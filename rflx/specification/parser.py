@@ -480,328 +480,379 @@ def create_array(
     return Array(identifier, element_type, node_location(array, filename))
 
 
+def create_numeric_literal(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    num = expression.text.split("#")
+    if len(num) == 1:
+        return rexpr.Number(int(num[0]), location=location)
+    elif len(num) == 3:
+        base = int(num[0])
+        return rexpr.Number(int(num[1], base), base=base, location=location)
+    fail(
+        f"Invalid numeric literal: {expression.text}",
+        Subsystem.PARSER,
+        Severity.ERROR,
+        node_location(identifier, filename),
+    )
+
+
+BINOP_MAP = {
+    "OpAnd": rexpr.And,
+    "OpOr": rexpr.Or,
+    "OpLt": rexpr.Less,
+    "OpGt": rexpr.Greater,
+    "OpLe": rexpr.LessEqual,
+    "OpGe": rexpr.GreaterEqual,
+    "OpPow": rexpr.Pow,
+    "OpAdd": rexpr.Add,
+    "OpSub": rexpr.Sub,
+    "OpMul": rexpr.Mul,
+    "OpDiv": rexpr.Div,
+    "OpEq": rexpr.Equal,
+    "OpNeq": rexpr.NotEqual,
+    "OpIn": rexpr.In,
+    "OpNotin": rexpr.NotIn,
+    "OpMod": rexpr.Mod,
+}
+
+
+def create_binop(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    try:
+        return BINOP_MAP[expression.f_op.kind_name](
+            create_expression(expression.f_left, filename, package),
+            create_expression(expression.f_right, filename, package),
+            location=node_location(expression, filename),
+        )
+    except KeyError:
+        raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
+
+
+def create_paren_expression(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return create_expression(expression.f_data, filename, package)
+
+
+def create_variable(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    if expression.f_identifier.text.lower() == "true":
+        return rexpr.TRUE
+    elif expression.f_identifier.text.lower() == "false":
+        return rexpr.FALSE
+    var_id = create_id(expression.f_identifier, filename)
+    if package:
+        return rexpr.Variable(qualified_type_identifier(var_id, package), location=location)
+    return rexpr.Variable(var_id, location=location)
+
+
+def create_attribute(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    inner = create_expression(expression.f_expression, filename, package)
+    if expression.f_kind.kind_name == "AttrLast":
+        return rexpr.Last(inner)
+    elif expression.f_kind.kind_name == "AttrFirst":
+        return rexpr.First(inner)
+    elif expression.f_kind.kind_name == "AttrSize":
+        return rexpr.Size(inner)
+    elif expression.f_kind.kind_name == "AttrValidChecksum":
+        return rexpr.ValidChecksum(inner)
+    elif expression.f_kind.kind_name == "AttrHead":
+        return rexpr.Head(inner)
+    elif expression.f_kind.kind_name == "AttrOpaque":
+        return rexpr.Opaque(inner)
+    elif expression.f_kind.kind_name == "AttrPresent":
+        return rexpr.Present(inner)
+    elif expression.f_kind.kind_name == "AttrValid":
+        return rexpr.Valid(inner)
+    else:
+        raise NotImplementedError(
+            f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
+        )
+
+
+def create_array_aggregate(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return rexpr.Aggregate(
+        *[create_expression(v, filename, package) for v in expression.f_values],
+        location=location,
+    )
+
+
+def create_string_literal(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return rexpr.String(
+        expression.text.split('"')[1],
+        location=location,
+    )
+
+
+def create_call(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return rexpr.Call(
+        create_id(expression.f_identifier, filename),
+        [create_expression(a, filename, package) for a in expression.f_arguments],
+        location=location,
+    )
+
+
+def create_quantified_expression(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    param_id = create_id(expression.f_parameter_identifier, filename)
+    iterable = create_expression(expression.f_iterable, filename, package)
+    predicate = create_expression(expression.f_predicate, filename, package)
+    if expression.f_operation.kind_name == "QuantAll":
+        return rexpr.ForAllIn(param_id, iterable, predicate, location)
+    elif expression.f_operation.kind_name == "QuantSome":
+        return rexpr.ForSomeIn(param_id, iterable, predicate, location)
+
+    raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
+
+
+def create_binding(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    bindings = {
+        create_id(b.f_identifier, filename): create_expression(b.f_expression, filename, package)
+        for b in expression.f_bindings
+    }
+    return rexpr.Binding(
+        create_expression(expression.f_expression, filename, package), bindings, location
+    )
+
+
+def create_list_attribute(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    attrs = {
+        "Append": stmt.Append,
+        "Extend": stmt.Extend,
+        "Read": stmt.Read,
+        "Write": stmt.Write,
+    }
+    try:
+        constructor = attrs[expression.f_attr.text]
+    except KeyError:
+        raise NotImplementedError(f"list attribute: {expression.f_attr.text}")
+
+    return constructor(
+        create_id(expression.f_identifier, filename),
+        create_expression(expression.f_expression, filename, package),
+        location=location,
+    )
+
+
+def create_reset(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
+
+
+def create_variable_decl(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    initializer = (
+        create_expression(expression.f_initializer, filename, package)
+        if expression.f_initializer
+        else None
+    )
+    return decl.VariableDeclaration(
+        create_id(expression.f_identifier, filename),
+        qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
+        initializer,
+        location=location,
+    )
+
+
+def create_private_type_decl(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return decl.TypeDeclaration(
+        Private(create_id(expression.f_identifier, filename), location=location)
+    )
+
+
+def create_channel_decl(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    readable = False
+    writable = False
+    for p in expression.f_parameters:
+        if p.kind_name == "Readable":
+            readable = True
+        elif p.kind_name == "Writable":
+            writable = True
+        else:
+            raise NotImplementedError(f"channel parameter: {p.kind_name}")
+    return decl.ChannelDeclaration(
+        create_id(expression.f_identifier, filename),
+        readable=readable,
+        writable=writable,
+        location=location,
+    )
+
+
+def create_renaming_decl(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return decl.RenamingDeclaration(
+        create_id(expression.f_identifier, filename),
+        qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
+        create_expression(expression.f_expression, filename, package),
+        location,
+    )
+
+
+def create_function_decl(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    arguments = []
+    if expression.f_parameters:
+        for p in expression.f_parameters.f_parameters:
+            arguments.append(
+                decl.Argument(
+                    create_id(p.f_identifier, filename),
+                    qualified_type_identifier(create_id(p.f_type_identifier, filename), package),
+                )
+            )
+    return decl.FunctionDeclaration(
+        create_id(expression.f_identifier, filename),
+        arguments,
+        create_id(expression.f_return_type_identifier, filename),
+        location,
+    )
+
+
+def create_negation(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    expr = create_expression(expression.f_data, filename, package)
+    assert isinstance(expr, rexpr.Number)
+    return rexpr.Number(-expr.value, expr.base, location)
+
+
+def create_assignment(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return stmt.Assignment(
+        create_id(expression.f_identifier, filename),
+        create_expression(expression.f_expression, filename, package),
+        location,
+    )
+
+
+def create_concatenation(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    left = create_expression(expression.f_left, filename, package)
+    right = create_expression(expression.f_right, filename, package)
+    assert isinstance(left, rexpr.Aggregate)
+    assert isinstance(right, rexpr.Aggregate)
+    return rexpr.Aggregate(*(left.elements + right.elements), location=location)
+
+
+def create_comprehension(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    condition = (
+        create_expression(expression.f_condition, filename, package)
+        if expression.f_condition
+        else rexpr.TRUE
+    )
+    return rexpr.Comprehension(
+        create_id(expression.f_iterator, filename),
+        create_expression(expression.f_array, filename, package),
+        create_expression(expression.f_selector, filename, package),
+        condition,
+        location,
+    )
+
+
+def create_selected(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return rexpr.Selected(
+        create_expression(expression.f_expression, filename, package),
+        create_id(expression.f_selector, filename),
+        location=location,
+    )
+
+
+def create_conversion(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    return rexpr.Conversion(
+        create_id(expression.f_target_identifier, filename),
+        create_expression(expression.f_argument, filename, package),
+        location=location,
+    )
+
+
+def create_message_aggregate(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    if expression.f_values.kind_name == "NullComponents":
+        values = {}
+    elif expression.f_values.kind_name == "MessageComponents":
+        values = {
+            create_id(c.f_identifier, filename): create_expression(
+                c.f_expression, filename, package
+            )
+            for c in expression.f_values.f_components
+        }
+    else:
+        raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
+
+    return rexpr.MessageAggregate(
+        create_id(expression.f_identifier, filename),
+        values,
+        location=location,
+    )
+
+
+EXPRESSION_MAP = {
+    "NumericLiteral": create_numeric_literal,
+    "BinOp": create_binop,
+    "ParenExpression": create_paren_expression,
+    "Variable": create_variable,
+    "Attribute": create_attribute,
+    "ArrayAggregate": create_array_aggregate,
+    "StringLiteral": create_string_literal,
+    "Call": create_call,
+    "QuantifiedExpression": create_quantified_expression,
+    "Binding": create_binding,
+    "ListAttribute": create_list_attribute,
+    "Reset": create_reset,
+    "VariableDecl": create_variable_decl,
+    "PrivateTypeDecl": create_private_type_decl,
+    "ChannelDecl": create_channel_decl,
+    "RenamingDecl": create_renaming_decl,
+    "FunctionDecl": create_function_decl,
+    "Negation": create_negation,
+    "Assignment": create_assignment,
+    "Concatenation": create_concatenation,
+    "Comprehension": create_comprehension,
+    "SelectNode": create_selected,
+    "Conversion": create_conversion,
+    "MessageAggregate": create_message_aggregate,
+}
+
+
 def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
+
     location = node_location(expression, filename)
-    if expression.kind_name == "NumericLiteral":
-        num = expression.text.split("#")
-        if len(num) == 1:
-            return rexpr.Number(int(num[0]), location=location)
-        elif len(num) == 3:
-            base = int(num[0])
-            return rexpr.Number(int(num[1], base), base=base, location=location)
-        fail(
-            f"Invalid numeric literal: {expression.text}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(identifier, filename),
-        )
-    elif expression.kind_name == "BinOp":
-        if expression.f_op.kind_name == "OpAnd":
-            return rexpr.And(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        if expression.f_op.kind_name == "OpOr":
-            return rexpr.Or(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpLt":
-            return rexpr.Less(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpGt":
-            return rexpr.Greater(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpLe":
-            return rexpr.LessEqual(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpGe":
-            return rexpr.GreaterEqual(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpPow":
-            return rexpr.Pow(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpAdd":
-            return rexpr.Add(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpSub":
-            return rexpr.Sub(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpMul":
-            return rexpr.Mul(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpDiv":
-            return rexpr.Div(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpEq":
-            return rexpr.Equal(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpNeq":
-            return rexpr.NotEqual(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpIn":
-            return rexpr.In(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpNotin":
-            return rexpr.NotIn(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        elif expression.f_op.kind_name == "OpMod":
-            return rexpr.Mod(
-                create_expression(expression.f_left, filename, package),
-                create_expression(expression.f_right, filename, package),
-                location=location,
-            )
-        else:
-            raise NotImplementedError(
-                f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
-            )
-    elif expression.kind_name == "ParenExpression":
-        return create_expression(expression.f_data, filename, package)
-    elif expression.kind_name == "Variable":
-        if expression.f_identifier.text.lower() == "true":
-            return rexpr.TRUE
-        elif expression.f_identifier.text.lower() == "false":
-            return rexpr.FALSE
-        var_id = create_id(expression.f_identifier, filename)
-        if package:
-            return rexpr.Variable(qualified_type_identifier(var_id, package), location=location)
-        return rexpr.Variable(var_id, location=location)
-    elif expression.kind_name == "Attribute":
-        inner = create_expression(expression.f_expression, filename, package)
-        if expression.f_kind.kind_name == "AttrLast":
-            return rexpr.Last(inner)
-        elif expression.f_kind.kind_name == "AttrFirst":
-            return rexpr.First(inner)
-        elif expression.f_kind.kind_name == "AttrSize":
-            return rexpr.Size(inner)
-        elif expression.f_kind.kind_name == "AttrValidChecksum":
-            return rexpr.ValidChecksum(inner)
-        elif expression.f_kind.kind_name == "AttrHead":
-            return rexpr.Head(inner)
-        elif expression.f_kind.kind_name == "AttrOpaque":
-            return rexpr.Opaque(inner)
-        elif expression.f_kind.kind_name == "AttrPresent":
-            return rexpr.Present(inner)
-        elif expression.f_kind.kind_name == "AttrValid":
-            return rexpr.Valid(inner)
-        else:
-            raise NotImplementedError(
-                f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
-            )
-    elif expression.kind_name == "ArrayAggregate":
-        return rexpr.Aggregate(
-            *[create_expression(v, filename, package) for v in expression.f_values],
-            location=location,
-        )
-    elif expression.kind_name == "StringLiteral":
-        return rexpr.String(
-            expression.text.split('"')[1],
-            location=location,
-        )
-    elif expression.kind_name == "Call":
-        return rexpr.Call(
-            create_id(expression.f_identifier, filename),
-            [create_expression(a, filename, package) for a in expression.f_arguments],
-            location=location,
-        )
-    elif expression.kind_name == "QuantifiedExpression":
-        param_id = create_id(expression.f_parameter_identifier, filename)
-        iterable = create_expression(expression.f_iterable, filename, package)
-        predicate = create_expression(expression.f_predicate, filename, package)
-        if expression.f_operation.kind_name == "QuantAll":
-            return rexpr.ForAllIn(param_id, iterable, predicate, location)
-        elif expression.f_operation.kind_name == "QuantSome":
-            return rexpr.ForSomeIn(param_id, iterable, predicate, location)
-        else:
-            raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
-    elif expression.kind_name == "Binding":
-        bindings = {
-            create_id(b.f_identifier, filename): create_expression(
-                b.f_expression, filename, package
-            )
-            for b in expression.f_bindings
-        }
-        return rexpr.Binding(
-            create_expression(expression.f_expression, filename, package), bindings, location
-        )
-    elif expression.kind_name == "ListAttribute":
-        attrs = {
-            "Append": stmt.Append,
-            "Extend": stmt.Extend,
-            "Read": stmt.Read,
-            "Write": stmt.Write,
-        }
-        try:
-            constructor = attrs[expression.f_attr.text]
-        except KeyError:
-            raise NotImplementedError(f"list attribute: {expression.f_attr.text}")
-
-        return constructor(
-            create_id(expression.f_identifier, filename),
-            create_expression(expression.f_expression, filename, package),
-            location=location,
-        )
-    elif expression.kind_name == "Reset":
-        return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
-    elif expression.kind_name == "VariableDecl":
-        initializer = (
-            create_expression(expression.f_initializer, filename, package)
-            if expression.f_initializer
-            else None
-        )
-        return decl.VariableDeclaration(
-            create_id(expression.f_identifier, filename),
-            qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
-            initializer,
-            location=location,
-        )
-    elif expression.kind_name == "PrivateTypeDecl":
-        return decl.TypeDeclaration(
-            Private(create_id(expression.f_identifier, filename), location=location)
-        )
-    elif expression.kind_name == "ChannelDecl":
-        readable = False
-        writable = False
-        for p in expression.f_parameters:
-            if p.kind_name == "Readable":
-                readable = True
-            elif p.kind_name == "Writable":
-                writable = True
-            else:
-                raise NotImplementedError(f"channel parameter: {p.kind_name}")
-        return decl.ChannelDeclaration(
-            create_id(expression.f_identifier, filename),
-            readable=readable,
-            writable=writable,
-            location=location,
-        )
-    elif expression.kind_name == "RenamingDecl":
-        return decl.RenamingDeclaration(
-            create_id(expression.f_identifier, filename),
-            qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
-            create_expression(expression.f_expression, filename, package),
-            location,
-        )
-    elif expression.kind_name == "FunctionDecl":
-        arguments = []
-        if expression.f_parameters:
-            for p in expression.f_parameters.f_parameters:
-                arguments.append(
-                    decl.Argument(
-                        create_id(p.f_identifier, filename),
-                        qualified_type_identifier(
-                            create_id(p.f_type_identifier, filename), package
-                        ),
-                    )
-                )
-        return decl.FunctionDeclaration(
-            create_id(expression.f_identifier, filename),
-            arguments,
-            create_id(expression.f_return_type_identifier, filename),
-            location,
-        )
-    elif expression.kind_name == "Negation":
-        expr = create_expression(expression.f_data, filename, package)
-        assert isinstance(expr, rexpr.Number)
-        return rexpr.Number(-expr.value, expr.base, location)
-    elif expression.kind_name == "Assignment":
-        return stmt.Assignment(
-            create_id(expression.f_identifier, filename),
-            create_expression(expression.f_expression, filename, package),
-            location,
-        )
-    elif expression.kind_name == "Concatenation":
-        left = create_expression(expression.f_left, filename, package)
-        right = create_expression(expression.f_right, filename, package)
-        assert isinstance(left, rexpr.Aggregate)
-        assert isinstance(right, rexpr.Aggregate)
-        return rexpr.Aggregate(*(left.elements + right.elements), location=location)
-    elif expression.kind_name == "Comprehension":
-        condition = (
-            create_expression(expression.f_condition, filename, package)
-            if expression.f_condition
-            else rexpr.TRUE
-        )
-        return rexpr.Comprehension(
-            create_id(expression.f_iterator, filename),
-            create_expression(expression.f_array, filename, package),
-            create_expression(expression.f_selector, filename, package),
-            condition,
-            location,
-        )
-    elif expression.kind_name == "SelectNode":
-        return rexpr.Selected(
-            create_expression(expression.f_expression, filename, package),
-            create_id(expression.f_selector, filename),
-            location=location,
-        )
-    elif expression.kind_name == "Conversion":
-        return rexpr.Conversion(
-            create_id(expression.f_target_identifier, filename),
-            create_expression(expression.f_argument, filename, package),
-            location=location,
-        )
-    elif expression.kind_name == "MessageAggregate":
-        if expression.f_values.kind_name == "NullComponents":
-            values = {}
-        elif expression.f_values.kind_name == "MessageComponents":
-            values = {
-                create_id(c.f_identifier, filename): create_expression(
-                    c.f_expression, filename, package
-                )
-                for c in expression.f_values.f_components
-            }
-        else:
-            raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
-
-        return rexpr.MessageAggregate(
-            create_id(expression.f_identifier, filename),
-            values,
-            location=location,
-        )
-
-    raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
+    try:
+        return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
+    except KeyError:
+        raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
 
 
 def create_modular(
