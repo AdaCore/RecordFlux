@@ -113,14 +113,6 @@ class ParenExpression(Expr):
     data = Field(type=Expr)
 
 
-class BooleanExpression(Expr):
-    """
-    Boolean expression
-    """
-
-    data = Field(type=Expr)
-
-
 class RefinementSpec(Type):
     """
     Refinement specification (for Message use (Field => Inner_Type))
@@ -129,7 +121,7 @@ class RefinementSpec(Type):
     pdu = Field(type=ID)
     field = Field(type=UnqualifiedID)
     sdu = Field(type=ID)
-    condition = Field(type=BooleanExpression)
+    condition = Field(type=Expr)
 
 
 @abstract
@@ -306,7 +298,7 @@ class ConditionalTransition(Transition):
     Conditional session state transition
     """
 
-    condition = Field(type=BooleanExpression)
+    condition = Field(type=Expr)
 
 
 class StateBody(BaseStateBody):
@@ -361,37 +353,13 @@ class IntegerTypeDef(TypeDef):
     """
 
 
-class MathematicalExpression(Expr):
-    """
-    Mathematical expression
-    """
-
-    data = Field(type=Expr)
-
-
-@abstract
 class Aspect(RFLXNode):
     """
-    Base class for aspects
-    """
-
-
-class MathematicalAspect(Aspect):
-    """
-    Aspect with mathematical expression type
+    Aspect
     """
 
     identifier = Field(type=UnqualifiedID)
-    value = Field(type=MathematicalExpression)
-
-
-class BooleanAspect(Aspect):
-    """
-    Aspect with boolean expression type
-    """
-
-    identifier = Field(type=UnqualifiedID)
-    value = Field(type=BooleanExpression)
+    value = Field(type=Expr)
 
 
 class RangeTypeDef(IntegerTypeDef):
@@ -399,9 +367,9 @@ class RangeTypeDef(IntegerTypeDef):
     Range type definition
     """
 
-    lower = Field(type=MathematicalExpression)
-    upper = Field(type=MathematicalExpression)
-    size = Field(type=MathematicalAspect)
+    lower = Field(type=Expr)
+    upper = Field(type=Expr)
+    size = Field(type=Aspect)
 
 
 class ModularTypeDef(IntegerTypeDef):
@@ -409,7 +377,7 @@ class ModularTypeDef(IntegerTypeDef):
     Modular type definition
     """
 
-    mod = Field(type=MathematicalExpression)
+    mod = Field(type=Expr)
 
 
 @abstract
@@ -488,8 +456,8 @@ class Then(RFLXNode):
     """
 
     target = Field(type=NullID)
-    aspects = Field(type=MathematicalAspect.list)
-    condition = Field(type=BooleanExpression)
+    aspects = Field(type=Aspect.list)
+    condition = Field(type=Expr)
 
 
 class NullComponent(RFLXNode):
@@ -507,8 +475,8 @@ class Component(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
-    aspects = Field(type=MathematicalAspect.list)
-    condition = Field(type=BooleanExpression)
+    aspects = Field(type=Aspect.list)
+    condition = Field(type=Expr)
     thens = Field(type=Then.list)
 
 
@@ -533,7 +501,7 @@ class ChecksumVal(BaseChecksumVal):
     Single checksum value
     """
 
-    data = Field(type=MathematicalExpression)
+    data = Field(type=Expr)
 
 
 class ChecksumValueRange(BaseChecksumVal):
@@ -541,8 +509,8 @@ class ChecksumValueRange(BaseChecksumVal):
     Checksum value range
     """
 
-    lower = Field(type=MathematicalExpression)
-    upper = Field(type=MathematicalExpression)
+    lower = Field(type=Expr)
+    upper = Field(type=Expr)
 
 
 class ChecksumAssoc(RFLXNode):
@@ -724,7 +692,7 @@ class Comprehension(Expr):
     iterator = Field(type=UnqualifiedID)
     array = Field(type=Expr)
     selector = Field(type=Expr)
-    condition = Field(type=BooleanExpression)
+    condition = Field(type=Expr)
 
 
 class Call(Expr):

@@ -60,13 +60,10 @@ def test_modular_type() -> None:
         "definition": {
             "_kind": "ModularTypeDef",
             "mod": {
-                "_kind": "MathematicalExpression",
-                "data": {
-                    "_kind": "BinOp",
-                    "left": {"_kind": "NumericLiteral", "_value": "2"},
-                    "op": {"_kind": "OpPow", "_value": "**"},
-                    "right": {"_kind": "NumericLiteral", "_value": "9"},
-                },
+                "_kind": "BinOp",
+                "left": {"_kind": "NumericLiteral", "_value": "2"},
+                "op": {"_kind": "OpPow", "_value": "**"},
+                "right": {"_kind": "NumericLiteral", "_value": "9"},
             },
         },
         "identifier": {"_kind": "UnqualifiedID", "_value": "Modular_Type"},
@@ -78,37 +75,34 @@ def test_checksum_attributes() -> None:
         """
             A'Valid_Checksum and B'Valid_Checksum;
         """,
-        rule=rflxdsl.GrammarRule.boolean_expression_rule,
+        rule=rflxdsl.GrammarRule.expression_rule,
     )
     assert to_dict(unit.root) == {
-        "_kind": "BooleanExpression",
-        "data": {
-            "_kind": "BinOp",
-            "left": {
-                "_kind": "Attribute",
-                "expression": {
-                    "_kind": "Variable",
-                    "identifier": {
-                        "_kind": "ID",
-                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
-                        "package": None,
-                    },
+        "_kind": "BinOp",
+        "left": {
+            "_kind": "Attribute",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "package": None,
                 },
-                "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
             },
-            "op": {"_kind": "OpAnd", "_value": "and"},
-            "right": {
-                "_kind": "Attribute",
-                "expression": {
-                    "_kind": "Variable",
-                    "identifier": {
-                        "_kind": "ID",
-                        "name": {"_kind": "UnqualifiedID", "_value": "B"},
-                        "package": None,
-                    },
+            "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
+        },
+        "op": {"_kind": "OpAnd", "_value": "and"},
+        "right": {
+            "_kind": "Attribute",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "B"},
+                    "package": None,
                 },
-                "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
             },
+            "kind": {"_kind": "AttrValidChecksum", "_value": "Valid_Checksum"},
         },
     }
 

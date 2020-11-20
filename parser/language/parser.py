@@ -116,8 +116,6 @@ rflx_grammar.add_rules(
         ),
         grammar.relation,
     ),
-    mathematical_expression=ast.MathematicalExpression(grammar.expression),
-    boolean_expression=ast.BooleanExpression(grammar.expression),
     quantified_expression=ast.QuantifiedExpression(
         "for",
         Or(
@@ -139,7 +137,7 @@ rflx_grammar.add_rules(
         grammar.extended_expression,
         "=>",
         grammar.extended_expression,
-        Opt("when", grammar.extended_boolean_expression),
+        Opt("when", grammar.extended_expression),
         "]",
     ),
     call=ast.Call(
@@ -278,33 +276,26 @@ rflx_grammar.add_rules(
         ),
         grammar.extended_relation,
     ),
-    extended_boolean_expression=ast.BooleanExpression(grammar.extended_expression),
-    extended_mathematical_expression=ast.MathematicalExpression(grammar.extended_expression),
 )
 
 rflx_grammar.add_rules(
-    mathematical_aspect=ast.MathematicalAspect(
-        grammar.unqualified_identifier, "=>", grammar.mathematical_expression
-    ),
-    boolean_aspect=ast.BooleanAspect(
-        grammar.unqualified_identifier, Opt("=>", grammar.boolean_expression)
-    ),
+    aspect=ast.Aspect(grammar.unqualified_identifier, Opt("=>", grammar.expression)),
     range_type_definition=ast.RangeTypeDef(
         "range",
-        grammar.mathematical_expression,
+        grammar.expression,
         "..",
-        grammar.mathematical_expression,
+        grammar.expression,
         "with",
-        grammar.mathematical_aspect,
+        grammar.aspect,
     ),
-    modular_type_definition=ast.ModularTypeDef("mod", grammar.mathematical_expression),
+    modular_type_definition=ast.ModularTypeDef("mod", grammar.expression),
     integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
-    if_condition=Pick("if", grammar.boolean_expression),
-    extended_if_condition=Pick("if", grammar.extended_boolean_expression),
+    if_condition=Pick("if", grammar.expression),
+    extended_if_condition=Pick("if", grammar.extended_expression),
     then=ast.Then(
         "then",
         Or(ast.NullID("null"), grammar.unqualified_identifier),
-        Opt("with", List(grammar.mathematical_aspect, sep=",")),
+        Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
     ),
     null_component_item=ast.NullComponent("null", grammar.then, ";"),
@@ -312,20 +303,18 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier,
         ":",
         grammar.qualified_identifier,
-        Opt("with", List(grammar.mathematical_aspect, sep=",")),
+        Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
         List(grammar.then, empty_valid=True),
         ";",
     ),
     component_list=ast.Components(Opt(grammar.null_component_item), List(grammar.component_item)),
-    value_range=ast.ChecksumValueRange(
-        grammar.mathematical_expression, "..", grammar.mathematical_expression
-    ),
+    value_range=ast.ChecksumValueRange(grammar.expression, "..", grammar.expression),
     checksum_association=ast.ChecksumAssoc(
         grammar.unqualified_identifier,
         "=>",
         "(",
-        List(Or(grammar.value_range, ast.ChecksumVal(grammar.mathematical_expression)), sep=","),
+        List(Or(grammar.value_range, ast.ChecksumVal(grammar.expression)), sep=","),
         ")",
     ),
     checksum_aspect=ast.ChecksumAspect(
@@ -348,7 +337,7 @@ rflx_grammar.add_rules(
         grammar.unqualified_identifier, "=>", grammar.numeric_literal
     ),
     named_enumeration=ast.NamedEnumerationDef(List(grammar.element_value_association, sep=",")),
-    enumeration_aspects=List(Or(grammar.mathematical_aspect, grammar.boolean_aspect), sep=","),
+    enumeration_aspects=List(Or(grammar.aspect, grammar.aspect), sep=","),
     enumeration_type_definition=ast.EnumerationTypeDef(
         "(",
         Or(grammar.named_enumeration, grammar.positional_enumeration),
