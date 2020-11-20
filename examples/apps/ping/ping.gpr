@@ -42,19 +42,6 @@ project Ping is
          "--proof-warnings",
          "--no-axiom-guard"
       );
-
-      for Proof_Switches ("basalt-strings_generic.adb") use ("--prover=CVC4", "--steps=1735");
-      for Proof_Switches ("icmpv4.adb") use ("--prover=Z3,CVC4", "--steps=211172");
-      for Proof_Switches ("rflx-icmp-message.ads") use ("--prover=CVC4", "--steps=25545");
-      for Proof_Switches ("rflx-icmp.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-ipv4-contains.ads") use ("--prover=CVC4,Z3", "--steps=64299");
-      for Proof_Switches ("rflx-ipv4-options.ads") use ("--prover=CVC4", "--steps=451");
-      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--prover=CVC4,Z3", "--steps=19485");
-      for Proof_Switches ("rflx-ipv4.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-ipv4_option-option.ads") use ("--prover=CVC4", "--steps=2879");
-      for Proof_Switches ("rflx-ipv4_option.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--prover=CVC4", "--steps=70979");
-      for Proof_Switches ("rflx-rflx_types.ads") use ("--prover=Z3,altergo,CVC4", "--steps=239854");
    end Prove;
 
 end Ping;
