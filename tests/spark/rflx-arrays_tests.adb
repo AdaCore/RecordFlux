@@ -1126,10 +1126,40 @@ package body RFLX.Arrays_Tests is
       Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
    end Test_Parsing_Array_Size_Defined_By_Message_Size;
 
+   procedure Test_Parsing_Array_Size_Defined_By_Message_Size_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 1);
+      Context          : Arrays.Array_Size_Defined_By_Message_Size.Context;
+      Header           : Arrays.Enumeration;
+      package Message renames Arrays.Array_Size_Defined_By_Message_Size;
+   begin
+      Message.Initialize (Context, Buffer);
+
+      Message.Verify_Message (Context);
+
+      if Message.Valid (Context, Message.F_Header) then
+         Header := Message.Get_Header (Context);
+
+         Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+         Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
+      end if;
+
+      Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
+
+      Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
+   end Test_Parsing_Array_Size_Defined_By_Message_Size_Empty;
+
    procedure Test_Generating_Array_Size_Defined_By_Message_Size (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
+      Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 1, 0, 2);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0);
       Context          : Arrays.Array_Size_Defined_By_Message_Size.Context;
       Sequence_Context : Arrays.Modular_Vector.Context;
@@ -1155,14 +1185,51 @@ package body RFLX.Arrays_Tests is
               "Invalid Modular_Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
-      if Message.Has_Buffer (Context) then
-         Message.Take_Buffer (Context, Buffer);
-      end if;
+      Message.Take_Buffer (Context, Buffer);
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
+
       Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Expected);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Context.Last");
       Assert (Sequence_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (40)'Image, "Invalid Sequence_Context.Last");
    end Test_Generating_Array_Size_Defined_By_Message_Size;
+
+   procedure Test_Generating_Array_Size_Defined_By_Message_Size_Empty (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Expected         : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 1);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr :=
+        new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 0);
+      Context          : Arrays.Array_Size_Defined_By_Message_Size.Context;
+      package Message renames Arrays.Array_Size_Defined_By_Message_Size;
+   begin
+      Message.Initialize (Context, Buffer);
+
+      Message.Set_Header (Context, Arrays.ONE);
+      Message.Set_Vector_Empty (Context);
+
+      Assert (Message.Structural_Valid (Context, Message.F_Vector), "Invalid Modular_Vector");
+      Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
+
+      Message.Take_Buffer (Context, Buffer);
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+              Expected.all,
+              "Invalid binary representation");
+
+      Free_Bytes_Ptr (Buffer);
+      Free_Bytes_Ptr (Expected);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
+   end Test_Generating_Array_Size_Defined_By_Message_Size_Empty;
 
    overriding
    procedure Register_Tests (T : in out Test) is
@@ -1184,8 +1251,12 @@ package body RFLX.Arrays_Tests is
       Register_Routine (T, Test_Generating_Arrays_Messages_Message'Access, "Generating Messages Message");
       Register_Routine (T, Test_Parsing_Array_Size_Defined_By_Message_Size'Access,
                         "Parsing message with array size defined by message size");
+      Register_Routine (T, Test_Parsing_Array_Size_Defined_By_Message_Size_Empty'Access,
+                        "Parsing message with array size defined by message size (empty)");
       Register_Routine (T, Test_Generating_Array_Size_Defined_By_Message_Size'Access,
                         "Generating message with array size defined by message size");
+      Register_Routine (T, Test_Generating_Array_Size_Defined_By_Message_Size_Empty'Access,
+                        "Generating message with array size defined by message size (empty)");
    end Register_Tests;
 
 end RFLX.Arrays_Tests;
