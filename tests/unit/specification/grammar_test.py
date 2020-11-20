@@ -52,7 +52,6 @@ def test_unqualified_identifier(string: str, expected: ID) -> None:
         ("X2::Y2", ID("X2::Y2")),
         ("X_Y::Z", ID("X_Y::Z")),
         ("X_Y_3::Z_4", ID("X_Y_3::Z_4")),
-        ("X::Y::Z", ID("X::Y::Z")),
     ],
 )
 def test_qualified_identifier(string: str, expected: ID) -> None:
