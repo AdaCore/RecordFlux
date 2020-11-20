@@ -257,3 +257,28 @@ def test_selector_precedence3() -> None:
         },
         "selector": {"_kind": "UnqualifiedID", "_value": "B"},
     }
+
+
+def test_suffix_precedence() -> None:
+    unit = parse_buffer(
+        "2**X'Size",
+        rule=rflxdsl.GrammarRule.extended_expression_rule,
+    )
+    assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
+    assert to_dict(unit.root) == {
+        "_kind": "BinOp",
+        "left": {"_kind": "NumericLiteral", "_value": "2"},
+        "op": {"_kind": "OpPow", "_value": "**"},
+        "right": {
+            "_kind": "Attribute",
+            "expression": {
+                "_kind": "Variable",
+                "identifier": {
+                    "_kind": "ID",
+                    "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                    "package": None,
+                },
+            },
+            "kind": {"_kind": "AttrSize", "_value": "Size"},
+        },
+    }

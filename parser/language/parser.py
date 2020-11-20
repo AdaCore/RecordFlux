@@ -39,11 +39,9 @@ rflx_grammar.add_rules(
         grammar.paren_expression,
     ),
     paren_expression=ast.ParenExpression("(", grammar.expression, ")"),
-    factor=Or(
-        # pylint: disable=no-member
-        ast.BinOp(grammar.factor, ast.Op.alt_pow("**"), cut(), grammar.primary),
+    suffix=Or(
         ast.Attribute(
-            grammar.factor,
+            grammar.suffix,
             "'",
             Or(
                 # pylint: disable=no-member
@@ -54,6 +52,11 @@ rflx_grammar.add_rules(
             ),
         ),
         grammar.primary,
+    ),
+    factor=Or(
+        # pylint: disable=no-member
+        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), cut(), grammar.primary),
+        grammar.suffix,
     ),
     term=Or(
         ast.BinOp(
@@ -168,24 +171,15 @@ rflx_grammar.add_rules(
         grammar.extended_paren_expression,
     ),
     extended_paren_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
-    extended_factor=Or(
-        ast.BinOp(
-            grammar.extended_primary,
-            Or(
-                # pylint: disable=no-member
-                ast.Op.alt_pow("**"),
-            ),
-            cut(),
-            grammar.extended_primary,
-        ),
+    extended_suffix=Or(
         ast.Select(
-            grammar.extended_factor,
+            grammar.extended_suffix,
             ".",
             cut(),
             grammar.unqualified_identifier,
         ),
         ast.Attribute(
-            grammar.extended_factor,
+            grammar.extended_suffix,
             "'",
             Or(
                 # pylint: disable=no-member
@@ -200,7 +194,7 @@ rflx_grammar.add_rules(
             ),
         ),
         ast.Binding(
-            grammar.extended_factor,
+            grammar.extended_suffix,
             "where",
             List(
                 ast.TermAssoc(grammar.unqualified_identifier, "=", grammar.extended_expression),
@@ -208,6 +202,18 @@ rflx_grammar.add_rules(
             ),
         ),
         grammar.extended_primary,
+    ),
+    extended_factor=Or(
+        ast.BinOp(
+            grammar.extended_factor,
+            Or(
+                # pylint: disable=no-member
+                ast.Op.alt_pow("**"),
+            ),
+            cut(),
+            grammar.extended_suffix,
+        ),
+        grammar.extended_suffix,
     ),
     extended_term=Or(
         ast.BinOp(
@@ -273,6 +279,7 @@ rflx_grammar.add_rules(
         grammar.extended_relation,
     ),
     extended_boolean_expression=ast.BooleanExpression(grammar.extended_expression),
+    extended_mathematical_expression=ast.MathematicalExpression(grammar.extended_expression),
 )
 
 rflx_grammar.add_rules(
