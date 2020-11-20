@@ -59,50 +59,6 @@ project Test is
    package Prove is
       for Proof_Dir use Proof_Dir;
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
-
-      --  Improving proof time
-      for Proof_Switches ("rflx-arrays-array_size_defined_by_message_size.ads") use ("--prover=CVC4", "--steps=140");
-      for Proof_Switches ("rflx-arrays-av_enumeration_vector.ads") use ("--prover=CVC4", "--steps=38");
-      for Proof_Switches ("rflx-arrays-enumeration_vector.ads") use ("--prover=CVC4", "--steps=28");
-      for Proof_Switches ("rflx-arrays-inner_message.ads") use ("--prover=CVC4", "--steps=14012");
-      for Proof_Switches ("rflx-arrays-inner_messages.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-arrays-message.ads") use ("--prover=CVC4", "--steps=20252");
-      for Proof_Switches ("rflx-arrays-messages_message.ads") use ("--prover=CVC4", "--steps=17358");
-      for Proof_Switches ("rflx-arrays-modular_vector.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-arrays-range_vector.ads") use ("--prover=CVC4", "--steps=108");
-      for Proof_Switches ("rflx-arrays_tests.adb") use ("--prover=CVC4,Z3", "--steps=84090");
-      for Proof_Switches ("rflx-arrays.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-builtin_types_tests.adb") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-custom_types_tests.adb") use ("--prover=altergo,Z3,CVC4", "--steps=308809");
-      for Proof_Switches ("rflx-derivation-message.ads") use ("--prover=CVC4", "--steps=20252");
-      for Proof_Switches ("rflx-derivation_tests.adb") use ("--prover=CVC4,Z3", "--steps=84090");
-      for Proof_Switches ("rflx-enumeration-message.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-enumeration_tests.adb") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-enumeration.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-ethernet-frame.ads") use ("--prover=CVC4,Z3", "--steps=54711");
-      for Proof_Switches ("rflx-ethernet_tests.adb") use ("--prover=Z3,altergo,CVC4", "--steps=146768");
-      for Proof_Switches ("rflx-ethernet.ads") use ("--prover=CVC4", "--steps=39029");
-      for Proof_Switches ("rflx-expression-message.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-expression_tests.adb") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-icmp-message.ads") use ("--prover=CVC4", "--steps=25545");
-      for Proof_Switches ("rflx-icmp.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-in_ethernet-contains.ads") use ("--prover=CVC4", "--steps=51452");
-      for Proof_Switches ("rflx-in_ethernet_tests.adb") use ("--prover=Z3,CVC4", "--steps=140036");
-      for Proof_Switches ("rflx-in_ipv4-contains.ads") use ("--prover=CVC4", "--steps=103447");
-      for Proof_Switches ("rflx-in_ipv4_tests.adb") use ("--prover=CVC4,Z3", "--steps=173271");
-      for Proof_Switches ("rflx-in_tlv_tests.adb") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-ipv4-option.ads") use ("--prover=CVC4", "--steps=2879");
-      for Proof_Switches ("rflx-ipv4-options.ads") use ("--prover=CVC4", "--steps=451");
-      for Proof_Switches ("rflx-ipv4-packet.ads") use ("--prover=CVC4,Z3", "--steps=140014");
-      for Proof_Switches ("rflx-ipv4_tests.adb") use ("--prover=CVC4,Z3", "--steps=140038");
-      for Proof_Switches ("rflx-ipv4.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--prover=CVC4", "--steps=70979");
-      for Proof_Switches ("rflx-rflx_types.ads") use ("--prover=altergo,Z3,CVC4", "--steps=239854");
-      for Proof_Switches ("rflx-tlv-message.ads") use ("--prover=CVC4,Z3", "--steps=47410");
-      for Proof_Switches ("rflx-tlv_tests.adb") use ("--prover=CVC4", "--steps=90865");
-      for Proof_Switches ("rflx-tlv.ads") use ("--prover=CVC4", "--steps=1");
-      for Proof_Switches ("rflx-udp-datagram.ads") use ("--prover=CVC4,Z3", "--steps=155426");
-      for Proof_Switches ("rflx-udp.ads") use ("--prover=CVC4", "--steps=39054");
    end Prove;
 
 end Test;
