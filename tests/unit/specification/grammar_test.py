@@ -11,10 +11,30 @@ from rflx.model.session import Session
 from rflx.specification import parser
 from rflx.specification.parser import (
     GrammarRule,
+    create_bool_expression,
     create_expression,
     create_id,
+    create_math_expression,
     diagnostics_to_error,
 )
+
+
+def parse_math_expression(data: str, extended: bool) -> expr.Expr:
+    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_math_expression(unit.root)
+
+
+def parse_bool_expression(data: str, extended: bool) -> expr.Expr:
+    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_bool_expression(unit.root)
 
 
 def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
@@ -74,7 +94,7 @@ def test_qualified_identifier(string: str, expected: ID) -> None:
     ],
 )
 def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.expression_rule)
+    actual = parse_math_expression(string, False)
     assert actual == expected
     assert actual.location
 
@@ -176,7 +196,7 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_math_expression(string, False)
     assert actual == expected
     assert actual.location
 
@@ -190,13 +210,11 @@ def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
         ("42 <= X", expr.LessEqual(expr.Number(42), expr.Variable("X"))),
         ("X > 42", expr.Greater(expr.Variable("X"), expr.Number(42))),
         ("X >= 42", expr.GreaterEqual(expr.Variable("X"), expr.Number(42))),
-        ("X in Y", expr.In(expr.Variable("X"), expr.Variable("Y"))),
-        ("X not in Y", expr.NotIn(expr.Variable("X"), expr.Variable("Y"))),
         ("((X = 42))", expr.Equal(expr.Variable("X"), expr.Number(42))),
     ],
 )
 def test_expression_relation(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_bool_expression(string, False)
     assert actual == expected
     assert actual.location
 
@@ -210,7 +228,7 @@ def test_expression_relation(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_boolean(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_bool_expression(string, False)
     assert actual == expected
     assert actual.location
 
@@ -223,7 +241,7 @@ def test_expression_boolean(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_math_expression(string, True)
     assert actual == expected
     assert actual.location
 
@@ -231,13 +249,13 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42 > X", 'unexpected expression type "Greater".*'),
-        ("X and Y", 'unexpected expression type "And".*'),
+        ("42 > X", "Invalid math BinOp OpGt.*"),
+        ("X and Y", "Invalid math BinOp OpAnd.*"),
     ],
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.expression_rule)
+    with pytest.raises(NotImplementedError, match=rf"^{error}$"):
+        parse_math_expression(string, False)
 
 
 @pytest.mark.parametrize(
@@ -248,7 +266,7 @@ def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_boolean_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.expression_rule)
+    actual = parse_bool_expression(string, True)
     assert actual == expected
     assert actual.location
 
@@ -256,13 +274,13 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42", 'unexpected expression type "Number".*'),
-        ("X", 'unexpected expression type "Variable".*'),
+        ("42", 'bool expression: NumericLiteral.*'),
+        ("X * 3", 'Invalid bool BinOp OpMul.*'),
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.expression_rule)
+    with pytest.raises(NotImplementedError, match=rf"^{error}$"):
+        parse_bool_expression(string, False)
 
 
 @pytest.mark.parametrize(
@@ -327,6 +345,8 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
         ),
         ("X'(null message)", expr.MessageAggregate("X", {})),
         ("X", expr.Variable("X")),
+        ("X in Y", expr.In(expr.Variable("X"), expr.Variable("Y"))),
+        ("X not in Y", expr.NotIn(expr.Variable("X"), expr.Variable("Y"))),
     ],
 )
 def test_expression_base(string: str, expected: expr.Expr) -> None:
@@ -501,7 +521,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_complex(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_bool_expression(string, True)
     assert actual == expected
     assert actual.location
 
