@@ -1,4 +1,5 @@
-from typing import Any
+from pathlib import Path
+from typing import Any, Callable
 
 import pytest
 from librecordfluxdsllang import AnalysisContext
@@ -15,6 +16,7 @@ from rflx.specification.parser import (
     create_expression,
     create_id,
     create_math_expression,
+    create_state,
     diagnostics_to_error,
 )
 
@@ -37,12 +39,14 @@ def parse_bool_expression(data: str, extended: bool) -> expr.Expr:
     return create_bool_expression(unit.root)
 
 
-def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
+def parse_expression(
+    data: str, rule: GrammarRule, convert: Callable[[], None] = create_expression
+) -> expr.Expr:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return create_expression(unit.root)
+    return convert(unit.root)
 
 
 def parse_id(data: str, rule: GrammarRule) -> expr.Expr:
@@ -274,8 +278,8 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42", 'bool expression: NumericLiteral.*'),
-        ("X * 3", 'Invalid bool BinOp OpMul.*'),
+        ("42", "bool expression: NumericLiteral.*"),
+        ("X * 3", "Invalid bool BinOp OpMul.*"),
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
@@ -694,9 +698,10 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
             ),
         ),
     ],
+    ids=range(1, 5),
 )
 def test_state(string: str, expected: decl.Declaration) -> None:
-    actual = parse_expression(string, GrammarRule.state_rule)
+    actual = parse_expression(string, GrammarRule.state_rule, create_state)
     assert actual == expected
     assert actual.location
 
@@ -712,13 +717,14 @@ def test_state(string: str, expected: decl.Declaration) -> None:
                   then B
                end C
          """,
-            "inconsistent state identifier: A /= C.*",
+            "<stdin>:2:16: parser: error: inconsistent state identifier: A /= C.*",
         )
     ],
+    ids=[1],
 )
 def test_state_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.state_rule)
+        parse_expression(string, GrammarRule.state_rule, create_state)
 
 
 @pytest.mark.parametrize(

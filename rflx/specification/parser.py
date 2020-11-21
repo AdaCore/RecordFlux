@@ -290,140 +290,154 @@ class Parser:
             error.extend(new_type.error)
 
 
+def create_description(description: Description = None) -> Optional[str]:
+    if description:
+        return description.text.split('"')[1]
+    return None
+
+
+def create_transition(transition: Transition, filename: Path, package: ID) -> rsess.Transition:
+    if transition.kind_name not in ("Transition", "ConditionalTransition"):
+        raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
+    target = qualified_type_identifier(create_id(transition.f_target, filename), package)
+    condition = rexpr.TRUE
+    description = create_description(transition.f_description)
+    if transition.kind_name == "ConditionalTransition":
+        condition = create_bool_expression(transition.f_condition, filename, package)
+    return rsess.Transition(target, condition, description, node_location(transition, filename))
+
+
+def create_statement(statement: Statement, filename: Path, package: ID) -> stmt.Statement:
+    identifier = qualified_type_identifier(create_id(statement.f_identifier, filename), package)
+    location = node_location(statement, filename)
+    if statement.kind_type == "Assignment":
+        return stmt.Assignment(
+            identifier, create_expression(statement.f_expression, filename, package), location
+        )
+    elif statement.kind_type == "ListAttribute":
+        expression = create_expression(statement.f_expression, filename, package)
+        if statement.f_attr.kind_name == "ListAttrAppend":
+            return stmt.Append(identifier, expression, location)
+        elif statement.f_attr.kind_name == "ListAttrExtend":
+            return stmt.Extend(identifier, expression, location)
+        elif statement.f_attr.kind_name == "ListAttrRead":
+            return stmt.Read(identifier, expression, location)
+        elif statement.f_attr.kind_name == "ListAttrWrite":
+            return stmt.Write(identifier, expression, location)
+
+        raise NotImplementedError(f"Attribute {statement.f_attr.kind_name} unsupported")
+
+    elif statement.kind_type == "Reset":
+        return stmt.Reset(identifier, location)
+
+    raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported")
+
+
+def create_state(state: State, filename: Path = None, package: ID = None) -> rsess.State:
+    location = node_location(state, filename)
+    identifier = qualified_type_identifier(create_id(state.f_identifier, filename), package)
+    if state.f_body.kind_name == "NullStateBody":
+        return rsess.State(identifier)
+    if state.f_identifier.text != state.f_body.f_end_identifier.text:
+        fail(
+            "inconsistent state identifier: "
+            f"{state.f_identifier.text} /= {state.f_body.f_end_identifier.text}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            location,
+        )
+    transitions = []
+    for t in state.f_body.f_conditional_transitions:
+        transitions.append(create_transition(t, filename, package))
+    transitions.append(create_transition(state.f_body.f_final_transition, filename, package))
+    actions = []
+    if state.f_body.f_actions:
+        for a in state.f_body.f_actions:
+            actions.append(create_statement(a, filename, package))
+    declarations = []
+    if state.f_body.f_declarations:
+        for d in state.f_body.f_declarations:
+            declarations.append(create_declaration(d, filename, package))
+    description = create_description(state.f_description)
+    return rsess.State(
+        identifier=identifier,
+        transitions=transitions,
+        actions=actions,
+        declarations=declarations,
+        description=description,
+        location=node_location(state, filename),
+    )
+
+
+def create_declaration(
+    declaration: SessionDecl, filename: Path, package: ID
+) -> decl.BasicDeclaration:
+    identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
+    type_identifier = create_id(declaration.f_type_identifier, filename)
+    if declaration.kind_name == "VariableDecl":
+        return decl.VariableDeclaration(
+            identifier,
+            type_identifier,
+            create_expression(declaration.f_initializer, filename, package),
+            node_location(declaration, filename),
+        )
+    elif declaration.kind_name == "RenamingDecl":
+        return decl.RenamingDeclaration(
+            identifier,
+            type_identifier,
+            create_expression(declaration.f_expression, filename, package),
+            node_location(declaration, filename),
+        )
+
+    raise NotImplementedError(f"Declaration kind {declaration.kind_name} unsupported")
+
+
+def create_parameter(declaration: TypeDecl, filename: Path, package: ID) -> decl.FormalDeclaration:
+    arguments = []
+    identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
+    location = node_location(declaration, filename)
+    if declaration.kind_name == "FunctionDecl":
+        if declaration.f_parameters:
+            for a in declaration.f_parameters.f_parameters:
+                arg_identifier = qualified_type_identifier(
+                    create_id(a.f_identifier, filename), package
+                )
+                type_identifier = qualified_type_identifier(
+                    create_id(a.f_type_identifier, filename), package
+                )
+                arguments.append(decl.Argument(arg_identifier, type_identifier))
+        return_type = qualified_type_identifier(
+            create_id(declaration.f_return_type_identifier, filename), package
+        )
+        return FunctionDeclaration(identifier, arguments, return_type, location)
+    elif declaration.kind_name == "ChannelDecl":
+        readable = False
+        writable = False
+        if declaration.f_parameters:
+            for p in declaration.f_parameters:
+                if p.kind_type == "Readable":
+                    readable = True
+                elif p.kind_type == "Writable":
+                    writable = True
+                else:
+                    raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
+        return ChannelDeclaration(identifier, readable, writable, location)
+    elif declaration.kind_name == "PrivateTypeDecl":
+        return Private(identifier, location)
+
+    raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
+
+
 def create_session(
     session: SessionSpec, package: ID, types: Sequence[Type], filename: Path = None
 ) -> Refinement:
-    def __create_description(description: Description = None) -> Optional[str]:
-        if description:
-            return description.text.split('"')[1]
-        return None
-
-    def __create_transition(transition: Transition) -> rsess.Transition:
-        if transition.kind_name not in ("Transition", "ConditionalTransition"):
-            raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
-        target = qualified_type_identifier(create_id(transition.f_target, filename), package)
-        condition = rexpr.TRUE
-        description = __create_description(transition.f_description)
-        if transition.kind_name == "Conditional_Transition":
-            condition = create_bool_expression(declaration.f_condition, filename, package)
-        return rsess.Transition(target, condition, description, node_location(transition, filename))
-
-    def __create_statement(statement: Statement) -> stmt.Statement:
-        identifier = qualified_type_identifier(create_id(statement.f_identifier, filename), package)
-        location = node_location(statement, filename)
-        if statement.kind_type == "Assignment":
-            return stmt.Assignment(
-                identifier, create_expression(statement.f_expression, filename, package), location
-            )
-        elif statement.kind_type == "ListAttribute":
-            expression = create_expression(statement.f_expression, filename, package)
-            if statement.f_attr.kind_name == "ListAttrAppend":
-                return stmt.Append(identifier, expression, location)
-            elif statement.f_attr.kind_name == "ListAttrExtend":
-                return stmt.Extend(identifier, expression, location)
-            elif statement.f_attr.kind_name == "ListAttrRead":
-                return stmt.Read(identifier, expression, location)
-            elif statement.f_attr.kind_name == "ListAttrWrite":
-                return stmt.Write(identifier, expression, location)
-
-            raise NotImplementedError(f"Attribute {statement.f_attr.kind_name} unsupported")
-
-        elif statement.kind_type == "Reset":
-            return stmt.Reset(identifier, location)
-
-        raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported")
-
-    def __create_state(state: State) -> rsess.State:
-        identifier = qualified_type_identifier(create_id(state.f_identifier, filename), package)
-        if state.f_body.kind_name == "NullStateBody":
-            return rsess.State(identifier)
-        transitions = []
-        for t in state.f_body.f_conditional_transitions:
-            transitions.append(__create_transition(t))
-        transitions.append(__create_transition(state.f_body.f_final_transition))
-        actions = []
-        if state.f_body.f_actions:
-            for a in state.f_body.f_actions:
-                actions.append(__create_statement(a))
-        declarations = []
-        if state.f_body.f_declarations:
-            for d in state.f_body.f_declarations:
-                declarations.append(__create_declarations(d))
-        description = __create_description(state.f_description)
-        return rsess.State(
-            identifier=identifier,
-            transitions=transitions,
-            actions=actions,
-            declarations=declarations,
-            description=description,
-        )
-
-    def __create_declaration(declaration: SessionDecl) -> decl.BasicDeclaration:
-        identifier = qualified_type_identifier(
-            create_id(declaration.f_identifier, filename), package
-        )
-        type_identifier = create_id(declaration.f_type_identifier, filename)
-        if declaration.kind_name == "VariableDecl":
-            return decl.VariableDeclaration(
-                identifier,
-                type_identifier,
-                create_expression(declaration.f_initializer, filename, package),
-                node_location(declaration, filename),
-            )
-        elif declaration.kind_name == "RenamingDecl":
-            return decl.RenamingDeclaration(
-                identifier,
-                type_identifier,
-                create_expression(declaration.f_expression, filename, package),
-                node_location(declaration, filename),
-            )
-
-        raise NotImplementedError(f"Declaration kind {declaration.kind_name} unsupported")
-
-    def __create_parameter(declaration: TypeDecl) -> decl.FormalDeclaration:
-        arguments = []
-        identifier = qualified_type_identifier(
-            create_id(declaration.f_identifier, filename), package
-        )
-        location = node_location(declaration, filename)
-        if declaration.kind_name == "FunctionDecl":
-            if declaration.f_parameters:
-                for a in declaration.f_parameters.f_parameters:
-                    arg_identifier = qualified_type_identifier(
-                        create_id(a.f_identifier, filename), package
-                    )
-                    type_identifier = qualified_type_identifier(
-                        create_id(a.f_type_identifier, filename), package
-                    )
-                    arguments.append(decl.Argument(arg_identifier, type_identifier))
-            return_type = qualified_type_identifier(
-                create_id(declaration.f_return_type_identifier, filename), package
-            )
-            return FunctionDeclaration(identifier, arguments, return_type, location)
-        elif declaration.kind_name == "ChannelDecl":
-            readable = False
-            writable = False
-            if declaration.f_parameters:
-                for p in declaration.f_parameters:
-                    if p.kind_type == "Readable":
-                        readable = True
-                    elif p.kind_type == "Writable":
-                        writable = True
-                    else:
-                        raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
-            return ChannelDeclaration(identifier, readable, writable, location)
-        elif declaration.kind_name == "PrivateTypeDecl":
-            return Private(identifier, location)
-
-        raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
-
     return Session(
         qualified_type_identifier(create_id(session.f_identifier, filename), package),
         session.f_aspects.f_initial.text,
         session.f_aspects.f_final.text,
-        [__create_state(s) for s in session.f_states],
-        [__create_declaration(d) for d in session.f_declarations],
-        [__create_parameter(p) for p in session.f_parameters],
+        [create_state(s, filename, package) for s in session.f_states],
+        [create_declaration(d, filename, package) for d in session.f_declarations],
+        [create_parameter(p, filename, package) for p in session.f_parameters],
         types,
         node_location(session, filename),
     )
@@ -504,6 +518,7 @@ OPERATIONS = {
     "OpNeq": rexpr.NotEqual,
 }
 
+
 def create_binop(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
 ) -> rexpr.Expr:
@@ -519,9 +534,7 @@ def create_binop(
             create_expression(expression.f_right, filename, package),
             location=node_location(expression, filename),
         )
-    raise NotImplementedError(
-        f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}"
-    )
+    raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
 MATH_OPERATIONS = {
