@@ -767,6 +767,7 @@ def test_state_error(string: str, error: str) -> None:
             ),
         ),
     ],
+    ids=[1],
 )
 def test_session_declaration(string: str, expected: decl.Declaration) -> None:
     actual = parse_session(string, skip_validation=True)

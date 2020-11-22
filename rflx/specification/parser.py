@@ -1104,7 +1104,7 @@ def create_message_types(
         )
         field_type = [t for t in types if t.identifier == type_identifier]
         if field_type:
-            field_types[Field(component.f_identifier.text)] = field_type[0]
+            field_types[Field(create_id(component.f_identifier, filename))] = field_type[0]
 
     return field_types
 
@@ -1132,7 +1132,9 @@ def create_message_structure(
         return size, first
 
     def extract_then(then: ThenNode) -> Tuple[Field, rexpr.Expr, rexpr.Expr, rexpr.Expr, Location]:
-        target = FINAL if then.f_target.text == "null" else Field(then.f_target.text)
+        target = (
+            FINAL if then.f_target.text == "null" else Field(create_id(then.f_target, filename))
+        )
         condition = (
             create_bool_expression(then.f_condition, filename) if then.f_condition else rexpr.TRUE
         )
@@ -1144,10 +1146,16 @@ def create_message_structure(
     if components.f_initial_component:
         structure.append(Link(INITIAL, *extract_then(components.f_initial_component.f_then)))
     else:
-        structure.append(Link(INITIAL, Field(components.f_components[0].f_identifier.text)))
+        structure.append(
+            Link(INITIAL, Field(create_id(components.f_components[0].f_identifier, filename)))
+        )
 
     for i, component in enumerate(components.f_components):
-        source_node = Field(component.f_identifier.text) if component.f_identifier else INITIAL
+        source_node = (
+            Field(create_id(component.f_identifier, filename))
+            if component.f_identifier
+            else INITIAL
+        )
         component_identifier = create_id(component.f_identifier, filename)
         if component.f_identifier.text.lower() == "message":
             fail(
@@ -1158,12 +1166,12 @@ def create_message_structure(
             )
 
         if len(component.f_thens) == 0:
-            target_name = (
-                components.f_components[i + 1].f_identifier.text
+            target_id = (
+                create_id(components.f_components[i + 1].f_identifier, filename)
                 if i + 1 < len(components.f_components)
                 else None
             )
-            target_node = Field(target_name) if target_name else FINAL
+            target_node = Field(target_id) if target_id else FINAL
             structure.append(Link(source_node, target_node))
 
         condition = (
@@ -1331,7 +1339,7 @@ def create_enumeration(
         ]
     else:
         raise NotImplementedError(
-            f"Enumeration kind {enumeration.f_elements.kind_name}" " unsupported"
+            f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
         )
 
     for a in enumeration.f_aspects:
@@ -1361,7 +1369,9 @@ def create_enumeration(
             Severity.ERROR,
             base_name.location,
         )
-    return Enumeration(identifier, literals, size, always_valid)
+    return Enumeration(
+        identifier, literals, size, always_valid, location=node_location(enumeration, filename)
+    )
 
 
 def create_proven_message(
@@ -1407,7 +1417,7 @@ def create_refinement(
     return Refinement(
         package,
         messages[pdu],
-        Field(refinement.f_field.text),
+        Field(create_id(refinement.f_field, filename)),
         messages[sdu],
         condition,
         node_location(refinement, filename),

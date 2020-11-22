@@ -18,8 +18,10 @@ def assert_model_error(types: Sequence[Type], regex: str) -> None:
 def test_name_conflict_types() -> None:
     assert_model_error(
         [
-            ModularInteger("P::T", Number(256), location=Location((10, 20))),
-            RangeInteger("P::T", Number(1), Number(100), Number(8), location=Location((10, 30))),
+            ModularInteger(ID("P::T", location=Location((10, 20))), Number(256)),
+            RangeInteger(
+                ID("P::T", location=Location((10, 30))), Number(1), Number(100), Number(8)
+            ),
         ],
         r"^"
         r'<stdin>:10:30: model: error: name conflict for type "P::T"\n'

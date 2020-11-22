@@ -55,22 +55,20 @@ class Model(Base):
 
         for t in self.__types:
             if t.identifier in types:
-                error.append(
-                    f'conflicting refinement of "{t.pdu.identifier}" with "{t.sdu.identifier}"'
-                    if isinstance(t, message.Refinement)
-                    else f'name conflict for type "{t.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    t.location,
-                )
-                error.append(
-                    "previous occurrence of refinement"
-                    if isinstance(t, message.Refinement)
-                    else f'previous occurrence of "{t.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    types[t.identifier].location,
-                )
+                if isinstance(t, message.Refinement):
+                    message1 = (
+                        f'conflicting refinement of "{t.pdu.identifier}" with "{t.sdu.identifier}"'
+                    )
+                    message2 = "previous occurrence of refinement"
+                    location = t.location
+                    prev_loc = types[t.identifier].location
+                else:
+                    message1 = f'name conflict for type "{t.identifier}"'
+                    message2 = f'previous occurrence of "{t.identifier}"'
+                    location = t.identifier.location
+                    prev_loc = types[t.identifier].identifier.location
+                error.append(message1, Subsystem.MODEL, Severity.ERROR, location)
+                error.append(message2, Subsystem.MODEL, Severity.INFO, prev_loc)
             types[t.identifier] = t
 
         for s in self.__sessions:
@@ -82,9 +80,9 @@ class Model(Base):
                     s.location,
                 )
                 if s.identifier in types:
-                    prev_loc = [k for k, _ in types.items() if k == s.identifier][0].location
+                    prev_loc = [d for d in types if d == s.identifier][0].location
                 else:
-                    prev_loc = [k for k, _ in sessions.items() if k == s.identifier][0].location
+                    prev_loc = sessions[s.identifier].location
                 error.append(
                     f'previous occurrence of "{s.identifier}"',
                     Subsystem.MODEL,
