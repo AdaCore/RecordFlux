@@ -416,5 +416,4 @@ def boolean_expressions(draw: Callable, elements: st.SearchStrategy[expr.Expr]) 
             st.builds(operation, boolean_expressions(elements), boolean_expressions(elements)),
         )
     )
-    # assume(len(expression.findall(lambda x: True)) < 30)
     return expression

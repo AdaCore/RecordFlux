@@ -296,10 +296,12 @@ def create_description(description: Description = None) -> Optional[str]:
     return None
 
 
-def create_transition(transition: Transition, filename: Path, package: ID) -> rsess.Transition:
+def create_transition(
+    transition: Transition, filename: Path, package: ID = None
+) -> rsess.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
-    target = qualified_type_identifier(create_id(transition.f_target, filename), package)
+    target = create_id(transition.f_target, filename)
     condition = rexpr.TRUE
     description = create_description(transition.f_description)
     if transition.kind_name == "ConditionalTransition":
@@ -307,14 +309,14 @@ def create_transition(transition: Transition, filename: Path, package: ID) -> rs
     return rsess.Transition(target, condition, description, node_location(transition, filename))
 
 
-def create_statement(statement: Statement, filename: Path, package: ID) -> stmt.Statement:
+def create_statement(statement: Statement, filename: Path, package: ID = None) -> stmt.Statement:
     identifier = qualified_type_identifier(create_id(statement.f_identifier, filename), package)
     location = node_location(statement, filename)
-    if statement.kind_type == "Assignment":
+    if statement.kind_name == "Assignment":
         return stmt.Assignment(
-            identifier, create_expression(statement.f_expression, filename, package), location
+            identifier, create_expression(statement.f_expression, filename), location
         )
-    elif statement.kind_type == "ListAttribute":
+    elif statement.kind_name == "ListAttribute":
         expression = create_expression(statement.f_expression, filename, package)
         if statement.f_attr.kind_name == "ListAttrAppend":
             return stmt.Append(identifier, expression, location)
@@ -327,7 +329,7 @@ def create_statement(statement: Statement, filename: Path, package: ID) -> stmt.
 
         raise NotImplementedError(f"Attribute {statement.f_attr.kind_name} unsupported")
 
-    elif statement.kind_type == "Reset":
+    elif statement.kind_name == "Reset":
         return stmt.Reset(identifier, location)
 
     raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported")
@@ -335,7 +337,7 @@ def create_statement(statement: Statement, filename: Path, package: ID) -> stmt.
 
 def create_state(state: State, filename: Path = None, package: ID = None) -> rsess.State:
     location = node_location(state, filename)
-    identifier = qualified_type_identifier(create_id(state.f_identifier, filename), package)
+    identifier = create_id(state.f_identifier, filename)
     if state.f_body.kind_name == "NullStateBody":
         return rsess.State(identifier)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
@@ -348,16 +350,16 @@ def create_state(state: State, filename: Path = None, package: ID = None) -> rse
         )
     transitions = []
     for t in state.f_body.f_conditional_transitions:
-        transitions.append(create_transition(t, filename, package))
-    transitions.append(create_transition(state.f_body.f_final_transition, filename, package))
+        transitions.append(create_transition(t, filename))
+    transitions.append(create_transition(state.f_body.f_final_transition, filename))
     actions = []
     if state.f_body.f_actions:
         for a in state.f_body.f_actions:
-            actions.append(create_statement(a, filename, package))
+            actions.append(create_statement(a, filename))
     declarations = []
     if state.f_body.f_declarations:
         for d in state.f_body.f_declarations:
-            declarations.append(create_declaration(d, filename, package))
+            declarations.append(create_declaration(d, filename))
     description = create_description(state.f_description)
     return rsess.State(
         identifier=identifier,
@@ -370,7 +372,7 @@ def create_state(state: State, filename: Path = None, package: ID = None) -> rse
 
 
 def create_declaration(
-    declaration: SessionDecl, filename: Path, package: ID
+    declaration: SessionDecl, filename: Path, package: ID = None
 ) -> decl.BasicDeclaration:
     identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
     type_identifier = create_id(declaration.f_type_identifier, filename)
@@ -392,7 +394,9 @@ def create_declaration(
     raise NotImplementedError(f"Declaration kind {declaration.kind_name} unsupported")
 
 
-def create_parameter(declaration: TypeDecl, filename: Path, package: ID) -> decl.FormalDeclaration:
+def create_parameter(
+    declaration: TypeDecl, filename: Path, package: ID = None
+) -> decl.FormalDeclaration:
     arguments = []
     identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
     location = node_location(declaration, filename)
@@ -409,38 +413,55 @@ def create_parameter(declaration: TypeDecl, filename: Path, package: ID) -> decl
         return_type = qualified_type_identifier(
             create_id(declaration.f_return_type_identifier, filename), package
         )
-        return FunctionDeclaration(identifier, arguments, return_type, location)
+        return decl.FunctionDeclaration(identifier, arguments, return_type, location)
     elif declaration.kind_name == "ChannelDecl":
         readable = False
         writable = False
         if declaration.f_parameters:
             for p in declaration.f_parameters:
-                if p.kind_type == "Readable":
+                if p.kind_name == "Readable":
                     readable = True
-                elif p.kind_type == "Writable":
+                elif p.kind_name == "Writable":
                     writable = True
                 else:
                     raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
-        return ChannelDeclaration(identifier, readable, writable, location)
+        return decl.ChannelDeclaration(identifier, readable, writable, location)
     elif declaration.kind_name == "PrivateTypeDecl":
-        return Private(identifier, location)
+        return create_private_type_decl(declaration, filename, package, location)
 
     raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
 
 
 def create_session(
-    session: SessionSpec, package: ID, types: Sequence[Type], filename: Path = None
+    session: SessionSpec,
+    package: ID,
+    types: Sequence[Type] = None,
+    filename: Path = None,
+    skip_validation: bool = False,
 ) -> Refinement:
-    return Session(
+    types = types or []
+    location = node_location(session, filename)
+    if session.f_identifier.text != session.f_end_identifier.text:
+        fail(
+            "inconsistent session identifier: "
+            f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            location,
+        )
+    states = [create_state(s, filename, package) for s in session.f_states]
+    s = Session(
         qualified_type_identifier(create_id(session.f_identifier, filename), package),
-        session.f_aspects.f_initial.text,
-        session.f_aspects.f_final.text,
-        [create_state(s, filename, package) for s in session.f_states],
-        [create_declaration(d, filename, package) for d in session.f_declarations],
-        [create_parameter(p, filename, package) for p in session.f_parameters],
+        create_id(session.f_aspects.f_initial, filename),
+        create_id(session.f_aspects.f_final, filename),
+        states,
+        [create_declaration(d, filename) for d in session.f_declarations],
+        [create_parameter(p, filename) for p in session.f_parameters],
         types,
-        node_location(session, filename),
+        location,
+        skip_validation=skip_validation,
     )
+    return s
 
 
 def create_id(identifier: NullID, filename: Path = None) -> ID:
@@ -534,6 +555,18 @@ def create_binop(
             create_expression(expression.f_right, filename, package),
             location=node_location(expression, filename),
         )
+    if expression.f_op.kind_name in MATH_OPERATIONS:
+        return MATH_OPERATIONS[expression.f_op.kind_name](
+            create_math_expression(expression.f_left, filename, package),
+            create_math_expression(expression.f_right, filename, package),
+            location=node_location(expression, filename),
+        )
+    if expression.f_op.kind_name in MATH_COMPARISONS:
+        return MATH_COMPARISONS[expression.f_op.kind_name](
+            create_math_expression(expression.f_left, filename, package),
+            create_math_expression(expression.f_right, filename, package),
+            location=node_location(expression, filename),
+        )
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
@@ -621,14 +654,30 @@ def create_paren_expression(
 def create_variable(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
 ) -> rexpr.Expr:
-    if expression.f_identifier.text.lower() == "true":
-        return rexpr.TRUE
-    elif expression.f_identifier.text.lower() == "false":
-        return rexpr.FALSE
-    var_id = create_id(expression.f_identifier, filename)
+    if expression.f_identifier.text.lower() in ("true", "false"):
+        return rexpr.Variable(create_id(expression.f_identifier), location=location)
     if package:
-        return rexpr.Variable(qualified_type_identifier(var_id, package), location=location)
-    return rexpr.Variable(var_id, location=location)
+        return rexpr.Variable(
+            qualified_type_identifier(create_id(expression.f_identifier, filename), package),
+            location=location,
+        )
+    return rexpr.Variable(create_id(expression.f_identifier, filename), location=location)
+
+
+def create_math_attribute(
+    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+) -> rexpr.Expr:
+    inner = create_expression(expression.f_expression, filename, package)
+    if expression.f_kind.kind_name == "AttrLast":
+        return rexpr.Last(inner)
+    elif expression.f_kind.kind_name == "AttrFirst":
+        return rexpr.First(inner)
+    elif expression.f_kind.kind_name == "AttrSize":
+        return rexpr.Size(inner)
+    else:
+        raise NotImplementedError(
+            f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}"
+        )
 
 
 def create_attribute(
@@ -653,7 +702,7 @@ def create_attribute(
         return rexpr.Valid(inner)
     else:
         raise NotImplementedError(
-            f"Invalid Attribute: {expression.f_kind.kind_name} => {expression.text}"
+            f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}"
         )
 
 
@@ -945,6 +994,7 @@ MATH_EXPRESSION_MAP = {
     "Call": create_call,
     "Binding": create_binding,
     "Negation": create_negation,
+    "Attribute": create_math_attribute,
 }
 
 
@@ -1290,16 +1340,16 @@ def create_enumeration(
         if a.f_identifier.text == "Always_Valid":
             if a.f_value:
                 av_expr = create_bool_expression(a.f_value, filename)
-                if av_expr == rexpr.TRUE:
+                if av_expr == rexpr.Variable("True"):
                     always_valid = True
-                elif av_expr == rexpr.FALSE:
+                elif av_expr == rexpr.Variable("False"):
                     always_valid = False
                 else:
                     fail(
                         f"Invalid Always_Valid expression: {av_expr}",
                         Subsystem.PARSER,
                         Severity.ERROR,
-                        base_name.location,
+                        node_location(a.f_value, filename),
                     )
             else:
                 always_valid = True

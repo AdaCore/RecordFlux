@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from librecordfluxdsllang import AnalysisContext
@@ -12,41 +12,22 @@ from rflx.model.session import Session
 from rflx.specification import parser
 from rflx.specification.parser import (
     GrammarRule,
-    create_bool_expression,
-    create_expression,
     create_id,
-    create_math_expression,
+    create_session,
     create_state,
     diagnostics_to_error,
 )
+from tests.utils import parse_bool_expression, parse_expression, parse_math_expression
 
 
-def parse_math_expression(data: str, extended: bool) -> expr.Expr:
-    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+def parse_session(string: str, skip_validation: bool = False) -> Session:
+    unit = AnalysisContext().get_from_buffer(
+        "<stdin>", string, rule=GrammarRule.session_declaration_rule
+    )
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return create_math_expression(unit.root)
-
-
-def parse_bool_expression(data: str, extended: bool) -> expr.Expr:
-    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
-    error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
-        error.propagate()
-    return create_bool_expression(unit.root)
-
-
-def parse_expression(
-    data: str, rule: GrammarRule, convert: Callable[[], None] = create_expression
-) -> expr.Expr:
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
-    error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
-        error.propagate()
-    return convert(unit.root)
+    return create_session(unit.root, ID("Package"), skip_validation=skip_validation)
 
 
 def parse_id(data: str, rule: GrammarRule) -> expr.Expr:
@@ -753,7 +734,7 @@ def test_state_error(string: str, error: str) -> None:
                   end A;
 
                   state B is null state;
-               end Session;
+               end Session
          """,
             Session(
                 ID("Package::Session"),
@@ -788,7 +769,7 @@ def test_state_error(string: str, error: str) -> None:
     ],
 )
 def test_session_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_expression(string, GrammarRule.session_declaration_rule)
+    actual = parse_session(string, skip_validation=True)
     assert actual == expected
     assert actual.location
 
@@ -805,15 +786,15 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
                is
                begin
                   state A is null state;
-               end Y;
+               end Y
          """,
-            "inconsistent session identifier: X /= Y.*",
+            "<stdin>:2:16: parser: error: inconsistent session identifier: X /= Y.*",
         )
     ],
 )
 def test_session_declaration_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.session_declaration_rule)
+        parse_session(string)
 
 
 def test_session() -> None:
