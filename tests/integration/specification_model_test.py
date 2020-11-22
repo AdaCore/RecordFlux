@@ -231,8 +231,8 @@ def test_model_name_conflict_messages() -> None:
                   end message;
             end Test;
         """,
-        r'^<stdin>:8:16: model: error: name conflict for type "Test::PDU"\n'
-        r'<stdin>:4:16: model: info: previous occurrence of "Test::PDU"$',
+        r'^<stdin>:8:21: model: error: name conflict for type "Test::PDU"\n'
+        r'<stdin>:4:21: model: info: previous occurrence of "Test::PDU"$',
     )
 
 
@@ -269,8 +269,8 @@ def test_model_name_conflict_derivations() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        r'^<stdin>:9:16: model: error: name conflict for type "Test::Bar"\n'
-        r'<stdin>:8:16: model: info: previous occurrence of "Test::Bar"',
+        r'^<stdin>:9:21: model: error: name conflict for type "Test::Bar"\n'
+        r'<stdin>:8:21: model: info: previous occurrence of "Test::Bar"',
     )
 
 
@@ -291,7 +291,7 @@ def test_model_name_conflict_sessions() -> None:
             end Test;
         """,
         r'^<stdin>:5:16: model: error: name conflict for session "Test::X"\n'
-        r'<stdin>:3:16: model: info: previous occurrence of "Test::X"$',
+        r'<stdin>:3:21: model: info: previous occurrence of "Test::X"$',
     )
 
 
