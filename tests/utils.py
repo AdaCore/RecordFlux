@@ -1,9 +1,10 @@
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import pytest
+from librecordfluxdsllang import AnalysisContext
 
 from rflx import declaration as decl
 from rflx.error import Location, RecordFluxError
@@ -12,6 +13,13 @@ from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Session, State, Type
 from rflx.specification import Parser
+from rflx.specification.parser import (
+    GrammarRule,
+    create_bool_expression,
+    create_expression,
+    create_math_expression,
+    diagnostics_to_error,
+)
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -130,3 +138,33 @@ def multilinestr(string: str) -> str:
         correct_indentation
     ), f"invalid indentation of line {correct_indentation.index(False) + 2}"
     return string.replace(15 * " ", "")
+
+
+def parse_math_expression(data: str, extended: bool) -> Expr:
+    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_math_expression(unit.root)
+
+
+def parse_bool_expression(data: str, extended: bool) -> Expr:
+    rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_bool_expression(unit.root)
+
+
+def parse_expression(
+    data: str,
+    rule: GrammarRule = GrammarRule.extended_expression_rule,
+    convert: Callable[[], None] = create_expression,
+) -> Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return convert(unit.root)

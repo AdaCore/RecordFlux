@@ -8,12 +8,7 @@ from rflx.model import Model
 from rflx.specification import Parser
 from rflx.specification.parser import GrammarRule, create_expression
 from tests.property import strategies
-
-
-def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
-    assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
-    return create_expression(unit.root)
+from tests.utils import parse_expression, parse_math_expression, parse_bool_expression
 
 
 @given(
@@ -27,18 +22,14 @@ def parse_expression(data: str, rule: GrammarRule) -> expr.Expr:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(
-        str(expression), GrammarRule.extended_mathematical_expression_rule
-    )
+    parsed_expression = parse_math_expression(str(expression), True)
     assert parsed_expression == expression
 
 
 @given(
     strategies.boolean_expressions(
         st.one_of(
-            strategies.aggregates(strategies.numbers())
-            | strategies.strings()
-            | strategies.mathematical_expressions(
+            strategies.mathematical_expressions(
                 st.one_of(
                     strategies.numbers()
                     | strategies.variables(strategies.identifiers())
@@ -50,9 +41,7 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(
-        str(expression), GrammarRule.extended_boolean_expression_rule
-    )
+    parsed_expression = parse_bool_expression(str(expression), True)
     assert parsed_expression == expression
 
 
@@ -67,9 +56,7 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
         ),
         strategies.boolean_expressions(
             st.one_of(
-                strategies.aggregates(strategies.numbers())
-                | strategies.strings()
-                | strategies.mathematical_expressions(
+                strategies.mathematical_expressions(
                     st.one_of(
                         strategies.numbers()
                         | strategies.variables(strategies.identifiers())
@@ -92,11 +79,13 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
                 | strategies.attributes(strategies.identifiers())
             )
         ),
+        strategies.strings(),
+        strategies.aggregates(strategies.numbers())
     )
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_expression(str(expression), GrammarRule.extended_expression_rule)
+    parsed_expression = parse_expression(str(expression))
     assert parsed_expression == expression
 
 
