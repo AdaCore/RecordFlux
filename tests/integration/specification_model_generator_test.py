@@ -119,17 +119,17 @@ def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p = Parser()
     p.parse_string(
         """
-           with Test;
-           package Array_Test is
-              type T is array of Test::T;
-           end Array_Test;
+           package Test is
+              type T is mod 256;
+           end Test;
         """
     )
     p.parse_string(
         """
-           package Test is
-              type T is mod 256;
-           end Test;
+           with Test;
+           package Array_Test is
+              type T is array of Test::T;
+           end Array_Test;
         """
     )
     utils.assert_compilable_code(p.create_model(), tmp_path)
@@ -137,14 +137,6 @@ def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
 
 def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
     p = Parser()
-    p.parse_string(
-        """
-           with Test;
-           package Array_Test is
-              type T is array of Test::M;
-           end Array_Test;
-        """
-    )
     p.parse_string(
         """
            package Test is
@@ -156,6 +148,14 @@ def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
                     A : Opaque;
                  end message;
            end Test;
+        """
+    )
+    p.parse_string(
+        """
+           with Test;
+           package Array_Test is
+              type T is array of Test::M;
+           end Array_Test;
         """
     )
     utils.assert_compilable_code(p.create_model(), tmp_path)
