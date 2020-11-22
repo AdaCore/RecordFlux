@@ -99,8 +99,8 @@ def test_message_derivation_of_derived_type() -> None:
                type Baz is new Bar;
             end Test;
         """,
-        r'^<stdin>:5:16: model: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:4:16: model: info: illegal base message type "Test::Bar"$',
+        r'^<stdin>:5:28: model: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:4:28: model: info: illegal base message type "Test::Bar"$',
     )
 
 
@@ -133,7 +133,7 @@ def test_invalid_enumeration_type_size() -> None:
                type T is (FOO, BAR, BAZ) with Size => 1;
             end Test;
         """,
-        r'<stdin>:3:16: model: error: size of "T" too small',
+        r'<stdin>:3:26: model: error: size of "T" too small',
     )
 
 
@@ -171,7 +171,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
                type T2 is (BAR, BAZ) with Size => 1;
             end Test;
         """,
-        r"<stdin>:4:16: model: error: conflicting literals: BAR\n"
+        r"<stdin>:4:27: model: error: conflicting literals: BAR\n"
         r'<stdin>:3:33: model: info: previous occurrence of "BAR"',
     )
 
@@ -240,6 +240,7 @@ def test_model_conflicting_refinements() -> None:
     assert_error_string(
         """
             package Test is
+               type X is null message;
                type PDU is
                   message
                      null
@@ -247,12 +248,12 @@ def test_model_conflicting_refinements() -> None:
                            with Size => 8;
                      Foo : Opaque;
                   end message;
-               for Test::PDU use (Foo => Test::PDU);
-               for PDU use (Foo => PDU);
+               for PDU use (Foo => X);
+               for PDU use (Foo => X);
             end Test;
         """,
-        r'^<stdin>:11:16: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
-        r"<stdin>:10:16: model: info: previous occurrence of refinement",
+        r'^<stdin>:12:16: model: error: conflicting refinement of "Test::PDU" with "Test::X"\n'
+        r"<stdin>:11:16: model: info: previous occurrence of refinement",
     )
 
 

@@ -164,7 +164,7 @@ def graph(args: argparse.Namespace) -> None:
         assert m.location.end
         assert m.location.source
 
-        source = str(m.location.source.name)
+        source = str(m.location.source)
 
         locations[source][name] = {
             "start": {"line": m.location.start[0], "column": m.location.start[1]},
