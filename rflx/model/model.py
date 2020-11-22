@@ -61,16 +61,15 @@ class Model(Base):
                     else f'name conflict for type "{t.identifier}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
-                    t.identifier.location,
+                    t.location,
                 )
-                prev_loc = [k for k, _ in types.items() if k == t.identifier][0].location
                 error.append(
                     "previous occurrence of refinement"
                     if isinstance(t, message.Refinement)
                     else f'previous occurrence of "{t.identifier}"',
                     Subsystem.MODEL,
                     Severity.INFO,
-                    prev_loc,
+                    types[t.identifier].location,
                 )
             types[t.identifier] = t
 
