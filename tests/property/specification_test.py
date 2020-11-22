@@ -8,7 +8,7 @@ from rflx.model import Model
 from rflx.specification import Parser
 from rflx.specification.parser import GrammarRule, create_expression
 from tests.property import strategies
-from tests.utils import parse_expression, parse_math_expression, parse_bool_expression
+from tests.utils import parse_bool_expression, parse_expression, parse_math_expression
 
 
 @given(
@@ -80,7 +80,7 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
             )
         ),
         strategies.strings(),
-        strategies.aggregates(strategies.numbers())
+        strategies.aggregates(strategies.numbers()),
     )
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
