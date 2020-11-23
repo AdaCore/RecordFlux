@@ -492,17 +492,17 @@ rflx_grammar.add_rules(
     basic_declaration=Or(
         grammar.type_declaration, grammar.type_refinement, grammar.session_declaration
     ),
+    basic_declarations=Pick(List(grammar.basic_declaration, sep=";"), ";"),
     package_declaration=ast.PackageSpec(
         "package",
         grammar.unqualified_identifier,
         "is",
-        Opt(List(grammar.basic_declaration, sep=";"), ";"),
+        Opt(grammar.basic_declarations),
         "end",
         grammar.unqualified_identifier,
         ";",
     ),
     context_item=ast.ContextItem("with", grammar.unqualified_identifier, ";"),
-    specification=ast.Specification(
-        List(grammar.context_item, empty_valid=True), grammar.package_declaration
-    ),
+    context_clause=List(grammar.context_item, empty_valid=True),
+    specification=ast.Specification(grammar.context_clause, grammar.package_declaration),
 )
