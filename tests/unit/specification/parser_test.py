@@ -2,25 +2,14 @@
 
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Sequence
+from typing import Any, Dict, Sequence
 
 import pytest
-from librecordfluxdsllang import RFLXNode
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import (
-    FINAL,
-    INITIAL,
-    OPAQUE,
-    Enumeration,
-    Field,
-    Link,
-    Message,
-    Model,
-    ModularInteger,
-)
+from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, Model, ModularInteger
 from rflx.specification import cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models

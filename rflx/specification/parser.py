@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import logging
 from collections import OrderedDict
 from pathlib import Path
@@ -8,7 +10,6 @@ from librecordfluxdsllang import (
     ArrayTypeDef,
     Aspect,
     ChecksumAspect,
-    Component,
     Components,
     Description,
     Diagnostic,
@@ -104,192 +105,6 @@ def diagnostics_to_error(
     return True
 
 
-class Parser:
-    def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
-        self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[Path, Optional[Specification]] = OrderedDict()
-        self.__evaluated_specifications: Set[ID] = set()
-        self.__types: List[Type] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
-        self.__sessions: List[Session] = []
-        self.__cache = Cache(cached)
-
-    def __convert_unit(
-        self, spec: Specification, specfile: Path = None, transitions: List[ID] = None
-    ) -> RecordFluxError:
-        transitions = transitions or []
-        error = RecordFluxError()
-
-        if spec:
-            parent = specfile.parent if specfile else Path(".")
-            filename = parent / Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
-            self.__specifications[filename] = (specfile, spec)
-            for context in spec.f_context_clause:
-                item = create_id(context.f_item, specfile)
-                if item in transitions:
-                    error.append(
-                        f'dependency cycle when including "{transitions[0]}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        transitions[0].location,
-                    )
-                    error.extend(
-                        [
-                            (
-                                f'when including "{i}"',
-                                Subsystem.PARSER,
-                                Severity.INFO,
-                                i.location,
-                            )
-                            for i in transitions[1:] + [item]
-                        ]
-                    )
-                    continue
-                transitions.append(item)
-                withed_file = filename.parent / f"{str(item).lower()}.rflx"
-                error.extend(self.__parse_specfile(withed_file, transitions))
-
-        return error
-
-    def __parse_specfile(self, specfile: Path, transitions: List[ID] = None) -> RecordFluxError:
-        error = RecordFluxError()
-        if specfile in self.__specifications:
-            self.__specifications.move_to_end(specfile)
-            return error
-
-        transitions = transitions or []
-
-        log.info("Parsing %s", specfile)
-        unit = AnalysisContext().get_from_file(str(specfile))
-        if diagnostics_to_error(unit.diagnostics, error, specfile):
-            return error
-        return self.__convert_unit(unit.root, specfile, transitions)
-
-    def parse(self, *specfiles: Path) -> None:
-        error = RecordFluxError()
-
-        for f in specfiles:
-            error.extend(self.__parse_specfile(f))
-
-        for f, (origname, s) in self.__specifications.items():
-            if s:
-                check_naming(error, s.f_package_declaration, f, origname)
-        error.propagate()
-
-    def parse_string(
-        self,
-        string: str,
-        rule: GrammarRule = GrammarRule.main_rule_rule,
-    ) -> None:
-        error = RecordFluxError()
-        unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
-        if not diagnostics_to_error(unit.diagnostics, error):
-            error = self.__convert_unit(unit.root)
-            for f, (origname, s) in self.__specifications.items():
-                if s:
-                    check_naming(error, s.f_package_declaration, f, origname)
-        error.propagate()
-
-    def create_model(self) -> Model:
-        error = RecordFluxError()
-        for filename, (origname, specification) in reversed(self.__specifications.items()):
-            if (
-                specification
-                and specification.f_package_declaration.f_identifier.text
-                not in self.__evaluated_specifications
-            ):
-                self.__evaluated_specifications.add(
-                    specification.f_package_declaration.f_identifier.text
-                )
-                try:
-                    self.__evaluate_specification(specification, origname)
-                except RecordFluxError as e:
-                    error.extend(e)
-        try:
-            result = Model(self.__types, self.__sessions)
-        except RecordFluxError as e:
-            error.extend(e)
-
-        error.propagate()
-        return result
-
-    @property
-    def specifications(self) -> Dict[str, Specification]:
-        return {
-            s.f_package_declaration.f_identifier.text: s
-            for _, s in self.__specifications.values()
-            if s
-        }
-
-    def __evaluate_specification(self, specification: Specification, filename: str = Path) -> None:
-        log.info("Processing %s", specification.f_package_declaration.f_identifier.text)
-
-        error = RecordFluxError()
-        self.__evaluate_types(specification, error, filename)
-        error.propagate()
-
-    def __evaluate_types(
-        self, spec: Specification, error: RecordFluxError, filename: Path = None
-    ) -> None:
-        package_id = create_id(spec.f_package_declaration.f_identifier, filename)
-        for t in spec.f_package_declaration.f_declarations:
-            if isinstance(t, TypeSpec):
-                identifier = qualified_type_identifier(
-                    create_id(t.f_identifier, filename), package_id
-                )
-                if t.f_definition.kind_name == "ArrayTypeDef":
-                    new_type = create_array(identifier, t.f_definition, self.__types, filename)
-                elif t.f_definition.kind_name == "ModularTypeDef":
-                    new_type = create_modular(identifier, t.f_definition, filename)
-                elif t.f_definition.kind_name == "RangeTypeDef":
-                    new_type = create_range(identifier, t.f_definition, filename)
-                elif t.f_definition.kind_name == "MessageTypeDef":
-                    new_type = create_message(
-                        identifier,
-                        t.f_definition,
-                        self.__types,
-                        self.skip_verification,
-                        self.__cache,
-                        filename,
-                    )
-                elif t.f_definition.kind_name == "NullMessageTypeDef":
-                    new_type = Message(identifier, [], {}, location=node_location(t, filename))
-                elif t.f_definition.kind_name == "TypeDerivationDef":
-                    new_type = create_derived_message(
-                        identifier,
-                        t.f_definition,
-                        filename,
-                        self.__types,
-                        self.skip_verification,
-                        self.__cache,
-                    )
-                elif t.f_definition.kind_name == "EnumerationTypeDef":
-                    new_type = create_enumeration(identifier, t.f_definition, filename)
-                else:
-                    fail(
-                        f"Unknown type {t.f_definition.kind_name}",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(identifier, filename),
-                    )
-            else:
-                if t.kind_name == "RefinementSpec":
-                    new_type = create_refinement(t, package_id, self.__types, filename)
-                elif t.kind_name == "SessionSpec":
-                    session = create_session(t, package_id, self.__types, filename)
-                    self.__sessions.append(session)
-                    error.extend(session.error)
-                    continue
-                else:
-                    fail(
-                        f'Unknown type "{t.kind_name}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(t, filename),
-                    )
-            self.__types.append(new_type)
-            error.extend(new_type.error)
-
-
 def create_description(description: Description = None) -> Optional[str]:
     if description:
         return description.text.split('"')[1]
@@ -316,26 +131,27 @@ def create_statement(statement: Statement, filename: Path, package: ID = None) -
         return stmt.Assignment(
             identifier, create_expression(statement.f_expression, filename), location
         )
-    elif statement.kind_name == "ListAttribute":
+
+    if statement.kind_name == "ListAttribute":
         expression = create_expression(statement.f_expression, filename, package)
         if statement.f_attr.kind_name == "ListAttrAppend":
             return stmt.Append(identifier, expression, location)
-        elif statement.f_attr.kind_name == "ListAttrExtend":
+        if statement.f_attr.kind_name == "ListAttrExtend":
             return stmt.Extend(identifier, expression, location)
-        elif statement.f_attr.kind_name == "ListAttrRead":
+        if statement.f_attr.kind_name == "ListAttrRead":
             return stmt.Read(identifier, expression, location)
-        elif statement.f_attr.kind_name == "ListAttrWrite":
+        if statement.f_attr.kind_name == "ListAttrWrite":
             return stmt.Write(identifier, expression, location)
 
         raise NotImplementedError(f"Attribute {statement.f_attr.kind_name} unsupported")
 
-    elif statement.kind_name == "Reset":
+    if statement.kind_name == "Reset":
         return stmt.Reset(identifier, location)
 
     raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported")
 
 
-def create_state(state: State, filename: Path = None, package: ID = None) -> rsess.State:
+def create_state(state: State, filename: Path = None) -> rsess.State:
     location = node_location(state, filename)
     identifier = create_id(state.f_identifier, filename)
     if state.f_body.kind_name == "NullStateBody":
@@ -383,7 +199,8 @@ def create_declaration(
             create_expression(declaration.f_initializer, filename, package),
             node_location(declaration, filename),
         )
-    elif declaration.kind_name == "RenamingDecl":
+
+    if declaration.kind_name == "RenamingDecl":
         return decl.RenamingDeclaration(
             identifier,
             type_identifier,
@@ -414,7 +231,7 @@ def create_parameter(
             create_id(declaration.f_return_type_identifier, filename), package
         )
         return decl.FunctionDeclaration(identifier, arguments, return_type, location)
-    elif declaration.kind_name == "ChannelDecl":
+    if declaration.kind_name == "ChannelDecl":
         readable = False
         writable = False
         if declaration.f_parameters:
@@ -426,7 +243,7 @@ def create_parameter(
                 else:
                     raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
         return decl.ChannelDeclaration(identifier, readable, writable, location)
-    elif declaration.kind_name == "PrivateTypeDecl":
+    if declaration.kind_name == "PrivateTypeDecl":
         return create_private_type_decl(declaration, filename, package, location)
 
     raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
@@ -449,7 +266,7 @@ def create_session(
             Severity.ERROR,
             location,
         )
-    states = [create_state(s, filename, package) for s in session.f_states]
+    states = [create_state(s, filename) for s in session.f_states]
     s = Session(
         qualified_type_identifier(create_id(session.f_identifier, filename), package),
         create_id(session.f_aspects.f_initial, filename),
@@ -474,7 +291,7 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
                 node_location(identifier, filename),
             )
         return ID(identifier.text, location=node_location(identifier, filename))
-    elif identifier.kind_name == "ID":
+    if identifier.kind_name == "ID":
         name = ID(identifier.f_name.text, location=node_location(identifier.f_name, filename))
         if identifier.f_package:
             return (
@@ -484,8 +301,7 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
                 )
                 * name
             )
-        else:
-            return name
+        return name
 
     fail(
         f"Invalid ID: {identifier.text}",
@@ -496,7 +312,12 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
 
 
 def create_array(
-    identifier: ID, array: ArrayTypeDef, types: Sequence[Type], filename: Path = None
+    identifier: ID,
+    array: ArrayTypeDef,
+    types: Sequence[Type],
+    _skip_verification: bool,
+    _cache: Cache,
+    filename: Path = None,
 ) -> Array:
     element_identifier = qualified_type_identifier(
         create_id(array.f_element_type, filename), identifier.parent
@@ -516,19 +337,19 @@ def create_array(
 
 
 def create_numeric_literal(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     num = expression.text.split("#")
     if len(num) == 1:
         return rexpr.Number(int(num[0]), location=location)
-    elif len(num) == 3:
+    if len(num) == 3:
         base = int(num[0])
         return rexpr.Number(int(num[1], base), base=base, location=location)
     fail(
         f"Invalid numeric literal: {expression.text}",
         Subsystem.PARSER,
         Severity.ERROR,
-        node_location(identifier, filename),
+        node_location(expression, filename),
     )
 
 
@@ -541,7 +362,7 @@ OPERATIONS = {
 
 
 def create_binop(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
@@ -581,7 +402,7 @@ MATH_OPERATIONS = {
 
 
 def create_math_binop(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
@@ -608,7 +429,7 @@ BOOLEAN_OPERATIONS = {
 
 
 def create_bool_binop(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
@@ -634,19 +455,19 @@ def create_bool_binop(
 
 
 def create_paren_bool_expression(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     return create_bool_expression(expression.f_data, filename, package)
 
 
 def create_paren_math_expression(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     return create_math_expression(expression.f_data, filename, package)
 
 
 def create_paren_expression(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     return create_expression(expression.f_data, filename, package)
 
@@ -665,45 +486,43 @@ def create_variable(
 
 
 def create_math_attribute(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     inner = create_expression(expression.f_expression, filename, package)
     if expression.f_kind.kind_name == "AttrLast":
         return rexpr.Last(inner)
-    elif expression.f_kind.kind_name == "AttrFirst":
+    if expression.f_kind.kind_name == "AttrFirst":
         return rexpr.First(inner)
-    elif expression.f_kind.kind_name == "AttrSize":
+    if expression.f_kind.kind_name == "AttrSize":
         return rexpr.Size(inner)
-    else:
-        raise NotImplementedError(
-            f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}"
-        )
+    raise NotImplementedError(
+        f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}"
+    )
 
 
 def create_attribute(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
     inner = create_expression(expression.f_expression, filename, package)
     if expression.f_kind.kind_name == "AttrLast":
         return rexpr.Last(inner)
-    elif expression.f_kind.kind_name == "AttrFirst":
+    if expression.f_kind.kind_name == "AttrFirst":
         return rexpr.First(inner)
-    elif expression.f_kind.kind_name == "AttrSize":
+    if expression.f_kind.kind_name == "AttrSize":
         return rexpr.Size(inner)
-    elif expression.f_kind.kind_name == "AttrValidChecksum":
+    if expression.f_kind.kind_name == "AttrValidChecksum":
         return rexpr.ValidChecksum(inner)
-    elif expression.f_kind.kind_name == "AttrHead":
+    if expression.f_kind.kind_name == "AttrHead":
         return rexpr.Head(inner)
-    elif expression.f_kind.kind_name == "AttrOpaque":
+    if expression.f_kind.kind_name == "AttrOpaque":
         return rexpr.Opaque(inner)
-    elif expression.f_kind.kind_name == "AttrPresent":
+    if expression.f_kind.kind_name == "AttrPresent":
         return rexpr.Present(inner)
-    elif expression.f_kind.kind_name == "AttrValid":
+    if expression.f_kind.kind_name == "AttrValid":
         return rexpr.Valid(inner)
-    else:
-        raise NotImplementedError(
-            f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}"
-        )
+    raise NotImplementedError(
+        f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}"
+    )
 
 
 def create_array_aggregate(
@@ -716,7 +535,7 @@ def create_array_aggregate(
 
 
 def create_string_literal(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, _filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     return rexpr.String(
         expression.text.split('"')[1],
@@ -742,10 +561,10 @@ def create_quantified_expression(
     predicate = create_expression(expression.f_predicate, filename, package)
     if expression.f_operation.kind_name == "QuantAll":
         return rexpr.ForAllIn(param_id, iterable, predicate, location)
-    elif expression.f_operation.kind_name == "QuantSome":
+    if expression.f_operation.kind_name == "QuantSome":
         return rexpr.ForSomeIn(param_id, iterable, predicate, location)
 
-    raise NotImplementedError(f"Invalid quantified: {rexpr.f_operation.text}")
+    raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
 
 
 def create_binding(
@@ -771,8 +590,8 @@ def create_list_attribute(
     }
     try:
         constructor = attrs[expression.f_attr.text]
-    except KeyError:
-        raise NotImplementedError(f"list attribute: {expression.f_attr.text}")
+    except KeyError as e:
+        raise NotImplementedError(f"list attribute: {expression.f_attr.text}") from e
 
     return constructor(
         create_id(expression.f_identifier, filename),
@@ -782,7 +601,7 @@ def create_list_attribute(
 
 
 def create_reset(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
 
@@ -804,7 +623,7 @@ def create_variable_decl(
 
 
 def create_private_type_decl(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     return decl.TypeDeclaration(
         Private(create_id(expression.f_identifier, filename), location=location)
@@ -812,7 +631,7 @@ def create_private_type_decl(
 
 
 def create_channel_decl(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
+    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     readable = False
     writable = False
@@ -982,8 +801,8 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
     location = node_location(expression, filename)
     try:
         return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
-    except KeyError:
-        raise NotImplementedError(f"{expression.kind_name} => {expression.text}")
+    except KeyError as e:
+        raise NotImplementedError(f"{expression.kind_name} => {expression.text}") from e
 
 
 MATH_EXPRESSION_MAP = {
@@ -1005,8 +824,10 @@ def create_math_expression(
     location = node_location(expression, filename)
     try:
         return MATH_EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
-    except KeyError:
-        raise NotImplementedError(f"math expression: {expression.kind_name} => {expression.text}")
+    except KeyError as e:
+        raise NotImplementedError(
+            f"math expression: {expression.kind_name} => {expression.text}"
+        ) from e
 
 
 BOOL_EXPRESSION_MAP = {
@@ -1028,12 +849,19 @@ def create_bool_expression(
     location = node_location(expression, filename)
     try:
         return BOOL_EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
-    except KeyError:
-        raise NotImplementedError(f"bool expression: {expression.kind_name} => {expression.text}")
+    except KeyError as e:
+        raise NotImplementedError(
+            f"bool expression: {expression.kind_name} => {expression.text}"
+        ) from e
 
 
 def create_modular(
-    identifier: ID, modular: ModularTypeDef, filename: Path = None
+    identifier: ID,
+    modular: ModularTypeDef,
+    _types: Sequence[Type],
+    _skip_verification: bool,
+    _cache: Cache,
+    filename: Path = None,
 ) -> ModularInteger:
     return ModularInteger(
         identifier,
@@ -1042,13 +870,20 @@ def create_modular(
     )
 
 
-def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path = None) -> RangeInteger:
+def create_range(
+    identifier: ID,
+    rangetype: RangeTypeDef,
+    _types: Sequence[Type],
+    _skip_verification: bool,
+    _cache: Cache,
+    filename: Path = None,
+) -> RangeInteger:
     if rangetype.f_size.f_identifier.text != "Size":
         fail(
             f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
             Subsystem.PARSER,
             Severity.ERROR,
-            base_name.location,
+            node_location(rangetype, filename),
         )
     size = create_math_expression(rangetype.f_size.f_value, filename, identifier.parent)
     return RangeInteger(
@@ -1058,6 +893,17 @@ def create_range(identifier: ID, rangetype: RangeTypeDef, filename: Path = None)
         size,
         node_location(rangetype, filename),
     )
+
+
+def create_null_message(
+    identifier: ID,
+    message: MessageTypeDef,
+    _types: Sequence[Type],
+    _skip_verification: bool,
+    _cache: Cache,
+    filename: Path = None,
+) -> Message:
+    return Message(identifier, [], {}, location=node_location(message, filename))
 
 
 def create_message(
@@ -1073,7 +919,7 @@ def create_message(
 
     error = RecordFluxError()
 
-    field_types = create_message_types(identifier, message, types, components, filename)
+    field_types = create_message_types(identifier, components, types, filename)
     structure = create_message_structure(components, identifier.parent, error, filename)
     aspects = {
         ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
@@ -1090,9 +936,8 @@ def create_message(
 
 def create_message_types(
     identifier: ID,
-    message: MessageTypeDef,
-    types: Sequence[Type],
     components: Components,
+    types: Sequence[Type],
     filename: Path = None,
 ) -> Dict[Field, Type]:
 
@@ -1110,9 +955,9 @@ def create_message_types(
 
 
 def create_message_structure(
-    components: Components, package: ID, error: RecordFluxError, filename: Path = None
+    components: Components, _package: ID, error: RecordFluxError, filename: Path = None
 ) -> List[Link]:
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches, too-many-locals
 
     def extract_aspect(aspects: List[Aspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
         size = rexpr.UNDEFINED
@@ -1159,7 +1004,7 @@ def create_message_structure(
         component_identifier = create_id(component.f_identifier, filename)
         if component.f_identifier.text.lower() == "message":
             fail(
-                f'reserved word "Message" used as identifier',
+                'reserved word "Message" used as identifier',
                 Subsystem.PARSER,
                 Severity.ERROR,
                 component_identifier.location,
@@ -1243,7 +1088,7 @@ def create_message_structure(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, package: ID, filename: Path
+    checksum: ChecksumAspect, _package: ID, filename: Path
 ) -> Mapping[ID, Sequence[rexpr.Expr]]:
     result = {}
     if checksum:
@@ -1264,7 +1109,7 @@ def create_message_aspects(
                         f"Invalid checksum association {value.kind_name}",
                         Subsystem.PARSER,
                         Severity.ERROR,
-                        base_name.location,
+                        node_location(value, filename),
                     )
             result[create_id(assoc.f_identifier, filename)] = exprs
     return result
@@ -1273,10 +1118,10 @@ def create_message_aspects(
 def create_derived_message(
     identifier: ID,
     derivation: TypeDerivationDef,
-    filename: Path,
     types: Sequence[Type],
     skip_verification: bool,
     cache: Cache,
+    filename: Path = None,
 ) -> Message:
     base_id = create_id(derivation.f_base, filename)
     base_name = qualified_type_identifier(base_id, identifier.parent)
@@ -1321,11 +1166,36 @@ def create_derived_message(
 def create_enumeration(
     identifier: ID,
     enumeration: EnumerationTypeDef,
-    filename: Path,
+    _types: Sequence[Type],
+    _skip_verification: bool,
+    _cache: Cache,
+    filename: Path = None,
 ) -> Message:
-    always_valid = False
-    size = None
     literals = []
+
+    def create_aspects(aspects: List[Aspect]):
+        always_valid = False
+        size = None
+        for a in aspects:
+            if a.f_identifier.text == "Size":
+                size = create_math_expression(a.f_value, filename, identifier.parent)
+            if a.f_identifier.text == "Always_Valid":
+                if a.f_value:
+                    av_expr = create_bool_expression(a.f_value, filename)
+                    if av_expr == rexpr.Variable("True"):
+                        always_valid = True
+                    elif av_expr == rexpr.Variable("False"):
+                        always_valid = False
+                    else:
+                        fail(
+                            f"Invalid Always_Valid expression: {av_expr}",
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(a.f_value, filename),
+                        )
+                else:
+                    always_valid = True
+        return size, always_valid
 
     if enumeration.f_elements.kind_name == "NamedEnumerationDef":
         for e in enumeration.f_elements.f_elements:
@@ -1342,33 +1212,15 @@ def create_enumeration(
             f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
         )
 
-    for a in enumeration.f_aspects:
-        if a.f_identifier.text == "Size":
-            size = create_math_expression(a.f_value, filename, identifier.parent)
-        if a.f_identifier.text == "Always_Valid":
-            if a.f_value:
-                av_expr = create_bool_expression(a.f_value, filename)
-                if av_expr == rexpr.Variable("True"):
-                    always_valid = True
-                elif av_expr == rexpr.Variable("False"):
-                    always_valid = False
-                else:
-                    fail(
-                        f"Invalid Always_Valid expression: {av_expr}",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(a.f_value, filename),
-                    )
-            else:
-                always_valid = True
-
+    size, always_valid = create_aspects(enumeration.f_aspects)
     if not size:
         fail(
             f"No size set for {identifier}",
             Subsystem.PARSER,
             Severity.ERROR,
-            base_name.location,
+            identifier.location,
         )
+
     return Enumeration(
         identifier, literals, size, always_valid, location=node_location(enumeration, filename)
     )
@@ -1425,7 +1277,7 @@ def create_refinement(
 
 
 def check_naming(
-    error: RecordFluxError, package: PackageSpec, filename: Path, origname: Path = None
+    error: RecordFluxError, package: PackageSpec, _filename: Path, origname: Path = None
 ) -> None:
     name = "<stdin>" or origname
     identifier = package.f_identifier.text
@@ -1467,3 +1319,175 @@ def check_naming(
                 Severity.ERROR,
                 node_location(t, name),
             )
+
+
+class Parser:
+    def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
+        self.skip_verification = skip_verification
+        self.__specifications: OrderedDict[Path, Optional[Specification]] = OrderedDict()
+        self.__evaluated_specifications: Set[ID] = set()
+        self.__types: List[Type] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
+        self.__sessions: List[Session] = []
+        self.__cache = Cache(cached)
+
+    def __convert_unit(
+        self, spec: Specification, specfile: Path = None, transitions: List[ID] = None
+    ) -> RecordFluxError:
+        transitions = transitions or []
+        error = RecordFluxError()
+
+        if spec:
+            parent = specfile.parent if specfile else Path(".")
+            filename = parent / Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
+            self.__specifications[filename] = (specfile, spec)
+            for context in spec.f_context_clause:
+                item = create_id(context.f_item, specfile)
+                if item in transitions:
+                    error.append(
+                        f'dependency cycle when including "{transitions[0]}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        transitions[0].location,
+                    )
+                    error.extend(
+                        [
+                            (
+                                f'when including "{i}"',
+                                Subsystem.PARSER,
+                                Severity.INFO,
+                                i.location,
+                            )
+                            for i in transitions[1:] + [item]
+                        ]
+                    )
+                    continue
+                transitions.append(item)
+                withed_file = filename.parent / f"{str(item).lower()}.rflx"
+                error.extend(self.__parse_specfile(withed_file, transitions))
+
+        return error
+
+    def __parse_specfile(self, specfile: Path, transitions: List[ID] = None) -> RecordFluxError:
+        error = RecordFluxError()
+        if specfile in self.__specifications:
+            self.__specifications.move_to_end(specfile)
+            return error
+
+        transitions = transitions or []
+
+        log.info("Parsing %s", specfile)
+        unit = AnalysisContext().get_from_file(str(specfile))
+        if diagnostics_to_error(unit.diagnostics, error, specfile):
+            return error
+        return self.__convert_unit(unit.root, specfile, transitions)
+
+    def parse(self, *specfiles: Path) -> None:
+        error = RecordFluxError()
+
+        for f in specfiles:
+            error.extend(self.__parse_specfile(f))
+
+        for f, (origname, s) in self.__specifications.items():
+            if s:
+                check_naming(error, s.f_package_declaration, f, origname)
+        error.propagate()
+
+    def parse_string(
+        self,
+        string: str,
+        rule: GrammarRule = GrammarRule.main_rule_rule,
+    ) -> None:
+        error = RecordFluxError()
+        unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
+        if not diagnostics_to_error(unit.diagnostics, error):
+            error = self.__convert_unit(unit.root)
+            for f, (origname, s) in self.__specifications.items():
+                if s:
+                    check_naming(error, s.f_package_declaration, f, origname)
+        error.propagate()
+
+    def create_model(self) -> Model:
+        error = RecordFluxError()
+        for origname, specification in reversed(self.__specifications.values()):
+            if (
+                specification
+                and specification.f_package_declaration.f_identifier.text
+                not in self.__evaluated_specifications
+            ):
+                self.__evaluated_specifications.add(
+                    specification.f_package_declaration.f_identifier.text
+                )
+                try:
+                    self.__evaluate_specification(specification, origname)
+                except RecordFluxError as e:
+                    error.extend(e)
+        try:
+            result = Model(self.__types, self.__sessions)
+        except RecordFluxError as e:
+            error.extend(e)
+
+        error.propagate()
+        return result
+
+    @property
+    def specifications(self) -> Dict[str, Specification]:
+        return {
+            s.f_package_declaration.f_identifier.text: s
+            for _, s in self.__specifications.values()
+            if s
+        }
+
+    TYPE_MAP = {
+        "ArrayTypeDef": create_array,
+        "ModularTypeDef": create_modular,
+        "RangeTypeDef": create_range,
+        "MessageTypeDef": create_message,
+        "NullMessageTypeDef": create_null_message,
+        "TypeDerivationDef": create_derived_message,
+        "EnumerationTypeDef": create_enumeration,
+    }
+
+    def __evaluate_specification(self, spec: Specification, filename: str = Path) -> None:
+        log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
+
+        error = RecordFluxError()
+        package_id = create_id(spec.f_package_declaration.f_identifier, filename)
+        for t in spec.f_package_declaration.f_declarations:
+            if isinstance(t, TypeSpec):
+                identifier = qualified_type_identifier(
+                    create_id(t.f_identifier, filename), package_id
+                )
+                try:
+                    new_type = self.TYPE_MAP[t.f_definition.kind_name](
+                        identifier,
+                        t.f_definition,
+                        self.__types,
+                        self.skip_verification,
+                        self.__cache,
+                        filename,
+                    )
+                except KeyError:
+                    fail(
+                        f"Unknown type {t.f_definition.kind_name}",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(identifier, filename),
+                    )
+            else:
+                if t.kind_name == "RefinementSpec":
+                    new_type = create_refinement(t, package_id, self.__types, filename)
+                elif t.kind_name == "SessionSpec":
+                    session = create_session(t, package_id, self.__types, filename)
+                    self.__sessions.append(session)
+                    error.extend(session.error)
+                    continue
+                else:
+                    fail(
+                        f'Unknown type "{t.kind_name}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(t, filename),
+                    )
+            self.__types.append(new_type)
+            error.extend(new_type.error)
+        error.propagate()
