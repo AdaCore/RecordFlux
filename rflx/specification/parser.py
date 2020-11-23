@@ -3,9 +3,9 @@
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
-from librecordfluxdsllang import (
+from librecordfluxdsllang import (  # type: ignore
     AnalysisContext,
     ArrayTypeDef,
     Aspect,
@@ -57,7 +57,7 @@ from rflx.model import (
     RangeInteger,
     Refinement,
     Session,
-    Type,
+    Type as RFLXType,
     UnprovenDerivedMessage,
     UnprovenMessage,
     is_builtin_type,
@@ -75,7 +75,7 @@ def node_location(node: RFLXNode, filename: Path = None) -> Location:
     end = node.token_end.sloc_range
     return Location(
         start=(start.start.line, start.start.column),
-        source=str(filename) if filename else "<stdin>",
+        source=Path(str(filename) if filename else "<stdin>"),
         end=(end.end.line, end.end.column),
     )
 
@@ -105,6 +105,12 @@ def diagnostics_to_error(
     return True
 
 
+def qualified_id(identifier: ID, package: ID = None) -> ID:
+    if package:
+        return qualified_type_identifier(identifier, package)
+    return identifier
+
+
 def create_description(description: Description = None) -> Optional[str]:
     if description:
         return description.text.split('"')[1]
@@ -112,20 +118,22 @@ def create_description(description: Description = None) -> Optional[str]:
 
 
 def create_transition(
-    transition: Transition, filename: Path, package: ID = None
+    transition: Transition, filename: Path = None, package: ID = None
 ) -> rsess.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
-    condition = rexpr.TRUE
+    condition: rexpr.Expr = rexpr.TRUE
     description = create_description(transition.f_description)
     if transition.kind_name == "ConditionalTransition":
         condition = create_bool_expression(transition.f_condition, filename, package)
     return rsess.Transition(target, condition, description, node_location(transition, filename))
 
 
-def create_statement(statement: Statement, filename: Path, package: ID = None) -> stmt.Statement:
-    identifier = qualified_type_identifier(create_id(statement.f_identifier, filename), package)
+def create_statement(
+    statement: Statement, filename: Path = None, package: ID = None
+) -> stmt.Statement:
+    identifier = qualified_id(create_id(statement.f_identifier, filename), package)
     location = node_location(statement, filename)
     if statement.kind_name == "Assignment":
         return stmt.Assignment(
@@ -188,9 +196,9 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
 
 
 def create_declaration(
-    declaration: SessionDecl, filename: Path, package: ID = None
+    declaration: SessionDecl, filename: Path = None, package: ID = None
 ) -> decl.BasicDeclaration:
-    identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
+    identifier = qualified_id(create_id(declaration.f_identifier, filename), package)
     type_identifier = create_id(declaration.f_type_identifier, filename)
     if declaration.kind_name == "VariableDecl":
         return decl.VariableDeclaration(
@@ -201,10 +209,12 @@ def create_declaration(
         )
 
     if declaration.kind_name == "RenamingDecl":
+        selected = create_expression(declaration.f_expression, filename, package)
+        assert isinstance(selected, rexpr.Selected)
         return decl.RenamingDeclaration(
             identifier,
             type_identifier,
-            create_expression(declaration.f_expression, filename, package),
+            selected,
             node_location(declaration, filename),
         )
 
@@ -212,22 +222,18 @@ def create_declaration(
 
 
 def create_parameter(
-    declaration: TypeDecl, filename: Path, package: ID = None
+    declaration: TypeDecl, filename: Path = None, package: ID = None
 ) -> decl.FormalDeclaration:
     arguments = []
-    identifier = qualified_type_identifier(create_id(declaration.f_identifier, filename), package)
+    identifier = qualified_id(create_id(declaration.f_identifier, filename), package)
     location = node_location(declaration, filename)
     if declaration.kind_name == "FunctionDecl":
         if declaration.f_parameters:
             for a in declaration.f_parameters.f_parameters:
-                arg_identifier = qualified_type_identifier(
-                    create_id(a.f_identifier, filename), package
-                )
-                type_identifier = qualified_type_identifier(
-                    create_id(a.f_type_identifier, filename), package
-                )
+                arg_identifier = qualified_id(create_id(a.f_identifier, filename), package)
+                type_identifier = qualified_id(create_id(a.f_type_identifier, filename), package)
                 arguments.append(decl.Argument(arg_identifier, type_identifier))
-        return_type = qualified_type_identifier(
+        return_type = qualified_id(
             create_id(declaration.f_return_type_identifier, filename), package
         )
         return decl.FunctionDeclaration(identifier, arguments, return_type, location)
@@ -244,7 +250,9 @@ def create_parameter(
                     raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
         return decl.ChannelDeclaration(identifier, readable, writable, location)
     if declaration.kind_name == "PrivateTypeDecl":
-        return create_private_type_decl(declaration, filename, package, location)
+        formal_decl = create_private_type_decl(declaration, filename, package, location)
+        assert isinstance(formal_decl, decl.FormalDeclaration)
+        return formal_decl
 
     raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
 
@@ -252,10 +260,10 @@ def create_parameter(
 def create_session(
     session: SessionSpec,
     package: ID,
-    types: Sequence[Type] = None,
+    types: Sequence[RFLXType] = None,
     filename: Path = None,
     skip_validation: bool = False,
-) -> Refinement:
+) -> Session:
     types = types or []
     location = node_location(session, filename)
     if session.f_identifier.text != session.f_end_identifier.text:
@@ -267,7 +275,7 @@ def create_session(
             location,
         )
     states = [create_state(s, filename) for s in session.f_states]
-    s = Session(
+    return Session(
         qualified_type_identifier(create_id(session.f_identifier, filename), package),
         create_id(session.f_aspects.f_initial, filename),
         create_id(session.f_aspects.f_final, filename),
@@ -278,7 +286,6 @@ def create_session(
         location,
         skip_validation=skip_validation,
     )
-    return s
 
 
 def create_id(identifier: NullID, filename: Path = None) -> ID:
@@ -309,12 +316,13 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
         Severity.ERROR,
         node_location(identifier),
     )
+    assert False
 
 
 def create_array(
     identifier: ID,
     array: ArrayTypeDef,
-    types: Sequence[Type],
+    types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path = None,
@@ -351,9 +359,10 @@ def create_numeric_literal(
         Severity.ERROR,
         node_location(expression, filename),
     )
+    assert False
 
 
-OPERATIONS = {
+OPERATIONS: Dict[str, Type[rexpr.BinExpr]] = {
     "OpIn": rexpr.In,
     "OpNotin": rexpr.NotIn,
     "OpEq": rexpr.Equal,
@@ -415,7 +424,7 @@ def create_math_binop(
     )
 
 
-MATH_COMPARISONS = {
+MATH_COMPARISONS: Dict[str, Type[rexpr.Relation]] = {
     "OpLt": rexpr.Less,
     "OpGt": rexpr.Greater,
     "OpLe": rexpr.LessEqual,
@@ -570,7 +579,7 @@ def create_quantified_expression(
 def create_binding(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
 ) -> rexpr.Expr:
-    bindings = {
+    bindings: Mapping[Union[str, ID], rexpr.Expr] = {
         create_id(b.f_identifier, filename): create_expression(b.f_expression, filename, package)
         for b in expression.f_bindings
     }
@@ -581,7 +590,7 @@ def create_binding(
 
 def create_list_attribute(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> stmt.AttributeStatement:
     attrs = {
         "Append": stmt.Append,
         "Extend": stmt.Extend,
