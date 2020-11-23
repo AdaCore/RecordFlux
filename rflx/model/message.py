@@ -1245,6 +1245,8 @@ class DerivedMessage(Message):
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
+        if not structure and not types:
+            structure = derived_message_structure(base)
 
         super().__init__(
             identifier,
@@ -1442,6 +1444,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
+        if not structure and not types:
+            structure = derived_message_structure(base)
 
         super().__init__(
             identifier,
@@ -1603,6 +1607,27 @@ class Refinement(mty.Type):
                 "condition": self.condition.serialize,
             },
         }
+
+
+def derived_message_structure(base: Union[UnprovenMessage, Message]) -> Sequence[Link]:
+    """Qualify enumeration literals to prevent ambiguities."""
+
+    base_enum_literals = [
+        l
+        for t in base.types.values()
+        if isinstance(t, mty.Enumeration) and t.package == base.package
+        for l in t.literals
+    ]
+    mapping: Mapping[expr.Name, expr.Expr] = {
+        expr.Variable(e): expr.Variable(base.package * e) for e in base_enum_literals
+    }
+    structure = []
+    for l in base.structure:
+        link = copy(l)
+        link.condition = link.condition.substituted(mapping=mapping)
+        structure.append(link)
+
+    return structure
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
