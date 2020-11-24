@@ -2,9 +2,8 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="altergo" version="1.30-gnatprove" timelimit="90" steplimit="239854" memlimit="1000"/>
-<prover id="1" name="Z3" version="4.5.1-gnatprove" timelimit="90" steplimit="192333200" memlimit="1000"/>
-<prover id="2" name="CVC4" version="1.6-gnatprove" timelimit="90" steplimit="8409890" memlimit="1000"/>
+<prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="90" steplimit="0" memlimit="1000"/>
+<prover id="1" name="CVC4" version="1.6-gnatprove" timelimit="90" steplimit="0" memlimit="1000"/>
 <file format="gnat-json">
 <path name=".."/><path name=".."/><path name=".."/><path name=".."/><path name=".."/>
 <path name="build"/><path name="gnatprove"/><path name="ada___rflx__rflx_types__u64_extract__d.gnat-json"/>
@@ -31,81 +30,84 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.5" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="1578"/></proof>
+  <proof prover="0"><result status="valid" steps="36011"/></proof>
   </goal>
   <goal name="def&#39;vc.6" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="1479"/></proof>
+  <proof prover="0"><result status="valid" steps="35631"/></proof>
   </goal>
   <goal name="def&#39;vc.7" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="251"/></proof>
+  <proof prover="0"><result status="valid" steps="4390"/></proof>
   </goal>
   <goal name="def&#39;vc.8" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="1744"/></proof>
+  <proof prover="0"><result status="valid" steps="4436"/></proof>
   </goal>
   <goal name="def&#39;vc.9" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="1613"/></proof>
+  <proof prover="0"><result status="valid" steps="4461"/></proof>
   </goal>
   <goal name="def&#39;vc.10" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.11" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="897"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="12361"/></proof>
   </goal>
   <goal name="def&#39;vc.12" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.13" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="255"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="25745"/></proof>
   </goal>
   <goal name="def&#39;vc.14" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.15" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="996"/></proof>
+  <proof prover="0"><result status="valid" steps="5701"/></proof>
   </goal>
   <goal name="def&#39;vc.16" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="938"/></proof>
+  <proof prover="0"><result status="valid" steps="5734"/></proof>
   </goal>
   <goal name="def&#39;vc.17" expl="precondition" proved="true">
-  <proof prover="0"><result status="failure"/></proof>
-  <proof prover="1"><result status="outofmemory"/></proof>
-  <proof prover="2"><result status="valid" steps="841"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="841"/></proof>
   </goal>
   <goal name="def&#39;vc.18" expl="precondition" proved="true">
-  <proof prover="0"><result status="failure"/></proof>
-  <proof prover="1"><result status="valid" steps="37189"/></proof>
+  <proof prover="0"><result status="valid" steps="37189"/></proof>
   </goal>
   <goal name="def&#39;vc.19" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.20" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="3361"/></proof>
+  <proof prover="0"><result status="valid" steps="61787"/></proof>
   </goal>
   <goal name="def&#39;vc.21" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="3575"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="72"/></proof>
   </goal>
   <goal name="def&#39;vc.22" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="2065"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="72"/></proof>
   </goal>
   <goal name="def&#39;vc.23" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="262"/></proof>
+  <proof prover="0"><result status="valid" steps="17767"/></proof>
   </goal>
   <goal name="def&#39;vc.24" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="236"/></proof>
+  <proof prover="0"><result status="valid" steps="3694"/></proof>
   </goal>
   <goal name="def&#39;vc.25" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="2312"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="681"/></proof>
   </goal>
   <goal name="def&#39;vc.26" expl="precondition" proved="true">
-  <proof prover="0"><result status="failure"/></proof>
-  <proof prover="1"><result status="valid" steps="38748"/></proof>
+  <proof prover="0"><result status="valid" steps="38748"/></proof>
   </goal>
   <goal name="def&#39;vc.27" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="16932"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="1"><result status="valid" steps="965"/></proof>
   </goal>
   <goal name="def&#39;vc.28" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
