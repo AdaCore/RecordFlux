@@ -45,7 +45,7 @@ import rflx.expression as rexpr
 import rflx.model.session as rsess
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from rflx.model import (
     BUILTIN_TYPES,
     FINAL,
@@ -597,7 +597,7 @@ def create_binding(
 
 def create_variable_decl(
     declaration: VariableDecl, filename: Path = None, package: ID = None, location: Location = None
-) -> decl.VariableDeclaration:
+) -> decl.BasicDeclaration:
     initializer = (
         create_expression(declaration.f_initializer, filename, package)
         if declaration.f_initializer
@@ -605,7 +605,7 @@ def create_variable_decl(
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        qualified_id(create_id(declaration.f_type_identifier, filename), package),
         initializer,
         location=location,
     )
@@ -616,7 +616,7 @@ def create_private_type_decl(
     filename: Path = None,
     _package: ID = None,
     location: Location = None,
-) -> decl.TypeDeclaration:
+) -> decl.FormalDeclaration:
     return decl.TypeDeclaration(
         Private(create_id(declaration.f_identifier, filename), location=location)
     )
@@ -624,7 +624,7 @@ def create_private_type_decl(
 
 def create_channel_decl(
     declaration: ChannelDecl, filename: Path = None, _package: ID = None, location: Location = None
-) -> decl.ChannelDeclaration:
+) -> decl.FormalDeclaration:
     readable = False
     writable = False
     for p in declaration.f_parameters:
@@ -644,25 +644,27 @@ def create_channel_decl(
 
 def create_renaming_decl(
     declaration: RenamingDecl, filename: Path = None, package: ID = None, location: Location = None
-) -> decl.RenamingDeclaration:
+) -> decl.BasicDeclaration:
+    selected = create_expression(declaration.f_expression, filename, package)
+    assert isinstance(selected, rexpr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
-        create_expression(declaration.f_expression, filename, package),
+        qualified_id(create_id(declaration.f_type_identifier, filename), package),
+        selected,
         location,
     )
 
 
 def create_function_decl(
     declaration: FunctionDecl, filename: Path = None, package: ID = None, location: Location = None
-) -> decl.FunctionDeclaration:
+) -> decl.FormalDeclaration:
     arguments = []
     if declaration.f_parameters:
         for p in declaration.f_parameters.f_parameters:
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    qualified_type_identifier(create_id(p.f_type_identifier, filename), package),
+                    qualified_id(create_id(p.f_type_identifier, filename), package),
                 )
             )
     return decl.FunctionDeclaration(
@@ -731,6 +733,7 @@ def create_conversion(
 def create_message_aggregate(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
 ) -> rexpr.Expr:
+    values: Mapping[StrID, rexpr.Expr] = {}
     if expression.f_values.kind_name == "NullComponents":
         values = {}
     elif expression.f_values.kind_name == "MessageComponents":
@@ -779,23 +782,37 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         raise NotImplementedError(f"{expression.kind_name} => {expression.text}") from e
 
 
-DECLARATIONS = {
+DECLARATIONS: Dict[str, Callable[..., decl.BasicDeclaration]] = {
     "VariableDecl": create_variable_decl,
-    "PrivateTypeDecl": create_private_type_decl,
-    "ChannelDecl": create_channel_decl,
     "RenamingDecl": create_renaming_decl,
-    "FunctionDecl": create_function_decl,
 }
 
 
 def create_declaration(
     declaration: Expr, filename: Path = None, package: ID = None
-) -> decl.Declaration:
+) -> decl.BasicDeclaration:
     location = node_location(declaration, filename)
     try:
         return DECLARATIONS[declaration.kind_name](declaration, filename, package, location)
     except KeyError as e:
-        raise NotImplementedError(f"{declaration.kind_name} => {expression.text}") from e
+        raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
+
+
+FORMAL_DECLARATIONS: Dict[str, Callable[..., decl.FormalDeclaration]] = {
+    "ChannelDecl": create_channel_decl,
+    "FunctionDecl": create_function_decl,
+    "PrivateTypeDecl": create_private_type_decl,
+}
+
+
+def create_formal_declaration(
+    declaration: Expr, filename: Path = None, package: ID = None
+) -> decl.FormalDeclaration:
+    location = node_location(declaration, filename)
+    try:
+        return FORMAL_DECLARATIONS[declaration.kind_name](declaration, filename, package, location)
+    except KeyError as e:
+        raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
 
 
 MATH_EXPRESSION_MAP = {
@@ -851,7 +868,7 @@ def create_bool_expression(
 def create_modular(
     identifier: ID,
     modular: ModularTypeDef,
-    _types: Sequence[Type],
+    _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path = None,
@@ -866,7 +883,7 @@ def create_modular(
 def create_range(
     identifier: ID,
     rangetype: RangeTypeDef,
-    _types: Sequence[Type],
+    _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path = None,
@@ -891,7 +908,7 @@ def create_range(
 def create_null_message(
     identifier: ID,
     message: MessageTypeDef,
-    _types: Sequence[Type],
+    _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path = None,
@@ -902,7 +919,7 @@ def create_null_message(
 def create_message(
     identifier: ID,
     message: MessageTypeDef,
-    types: Sequence[Type],
+    types: Sequence[RFLXType],
     skip_verification: bool,
     cache: Cache,
     filename: Path = None,
@@ -912,7 +929,9 @@ def create_message(
 
     error = RecordFluxError()
 
-    field_types = create_message_types(identifier, components, types, filename)
+    field_types: Mapping[Field, RFLXType] = create_message_types(
+        identifier, components, types, filename
+    )
     structure = create_message_structure(components, identifier.parent, error, filename)
     aspects = {
         ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
@@ -930,11 +949,11 @@ def create_message(
 def create_message_types(
     identifier: ID,
     components: Components,
-    types: Sequence[Type],
+    types: Sequence[RFLXType],
     filename: Path = None,
-) -> Dict[Field, Type]:
+) -> Mapping[Field, RFLXType]:
 
-    field_types: Dict[Field, Type] = {}
+    field_types: Dict[Field, RFLXType] = {}
 
     for component in components.f_components:
         type_identifier = qualified_type_identifier(
@@ -953,8 +972,8 @@ def create_message_structure(
     # pylint: disable=too-many-branches, too-many-locals
 
     def extract_aspect(aspects: List[Aspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
-        size = rexpr.UNDEFINED
-        first = rexpr.UNDEFINED
+        size: rexpr.Expr = rexpr.UNDEFINED
+        first: rexpr.Expr = rexpr.UNDEFINED
         for aspect in aspects:
             if aspect.f_identifier.text == "Size":
                 size = create_math_expression(aspect.f_value, filename)
@@ -1081,7 +1100,7 @@ def create_message_structure(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, _package: ID, filename: Path
+    checksum: ChecksumAspect, package: ID = None, filename: Path = None
 ) -> Mapping[ID, Sequence[rexpr.Expr]]:
     result = {}
     if checksum:
@@ -1111,7 +1130,7 @@ def create_message_aspects(
 def create_derived_message(
     identifier: ID,
     derivation: TypeDerivationDef,
-    types: Sequence[Type],
+    types: Sequence[RFLXType],
     skip_verification: bool,
     cache: Cache,
     filename: Path = None,
@@ -1120,7 +1139,7 @@ def create_derived_message(
     base_name = qualified_type_identifier(base_id, identifier.parent)
     error = RecordFluxError()
 
-    base_types = [t for t in types if t.identifier == base_name]
+    base_types: Sequence[RFLXType] = [t for t in types if t.identifier == base_name]
 
     if not base_types:
         fail(
@@ -1130,7 +1149,7 @@ def create_derived_message(
             base_name.location,
         )
 
-    base_messages = [t for t in base_types if isinstance(t, Message)]
+    base_messages: Sequence[Message] = [t for t in base_types if isinstance(t, Message)]
 
     if not base_messages:
         error.append(
@@ -1159,14 +1178,14 @@ def create_derived_message(
 def create_enumeration(
     identifier: ID,
     enumeration: EnumerationTypeDef,
-    _types: Sequence[Type],
+    _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path = None,
-) -> Message:
-    literals = []
+) -> Enumeration:
+    literals: List[Tuple[StrID, rexpr.Number]] = []
 
-    def create_aspects(aspects: List[Aspect]):
+    def create_aspects(aspects: List[Aspect]) -> Tuple[rexpr.Expr, bool]:
         always_valid = False
         size = None
         for a in aspects:
@@ -1188,12 +1207,14 @@ def create_enumeration(
                         )
                 else:
                     always_valid = True
+        assert size
         return size, always_valid
 
     if enumeration.f_elements.kind_name == "NamedEnumerationDef":
         for e in enumeration.f_elements.f_elements:
             element_identifier = create_id(e.f_identifier, filename)
             value = create_math_expression(e.f_literal, filename)
+            assert isinstance(value, rexpr.Number)
             literals.append((element_identifier, value))
     elif enumeration.f_elements.kind_name == "PositionalEnumerationDef":
         literals = [
@@ -1232,7 +1253,7 @@ def create_proven_message(
 
 
 def create_refinement(
-    refinement: RefinementSpec, package: ID, types: Sequence[Type], filename: Path
+    refinement: RefinementSpec, package: ID, types: Sequence[RFLXType], filename: Path
 ) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
@@ -1272,7 +1293,7 @@ def create_refinement(
 def check_naming(
     error: RecordFluxError, package: PackageSpec, _filename: Path, origname: Path = None
 ) -> None:
-    name = "<stdin>" or origname
+    name = Path("<stdin>") or origname
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
@@ -1317,9 +1338,9 @@ def check_naming(
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[Path, Optional[Specification]] = OrderedDict()
+        self.__specifications: OrderedDict[Path, Specification] = OrderedDict()
         self.__evaluated_specifications: Set[ID] = set()
-        self.__types: List[Type] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
+        self.__types: List[RFLXType] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
         self.__sessions: List[Session] = []
         self.__cache = Cache(cached)
 
@@ -1440,7 +1461,7 @@ class Parser:
         "EnumerationTypeDef": create_enumeration,
     }
 
-    def __evaluate_specification(self, spec: Specification, filename: str = Path) -> None:
+    def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
         log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
 
         error = RecordFluxError()
