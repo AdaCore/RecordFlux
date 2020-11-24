@@ -10,7 +10,7 @@ import pathlib
 import subprocess
 import sys
 
-from librecordfluxdsllang import AnalysisContext
+from librecordfluxdsllang import AnalysisContext  # type: ignore
 
 import rflx.error
 import rflx.specification

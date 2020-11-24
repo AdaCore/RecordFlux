@@ -1,12 +1,13 @@
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 import pytest
-from librecordfluxdsllang import AnalysisContext
+from librecordfluxdsllang import AnalysisContext  # type: ignore
 
 from rflx import declaration as decl
+from rflx.declaration import Declaration
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Generator
@@ -18,10 +19,12 @@ from rflx.specification.parser import (
     create_bool_expression,
     create_declaration,
     create_expression,
+    create_formal_declaration,
     create_math_expression,
     create_statement,
     diagnostics_to_error,
 )
+from rflx.statement import Statement
 
 
 def assert_equal(left: Any, right: Any) -> None:
@@ -142,7 +145,7 @@ def multilinestr(string: str) -> str:
     return string.replace(15 * " ", "")
 
 
-def parse_attribute_statement(data: str) -> Expr:
+def parse_attribute_statement(data: str) -> Statement:
     unit = AnalysisContext().get_from_buffer(
         "<stdin>", data, rule=GrammarRule.attribute_statement_rule
     )
@@ -152,7 +155,7 @@ def parse_attribute_statement(data: str) -> Expr:
     return create_statement(unit.root)
 
 
-def parse_statement(data: str) -> Expr:
+def parse_statement(data: str) -> Statement:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=GrammarRule.action_rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
@@ -178,18 +181,28 @@ def parse_bool_expression(data: str, extended: bool) -> Expr:
     return create_bool_expression(unit.root)
 
 
-def parse_declaration(data: str, rule: GrammarRule) -> Expr:
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+def parse_declaration(data: str) -> Declaration:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=GrammarRule.declaration_rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
     return create_declaration(unit.root)
 
 
+def parse_formal_declaration(data: str) -> Declaration:
+    unit = AnalysisContext().get_from_buffer(
+        "<stdin>", data, rule=GrammarRule.session_parameter_rule
+    )
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_formal_declaration(unit.root)
+
+
 def parse_expression(
     data: str,
     rule: GrammarRule = GrammarRule.extended_expression_rule,
-    convert: Callable[[], None] = create_expression,
+    convert: Callable[..., Expr] = create_expression,
 ) -> Expr:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()

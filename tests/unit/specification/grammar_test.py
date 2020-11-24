@@ -20,14 +20,13 @@ from tests.utils import (
     parse_bool_expression,
     parse_declaration,
     parse_expression,
+    parse_formal_declaration,
     parse_math_expression,
     parse_statement,
 )
 
 
-def parse_session(
-    string: str, skip_validation: bool = False
-) -> Session:
+def parse_session(string: str, skip_validation: bool = False) -> Session:
     unit = AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=GrammarRule.session_declaration_rule
     )
@@ -521,7 +520,7 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
 def test_private_type_declaration() -> None:
     string = "type X is private"
     expected = decl.TypeDeclaration(model.Private("X", location=Location((1, 1), None, (1, 17))))
-    actual = parse_declaration(string, GrammarRule.session_parameter_rule)
+    actual = parse_formal_declaration(string)
     assert actual == expected
     assert actual.location
 
@@ -538,7 +537,7 @@ def test_private_type_declaration() -> None:
     ],
 )
 def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_declaration(string, GrammarRule.session_parameter_rule)
+    actual = parse_formal_declaration(string)
     assert actual == expected
     assert actual.location
 
@@ -554,7 +553,7 @@ def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_formal_function_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_declaration(string, GrammarRule.session_parameter_rule)
+    actual = parse_formal_declaration(string)
     assert actual == expected
     assert actual.location
 
@@ -568,7 +567,7 @@ def test_formal_function_declaration(string: str, expected: decl.Declaration) ->
     ],
 )
 def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_declaration(string, GrammarRule.declaration_rule)
+    actual = parse_declaration(string)
     assert actual == expected
     assert actual.location
 
@@ -583,7 +582,7 @@ def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_renaming_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_declaration(string, GrammarRule.declaration_rule)
+    actual = parse_declaration(string)
     assert actual == expected
     assert actual.location
 
@@ -750,7 +749,11 @@ def test_state_error(string: str, error: str) -> None:
                 [
                     model.State(
                         "A",
-                        declarations=[decl.VariableDeclaration("Z", "__BUILTINS__::Boolean", expr.Variable("Y"))],
+                        declarations=[
+                            decl.VariableDeclaration(
+                                "Z", "__BUILTINS__::Boolean", expr.Variable("Y")
+                            )
+                        ],
                         actions=[stmt.Assignment("Z", expr.Variable("False"))],
                         transitions=[
                             model.Transition(
