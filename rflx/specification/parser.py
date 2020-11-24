@@ -3,25 +3,29 @@
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 from librecordfluxdsllang import (  # type: ignore
     AnalysisContext,
     ArrayTypeDef,
     Aspect,
+    ChannelDecl,
     ChecksumAspect,
     Components,
     Description,
     Diagnostic,
     EnumerationTypeDef,
     Expr,
+    FunctionDecl,
     GrammarRule,
     MessageTypeDef,
     ModularTypeDef,
     NullID,
     PackageSpec,
+    PrivateTypeDecl,
     RangeTypeDef,
     RefinementSpec,
+    RenamingDecl,
     RFLXNode,
     SessionDecl,
     SessionSpec,
@@ -33,6 +37,7 @@ from librecordfluxdsllang import (  # type: ignore
     TypeDecl,
     TypeDerivationDef,
     TypeSpec,
+    VariableDecl,
 )
 
 import rflx.declaration as decl
@@ -130,33 +135,61 @@ def create_transition(
     return rsess.Transition(target, condition, description, node_location(transition, filename))
 
 
+def create_reset(
+    reset: Statement, filename: Path = None, _package: ID = None, location: Location = None
+) -> stmt.Statement:
+    return stmt.Reset(create_id(reset.f_identifier, filename), location=location)
+
+
+def create_assignment(
+    assignment: Statement, filename: Path = None, package: ID = None, location: Location = None
+) -> stmt.Statement:
+    return stmt.Assignment(
+        create_id(assignment.f_identifier, filename),
+        create_expression(assignment.f_expression, filename, package),
+        location,
+    )
+
+
+def create_list_attribute(
+    expression: Statement, filename: Path = None, package: ID = None, location: Location = None
+) -> stmt.Statement:
+    attrs = {
+        "Append": stmt.Append,
+        "Extend": stmt.Extend,
+        "Read": stmt.Read,
+        "Write": stmt.Write,
+    }
+    try:
+        constructor = attrs[expression.f_attr.text]
+    except KeyError as e:
+        raise NotImplementedError(f"list attribute: {expression.f_attr.text}") from e
+
+    return constructor(
+        create_id(expression.f_identifier, filename),
+        create_expression(expression.f_expression, filename, package),
+        location=location,
+    )
+
+
+STATEMENTS: Dict[
+    str, Callable[[Statement, Optional[Path], Optional[ID], Optional[Location]], stmt.Statement]
+] = {
+    "Reset": create_reset,
+    "Assignment": create_assignment,
+    "ListAttribute": create_list_attribute,
+}
+
+
 def create_statement(
     statement: Statement, filename: Path = None, package: ID = None
 ) -> stmt.Statement:
-    identifier = qualified_id(create_id(statement.f_identifier, filename), package)
-    location = node_location(statement, filename)
-    if statement.kind_name == "Assignment":
-        return stmt.Assignment(
-            identifier, create_expression(statement.f_expression, filename), location
+    try:
+        return STATEMENTS[statement.kind_name](
+            statement, filename, package, node_location(statement, filename)
         )
-
-    if statement.kind_name == "ListAttribute":
-        expression = create_expression(statement.f_expression, filename, package)
-        if statement.f_attr.kind_name == "ListAttrAppend":
-            return stmt.Append(identifier, expression, location)
-        if statement.f_attr.kind_name == "ListAttrExtend":
-            return stmt.Extend(identifier, expression, location)
-        if statement.f_attr.kind_name == "ListAttrRead":
-            return stmt.Read(identifier, expression, location)
-        if statement.f_attr.kind_name == "ListAttrWrite":
-            return stmt.Write(identifier, expression, location)
-
-        raise NotImplementedError(f"Attribute {statement.f_attr.kind_name} unsupported")
-
-    if statement.kind_name == "Reset":
-        return stmt.Reset(identifier, location)
-
-    raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported")
+    except KeyError as e:
+        raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported") from e
 
 
 def create_state(state: State, filename: Path = None) -> rsess.State:
@@ -193,32 +226,6 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
         description=description,
         location=node_location(state, filename),
     )
-
-
-def create_declaration(
-    declaration: SessionDecl, filename: Path = None, package: ID = None
-) -> decl.BasicDeclaration:
-    identifier = qualified_id(create_id(declaration.f_identifier, filename), package)
-    type_identifier = create_id(declaration.f_type_identifier, filename)
-    if declaration.kind_name == "VariableDecl":
-        return decl.VariableDeclaration(
-            identifier,
-            type_identifier,
-            create_expression(declaration.f_initializer, filename, package),
-            node_location(declaration, filename),
-        )
-
-    if declaration.kind_name == "RenamingDecl":
-        selected = create_expression(declaration.f_expression, filename, package)
-        assert isinstance(selected, rexpr.Selected)
-        return decl.RenamingDeclaration(
-            identifier,
-            type_identifier,
-            selected,
-            node_location(declaration, filename),
-        )
-
-    raise NotImplementedError(f"Declaration kind {declaration.kind_name} unsupported")
 
 
 def create_parameter(
@@ -588,63 +595,39 @@ def create_binding(
     )
 
 
-def create_list_attribute(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> stmt.AttributeStatement:
-    attrs = {
-        "Append": stmt.Append,
-        "Extend": stmt.Extend,
-        "Read": stmt.Read,
-        "Write": stmt.Write,
-    }
-    try:
-        constructor = attrs[expression.f_attr.text]
-    except KeyError as e:
-        raise NotImplementedError(f"list attribute: {expression.f_attr.text}") from e
-
-    return constructor(
-        create_id(expression.f_identifier, filename),
-        create_expression(expression.f_expression, filename, package),
-        location=location,
-    )
-
-
-def create_reset(
-    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return stmt.Reset(create_id(expression.f_identifier, filename), location=location)
-
-
 def create_variable_decl(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+    declaration: VariableDecl, filename: Path = None, package: ID = None, location: Location = None
+) -> decl.VariableDeclaration:
     initializer = (
-        create_expression(expression.f_initializer, filename, package)
-        if expression.f_initializer
+        create_expression(declaration.f_initializer, filename, package)
+        if declaration.f_initializer
         else None
     )
     return decl.VariableDeclaration(
-        create_id(expression.f_identifier, filename),
-        qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
+        create_id(declaration.f_identifier, filename),
+        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
         initializer,
         location=location,
     )
 
 
 def create_private_type_decl(
-    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
-) -> rexpr.Expr:
+    declaration: PrivateTypeDecl,
+    filename: Path = None,
+    _package: ID = None,
+    location: Location = None,
+) -> decl.TypeDeclaration:
     return decl.TypeDeclaration(
-        Private(create_id(expression.f_identifier, filename), location=location)
+        Private(create_id(declaration.f_identifier, filename), location=location)
     )
 
 
 def create_channel_decl(
-    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
-) -> rexpr.Expr:
+    declaration: ChannelDecl, filename: Path = None, _package: ID = None, location: Location = None
+) -> decl.ChannelDeclaration:
     readable = False
     writable = False
-    for p in expression.f_parameters:
+    for p in declaration.f_parameters:
         if p.kind_name == "Readable":
             readable = True
         elif p.kind_name == "Writable":
@@ -652,7 +635,7 @@ def create_channel_decl(
         else:
             raise NotImplementedError(f"channel parameter: {p.kind_name}")
     return decl.ChannelDeclaration(
-        create_id(expression.f_identifier, filename),
+        create_id(declaration.f_identifier, filename),
         readable=readable,
         writable=writable,
         location=location,
@@ -660,22 +643,22 @@ def create_channel_decl(
 
 
 def create_renaming_decl(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+    declaration: RenamingDecl, filename: Path = None, package: ID = None, location: Location = None
+) -> decl.RenamingDeclaration:
     return decl.RenamingDeclaration(
-        create_id(expression.f_identifier, filename),
-        qualified_type_identifier(create_id(expression.f_type_identifier, filename), package),
-        create_expression(expression.f_expression, filename, package),
+        create_id(declaration.f_identifier, filename),
+        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        create_expression(declaration.f_expression, filename, package),
         location,
     )
 
 
 def create_function_decl(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+    declaration: FunctionDecl, filename: Path = None, package: ID = None, location: Location = None
+) -> decl.FunctionDeclaration:
     arguments = []
-    if expression.f_parameters:
-        for p in expression.f_parameters.f_parameters:
+    if declaration.f_parameters:
+        for p in declaration.f_parameters.f_parameters:
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
@@ -683,9 +666,9 @@ def create_function_decl(
                 )
             )
     return decl.FunctionDeclaration(
-        create_id(expression.f_identifier, filename),
+        create_id(declaration.f_identifier, filename),
         arguments,
-        create_id(expression.f_return_type_identifier, filename),
+        create_id(declaration.f_return_type_identifier, filename),
         location,
     )
 
@@ -696,16 +679,6 @@ def create_negation(
     expr = create_math_expression(expression.f_data, filename, package)
     assert isinstance(expr, rexpr.Number)
     return rexpr.Number(-expr.value, expr.base, location)
-
-
-def create_assignment(
-    expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return stmt.Assignment(
-        create_id(expression.f_identifier, filename),
-        create_expression(expression.f_expression, filename, package),
-        location,
-    )
 
 
 def create_concatenation(
@@ -787,15 +760,7 @@ EXPRESSION_MAP = {
     "Call": create_call,
     "QuantifiedExpression": create_quantified_expression,
     "Binding": create_binding,
-    "ListAttribute": create_list_attribute,
-    "Reset": create_reset,
-    "VariableDecl": create_variable_decl,
-    "PrivateTypeDecl": create_private_type_decl,
-    "ChannelDecl": create_channel_decl,
-    "RenamingDecl": create_renaming_decl,
-    "FunctionDecl": create_function_decl,
     "Negation": create_negation,
-    "Assignment": create_assignment,
     "Concatenation": create_concatenation,
     "Comprehension": create_comprehension,
     "SelectNode": create_selected,
@@ -812,6 +777,25 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
     except KeyError as e:
         raise NotImplementedError(f"{expression.kind_name} => {expression.text}") from e
+
+
+DECLARATIONS = {
+    "VariableDecl": create_variable_decl,
+    "PrivateTypeDecl": create_private_type_decl,
+    "ChannelDecl": create_channel_decl,
+    "RenamingDecl": create_renaming_decl,
+    "FunctionDecl": create_function_decl,
+}
+
+
+def create_declaration(
+    declaration: Expr, filename: Path = None, package: ID = None
+) -> decl.Declaration:
+    location = node_location(declaration, filename)
+    try:
+        return DECLARATIONS[declaration.kind_name](declaration, filename, package, location)
+    except KeyError as e:
+        raise NotImplementedError(f"{declaration.kind_name} => {expression.text}") from e
 
 
 MATH_EXPRESSION_MAP = {
