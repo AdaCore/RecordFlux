@@ -196,9 +196,6 @@ package body RFLX.In_IPv4_Tests is
          end if;
       end if;
 
-      if Ethernet.Frame.Has_Buffer (Ethernet_Frame_Context) then
-         Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
-      end if;
       if IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
       end if;
