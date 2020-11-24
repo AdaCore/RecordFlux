@@ -16,8 +16,10 @@ from rflx.specification import Parser
 from rflx.specification.parser import (
     GrammarRule,
     create_bool_expression,
+    create_declaration,
     create_expression,
     create_math_expression,
+    create_statement,
     diagnostics_to_error,
 )
 
@@ -140,6 +142,24 @@ def multilinestr(string: str) -> str:
     return string.replace(15 * " ", "")
 
 
+def parse_attribute_statement(data: str) -> Expr:
+    unit = AnalysisContext().get_from_buffer(
+        "<stdin>", data, rule=GrammarRule.attribute_statement_rule
+    )
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_statement(unit.root)
+
+
+def parse_statement(data: str) -> Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=GrammarRule.action_rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_statement(unit.root)
+
+
 def parse_math_expression(data: str, extended: bool) -> Expr:
     rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
@@ -156,6 +176,14 @@ def parse_bool_expression(data: str, extended: bool) -> Expr:
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
     return create_bool_expression(unit.root)
+
+
+def parse_declaration(data: str, rule: GrammarRule) -> Expr:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_declaration(unit.root)
 
 
 def parse_expression(
