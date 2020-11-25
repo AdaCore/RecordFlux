@@ -1,7 +1,7 @@
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import pytest
 from librecordfluxdsllang import AnalysisContext  # type: ignore
