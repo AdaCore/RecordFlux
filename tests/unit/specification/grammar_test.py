@@ -1,5 +1,3 @@
-from typing import Sequence
-
 import pytest
 from librecordfluxdsllang import AnalysisContext
 

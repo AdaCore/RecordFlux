@@ -27,14 +27,12 @@ from librecordfluxdsllang import (  # type: ignore
     RefinementSpec,
     RenamingDecl,
     RFLXNode,
-    SessionDecl,
     SessionSpec,
     Specification,
     State,
     Statement,
     ThenNode,
     Transition,
-    TypeDecl,
     TypeDerivationDef,
     TypeSpec,
     VariableDecl,
@@ -172,20 +170,18 @@ def create_list_attribute(
     )
 
 
-STATEMENTS: Dict[
-    str, Callable[[Statement, Optional[Path], Optional[ID], Optional[Location]], stmt.Statement]
-] = {
-    "Reset": create_reset,
-    "Assignment": create_assignment,
-    "ListAttribute": create_list_attribute,
-}
-
-
 def create_statement(
     statement: Statement, filename: Path = None, package: ID = None
 ) -> stmt.Statement:
+    handlers: Dict[
+        str, Callable[[Statement, Optional[Path], Optional[ID], Optional[Location]], stmt.Statement]
+    ] = {
+        "Reset": create_reset,
+        "Assignment": create_assignment,
+        "ListAttribute": create_list_attribute,
+    }
     try:
-        return STATEMENTS[statement.kind_name](
+        return handlers[statement.kind_name](
             statement, filename, package, node_location(statement, filename)
         )
     except KeyError as e:
@@ -228,42 +224,6 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
     )
 
 
-def create_parameter(
-    declaration: TypeDecl, filename: Path = None, package: ID = None
-) -> decl.FormalDeclaration:
-    arguments = []
-    identifier = qualified_id(create_id(declaration.f_identifier, filename), package)
-    location = node_location(declaration, filename)
-    if declaration.kind_name == "FunctionDecl":
-        if declaration.f_parameters:
-            for a in declaration.f_parameters.f_parameters:
-                arg_identifier = qualified_id(create_id(a.f_identifier, filename), package)
-                type_identifier = qualified_id(create_id(a.f_type_identifier, filename), package)
-                arguments.append(decl.Argument(arg_identifier, type_identifier))
-        return_type = qualified_id(
-            create_id(declaration.f_return_type_identifier, filename), package
-        )
-        return decl.FunctionDeclaration(identifier, arguments, return_type, location)
-    if declaration.kind_name == "ChannelDecl":
-        readable = False
-        writable = False
-        if declaration.f_parameters:
-            for p in declaration.f_parameters:
-                if p.kind_name == "Readable":
-                    readable = True
-                elif p.kind_name == "Writable":
-                    writable = True
-                else:
-                    raise NotImplementedError(f"Channel parameter {p.kind_name} unsupported")
-        return decl.ChannelDeclaration(identifier, readable, writable, location)
-    if declaration.kind_name == "PrivateTypeDecl":
-        formal_decl = create_private_type_decl(declaration, filename, package, location)
-        assert isinstance(formal_decl, decl.FormalDeclaration)
-        return formal_decl
-
-    raise NotImplementedError(f"Parameter kind {declaration.kind_name} unsupported")
-
-
 def create_session(
     session: SessionSpec,
     package: ID,
@@ -288,7 +248,7 @@ def create_session(
         create_id(session.f_aspects.f_final, filename),
         states,
         [create_declaration(d, filename) for d in session.f_declarations],
-        [create_parameter(p, filename) for p in session.f_parameters],
+        [create_formal_declaration(p, filename) for p in session.f_parameters],
         types,
         location,
         skip_validation=skip_validation,
@@ -782,83 +742,73 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
         raise NotImplementedError(f"{expression.kind_name} => {expression.text}") from e
 
 
-DECLARATIONS: Dict[str, Callable[..., decl.BasicDeclaration]] = {
-    "VariableDecl": create_variable_decl,
-    "RenamingDecl": create_renaming_decl,
-}
-
-
 def create_declaration(
     declaration: Expr, filename: Path = None, package: ID = None
 ) -> decl.BasicDeclaration:
     location = node_location(declaration, filename)
+    handlers: Dict[str, Callable[..., decl.BasicDeclaration]] = {
+        "VariableDecl": create_variable_decl,
+        "RenamingDecl": create_renaming_decl,
+    }
     try:
-        return DECLARATIONS[declaration.kind_name](declaration, filename, package, location)
+        return handlers[declaration.kind_name](declaration, filename, package, location)
     except KeyError as e:
         raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
-
-
-FORMAL_DECLARATIONS: Dict[str, Callable[..., decl.FormalDeclaration]] = {
-    "ChannelDecl": create_channel_decl,
-    "FunctionDecl": create_function_decl,
-    "PrivateTypeDecl": create_private_type_decl,
-}
 
 
 def create_formal_declaration(
     declaration: Expr, filename: Path = None, package: ID = None
 ) -> decl.FormalDeclaration:
     location = node_location(declaration, filename)
+    handlers: Dict[str, Callable[..., decl.FormalDeclaration]] = {
+        "ChannelDecl": create_channel_decl,
+        "FunctionDecl": create_function_decl,
+        "PrivateTypeDecl": create_private_type_decl,
+    }
     try:
-        return FORMAL_DECLARATIONS[declaration.kind_name](declaration, filename, package, location)
+        return handlers[declaration.kind_name](declaration, filename, package, location)
     except KeyError as e:
         raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
-
-
-MATH_EXPRESSION_MAP = {
-    "NumericLiteral": create_numeric_literal,
-    "BinOp": create_math_binop,
-    "ParenExpression": create_paren_math_expression,
-    "Variable": create_variable,
-    "Call": create_call,
-    "Binding": create_binding,
-    "Negation": create_negation,
-    "Attribute": create_math_attribute,
-}
 
 
 def create_math_expression(
     expression: Expr, filename: Path = None, package: ID = None
 ) -> rexpr.Expr:
-
     location = node_location(expression, filename)
+    handlers = {
+        "NumericLiteral": create_numeric_literal,
+        "BinOp": create_math_binop,
+        "ParenExpression": create_paren_math_expression,
+        "Variable": create_variable,
+        "Call": create_call,
+        "Binding": create_binding,
+        "Negation": create_negation,
+        "Attribute": create_math_attribute,
+    }
     try:
-        return MATH_EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
+        return handlers[expression.kind_name](expression, filename, package, location)
     except KeyError as e:
         raise NotImplementedError(
             f"math expression: {expression.kind_name} => {expression.text}"
         ) from e
 
 
-BOOL_EXPRESSION_MAP = {
-    "BinOp": create_bool_binop,
-    "ParenExpression": create_paren_bool_expression,
-    "Attribute": create_attribute,
-    "Call": create_call,
-    "Variable": create_variable,
-    "QuantifiedExpression": create_quantified_expression,
-    "Binding": create_binding,
-    "SelectNode": create_selected,
-}
-
-
 def create_bool_expression(
     expression: Expr, filename: Path = None, package: ID = None
 ) -> rexpr.Expr:
-
     location = node_location(expression, filename)
+    handlers = {
+        "BinOp": create_bool_binop,
+        "ParenExpression": create_paren_bool_expression,
+        "Attribute": create_attribute,
+        "Call": create_call,
+        "Variable": create_variable,
+        "QuantifiedExpression": create_quantified_expression,
+        "Binding": create_binding,
+        "SelectNode": create_selected,
+    }
     try:
-        return BOOL_EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
+        return handlers[expression.kind_name](expression, filename, package, location)
     except KeyError as e:
         raise NotImplementedError(
             f"bool expression: {expression.kind_name} => {expression.text}"
@@ -1100,7 +1050,7 @@ def create_message_structure(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, package: ID = None, filename: Path = None
+    checksum: ChecksumAspect, _package: ID = None, filename: Path = None
 ) -> Mapping[ID, Sequence[rexpr.Expr]]:
     result = {}
     if checksum:
@@ -1451,19 +1401,17 @@ class Parser:
             if s
         }
 
-    TYPE_MAP = {
-        "ArrayTypeDef": create_array,
-        "ModularTypeDef": create_modular,
-        "RangeTypeDef": create_range,
-        "MessageTypeDef": create_message,
-        "NullMessageTypeDef": create_null_message,
-        "TypeDerivationDef": create_derived_message,
-        "EnumerationTypeDef": create_enumeration,
-    }
-
     def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
+        handlers = {
+            "ArrayTypeDef": create_array,
+            "ModularTypeDef": create_modular,
+            "RangeTypeDef": create_range,
+            "MessageTypeDef": create_message,
+            "NullMessageTypeDef": create_null_message,
+            "TypeDerivationDef": create_derived_message,
+            "EnumerationTypeDef": create_enumeration,
+        }
         log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
-
         error = RecordFluxError()
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
         for t in spec.f_package_declaration.f_declarations:
@@ -1472,7 +1420,7 @@ class Parser:
                     create_id(t.f_identifier, filename), package_id
                 )
                 try:
-                    new_type = self.TYPE_MAP[t.f_definition.kind_name](
+                    new_type = handlers[t.f_definition.kind_name](
                         identifier,
                         t.f_definition,
                         self.__types,
