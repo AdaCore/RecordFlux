@@ -1308,7 +1308,7 @@ class Parser:
                 item = create_id(context.f_item, specfile)
                 if item in transitions:
                     error.append(
-                        f'dependency cycle when including "{transitions[0]}"',
+                        f'dependency cycle when including "{item}"',
                         Subsystem.PARSER,
                         Severity.ERROR,
                         transitions[0].location,
@@ -1325,9 +1325,8 @@ class Parser:
                         ]
                     )
                     continue
-                transitions.append(item)
                 withed_file = filename.parent / f"{str(item).lower()}.rflx"
-                error.extend(self.__parse_specfile(withed_file, transitions))
+                error.extend(self.__parse_specfile(withed_file, transitions + [item]))
 
         return error
 
