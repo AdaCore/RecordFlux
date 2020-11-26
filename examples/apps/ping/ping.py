@@ -58,6 +58,9 @@ def create_request(src: int, dst: int, seq: int) -> bytes:
     msg.set("Sequence_Number", seq)
     msg.set("Data", ICMP_DATA)
     msg.set("Checksum", icmp_checksum(msg.bytestring))
+    msg.set("Identifier", 0)
+    msg.set("Sequence_Number", seq)
+    msg.set("Data", ICMP_DATA)
 
     pkt = IP["Packet"]
     pkt.set("Version", 4)
