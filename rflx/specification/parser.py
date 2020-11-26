@@ -784,6 +784,7 @@ def create_math_expression(
         "Binding": create_binding,
         "Negation": create_negation,
         "Attribute": create_math_attribute,
+        "SelectNode": create_selected,
     }
     try:
         return handlers[expression.kind_name](expression, filename, package, location)
