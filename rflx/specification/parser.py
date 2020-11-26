@@ -1227,7 +1227,7 @@ def create_refinement(
 def check_naming(
     error: RecordFluxError, package: PackageSpec, _filename: Path, origname: Path = None
 ) -> None:
-    name = Path("<stdin>") or origname
+    name = origname or Path("<stdin>")
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
@@ -1292,7 +1292,7 @@ class Parser:
                 item = create_id(context.f_item, specfile)
                 if item in transitions:
                     error.append(
-                        f'dependency cycle when including "{item}"',
+                        f'dependency cycle when including "{transitions[0]}"',
                         Subsystem.PARSER,
                         Severity.ERROR,
                         transitions[0].location,
