@@ -277,13 +277,7 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
             )
         return name
 
-    fail(
-        f"Invalid ID: {identifier.text}",
-        Subsystem.PARSER,
-        Severity.ERROR,
-        node_location(identifier),
-    )
-    assert False
+    raise NotImplementedError(f"Invalid ID: {identifier.text}")
 
 
 def create_array(
@@ -320,13 +314,7 @@ def create_numeric_literal(
     if len(num) == 3:
         base = int(num[0])
         return rexpr.Number(int(num[1], base), base=base, location=location)
-    fail(
-        f"Invalid numeric literal: {expression.text}",
-        Subsystem.PARSER,
-        Severity.ERROR,
-        node_location(expression, filename),
-    )
-    assert False
+    raise NotImplementedError(f"Invalid numeric literal: {expression.text}")
 
 
 OPERATIONS: Dict[str, Type[rexpr.BinExpr]] = {
@@ -1068,12 +1056,7 @@ def create_message_aspects(
                         )
                     )
                 else:
-                    fail(
-                        f"Invalid checksum association {value.kind_name}",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(value, filename),
-                    )
+                    raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
             result[create_id(assoc.f_identifier, filename)] = exprs
     return result
 
