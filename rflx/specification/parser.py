@@ -286,7 +286,7 @@ def create_array(
     types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> Array:
     element_identifier = qualified_type_identifier(
         create_id(array.f_element_type, filename), identifier.parent
@@ -306,7 +306,7 @@ def create_array(
 
 
 def create_numeric_literal(
-    expression: Expr, filename: Path = None, _package: ID = None, location: Location = None
+    expression: Expr, _filename: Path = None, _package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     num = expression.text.split("#")
     if len(num) == 1:
@@ -773,13 +773,18 @@ def create_math_expression(
         "Negation": create_negation,
         "Attribute": create_math_attribute,
         "SelectNode": create_selected,
+        "ArrayAggregate": create_array_aggregate,
     }
     try:
         return handlers[expression.kind_name](expression, filename, package, location)
-    except KeyError as e:
-        raise NotImplementedError(
-            f"math expression: {expression.kind_name} => {expression.text}"
-        ) from e
+    except KeyError:
+        fail(
+            f"Invalid math expression {expression.kind_name}",
+            Subsystem.PARSER,
+            Severity.ERROR,
+            node_location(expression, filename),
+        )
+        assert False
 
 
 def create_bool_expression(
@@ -810,7 +815,7 @@ def create_modular(
     _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> ModularInteger:
     return ModularInteger(
         identifier,
@@ -825,7 +830,7 @@ def create_range(
     _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> RangeInteger:
     if rangetype.f_size.f_identifier.text != "Size":
         fail(
@@ -850,7 +855,7 @@ def create_null_message(
     _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> Message:
     return Message(identifier, [], {}, location=node_location(message, filename))
 
@@ -861,12 +866,11 @@ def create_message(
     types: Sequence[RFLXType],
     skip_verification: bool,
     cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> Message:
 
-    components = message.f_components
-
     error = RecordFluxError()
+    components = message.f_components
 
     field_types: Mapping[Field, RFLXType] = create_message_types(
         identifier, components, types, filename
@@ -876,13 +880,18 @@ def create_message(
         ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
     }
 
-    return create_proven_message(
-        UnprovenMessage(
-            identifier, structure, field_types, aspects, node_location(message, filename), error
-        ).merged(),
-        skip_verification,
-        cache,
-    )
+    try:
+        result = create_proven_message(
+            UnprovenMessage(
+                identifier, structure, field_types, aspects, node_location(message, filename)
+            ).merged(),
+            skip_verification,
+            cache,
+        )
+    except RecordFluxError as e:
+        error.extend(e)
+    error.propagate()
+    return result
 
 
 def create_message_types(
@@ -919,7 +928,7 @@ def create_message_structure(
             elif aspect.f_identifier.text == "First":
                 first = create_math_expression(aspect.f_value, filename)
             else:
-                fail(
+                error.append(
                     f"Invalid aspect {aspect.f_identifier.text}",
                     Subsystem.PARSER,
                     Severity.ERROR,
@@ -954,12 +963,13 @@ def create_message_structure(
         )
         component_identifier = create_id(component.f_identifier, filename)
         if component.f_identifier.text.lower() == "message":
-            fail(
+            error.append(
                 'reserved word "Message" used as identifier',
                 Subsystem.PARSER,
                 Severity.ERROR,
                 component_identifier.location,
             )
+            continue
 
         if len(component.f_thens) == 0:
             target_id = (
@@ -1033,7 +1043,10 @@ def create_message_structure(
                     node_location(then.f_target, filename) if then.f_target else None,
                 )
                 continue
-            structure.append(Link(source_node, *extract_then(then)))
+            try:
+                structure.append(Link(source_node, *extract_then(then)))
+            except RecordFluxError as e:
+                error.extend(e)
 
     return structure
 
@@ -1067,11 +1080,10 @@ def create_derived_message(
     types: Sequence[RFLXType],
     skip_verification: bool,
     cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> Message:
     base_id = create_id(derivation.f_base, filename)
     base_name = qualified_type_identifier(base_id, identifier.parent)
-    error = RecordFluxError()
 
     base_types: Sequence[RFLXType] = [t for t in types if t.identifier == base_name]
 
@@ -1086,6 +1098,7 @@ def create_derived_message(
     base_messages: Sequence[Message] = [t for t in base_types if isinstance(t, Message)]
 
     if not base_messages:
+        error = RecordFluxError()
         error.append(
             f'illegal derivation "{identifier}"',
             Subsystem.PARSER,
@@ -1115,9 +1128,10 @@ def create_enumeration(
     _types: Sequence[RFLXType],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path = None,
+    filename: Path,
 ) -> Enumeration:
     literals: List[Tuple[StrID, rexpr.Number]] = []
+    error = RecordFluxError()
 
     def create_aspects(aspects: List[Aspect]) -> Tuple[rexpr.Expr, bool]:
         always_valid = False
@@ -1133,7 +1147,7 @@ def create_enumeration(
                     elif av_expr == rexpr.Variable("False"):
                         always_valid = False
                     else:
-                        fail(
+                        error.append(
                             f"Invalid Always_Valid expression: {av_expr}",
                             Subsystem.PARSER,
                             Severity.ERROR,
@@ -1141,6 +1155,7 @@ def create_enumeration(
                         )
                 else:
                     always_valid = True
+        error.propagate()
         assert size
         return size, always_valid
 
@@ -1162,12 +1177,13 @@ def create_enumeration(
 
     size, always_valid = create_aspects(enumeration.f_aspects)
     if not size:
-        fail(
+        error.append(
             f"No size set for {identifier}",
             Subsystem.PARSER,
             Severity.ERROR,
             identifier.location,
         )
+        error.propagate()
 
     return Enumeration(
         identifier, literals, size, always_valid, location=node_location(enumeration, filename)
@@ -1397,6 +1413,7 @@ class Parser:
         log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
         error = RecordFluxError()
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
+
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, TypeSpec):
                 identifier = qualified_type_identifier(
@@ -1411,28 +1428,34 @@ class Parser:
                         self.__cache,
                         filename,
                     )
+                    self.__types.append(new_type)
+                    error.extend(new_type.error)
+                except RecordFluxError as e:
+                    error.extend(e)
                 except KeyError:
-                    fail(
+                    error.append(
                         f"Unknown type {t.f_definition.kind_name}",
-                        Subsystem.PARSER,
+                        Subsystem.MODEL,
                         Severity.ERROR,
-                        node_location(identifier, filename),
+                        t.location,
                     )
             else:
                 if t.kind_name == "RefinementSpec":
-                    new_type = create_refinement(t, package_id, self.__types, filename)
+                    try:
+                        new_type = create_refinement(t, package_id, self.__types, filename)
+                        self.__types.append(new_type)
+                        error.extend(new_type.error)
+                    except RecordFluxError as e:
+                        error.extend(e)
                 elif t.kind_name == "SessionSpec":
-                    session = create_session(t, package_id, self.__types, filename)
-                    self.__sessions.append(session)
-                    error.extend(session.error)
-                    continue
+                    new_session = create_session(t, package_id, self.__types, filename)
+                    self.__sessions.append(new_session)
+                    error.extend(new_session.error)
                 else:
-                    fail(
-                        f'Unknown type "{t.kind_name}"',
-                        Subsystem.PARSER,
+                    error.append(
+                        f'Unknown spec "{t.kind_name}"',
+                        Subsystem.MODEL,
                         Severity.ERROR,
-                        node_location(t, filename),
+                        t.location,
                     )
-            self.__types.append(new_type)
-            error.extend(new_type.error)
         error.propagate()

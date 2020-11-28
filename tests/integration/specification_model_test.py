@@ -76,7 +76,7 @@ def test_message_field_size_conflict() -> None:
                      A : T
                         then B
                            with Size => 8;
-                     B : T
+                     B : Opaque
                         with Size => 8;
                   end message;
 
