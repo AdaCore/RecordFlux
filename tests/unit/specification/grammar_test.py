@@ -678,7 +678,9 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
             model.State(
                 "A",
                 transitions=[model.Transition("B")],
-                declarations=[decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y"))],
+                declarations=[
+                    decl.VariableDeclaration("Z", "__BUILTINS__::Boolean", expr.Variable("Y"))
+                ],
                 actions=[],
             ),
         ),
@@ -769,7 +771,7 @@ def test_state_error(string: str, error: str) -> None:
                     decl.TypeDeclaration(model.Private("T")),
                     decl.FunctionDeclaration("F", [], "T"),
                 ],
-                [BOOLEAN],
+                [],
                 Location((2, 16), None, (23, 27)),
                 skip_validation=True,
             ),
