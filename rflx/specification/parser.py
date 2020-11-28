@@ -108,12 +108,6 @@ def diagnostics_to_error(
     return True
 
 
-def qualified_id(identifier: ID, package: ID = None) -> ID:
-    if package:
-        return qualified_type_identifier(identifier, package)
-    return identifier
-
-
 def create_description(description: Description = None) -> Optional[str]:
     if description:
         return description.text.split('"')[1]
@@ -553,7 +547,7 @@ def create_variable_decl(
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_id(create_id(declaration.f_type_identifier, filename), package),
+        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
         initializer,
         location=location,
     )
@@ -597,7 +591,7 @@ def create_renaming_decl(
     assert isinstance(selected, rexpr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_id(create_id(declaration.f_type_identifier, filename), package),
+        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
         selected,
         location,
     )
@@ -612,7 +606,7 @@ def create_function_decl(
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    qualified_id(create_id(p.f_type_identifier, filename), package),
+                    qualified_type_identifier(create_id(p.f_type_identifier, filename), package),
                 )
             )
     return decl.FunctionDeclaration(

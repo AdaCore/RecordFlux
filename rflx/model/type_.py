@@ -611,12 +611,12 @@ def is_builtin_type(identifier: StrID) -> bool:
     )
 
 
-def qualified_type_identifier(identifier: ID, package: ID) -> ID:
+def qualified_type_identifier(identifier: ID, package: ID = None) -> ID:
     if is_builtin_type(identifier):
-        return ID(const.BUILTINS_PACKAGE * identifier, location=identifier.location)
+        return ID(const.BUILTINS_PACKAGE * identifier.name, location=identifier.location)
 
     if is_internal_type(identifier):
-        return ID(const.INTERNAL_PACKAGE * identifier, location=identifier.location)
+        return ID(const.INTERNAL_PACKAGE * identifier.name, location=identifier.location)
 
     if len(identifier.parts) == 1 and package:
         return ID(package * identifier, location=identifier.location)
