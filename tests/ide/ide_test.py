@@ -36,6 +36,7 @@ def test_multiple_errors() -> None:
         path,
         [
             f'{path}:2:6: parser: error: dependency cycle when including "Multiple_Errors"',
+            f'{path}:2:6: parser: info: when including "Multiple_Errors"',
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
             f'{path}:296:5: parser: error: inconsistent package identifier "Inconsistent"',
@@ -43,18 +44,18 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid",'
             ' should be "rflx_invalid.rflx"',
             f'{path}:40:4: model: error: illegal redefinition of built-in type "Boolean"',
-            f'{path}:13:4: model: error: first of "Range2" contains variable',
-            f'{path}:13:4: model: error: last of "Range2" contains variable',
-            f'{path}:16:4: model: error: range of "Range3" negative',
-            f'{path}:19:4: model: error: size of "Range4" contains variable',
-            f'{path}:22:4: model: error: size of "Range5" too small',
+            f'{path}:13:19: model: error: first of "Range2" contains variable',
+            f'{path}:13:19: model: error: last of "Range2" contains variable',
+            f'{path}:16:19: model: error: range of "Range3" negative',
+            f'{path}:19:19: model: error: size of "Range4" contains variable',
+            f'{path}:22:19: model: error: size of "Range5" too small',
             f'{path}:25:24: parser: error: undefined element type "RFLX_Invalid::Undef"',
             f'{path}:28:18: model: error: modulus of "S" exceeds limit (2**64)',
-            f'{path}:31:4: model: error: modulus of "T" not power of two',
-            f'{path}:34:4: model: error: modulus of "Mod3" contains variable',
+            f'{path}:31:14: model: error: modulus of "T" not power of two',
+            f'{path}:34:17: model: error: modulus of "Mod3" contains variable',
             f'{path}:47:28: model: error: duplicate literal "E2_2"',
             f"{path}:47:22: model: info: previous occurrence",
-            f'{path}:47:4: model: error: size of "E2" too small',
+            f'{path}:47:15: model: error: size of "E2" too small',
             f'{path}:50:46: model: error: duplicate enumeration value "2" in "E3"',
             f"{path}:50:35: model: info: previous occurrence",
             f'{path}:73:10: model: error: unreachable field "Z" in "RFLX_Invalid::M1"',
@@ -63,8 +64,8 @@ def test_multiple_errors() -> None:
             f"{path}:73:26: model: info: duplicate link",
             f'{path}:81:18: parser: error: undefined field "X"',
             f'{path}:79:10: model: error: missing type for field "Z" in "RFLX_Invalid::M2"',
-            f'{path}:86:4: model: error: unsupported element type size of array "A3"',
-            f'{path}:85:4: model: info: type "E6" has size 4, must be multiple of 8',
+            f'{path}:86:15: model: error: unsupported element type size of array "A3"',
+            f'{path}:85:15: model: info: type "E6" has size 4, must be multiple of 8',
             f'{path}:93:30: model: error: invalid First for field "Final"',
             f'{path}:103:26: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
@@ -73,15 +74,15 @@ def test_multiple_errors() -> None:
             f'{path}:112:4: parser: error: undefined type "RFLX_Invalid::Undef_PDU" in refinement',
             f'{path}:115:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
             f'{path}:118:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:124:4: parser: error: undefined base message "RFLX_Invalid::PDU1"'
+            f'{path}:124:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
-            f'{path}:125:4: parser: error: undefined base message "RFLX_Invalid::PDU1"'
+            f'{path}:125:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
-            f'{path}:128:4: parser: error: undefined base message "RFLX_Invalid::Undef_Type"'
+            f'{path}:128:21: parser: error: undefined base message "RFLX_Invalid::Undef_Type"'
             " in derived message",
-            f'{path}:131:4: parser: error: illegal derivation "RFLX_Invalid::Ref3"',
-            f'{path}:8:4: parser: info: invalid base message type "RFLX_Invalid::R"',
-            f'{path}:134:4: parser: error: undefined base message "RFLX_Invalid::Ref1"'
+            f'{path}:131:9: parser: error: illegal derivation "RFLX_Invalid::Ref3"',
+            f'{path}:8:9: parser: info: invalid base message type "RFLX_Invalid::R"',
+            f'{path}:134:21: parser: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
             f'{path}:142:19: model: error: undefined variable "Undef_Var"',
             f'{path}:144:23: model: error: undefined variable "F1"',
@@ -97,7 +98,7 @@ def test_multiple_errors() -> None:
             f"{path}:156:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
             f'{path}:152:19: model: error: invalid use of size attribute for "1"',
             f'{path}:168:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
-            f'{path}:159:4: model: info: when merging message "RFLX_Invalid::M4"',
+            f'{path}:160:7: model: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:166:10: model: info: into field "F2"',
             f'{path}:180:27: model: error: expected array type "RFLX_Invalid::R_Array"'
             ' with element integer type "RFLX_Invalid::R" (5 .. 23)',
@@ -122,26 +123,28 @@ def test_multiple_errors() -> None:
             f'{path}:257:18: model: error: negative size for field "F2" (F1 -> F2)',
             f'{path}:266:10: model: error: unconstrained field "F1" without size aspect',
             f'{path}:271:9: model: error: field "F3" not congruent with overlaid field "F1"',
-            f"{path}:271:4: model: info: unsatisfied \"F1'First = Message'First\"",
+            f"{path}:272:7: model: info: unsatisfied \"F1'First = Message'First\"",
             f"{path}:273:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
             f"{path}:275:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
             f'{path}:287:29: model: error: size attribute for final field in "RFLX_Invalid::M17"',
-            f"{path}:290:4: model: error: unnecessary always-valid aspect"
+            f"{path}:290:42: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
-            f'{path}:37:4: model: error: name conflict for type "RFLX_Invalid::R"',
-            f'{path}:8:4: model: info: previous occurrence of "RFLX_Invalid::R"',
-            f"{path}:53:4: model: error: conflicting literals: False, True",
+            f'{path}:37:9: model: error: name conflict for type "RFLX_Invalid::R"',
+            f'{path}:8:9: model: info: previous occurrence of "RFLX_Invalid::R"',
+            f'{path}:40:9: model: error: name conflict for type "__BUILTINS__::Boolean"',
+            '__BUILTINS__:0:0: model: info: previous occurrence of "__BUILTINS__::Boolean"',
+            f"{path}:53:15: model: error: conflicting literals: False, True",
             '__BUILTINS__:0:0: model: info: previous occurrence of "False"',
             '__BUILTINS__:0:0: model: info: previous occurrence of "True"',
-            f"{path}:43:4: model: error: conflicting literals: Foo",
+            f"{path}:43:15: model: error: conflicting literals: Foo",
             f'{path}:40:21: model: info: previous occurrence of "Foo"',
-            f"{path}:56:4: model: error: conflicting literals: Bar, Foo",
+            f"{path}:56:15: model: error: conflicting literals: Bar, Foo",
             f'{path}:40:26: model: info: previous occurrence of "Bar"',
             f'{path}:40:21: model: info: previous occurrence of "Foo"',
-            f"{path}:56:4: model: error: conflicting literals: Foo",
+            f"{path}:56:15: model: error: conflicting literals: Foo",
             f'{path}:43:30: model: info: previous occurrence of "Foo"',
             f'{path}:56:21: model: error: literal "E4" conflicts with type declaration',
-            f'{path}:53:4: model: info: conflicting type "RFLX_Invalid::E4"',
+            f'{path}:53:15: model: info: conflicting type "RFLX_Invalid::E4"',
         ],
     )
 

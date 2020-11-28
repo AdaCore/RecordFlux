@@ -1582,7 +1582,8 @@ def test_parse_error_message_undefined_component() -> None:
                type PDU is
                   message
                      Foo : T
-                        then Bar;
+                        then Bar if Foo < 100
+                        then null if Foo >= 100;
                   end message;
             end Test;
         """,

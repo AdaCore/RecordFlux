@@ -66,7 +66,9 @@ class Model(Base):
                     message1 = f'name conflict for type "{t.identifier}"'
                     message2 = f'previous occurrence of "{t.identifier}"'
                     location = t.identifier.location
-                    prev_loc = types[t.identifier].identifier.location
+                    prev_loc = (
+                        types[t.identifier].identifier.location or types[t.identifier].location
+                    )
                 error.append(message1, Subsystem.MODEL, Severity.ERROR, location)
                 error.append(message2, Subsystem.MODEL, Severity.INFO, prev_loc)
             types[t.identifier] = t
