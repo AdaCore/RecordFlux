@@ -46,7 +46,6 @@ setup(
     install_requires=[
         "icontract >=2.3.4, <3",
         "pydotplus >=2, <3",
-        "pyparsing >=2.4.0, <3",
         "z3-solver >=4, <5",
         "RecordFlux-language@git+https://github.com/Componolit/RecordFlux-language.git"
         "@master#egg=RecordFlux-language",
