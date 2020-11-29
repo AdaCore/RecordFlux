@@ -4,7 +4,6 @@ from librecordfluxdsllang import AnalysisContext
 from rflx import declaration as decl, expression as expr, model, statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import BOOLEAN
 from rflx.model.session import Session
 from rflx.specification import parser
 from rflx.specification.parser import (
@@ -263,12 +262,12 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42", "bool expression: NumericLiteral.*"),
-        ("X * 3", "Invalid bool BinOp OpMul.*"),
+        ("42", "'NumericLiteral'"),
+        ("X * 3", "Invalid bool BinOp OpMul => X [*] 3"),
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(NotImplementedError, match=rf"^{error}$"):
+    with pytest.raises((KeyError, NotImplementedError), match=rf"^{error}$"):
         parse_bool_expression(string, False)
 
 

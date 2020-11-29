@@ -335,6 +335,50 @@ def test_parse_enumeration_type_spec() -> None:
                                 {
                                     "_kind": "Aspect",
                                     "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                    "value": {"_kind": "NumericLiteral", "_value": "3"},
+                                },
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "Always_Valid",
+                                    },
+                                    "value": {
+                                        "_kind": "Variable",
+                                        "identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "True"},
+                                            "package": None,
+                                        },
+                                    },
+                                },
+                            ],
+                            "elements": {
+                                "_kind": "NamedEnumerationDef",
+                                "elements": [
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "P1"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "1"},
+                                    },
+                                    {
+                                        "_kind": "ElementValueAssoc",
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "P2"},
+                                        "literal": {"_kind": "NumericLiteral", "_value": "2"},
+                                    },
+                                ],
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Protocol"},
+                    },
+                    {
+                        "_kind": "TypeSpec",
+                        "definition": {
+                            "_kind": "EnumerationTypeDef",
+                            "aspects": [
+                                {
+                                    "_kind": "Aspect",
+                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                     "value": {"_kind": "NumericLiteral", "_value": "1"},
                                 },
                                 {
@@ -2212,3 +2256,42 @@ def test_message_field_condition_and_aspects(link: str, field: str) -> None:
             ),
         ],
     )
+
+
+def test_parse_error_invalid_range_aspect() -> None:
+    assert_error_string(
+        """
+            package Test is
+                type T is range 1 .. 200 with Invalid => 42;
+            end Test;
+        """,
+        r"^<stdin>:3:27: parser: error: invalid aspect Invalid for range type T",
+    )
+
+
+@pytest.mark.parametrize(
+    "spec, error",
+    [
+        (
+            """
+            package Test is
+                type T is (A, B) with Foo;
+            end Test;
+        """,
+            r"^<stdin>:3:22: parser: error: No size set for Test::T",
+        ),
+        (
+            """
+            package Test is
+                type T is (A, B) with Always_Valid => Invalid;
+            end Test;
+        """,
+            r"^"
+            "<stdin>:3:55: parser: error: Invalid Always_Valid expression: Invalid\n"
+            "<stdin>:3:22: parser: error: No size set for Test::T"
+            r"$",
+        ),
+    ],
+)
+def test_parse_error_invalid_enum(spec: str, error: str) -> None:
+    assert_error_string(spec, error)

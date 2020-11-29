@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 from librecordfluxdsllang import (  # type: ignore
     AnalysisContext,
@@ -152,10 +152,7 @@ def create_list_attribute(
         "Read": stmt.Read,
         "Write": stmt.Write,
     }
-    try:
-        constructor = attrs[expression.f_attr.text]
-    except KeyError as e:
-        raise NotImplementedError(f"list attribute: {expression.f_attr.text}") from e
+    constructor = attrs[expression.f_attr.text]
 
     return constructor(
         create_id(expression.f_identifier, filename),
@@ -174,12 +171,9 @@ def create_statement(
         "Assignment": create_assignment,
         "ListAttribute": create_list_attribute,
     }
-    try:
-        return handlers[statement.kind_name](
-            statement, filename, package, node_location(statement, filename)
-        )
-    except KeyError as e:
-        raise NotImplementedError(f"Statement kind {statement.kind_name} unsupported") from e
+    return handlers[statement.kind_name](
+        statement, filename, package, node_location(statement, filename)
+    )
 
 
 def create_state(state: State, filename: Path = None) -> rsess.State:
@@ -200,13 +194,11 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
         transitions.append(create_transition(t, filename))
     transitions.append(create_transition(state.f_body.f_final_transition, filename))
     actions = []
-    if state.f_body.f_actions:
-        for a in state.f_body.f_actions:
-            actions.append(create_statement(a, filename))
+    for a in state.f_body.f_actions:
+        actions.append(create_statement(a, filename))
     declarations = []
-    if state.f_body.f_declarations:
-        for d in state.f_body.f_declarations:
-            declarations.append(create_declaration(d, filename))
+    for d in state.f_body.f_declarations:
+        declarations.append(create_declaration(d, filename))
     description = create_description(state.f_description)
     return rsess.State(
         identifier=identifier,
@@ -718,10 +710,7 @@ EXPRESSION_MAP = {
 def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
 
     location = node_location(expression, filename)
-    try:
-        return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
-    except KeyError as e:
-        raise NotImplementedError(f"{expression.kind_name} => {expression.text}") from e
+    return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
 
 
 def create_declaration(
@@ -732,10 +721,7 @@ def create_declaration(
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    try:
-        return handlers[declaration.kind_name](declaration, filename, package, location)
-    except KeyError as e:
-        raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
+    return handlers[declaration.kind_name](declaration, filename, package, location)
 
 
 def create_formal_declaration(
@@ -747,10 +733,7 @@ def create_formal_declaration(
         "FunctionDecl": create_function_decl,
         "PrivateTypeDecl": create_private_type_decl,
     }
-    try:
-        return handlers[declaration.kind_name](declaration, filename, package, location)
-    except KeyError as e:
-        raise NotImplementedError(f"{declaration.kind_name} => {declaration.text}") from e
+    return handlers[declaration.kind_name](declaration, filename, package, location)
 
 
 def create_math_expression(
@@ -769,16 +752,7 @@ def create_math_expression(
         "SelectNode": create_selected,
         "ArrayAggregate": create_array_aggregate,
     }
-    try:
-        return handlers[expression.kind_name](expression, filename, package, location)
-    except KeyError:
-        fail(
-            f"Invalid math expression {expression.kind_name}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(expression, filename),
-        )
-        assert False
+    return handlers[expression.kind_name](expression, filename, package, location)
 
 
 def create_bool_expression(
@@ -795,12 +769,7 @@ def create_bool_expression(
         "Binding": create_binding,
         "SelectNode": create_selected,
     }
-    try:
-        return handlers[expression.kind_name](expression, filename, package, location)
-    except KeyError as e:
-        raise NotImplementedError(
-            f"bool expression: {expression.kind_name} => {expression.text}"
-        ) from e
+    return handlers[expression.kind_name](expression, filename, package, location)
 
 
 def create_modular(
@@ -1037,10 +1006,7 @@ def create_message_structure(
                     node_location(then.f_target, filename) if then.f_target else None,
                 )
                 continue
-            try:
-                structure.append(Link(source_node, *extract_then(then)))
-            except RecordFluxError as e:
-                error.extend(e)
+            structure.append(Link(source_node, *extract_then(then)))
 
     return structure
 
@@ -1149,6 +1115,13 @@ def create_enumeration(
                         )
                 else:
                     always_valid = True
+        if not size:
+            error.append(
+                f"No size set for {identifier}",
+                Subsystem.PARSER,
+                Severity.ERROR,
+                identifier.location,
+            )
         error.propagate()
         assert size
         return size, always_valid
@@ -1170,14 +1143,6 @@ def create_enumeration(
         )
 
     size, always_valid = create_aspects(enumeration.f_aspects)
-    if not size:
-        error.append(
-            f"No size set for {identifier}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            identifier.location,
-        )
-        error.propagate()
 
     return Enumeration(
         identifier, literals, size, always_valid, location=node_location(enumeration, filename)
@@ -1283,7 +1248,6 @@ class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
         self.__specifications: OrderedDict[Path, Specification] = OrderedDict()
-        self.__evaluated_specifications: Set[ID] = set()
         self.__types: List[RFLXType] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
         self.__sessions: List[Session] = []
         self.__cache = Cache(cached)
@@ -1344,9 +1308,8 @@ class Parser:
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
 
-        for f, (origname, s) in self.__specifications.items():
-            if s:
-                check_naming(error, s.f_package_declaration, f, origname)
+        for f, (origname, spec) in self.__specifications.items():
+            check_naming(error, spec.f_package_declaration, f, origname)
         error.propagate()
 
     def parse_string(
@@ -1358,26 +1321,17 @@ class Parser:
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root)
-            for f, (origname, s) in self.__specifications.items():
-                if s:
-                    check_naming(error, s.f_package_declaration, f, origname)
+            for f, (origname, spec) in self.__specifications.items():
+                check_naming(error, spec.f_package_declaration, f, origname)
         error.propagate()
 
     def create_model(self) -> Model:
         error = RecordFluxError()
         for origname, specification in reversed(self.__specifications.values()):
-            if (
-                specification
-                and specification.f_package_declaration.f_identifier.text
-                not in self.__evaluated_specifications
-            ):
-                self.__evaluated_specifications.add(
-                    specification.f_package_declaration.f_identifier.text
-                )
-                try:
-                    self.__evaluate_specification(specification, origname)
-                except RecordFluxError as e:
-                    error.extend(e)
+            try:
+                self.__evaluate_specification(specification, origname)
+            except RecordFluxError as e:
+                error.extend(e)
         try:
             result = Model(self.__types, self.__sessions)
         except RecordFluxError as e:
@@ -1389,9 +1343,8 @@ class Parser:
     @property
     def specifications(self) -> Dict[str, Specification]:
         return {
-            s.f_package_declaration.f_identifier.text: s
-            for _, s in self.__specifications.values()
-            if s
+            spec.f_package_declaration.f_identifier.text: spec
+            for _, spec in self.__specifications.values()
         }
 
     def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
@@ -1426,13 +1379,6 @@ class Parser:
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
-                except KeyError:
-                    error.append(
-                        f"Unknown type {t.f_definition.kind_name}",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        t.location,
-                    )
             else:
                 if t.kind_name == "RefinementSpec":
                     try:
@@ -1441,15 +1387,9 @@ class Parser:
                         error.extend(new_type.error)
                     except RecordFluxError as e:
                         error.extend(e)
-                elif t.kind_name == "SessionSpec":
+                else:
+                    assert t.kind_name == "SessionSpec"
                     new_session = create_session(t, package_id, self.__types, filename)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)
-                else:
-                    error.append(
-                        f'Unknown spec "{t.kind_name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        t.location,
-                    )
         error.propagate()
