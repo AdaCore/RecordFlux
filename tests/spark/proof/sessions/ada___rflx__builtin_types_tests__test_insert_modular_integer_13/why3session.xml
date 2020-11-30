@@ -43,272 +43,320 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.10" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19668"/></proof>
+  <proof prover="0"><result status="valid" steps="19985"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.11" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19668"/></proof>
+  <proof prover="0"><result status="valid" steps="19985"/></proof>
   </goal>
   <goal name="def&#39;vc.12" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19668"/></proof>
+  <proof prover="0"><result status="valid" steps="19985"/></proof>
   </goal>
   <goal name="def&#39;vc.13" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19670"/></proof>
+  <proof prover="0"><result status="valid" steps="19987"/></proof>
   </goal>
   <goal name="def&#39;vc.14" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19754"/></proof>
+  <proof prover="0"><result status="valid" steps="20071"/></proof>
   </goal>
   <goal name="def&#39;vc.15" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="225632"/></proof>
+  <proof prover="0"><result status="valid" steps="226913"/></proof>
   </goal>
   <goal name="def&#39;vc.16" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="245615"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.17" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19963"/></proof>
+  <proof prover="0"><result status="valid" steps="20573"/></proof>
   </goal>
   <goal name="def&#39;vc.18" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19963"/></proof>
+  <proof prover="0"><result status="valid" steps="20573"/></proof>
   </goal>
   <goal name="def&#39;vc.19" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19963"/></proof>
+  <proof prover="0"><result status="valid" steps="20573"/></proof>
   </goal>
   <goal name="def&#39;vc.20" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="19963"/></proof>
+  <proof prover="0"><result status="valid" steps="20573"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.21" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20049"/></proof>
+  <proof prover="0"><result status="valid" steps="20659"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.22" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="227581"/></proof>
+  <proof prover="0"><result status="valid" steps="230119"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.23" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.24" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20256"/></proof>
+  <proof prover="0"><result status="valid" steps="21159"/></proof>
   </goal>
   <goal name="def&#39;vc.25" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20256"/></proof>
+  <proof prover="0"><result status="valid" steps="21159"/></proof>
   </goal>
   <goal name="def&#39;vc.26" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20256"/></proof>
+  <proof prover="0"><result status="valid" steps="21159"/></proof>
   </goal>
   <goal name="def&#39;vc.27" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20254"/></proof>
+  <proof prover="0"><result status="valid" steps="21157"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.28" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20342"/></proof>
+  <proof prover="0"><result status="valid" steps="21245"/></proof>
   </goal>
   <goal name="def&#39;vc.29" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="229530"/></proof>
+  <proof prover="0"><result status="valid" steps="233325"/></proof>
   </goal>
   <goal name="def&#39;vc.30" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.31" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20614"/></proof>
+  <proof prover="0"><result status="valid" steps="21810"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.32" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="19963"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.33" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="233503"/></proof>
+  <proof prover="0"><result status="valid" steps="238493"/></proof>
   </goal>
   <goal name="def&#39;vc.34" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="20256"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.35" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="20888"/></proof>
+  <proof prover="0"><result status="valid" steps="22373"/></proof>
   </goal>
   <goal name="def&#39;vc.36" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.37" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="234626"/></proof>
+  <proof prover="0"><result status="valid" steps="241080"/></proof>
   </goal>
   <goal name="def&#39;vc.38" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="22530"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.39" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21150"/></proof>
+  <proof prover="0"><result status="valid" steps="22926"/></proof>
   </goal>
   <goal name="def&#39;vc.40" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="22167"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.41" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="235719"/></proof>
+  <proof prover="0"><result status="valid" steps="243632"/></proof>
   </goal>
   <goal name="def&#39;vc.42" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.43" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21404"/></proof>
+  <proof prover="0"><result status="valid" steps="23473"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.44" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="21593"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.45" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="236841"/></proof>
+  <proof prover="0"><result status="valid" steps="246134"/></proof>
   </goal>
   <goal name="def&#39;vc.46" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.47" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21597"/></proof>
+  <proof prover="0"><result status="valid" steps="23959"/></proof>
   </goal>
   <goal name="def&#39;vc.48" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21597"/></proof>
+  <proof prover="0"><result status="valid" steps="23959"/></proof>
   </goal>
   <goal name="def&#39;vc.49" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21597"/></proof>
+  <proof prover="0"><result status="valid" steps="23959"/></proof>
   </goal>
   <goal name="def&#39;vc.50" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21593"/></proof>
+  <proof prover="0"><result status="valid" steps="23955"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.51" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21675"/></proof>
+  <proof prover="0"><result status="valid" steps="24037"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.52" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="236399"/></proof>
+  <proof prover="0"><result status="valid" steps="247090"/></proof>
   </goal>
   <goal name="def&#39;vc.53" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="21882"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.54" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21882"/></proof>
+  <proof prover="0"><result status="valid" steps="24537"/></proof>
   </goal>
   <goal name="def&#39;vc.55" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21882"/></proof>
+  <proof prover="0"><result status="valid" steps="24537"/></proof>
   </goal>
   <goal name="def&#39;vc.56" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21882"/></proof>
+  <proof prover="0"><result status="valid" steps="24537"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.57" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21876"/></proof>
+  <proof prover="0"><result status="valid" steps="24531"/></proof>
   </goal>
   <goal name="def&#39;vc.58" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="21960"/></proof>
+  <proof prover="0"><result status="valid" steps="24615"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.59" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="238340"/></proof>
+  <proof prover="0"><result status="valid" steps="250288"/></proof>
   </goal>
   <goal name="def&#39;vc.60" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="20256"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.61" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22167"/></proof>
+  <proof prover="0"><result status="valid" steps="25115"/></proof>
   </goal>
   <goal name="def&#39;vc.62" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22167"/></proof>
+  <proof prover="0"><result status="valid" steps="25115"/></proof>
   </goal>
   <goal name="def&#39;vc.63" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22167"/></proof>
+  <proof prover="0"><result status="valid" steps="25115"/></proof>
   </goal>
   <goal name="def&#39;vc.64" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22159"/></proof>
+  <proof prover="0"><result status="valid" steps="25107"/></proof>
   </goal>
   <goal name="def&#39;vc.65" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22245"/></proof>
+  <proof prover="0"><result status="valid" steps="25193"/></proof>
   </goal>
   <goal name="def&#39;vc.66" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="240281"/></proof>
+  <proof prover="0"><result status="valid" steps="253486"/></proof>
   </goal>
   <goal name="def&#39;vc.67" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="19963"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.68" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22452"/></proof>
+  <proof prover="0"><result status="valid" steps="25693"/></proof>
   </goal>
   <goal name="def&#39;vc.69" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22452"/></proof>
+  <proof prover="0"><result status="valid" steps="25693"/></proof>
   </goal>
   <goal name="def&#39;vc.70" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22452"/></proof>
+  <proof prover="0"><result status="valid" steps="25693"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.71" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22442"/></proof>
+  <proof prover="0"><result status="valid" steps="25683"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.72" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22530"/></proof>
+  <proof prover="0"><result status="valid" steps="25771"/></proof>
   </goal>
   <goal name="def&#39;vc.73" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="242222"/></proof>
+  <proof prover="0"><result status="valid" steps="256684"/></proof>
   </goal>
   <goal name="def&#39;vc.74" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.75" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="22798"/></proof>
+  <proof prover="0"><result status="valid" steps="26332"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.76" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="240281"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.77" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="245615"/></proof>
+  <proof prover="0"><result status="valid" steps="261325"/></proof>
   </goal>
   <goal name="def&#39;vc.78" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="236841"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.79" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="23028"/></proof>
+  <proof prover="0"><result status="valid" steps="26855"/></proof>
   </goal>
   <goal name="def&#39;vc.80" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="21150"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.81" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="246406"/></proof>
+  <proof prover="0"><result status="valid" steps="263413"/></proof>
   </goal>
   <goal name="def&#39;vc.82" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="21597"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.83" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="23258"/></proof>
+  <proof prover="0"><result status="valid" steps="27378"/></proof>
   </goal>
   <goal name="def&#39;vc.84" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.85" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="247237"/></proof>
+  <proof prover="0"><result status="valid" steps="265775"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.86" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="21960"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.87" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="23488"/></proof>
+  <proof prover="0"><result status="valid" steps="27901"/></proof>
   </goal>
   <goal name="def&#39;vc.88" expl="precondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="19963"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.89" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="247956"/></proof>
+  <proof prover="0"><result status="valid" steps="268015"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.90" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.91" expl="postcondition" proved="true">
+  <proof prover="0" obsolete="true"><result status="valid" steps="20049"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
