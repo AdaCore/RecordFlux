@@ -43,9 +43,9 @@ is
    end Switch;
 
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) is
-      Buffer : Types.Bytes_Ptr;
+      Buffer        : Types.Bytes_Ptr;
       Valid_Message : constant Boolean := Element_Valid_Message (Element_Ctx);
-      Last : Types.Bit_Index := Types.Bit_Index'First;
+      Last          : Types.Bit_Index := Types.Bit_Index'First;
    begin
       if Valid_Message then
          Last := Element_Last (Element_Ctx);
