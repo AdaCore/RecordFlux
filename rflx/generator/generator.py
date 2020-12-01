@@ -3,7 +3,7 @@ import itertools
 import logging
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Mapping, Sequence, Tuple, cast
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import pkg_resources
 
@@ -132,7 +132,11 @@ log = logging.getLogger(__name__)
 
 NULL = Variable("null")
 
-CONFIGURATION_PRAGMAS = [Pragma("Style_Checks", [String("N3aAbcdefhiIklnOprStux")])]
+CONFIGURATION_PRAGMAS = [
+    Pragma("Style_Checks", [String("N3aAbcdefhiIklnOprStux")]),
+    # ISSUE: Componolit/RecordFlux#508
+    Pragma("Warnings", [Variable("Off"), String("redundant conversion")]),
+]
 
 
 class Generator:
@@ -1037,8 +1041,14 @@ class Generator:
     @staticmethod
     def __create_field_first_function(message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
-            def substituted(expression: expr.Expr) -> Expr:
-                return expression.substituted(common.substitution(message)).simplified().ada_expr()
+            def substituted(
+                expression: expr.Expr, target_type: Optional[ID] = const.TYPES_U64
+            ) -> Expr:
+                return (
+                    expression.substituted(common.substitution(message, target_type=target_type))
+                    .simplified()
+                    .ada_expr()
+                )
 
             if field == message.fields[0]:
                 return Variable("Ctx.First")
@@ -1075,7 +1085,8 @@ class Generator:
                         substituted(
                             l.first.substituted(
                                 lambda x: contiguous_first if x == expr.UNDEFINED else x
-                            )
+                            ),
+                            target_type=None,
                         ),
                     )
                     for l in message.incoming(field)
@@ -1154,8 +1165,16 @@ class Generator:
                 mapping={
                     expr.Size(field.name): expr.Call(const.TYPES_U64, [expr.Variable("Size")]),
                     expr.Last(field.name): expr.Call(
-                        "Field_Last",
-                        [expr.Variable("Ctx"), expr.Variable(field.affixed_name, immutable=True)],
+                        const.TYPES_U64,
+                        [
+                            expr.Call(
+                                "Field_Last",
+                                [
+                                    expr.Variable("Ctx"),
+                                    expr.Variable(field.affixed_name, immutable=True),
+                                ],
+                            )
+                        ],
                     ),
                     # ISSUE: Componolit/RecordFlux#276
                     **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},

@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Generic_Types;
 with RFLX.RFLX_Scalar_Sequence;
 
@@ -431,7 +432,7 @@ private
                    and then (if
                                 Structural_Valid (Cursors (F_Vector))
                              then
-                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = Last - First + 1 - Types.Bit_Length (Cursors (F_Header).Last - Cursors (F_Header).First + 1)
+                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = Types.Bit_Length (Last - First + 1) - Types.Bit_Length (Cursors (F_Header).Last - Cursors (F_Header).First + 1)
                                 and then Cursors (F_Vector).Predecessor = F_Header
                                 and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1)));
 

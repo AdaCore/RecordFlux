@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Generic_Types;
 
 generic
@@ -1359,7 +1360,7 @@ private
                                                                                     and then (Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                               or Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Last - Cursors (F_Sequence_Number).Last
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Types.Bit_Length (Last) - Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1465,7 +1466,7 @@ private
                                                                                     and then (Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                               or Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Last - Cursors (F_Sequence_Number).Last
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Types.Bit_Length (Last) - Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1571,7 +1572,7 @@ private
                                                                                     and then (Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                               or Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Last - Cursors (F_Sequence_Number).Last
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Types.Bit_Length (Last) - Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1684,7 +1685,7 @@ private
                                                                                     and then (Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                               or Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Last - Cursors (F_Sequence_Number).Last
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Types.Bit_Length (Last) - Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
