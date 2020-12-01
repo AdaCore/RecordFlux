@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size with
   SPARK_Mode
@@ -70,7 +71,7 @@ is
           when F_Header =>
              (case Fld is
                  when F_Vector =>
-                    Ctx.Last - Ctx.First + 1 - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1),
+                    Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1),
                  when others =>
                     Types.Unreachable_Bit_Length),
           when F_Vector | F_Final =>
@@ -264,7 +265,7 @@ is
                                   and then (if
                                                Structural_Valid (Ctx.Cursors (F_Vector))
                                             then
-                                               Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Ctx.Last - Ctx.First + 1 - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
+                                               Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
                                                and then Ctx.Cursors (F_Vector).Predecessor = F_Header
                                                and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
                if Fld = F_Header then
@@ -433,7 +434,7 @@ is
                             and then (if
                                          Structural_Valid (Ctx.Cursors (F_Vector))
                                       then
-                                         Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Ctx.Last - Ctx.First + 1 - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
+                                         Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
                                          and then Ctx.Cursors (F_Vector).Predecessor = F_Header
                                          and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
          Ctx.Cursors (F_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);

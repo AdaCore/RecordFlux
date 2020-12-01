@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Builtin_Types.Conversions;
 use RFLX.RFLX_Builtin_Types.Conversions;

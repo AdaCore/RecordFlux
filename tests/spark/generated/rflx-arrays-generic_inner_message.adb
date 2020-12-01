@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Arrays.Generic_Inner_Message with
   SPARK_Mode

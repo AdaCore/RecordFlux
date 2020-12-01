@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.ICMP.Generic_Message with
   SPARK_Mode
@@ -267,7 +268,7 @@ is
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
-                    Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last,
+                    Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last),
                  when F_Originate_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
@@ -1315,7 +1316,7 @@ is
                                                                                                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                                 then
-                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                                    and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                                    and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                                       and then (if
@@ -1421,7 +1422,7 @@ is
                                                                                                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                                 then
-                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                                    and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                                    and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                                       and then (if
@@ -1527,7 +1528,7 @@ is
                                                                                                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                                 then
-                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                                    and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                                    and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                                       and then (if
@@ -1640,7 +1641,7 @@ is
                                                                                                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                                 then
-                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                                   Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                                    and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                                    and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                                       and then (if
@@ -2474,7 +2475,7 @@ is
                                                                                           and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                     or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                        then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                           and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                           and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                              and then (if
@@ -2580,7 +2581,7 @@ is
                                                                                           and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                     or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                        then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                           and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                           and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                              and then (if
@@ -2686,7 +2687,7 @@ is
                                                                                           and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                     or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                        then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                           and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                           and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                              and then (if
@@ -2799,7 +2800,7 @@ is
                                                                                           and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
                                                                                                     or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
                                                                                        then
-                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Ctx.Last - Ctx.Cursors (F_Sequence_Number).Last
+                                                                                          Ctx.Cursors (F_Data).Last - Ctx.Cursors (F_Data).First + 1 = Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
                                                                                           and then Ctx.Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                           and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Sequence_Number).Last + 1)
                                                                              and then (if

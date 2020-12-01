@@ -205,3 +205,25 @@ def test_size_attribute(tmp_path: Path, aspects: str) -> None:
         """,
         tmp_path,
     )
+
+
+def test_message_size_calculation(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+           package Test is
+
+              type T is mod 2**16;
+
+              type Message is
+                 message
+                    A : T;
+                    B : T;
+                    C : Opaque
+                       with Size => A * 8
+                       if Message'Size = A * 8 + (B'Last - A'First + 1);
+                 end message;
+
+           end Test;
+        """,
+        tmp_path,
+    )

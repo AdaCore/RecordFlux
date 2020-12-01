@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Optional, Sequence
 
 import rflx.ada as ada
 import rflx.expression as expr
@@ -24,7 +24,7 @@ def substitution(
     message: Message,
     embedded: bool = False,
     public: bool = False,
-    target_type: ada.ID = const.TYPES_U64,
+    target_type: Optional[ada.ID] = const.TYPES_U64,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, embedded, public, target_type)
 
@@ -127,7 +127,7 @@ def substitution_facts(
     message: Message,
     embedded: bool = False,
     public: bool = False,
-    target_type: ada.ID = const.TYPES_U64,
+    target_type: Optional[ada.ID] = const.TYPES_U64,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(expr.ID("Ctx") * name) if not embedded else expr.Variable(name)
@@ -153,86 +153,61 @@ def substitution_facts(
     def field_size(field: Field) -> expr.Expr:
         if public:
             return expr.Call(
-                target_type,
-                [
-                    expr.Call(
-                        "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
-                    )
-                ],
+                "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
-        return expr.Call(
-            target_type,
-            [
-                expr.Add(
-                    expr.Sub(
-                        expr.Selected(
-                            expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last"
-                        ),
-                        expr.Selected(
-                            expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First"
-                        ),
-                    ),
-                    expr.Number(1),
-                )
-            ],
+        return expr.Add(
+            expr.Sub(
+                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last"),
+                expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First"),
+            ),
+            expr.Number(1),
         )
 
     def field_value(field: Field, field_type: Type) -> expr.Expr:
         if isinstance(field_type, Enumeration):
             if public:
                 return expr.Call(
-                    target_type,
-                    [
-                        expr.Call(
-                            "To_Base", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
-                        )
-                    ],
+                    "To_Base", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
                 )
-            return expr.Call(
-                target_type,
-                [
-                    expr.Selected(
-                        expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                        expr.ID("Value") * f"{field.name}_Value",
-                    )
-                ],
+            return expr.Selected(
+                expr.Indexed(cursors, expr.Variable(field.affixed_name)),
+                expr.ID("Value") * f"{field.name}_Value",
             )
         if isinstance(field_type, Scalar):
             if public:
-                return expr.Call(
-                    target_type, [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
-                )
-            return expr.Call(
-                target_type,
-                [
-                    expr.Selected(
-                        expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                        expr.ID("Value") * f"{field.name}_Value",
-                    )
-                ],
+                return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
+            return expr.Selected(
+                expr.Indexed(cursors, expr.Variable(field.affixed_name)),
+                expr.ID("Value") * f"{field.name}_Value",
             )
         if isinstance(field_type, Composite):
             return expr.Variable(field.name)
 
         assert False, f'unexpected type "{type(field_type).__name__}"'
 
+    def type_conversion(expression: expr.Expr) -> expr.Expr:
+        return expr.Call(target_type, [expression]) if target_type else expression
+
     return {
-        **{expr.First("Message"): first},
-        **{expr.Last("Message"): last},
-        **{expr.Size("Message"): expr.Add(last, -first, expr.Number(1))},
-        **{expr.First(f.name): field_first(f) for f in message.fields},
-        **{expr.Last(f.name): field_last(f) for f in message.fields},
-        **{expr.Size(f.name): field_size(f) for f in message.fields},
-        **{expr.Variable(f.name): field_value(f, t) for f, t in message.types.items()},
+        **{expr.First("Message"): type_conversion(first)},
+        **{expr.Last("Message"): type_conversion(last)},
+        **{expr.Size("Message"): type_conversion(expr.Add(last, -first, expr.Number(1)))},
+        **{expr.First(f.name): type_conversion(field_first(f)) for f in message.fields},
+        **{expr.Last(f.name): type_conversion(field_last(f)) for f in message.fields},
+        **{expr.Size(f.name): type_conversion(field_size(f)) for f in message.fields},
         **{
-            expr.Variable(l): expr.Call(target_type, [expr.Call("To_Base", [expr.Variable(l)])])
+            expr.Variable(f.name): type_conversion(field_value(f, t))
+            for f, t in message.types.items()
+        },
+        **{
+            expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, Enumeration)
             for l in t.literals.keys()
         },
         **{
-            expr.Variable(t.package * l): expr.Call(
-                target_type, [expr.Call("To_Base", [expr.Variable(t.package * l)])]
+            expr.Variable(t.package * l): type_conversion(
+                expr.Call("To_Base", [expr.Variable(t.package * l)])
             )
             for t in message.types.values()
             if isinstance(t, Enumeration)
@@ -270,7 +245,9 @@ def message_structure_invariant(
     first = (
         prefixed("First")
         if source == INITIAL
-        else link.first.substituted(substitution(message, embedded))
+        else link.first.substituted(
+            substitution(message, embedded, target_type=const.TYPES_BIT_INDEX)
+        )
         .substituted(
             mapping={
                 expr.UNDEFINED: expr.Add(

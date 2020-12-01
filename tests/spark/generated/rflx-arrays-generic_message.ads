@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Generic_Types;
 with RFLX.RFLX_Scalar_Sequence;
 
