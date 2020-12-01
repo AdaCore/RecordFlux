@@ -551,11 +551,13 @@ class MessageValue(TypeValue):
             }
         )
 
+        self.__message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
-            [initial.name_size, initial.name_last, initial.name_first], Number(0)
+            [initial.name_size, initial.name_last, initial.name_first, self.__message_first_name],
+            Number(0),
         )
         self.accessible_fields: List[str] = []
         if self._skip_verification:
@@ -903,7 +905,12 @@ class MessageValue(TypeValue):
 
     def _is_checksum_settable(self, checksum: "MessageValue.Checksum") -> bool:
         def valid_path(value_range: ValueRange) -> bool:
-            expr: Dict[Expr, str] = dict.fromkeys([value_range.lower, value_range.upper])
+            lower = value_range.lower.substituted(
+                func=lambda e: self._fields[self._next_field(INITIAL.name)].name_first
+                if e == self.__message_first_name
+                else e
+            )
+            expr: Dict[Expr, str] = dict.fromkeys([lower, value_range.upper])
 
             for e in expr:
                 if isinstance(e, Sub):
@@ -917,7 +924,7 @@ class MessageValue(TypeValue):
                     assert isinstance(e, (First, Last))
                     expr[e] = str(e.prefix)
 
-            field = expr.get(value_range.lower)
+            field = expr.get(lower)
             assert isinstance(field, str)
             upper_field_name = expr[value_range.upper]
             if upper_field_name == "Message":
@@ -1113,7 +1120,7 @@ class MessageValue(TypeValue):
             self._simplified_mapping[self.__message_last_name] = field.last
             return
 
-        self._simplified_mapping = {}
+        self._simplified_mapping = {self.__message_first_name: Number(0)}
         for v in self._fields.values():
             if isinstance(v.typeval, ScalarValue) and v.set:
                 self._simplified_mapping[v.name_variable] = v.typeval.expr

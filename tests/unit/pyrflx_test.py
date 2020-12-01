@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from pathlib import Path
 
 import pytest
@@ -790,6 +791,8 @@ def test_array_assign_invalid(
 
 def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
     first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
+    if first_arg is None:
+        first_arg = kwargs.get("Message'First .. Checksum'First - 1")
     assert isinstance(first_arg, tuple)
     tag_first, checksum_first_minus_one = first_arg
     assert tag_first == 0 and checksum_first_minus_one == 15
@@ -924,6 +927,75 @@ def test_checksum_parse_invalid(icmp_checksum_message_value: MessageValue) -> No
     icmp_checksum_message_value.set_checksum_function({"Checksum": icmp_checksum_function})
     icmp_checksum_message_value.parse(test_data)
     assert not icmp_checksum_message_value.valid_message
+
+
+def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> None:
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_checksum_message_first.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_checksum_message_first.set("Tag", "Echo_Request")
+    icmp_checksum_message_first.set("Code_Zero", 0)
+    icmp_checksum_message_first.set("Identifier", 5)
+    icmp_checksum_message_first.set("Sequence_Number", 1)
+    icmp_checksum_message_first.set("Data", test_data)
+    assert icmp_checksum_message_first.get("Checksum") == 12824
+    assert icmp_checksum_message_first.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
+    assert icmp_checksum_message_first.valid_message
+
+
+def test_checksum_no_verification() -> None:
+    # pylint: disable = protected-access
+    pyrflx_ = PyRFLX.from_specs(
+        [f"{EX_SPEC_DIR}/icmp.rflx"], skip_model_verification=True, skip_message_verification=True
+    )
+    icmp_message = pyrflx_["ICMP"]["Message"]._type
+    icmp_msg = MessageValue(
+        icmp_message.copy(
+            structure=[
+                Link(
+                    l.source,
+                    l.target,
+                    condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                )
+                if l.target == FINAL
+                else l
+                for l in icmp_message.structure
+            ],
+            aspects={
+                ID("Checksum"): {
+                    ID("Checksum"): [
+                        expr.ValueRange(
+                            expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))
+                        ),
+                        expr.Size("Checksum"),
+                        expr.ValueRange(
+                            expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
+                        ),
+                    ]
+                }
+            },
+        )
+    )
+    test_data = (
+        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
+        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
+        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
+        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_msg.set_checksum_function({"Checksum": icmp_checksum_function})
+    icmp_msg.set("Tag", "Echo_Request")
+    icmp_msg.set("Code_Zero", 0)
+    icmp_msg.set("Identifier", 5)
+    icmp_msg.set("Sequence_Number", 1)
+    icmp_msg.set("Data", test_data)
+    icmp_msg.update_checksums()
+    assert icmp_msg.get("Checksum") == 12824
+    assert icmp_msg.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
+    assert icmp_msg.valid_message
 
 
 @pytest.fixture(name="tlv_checksum_package", scope="session")
