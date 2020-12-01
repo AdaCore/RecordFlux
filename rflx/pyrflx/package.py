@@ -1,4 +1,4 @@
-from typing import Dict, Iterator
+from typing import Callable, Dict, Iterator
 
 from rflx.common import Base
 from rflx.pyrflx.typevalue import MessageValue
@@ -21,3 +21,7 @@ class Package(Base):
 
     def __iter__(self) -> Iterator:
         return self.__messages.values().__iter__()
+
+    def set_checksum_functions(self, functions: Dict[str, Dict[str, Callable]]) -> None:
+        for key, value in functions.items():
+            self.__messages[key].set_checksum_function(value)

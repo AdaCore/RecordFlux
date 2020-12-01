@@ -1,0 +1,22 @@
+with TLV_With_Checksum;
+
+package Refinement_With_Checksum is
+
+   type Length is mod 2 ** 8;
+   type Checksum is mod 2 ** 8;
+
+   type Message is
+      message
+         Length   : Length;
+         Checksum : Checksum
+            then Payload
+               with Size => Length * 8;
+         Payload  : Opaque
+            then null
+               if Checksum'Valid_Checksum;
+      end message
+         with Checksum => (Checksum => (Payload'First .. Payload'Last));
+
+   for Message use (Payload => TLV_With_Checksum::Message);
+
+end Refinement_With_Checksum;

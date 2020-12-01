@@ -117,7 +117,7 @@ class TypeValue(Base):
 
     @classmethod
     def construct(
-        cls, vtype: Type, imported: bool = False, refinements: Sequence[Refinement] = None
+        cls, vtype: Type, imported: bool = False, refinements: Sequence["RefinementValue"] = None
     ) -> "TypeValue":
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
@@ -338,8 +338,7 @@ class OpaqueValue(CompositeValue):
 
     def __init__(self, vtype: Opaque) -> None:
         super().__init__(vtype)
-        self._refinement_message: Optional[Message] = None
-        self._all_refinements: Sequence[Refinement] = []
+        self._refinement_message: Optional["MessageValue"] = None
 
     def assign(self, value: bytes, check: bool = True) -> None:
         self.parse(value, check)
@@ -348,7 +347,7 @@ class OpaqueValue(CompositeValue):
         if check:
             self._check_size_of_assigned_value(value)
         if self._refinement_message is not None:
-            nested_msg = MessageValue(self._refinement_message, self._all_refinements)
+            nested_msg = self._refinement_message.clone()
             try:
                 nested_msg.parse(value, check)
             except (IndexError, ValueError, KeyError) as e:
@@ -362,11 +361,8 @@ class OpaqueValue(CompositeValue):
         else:
             self._value = bytes(value)
 
-    def set_refinement(
-        self, model_of_refinement_msg: Message, all_refinements: Sequence[Refinement]
-    ) -> None:
+    def set_refinement(self, model_of_refinement_msg: "MessageValue") -> None:
         self._refinement_message = model_of_refinement_msg
-        self._all_refinements = all_refinements
 
     @property
     def size(self) -> Expr:
@@ -504,7 +500,7 @@ class MessageValue(TypeValue):
     def __init__(
         self,
         model: Message,
-        refinements: Sequence[Refinement] = None,
+        refinements: Sequence["RefinementValue"] = None,
         skip_verification: bool = False,
         state: "MessageValue.State" = None,
     ) -> None:
@@ -566,6 +562,9 @@ class MessageValue(TypeValue):
             self._preset_fields(INITIAL.name)
         self.__message_last_name = Last("Message")
 
+    def add_refinement(self, refinement: "RefinementValue") -> None:
+        self._refinements = [*(self._refinements or []), refinement]
+
     def clone(self) -> "MessageValue":
         return MessageValue(
             self._type,
@@ -596,7 +595,7 @@ class MessageValue(TypeValue):
     def equal_type(self, other: Type) -> bool:
         return self.identifier == other.identifier
 
-    def _valid_refinement_condition(self, refinement: Refinement) -> bool:
+    def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
 
     def _next_field(self, fld: str) -> str:
@@ -786,7 +785,7 @@ class MessageValue(TypeValue):
                         and ref.field.name == fld_name
                         and self._valid_refinement_condition(ref)
                     ):
-                        fld.typeval.set_refinement(ref.sdu, self._refinements)
+                        fld.typeval.set_refinement(ref.sdu)
 
         def check_outgoing_condition_satisfied() -> None:
             if all(
@@ -1244,3 +1243,12 @@ class MessageValue(TypeValue):
         fields: Optional[Mapping[str, "MessageValue.Field"]] = None
         checksums: Optional[Mapping[str, "MessageValue.Checksum"]] = None
         type_literals: Optional[Mapping[Name, Expr]] = None
+
+
+class RefinementValue:
+    def __init__(self, refinement: Refinement, sdu_message: MessageValue) -> None:
+        self.package = refinement.package
+        self.pdu = refinement.pdu
+        self.field = refinement.field
+        self.sdu = sdu_message
+        self.condition = refinement.condition

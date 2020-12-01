@@ -1053,3 +1053,27 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
     msg.set("Tag", 0)
     msg.set("Data", 0)
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
+
+
+def test_refinement_with_checksum() -> None:
+    def tlv_checksum(_: bytes, **__: object) -> int:
+        return 0
+
+    def msg_checksum(_: bytes, **__: object) -> int:
+        return 0xFF
+
+    pyrflx_ = PyRFLX.from_specs(
+        [f"{SPEC_DIR}/refinement_with_checksum.rflx", f"{SPEC_DIR}/tlv_with_checksum.rflx"]
+    )
+    refinement_package = pyrflx_["Refinement_With_Checksum"]
+    tlv_package = pyrflx_["TLV_With_Checksum"]
+    refinement_package.set_checksum_functions({"Message": {"Checksum": msg_checksum}})
+    tlv_package.set_checksum_functions({"Message": {"Checksum": tlv_checksum}})
+    data = b"\x08\xff\x40\x02\x01\x02\x00\x00\x00\x00"
+    message = refinement_package["Message"]
+    message.set_checksum_function({"Checksum": msg_checksum})
+    message.parse(data)
+    assert message.valid_message
+    tlv_message = message.get("Payload")
+    assert isinstance(tlv_message, MessageValue)
+    assert tlv_message.valid_message
