@@ -256,12 +256,14 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
-         while I <= 10 and then Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
+         while Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
             pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
             pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Assert (I <= 2, "Unexpected element");
 
             Arrays.Modular_Vector.Next (Sequence_Context);
 
@@ -300,12 +302,14 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
-         while I <= 10 and then Arrays.Range_Vector.Has_Element (Sequence_Context) loop
+         while Arrays.Range_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
             pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
             pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Assert (I <= 2, "Unexpected element");
 
             Arrays.Range_Vector.Next (Sequence_Context);
 
@@ -344,12 +348,14 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
-         while I <= 10 and then Arrays.Enumeration_Vector.Has_Element (Sequence_Context) loop
+         while Arrays.Enumeration_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
             pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
             pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Assert (I <= 2, "Unexpected element");
 
             Arrays.Enumeration_Vector.Next (Sequence_Context);
 
@@ -390,12 +396,14 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
-         while I <= 10 and then Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context) loop
+         while Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
             pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
             pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+            Assert (I <= 2, "Unexpected element");
 
             Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
 
@@ -847,13 +855,15 @@ package body RFLX.Arrays_Tests is
 
       Message.Switch_To_Messages (Context, Sequence_Context);
 
-      while I <= 10 and then Arrays.Inner_Messages.Has_Element (Sequence_Context) loop
+      while Arrays.Inner_Messages.Has_Element (Sequence_Context) loop
          pragma Loop_Invariant (Arrays.Inner_Messages.Has_Buffer (Sequence_Context));
          pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
          pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
          pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
          pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
          pragma Loop_Invariant (not Inner_Message.Has_Buffer (Element_Context));
+
+         Assert (I <= 2, "Unexpected element");
 
          Arrays.Inner_Messages.Switch (Sequence_Context, Element_Context);
 
@@ -1100,12 +1110,14 @@ package body RFLX.Arrays_Tests is
 
       Message.Switch_To_Vector (Context, Sequence_Context);
 
-      while I <= 10 and then Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
+      while Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
          pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
          pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
          pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
          pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
          pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+
+         Assert (I <= 2, "Unexpected element");
 
          Arrays.Modular_Vector.Next (Sequence_Context);
 
