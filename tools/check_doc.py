@@ -10,12 +10,12 @@ import pathlib
 import subprocess
 import sys
 
-from librecordfluxdsllang import AnalysisContext  # type: ignore
+from librflxlang import AnalysisContext, GrammarRule
 
 import rflx.error
 import rflx.specification
 from rflx.error import RecordFluxError
-from rflx.specification.parser import GrammarRule, diagnostics_to_error
+from rflx.specification.parser import diagnostics_to_error
 from tests.const import GENERATED_DIR, SPEC_DIR
 
 
