@@ -6,6 +6,41 @@ on:
     - cron:  '0 2 * * *'
 
 jobs:
+  Checks:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7]
+        target: [black, isort, flake8, pylint, mypy]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Determine exact Python version
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.target }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest-xdist ${{ matrix.target }}
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+    - name: Check
+      run: |
+        make check_${{ matrix.target }}
+
   Tests:
     runs-on: ubuntu-20.04
     strategy:
