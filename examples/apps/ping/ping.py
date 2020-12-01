@@ -5,10 +5,31 @@ import socket
 import sys
 import time
 
-from rflx.pyrflx import MessageValue, PyRFLX
+from rflx.pyrflx import MessageValue, PyRFLX, utils
+
+
+def icmp_checksum(message: bytes, **kwargs: object) -> int:
+    first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
+    assert isinstance(first_arg, tuple)
+    tag_first, checksum_first_minus_one = first_arg
+    assert tag_first == 0 and checksum_first_minus_one == 15
+    second_arg = kwargs.get("Checksum'Last + 1 .. Message'Last")
+    assert isinstance(second_arg, tuple)
+    checksum_last_plus_one, data_last = second_arg
+    assert checksum_last_plus_one == 32 and data_last == 511
+    checksum_size = kwargs.get("Checksum'Size")
+    assert isinstance(checksum_size, int)
+    assert checksum_size == 16
+
+    checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
+    checksum_bytes += b"\x00" * (checksum_size // 8)
+    checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
+    return utils.internet_checksum(checksum_bytes)
+
 
 PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], True)
 ICMP = PYRFLX["ICMP"]
+ICMP.set_checksum_functions({"Message": {"Checksum": icmp_checksum}})
 IP = PYRFLX["IPv4"]
 
 ICMP_DATA = bytes(list(range(0, 56)))
@@ -57,10 +78,7 @@ def create_request(src: int, dst: int, seq: int) -> bytes:
     msg.set("Identifier", 0)
     msg.set("Sequence_Number", seq)
     msg.set("Data", ICMP_DATA)
-    msg.set("Checksum", icmp_checksum(msg.bytestring))
-    msg.set("Identifier", 0)
-    msg.set("Sequence_Number", seq)
-    msg.set("Data", ICMP_DATA)
+    msg.update_checksums()
 
     pkt = IP["Packet"]
     pkt.set("Version", 4)
@@ -88,20 +106,6 @@ def parse_reply(message: bytes) -> MessageValue:
     pkt = IP["Packet"]
     pkt.parse(message)
     return pkt
-
-
-def icmp_checksum(message: bytes) -> int:
-    def add_ones_complement(num1: int, num2: int) -> int:
-        mod = 1 << 16
-        result = num1 + num2
-        return result if result < mod else (result + 1) % mod
-
-    chunks = [int.from_bytes(message[i : i + 2], "big") for i in range(0, len(message), 2)]
-    intermediary_result = chunks[0]
-    for i in range(1, len(chunks)):
-        intermediary_result = add_ones_complement(intermediary_result, chunks[i])
-
-    return intermediary_result ^ 0xFFFF
 
 
 if __name__ == "__main__":
