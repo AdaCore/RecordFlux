@@ -8,10 +8,10 @@ is
      Pre => Has_Buffer (Ctx) and Ctx.Last - Ctx.Sequence_Last >= Element_Base_Type'Size,
      Post => Has_Buffer (Ctx) and Ctx.Buffer_First = Ctx.Buffer_First'Old and Ctx.Buffer_Last = Ctx.Buffer_Last'Old and Ctx.First = Ctx.First'Old and Ctx.Last = Ctx.Last'Old and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old
    is
-      Last_Bit : constant Types.Bit_Index := Ctx.Sequence_Last + Element_Base_Type'Size;
+      Last_Bit     : constant Types.Bit_Index := Ctx.Sequence_Last + Element_Base_Type'Size;
       Buffer_First : constant Types.Index := Types.Byte_Index (Ctx.Sequence_Last + 1);
-      Buffer_Last : constant Types.Index := Types.Byte_Index (Last_Bit);
-      Offset : constant Types.Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
+      Buffer_Last  : constant Types.Index := Types.Byte_Index (Last_Bit);
+      Offset       : constant Types.Offset := Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       function Extract is new Types.Extract (Element_Base_Type);
    begin
       if Buffer_First >= Ctx.Buffer'First and Buffer_Last <= Ctx.Buffer'Last and Buffer_First <= Buffer_Last then
