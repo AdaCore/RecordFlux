@@ -118,6 +118,9 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
+        sudo apt install graphviz libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        PATH="$HOME/bin:$PATH" pip install --user -e .[devel]
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -168,6 +171,9 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
+        sudo apt install graphviz libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        PATH="$HOME/bin:$PATH" pip install --user -e .[devel]
     - name: Test
       run: |
         make test_${{ matrix.target }}
