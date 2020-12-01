@@ -124,21 +124,15 @@
   </goal>
   <goal name="def&#39;vc.31" expl="precondition" proved="true">
   <proof prover="0"><result status="valid" steps="33106"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.32" expl="precondition" proved="true">
-  <proof prover="0" obsolete="true"><result status="valid" steps="33900"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.33" expl="precondition" proved="true">
   <proof prover="0"><result status="valid" steps="33676"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.34" expl="precondition" proved="true">
-  <proof prover="0" obsolete="true"><result status="valid" steps="33908"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -152,8 +146,6 @@
   </goal>
   <goal name="def&#39;vc.37" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="33981"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.38" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -163,7 +155,6 @@
   <proof prover="0"><result status="valid" steps="33973"/></proof>
   </goal>
   <goal name="def&#39;vc.40" expl="precondition" proved="true">
-  <proof prover="0" obsolete="true"><result status="valid" steps="33620"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -173,8 +164,6 @@
   </goal>
   <goal name="def&#39;vc.42" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="23604"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.43" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -184,7 +173,6 @@
   <proof prover="0"><result status="valid" steps="278198"/></proof>
   </goal>
   <goal name="def&#39;vc.45" expl="postcondition" proved="true">
-  <proof prover="0" obsolete="true"><result status="valid" steps="305725"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>

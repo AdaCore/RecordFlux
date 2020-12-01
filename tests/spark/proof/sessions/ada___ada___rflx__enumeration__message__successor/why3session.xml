@@ -26,7 +26,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.4" expl="assertion">
-  <proof prover="0"><result status="unknown" steps="325157"/></proof>
+  <proof prover="0"><result status="unknown" steps="692382"/></proof>
   </goal>
   <goal name="def&#39;vc.5" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
