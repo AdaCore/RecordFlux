@@ -86,6 +86,37 @@ def fixture_icmp_checksum_message_value(icmp_message: model.Message) -> pyrflx.M
     )
 
 
+@pytest.fixture(name="icmp_checksum_message_first")
+def fixture_icmp_checksum_message_first(icmp_message: model.Message) -> pyrflx.MessageValue:
+    return pyrflx.MessageValue(
+        icmp_message.copy(
+            structure=[
+                model.Link(
+                    l.source,
+                    l.target,
+                    condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                )
+                if l.target == model.FINAL
+                else l
+                for l in icmp_message.structure
+            ],
+            aspects={
+                ID("Checksum"): {
+                    ID("Checksum"): [
+                        expr.ValueRange(
+                            expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))
+                        ),
+                        expr.Size("Checksum"),
+                        expr.ValueRange(
+                            expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
+                        ),
+                    ]
+                }
+            },
+        )
+    )
+
+
 @pytest.fixture(name="ipv4_package", scope="session")
 def fixture_ipv4_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_["IPv4"]
