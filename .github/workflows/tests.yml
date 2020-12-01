@@ -65,7 +65,7 @@ jobs:
     - name: Install
       run: |
         python setup.py sdist
-        pip install RecordFlux --user --no-deps --no-index --find-links dist/*
+        pip install RecordFlux --user --no-deps --no-index --find-links dist/
 
   tests_python:
     name: Tests
