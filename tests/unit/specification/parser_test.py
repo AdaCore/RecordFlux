@@ -138,7 +138,7 @@ def test_parse_duplicate_specifications() -> None:
                 "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
-                    "_kind": "PackageSpec",
+                    "_kind": "PackageNode",
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
@@ -156,7 +156,7 @@ def test_parse_empty_package_spec() -> None:
                 "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
-                    "_kind": "PackageSpec",
+                    "_kind": "PackageNode",
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
@@ -183,7 +183,7 @@ def test_parse_context_spec() -> None:
                     },
                 ],
                 "package_declaration": {
-                    "_kind": "PackageSpec",
+                    "_kind": "PackageNode",
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Context"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Context"},
@@ -193,7 +193,7 @@ def test_parse_context_spec() -> None:
                 "_kind": "Specification",
                 "context_clause": [],
                 "package_declaration": {
-                    "_kind": "PackageSpec",
+                    "_kind": "PackageNode",
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
@@ -209,38 +209,38 @@ def test_parse_integer_type_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "RangeTypeDef",
-                            "lower": {"_kind": "NumericLiteral", "_value": "1"},
+                            "first": {"_kind": "NumericLiteral", "_value": "1"},
                             "size": {
                                 "_kind": "Aspect",
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                 "value": {"_kind": "NumericLiteral", "_value": "16"},
                             },
-                            "upper": {"_kind": "NumericLiteral", "_value": "2_000"},
+                            "last": {"_kind": "NumericLiteral", "_value": "2_000"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Page_Num"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "RangeTypeDef",
-                            "lower": {"_kind": "NumericLiteral", "_value": "0"},
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
                             "size": {
                                 "_kind": "Aspect",
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                 "value": {"_kind": "NumericLiteral", "_value": "8"},
                             },
-                            "upper": {"_kind": "NumericLiteral", "_value": "255"},
+                            "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Line_Size"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
@@ -248,7 +248,7 @@ def test_parse_integer_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {"_kind": "NumericLiteral", "_value": "64"},
@@ -271,10 +271,10 @@ def test_parse_enumeration_type_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "EnumerationTypeDef",
                             "aspects": [
@@ -328,7 +328,7 @@ def test_parse_enumeration_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Day"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "EnumerationTypeDef",
                             "aspects": [
@@ -372,7 +372,7 @@ def test_parse_enumeration_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Protocol"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "EnumerationTypeDef",
                             "aspects": [
@@ -408,7 +408,7 @@ def test_parse_enumeration_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Gender"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "EnumerationTypeDef",
                             "aspects": [
@@ -467,10 +467,10 @@ def test_parse_array_type_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
@@ -478,7 +478,7 @@ def test_parse_array_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ArrayTypeDef",
                             "element_type": {
@@ -490,7 +490,7 @@ def test_parse_array_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Bytes"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
@@ -568,7 +568,7 @@ def test_parse_array_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ArrayTypeDef",
                             "element_type": {
@@ -594,10 +594,10 @@ def test_parse_message_type_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
@@ -605,7 +605,7 @@ def test_parse_message_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
@@ -710,7 +710,7 @@ def test_parse_message_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
@@ -748,7 +748,7 @@ def test_parse_message_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {"_kind": "NullMessageTypeDef", "_value": "null " "message"},
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
                     },
@@ -767,10 +767,10 @@ def test_parse_type_refinement_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
@@ -778,7 +778,7 @@ def test_parse_type_refinement_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
@@ -883,7 +883,7 @@ def test_parse_type_refinement_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
@@ -921,7 +921,7 @@ def test_parse_type_refinement_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {"_kind": "NullMessageTypeDef", "_value": "null message"},
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
                     },
@@ -939,10 +939,10 @@ def test_parse_type_refinement_spec() -> None:
                 }
             ],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "RefinementSpec",
+                        "_kind": "RefinementDecl",
                         "condition": {
                             "_kind": "BinOp",
                             "left": {
@@ -969,7 +969,7 @@ def test_parse_type_refinement_spec() -> None:
                         },
                     },
                     {
-                        "_kind": "RefinementSpec",
+                        "_kind": "RefinementDecl",
                         "condition": None,
                         "field": {"_kind": "UnqualifiedID", "_value": "Bar"},
                         "pdu": {
@@ -1046,10 +1046,10 @@ def test_parse_ethernet_spec() -> None:
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
-                "_kind": "PackageSpec",
+                "_kind": "PackageNode",
                 "declarations": [
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {
@@ -1062,16 +1062,16 @@ def test_parse_ethernet_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Address"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "RangeTypeDef",
-                            "lower": {"_kind": "NumericLiteral", "_value": "46"},
+                            "first": {"_kind": "NumericLiteral", "_value": "46"},
                             "size": {
                                 "_kind": "Aspect",
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                 "value": {"_kind": "NumericLiteral", "_value": "16"},
                             },
-                            "upper": {
+                            "last": {
                                 "_kind": "BinOp",
                                 "left": {
                                     "_kind": "BinOp",
@@ -1086,21 +1086,21 @@ def test_parse_ethernet_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Type_Length"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "RangeTypeDef",
-                            "lower": {"_kind": "NumericLiteral", "_value": "16#8100#"},
+                            "first": {"_kind": "NumericLiteral", "_value": "16#8100#"},
                             "size": {
                                 "_kind": "Aspect",
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                 "value": {"_kind": "NumericLiteral", "_value": "16"},
                             },
-                            "upper": {"_kind": "NumericLiteral", "_value": "16#8100#"},
+                            "last": {"_kind": "NumericLiteral", "_value": "16#8100#"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "TPID"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "ModularTypeDef",
                             "mod": {
@@ -1113,7 +1113,7 @@ def test_parse_ethernet_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
                     },
                     {
-                        "_kind": "TypeSpec",
+                        "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,

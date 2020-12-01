@@ -37,11 +37,14 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install --user -e .[devel]
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        PATH="$HOME/bin:$PATH" pip install .[devel]
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -65,7 +68,7 @@ jobs:
     - name: Install
       run: |
         python setup.py sdist
-        pip install RecordFlux --user --no-deps --no-index --find-links dist/
+        pip install RecordFlux --no-deps --no-index --find-links dist/
 
   tests_python:
     name: Tests
@@ -111,7 +114,7 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install --user -e .[devel]
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
@@ -120,7 +123,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install --user -e .[devel]
+        PATH="$HOME/bin:$PATH" pip install .[devel] -vv
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -162,10 +165,12 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install --user -e .[devel]
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
         chmod +x $HOME/bin/gnatprove
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatpp
+        chmod +x $HOME/bin/gnatpp
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -173,7 +178,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install --user -e .[devel]
+        PATH="$HOME/bin:$PATH" pip install .[devel] -vv
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -195,7 +200,7 @@ jobs:
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "$HOME/bin" >> $GITHUB_PATH
     - name: Test
@@ -212,7 +217,7 @@ jobs:
     - name: Install GNAT
       run: |
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
+        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
         chmod +x $HOME/bin/gprbuild
         echo "$HOME/bin" >> $GITHUB_PATH
     - name: Build runtime
@@ -275,6 +280,9 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        PATH="$HOME/bin:$PATH" pip install .[devel]
     - name: Verify
       run: |
         make prove_${{ matrix.target }}
@@ -326,6 +334,9 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        PATH="$HOME/bin:$PATH" pip install .[devel]
     - name: Verify
       run: |
         make prove_${{ matrix.target }}

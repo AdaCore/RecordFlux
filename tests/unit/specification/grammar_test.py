@@ -1,5 +1,5 @@
 import pytest
-from librecordfluxdsllang import AnalysisContext
+from librflxlang import AnalysisContext
 
 from rflx import declaration as decl, expression as expr, model, statement as stmt
 from rflx.error import Location, RecordFluxError

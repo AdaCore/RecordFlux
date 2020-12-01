@@ -5,36 +5,36 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
-from librecordfluxdsllang import (  # type: ignore
+from librflxlang import (
     AnalysisContext,
     ArrayTypeDef,
     Aspect,
-    ChannelDecl,
     ChecksumAspect,
     Components,
     Description,
     Diagnostic,
     EnumerationTypeDef,
     Expr,
-    FunctionDecl,
+    FormalChannelDecl,
+    FormalFunctionDecl,
+    FormalPrivateTypeDecl,
     GrammarRule,
     MessageTypeDef,
     ModularTypeDef,
     NullID,
-    PackageSpec,
-    PrivateTypeDecl,
+    PackageNode,
     RangeTypeDef,
-    RefinementSpec,
+    RefinementDecl,
     RenamingDecl,
     RFLXNode,
-    SessionSpec,
+    SessionDecl,
     Specification,
     State,
     Statement,
     ThenNode,
     Transition,
+    TypeDecl,
     TypeDerivationDef,
-    TypeSpec,
     VariableDecl,
 )
 
@@ -211,7 +211,7 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
 
 
 def create_session(
-    session: SessionSpec,
+    session: SessionDecl,
     package: ID,
     types: Sequence[RFLXType] = None,
     filename: Path = None,
@@ -509,9 +509,9 @@ def create_quantified_expression(
     param_id = create_id(expression.f_parameter_identifier, filename)
     iterable = create_expression(expression.f_iterable, filename, package)
     predicate = create_expression(expression.f_predicate, filename, package)
-    if expression.f_operation.kind_name == "QuantAll":
+    if expression.f_operation.kind_name == "QuantifierAll":
         return rexpr.ForAllIn(param_id, iterable, predicate, location)
-    if expression.f_operation.kind_name == "QuantSome":
+    if expression.f_operation.kind_name == "QuantifierSome":
         return rexpr.ForSomeIn(param_id, iterable, predicate, location)
 
     raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
@@ -546,7 +546,7 @@ def create_variable_decl(
 
 
 def create_private_type_decl(
-    declaration: PrivateTypeDecl,
+    declaration: FormalPrivateTypeDecl,
     filename: Path = None,
     _package: ID = None,
     location: Location = None,
@@ -557,7 +557,10 @@ def create_private_type_decl(
 
 
 def create_channel_decl(
-    declaration: ChannelDecl, filename: Path = None, _package: ID = None, location: Location = None
+    declaration: FormalChannelDecl,
+    filename: Path = None,
+    _package: ID = None,
+    location: Location = None,
 ) -> decl.FormalDeclaration:
     readable = False
     writable = False
@@ -590,7 +593,10 @@ def create_renaming_decl(
 
 
 def create_function_decl(
-    declaration: FunctionDecl, filename: Path = None, package: ID = None, location: Location = None
+    declaration: FormalFunctionDecl,
+    filename: Path = None,
+    package: ID = None,
+    location: Location = None,
 ) -> decl.FormalDeclaration:
     arguments = []
     if declaration.f_parameters:
@@ -668,14 +674,14 @@ def create_message_aggregate(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
 ) -> rexpr.Expr:
     values: Mapping[StrID, rexpr.Expr] = {}
-    if expression.f_values.kind_name == "NullComponents":
+    if expression.f_values.kind_name == "NullMessageAggregate":
         values = {}
-    elif expression.f_values.kind_name == "MessageComponents":
+    elif expression.f_values.kind_name == "MessageAggregateAssociations":
         values = {
             create_id(c.f_identifier, filename): create_expression(
                 c.f_expression, filename, package
             )
-            for c in expression.f_values.f_components
+            for c in expression.f_values.f_associations
         }
     else:
         raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
@@ -729,9 +735,9 @@ def create_formal_declaration(
 ) -> decl.FormalDeclaration:
     location = node_location(declaration, filename)
     handlers: Dict[str, Callable[..., decl.FormalDeclaration]] = {
-        "ChannelDecl": create_channel_decl,
-        "FunctionDecl": create_function_decl,
-        "PrivateTypeDecl": create_private_type_decl,
+        "FormalChannelDecl": create_channel_decl,
+        "FormalFunctionDecl": create_function_decl,
+        "FormalPrivateTypeDecl": create_private_type_decl,
     }
     return handlers[declaration.kind_name](declaration, filename, package, location)
 
@@ -805,8 +811,8 @@ def create_range(
     size = create_math_expression(rangetype.f_size.f_value, filename, identifier.parent)
     return RangeInteger(
         identifier,
-        create_math_expression(rangetype.f_lower, filename, identifier.parent),
-        create_math_expression(rangetype.f_upper, filename, identifier.parent),
+        create_math_expression(rangetype.f_first, filename, identifier.parent),
+        create_math_expression(rangetype.f_last, filename, identifier.parent),
         size,
         node_location(rangetype, filename),
     )
@@ -1024,8 +1030,8 @@ def create_message_aspects(
                 elif value.kind_name == "ChecksumValueRange":
                     exprs.append(
                         rexpr.ValueRange(
-                            create_math_expression(value.f_lower, filename),
-                            create_math_expression(value.f_upper, filename),
+                            create_math_expression(value.f_first, filename),
+                            create_math_expression(value.f_last, filename),
                         )
                     )
                 else:
@@ -1162,7 +1168,7 @@ def create_proven_message(
 
 
 def create_refinement(
-    refinement: RefinementSpec, package: ID, types: Sequence[RFLXType], filename: Path
+    refinement: RefinementDecl, package: ID, types: Sequence[RFLXType], filename: Path
 ) -> Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, Message)}
 
@@ -1200,7 +1206,7 @@ def create_refinement(
 
 
 def check_naming(
-    error: RecordFluxError, package: PackageSpec, _filename: Path, origname: Path = None
+    error: RecordFluxError, package: PackageNode, _filename: Path, origname: Path = None
 ) -> None:
     name = origname or Path("<stdin>")
     identifier = package.f_identifier.text
@@ -1235,7 +1241,7 @@ def check_naming(
                 node_location(package.f_identifier, origname),
             )
     for t in package.f_declarations:
-        if isinstance(t, TypeSpec) and is_builtin_type(create_id(t.f_identifier, name).name):
+        if isinstance(t, TypeDecl) and is_builtin_type(create_id(t.f_identifier, name).name):
             error.append(
                 f'illegal redefinition of built-in type "{t.f_identifier.text}"',
                 Subsystem.MODEL,
@@ -1362,7 +1368,7 @@ class Parser:
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
-            if isinstance(t, TypeSpec):
+            if isinstance(t, TypeDecl):
                 identifier = qualified_type_identifier(
                     create_id(t.f_identifier, filename), package_id
                 )
@@ -1380,7 +1386,7 @@ class Parser:
                 except RecordFluxError as e:
                     error.extend(e)
             else:
-                if t.kind_name == "RefinementSpec":
+                if t.kind_name == "RefinementDecl":
                     try:
                         new_type = create_refinement(t, package_id, self.__types, filename)
                         self.__types.append(new_type)
@@ -1388,7 +1394,7 @@ class Parser:
                     except RecordFluxError as e:
                         error.extend(e)
                 else:
-                    assert t.kind_name == "SessionSpec"
+                    assert t.kind_name == "SessionDecl"
                     new_session = create_session(t, package_id, self.__types, filename)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)

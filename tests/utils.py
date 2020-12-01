@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Callable, Mapping, Sequence
 
 import pytest
-from librecordfluxdsllang import AnalysisContext  # type: ignore
+from librflxlang import AnalysisContext
 
 from rflx import declaration as decl
 from rflx.declaration import Declaration
