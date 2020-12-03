@@ -1,6 +1,10 @@
 #!/usr/bin/env -S ./python -O
 
+import errno
+import fcntl
 import ipaddress
+import os
+import select
 import socket
 import sys
 import time
@@ -42,6 +46,7 @@ def ping(target: str) -> None:
 
     sock_out = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
     sock_in = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+    fcntl.fcntl(sock_in, fcntl.F_SETFL, os.O_NONBLOCK)
 
     seq = 0
     while True:
@@ -51,24 +56,44 @@ def ping(target: str) -> None:
         )
         seq = (seq + 1) % 2 ** 16
 
-        packet = parse_reply(sock_in.recv(4096))
-        packet_src = str(ipaddress.IPv4Address(packet.get("Source")))
-        if packet_src != target_ip:
-            continue
+        receiving = True
+        while receiving:
+            try:
+                select.select([sock_in], [], [], 1)
+                data = sock_in.recv(4096)
+                try:
+                    packet = parse_reply(data)
+                except AssertionError:
+                    # Invalid data has been parsed
+                    continue
+                packet_src = str(ipaddress.IPv4Address(packet.get("Source")))
+                if packet_src != target_ip:
+                    continue
 
-        reply = packet.get("Payload")
-        assert isinstance(reply, MessageValue)
+                reply = packet.get("Payload")
+                assert isinstance(reply, MessageValue)
 
-        if reply.get("Tag") != "Echo_Reply":
-            continue
+                if reply.get("Tag") != "Echo_Reply":
+                    continue
 
-        reply_seq = str(reply.get("Sequence_Number"))
-        print(f"{int(reply.size) // 8} bytes from {packet_src}: icmp_seq={reply_seq}", flush=True)
+                reply_seq = str(reply.get("Sequence_Number"))
+                print(
+                    f"{int(reply.size) // 8} bytes from {packet_src}: icmp_seq={reply_seq}",
+                    flush=True,
+                )
 
-        if reply.get("Data") != ICMP_DATA:
-            print("mismatch between sent and received data")
+                if reply.get("Data") != ICMP_DATA:
+                    print("mismatch between sent and received data")
 
-        time.sleep(1)
+                time.sleep(1)
+                receiving = False
+            except socket.error as e:
+                if e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                    time.sleep(1)
+                    receiving = False
+                else:
+                    print(e)
+                    sys.exit(1)
 
 
 def create_request(src: int, dst: int, seq: int) -> bytes:
