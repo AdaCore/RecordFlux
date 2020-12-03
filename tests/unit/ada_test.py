@@ -98,6 +98,11 @@ def test_attribute_expression_str() -> None:
     assert str(ada.Val("X", ada.Number(1))) == "X'Val (1)"
 
 
+def test_selected_str() -> None:
+    assert str(ada.Selected(ada.Variable("X"), "Y")) == "X.Y"
+    assert str(-ada.Selected(ada.Variable("X"), "Y")) == "(-X.Y)"
+
+
 def test_indexed_str() -> None:
     assert str(ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "X (Y)"
     assert str(-ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "(-X (Y))"
