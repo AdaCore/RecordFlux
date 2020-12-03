@@ -220,7 +220,10 @@ package body RFLX.IPv4_Tests is
             Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Number);
             Assert (Valid, "Invalid Option_Number");
             if Valid then
+               --  WORKAROUND: Componolit/Workarounds#30
+               pragma Warnings (Off, "unreachable code");
                Option_Number := IPv4.Option.Get_Option_Number (Context);
+               pragma Warnings (On, "unreachable code");
                Assert (Option_Number'Image, RFLX_Builtin_Types.Index'Image (4), "Invalid Option_Number");
                Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Length);
                Assert (Valid, "Invalid Option_Length");
