@@ -49,6 +49,7 @@ def ping(target: str) -> None:
             create_request(0, int(ipaddress.IPv4Address(target_ip)), seq),
             (target, 0),
         )
+        seq = (seq + 1) % 2 ** 16
 
         packet = parse_reply(sock_in.recv(4096))
         packet_src = str(ipaddress.IPv4Address(packet.get("Source")))
@@ -58,16 +59,16 @@ def ping(target: str) -> None:
         reply = packet.get("Payload")
         assert isinstance(reply, MessageValue)
 
+        if reply.get("Tag") != "Echo_Reply":
+            continue
+
         reply_seq = str(reply.get("Sequence_Number"))
         print(f"{int(reply.size) // 8} bytes from {packet_src}: icmp_seq={reply_seq}", flush=True)
 
-        if reply.get("Tag") != "Echo_Reply":
-            print("unexpected type")
         if reply.get("Data") != ICMP_DATA:
             print("mismatch between sent and received data")
 
         time.sleep(1)
-        seq = (seq + 1) % 2 ** 16
 
 
 def create_request(src: int, dst: int, seq: int) -> bytes:
