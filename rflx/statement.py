@@ -3,7 +3,7 @@ from typing import Callable, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import Expr, Variable
 from rflx.identifier import ID, StrID
 
@@ -86,6 +86,21 @@ class Append(ListAttributeStatement):
         )
         if isinstance(statement_type, rty.Array):
             error += self.parameters[0].check_type(statement_type.element)
+            if isinstance(statement_type.element, rty.Message) and isinstance(
+                self.parameters[0], Variable
+            ):
+                error.append(
+                    "appending independently created message not supported",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.parameters[0].location,
+                )
+                error.append(
+                    "message aggregate should be used instead",
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    self.parameters[0].location,
+                )
         return error
 
 
