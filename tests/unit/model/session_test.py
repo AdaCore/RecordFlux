@@ -1381,16 +1381,21 @@ def test_append() -> None:
                 "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Append("List", expr.Variable("Element"))],
+                actions=[
+                    stmt.Append(
+                        "List",
+                        expr.MessageAggregate(
+                            "TLV::Message",
+                            {"Tag": expr.Variable("TLV::Msg_Error")},
+                        ),
+                    )
+                ],
             ),
             State("End"),
         ],
-        declarations=[
-            decl.VariableDeclaration("List", "TLV::Messages"),
-            decl.VariableDeclaration("Element", "TLV::Message"),
-        ],
+        declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGE, TLV_MESSAGES],
+        types=[TLV_TAG, TLV_MESSAGE, TLV_MESSAGES],
     )
 
 
@@ -1413,6 +1418,32 @@ def test_append_incompatible() -> None:
         regex=(
             r"^<stdin>:10:20: model: error: expected array type\n"
             r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+        ),
+    )
+
+
+def test_append_message_unsupported() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Append("List", expr.Variable("Element", location=Location((10, 20))))
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("List", "TLV::Messages"),
+            decl.VariableDeclaration("Element", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE, TLV_MESSAGES],
+        regex=(
+            r"^<stdin>:10:20: model: error: appending independently created message not supported\n"
+            r"<stdin>:10:20: model: info: message aggregate should be used instead$"
         ),
     )
 
