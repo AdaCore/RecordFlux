@@ -133,24 +133,31 @@ class Model(Base):
                     ]
                 )
 
-        literals = {
-            l: t for t in self.__types if isinstance(t, type_.Enumeration) for l in t.literals
-        }
-        type_set = {t.identifier.name for t in self.__types}
-        name_conflicts = [n for n in literals.keys() if n in type_set]
-        for name in sorted(name_conflicts):
+        literals = [
+            t.package * l
+            for t in self.__types
+            if isinstance(t, type_.Enumeration)
+            for l in t.literals
+        ]
+        name_conflicts = [
+            (l, t)
+            for l in literals
+            for t in self.__types
+            if (l.parent == t.package or type_.is_builtin_type(t.identifier))
+            and l.name == t.identifier.name
+        ]
+        for literal, conflicting_type in name_conflicts:
             error.append(
-                f'literal conflicts with type "{name}"',
+                f'literal "{literal.name}" conflicts with type declaration',
                 Subsystem.MODEL,
                 Severity.ERROR,
-                name.location,
+                literal.location,
             )
-            type_location = [t.location for t in self.__types if t.identifier.name == name][0]
             error.append(
-                "conflicting type declaration",
+                f'conflicting type "{conflicting_type.identifier}"',
                 Subsystem.MODEL,
                 Severity.INFO,
-                type_location,
+                conflicting_type.location,
             )
 
         return error

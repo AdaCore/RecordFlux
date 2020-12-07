@@ -15,7 +15,7 @@ package GreenTLS is
 
    for Content use (Data => TLS_Alert::Alert);
 
-   type Control_Message_Type is (KEY_UPDATE_CLIENT, KEY_UPDATE_SERVER, HEARTBEAT_MODE, ALERT) with Size => 8;
+   type Control_Message_Type is (KEY_UPDATE_CLIENT, KEY_UPDATE_SERVER, HEARTBEAT, ALERT) with Size => 8;
    type Control_Message_Length is range 0 .. 2**16 - 1 with Size => 16;
 
    type Control_Message is
@@ -53,7 +53,7 @@ package GreenTLS is
       end message;
 
    for Control_Message use (Data => Heartbeat_Control_Message)
-      if Tag = HEARTBEAT_MODE;
+      if Tag = HEARTBEAT;
 
    type Alert_Message is
       message
