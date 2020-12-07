@@ -60,6 +60,14 @@ def test_id_invalid_colon() -> None:
         ID("A::B:C::D")
 
 
+def test_id_eq() -> None:
+    assert ID("A") == ID("a")
+
+
+def test_id_hash() -> None:
+    assert hash(ID("A")) == hash(ID("a"))
+
+
 def test_id_str() -> None:
     assert str(ID("A::B::C")) == "A::B::C"
 

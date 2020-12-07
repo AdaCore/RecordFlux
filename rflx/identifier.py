@@ -27,7 +27,9 @@ class ID:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self.parts == other.parts
+            if len(self.parts) != len(other.parts):
+                return False
+            return all(s.lower() == o.lower() for s, o in zip(self.parts, other.parts))
         return NotImplemented
 
     def __lt__(self, other: object) -> bool:
@@ -36,7 +38,7 @@ class ID:
         return NotImplemented
 
     def __hash__(self) -> int:
-        return hash(tuple(self.parts))
+        return hash(tuple(map(str.lower, self.parts)))
 
     def __repr__(self) -> str:
         return f'ID("{self}")'
