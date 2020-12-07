@@ -150,7 +150,7 @@ package TLS_Record_Session is
          then KEY_UPDATE_SERVER
             if Handshake_Control_Message.Tag = GreenTLS::KEY_UPDATE_SERVER
          then HEARTBEAT_CONTROL
-            if Handshake_Control_Message.Tag = GreenTLS::HEARTBEAT_MODE
+            if Handshake_Control_Message.Tag = GreenTLS::HEARTBEAT
          then HANDSHAKE_ALERT
             if Handshake_Control_Message.Tag = GreenTLS::ALERT
          then ERROR_INTERNAL_ERROR

@@ -74,8 +74,8 @@ def test_conflicting_literal_builtin_type() -> None:
                 False,
             ),
         ],
-        r'<stdin>:3:31: model: error: literal conflicts with type "Boolean"\n'
-        r"__BUILTINS__:0:0: model: info: conflicting type declaration",
+        r'<stdin>:3:31: model: error: literal "Boolean" conflicts with type declaration\n'
+        r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"',
     )
 
 
@@ -85,19 +85,19 @@ def test_name_conflict_between_literal_and_type() -> None:
             Enumeration(
                 "P::T",
                 [
-                    (ID("Foo", Location((3, 27))), Number(1)),
-                    (ID("Bar", Location((3, 32))), Number(2)),
+                    (ID("FOO", Location((3, 27))), Number(1)),
+                    (ID("BAR", Location((3, 32))), Number(2)),
                 ],
                 Number(1),
                 False,
             ),
-            ModularInteger("T::Foo", Number(256), Location((4, 16))),
-            ModularInteger("T::Bar", Number(256), Location((5, 16))),
+            ModularInteger("P::Foo", Number(256), Location((4, 16))),
+            ModularInteger("P::Bar", Number(256), Location((5, 16))),
         ],
-        r'<stdin>:3:32: model: error: literal conflicts with type "Bar"\n'
-        r"<stdin>:5:16: model: info: conflicting type declaration\n"
-        r'<stdin>:3:27: model: error: literal conflicts with type "Foo"\n'
-        r"<stdin>:4:16: model: info: conflicting type declaration",
+        r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
+        r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
+        r'<stdin>:3:32: model: error: literal "BAR" conflicts with type declaration\n'
+        r'<stdin>:5:16: model: info: conflicting type "P::Bar"',
     )
 
 

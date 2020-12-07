@@ -140,8 +140,8 @@ def test_multiple_errors() -> None:
             f'{path}:40:21: model: info: previous occurrence of "Foo"',
             f"{path}:56:4: model: error: conflicting literals: Foo",
             f'{path}:43:30: model: info: previous occurrence of "Foo"',
-            f'{path}:56:21: model: error: literal conflicts with type "E4"',
-            f"{path}:53:4: model: info: conflicting type declaration",
+            f'{path}:56:21: model: error: literal "E4" conflicts with type declaration',
+            f'{path}:53:4: model: info: conflicting type "RFLX_Invalid::E4"',
         ],
     )
 

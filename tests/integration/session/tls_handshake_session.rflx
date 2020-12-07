@@ -716,7 +716,7 @@ package TLS_Handshake_Session is
          Server_Heartbeat_Mode : TLS_Handshake::Heartbeat_Mode;
       begin
          Server_Heartbeat_Mode := TLS_Handshake::Heartbeat ([for E in Encrypted_Extensions_Message.Extensions => E when E.Tag = TLS_Handshake::EXTENSION_HEARTBEAT]'Head.Data).Mode;
-         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT_MODE, Length => Data'Size, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT, Length => Data'Size, Data => Data)
             where Data = GreenTLS::Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
          Heartbeat_Received := True;
       transition
