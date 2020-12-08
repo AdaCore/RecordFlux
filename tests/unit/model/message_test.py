@@ -679,7 +679,7 @@ def test_subsequent_variable() -> None:
     )
 
 
-def test_reference_to_optional_field() -> None:
+def test_reference_to_optional_field_1() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), Equal(Variable("F1"), TRUE)),
@@ -700,6 +700,37 @@ def test_reference_to_optional_field() -> None:
         r"^"
         r'<stdin>:10:30: model: error: undefined variable "F2"\n'
         r"<stdin>:10:20: model: info: on path F1 -> F3 -> Final"
+        r"$",
+    )
+
+
+def test_reference_to_optional_field_2() -> None:
+    structure = [
+        Link(INITIAL, Field("Flag")),
+        Link(Field("Flag"), Field("Opt"), Equal(Variable("Flag"), Number(1))),
+        Link(Field("Flag"), Field("Any"), NotEqual(Variable("Flag"), Number(1))),
+        Link(Field("Opt"), Field("Any")),
+        Link(
+            Field("Any"),
+            Field("Data"),
+            size=Mul(
+                Variable("Opt", location=Location((10, 30))), Number(8), location=Location((10, 20))
+            ),
+        ),
+        Link(Field("Data"), FINAL),
+    ]
+    types = {
+        Field("Flag"): MODULAR_INTEGER,
+        Field("Opt"): MODULAR_INTEGER,
+        Field("Any"): MODULAR_INTEGER,
+        Field("Data"): OPAQUE,
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'<stdin>:10:30: model: error: undefined variable "Opt"\n'
+        r"<stdin>:10:20: model: info: on path Flag -> Any -> Data"
         r"$",
     )
 

@@ -655,6 +655,7 @@ class Message(AbstractMessage):
         types: Dict[ID, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
+            expression = copy(expression)
             if isinstance(expression, expr.Variable):
                 if expression.name.lower() == "message":
                     expression.type_ = rty.OPAQUE
@@ -683,15 +684,15 @@ class Message(AbstractMessage):
                 if l.source in self.types:
                     types[l.source.identifier] = self.types[l.source]
 
-                l.condition = l.condition.substituted(typed_variable)
-                l.size = l.size.substituted(typed_variable)
-                l.first = l.first.substituted(typed_variable)
-
-                for t in [l.condition, l.size, l.first]:
-                    if t == expr.UNDEFINED:
+                for expression in [
+                    l.condition.substituted(typed_variable),
+                    l.size.substituted(typed_variable),
+                    l.first.substituted(typed_variable),
+                ]:
+                    if expression == expr.UNDEFINED:
                         continue
 
-                    error = t.check_type(rty.Any())
+                    error = expression.check_type(rty.Any())
 
                     self.error.extend(error)
 
@@ -700,7 +701,7 @@ class Message(AbstractMessage):
                             "on path " + " -> ".join(f.name for f in path),
                             Subsystem.MODEL,
                             Severity.INFO,
-                            t.location,
+                            expression.location,
                         )
 
     def __verify_expressions(self) -> None:
