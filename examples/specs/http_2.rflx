@@ -142,7 +142,7 @@ package HTTP_2 is
          Stream_Identifier : Stream_ID
             then Pad_Length
                if (Frame_Type = DATA or Frame_Type = HEADERS or Frame_Type = PUSH_PROMISE) and Flag_Padded = True
-            then Data
+            then Application_Data
                with Size => Payload_Length * 8
                if Frame_Type = DATA and Flag_Padded = False
             then Exclusive_Flag
@@ -157,7 +157,7 @@ package HTTP_2 is
             then Settings_Parameters
                with Size => Payload_Length
                if Frame_Type = SETTINGS
-            then Data
+            then Application_Data
                with Size => 64
                if Frame_Type = PING and Stream_Identifier = 0
             then Reserved_Bit_2
@@ -167,7 +167,7 @@ package HTTP_2 is
          Settings_Parameters : Settings_Parameters
             then null;
          Pad_Length : Pad_Length
-            then Data
+            then Application_Data
                with Size => (Payload_Length - Pad_Length) * 8 - Pad_Length'Size
                if Frame_Type = DATA and Payload_Length >= Pad_Length * 8 + Pad_Length'Size
             then Exclusive_Flag
@@ -212,7 +212,7 @@ package HTTP_2 is
             then null
                if Frame_Type = CONTINUATION
                   or ((Frame_Type = PUSH_PROMISE or Frame_Type = HEADERS) and Flag_Padded = False);
-         Data : Opaque
+         Application_Data : Opaque
             then Padding
                if Frame_Type = DATA and Flag_Padded = True
             then null
