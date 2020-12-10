@@ -1,6 +1,6 @@
-from typing import Any
-
 import librecordfluxdsllang as rflxdsl  # type: ignore
+
+from tests.utils import to_dict
 
 
 def parse_buffer(
@@ -10,18 +10,6 @@ def parse_buffer(
     unit = ctx.get_from_buffer("text.rflx", data, rule=rule)
     del ctx
     return unit
-
-
-def to_dict(node: Any) -> Any:
-    if node is None:
-        return None
-    if node.is_list_type:
-        return [to_dict(e) for e in node.children]
-    result = {name[2:]: to_dict(getattr(node, name)) for name in dir(node) if name.startswith("f_")}
-    if result:
-        result["_kind"] = node.kind_name
-        return result
-    return {"_kind": node.kind_name, "_value": node.text}
 
 
 def test_empty_file() -> None:
