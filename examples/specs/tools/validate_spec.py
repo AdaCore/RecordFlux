@@ -64,6 +64,8 @@ def cli(argv: List[str]) -> Union[int, str]:
         ),
     )
 
+    parser.add_argument("--no-verification", action="store_true", help="skip model verification")
+
     args = parser.parse_args(argv[1:])
     if args.directory_valid is None and args.directory_invalid is None:
         parser.error("must provide directory with valid and/or invalid messages")
@@ -94,6 +96,7 @@ def validation_main(args: argparse.Namespace) -> None:
     path_valid: Optional[Path] = args.directory_valid
     full_output_path: Optional[Path] = args.json_output
     abort_on_error: bool = args.abort_on_error
+    no_verification: bool = args.no_verification
 
     path_generators: Dict[Path, Iterator[Path]] = {}
     for path in [path_valid, path_invalid]:
@@ -106,9 +109,9 @@ def validation_main(args: argparse.Namespace) -> None:
         raise ValidationError(f'invalid identifier "{root_message_id}" : {str(e)}') from e
 
     try:
-        pdu_message = PyRFLX.from_specs([str(path_spec)])[str(identifier.parent)][
-            str(identifier.name)
-        ]
+        pdu_message = PyRFLX.from_specs([str(path_spec)], skip_model_verification=no_verification)[
+            str(identifier.parent)
+        ][str(identifier.name)]
     except KeyError as e:
         raise ValidationError(
             f'message "{str(identifier.name)}" could not be '
