@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -O
 
 import argparse
 import json
@@ -106,7 +106,7 @@ def validation_main(args: argparse.Namespace) -> None:
     try:
         identifier = ID(root_message_id)
     except AssertionError as e:
-        raise ValidationError(f'invalid identifier "{root_message_id}" : {str(e)}') from e
+        raise ValidationError(f'invalid identifier "{root_message_id}" : {e}') from e
 
     try:
         pdu_message = PyRFLX.from_specs([str(path_spec)], skip_model_verification=no_verification)[
@@ -118,7 +118,7 @@ def validation_main(args: argparse.Namespace) -> None:
             f'found in package "{str(identifier.parent)}"'
         ) from e
     except FileNotFoundError as e:
-        raise ValidationError(f"specification {str(e)}") from e
+        raise ValidationError(f"specification {e}") from e
 
     classified_incorrectly = 0
     with JsonOutputWriter(full_output_path) as json_output_writer:
@@ -166,10 +166,6 @@ class JsonOutputWriter:
         exception_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
-
-        if exception_value is not None:
-            raise ValidationError(str(exception_value))
-
         if self.file is not None:
             self.file.write("\n]")
             self.file.close()
@@ -221,7 +217,7 @@ class Validator:
             result.parsed_message = pdu_model
             # ISSUE: Componolit/RecordFlux#510
         except Exception as e:  # pylint: disable=broad-except
-            result.error_message = str(e)
+            result.error_message = f"{e.__class__.__name__}: {e}"
         return result
 
 
@@ -265,24 +261,8 @@ class ValidationResult:
     def __init__(self, parser_result: ParserResult, original_message: OriginalMessage):
         self.__parser_result: ParserResult = parser_result
         self.__original_message: OriginalMessage = original_message
-        self.__classification: Classification = Classification.NI
-        self.__correct_serialization: Optional[bool] = None
-
-    @property
-    def classification(self) -> "Classification":
-        return self.__classification
-
-    @classification.setter
-    def classification(self, classifier: "Classification") -> None:
-        self.__classification = classifier
-
-    @property
-    def correct_serialization(self) -> Optional[bool]:
-        return self.__correct_serialization
-
-    @correct_serialization.setter
-    def correct_serialization(self, is_correct: bool) -> None:
-        self.__correct_serialization = is_correct
+        self.classification: Classification = Classification.NI
+        self.correct_serialization: Optional[bool] = None
 
     def get_json_output(self) -> Dict[str, object]:
         parsed_message = self.__parser_result.parsed_message
@@ -310,8 +290,8 @@ class ValidationResult:
             "error_message": self.__parser_result.error_message,
             "provided_as": self.__original_message.is_valid,
             "recognized_as": self.__parser_result.is_valid,
-            "classification": self.__classification.value,
-            "serialized_correctly": self.__correct_serialization,
+            "classification": self.classification.value,
+            "serialized_correctly": self.correct_serialization,
         }
 
     def get_abbreviated_output(self) -> str:
@@ -330,7 +310,7 @@ class ValidationResult:
         return output
 
 
-class ValidationError(BaseException):
+class ValidationError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__()
         self.message = message
