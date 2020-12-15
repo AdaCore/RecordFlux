@@ -68,15 +68,19 @@ def cli(argv: List[str]) -> Union[int, str]:
 
     args = parser.parse_args(argv[1:])
     if args.directory_valid is None and args.directory_invalid is None:
-        parser.error("must provide directory with valid and/or invalid messages")
+        return "must provide directory with valid and/or invalid messages"
+
+    for path in [args.directory_valid, args.directory_invalid]:
+        if path is not None and not path.exists():
+            return f"{path} does not exist"
 
     if args.json_output is not None and args.json_output.exists():
-        parser.error(f"output file already exists: {args.json_output}")
+        return f"output file already exists: {args.json_output}"
 
     try:
         validation_main(args)
     except ValidationError as e:
-        sys.exit(e)
+        return f"{e}"
 
     return 0
 
@@ -141,7 +145,7 @@ def validation_main(args: argparse.Namespace) -> None:
                     classified_incorrectly += 1
 
     if classified_incorrectly != 0:
-        raise ValidationError(f"{classified_incorrectly} message(s) were classified incorrectly")
+        raise ValidationError(f"{classified_incorrectly} messages were classified incorrectly")
 
 
 class JsonOutputWriter:
