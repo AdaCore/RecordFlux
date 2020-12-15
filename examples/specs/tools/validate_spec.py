@@ -134,13 +134,14 @@ def validation_main(args: argparse.Namespace) -> None:
                     Classification.FN,
                 ]:
                     if abort_on_error:
-                        sys.exit(1)
-                    else:
-                        classified_incorrectly += 1
+                        raise ValidationError(
+                            f"{message_file_path} classified as "
+                            f"{validation_result.classification.value}"
+                        )
+                    classified_incorrectly += 1
 
-    print(f"Summary: {classified_incorrectly} messages were classified incorrectly.")
     if classified_incorrectly != 0:
-        sys.exit(1)
+        raise ValidationError(f"{classified_incorrectly} message(s) were classified incorrectly")
 
 
 class JsonOutputWriter:
