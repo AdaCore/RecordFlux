@@ -24,8 +24,8 @@ check_mypy:
 	mypy --pretty $(python-packages)
 
 format:
-	black -l 100 $(python-packages) ide/gnatstudio
-	isort $(python-packages) ide/gnatstudio
+	black -l 100 $(python-packages)
+	isort $(python-packages)
 
 test: test_python
 
