@@ -806,6 +806,18 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
             r"^<stdin>:10:30: model: error: invalid prefix for attribute Present$",
         ),
         (
+            Head(
+                Comprehension(
+                    "X",
+                    Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+                    Variable("X"),
+                    TRUE,
+                    location=Location((10, 30)),
+                )
+            ),
+            r"^<stdin>:10:30: model: error: prefix of attribute Head must be a name$",
+        ),
+        (
             Opaque(
                 Call(
                     "X", [Variable("Y", location=Location((10, 30)))], location=Location((10, 20))
