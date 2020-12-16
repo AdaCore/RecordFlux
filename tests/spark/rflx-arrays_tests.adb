@@ -268,6 +268,8 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Modular_Vector (Context, Sequence_Context);
 
+         Assert (Arrays.Modular_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
+
          while Arrays.Modular_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Modular_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
@@ -288,6 +290,8 @@ package body RFLX.Arrays_Tests is
             I := I + 1;
          end loop;
 
+         Assert (Arrays.Modular_Vector.Size (Sequence_Context) = 2 * Arrays.Modular_Integer'Size, "Invalid size");
+         Assert (Arrays.Modular_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
          Assert (Arrays.Modular_Vector.Valid (Sequence_Context), "Invalid Modular_Vector after parsing");
          Assert (not Message.Valid (Context, Message.F_Modular_Vector),
@@ -317,6 +321,8 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Range_Vector (Context, Sequence_Context);
 
+         Assert (Arrays.Range_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
+
          while Arrays.Range_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Range_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
@@ -337,6 +343,8 @@ package body RFLX.Arrays_Tests is
             I := I + 1;
          end loop;
 
+         Assert (Arrays.Range_Vector.Size (Sequence_Context) = 2 * Arrays.Range_Integer_Base'Size, "Invalid size");
+         Assert (Arrays.Range_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
          Assert (Arrays.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
          Assert (not Message.Valid (Context, Message.F_Range_Vector),
@@ -366,6 +374,8 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_Enumeration_Vector (Context, Sequence_Context);
 
+         Assert (Arrays.Enumeration_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
+
          while Arrays.Enumeration_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.Enumeration_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
@@ -387,6 +397,8 @@ package body RFLX.Arrays_Tests is
             I := I + 1;
          end loop;
 
+         Assert (Arrays.Enumeration_Vector.Size (Sequence_Context) = 2 * Arrays.Enumeration_Base'Size, "Invalid size");
+         Assert (Arrays.Enumeration_Vector.Head (Sequence_Context)'Image, Arrays.One'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
          Assert (Arrays.Enumeration_Vector.Valid (Sequence_Context), "Invalid Enumeration_Vector after parsing");
          Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -417,6 +429,8 @@ package body RFLX.Arrays_Tests is
 
          Message.Switch_To_AV_Enumeration_Vector (Context, Sequence_Context);
 
+         Assert (Arrays.AV_Enumeration_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
+
          while Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context) loop
             pragma Loop_Invariant (Arrays.AV_Enumeration_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
@@ -439,6 +453,11 @@ package body RFLX.Arrays_Tests is
             I := I + 1;
          end loop;
 
+         Assert (Arrays.AV_Enumeration_Vector.Size (Sequence_Context) = 2 * Arrays.AV_Enumeration_Base'Size,
+                 "Invalid size");
+         Assert (Arrays.AV_Enumeration_Vector.Head (Sequence_Context).Known, "Unknown head element");
+         Assert (Arrays.AV_Enumeration_Vector.Head (Sequence_Context).Enum'Image, Arrays.AV_One'Image,
+                 "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
          Assert (Arrays.AV_Enumeration_Vector.Valid (Sequence_Context),
                  "Invalid AV_Enumeration_Vector after parsing");
@@ -487,9 +506,16 @@ package body RFLX.Arrays_Tests is
       Message.Initialize (Context, Buffer);
       Message.Set_Length (Context, 4);
       Message.Switch_To_Modular_Vector (Context, Modular_Vector_Context);
+
+      Assert (Arrays.Modular_Vector.Size (Modular_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
+
       Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 1);
       Arrays.Modular_Vector.Append_Element (Modular_Vector_Context, 2);
 
+      Assert (Arrays.Modular_Vector.Size (Modular_Vector_Context)'Image,
+              Natural (2 * Arrays.Modular_Integer'Size)'Image,
+              "Invalid size");
+      Assert (Arrays.Modular_Vector.Head (Modular_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
       Assert (not Arrays.Modular_Vector.Has_Element (Modular_Vector_Context),
               "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_Modular_Vector),
@@ -507,9 +533,15 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_Range_Vector (Context, Range_Vector_Context);
+
+      Assert (Arrays.Range_Vector.Size (Range_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
+
       Arrays.Range_Vector.Append_Element (Range_Vector_Context, 1);
       Arrays.Range_Vector.Append_Element (Range_Vector_Context, 2);
 
+      Assert (Arrays.Range_Vector.Size (Range_Vector_Context)'Image, Natural (2 * Arrays.Range_Integer_Base'Size)'Image,
+              "Invalid size");
+      Assert (Arrays.Range_Vector.Head (Range_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
       Assert (not Arrays.Range_Vector.Has_Element (Range_Vector_Context), "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_Range_Vector),
               "Valid Range_Vector before context update");
@@ -526,9 +558,17 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_Enumeration_Vector (Context, Enumeration_Vector_Context);
+
+      Assert (Arrays.Enumeration_Vector.Size (Enumeration_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
+
       Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.One);
       Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.Two);
 
+      Assert (Arrays.Enumeration_Vector.Size (Enumeration_Vector_Context)'Image,
+              Natural (2 * Arrays.Enumeration_Base'Size)'Image,
+              "Invalid size");
+      Assert (Arrays.Enumeration_Vector.Head (Enumeration_Vector_Context)'Image, Arrays.One'Image,
+              "Invalid head element");
       Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
               "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -546,9 +586,19 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+
+      Assert (Arrays.AV_Enumeration_Vector.Size (AV_Enumeration_Vector_Context)'Image, Natural (0)'Image,
+              "Invalid size");
+
       Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_One));
       Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_Two));
 
+      Assert (Arrays.AV_Enumeration_Vector.Size (AV_Enumeration_Vector_Context)'Image,
+              Natural (2 * Arrays.AV_Enumeration_Base'Size)'Image,
+              "Invalid size");
+      Assert (Arrays.AV_Enumeration_Vector.Head (AV_Enumeration_Vector_Context).Known, "Unknown head element");
+      Assert (Arrays.AV_Enumeration_Vector.Head (AV_Enumeration_Vector_Context).Enum'Image, Arrays.AV_One'Image,
+              "Invalid head element");
       Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
               "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),

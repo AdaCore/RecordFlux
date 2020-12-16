@@ -112,6 +112,11 @@ is
      Pre =>
        Valid_Element (Ctx);
 
+   function Head (Ctx : Context) return Element_Type with
+     Pre =>
+       (Valid (Ctx)
+        and then Sequence_Last (Ctx) >= Ctx.First + Element_Base_Type'Size - 1);
+
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
      Pre =>
        (Has_Buffer (Ctx)
@@ -159,6 +164,7 @@ private
          Sequence_Last : Types.Bit_Length := First - 1;
          Buffer        : Types.Bytes_Ptr := null;
          State         : Context_State := S_Valid;
+         First_Element : Element_Base_Type := Element_Base_Type'First;
          Next_Element  : Element_Base_Type := Element_Base_Type'First;
       end record with
      Dynamic_Predicate =>
@@ -171,7 +177,8 @@ private
         and First <= Last
         and Last <= Types.Bit_Index'Last - 1
         and Sequence_Last >= First - 1
-        and Sequence_Last <= Last);
+        and Sequence_Last <= Last
+        and (if Sequence_Last > First - 1 and State = S_Valid then Valid (First_Element)));
 
    function Has_Element (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid and Ctx.Last - Ctx.Sequence_Last >= Element_Base_Type'Size);
