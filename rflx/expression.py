@@ -1173,6 +1173,13 @@ class Head(Attribute):
             if isinstance(self.prefix.type_, (rty.Aggregate, rty.Array))
             else rty.Any()
         )
+        if not isinstance(self.prefix, (Variable, Selected)):
+            error.append(
+                "prefix of attribute Head must be a name",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.prefix.location,
+            )
         return error
 
 
