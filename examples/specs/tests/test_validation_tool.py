@@ -1,5 +1,6 @@
-import os
 import re
+from pathlib import Path
+from typing import Iterator
 
 import pytest
 
@@ -87,7 +88,7 @@ def test_cli_no_test_data_provided() -> None:
     )
 
 
-def test_cli_output_file_exists(tmp_path) -> None:
+def test_cli_output_file_exists(tmp_path: Path) -> None:
     tmp_file = tmp_path / "test.json"
     tmp_file.write_text("")
     assert tmp_file.is_file()
@@ -126,7 +127,7 @@ def test_cli_path_does_not_exist() -> None:
     ) == "tests/data/ethernet/non_existent_dir does not exist or is not a directory"
 
 
-def test_cli_path_is_not_directory(tmp_path) -> None:
+def test_cli_path_is_not_directory(tmp_path: Path) -> None:
     tmp_file = tmp_path / "test.txt"
     tmp_file.write_text("")
     assert tmp_file.is_file()
@@ -145,14 +146,14 @@ def test_cli_path_is_not_directory(tmp_path) -> None:
     ) == f"{tmp_file} does not exist or is not a directory"
 
 
-@pytest.fixture
-def tmp_path_restricted(tmp_path):
+@pytest.fixture(name="tmp_path_restricted")
+def fixture_tmp_path_restricted(tmp_path: Path) -> Iterator[Path]:
     tmp_path.chmod(0o100)
     yield tmp_path
     tmp_path.chmod(0o700)
 
 
-def test_cli_cannot_open_output_file(tmp_path_restricted) -> None:
+def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
     assert (
         cli(
             [
@@ -193,8 +194,9 @@ def test_cli_abort_on_error() -> None:
     assert re.match(r"^(tests/data/ethernet/invalid/).+(\.raw) (classified as FalseNegative)$", ret)
 
 
-def test_cli_not_regular_file(tmpdir) -> None:
-    subdir = tmpdir.mkdir("test")
+def test_cli_not_regular_file(tmpdir: Path) -> None:
+    subdir = tmpdir / "test"
+    subdir.mkdir()
     assert (
         cli(
             [
@@ -208,6 +210,25 @@ def test_cli_not_regular_file(tmpdir) -> None:
             ]
         )
         == f"{subdir} is not a regular file"
+    )
+
+
+def test_cli_invalid_identifier() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet.Frame",
+                "-v",
+                "tests/data/ethernet/valid",
+                "-i",
+                "tests/data/ethernet/invalid",
+            ]
+        )
+        == 'invalid identifier "Ethernet.Frame" : id: error: "." in identifier parts'
     )
 
 
@@ -243,6 +264,26 @@ def test_validation_negative() -> None:
                 "tests/data/ethernet/invalid",
                 "-i",
                 "tests/data/ethernet/valid",
+            ]
+        )
+    ) == "8 messages were classified incorrectly"
+
+
+def test_cli_full_json_output(tmp_path: Path) -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-v",
+                "tests/data/ethernet/invalid",
+                "-i",
+                "tests/data/ethernet/valid",
+                "-o",
+                f"{tmp_path}/output.json",
             ]
         )
     ) == "8 messages were classified incorrectly"
