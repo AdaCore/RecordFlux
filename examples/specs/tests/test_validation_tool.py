@@ -87,26 +87,27 @@ def test_cli_no_test_data_provided() -> None:
     )
 
 
-def test_cli_output_file_exists() -> None:
-    with open("tests/test.json", "w"):
-        assert (
-            cli(
-                [
-                    "validate_spec",
-                    "-s",
-                    "in_ethernet.rflx",
-                    "-m",
-                    "Ethernet::Frame",
-                    "-v",
-                    "tests/data/ethernet/valid",
-                    "-i",
-                    "tests/data/ethernet/invalid",
-                    "-o",
-                    "tests/test.json",
-                ]
-            )
-        ) == "output file already exists: tests/test.json"
-    os.remove("tests/test.json")
+def test_cli_output_file_exists(tmp_path) -> None:
+    tmp_file = tmp_path / "test.json"
+    tmp_file.write_text("")
+    assert tmp_file.is_file()
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-v",
+                "tests/data/ethernet/valid",
+                "-i",
+                "tests/data/ethernet/invalid",
+                "-o",
+                f"{tmp_file}",
+            ]
+        )
+    ) == f"output file already exists: {tmp_file}"
 
 
 def test_cli_path_does_not_exist() -> None:
@@ -122,7 +123,26 @@ def test_cli_path_does_not_exist() -> None:
                 "tests/data/ethernet/non_existent_dir",
             ]
         )
-    ) == "tests/data/ethernet/non_existent_dir does not exist"
+    ) == "tests/data/ethernet/non_existent_dir does not exist or is not a directory"
+
+
+def test_cli_path_is_not_directory(tmp_path) -> None:
+    tmp_file = tmp_path / "test.txt"
+    tmp_file.write_text("")
+    assert tmp_file.is_file()
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-i",
+                f"{tmp_file}",
+            ]
+        )
+    ) == f"{tmp_file} does not exist or is not a directory"
 
 
 @pytest.fixture
