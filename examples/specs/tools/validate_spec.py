@@ -132,17 +132,20 @@ def validation_main(args: argparse.Namespace) -> None:
                 msg = get_message_to_validate(message_file_path, path == path_valid)
                 validation_result = validator.validate_message(msg)
                 json_output_writer.write(validation_result.get_json_output())
-                print(validation_result.get_abbreviated_output())
                 if validation_result.classification in [
                     Classification.FP,
                     Classification.FN,
                 ]:
+                    print(f"{message_file_path}: FAILED")
+                    print(f"{validation_result.get_abbreviated_output()}\n")
                     if abort_on_error:
                         raise ValidationError(
                             f"{message_file_path} classified as "
                             f"{validation_result.classification.value}"
                         )
                     classified_incorrectly += 1
+                else:
+                    print(f"{message_file_path}: PASSED")
 
     if classified_incorrectly != 0:
         raise ValidationError(f"{classified_incorrectly} messages were classified incorrectly")
