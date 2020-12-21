@@ -71,8 +71,8 @@ def cli(argv: List[str]) -> Union[int, str]:
         return "must provide directory with valid and/or invalid messages"
 
     for path in [args.directory_valid, args.directory_invalid]:
-        if path is not None and not path.exists():
-            return f"{path} does not exist"
+        if path is not None and not path.is_dir():
+            return f"{path} does not exist or is not a directory"
 
     if args.json_output is not None and args.json_output.exists():
         return f"output file already exists: {args.json_output}"
