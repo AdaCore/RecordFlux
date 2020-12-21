@@ -9,8 +9,9 @@ from pathlib import Path
 from types import TracebackType
 from typing import IO, Dict, Iterator, List, Optional, Sequence, Type, Union
 
+from rflx.error import RecordFluxError
 from rflx.identifier import ID
-from rflx.pyrflx import PyRFLX, TypeValue
+from rflx.pyrflx import PyRFLX, PyRFLXError, TypeValue
 from rflx.pyrflx.typevalue import MessageValue
 
 
@@ -109,17 +110,18 @@ def validation_main(args: argparse.Namespace) -> None:
 
     try:
         identifier = ID(root_message_id)
-    except AssertionError as e:
+    except RecordFluxError as e:
         raise ValidationError(f'invalid identifier "{root_message_id}" : {e}') from e
 
+    message_name = str(identifier.name)
+    package_name = str(identifier.parent)
     try:
         pdu_message = PyRFLX.from_specs([str(path_spec)], skip_model_verification=no_verification)[
-            str(identifier.parent)
-        ][str(identifier.name)]
+            package_name
+        ][message_name]
     except KeyError as e:
         raise ValidationError(
-            f'message "{str(identifier.name)}" could not be '
-            f'found in package "{str(identifier.parent)}"'
+            f'message "{message_name}" could not be found in package "{package_name}"'
         ) from e
     except FileNotFoundError as e:
         raise ValidationError(f"specification {e}") from e
@@ -131,7 +133,7 @@ def validation_main(args: argparse.Namespace) -> None:
             for message_file_path in path_generator:
                 msg = get_message_to_validate(message_file_path, path == path_valid)
                 validation_result = validator.validate_message(msg)
-                json_output_writer.write(validation_result.get_json_output())
+                json_output_writer.write(validation_result)
                 if validation_result.classification in [
                     Classification.FP,
                     Classification.FN,
@@ -178,12 +180,12 @@ class JsonOutputWriter:
             self.file.write("\n]")
             self.file.close()
 
-    def write(self, content: Dict[str, object]) -> None:
+    def write(self, validation_result: "ValidationResult") -> None:
         if self.file is not None:
             if self.count != 0:
                 self.file.write(",\n")
             json.dump(
-                content,
+                validation_result.get_json_output(),
                 self.file,
                 indent="\t",
             )
@@ -223,8 +225,7 @@ class Validator:
         try:
             pdu_model.parse(message)
             result.parsed_message = pdu_model
-            # ISSUE: Componolit/RecordFlux#510
-        except Exception as e:  # pylint: disable=broad-except
+        except RecordFluxError as e:
             result.error_message = f"{e.__class__.__name__}: {e}"
         return result
 
@@ -282,7 +283,7 @@ class ValidationResult:
             for field_name in parsed_message.fields:
                 try:
                     field_value = parsed_message.get(field_name)
-                except ValueError as e:
+                except PyRFLXError as e:
                     field_value = str(f"{e} or not set")
                 if isinstance(field_value, MessageValue):
                     field_value = field_value.bytestring.hex()
