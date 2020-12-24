@@ -40,7 +40,7 @@ def manage_factory():
     from langkit.libmanage import ManageScript
 
     from language.lexer import rflx_lexer as lexer
-    from language.parser import rflx_grammar as grammar
+    from language.parser import grammar
 
     class Manage(ManageScript):
         def create_context(self, args):

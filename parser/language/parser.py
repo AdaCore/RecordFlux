@@ -1,16 +1,12 @@
-from langkit.parsers import Grammar, List, NoBacktrack as cut, Opt, Or, Pick  # type: ignore
+from langkit.parsers import Grammar, List, NoBacktrack, Opt, Or, Pick  # type: ignore
 
 import language.ast as ast
 from language.lexer import rflx_lexer as lexer
 
-rflx_grammar = Grammar("main_rule")
-grammar = rflx_grammar
+grammar = Grammar("main_rule")
 
-rflx_grammar.add_rules(
+grammar.add_rules(
     main_rule=Opt(grammar.specification),
-)
-
-rflx_grammar.add_rules(
     unqualified_identifier=ast.UnqualifiedID(lexer.UnqualifiedIdentifier),
     qualified_identifier=ast.ID(
         Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
@@ -26,7 +22,7 @@ rflx_grammar.add_rules(
         ast.Concatenation(
             grammar.concatenation,
             "&",
-            cut(),
+            NoBacktrack(),
             Or(grammar.array_aggregate, grammar.string_literal),
         ),
         Or(grammar.array_aggregate, grammar.string_literal),
@@ -55,7 +51,7 @@ rflx_grammar.add_rules(
     ),
     factor=Or(
         # pylint: disable=no-member
-        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), cut(), grammar.primary),
+        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), NoBacktrack(), grammar.primary),
         grammar.suffix,
     ),
     term=Or(
@@ -67,12 +63,12 @@ rflx_grammar.add_rules(
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.factor,
         ),
         grammar.factor,
     ),
-    unop_term=Or(ast.Negation("-", cut(), grammar.term), grammar.term),
+    unop_term=Or(ast.Negation("-", NoBacktrack(), grammar.term), grammar.term),
     simple_expr=Or(
         ast.BinOp(
             grammar.simple_expr,
@@ -81,7 +77,7 @@ rflx_grammar.add_rules(
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.unop_term,
         ),
         grammar.unop_term,
@@ -98,7 +94,7 @@ rflx_grammar.add_rules(
                 ast.Op.alt_ge(">="),
                 ast.Op.alt_gt(">"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.simple_expr,
         ),
         grammar.simple_expr,
@@ -111,7 +107,7 @@ rflx_grammar.add_rules(
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.relation,
         ),
         grammar.relation,
@@ -173,7 +169,7 @@ rflx_grammar.add_rules(
         ast.Select(
             grammar.extended_suffix,
             ".",
-            cut(),
+            NoBacktrack(),
             grammar.unqualified_identifier,
         ),
         ast.Attribute(
@@ -208,7 +204,7 @@ rflx_grammar.add_rules(
                 # pylint: disable=no-member
                 ast.Op.alt_pow("**"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.extended_suffix,
         ),
         grammar.extended_suffix,
@@ -222,13 +218,13 @@ rflx_grammar.add_rules(
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.extended_factor,
         ),
         grammar.extended_factor,
     ),
     extended_unop_term=Or(
-        ast.Negation("-", cut(), grammar.extended_term),
+        ast.Negation("-", NoBacktrack(), grammar.extended_term),
         grammar.extended_term,
     ),
     extended_simple_expr=Or(
@@ -239,7 +235,7 @@ rflx_grammar.add_rules(
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.extended_unop_term,
         ),
         grammar.extended_unop_term,
@@ -258,7 +254,7 @@ rflx_grammar.add_rules(
                 ast.Op.alt_in("in"),
                 ast.Op.alt_notin("not", "in"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.extended_simple_expr,
         ),
         grammar.extended_simple_expr,
@@ -271,14 +267,11 @@ rflx_grammar.add_rules(
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
-            cut(),
+            NoBacktrack(),
             grammar.extended_relation,
         ),
         grammar.extended_relation,
     ),
-)
-
-rflx_grammar.add_rules(
     aspect=ast.Aspect(grammar.unqualified_identifier, Opt("=>", grammar.expression)),
     range_type_definition=ast.RangeTypeDef(
         "range",
