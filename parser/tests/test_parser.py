@@ -1,4 +1,4 @@
-import librecordfluxdsllang as rflxdsl  # type: ignore
+import librecordfluxdsllang as rflxdsl
 
 from tests.utils import to_dict
 

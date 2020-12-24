@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import librecordfluxdsllang as rflxdsl  # type: ignore
+import librecordfluxdsllang as rflxdsl
 import pytest
 
 

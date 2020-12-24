@@ -1,4 +1,4 @@
-from langkit.lexer import (  # type: ignore
+from langkit.lexer import (
     Alt,
     Case,
     Ignore,

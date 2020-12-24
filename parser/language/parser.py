@@ -1,4 +1,4 @@
-from langkit.parsers import Grammar, List, NoBacktrack, Opt, Or, Pick  # type: ignore
+from langkit.parsers import Grammar, List, NoBacktrack, Opt, Or, Pick
 
 import language.ast as ast
 from language.lexer import rflx_lexer as lexer

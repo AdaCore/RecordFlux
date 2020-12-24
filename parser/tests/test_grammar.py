@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 import pytest
-from librecordfluxdsllang import AnalysisContext, GrammarRule  # type: ignore
+from librecordfluxdsllang import AnalysisContext, GrammarRule
 
 from tests.utils import to_dict
 

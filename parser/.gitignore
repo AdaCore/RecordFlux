@@ -4,7 +4,6 @@
 *.o
 *.pyc
 .coverage
-.hypothesis
 .mypy_cache
 \.*.swp
 __pycache__

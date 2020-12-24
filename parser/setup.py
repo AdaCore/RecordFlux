@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-# type: ignore
 import os
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import setuptools.command.build_py as orig
 from setuptools import setup
@@ -25,7 +25,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 # is placed in the same directory cannot be found. To fix that, we add
 # "$ORIGIN" to the RPATH of librecordfluxdsllang.so. The simplest way to
 # do this is the `patchelf` tool.
-def patch_rpath():
+def patch_rpath() -> None:
     sopath = "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so"
     rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
     subprocess.run(
@@ -34,7 +34,7 @@ def patch_rpath():
 
 
 # We cannot import langkit.* or language.* globally, as langkit needs to be installed first.
-def manage_factory():
+def manage_factory() -> Any:
     # pylint: disable=import-outside-toplevel
     from langkit.compile_context import CompileCtx
     from langkit.libmanage import ManageScript
@@ -43,14 +43,14 @@ def manage_factory():
     from language.parser import grammar
 
     class Manage(ManageScript):
-        def create_context(self, args):
+        def create_context(self, args: Any) -> CompileCtx:
             return CompileCtx(lang_name="RecordFluxDSL", lexer=lexer, grammar=grammar)
 
     return Manage()
 
 
 class BuildWithParser(orig.build_py):
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         os.environ["GNATCOLL_ICONV_OPT"] = "-v"
         manage_factory().run(
             [
@@ -77,7 +77,7 @@ class BuildWithParser(orig.build_py):
 class BuildParser(orig.build_py):
     description = "Build RecordFlux langkit parser"
 
-    def run(self):
+    def run(self) -> None:
         Path("build/langkit").mkdir(parents=True, exist_ok=True)
         manage_factory().run(["--build-dir", "build/langkit", "--verbosity", "debug", "make"])
 
@@ -114,19 +114,15 @@ setup(
     python_requires=">=3.7",
     setup_requires=["langkit@" + LANGKIT],
     dependency_links=[LANGKIT],
-    install_requires=["icontract >=2.3.4, <3"],
     extras_require={
         "devel": [
             "black ==20.8b1",
             "flake8 >=3, <4",
-            "hypothesis >=5, <6",
             "isort >=5, <6",
             "mypy >=0.770",
-            "pyicontract-lint >=2.0.0, <3",
             "pylint >=2.6.0, <3",
             "pytest >=5, <6",
             "pytest-xdist >=1.32.0, <2",
-            "tqdm >=4, <5",
             "langkit@" + LANGKIT,
         ]
     },

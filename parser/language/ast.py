@@ -1,4 +1,4 @@
-from langkit.dsl import ASTNode, Field, abstract  # type: ignore
+from langkit.dsl import ASTNode, Field, abstract
 
 
 @abstract

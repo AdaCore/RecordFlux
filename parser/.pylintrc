@@ -73,8 +73,3 @@ min-similarity-lines=12
 
 # Ignore imports when computing similarities.
 ignore-imports=yes
-
-
-[TYPECHECK]
-
-signature-mutators=hypothesis.strategies._internal.core.composite
