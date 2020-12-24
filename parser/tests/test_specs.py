@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import librecordfluxdsllang as rflxdsl
+import librflxlang
 import pytest
 
 
@@ -9,7 +9,7 @@ import pytest
     (Path("tests") / "data").rglob("*.rflx"),
 )
 def test_file(spec: Path) -> None:
-    ctx = rflxdsl.AnalysisContext()
+    ctx = librflxlang.AnalysisContext()
     unit = ctx.get_from_file(str(spec))
     del ctx
     if spec.name.startswith("incorrect_"):

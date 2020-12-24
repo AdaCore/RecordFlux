@@ -23,10 +23,10 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 # we need patch the RPATH of the parser library. While the parse library
 # itself is loaded via dlopen() directly, the langkit_base library which
 # is placed in the same directory cannot be found. To fix that, we add
-# "$ORIGIN" to the RPATH of librecordfluxdsllang.so. The simplest way to
+# "$ORIGIN" to the RPATH of librflxlang.so. The simplest way to
 # do this is the `patchelf` tool.
 def patch_rpath() -> None:
-    sopath = "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so"
+    sopath = "lib/librflxlang/relocatable/dev/librflxlang.so"
     rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
     subprocess.run(
         ["patchelf", "--set-rpath", "$ORIGIN:" + rpath.decode("utf-8"), sopath], check=True
@@ -44,7 +44,7 @@ def manage_factory() -> Any:
 
     class Manage(ManageScript):
         def create_context(self, args: Any) -> CompileCtx:
-            return CompileCtx(lang_name="RecordFluxDSL", lexer=lexer, grammar=grammar)
+            return CompileCtx(lang_name="RFLX", lexer=lexer, grammar=grammar)
 
     return Manage()
 
@@ -64,13 +64,13 @@ class BuildWithParser(orig.build_py):
         )
         patch_rpath()
         for l in [
-            "lib/librecordfluxdsllang/relocatable/dev/librecordfluxdsllang.so",
+            "lib/librflxlang/relocatable/dev/librflxlang.so",
             "lib/langkit_support/relocatable/dev/liblangkit_support.so",
             f"{base_dir}/contrib/gnatcoll-bindings/iconv/lib/relocatable/libgnatcoll_iconv.so.0",
             f"{base_dir}/contrib/gnatcoll-bindings/gmp/lib/relocatable/libgnatcoll_gmp.so.0",
         ]:
             source = Path(l)
-            shutil.copy(source, Path("python/librecordfluxdsllang/") / source.name)
+            shutil.copy(source, Path("python/librflxlang/") / source.name)
         super().initialize_options()
 
 
@@ -127,11 +127,11 @@ setup(
         ]
     },
     cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
-    packages=["librecordfluxdsllang"],
-    package_dir={"librecordfluxdsllang": "python/librecordfluxdsllang"},
+    packages=["librflxlang"],
+    package_dir={"librflxlang": "python/librflxlang"},
     package_data={
-        "librecordfluxdsllang": [
-            "librecordfluxdsllang.so",
+        "librflxlang": [
+            "librflxlang.so",
             "liblangkit_support.so",
             "libgnatcoll_iconv.so.0",
             "libgnatcoll_gmp.so.0",

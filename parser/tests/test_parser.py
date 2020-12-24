@@ -1,12 +1,12 @@
-import librecordfluxdsllang as rflxdsl
+import librflxlang
 
 from tests.utils import to_dict
 
 
 def parse_buffer(
-    data: str, rule: rflxdsl.GrammarRule = rflxdsl.GrammarRule.main_rule_rule
-) -> rflxdsl.AnalysisUnit:
-    ctx = rflxdsl.AnalysisContext()
+    data: str, rule: librflxlang.GrammarRule = librflxlang.GrammarRule.main_rule_rule
+) -> librflxlang.AnalysisUnit:
+    ctx = librflxlang.AnalysisContext()
     unit = ctx.get_from_buffer("text.rflx", data, rule=rule)
     del ctx
     return unit
@@ -41,7 +41,7 @@ def test_modular_type() -> None:
         """
             type Modular_Type is mod 2 ** 9;
         """,
-        rule=rflxdsl.GrammarRule.type_declaration_rule,
+        rule=librflxlang.GrammarRule.type_declaration_rule,
     )
     assert to_dict(unit.root) == {
         "_kind": "TypeSpec",
@@ -63,7 +63,7 @@ def test_checksum_attributes() -> None:
         """
             A'Valid_Checksum and B'Valid_Checksum;
         """,
-        rule=rflxdsl.GrammarRule.expression_rule,
+        rule=librflxlang.GrammarRule.expression_rule,
     )
     assert to_dict(unit.root) == {
         "_kind": "BinOp",
@@ -100,7 +100,7 @@ def test_operator_precedence() -> None:
         """
             A / 8 >= 46 and A / 8 <= 1500
         """,
-        rule=rflxdsl.GrammarRule.expression_rule,
+        rule=librflxlang.GrammarRule.expression_rule,
     )
     assert to_dict(unit.root) == {
         "_kind": "BinOp",
@@ -149,7 +149,7 @@ def test_negative_number() -> None:
         """
             -16#20_000#
         """,
-        rule=rflxdsl.GrammarRule.expression_rule,
+        rule=librflxlang.GrammarRule.expression_rule,
     )
     assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
     assert to_dict(unit.root) == {
@@ -161,7 +161,7 @@ def test_negative_number() -> None:
 def test_selector_precedence1() -> None:
     unit = parse_buffer(
         "X.B = Z",
-        rule=rflxdsl.GrammarRule.extended_expression_rule,
+        rule=librflxlang.GrammarRule.extended_expression_rule,
     )
     assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
     assert to_dict(unit.root) == {
@@ -196,7 +196,7 @@ def test_selector_precedence1() -> None:
 def test_selector_precedence2() -> None:
     unit = parse_buffer(
         "X.B'Size",
-        rule=rflxdsl.GrammarRule.extended_expression_rule,
+        rule=librflxlang.GrammarRule.extended_expression_rule,
     )
     assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
     assert to_dict(unit.root) == {
@@ -220,7 +220,7 @@ def test_selector_precedence2() -> None:
 def test_selector_precedence3() -> None:
     unit = parse_buffer(
         "X'Head.B",
-        rule=rflxdsl.GrammarRule.extended_expression_rule,
+        rule=librflxlang.GrammarRule.extended_expression_rule,
     )
     assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
     assert to_dict(unit.root) == {
@@ -244,7 +244,7 @@ def test_selector_precedence3() -> None:
 def test_suffix_precedence() -> None:
     unit = parse_buffer(
         "2**X'Size",
-        rule=rflxdsl.GrammarRule.extended_expression_rule,
+        rule=librflxlang.GrammarRule.extended_expression_rule,
     )
     assert len(unit.diagnostics) == 0, "\n".join(str(d) for d in unit.diagnostics)
     assert to_dict(unit.root) == {

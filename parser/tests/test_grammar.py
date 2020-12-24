@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 import pytest
-from librecordfluxdsllang import AnalysisContext, GrammarRule
+from librflxlang import AnalysisContext, GrammarRule
 
 from tests.utils import to_dict
 
