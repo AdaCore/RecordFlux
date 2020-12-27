@@ -1,9 +1,13 @@
 with Ethernet;
 with IPv4;
+with ARP;
 
 package In_Ethernet is
 
    for Ethernet::Frame use (Payload => IPv4::Packet)
-      if Type_Length = 16#0800#;
+      if Ether_Type = Ethernet::ET_IPv4;
+
+   for Ethernet::Frame use (Payload => ARP::IPv4)
+      if Ether_Type = Ethernet::ET_ARP;
 
 end In_Ethernet;

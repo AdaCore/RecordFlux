@@ -1,0 +1,37 @@
+with Ethernet;
+with IPv4;
+
+package ARP is
+
+   type Hardware_Address_Space is
+   (
+      Hrd_Ethernet =>   1,
+      Hrd_HW_Exp1  =>  36,
+      Hrd_HW_Exp2  => 256
+   ) with Size => 16;
+
+   type Opcode is (Op_Request => 1, Op_Reply => 2) with Size => 16;
+
+   type Address_Length is mod 2**8;
+
+   type IPv4 is
+      message
+         Hrd : Hardware_Address_Space
+            then Pro if Hrd = Hrd_Ethernet;
+         Pro : Ethernet::Ether_Type;
+         HLn : Address_Length
+            --  ISSUE: Componolit/RecordFlux#525
+            --  then PLn if HLn = Ethernet::Address'Size / 8;
+            then PLn if HLn = 6;
+         PLn : Address_Length
+            --  ISSUE: Componolit/RecordFlux#525
+            --  then Op if PLn = IPv4::Address'Size / 8;
+            then Op if PLn = 4;
+         Op  : Opcode;
+         SHA : Ethernet::Address;
+         SPA : IPv4::Address;
+         THA : Ethernet::Address;
+         TPA : IPv4::Address;
+      end message;
+
+end ARP;
