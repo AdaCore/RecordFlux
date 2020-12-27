@@ -208,11 +208,13 @@ class Validator:
         else:
             validation_result.correct_serialization = False
 
-        if parser_result.is_valid and original_message.is_valid:
+        is_valid = parser_result.is_valid and validation_result.correct_serialization
+
+        if is_valid and original_message.is_valid:
             validation_result.classification = Classification.TP
-        elif parser_result.is_valid and not original_message.is_valid:
+        elif is_valid and not original_message.is_valid:
             validation_result.classification = Classification.FP
-        elif not parser_result.is_valid and original_message.is_valid:
+        elif not is_valid and original_message.is_valid:
             validation_result.classification = Classification.FN
         else:
             validation_result.classification = Classification.TN
