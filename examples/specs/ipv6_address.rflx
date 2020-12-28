@@ -1,0 +1,13 @@
+package IPv6_Address is
+
+   --  IPv6 address (RFC 4291, 2.5)
+
+   type Address is
+      message
+         null
+            then Data
+               with Size => 128;
+         Data : Opaque;
+      end message;
+
+end IPv6_Address;
