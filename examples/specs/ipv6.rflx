@@ -7,11 +7,10 @@ package IPv6 is
 
    --  The value [...] MUST be ignored by the receiver
    --  ISSUE: Componolit/systematization-binary-schemas#55
+   type Reserved_8  is range 0 .. 0 with Size => 8;
+   type Reserved_15 is range 0 .. 0 with Size => 15;
    type Reserved_20 is range 0 .. 0 with Size => 20;
-
-   --  The value [...] MUST be ignored by the receiver
-   --  ISSUE: Componolit/systematization-binary-schemas#55
-   type Reserved_32 is mod 2**32;
+   type Reserved_32 is range 0 .. 0 with Size => 32;
 
    --  Options (RFC 8200, 4.2)
 
@@ -138,5 +137,67 @@ package IPv6 is
 
    for Routing_Header use (Data => RPL_Routing_Header)
       if Routing_Type = RT_RPL_Source_Route;
+
+   --  Segment Routing Header, SRH (RFC 8754, 2)
+
+   type SRH_Last_Entry_Index is range 0 .. 2**8 - 1 with Size => 8;
+   type SRH_Tag is range 0 .. 2**16 - 1 with Size => 16;
+
+   type SRH_TLV_Kind is
+      (SRH_TK_Pad1         =>   0,
+       SRH_TK_Reserved_1   =>   1,
+       SRH_TK_Reserved_2   =>   2,
+       SRH_TK_Reserved_3   =>   3,
+       SRH_TK_PadN         =>   4,
+       SRH_TK_HMAC         =>   5,
+       SRH_TK_Reserved_6   =>   6,
+       SRH_TK_EuT_124      => 124,
+       SRH_TK_EuT_125      => 125,
+       SRH_TK_EuT_126      => 126,
+       SRH_TK_EuT_252      => 252,
+       SRH_TK_EuT_253      => 253,
+       SRH_TK_EuT_254      => 254,
+       SRH_TK_Reserved_255 => 255) with Size => 8, Always_Valid;
+
+   type SRH_TLV is
+      message
+         Kind   : SRH_TLV_Kind
+            then null
+               if Kind = SRH_TK_Pad1
+            then Length
+               if Kind /= SRH_TK_Pad1;
+         Length : Data_Len
+            then Data
+               with Size => 8 * Length;
+         Data   : Opaque;
+      end message;
+
+   type SRH_HMAC_Key_ID is mod 2**32;
+
+   type SRH_HMAC_TLV is
+      message
+         Dest_Addr_Verification_Disable : Boolean;
+         Reserved                       : Reserved_15;
+         HMAC_Key_ID                    : SRH_HMAC_Key_ID;
+         HMAC                           : Opaque
+            with Size => Message'Last - HMAC_Key_ID'Last;
+      end message;
+
+   for SRH_TLV use (Data => SRH_HMAC_TLV)
+      if Kind = SRH_TK_HMAC;
+
+   type Segment_Routing_Header is
+      message
+         Segments_Left : Segments_Count;
+         Last_Entry    : SRH_Last_Entry_Index;
+         Flags         : Reserved_8;
+         Tag           : SRH_Tag
+            then Segments
+               with Size => 128 * (Last_Entry + 1);
+         Segments      : IPv6_Address::Addresses;
+      end message;
+
+   for Routing_Header use (Data => Segment_Routing_Header)
+      if Routing_Type = RT_Segment_Routing;
 
 end IPv6;
