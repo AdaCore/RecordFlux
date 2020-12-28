@@ -1,3 +1,5 @@
+with Protocol_Numbers;
+
 package IPv4 is
 
    type Version is range 4 .. 4 with Size => 4;
@@ -8,7 +10,6 @@ package IPv4 is
    type Identification is mod 2**16;
    type Fragment_Offset is mod 2**13;
    type TTL is mod 2**8;
-   type Protocol is (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
    type Header_Checksum is mod 2**16;
    type Address is mod 2**32;
 
@@ -51,7 +52,7 @@ package IPv4 is
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
-         Protocol : Protocol;
+         Protocol : Protocol_Numbers::Protocol;
          Header_Checksum : Header_Checksum;
          Source : Address;
          Destination : Address

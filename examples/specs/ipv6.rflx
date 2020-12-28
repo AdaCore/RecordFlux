@@ -1,0 +1,142 @@
+with IPv6_Address;
+with Protocol_Numbers;
+
+package IPv6 is
+
+   --  Types
+
+   --  The value [...] MUST be ignored by the receiver
+   --  ISSUE: Componolit/systematization-binary-schemas#55
+   type Reserved_20 is range 0 .. 0 with Size => 20;
+
+   --  The value [...] MUST be ignored by the receiver
+   --  ISSUE: Componolit/systematization-binary-schemas#55
+   type Reserved_32 is mod 2**32;
+
+   --  Options (RFC 8200, 4.2)
+
+   type Option_Action is
+      (Skip                                        => 0,
+       Discard                                     => 1,
+       Discard_With_Parameter_Problem              => 2,
+       Discard_With_Parameter_Problem_If_Multicast => 3) with Size => 2;
+
+   type Option_Value is
+      (Pad1 => 0,
+       PadN => 1) with Size => 5;
+
+   type Option_Kind is
+      message
+         Action     : Option_Action;
+         May_Change : Boolean;
+         Value      : Option_Value;
+      end message;
+
+   type Data_Len is range 0 .. 2**8 - 1 with Size => 8;
+
+   type Option is
+      message
+         Kind : Option_Kind
+            then null
+               if Kind_Action = Skip and Kind_May_Change = False and Kind_Value = Pad1
+            then Len
+               if Kind_Action /= Skip or Kind_May_Change = True or Kind_Value /= Pad1;
+         Len  : Data_Len
+            then Data
+               with Size => 8 * Len;
+         Data : Opaque;
+      end message;
+
+   type Options is array of Option;
+
+   --  Hop-by-Hop Options Header (RFC 8200, 4.3)
+
+   type Hop_By_Hop_Options_Header is
+      message
+         Next_Header : Protocol_Numbers::Protocol;
+         Hdr_Ext_Len : Data_Len
+            then Options
+               with Size => 40 + 64 * Hdr_Ext_Len;
+         Options     : Options
+            then null
+               if Message'Size mod 64 = 0;
+      end message;
+
+   --  Routing Header (RFC 8200, 4.4)
+
+   --  Routing types
+   --  https://www.iana.org/assignments/ipv6-parameters/ipv6-parameters-3.csv
+   type Routing_Type is
+      (RT_Type_2           => 2,
+       RT_RPL_Source_Route => 3,
+       RT_Segment_Routing  => 4,
+       RT_Experiment_1     => 253,
+       RT_Experiment_2     => 254,
+       RT_Reserved         => 255) with Size => 8, Always_Valid;
+
+   type Segments_Count is range 0 .. 2**8 - 1 with Size => 8;
+
+   type Routing_Header is
+      message
+         Next_Header  : Protocol_Numbers::Protocol;
+         Hdr_Ext_Len  : Data_Len;
+         Routing_Type : Routing_Type
+            then Data
+               with Size => 40 + 64 * Hdr_Ext_Len;
+         Data         : Opaque
+            then null
+               if Message'Size mod 64 = 0;
+      end message;
+
+   --  Type 2 routing header (RFC 6275, 6.4)
+   type Routing_Header_Type_2 is
+      message
+         Segments_Left : Segments_Count
+            then Reserved
+               if Segments_Left = 1;
+         Reserved      : Reserved_32;
+         Home_Address  : IPv6_Address::Address;
+      end message;
+
+   for Routing_Header use (Data => Routing_Header_Type_2)
+      if Hdr_Ext_Len = 2 and Routing_Type = RT_Type_2;
+
+   --  RPL Routing Header (RFC 6554, 3)
+
+   type Cmpr_Length is range 0 .. 15 with Size => 4;
+   type Pad_Length is range 0 .. 15 with Size => 4;
+
+   --  ISSUE: Componolit/systematization-binary-schemas#57
+   --  As per RFC 6554, section 3, the segments sent in the RPL routing header actually are
+   --  a vector of adresses. However, these are not fixed-size IPv6 addresses, but they are
+   --  truncated depending on the the values of CmprI and CmprE. We cannot specify this as,
+   --  a normal sequence because those require a static element type.
+   type RPL_Routing_Header is
+      message
+         Segments_Left : Segments_Count;
+         CmprI         : Cmpr_Length;
+         CmprE         : Cmpr_Length;
+         Pad           : Pad_Length;
+         Reserved      : Reserved_20
+            then Padding
+               with Size => 8 * Pad
+                  if Segments_Left = 0
+            then Last_Segment
+               with Size => 8 * (16 - CmprE)
+                  if Segments_Left = 1
+            then Segments
+               with Size => Segments_Left * 8 * (16 - CmprI)
+                  if Segments_Left > 1;
+         Segments      : Opaque
+            then Last_Segment
+               with Size => 8 * (16 - CmprE);
+         Last_Segment : Opaque
+            then Padding
+               with Size => 8 * Pad;
+         Padding      : Opaque;
+      end message;
+
+   for Routing_Header use (Data => RPL_Routing_Header)
+      if Routing_Type = RT_RPL_Source_Route;
+
+end IPv6;
