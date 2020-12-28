@@ -4,6 +4,9 @@ package Protocol_Numbers is
       (PROTOCOL_HOPOPT     => 0,
        PROTOCOL_ICMP       => 1,
        PROTOCOL_UDP        => 17,
-       PROTOCOL_IPv6_ROUTE => 43) with Size => 8, Always_Valid;
+       PROTOCOL_IPv6_ROUTE => 43,
+       PROTOCOL_IPv6_FRAG  => 44,
+       PROTOCOL_IPv6_NONXT => 59,
+       PROTOCOL_IPv6_OPTS  => 60) with Size => 8, Always_Valid;
 
 end Protocol_Numbers;
