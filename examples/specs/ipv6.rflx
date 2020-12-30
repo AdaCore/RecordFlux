@@ -240,7 +240,11 @@ package IPv6 is
          Source         : IPv6_Address::Address;
          Destination    : IPv6_Address::Address
             then Data
-               with Size => 8 * Payload_Length;
+               with Size => 8 * Payload_Length
+               if Payload_Length > 0
+            --  ISSUE: Componolit/RecordFlux#533
+            then null
+               if Payload_Length = 0;
          Data           : Opaque;
       end message;
 
