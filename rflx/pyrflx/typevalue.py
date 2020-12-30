@@ -709,25 +709,11 @@ class MessageValue(TypeValue):
         def set_field_with_size(field_name: str, field_size: int) -> Tuple[int, int]:
             assert isinstance(value, Bitstring)
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
-            if field_size < 8 or field_size % 8 == 0:
-                self.set(
-                    field_name,
-                    value[current_pos_in_bitstring : current_pos_in_bitstring + field_size],
-                )
-                current_pos_in_bitstring += field_size
-            else:
-                bytes_used_for_field = field_size // 8 + 1
-                first_pos = current_pos_in_bitstring
-                field_bits = Bitstring()
-
-                for _ in range(bytes_used_for_field - 1):
-                    field_bits += value[current_pos_in_bitstring : current_pos_in_bitstring + 8]
-                    current_pos_in_bitstring += 8
-
-                k = field_size // bytes_used_for_field + 1
-                field_bits += value[current_pos_in_bitstring + 8 - k : first_pos + field_size]
-                current_pos_in_bitstring = first_pos + field_size
-                self.set(field_name, field_bits)
+            self.set(
+                field_name,
+                value[current_pos_in_bitstring : current_pos_in_bitstring + field_size],
+            )
+            current_pos_in_bitstring += field_size
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         while current_field_name != FINAL.name:

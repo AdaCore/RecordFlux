@@ -1,0 +1,12 @@
+package Unaligned_Field is
+
+   type T1 is mod 2**7;
+   type T2 is mod 2**18;
+
+   type M1 is
+      message
+         F1 : T1;
+         F2 : T1;
+         F3 : T2;
+      end message;
+end Unaligned_Field;
