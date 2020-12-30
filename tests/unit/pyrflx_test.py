@@ -1077,3 +1077,21 @@ def test_refinement_with_checksum() -> None:
     tlv_message = message.get("Payload")
     assert isinstance(tlv_message, MessageValue)
     assert tlv_message.valid_message
+
+
+@pytest.mark.parametrize(
+    "data, f1, f2, f3",
+    [
+        (b"\x00\x00\x00\x00", 0, 0, 0),
+        (b"\x11\x11\x11\x11", 0x8, 0x44, 0x11111),
+        (b"\x11\x22\x33\x44", 0x8, 0x48, 0x23344),
+        (b"\xff\xff\xff\xff", 0x7F, 0x7F, 0x3FFFF),
+    ],
+)
+def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -> None:
+    msg = PyRFLX.from_specs([f"{SPEC_DIR}/unaligned_field.rflx"])["Unaligned_Field"]["M1"]
+    msg.parse(data)
+    assert msg.get("F1") == f1
+    assert msg.get("F2") == f2
+    assert msg.get("F3") == f3
+    assert data == msg.bytestring
