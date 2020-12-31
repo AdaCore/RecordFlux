@@ -22,8 +22,9 @@ package IPv6 is
        Discard_With_Parameter_Problem_If_Multicast => 3) with Size => 2;
 
    type Option_Value is
-      (Pad1 => 0,
-       PadN => 1) with Size => 5;
+      (Pad1         => 0,
+       PadN         => 1,
+       Router_Alert => 5) with Size => 5;
 
    type Option_Kind is
       message
@@ -43,26 +44,31 @@ package IPv6 is
                if Kind_Action /= Skip or Kind_May_Change = True or Kind_Value /= Pad1;
          Len  : Data_Len
             then Data
-               with Size => 8 * Len;
+               with Size => 8 * Len
+               if Len > 0
+            --  ISSUE: Componolit/RecordFlux#533
+            then null
+               if Len = 0;
          Data : Opaque;
       end message;
 
    type Options is array of Option;
 
-   type Options_Header is
+   type Options_Base_Header is
       message
          Next_Header : Protocol_Numbers::Protocol;
          Hdr_Ext_Len : Data_Len
             then Options
-               with Size => 40 + 64 * Hdr_Ext_Len;
+               with Size => 48 + 64 * Hdr_Ext_Len;
          Options     : Options
-            then null
-               if Message'Size mod 64 = 0;
+            then Data
+               with Size => Message'Last - Options'Last;
+         Data        : Opaque;
       end message;
 
    --  Hop-by-Hop Options Header (RFC 8200, 4.3)
 
-   type Hop_By_Hop_Options_Header is new Options_Header;
+   type Hop_By_Hop_Options_Header is new Options_Base_Header;
 
    --  Routing Header (RFC 8200, 4.4)
 
@@ -78,16 +84,13 @@ package IPv6 is
 
    type Segments_Count is range 0 .. 2**8 - 1 with Size => 8;
 
-   type Routing_Header is
+   type Routing_Base_Header is
       message
-         Next_Header  : Protocol_Numbers::Protocol;
          Hdr_Ext_Len  : Data_Len;
          Routing_Type : Routing_Type
             then Data
                with Size => 40 + 64 * Hdr_Ext_Len;
-         Data         : Opaque
-            then null
-               if Message'Size mod 64 = 0;
+         Data         : Opaque;
       end message;
 
    --  Type 2 routing header (RFC 6275, 6.4)
@@ -100,7 +103,7 @@ package IPv6 is
          Home_Address  : IPv6_Address::Address;
       end message;
 
-   for Routing_Header use (Data => Routing_Header_Type_2)
+   for Routing_Base_Header use (Data => Routing_Header_Type_2)
       if Hdr_Ext_Len = 2 and Routing_Type = RT_Type_2;
 
    --  RPL Routing Header (RFC 6554, 3)
@@ -111,7 +114,7 @@ package IPv6 is
    --  ISSUE: Componolit/systematization-binary-schemas#57
    --  As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
    --  vector of addresses. However, these are not fixed-size IPv6 addresses, but they are
-   --  truncated depending on the values of CmprI and CmprE. We cannot specify this as, a normal
+   --  truncated depending on the values of CmprI and CmprE. We cannot specify this as a normal
    --  sequence because those require a static element type.
    type RPL_Routing_Header is
       message
@@ -138,7 +141,7 @@ package IPv6 is
          Padding      : Opaque;
       end message;
 
-   for Routing_Header use (Data => RPL_Routing_Header)
+   for Routing_Base_Header use (Data => RPL_Routing_Header)
       if Routing_Type = RT_RPL_Source_Route;
 
    --  Segment Routing Header, SRH (RFC 8754, 2)
@@ -200,8 +203,17 @@ package IPv6 is
          Segments      : IPv6_Address::Addresses;
       end message;
 
-   for Routing_Header use (Data => Segment_Routing_Header)
+   for Routing_Base_Header use (Data => Segment_Routing_Header)
       if Routing_Type = RT_Segment_Routing;
+
+   type Routing_Header is
+      message
+         Next_Header  : Protocol_Numbers::Protocol;
+         RH           : Routing_Base_Header
+            then Data
+               with Size => Message'Last - RH_Data'Last;
+         Data        : Opaque;
+      end message;
 
    --  Fragment Header (RFC 8200, 4.5)
 
@@ -211,15 +223,19 @@ package IPv6 is
    type Fragment_Header is
       message
          Next_Header     : Protocol_Numbers::Protocol;
-         Reserved        : Reserved_8;
+         Reserved_1      : Reserved_8;
          Fragment_Offset : FH_Offset;
+         Reserved_2      : Reserved_2;
          More_Fragments  : Boolean;
-         Identification  : FH_Identification;
+         Identification  : FH_Identification
+            then Data
+               with Size => Message'Last - Identification'Last;
+         Data            : Opaque;
       end message;
 
    --  Destination Options Header (RFC 8200, 4.6)
 
-   type Destination_Options_Header is new Options_Header;
+   type Destination_Options_Header is new Options_Base_Header;
 
    --  Packet (RFC 8200, 3)
 
@@ -247,5 +263,122 @@ package IPv6 is
                if Payload_Length = 0;
          Data           : Opaque;
       end message;
+
+   --  Router Alert Option (RFC 2711, 2.1)
+
+   type Router_Alert_Option_Value is
+      (RAO_Multicast_Listener_Discover => 0,
+       RAO_RSVP                        => 1,
+       RAO_Active_Networks             => 2) with Size => 16;
+
+   type Router_Alert_Option is
+      message
+         Value : Router_Alert_Option_Value;
+      end message;
+
+   for Option use (Data => Router_Alert_Option)
+      if Kind_Action = Skip and Kind_May_Change = False and Kind_Value = Router_Alert;
+
+   -- Null Header (RFC 8200, 4.7)
+   type Null_Header is null message;
+
+   ------------------------------
+   --  Next header refinements --
+   ------------------------------
+
+   --  Hop-by-Hop Options Header
+   for Hop_By_Hop_Options_Header use (Data => Hop_By_Hop_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+
+   for Hop_By_Hop_Options_Header use (Data => Routing_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+
+   for Hop_By_Hop_Options_Header use (Data => Fragment_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+
+   for Hop_By_Hop_Options_Header use (Data => Null_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+
+   for Hop_By_Hop_Options_Header use (Data => Destination_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+
+   for Hop_By_Hop_Options_Header use (Data => Packet)
+      if Next_Header = Protocol_Numbers::PROT_IPv6;
+
+   --  Routing header
+   for Routing_Header use (Data => Hop_By_Hop_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+
+   for Routing_Header use (Data => Routing_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+
+   for Routing_Header use (Data => Fragment_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+
+   for Routing_Header use (Data => Null_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+
+   for Routing_Header use (Data => Destination_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+
+   for Routing_Header use (Data => Packet)
+      if Next_Header = Protocol_Numbers::PROT_IPv6;
+
+   --  Fragment Header
+   for Fragment_Header use (Data => Hop_By_Hop_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+
+   for Fragment_Header use (Data => Routing_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+
+   for Fragment_Header use (Data => Fragment_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+
+   for Fragment_Header use (Data => Null_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+
+   for Fragment_Header use (Data => Destination_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+
+   for Fragment_Header use (Data => Packet)
+      if Next_Header = Protocol_Numbers::PROT_IPv6;
+
+   --  Destination Options Header
+   for Destination_Options_Header use (Data => Hop_By_Hop_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+
+   for Destination_Options_Header use (Data => Routing_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+
+   for Destination_Options_Header use (Data => Fragment_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+
+   for Destination_Options_Header use (Data => Null_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+
+   for Destination_Options_Header use (Data => Destination_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+
+   for Destination_Options_Header use (Data => Packet)
+      if Next_Header = Protocol_Numbers::PROT_IPv6;
+
+   --  Packet
+   for Packet use (Data => Hop_By_Hop_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+
+   for Packet use (Data => Routing_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+
+   for Packet use (Data => Fragment_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+
+   for Packet use (Data => Null_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+
+   for Packet use (Data => Destination_Options_Header)
+      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+
+   for Packet use (Data => Packet)
+      if Next_Header = Protocol_Numbers::PROT_IPv6;
 
 end IPv6;
