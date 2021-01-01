@@ -1,3 +1,4 @@
+with IANA;
 with IPv6_Address;
 with Protocol_Numbers;
 
@@ -56,14 +57,12 @@ package IPv6 is
 
    type Options_Base_Header is
       message
-         Next_Header : Protocol_Numbers::Protocol;
-         Hdr_Ext_Len : Data_Len
-            then Options
-               with Size => 48 + 64 * Hdr_Ext_Len;
+         Next_Header : IANA::Protocol_Number;
+         Hdr_Ext_Len : Data_Len;
          Options     : Options
-            then Data
-               with Size => Message'Last - Options'Last;
-         Data        : Opaque;
+            with Size => 48 + 64 * Hdr_Ext_Len;
+         Data        : Opaque
+            with Size => Message'Last - Options'Last;
       end message;
 
    --  Hop-by-Hop Options Header (RFC 8200, 4.3)
@@ -87,19 +86,17 @@ package IPv6 is
    type Routing_Base_Header is
       message
          Hdr_Ext_Len  : Data_Len;
-         Routing_Type : Routing_Type
-            then Data
-               with Size => 40 + 64 * Hdr_Ext_Len;
-         Data         : Opaque;
+         Routing_Type : Routing_Type;
+         Data         : Opaque
+            with Size => 40 + 64 * Hdr_Ext_Len;
       end message;
 
    --  Type 2 routing header (RFC 6275, 6.4)
    type Routing_Header_Type_2 is
       message
-         Segments_Left : Segments_Count
-            then Reserved
-               if Segments_Left = 1;
-         Reserved      : Reserved_32;
+         Segments_Left : Segments_Count;
+         Reserved      : Reserved_32
+            if Segments_Left = 1;
          Home_Address  : IPv6_Address::Address;
       end message;
 
@@ -172,10 +169,9 @@ package IPv6 is
                if Kind = SRH_TK_Pad1
             then Length
                if Kind /= SRH_TK_Pad1;
-         Length : Data_Len
-            then Data
-               with Size => 8 * Length;
-         Data   : Opaque;
+         Length : Data_Len;
+         Data   : Opaque
+            with Size => 8 * Length;
       end message;
 
    type SRH_HMAC_Key_ID is mod 2**32;
@@ -197,10 +193,9 @@ package IPv6 is
          Segments_Left : Segments_Count;
          Last_Entry    : SRH_Last_Entry_Index;
          Flags         : Reserved_8;
-         Tag           : SRH_Tag
-            then Segments
-               with Size => 128 * (Last_Entry + 1);
-         Segments      : IPv6_Address::Addresses;
+         Tag           : SRH_Tag;
+         Segments      : IPv6_Address::Addresses
+            with Size => 128 * (Last_Entry + 1);
       end message;
 
    for Routing_Base_Header use (Data => Segment_Routing_Header)
@@ -208,11 +203,10 @@ package IPv6 is
 
    type Routing_Header is
       message
-         Next_Header  : Protocol_Numbers::Protocol;
-         RH           : Routing_Base_Header
-            then Data
-               with Size => Message'Last - RH_Data'Last;
-         Data        : Opaque;
+         Next_Header  : IANA::Protocol_Number;
+         RH           : Routing_Base_Header;
+         Data         : Opaque
+            with Size => Message'Last - RH_Data'Last;
       end message;
 
    --  Fragment Header (RFC 8200, 4.5)
@@ -222,15 +216,14 @@ package IPv6 is
 
    type Fragment_Header is
       message
-         Next_Header     : Protocol_Numbers::Protocol;
+         Next_Header     : IANA::Protocol_Number;
          Reserved_1      : Reserved_8;
          Fragment_Offset : FH_Offset;
          Reserved_2      : Reserved_2;
          More_Fragments  : Boolean;
-         Identification  : FH_Identification
-            then Data
-               with Size => Message'Last - Identification'Last;
-         Data            : Opaque;
+         Identification  : FH_Identification;
+         Data            : Opaque
+            with Size => Message'Last - Identification'Last;
       end message;
 
    --  Destination Options Header (RFC 8200, 4.6)
@@ -251,7 +244,7 @@ package IPv6 is
          Traffic_Class  : Traffic_Class;
          Flow_Label     : Flow_Label;
          Payload_Length : Payload_Length;
-         Next_Header    : Protocol_Numbers::Protocol;
+         Next_Header    : IANA::Protocol_Number;
          Hop_Limit      : Hop_Limit;
          Source         : IPv6_Address::Address;
          Destination    : IPv6_Address::Address
@@ -288,97 +281,97 @@ package IPv6 is
 
    --  Hop-by-Hop Options Header
    for Hop_By_Hop_Options_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+      if Next_Header = IANA::PROT_HOPOPT;
 
    for Hop_By_Hop_Options_Header use (Data => Routing_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::PROT_IPv6_ROUTE;
 
    for Hop_By_Hop_Options_Header use (Data => Fragment_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+      if Next_Header = IANA::PROT_IPv6_FRAG;
 
    for Hop_By_Hop_Options_Header use (Data => Null_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+      if Next_Header = IANA::PROT_IPv6_NONXT;
 
    for Hop_By_Hop_Options_Header use (Data => Destination_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+      if Next_Header = IANA::PROT_IPv6_OPTS;
 
    for Hop_By_Hop_Options_Header use (Data => Packet)
-      if Next_Header = Protocol_Numbers::PROT_IPv6;
+      if Next_Header = IANA::PROT_IPv6;
 
    --  Routing header
    for Routing_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+      if Next_Header = IANA::PROT_HOPOPT;
 
    for Routing_Header use (Data => Routing_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::PROT_IPv6_ROUTE;
 
    for Routing_Header use (Data => Fragment_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+      if Next_Header = IANA::PROT_IPv6_FRAG;
 
    for Routing_Header use (Data => Null_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+      if Next_Header = IANA::PROT_IPv6_NONXT;
 
    for Routing_Header use (Data => Destination_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+      if Next_Header = IANA::PROT_IPv6_OPTS;
 
    for Routing_Header use (Data => Packet)
-      if Next_Header = Protocol_Numbers::PROT_IPv6;
+      if Next_Header = IANA::PROT_IPv6;
 
    --  Fragment Header
    for Fragment_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+      if Next_Header = IANA::PROT_HOPOPT;
 
    for Fragment_Header use (Data => Routing_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::PROT_IPv6_ROUTE;
 
    for Fragment_Header use (Data => Fragment_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+      if Next_Header = IANA::PROT_IPv6_FRAG;
 
    for Fragment_Header use (Data => Null_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+      if Next_Header = IANA::PROT_IPv6_NONXT;
 
    for Fragment_Header use (Data => Destination_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+      if Next_Header = IANA::PROT_IPv6_OPTS;
 
    for Fragment_Header use (Data => Packet)
-      if Next_Header = Protocol_Numbers::PROT_IPv6;
+      if Next_Header = IANA::PROT_IPv6;
 
    --  Destination Options Header
    for Destination_Options_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+      if Next_Header = IANA::PROT_HOPOPT;
 
    for Destination_Options_Header use (Data => Routing_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::PROT_IPv6_ROUTE;
 
    for Destination_Options_Header use (Data => Fragment_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+      if Next_Header = IANA::PROT_IPv6_FRAG;
 
    for Destination_Options_Header use (Data => Null_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+      if Next_Header = IANA::PROT_IPv6_NONXT;
 
    for Destination_Options_Header use (Data => Destination_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+      if Next_Header = IANA::PROT_IPv6_OPTS;
 
    for Destination_Options_Header use (Data => Packet)
-      if Next_Header = Protocol_Numbers::PROT_IPv6;
+      if Next_Header = IANA::PROT_IPv6;
 
    --  Packet
    for Packet use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_HOPOPT;
+      if Next_Header = IANA::PROT_HOPOPT;
 
    for Packet use (Data => Routing_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::PROT_IPv6_ROUTE;
 
    for Packet use (Data => Fragment_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_FRAG;
+      if Next_Header = IANA::PROT_IPv6_FRAG;
 
    for Packet use (Data => Null_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_NONXT;
+      if Next_Header = IANA::PROT_IPv6_NONXT;
 
    for Packet use (Data => Destination_Options_Header)
-      if Next_Header = Protocol_Numbers::PROT_IPv6_OPTS;
+      if Next_Header = IANA::PROT_IPv6_OPTS;
 
    for Packet use (Data => Packet)
-      if Next_Header = Protocol_Numbers::PROT_IPv6;
+      if Next_Header = IANA::PROT_IPv6;
 
 end IPv6;
