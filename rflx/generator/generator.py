@@ -2301,14 +2301,16 @@ class Generator:
             WithClause(self.__prefix * const.TYPES_PACKAGE),
         ]
 
-        arrays = [
-            self.__prefix * ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
-        ]
+        arrays = {
+            self.__prefix * ID(t.identifier): None
+            for t in message.types.values()
+            if isinstance(t, Array)
+        }
         context.extend(WithClause(array) for array in arrays)
         instantiation = GenericPackageInstantiation(
             self.__prefix * ID(message.identifier),
             name,
-            [self.__prefix * const.TYPES_PACKAGE] + arrays,
+            [self.__prefix * const.TYPES_PACKAGE] + list(arrays.keys()),
         )
 
         self.__create_instantiation_unit(ID(message.identifier), context, instantiation)
