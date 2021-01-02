@@ -1,0 +1,105 @@
+package ICMPv6 is
+
+   type Reserved_8 is range 0 .. 0 with Size => 8;
+   type Reserved_32 is range 0 .. 0 with Size => 32;
+   type Checksum is mod 2**16;
+
+   type Kind is (
+      Destination_Unreachable     =>   1,
+      Packet_Too_Big              =>   2,
+      Time_Exceeded               =>   3,
+      Parameter_Problem           =>   4,
+      Private_Experimentation_100 => 100,
+      Private_Experimentation_101 => 101,
+      Reserved_127                => 127,
+      Echo_Request                => 128,
+      Echo_Reply                  => 129,
+      Private_Experimentation_200 => 200,
+      Private_Experimentation_201 => 201,
+      Reserved_255                => 255
+   ) with Size => 8;
+
+   type DU_Code is (
+      No_Route_To_Destination        => 0,
+      Communication_Prohibited       => 1,
+      Beyond_Scope_Of_Source_Address => 2,
+      Address_Unreachable            => 3,
+      Port_Unreachable               => 4,
+      Source_Address_Failed_Policy   => 5,
+      Route_To_Destination_Rejected  => 6
+   ) with Size => 8;
+
+   type TE_Code is (
+      Hop_Limit_Exceeded                => 0,
+      Fragment_Reassembly_Time_Exceeded => 1
+   ) with Size => 8;
+
+   type PP_Code is (
+      Erroneous_Header_Field   => 0,
+      Unrecognized_Next_Header => 1,
+      Unrecognized_IPv6_Option => 2
+   ) with Size => 8;
+
+   type MTU is range 1280 .. 2**32 - 1 with Size => 32;
+   type Pointer is range 0 .. 2**32 - 1 with Size => 32;
+   type Identifier is mod 2**16;
+   type Sequence_Number is mod 2**16;
+
+   type Message is
+      message
+         Kind            : Kind
+            then DU_Code
+               if Kind = Destination_Unreachable
+            then TE_Code
+               if Kind = Time_Exceeded
+            then PP_Code
+               if Kind = Parameter_Problem
+            then Unused_Code
+               if Kind = Packet_Too_Big
+                  or Kind = Echo_Request
+                  or Kind = Echo_Reply
+            then Data
+               with Size => Message'Size - (Kind'Last - Kind'First + 1)
+               if Kind = Private_Experimentation_100
+                  or Kind = Private_Experimentation_101
+                  or Kind = Reserved_127
+                  or Kind = Private_Experimentation_200
+                  or Kind = Private_Experimentation_201
+                  or Kind = Reserved_255;
+         DU_Code         : DU_Code
+            then Checksum;
+         TE_Code         : TE_Code
+            then Checksum;
+         PP_Code         : PP_Code
+            then Checksum;
+         Unused_Code     : Reserved_8
+            then Checksum;
+         Checksum        : Checksum
+            then Unused
+               if Kind = Destination_Unreachable
+                  or Kind = Time_Exceeded
+            then MTU
+               if Kind = Packet_Too_Big
+            then Pointer
+               if Kind = Parameter_Problem
+            then Identifier
+               if Kind = Echo_Request
+                  or Kind = Echo_Reply;
+         Unused          : Reserved_32
+            then Data
+               with Size => Message'Size - (Unused'Last - Kind'First + 1);
+         MTU             : MTU
+            then Data
+               with Size => Message'Size - (MTU'Last - Kind'First + 1);
+         Pointer         : Pointer
+            then Data
+               with Size => Message'Size - (Pointer'Last - Kind'First + 1);
+         Identifier      : Identifier;
+         Sequence_Number : Sequence_Number
+            then Data
+               with Size => Message'Size - (Sequence_Number'Last - Kind'First + 1);
+         Data            : Opaque
+            if Message'Size >= 64 and Message'Size <= 8 * 1280;
+      end message;
+
+end ICMPv6;
