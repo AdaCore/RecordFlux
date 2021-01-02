@@ -1,4 +1,4 @@
-with Protocol_Numbers;
+with IANA;
 
 package IPv4 is
 
@@ -52,7 +52,7 @@ package IPv4 is
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
-         Protocol : Protocol_Numbers::Protocol;
+         Protocol : IANA::Protocol_Number;
          Header_Checksum : Header_Checksum;
          Source : Address;
          Destination : Address
