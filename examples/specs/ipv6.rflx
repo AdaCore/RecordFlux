@@ -1,6 +1,5 @@
 with IANA;
 with IPv6_Address;
-with Protocol_Numbers;
 
 package IPv6 is
 
