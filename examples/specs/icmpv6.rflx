@@ -98,8 +98,9 @@ package ICMPv6 is
          Sequence_Number : Sequence_Number
             then Data
                with Size => Message'Size - (Sequence_Number'Last - Kind'First + 1);
-         Data            : Opaque
-            if Message'Size >= 64 and Message'Size <= 8 * 1280;
+         Data            : Opaque;
+            --  ISSUE: Componolit/RecordFlux#525
+            --  if Message'Size >= 64 and Message'Size <= 8 * 1280;
       end message;
 
 end ICMPv6;
