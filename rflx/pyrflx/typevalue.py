@@ -1,5 +1,4 @@
 # pylint: disable=too-many-lines
-
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
@@ -40,10 +39,7 @@ from rflx.model import (
     Type,
 )
 from rflx.pyrflx.bitstring import Bitstring
-
-
-class NotInitializedError(Exception):
-    pass
+from rflx.pyrflx.error import PyRFLXError, Severity, Subsystem
 
 
 class TypeValue(Base):
@@ -79,7 +75,7 @@ class TypeValue(Base):
 
     def _raise_initialized(self) -> None:
         if not self.initialized:
-            raise NotInitializedError("value not initialized")
+            raise PyRFLXError(f"value {self.identifier} not initialized")
 
     def clear(self) -> None:
         self._value = None
@@ -129,7 +125,7 @@ class TypeValue(Base):
             return ArrayValue(vtype)
         if isinstance(vtype, Message):
             return MessageValue(vtype, refinements)
-        raise ValueError("cannot construct unknown type: " + type(vtype).__name__)
+        raise PyRFLXError("cannot construct unknown type: " + type(vtype).__name__)
 
 
 class ScalarValue(TypeValue):
@@ -174,7 +170,7 @@ class IntegerValue(ScalarValue):
             .simplified()
             != TRUE
         ):
-            raise ValueError(f"value {value} not in type range {self._first} .. {self._last}")
+            raise PyRFLXError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
@@ -226,7 +222,7 @@ class EnumValue(ScalarValue):
             else self._type.package * value
         )
         if Variable(prefixed_value) not in self.literals:
-            raise KeyError(f"{value} is not a valid enum value")
+            raise PyRFLXError(f"{value} is not a valid enum value")
         r = (
             (
                 And(*self._type.constraints("__VALUE__", check, not self.__imported))
@@ -258,7 +254,7 @@ class EnumValue(ScalarValue):
             if self._type.always_valid:
                 self._value = "UNKNOWN", value_as_number
             else:
-                raise KeyError(f"Number {value_as_number.value} is not a valid enum value")
+                raise PyRFLXError(f"Number {value_as_number.value} is not a valid enum value")
         else:
             for k, v in self.literals.items():
                 if v == value_as_number:
@@ -320,7 +316,7 @@ class CompositeValue(TypeValue):
             and isinstance(self._expected_size, Number)
             and size_of_value != self._expected_size.value
         ):
-            raise ValueError(
+            raise PyRFLXError(
                 f"invalid data size: input size is {len(value) * 8} "
                 f"while expected input size is {self._expected_size.value}"
             )
@@ -350,11 +346,13 @@ class OpaqueValue(CompositeValue):
             nested_msg = self._refinement_message.clone()
             try:
                 nested_msg.parse(value, check)
-            except (IndexError, ValueError, KeyError) as e:
-                raise ValueError(
-                    f"Error while parsing nested message "
-                    f"{self._refinement_message.identifier}: {e}"
-                ) from e
+            except PyRFLXError as e:
+                e.append(
+                    f"Error while parsing nested message " f"{self._refinement_message.identifier}",
+                    Subsystem.PYRFLX,
+                    Severity.ERROR,
+                )
+                raise e
             assert nested_msg.valid_message
             self._nested_message = nested_msg
             self._value = nested_msg.bytestring
@@ -414,22 +412,22 @@ class ArrayValue(CompositeValue):
                 if isinstance(v, MessageValue):
                     assert isinstance(self._element_type, Message)
                     if not v.equal_type(self._element_type):
-                        raise ValueError(
+                        raise PyRFLXError(
                             f'cannot assign "{v.name}" to an array of "{self._element_type.name}"'
                         )
                     if not v.valid_message:
-                        raise ValueError(
+                        raise PyRFLXError(
                             f'cannot assign message "{v.name}" to array of messages: '
                             f"all messages must be valid"
                         )
                 else:
-                    raise ValueError(
+                    raise PyRFLXError(
                         f"cannot assign {type(v).__name__} to an array of "
                         f"{type(self._element_type).__name__}"
                     )
             else:
                 if isinstance(v, MessageValue) or not v.equal_type(self._element_type):
-                    raise ValueError(
+                    raise PyRFLXError(
                         f"cannot assign {type(v).__name__} to an array of "
                         f"{type(self._element_type).__name__}"
                     )
@@ -447,11 +445,14 @@ class ArrayValue(CompositeValue):
                 assert isinstance(nested_message, MessageValue)
                 try:
                     nested_message.parse(value, check)
-                except (IndexError, ValueError, KeyError) as e:
-                    raise ValueError(
+                except PyRFLXError as e:
+                    e.append(
                         f"cannot parse nested messages in array of type "
-                        f"{self._element_type.full_name}: {e}"
-                    ) from e
+                        f"{self._element_type.full_name}",
+                        Subsystem.PYRFLX,
+                        Severity.ERROR,
+                    )
+                    raise e
                 assert nested_message.valid_message
                 self._value.append(nested_message)
                 value = value[len(nested_message.bitstring) :]
@@ -472,7 +473,7 @@ class ArrayValue(CompositeValue):
 
             self._value = new_value
         else:
-            raise NotImplementedError(f"Arrays of {self._element_type} currently not supported")
+            raise PyRFLXError(f"Arrays of {self._element_type} currently not supported")
 
     @property
     def size(self) -> Expr:
@@ -738,7 +739,7 @@ class MessageValue(TypeValue):
                         current_field_first_in_bitstr,
                     ) = set_field_with_size(current_field_name, current_field_size)
                 except IndexError:
-                    raise IndexError(
+                    raise PyRFLXError(
                         f"Bitstring representing the message is too short - "
                         f"stopped while parsing field: {current_field_name}"
                     ) from None
@@ -783,7 +784,7 @@ class MessageValue(TypeValue):
                 for o in self._type.outgoing(Field(field_name))
             ):
                 self._fields[field_name].typeval.clear()
-                raise ValueError(
+                raise PyRFLXError(
                     f"none of the field conditions "
                     f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
                     f" for field {field_name} have been met by the assigned value: {value!s}"
@@ -819,14 +820,19 @@ class MessageValue(TypeValue):
                 elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value)
                 else:
-                    raise TypeError(
+                    raise PyRFLXError(
                         f"cannot assign different types: {field.typeval.accepted_type.__name__}"
                         f" != {type(value).__name__}"
                     )
-            except (ValueError, KeyError, TypeError) as e:
-                raise ValueError(f"Error while setting value for field {field_name}: {e}") from e
+            except PyRFLXError as e:
+                e.append(
+                    f"cannot set value for field {field_name}",
+                    Subsystem.PYRFLX,
+                    Severity.ERROR,
+                )
+                raise e
         else:
-            raise KeyError(f"cannot access field {field_name}")
+            raise PyRFLXError(f"cannot access field {field_name}")
 
         self.__update_simplified_mapping()
         check_outgoing_condition_satisfied()
@@ -880,14 +886,14 @@ class MessageValue(TypeValue):
     def set_checksum_function(self, checksums: Dict[str, Callable]) -> None:
         for checksum_field_name, checksum_function in checksums.items():
             if checksum_field_name not in self.fields:
-                raise KeyError(
+                raise PyRFLXError(
                     f"cannot set checksum function: field {checksum_field_name} is not defined"
                 )
             for field_name, checksum in self._checksums.items():
                 if field_name == checksum_field_name:
                     checksum.function = checksum_function
                 else:
-                    raise KeyError(
+                    raise PyRFLXError(
                         f"cannot set checksum function: field {checksum_field_name} "
                         f"has not been defined as a checksum field"
                     )
@@ -970,7 +976,7 @@ class MessageValue(TypeValue):
         self, checksum: "MessageValue.Checksum"
     ) -> Union[bytes, int, str, Sequence[TypeValue], Bitstring]:
         if not checksum.function:
-            raise AttributeError(
+            raise PyRFLXError(
                 f"cannot calculate checksum for {checksum.field_name}: "
                 f"no callable checksum function provided"
             )
@@ -1000,7 +1006,7 @@ class MessageValue(TypeValue):
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
-            raise ValueError(f"field {field_name} not valid")
+            raise PyRFLXError(f"field {field_name} not valid")
         field = self._fields[field_name]
         if isinstance(field.typeval, OpaqueValue) and field.typeval.nested_message is not None:
             return field.typeval.nested_message
@@ -1039,7 +1045,7 @@ class MessageValue(TypeValue):
     @property
     def bytestring(self) -> bytes:
         if not self._skip_verification and not self.valid_message:
-            raise RuntimeError("cannot create bytestring of invalid message")
+            raise PyRFLXError(f"cannot create bytestring of invalid message: {self.identifier}")
         return self._unchecked_bytestring()
 
     @property

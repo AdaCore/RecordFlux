@@ -65,6 +65,7 @@ class Subsystem(Enum):
     MODEL = auto()
     CLI = auto()
     GRAPH = auto()
+    PYRFLX = auto()
     ID = auto()
 
     def __str__(self) -> str:
