@@ -19,7 +19,6 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{EX_SPEC_DIR}/udp.rflx",
             f"{SPEC_DIR}/array_message.rflx",
             f"{SPEC_DIR}/array_type.rflx",
-            f"{SPEC_DIR}/message_odd_length.rflx",
             f"{SPEC_DIR}/no_conditionals.rflx",
             f"{SPEC_DIR}/null_message.rflx",
             f"{SPEC_DIR}/tlv.rflx",

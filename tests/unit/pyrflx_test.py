@@ -65,7 +65,6 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "UDP",
         "Array_Message",
         "Array_Type",
-        "Message_Odd_Length",
         "Null_Message",
         "TLV_With_Checksum",
         "No_Conditionals",
@@ -443,24 +442,6 @@ def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
         " have been met by the assigned value: 1501",
     ):
         ethernet_frame_value.set("Type_Length", 1501)
-
-
-@pytest.fixture(name="message_odd_length_package", scope="session")
-def fixture_message_odd_length_package(pyrflx_: PyRFLX) -> Package:
-    return pyrflx_["Message_Odd_Length"]
-
-
-@pytest.fixture(name="odd_length_message_value")
-def fixture_message_odd_length_message_value(
-    message_odd_length_package: Package,
-) -> MessageValue:
-    return message_odd_length_package["Message"]
-
-
-def test_message_value_odd_length_binary(odd_length_message_value: MessageValue) -> None:
-    test_bytes = b"\x01\x02\x01\xff\xb8"
-    odd_length_message_value.parse(test_bytes)
-    assert odd_length_message_value.valid_message
 
 
 def test_integer_value_mod() -> None:
