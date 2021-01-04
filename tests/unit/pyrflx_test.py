@@ -330,6 +330,14 @@ def test_message_value_required_fields(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.required_fields == []
 
 
+def test_message_value_empty_opaque_field(tlv_message_value: MessageValue) -> None:
+    tlv_message_value.set("Tag", "Msg_Data")
+    tlv_message_value.set("Length", 0)
+    tlv_message_value.set("Value", b"")
+    assert tlv_message_value.valid_message
+    assert tlv_message_value.bytestring == b"\x40\x00"
+
+
 def test_message_value_field_eq() -> None:
     f1 = MessageValue.Field(OpaqueValue(Opaque()), "f1")
     assert f1 == MessageValue.Field(OpaqueValue(Opaque()), "f1")
