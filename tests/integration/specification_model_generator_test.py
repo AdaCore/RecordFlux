@@ -227,3 +227,36 @@ def test_message_size_calculation(tmp_path: Path) -> None:
         """,
         tmp_path,
     )
+
+
+def test_transitive_type_use(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+            package Test is
+
+               type U8  is mod 2**8;
+
+               type M1 is
+                  message
+                     F1 : U8;
+                     F2 : Opaque with Size => F1 * 8;
+                  end message;
+               type M1S is array of M1;
+
+               type M2 is
+                  message
+                     F1 : U8;
+                     F2 : M1S with Size => F1 * 8;
+                  end message;
+
+               type M3 is
+                  message
+                     F1 : M2;
+                     F2 : U8;
+                     F3 : M1S with Size => F2 * 8;
+                  end message;
+
+            end Test;
+        """,
+        tmp_path,
+    )
