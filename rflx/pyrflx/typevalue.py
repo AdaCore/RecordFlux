@@ -385,7 +385,11 @@ class OpaqueValue(CompositeValue):
     def bitstring(self) -> Bitstring:
         self._raise_initialized()
         assert self._value is not None
-        return Bitstring(format(int.from_bytes(self._value, "big"), f"0{self.size}b"))
+        size = self.size
+        assert isinstance(size, Number)
+        if size.value == 0:
+            return Bitstring("")
+        return Bitstring(format(int.from_bytes(self._value, "big"), f"0{size}b"))
 
     @property
     def accepted_type(self) -> type:
