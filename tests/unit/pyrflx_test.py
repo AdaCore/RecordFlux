@@ -24,18 +24,21 @@ from rflx.pyrflx import (
     EnumValue,
     IntegerValue,
     MessageValue,
-    NotInitializedError,
     OpaqueValue,
     Package,
     PyRFLX,
     TypeValue,
     utils,
 )
+from rflx.pyrflx.error import PyRFLXError
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 
 
-def assert_bytestring_error(msg: MessageValue) -> None:
-    with pytest.raises(RuntimeError, match="cannot create bytestring of invalid message"):
+def assert_bytestring_error(msg: MessageValue, msg_name: ID) -> None:
+    with pytest.raises(
+        PyRFLXError,
+        match=f"^pyrflx: error: cannot create bytestring of invalid message: {msg_name}$",
+    ):
         # pylint: disable=pointless-statement
         msg.bytestring
 
@@ -190,16 +193,16 @@ def test_message_value_accessible_fields_fields_complex(tlv_message_value: Messa
 
 def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
     assert not tlv_message_value.valid_message
-    assert_bytestring_error(tlv_message_value)
+    assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\xc0"
     tlv_message_value.set("Tag", "Msg_Data")
     assert not tlv_message_value.valid_message
-    assert_bytestring_error(tlv_message_value)
+    assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Length", 1)
     assert not tlv_message_value.valid_message
-    assert_bytestring_error(tlv_message_value)
+    assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Value", b"\x01")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\x40\x01\x01"
@@ -222,11 +225,11 @@ def test_message_value_set_value(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", v1)
     with pytest.raises(
-        ValueError,
+        PyRFLXError,
         match=(
             "^"
-            "Error while setting value for field Value:"
-            " invalid data size: input size is 80 while expected input size is 64"
+            "pyrflx: error: cannot set value for field Value\n"
+            "pyrflx: error: invalid data size: input size is 80 while expected input size is 64"
             "$"
         ),
     ):
@@ -272,33 +275,41 @@ def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_get_invalid_field(tlv_message_value: MessageValue) -> None:
-    with pytest.raises(ValueError, match=r"field nofield not valid"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: field nofield not valid$"):
         tlv_message_value.get("nofield")
 
 
 def test_message_value_set_invalid_field(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Tag", "Msg_Data")
-    with pytest.raises(KeyError, match=r"cannot access field Value"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Value$"):
         tlv_message_value.set("Value", b"")
-    with pytest.raises(KeyError, match=r"cannot access field Checksum"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Checksum$"):
         tlv_message_value.set("Checksum", 8)
     tlv_message_value.set("Tag", "Msg_Error")
-    with pytest.raises(KeyError, match=r"cannot access field Length"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Length$"):
         tlv_message_value.set("Length", 8)
 
 
 def test_message_value_invalid_value(tlv_message_value: MessageValue) -> None:
     with pytest.raises(
-        ValueError,
-        match="Error while setting value for field Tag: "
-        "cannot assign different types: str != int",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot set value for field Tag\n"
+            "pyrflx: error: cannot assign different types: str != int"
+            "$"
+        ),
     ):
         tlv_message_value.set("Tag", 1)
     tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(
-        ValueError,
-        match="Error while setting value for field Length: "
-        "cannot assign different types: int != str",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot set value for field Length\n"
+            "pyrflx: error: cannot assign different types: int != str"
+            "$"
+        ),
     ):
         tlv_message_value.set("Length", "blubb")
 
@@ -396,12 +407,14 @@ def test_message_value_parse_incorrect_nested_message(ethernet_frame_value: Mess
         b"\x00\x00\x00\x00\x0a"
     )
     with pytest.raises(
-        ValueError,
+        PyRFLXError,
         match=(
-            "Error while setting value for field Payload: "
-            "Error while parsing nested message IPv4::Packet: "
-            "Bitstring representing the message is too short - "
+            "^"
+            "pyrflx: error: cannot set value for field Payload\n"
+            "pyrflx: error: Error while parsing nested message IPv4::Packet\n"
+            "pyrflx: error: Bitstring representing the message is too short - "
             "stopped while parsing field: Payload"
+            "$"
         ),
     ):
         ethernet_frame_value.parse(incorrect_message)
@@ -424,16 +437,20 @@ def test_message_value_parse_from_bitstring(
 
 
 def test_message_value_parse_from_bitstring_invalid(tlv_message_value: MessageValue) -> None:
-    with pytest.raises(ValueError, match="Bitstring does not consist of only 0 and 1"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: Bitstring does not consist of only 0 and 1$"
+    ):
         Bitstring("123")
     assert Bitstring("01") + Bitstring("00") == Bitstring("0100")
 
     test_bytes = b"\x40"
     with pytest.raises(
-        IndexError,
+        PyRFLXError,
         match=(
-            "Bitstring representing the message is too short"
+            "^"
+            "pyrflx: error: Bitstring representing the message is too short"
             " - stopped while parsing field: Length"
+            "$"
         ),
     ):
         tlv_message_value.parse(test_bytes)
@@ -445,9 +462,13 @@ def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
     ethernet_frame_value.set("Source", 0)
     ethernet_frame_value.set("Type_Length_TPID", 1501)
     with pytest.raises(
-        ValueError,
-        match=r"none of the field conditions .* for field Type_Length"
-        " have been met by the assigned value: 1501",
+        PyRFLXError,
+        match=(
+            r"^"
+            "pyrflx: error: none of the field conditions .* for field Type_Length"
+            " have been met by the assigned value: 1501"
+            "$"
+        ),
     ):
         ethernet_frame_value.set("Type_Length", 1501)
 
@@ -457,17 +478,21 @@ def test_integer_value_mod() -> None:
     modtype = ModularInteger("Test::Int", expr.Number(2 ** 16))
     modvalue = IntegerValue(modtype)
     assert not modvalue.initialized
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
         modvalue.value
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
         modvalue.expr
     modvalue.assign(128)
     assert modvalue.initialized
     assert modvalue.value == 128
     assert str(modvalue.bitstring) == "0000000010000000"
-    with pytest.raises(ValueError, match=r"value 65536 not in type range 0 .. 65535"):
+    with pytest.raises(
+        PyRFLXError, match=r"^pyrflx: error: value 65536 not in type range 0 .. 65535$"
+    ):
         modvalue.assign(2 ** 16)
-    with pytest.raises(ValueError, match=r"value -1 not in type range 0 .. 65535"):
+    with pytest.raises(
+        PyRFLXError, match=r"^pyrflx: error: value -1 not in type range 0 .. 65535$"
+    ):
         modvalue.assign(-1)
 
 
@@ -476,17 +501,17 @@ def test_integer_value_range() -> None:
     rangetype = RangeInteger("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
     rangevalue = IntegerValue(rangetype)
     assert not rangevalue.initialized
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
         rangevalue.value
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
         rangevalue.expr
     rangevalue.assign(10)
     assert rangevalue.initialized
     assert rangevalue.value == 10
     assert str(rangevalue.bitstring) == "00001010"
-    with pytest.raises(ValueError, match=r"value 17 not in type range 8 .. 16"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: value 17 not in type range 8 .. 16$"):
         rangevalue.assign(17)
-    with pytest.raises(ValueError, match=r"value 7 not in type range 8 .. 16"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: value 7 not in type range 8 .. 16$"):
         rangevalue.assign(7)
 
 
@@ -510,9 +535,9 @@ def test_enum_value_literals(enum_value: EnumValue) -> None:
 
 
 def test_enum_value_assign(enum_value: EnumValue) -> None:
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
         enum_value.value  # pylint: disable=pointless-statement
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
         enum_value.expr  # pylint: disable=pointless-statement
 
     enum_value.assign("One")
@@ -520,7 +545,7 @@ def test_enum_value_assign(enum_value: EnumValue) -> None:
     assert enum_value.value == "One"
     assert str(enum_value.bitstring) == "00000001"
 
-    with pytest.raises(KeyError, match=r"Three is not a valid enum value"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: Three is not a valid enum value$"):
         enum_value.assign("Three")
 
 
@@ -528,7 +553,7 @@ def test_enum_value_parse(enum_value: EnumValue) -> None:
     enum_value.parse(b"\x01")
     assert enum_value.value == "One"
 
-    with pytest.raises(KeyError, match=r"Number 15 is not a valid enum value"):
+    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: Number 15 is not a valid enum value$"):
         enum_value.parse(Bitstring("1111"))
 
 
@@ -594,7 +619,9 @@ def test_opaque_value() -> None:
     # pylint: disable=protected-access
     opaquevalue = OpaqueValue(Opaque())
     assert not opaquevalue.initialized
-    with pytest.raises(NotInitializedError, match="value not initialized"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: value __INTERNAL__::Opaque not initialized$"
+    ):
         opaquevalue.value
     opaquevalue.assign(b"\x01\x02")
     assert opaquevalue.initialized
@@ -646,7 +673,9 @@ def test_invalid_value() -> None:
         pass
 
     t = TestType("Test::Type")
-    with pytest.raises(ValueError, match="cannot construct unknown type: TestType"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: cannot construct unknown type: TestType$"
+    ):
         TypeValue.construct(t)
 
 
@@ -693,7 +722,9 @@ def test_array_preserve_value(enum_value: EnumValue) -> None:
     type_array = ArrayValue(Array("Test::Array", ModularInteger("Test::Mod_Int", expr.Number(256))))
     type_array.assign([intval])
     assert type_array.value == [intval]
-    with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of ModularInteger$"
+    ):
         type_array.assign([enum_value])
     assert type_array.value == [intval]
 
@@ -710,6 +741,14 @@ def test_array_parse_from_bytes(
     assert array_message_value.bytestring == b"\x02\x05\x06"
 
 
+def test_array_parse_unsupported_member_type() -> None:
+    opaque_array = ArrayValue(Array("Test::Array", Opaque()))
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: Arrays of __INTERNAL__::Opaque currently not supported$"
+    ):
+        opaque_array.parse(b"\x00")
+
+
 def test_array_assign_invalid(
     tlv_message_value: MessageValue,
     ethernet_frame_value: MessageValue,
@@ -722,17 +761,26 @@ def test_array_assign_invalid(
 
     intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
     enum_value.assign("One")
-    with pytest.raises(ValueError, match="cannot assign EnumValue to an array of ModularInteger"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of ModularInteger$"
+    ):
         type_array.assign([enum_value])
 
     tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(
-        ValueError,
-        match='cannot assign message "Message" to array of messages: all messages must be valid',
+        PyRFLXError,
+        match=(
+            "^"
+            'pyrflx: error: cannot assign message "Message" to array of messages: '
+            "all messages must be valid"
+            "$"
+        ),
     ):
         msg_array.assign([tlv_message_value])
 
-    with pytest.raises(ValueError, match="cannot assign EnumValue to an array of Message"):
+    with pytest.raises(
+        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of Message$"
+    ):
         msg_array.assign([enum_value])
 
     tlv_message_value.set("Tag", "Msg_Data")
@@ -745,21 +793,33 @@ def test_array_assign_invalid(
     ethernet_frame_value.set("Type_Length", 1537)
     ethernet_frame_value.set("Payload", bytes(46))
 
-    with pytest.raises(ValueError, match='cannot assign "Frame" to an array of "Message"'):
+    with pytest.raises(
+        PyRFLXError, match='^pyrflx: error: cannot assign "Frame" to an array of "Message"$'
+    ):
         msg_array.assign([tlv_message_value, ethernet_frame_value])
 
     with pytest.raises(
-        ValueError,
-        match="cannot parse nested messages in array of type TLV::Message: Error while setting "
-        "value for field Tag: 'Number 0 is not a valid enum value'",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot parse nested messages in array of type TLV::Message\n"
+            "pyrflx: error: cannot set value for field Tag\n"
+            "pyrflx: error: Number 0 is not a valid enum value"
+            "$"
+        ),
     ):
         msg_array.parse(Bitstring("0001111"))
 
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value._fields["Length"].typeval.assign(111111111111111, False)
     with pytest.raises(
-        ValueError,
-        match='cannot assign message "Message" to array of messages: all messages must be valid',
+        PyRFLXError,
+        match=(
+            "^"
+            'pyrflx: error: cannot assign message "Message" to array of messages:'
+            " all messages must be valid"
+            "$"
+        ),
     ):
         msg_array.assign([tlv_message_value])
     assert msg_array.value == []
@@ -767,11 +827,11 @@ def test_array_assign_invalid(
     intval.assign(5)
     array_type_foo_value.set("Length", 42)
     with pytest.raises(
-        ValueError,
+        PyRFLXError,
         match=(
             "^"
-            "Error while setting value for field Bytes:"
-            " invalid data size: input size is 8 while expected input size is 336"
+            "pyrflx: error: cannot set value for field Bytes\n"
+            "pyrflx: error: invalid data size: input size is 8 while expected input size is 336"
             "$"
         ),
     ):
@@ -801,16 +861,23 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
 
 def test_checksum_field_not_defined(icmp_checksum_message_value: MessageValue) -> None:
     with pytest.raises(
-        KeyError,
-        match="cannot set checksum function: field NonExistingField is not defined",
+        PyRFLXError,
+        match=(
+            "^pyrflx: error: cannot set checksum function: field NonExistingField is not defined$"
+        ),
     ):
         icmp_checksum_message_value.set_checksum_function(
             {"NonExistingField": icmp_checksum_function}
         )
 
     with pytest.raises(
-        KeyError,
-        match="cannot set checksum function: field Tag has not been defined as " "a checksum field",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot set checksum function: field Tag has not been defined as "
+            "a checksum field"
+            "$"
+        ),
     ):
         icmp_checksum_message_value.set_checksum_function({"Tag": icmp_checksum_function})
 
@@ -821,8 +888,13 @@ def test_checksum_function_not_set(icmp_checksum_message_value: MessageValue) ->
     icmp_checksum_message_value.set("Identifier", 5)
     icmp_checksum_message_value.set("Sequence_Number", 1)
     with pytest.raises(
-        AttributeError,
-        match="cannot calculate checksum for Checksum: no callable checksum function provided",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot calculate checksum for Checksum: "
+            "no callable checksum function provided"
+            "$"
+        ),
     ):
         icmp_checksum_message_value.set("Data", b"\x00")
 
@@ -843,7 +915,7 @@ def test_checksum_manual(icmp_checksum_message_value: MessageValue) -> None:
     icmp_checksum_message_value.set("Data", test_data)
     assert not icmp_checksum_message_value.valid_message
     assert icmp_checksum_message_value.get("Checksum") == 1234
-    assert_bytestring_error(icmp_checksum_message_value)
+    assert_bytestring_error(icmp_checksum_message_value, icmp_checksum_message_value.identifier)
     icmp_checksum_message_value.set("Checksum", 12824)
     icmp_checksum_message_value.set("Identifier", 5)
     icmp_checksum_message_value.set("Sequence_Number", 1)

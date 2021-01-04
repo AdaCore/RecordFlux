@@ -6,7 +6,7 @@ import pytest
 from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidChecksum, ValueRange
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
-from rflx.pyrflx import MessageValue, Package, PyRFLX, TypeValue, utils
+from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from tests.const import CAPTURED_DIR, EX_SPEC_DIR, SPEC_DIR
 
 
@@ -112,9 +112,9 @@ def test_tls_fields(tls_record_value: MessageValue) -> None:
 def test_tls_invalid_outgoing(tls_record_value: MessageValue) -> None:
     tls_record_value.set("Tag", "INVALID")
     with pytest.raises(
-        ValueError,
-        match=r"none of the field conditions .* for field Length"
-        " have been met by the assigned value: 16385",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions .* for field Length"
+        " have been met by the assigned value: 16385$",
     ):
         tls_record_value.set("Length", 2 ** 14 + 1)
 
@@ -209,25 +209,25 @@ def test_imported_literals(tmp_path: Path) -> None:
     assert m.get("A") == "Foo::E1"
 
     with pytest.raises(
-        ValueError,
-        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
-        " by the assigned value: 00001100$",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        r"been met by the assigned value: 00001100$",
     ):
         m.parse(b"\x0C")
         assert not m.valid_message
 
     with pytest.raises(
-        ValueError,
-        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
-        " by the assigned value: E2$",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        r"been met by the assigned value: E2$",
     ):
         m.set("A", "E2")
         assert not m.valid_message
 
     with pytest.raises(
-        ValueError,
-        match=r"^none of the field conditions \['A = Foo::E1'\] for field A have been met"
-        " by the assigned value: Foo::E2$",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        r"been met by the assigned value: Foo::E2$",
     ):
         m.set("A", "Foo::E2")
         assert not m.valid_message
