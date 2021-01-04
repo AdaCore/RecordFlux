@@ -1,10 +1,12 @@
 from typing import Sequence, Union
 
+from rflx.pyrflx.error import PyRFLXError
+
 
 class Bitstring:
     def __init__(self, bits: str = ""):
         if not self.valid_bitstring(bits):
-            raise ValueError("Bitstring does not consist of only 0 and 1")
+            raise PyRFLXError("Bitstring does not consist of only 0 and 1")
         self._bits = bits
 
     def __add__(self, other: "Bitstring") -> "Bitstring":
