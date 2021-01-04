@@ -7,6 +7,7 @@ import pytest
 from rflx import expression as expr, pyrflx
 from rflx.generator import Generator
 from rflx.identifier import ID
+from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
 from tests import utils
 from tests.const import CAPTURED_DIR, EX_SPEC_DIR, GENERATED_DIR, SPEC_DIR
@@ -84,9 +85,9 @@ def test_ethernet_parsing_invalid_ethernet_2_too_short(
     with open(CAPTURED_DIR / "ethernet_invalid_too_short.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()
     with pytest.raises(
-        ValueError,
-        match=r"none of the field conditions .* for field Payload"
-        " have been met by the assigned value: [01]*",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions .* for field Payload"
+        " have been met by the assigned value: [01]*$",
     ):
         ethernet_frame_value.parse(msg_as_bytes)
     assert not ethernet_frame_value.valid_message
@@ -98,9 +99,9 @@ def test_ethernet_parsing_invalid_ethernet_2_too_long(
     with open(CAPTURED_DIR / "ethernet_invalid_too_long.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()
     with pytest.raises(
-        ValueError,
-        match=r"none of the field conditions .* for field Payload"
-        " have been met by the assigned value: [01]*",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions .* for field Payload"
+        " have been met by the assigned value: [01]*$",
     ):
         ethernet_frame_value.parse(msg_as_bytes)
     assert not ethernet_frame_value.valid_message
@@ -112,9 +113,9 @@ def test_ethernet_parsing_invalid_ethernet_2_undefined_type(
     with open(CAPTURED_DIR / "ethernet_undefined.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()
     with pytest.raises(
-        ValueError,
-        match=r"none of the field conditions .* for field Type_Length"
-        " have been met by the assigned value: [01]*",
+        PyRFLXError,
+        match=r"^pyrflx: error: none of the field conditions .* for field Type_Length"
+        " have been met by the assigned value: [01]*$",
     ):
         ethernet_frame_value.parse(msg_as_bytes)
 
@@ -127,9 +128,9 @@ def test_ethernet_parsing_ieee_802_3_invalid_length(
     with open(CAPTURED_DIR / "ethernet_802.3_invalid_length.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()
     with pytest.raises(
-        IndexError,
-        match="Bitstring representing the message is too short"
-        " - stopped while parsing field: Payload",
+        PyRFLXError,
+        match="^pyrflx: error: Bitstring representing the message is too short"
+        " - stopped while parsing field: Payload$",
     ):
         ethernet_frame_value.parse(msg_as_bytes)
 
@@ -139,9 +140,9 @@ def test_ethernet_parsing_ieee_802_3_invalid_length(
 def test_ethernet_parsing_incomplete(ethernet_frame_value: pyrflx.MessageValue) -> None:
     test_bytes = b"\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x02"
     with pytest.raises(
-        IndexError,
-        match="Bitstring representing the message is too short"
-        " - stopped while parsing field: Type_Length_TPID",
+        PyRFLXError,
+        match="^pyrflx: error: Bitstring representing the message is too short"
+        " - stopped while parsing field: Type_Length_TPID$",
     ):
         ethernet_frame_value.parse(test_bytes)
 
@@ -425,8 +426,13 @@ def test_tlv_parsing_tlv_error(tlv_message_value: pyrflx.MessageValue) -> None:
 def test_tlv_parsing_invalid_tlv_invalid_tag(tlv_message_value: pyrflx.MessageValue) -> None:
     test_bytes = b"\x00\x00"
     with pytest.raises(
-        ValueError,
-        match="Error while setting value for field Tag: 'Number 0 is not a valid enum value'",
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: cannot set value for field Tag\n"
+            "pyrflx: error: Number 0 is not a valid enum value"
+            "$"
+        ),
     ):
         tlv_message_value.parse(test_bytes)
     assert not tlv_message_value.valid_message
