@@ -560,14 +560,7 @@ class Variable(Expr):
     identifier = Field(type=ID)
 
 
-@abstract
-class AttrBase(RFLXNode):
-    """
-    Base class for attributes
-    """
-
-
-class Attr(AttrBase):
+class Attr(RFLXNode):
     """
     Attribute
     """
