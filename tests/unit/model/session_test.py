@@ -388,7 +388,10 @@ def test_undeclared_variable() -> None:
                         condition=expr.Equal(
                             expr.Variable("Undefined", location=Location((10, 20))), expr.TRUE
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -400,7 +403,7 @@ def test_undeclared_variable() -> None:
     )
 
 
-def test_undefinded_type() -> None:
+def test_undefined_type() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -409,7 +412,10 @@ def test_undefinded_type() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Variable("Defined"), expr.TRUE),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -437,7 +443,10 @@ def test_declared_variable() -> None:
                         condition=expr.Equal(
                             expr.Variable("Defined"), expr.Variable("TLV::Msg_Data")
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -460,7 +469,10 @@ def test_declared_local_variable() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Variable("Local"), expr.Variable("Global")),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[decl.VariableDeclaration("Local", "Boolean")],
             ),
@@ -477,7 +489,12 @@ def test_undeclared_local_variable() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("State"), condition=expr.Variable("Global"))],
+                transitions=[
+                    Transition(target=ID("State"), condition=expr.Variable("Global")),
+                    Transition(
+                        target=ID("Start"),
+                    ),
+                ],
                 declarations=[],
             ),
             State(
@@ -489,7 +506,10 @@ def test_undeclared_local_variable() -> None:
                             expr.Variable("Local", location=Location((10, 20))),
                             expr.Variable("Global"),
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("State"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -514,7 +534,10 @@ def test_declared_local_variable_valid() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Valid(expr.Variable("Global")), expr.TRUE),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -540,7 +563,10 @@ def test_declared_local_variable_message_field() -> None:
                         condition=expr.Equal(
                             expr.Selected(expr.Variable("Global"), "Length"), expr.Number(1)
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -664,7 +690,10 @@ def test_call_undeclared_variable() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
                 actions=[
@@ -1014,7 +1043,10 @@ def test_undeclared_variable_in_function_call() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
                 actions=[
@@ -1108,7 +1140,10 @@ def test_local_variable_shadows_global() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[
                     decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))
@@ -1224,7 +1259,10 @@ def test_renaming() -> None:
                         condition=expr.Equal(
                             expr.Length(expr.Variable("Null_Message")), expr.Number(0)
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -1254,7 +1292,10 @@ def test_renaming_invalid() -> None:
                         condition=expr.Equal(
                             expr.Length(expr.Variable("Null_Message")), expr.Number(0)
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -1290,7 +1331,10 @@ def test_renaming_undefined() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Length(expr.Variable("M")), expr.Number(0)),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -1360,7 +1404,10 @@ def test_for_all() -> None:
                                 expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
                             ),
                         ),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -1823,7 +1870,10 @@ def test_private_type() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Variable("X"), expr.Variable("X")),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -1864,7 +1914,10 @@ def test_private_type_shadows_type() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Variable("X"), expr.Variable("Y")),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -1905,7 +1958,10 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaratio
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(expr.Call("X", [expr.TRUE]), expr.TRUE),
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -1940,7 +1996,10 @@ def test_undefined_type_in_declarations(declarations: Sequence[decl.BasicDeclara
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
             ),
             State("End"),
@@ -1975,7 +2034,10 @@ def test_undefined_type_in_local_declarations(declarations: Sequence[decl.Declar
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=declarations,
             ),
@@ -1996,7 +2058,10 @@ def test_type_error_in_variable_declaration() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
@@ -2024,7 +2089,10 @@ def test_type_error_in_renaming_declaration() -> None:
                 transitions=[
                     Transition(
                         target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
-                    )
+                    ),
+                    Transition(
+                        target=ID("Start"),
+                    ),
                 ],
                 declarations=[],
             ),
