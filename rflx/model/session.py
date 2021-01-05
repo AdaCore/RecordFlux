@@ -51,6 +51,12 @@ class State(Base):
         location: Location = None,
     ):
         # pylint: disable=too-many-arguments
+
+        if transitions:
+            assert transitions[-1].condition == expr.TRUE, "missing default transition"
+        else:
+            assert not actions and not declarations
+
         self.__identifier = ID(identifier)
         self.__transitions = transitions or []
         self.__actions = actions or []
