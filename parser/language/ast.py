@@ -8,13 +8,18 @@ class RFLXNode(ASTNode):
     """
 
 
-class NullID(RFLXNode):
+@abstract
+class AbstractID(RFLXNode):
+    pass
+
+
+class NullID(AbstractID):
     """
     "null" identifier
     """
 
 
-class UnqualifiedID(NullID):
+class UnqualifiedID(AbstractID):
     """
     Simple, unqualified identifiers, i.e. identifiers without a package part (e.g. "Foo")
     """
@@ -22,7 +27,7 @@ class UnqualifiedID(NullID):
     token_node = True
 
 
-class ID(NullID):
+class ID(AbstractID):
     """
     Qualified identifiers which may optionally have a package part (e.g. "Pkg::Foo", "Foo")
     """
@@ -455,7 +460,7 @@ class Then(RFLXNode):
     Link to field
     """
 
-    target = Field(type=NullID)
+    target = Field(type=AbstractID)
     aspects = Field(type=Aspect.list)
     condition = Field(type=Expr)
 
