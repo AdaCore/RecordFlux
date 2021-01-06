@@ -25,7 +25,7 @@ is
       and then IPv4_Packet.Present (Ctx, IPv4_Packet.F_Payload)
       and then IPv4_Packet.Valid (Ctx, IPv4_Packet.F_Protocol)
       and then IPv4_Packet.Get_Protocol (Ctx).Known
-      and then IPv4_Packet.Get_Protocol (Ctx).Enum = PROTOCOL_UDP);
+      and then IPv4_Packet.Get_Protocol (Ctx).Enum = IPv4.PROTOCOL_UDP);
 
    use type IPv4_Packet.Field_Cursors;
 
@@ -55,7 +55,7 @@ is
       and then IPv4_Packet.Present (Ctx, IPv4_Packet.F_Payload)
       and then IPv4_Packet.Valid (Ctx, IPv4_Packet.F_Protocol)
       and then IPv4_Packet.Get_Protocol (Ctx).Known
-      and then IPv4_Packet.Get_Protocol (Ctx).Enum = PROTOCOL_ICMP);
+      and then IPv4_Packet.Get_Protocol (Ctx).Enum = IPv4.PROTOCOL_ICMP);
 
    procedure Switch_To_Payload (IPv4_Packet_Context : in out IPv4_Packet.Context; ICMP_Message_Context : out ICMP_Message.Context) with
      Pre =>
