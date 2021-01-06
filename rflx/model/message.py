@@ -1565,13 +1565,7 @@ class Refinement(mty.Type):
             )
 
         for variable in condition.variables():
-            literals = [
-                l
-                for e in pdu.types.values()
-                if isinstance(e, mty.Enumeration)
-                for k in e.literals.keys()
-                for l in [e.package * k, k]
-            ]
+            literals = mty.qualified_enum_literals(pdu.types.values(), self.package)
             if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
                 self.error.append(
                     f'unknown field or literal "{variable.identifier}" in refinement'

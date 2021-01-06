@@ -3117,3 +3117,35 @@ def test_refinement_invalid_condition() -> None:
         r' of "P::M"'
         r"$",
     )
+
+
+def test_refinement_invalid_condition_unqualified_literal() -> None:
+    e = Enumeration(
+        "P2::E",
+        [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
+        Number(8),
+        False,
+    )
+
+    x = Field("X")
+    y = Field("Y")
+
+    message = Message(
+        "P::M",
+        [Link(INITIAL, x), Link(x, y, size=Number(8)), Link(y, FINAL)],
+        {x: e, y: OPAQUE},
+    )
+
+    assert_type_error(
+        Refinement(
+            "P",
+            message,
+            y,
+            message,
+            Equal(Variable("X"), Variable("E1", location=Location((10, 20)))),
+        ),
+        r"^"
+        r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
+        r' of "P::M"'
+        r"$",
+    )
