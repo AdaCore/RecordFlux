@@ -260,3 +260,40 @@ def test_transitive_type_use(tmp_path: Path) -> None:
         """,
         tmp_path,
     )
+
+
+def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
+    p = Parser()
+    p.parse_string(
+        """
+           with Proto;
+           with Numbers;
+           package In_Proto is
+              type X is null message;
+              for Proto::Packet use (Data => X)
+                 if Protocol = Numbers::PROTO_X;
+           end In_Proto;
+        """
+    )
+    p.parse_string(
+        """
+           with Numbers;
+           package Proto is
+              type Packet is
+                 message
+                    Protocol : Numbers::Protocol
+                       then Data
+                          with Size => 128;
+                    Data  : Opaque;
+                 end message;
+           end Proto;
+        """
+    )
+    p.parse_string(
+        """
+           package Numbers is
+              type Protocol is (PROTO_X) with Size => 8;
+           end Numbers;
+        """
+    )
+    utils.assert_compilable_code(p.create_model(), tmp_path)

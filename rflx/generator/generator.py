@@ -2329,12 +2329,22 @@ class Generator:
                 ],
             )
 
+        assert isinstance(unit, PackageUnit), "unexpected unit type"
+
+        for v in refinement.condition.variables():
+            if len(v.identifier.parts) == 2 and v.identifier.parent != refinement.package:
+                unit.declaration_context.extend(
+                    [
+                        WithClause(self.__prefix * ID(v.identifier.parent)),
+                        UsePackageClause(self.__prefix * ID(v.identifier.parent)),
+                    ]
+                )
+
         null_sdu = not refinement.sdu.fields
 
         if not null_sdu:
             unit += UnitPart([UseTypeClause(const.TYPES_INDEX, const.TYPES_BIT_INDEX)])
 
-        assert isinstance(unit, PackageUnit), "unexpected unit type"
         assert isinstance(unit.declaration.formal_parameters, list), "missing formal parameters"
 
         if refinement.pdu.package != refinement.package:
