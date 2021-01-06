@@ -56,7 +56,7 @@ format:
 test: check test_python_coverage test_python_property test_spark prove_tests prove_apps
 
 test_python:
-	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis"
+	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 test_python_unit:
 	python3 -m pytest -n$(shell nproc) -vv tests/unit
@@ -68,10 +68,10 @@ test_python_property:
 	python3 -m pytest -vv tests/property
 
 test_python_verification:
-	python3 -m pytest -vv -m "verification" -s
+	python3 -m pytest -vv -m "verification" -s tests
 
 test_python_optimized:
-	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis"
+	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
