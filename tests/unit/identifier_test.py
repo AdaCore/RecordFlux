@@ -1,5 +1,6 @@
 import pytest
 
+from rflx.error import RecordFluxError
 from rflx.identifier import ID
 
 
@@ -18,45 +19,38 @@ def test_id_invalid_type() -> None:
         ID(0)  # type: ignore
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty() -> None:
-    with pytest.raises(AssertionError, match=r"^empty identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty identifier$"):
         ID([])
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty_string() -> None:
-    with pytest.raises(AssertionError, match=r"^empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         ID("")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty_part() -> None:
-    with pytest.raises(AssertionError, match=r"^empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         ID("A::::B")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty_first_part() -> None:
-    with pytest.raises(AssertionError, match=r"^empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         ID("::A::B")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_empty_last_part() -> None:
-    with pytest.raises(AssertionError, match=r"^empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         ID("A::B::")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_whitespace() -> None:
-    with pytest.raises(AssertionError, match=r'^" " in identifier parts$'):
+    with pytest.raises(RecordFluxError, match=r'^id: error: " " in identifier parts$'):
         ID("A::B C::D")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_colon() -> None:
-    with pytest.raises(AssertionError, match=r'^":" in identifier parts$'):
+    with pytest.raises(RecordFluxError, match=r'^id: error: ":" in identifier parts$'):
         ID("A::B:C::D")
 
 
@@ -104,9 +98,8 @@ def test_id_parent() -> None:
     assert ID("A::B::C").parent == ID("A::B")
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_parent_error() -> None:
-    with pytest.raises(AssertionError, match=r"^empty identifier$"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty identifier$"):
         ID("A").parent  # pylint: disable=expression-not-assigned
 
 

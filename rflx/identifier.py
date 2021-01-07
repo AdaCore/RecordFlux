@@ -1,6 +1,6 @@
 from typing import Optional, Sequence, Union
 
-from rflx.error import Location
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 
 
 class ID:
@@ -20,10 +20,16 @@ class ID:
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
-        assert self._parts, "empty identifier"
-        assert "" not in self._parts, "empty part in identifier"
-        for c in [" ", ".", ":"]:
-            assert all(c not in part for part in self._parts), f'"{c}" in identifier parts'
+        error = RecordFluxError()
+        if not self._parts:
+            error.append("empty identifier", Subsystem.ID, Severity.ERROR)
+        elif "" in self._parts:
+            error.append("empty part in identifier", Subsystem.ID, Severity.ERROR)
+        else:
+            for c in [" ", ".", ":"]:
+                if any(c in part for part in self._parts):
+                    error.append(f'"{c}" in identifier parts', Subsystem.ID, Severity.ERROR)
+        error.propagate()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

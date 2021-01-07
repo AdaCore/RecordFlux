@@ -705,9 +705,8 @@ def test_term_simplified() -> None:
     )
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_variable_invalid_name() -> None:
-    with pytest.raises(AssertionError):
+    with pytest.raises(RecordFluxError):
         Variable("Foo (Bar)")
 
 
