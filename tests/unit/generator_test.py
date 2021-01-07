@@ -5,6 +5,7 @@ import pytest
 
 import rflx.expression as expr
 from rflx.ada import ID
+from rflx.error import RecordFluxError
 from rflx.generator import Generator, common, const
 from rflx.model import BUILTIN_TYPES, Model, Type
 from tests.const import GENERATED_DIR
@@ -30,9 +31,8 @@ def generate(model: Model) -> Generator:
     return generator
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_invalid_prefix() -> None:
-    with pytest.raises(AssertionError, match=r"empty part in identifier"):
+    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         Generator(Model(), "A..B")
 
 
