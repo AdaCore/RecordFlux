@@ -9,10 +9,7 @@ from typing import Any
 import setuptools.command.build_py as orig
 from setuptools import setup
 
-LANGKIT = (
-    "git+https://github.com/AdaCore/langkit.git"
-    "@45df941275a0844fafc960cfc6b775b1108f42f3#egg=langkit"
-)
+LANGKIT = "git+https://github.com/AdaCore/langkit.git@v21.0.0#egg=langkit"
 
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
