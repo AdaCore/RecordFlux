@@ -60,6 +60,8 @@ class BuildWithParser(orig.build_py):
                 "--gargs",
                 f"-aP {base_dir}/contrib/gnatcoll-bindings/iconv "
                 f"-aP {base_dir}/contrib/gnatcoll-bindings/gmp",
+                "--disable-warning",
+                "undocumented-nodes",
             ]
         )
         patch_rpath()
@@ -79,7 +81,17 @@ class BuildParser(orig.build_py):
 
     def run(self) -> None:
         Path("build/langkit").mkdir(parents=True, exist_ok=True)
-        manage_factory().run(["--build-dir", "build/langkit", "--verbosity", "debug", "make"])
+        manage_factory().run(
+            [
+                "--build-dir",
+                "build/langkit",
+                "--verbosity",
+                "debug",
+                "make",
+                "--disable-warning",
+                "undocumented-nodes",
+            ]
+        )
 
 
 with open("README.md") as f:

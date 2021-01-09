@@ -4,13 +4,15 @@ from langkit.dsl import ASTNode, Field, abstract
 @abstract
 class RFLXNode(ASTNode):
     """
-    Root node class for the RecordFlux DSL language
+    Root node class for the RecordFlux language
     """
 
 
 @abstract
 class AbstractID(RFLXNode):
-    pass
+    """
+    Base class for identifiers
+    """
 
 
 class NullID(AbstractID):
@@ -53,7 +55,7 @@ class TypeDef(RFLXNode):
 
 class TypeDecl(Declaration):
     """
-    Type specification (type Foo is ...)
+    Type declaration (type Foo is ...)
     """
 
     identifier = Field(type=UnqualifiedID)
@@ -94,9 +96,6 @@ class Op(RFLXNode):
 
 
 class Negation(Expr):
-    """
-    Negation
-    """
 
     data = Field(type=Expr)
 
@@ -189,9 +188,7 @@ class BaseStateBody(RFLXNode):
 
 
 class NullStateBody(BaseStateBody):
-    """
-    Null session state body
-    """
+    pass
 
 
 @abstract
@@ -258,9 +255,6 @@ class StringLiteral(ArrayLiteral):
 
 
 class NumericLiteral(Expr):
-    """
-    Numeric literal
-    """
 
     token_node = True
 
@@ -275,7 +269,7 @@ class ArrayAggregate(ArrayLiteral):
 
 class Concatenation(ArrayLiteral):
     """
-    Concatenation of aggragates or string literals
+    Concatenation of aggregates or string literals
     """
 
     left = Field(type=ArrayLiteral)
@@ -330,9 +324,6 @@ class State(RFLXNode):
 
 
 class SessionSpec(Declaration):
-    """
-    Session specification
-    """
 
     parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
@@ -343,9 +334,6 @@ class SessionSpec(Declaration):
 
 
 class PackageSpec(RFLXNode):
-    """
-    RecordFlux package
-    """
 
     identifier = Field(type=UnqualifiedID)
     declarations = Field(type=Declaration.list)
@@ -360,18 +348,12 @@ class IntegerTypeDef(TypeDef):
 
 
 class Aspect(RFLXNode):
-    """
-    Aspect
-    """
 
     identifier = Field(type=UnqualifiedID)
     value = Field(type=Expr)
 
 
 class RangeTypeDef(IntegerTypeDef):
-    """
-    Range type definition
-    """
 
     lower = Field(type=Expr)
     upper = Field(type=Expr)
@@ -379,9 +361,6 @@ class RangeTypeDef(IntegerTypeDef):
 
 
 class ModularTypeDef(IntegerTypeDef):
-    """
-    Modular type definition
-    """
 
     mod = Field(type=Expr)
 
@@ -389,28 +368,20 @@ class ModularTypeDef(IntegerTypeDef):
 @abstract
 class AbstractMessageTypeDef(TypeDef):
     """
-    Base class for message types
+    Base class for message type definitions
     """
 
 
 class NullMessageTypeDef(AbstractMessageTypeDef):
-    """
-    Null message type
-    """
+    pass
 
 
 class TypeDerivationDef(TypeDef):
-    """
-    Type derivation definition
-    """
 
     base = Field(type=ID)
 
 
 class ArrayTypeDef(TypeDef):
-    """
-    Array type definition
-    """
 
     element_type = Field(type=ID)
 
@@ -418,14 +389,11 @@ class ArrayTypeDef(TypeDef):
 @abstract
 class EnumerationDef(TypeDef):
     """
-    Base class for enumeration
+    Base class for enumeration definitions
     """
 
 
 class PositionalEnumerationDef(EnumerationDef):
-    """
-    Positional enumeration
-    """
 
     elements = Field(type=UnqualifiedID.list)
 
@@ -440,17 +408,11 @@ class ElementValueAssoc(RFLXNode):
 
 
 class NamedEnumerationDef(EnumerationDef):
-    """
-    Named enumeration
-    """
 
     elements = Field(type=ElementValueAssoc.list)
 
 
 class EnumerationTypeDef(TypeDef):
-    """
-    Enumeration type definition
-    """
 
     elements = Field(type=EnumerationDef)
     aspects = Field(type=Aspect.list)
@@ -467,9 +429,6 @@ class Then(RFLXNode):
 
 
 class NullComponent(RFLXNode):
-    """
-    Null message component
-    """
 
     then = Field(type=Then)
 
@@ -529,41 +488,29 @@ class ChecksumAssoc(RFLXNode):
 
 
 class ChecksumAspect(RFLXNode):
-    """
-    Checksum aspect
-    """
 
     associations = Field(type=ChecksumAssoc.list)
 
 
 class MessageTypeDef(AbstractMessageTypeDef):
-    """
-    Message type definition
-    """
 
     components = Field(type=Components)
     checksums = Field(type=ChecksumAspect)
 
 
 class UnqualifiedVariable(Expr):
-    """
-    Unqualified variable
-    """
 
     identifier = Field(type=UnqualifiedID)
 
 
 class Variable(Expr):
-    """
-    Variable
-    """
 
     identifier = Field(type=ID)
 
 
 class Attr(RFLXNode):
     """
-    Attribute
+    Attribute kind
     """
 
     enum_node = True
@@ -580,9 +527,6 @@ class Attr(RFLXNode):
 
 
 class Attribute(Expr):
-    """
-    Attribute
-    """
 
     expression = Field(type=Expr)
     kind = Field(type=Attr)
@@ -606,26 +550,17 @@ class Specification(RFLXNode):
 
 
 class Parameter(RFLXNode):
-    """
-    Parameter
-    """
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
 
 
 class Parameters(RFLXNode):
-    """
-    Parameter list
-    """
 
     parameters = Field(type=Parameter.list)
 
 
 class FormalFunctionDecl(FormalDecl):
-    """
-    Formal function declaration
-    """
 
     identifier = Field(type=UnqualifiedID)
     parameters = Field(type=Parameters)
@@ -652,9 +587,6 @@ class Writable(ChannelAttribute):
 
 
 class FormalChannelDecl(FormalDecl):
-    """
-    Channel declaration
-    """
 
     identifier = Field(type=UnqualifiedID)
     parameters = Field(type=ChannelAttribute.list)
@@ -673,9 +605,6 @@ class Quantifier(RFLXNode):
 
 
 class QuantifiedExpression(Expr):
-    """
-    Quantified expression
-    """
 
     operation = Field(type=Quantifier)
     parameter_identifier = Field(type=UnqualifiedID)
@@ -684,9 +613,6 @@ class QuantifiedExpression(Expr):
 
 
 class Comprehension(Expr):
-    """
-    List comprehension
-    """
 
     iterator = Field(type=UnqualifiedID)
     array = Field(type=Expr)
@@ -695,27 +621,18 @@ class Comprehension(Expr):
 
 
 class Call(Expr):
-    """
-    Function call
-    """
 
     identifier = Field(type=UnqualifiedID)
     arguments = Field(type=Expr.list)
 
 
 class Conversion(Expr):
-    """
-    Type conversion
-    """
 
     target_identifier = Field(type=ID)
     argument = Field(type=Expr)
 
 
 class MessageAggregateAssociation(RFLXNode):
-    """
-    Message aggregation association
-    """
 
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
@@ -729,50 +646,33 @@ class BaseAggregate(RFLXNode):
 
 
 class NullMessageAggregate(BaseAggregate):
-    """
-    Null message aggregate
-    """
+    pass
 
 
 class MessageAggregateAssociations(BaseAggregate):
-    """
-    Message aggregate association list
-    """
 
     associations = Field(type=MessageAggregateAssociation.list)
 
 
 class MessageAggregate(Expr):
-    """
-    Message aggregate
-    """
 
     identifier = Field(type=ID)
     values = Field(type=BaseAggregate)
 
 
 class TermAssoc(RFLXNode):
-    """
-    Term association
-    """
 
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
 
 class Binding(Expr):
-    """
-    Variable binding
-    """
 
     expression = Field(type=Expr)
     bindings = Field(type=TermAssoc.list)
 
 
 class Select(Expr):
-    """
-    Selector
-    """
 
     expression = Field(type=Expr)
     selector = Field(type=UnqualifiedID)
