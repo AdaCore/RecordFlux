@@ -1199,10 +1199,10 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                     "package": None,
                 },
                 "values": {
-                    "_kind": "MessageComponents",
-                    "components": [
+                    "_kind": "MessageAggregateAssociations",
+                    "associations": [
                         {
-                            "_kind": "MessageComponent",
+                            "_kind": "MessageAggregateAssociation",
                             "expression": {
                                 "_kind": "Variable",
                                 "identifier": {
@@ -1227,10 +1227,10 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                     "package": None,
                 },
                 "values": {
-                    "_kind": "MessageComponents",
-                    "components": [
+                    "_kind": "MessageAggregateAssociations",
+                    "associations": [
                         {
-                            "_kind": "MessageComponent",
+                            "_kind": "MessageAggregateAssociation",
                             "expression": {
                                 "_kind": "Variable",
                                 "identifier": {
@@ -1242,7 +1242,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                             "identifier": {"_kind": "UnqualifiedID", "_value": "Y"},
                         },
                         {
-                            "_kind": "MessageComponent",
+                            "_kind": "MessageAggregateAssociation",
                             "expression": {
                                 "_kind": "Variable",
                                 "identifier": {
@@ -1266,7 +1266,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                     "name": {"_kind": "UnqualifiedID", "_value": "X"},
                     "package": None,
                 },
-                "values": {"_kind": "NullComponents", "_value": "null message"},
+                "values": {"_kind": "NullMessageAggregate", "_value": "null message"},
             },
         ),
         (
@@ -2210,10 +2210,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "package": None,
                             },
                             "values": {
-                                "_kind": "MessageComponents",
-                                "components": [
+                                "_kind": "MessageAggregateAssociations",
+                                "associations": [
                                     {
-                                        "_kind": "MessageComponent",
+                                        "_kind": "MessageAggregateAssociation",
                                         "expression": {
                                             "_kind": "Variable",
                                             "identifier": {
@@ -2238,10 +2238,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                         "package": None,
                     },
                     "values": {
-                        "_kind": "MessageComponents",
-                        "components": [
+                        "_kind": "MessageAggregateAssociations",
+                        "associations": [
                             {
-                                "_kind": "MessageComponent",
+                                "_kind": "MessageAggregateAssociation",
                                 "expression": {
                                     "_kind": "Variable",
                                     "identifier": {
@@ -2272,10 +2272,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "package": None,
                             },
                             "values": {
-                                "_kind": "MessageComponents",
-                                "components": [
+                                "_kind": "MessageAggregateAssociations",
+                                "associations": [
                                     {
-                                        "_kind": "MessageComponent",
+                                        "_kind": "MessageAggregateAssociation",
                                         "expression": {
                                             "_kind": "Variable",
                                             "identifier": {
@@ -2301,10 +2301,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "package": None,
                             },
                             "values": {
-                                "_kind": "MessageComponents",
-                                "components": [
+                                "_kind": "MessageAggregateAssociations",
+                                "associations": [
                                     {
-                                        "_kind": "MessageComponent",
+                                        "_kind": "MessageAggregateAssociation",
                                         "expression": {
                                             "_kind": "Variable",
                                             "identifier": {
@@ -2329,10 +2329,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                         "package": None,
                     },
                     "values": {
-                        "_kind": "MessageComponents",
-                        "components": [
+                        "_kind": "MessageAggregateAssociations",
+                        "associations": [
                             {
-                                "_kind": "MessageComponent",
+                                "_kind": "MessageAggregateAssociation",
                                 "expression": {
                                     "_kind": "Variable",
                                     "identifier": {
@@ -2344,7 +2344,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "D1"},
                             },
                             {
-                                "_kind": "MessageComponent",
+                                "_kind": "MessageAggregateAssociation",
                                 "expression": {
                                     "_kind": "Variable",
                                     "identifier": {
@@ -2380,10 +2380,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                             "package": None,
                                         },
                                         "values": {
-                                            "_kind": "MessageComponents",
-                                            "components": [
+                                            "_kind": "MessageAggregateAssociations",
+                                            "associations": [
                                                 {
-                                                    "_kind": "MessageComponent",
+                                                    "_kind": "MessageAggregateAssociation",
                                                     "expression": {
                                                         "_kind": "Variable",
                                                         "identifier": {
@@ -2414,10 +2414,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "package": None,
                                 },
                                 "values": {
-                                    "_kind": "MessageComponents",
-                                    "components": [
+                                    "_kind": "MessageAggregateAssociations",
+                                    "associations": [
                                         {
-                                            "_kind": "MessageComponent",
+                                            "_kind": "MessageAggregateAssociation",
                                             "expression": {
                                                 "_kind": "Variable",
                                                 "identifier": {
@@ -2446,10 +2446,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                         "package": None,
                     },
                     "values": {
-                        "_kind": "MessageComponents",
-                        "components": [
+                        "_kind": "MessageAggregateAssociations",
+                        "associations": [
                             {
-                                "_kind": "MessageComponent",
+                                "_kind": "MessageAggregateAssociation",
                                 "expression": {
                                     "_kind": "Variable",
                                     "identifier": {

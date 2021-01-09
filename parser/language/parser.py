@@ -140,16 +140,18 @@ grammar.add_rules(
         grammar.unqualified_identifier, "(", List(grammar.extended_expression, sep=","), ")"
     ),
     conversion=ast.Conversion(grammar.qualified_identifier, "(", grammar.extended_expression, ")"),
-    null_message=ast.NullComponents("null", "message"),
-    message_component=ast.MessageComponent(
+    null_message_aggregate=ast.NullMessageAggregate("null", "message"),
+    message_aggregate_association=ast.MessageAggregateAssociation(
         grammar.unqualified_identifier, "=>", grammar.extended_expression
     ),
-    message_components=ast.MessageComponents(List(grammar.message_component, sep=",")),
+    message_aggregate_association_list=ast.MessageAggregateAssociations(
+        List(grammar.message_aggregate_association, sep=",")
+    ),
     message_aggregate=ast.MessageAggregate(
         grammar.qualified_identifier,
         "'",
         "(",
-        Or(grammar.null_message, grammar.message_components),
+        Or(grammar.null_message_aggregate, grammar.message_aggregate_association_list),
         ")",
     ),
     extended_primary=Or(

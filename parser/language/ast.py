@@ -712,9 +712,9 @@ class Conversion(Expr):
     argument = Field(type=Expr)
 
 
-class MessageComponent(RFLXNode):
+class MessageAggregateAssociation(RFLXNode):
     """
-    Message component association
+    Message aggregation association
     """
 
     identifier = Field(type=UnqualifiedID)
@@ -722,24 +722,24 @@ class MessageComponent(RFLXNode):
 
 
 @abstract
-class BaseComponents(RFLXNode):
+class BaseAggregate(RFLXNode):
     """
-    Base class for message components
-    """
-
-
-class NullComponents(BaseComponents):
-    """
-    Null message components
+    Base class for message aggregates
     """
 
 
-class MessageComponents(BaseComponents):
+class NullMessageAggregate(BaseAggregate):
     """
-    Message components
+    Null message aggregate
     """
 
-    components = Field(type=MessageComponent.list)
+
+class MessageAggregateAssociations(BaseAggregate):
+    """
+    Message aggregate association list
+    """
+
+    associations = Field(type=MessageAggregateAssociation.list)
 
 
 class MessageAggregate(Expr):
@@ -748,7 +748,7 @@ class MessageAggregate(Expr):
     """
 
     identifier = Field(type=ID)
-    values = Field(type=BaseComponents)
+    values = Field(type=BaseAggregate)
 
 
 class TermAssoc(RFLXNode):
