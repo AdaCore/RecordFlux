@@ -22,10 +22,6 @@ class Token(LexerToken):
     If = WithText()
     End = WithText()
     Null = WithText()
-    Semicolon = WithText()
-    DoubleColon = WithText()
-    Assignment = WithText()
-    Colon = WithText()
     Type = WithText()
     Range = WithText()
     With = WithText()
@@ -102,6 +98,10 @@ class Token(LexerToken):
     And = WithText()
     Or = WithText()
     Ampersand = WithText()
+    Semicolon = WithText()
+    DoubleColon = WithText()
+    Assignment = WithText()
+    Colon = WithText()
 
     # Comment
     Comment = WithTrivia()
