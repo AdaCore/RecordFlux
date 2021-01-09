@@ -35,7 +35,7 @@ format:
 test: check test_python
 
 test_python: $(parser-installed)
-	python3 -m pytest -n$(shell nproc)  -vv tests
+	python3 -m pytest -n$(shell nproc)  -vv --ignore=tests/data tests
 
 $(parser-installed):
 	pip3 install --user .[Devel]

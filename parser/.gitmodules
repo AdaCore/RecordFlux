@@ -1,3 +1,6 @@
 [submodule "contrib/gnatcoll-bindings"]
 	path = contrib/gnatcoll-bindings
 	url = https://github.com/AdaCore/gnatcoll-bindings
+[submodule "tests/data/examples"]
+	path = tests/data/examples
+	url = https://github.com/Componolit/RecordFlux-specifications.git
