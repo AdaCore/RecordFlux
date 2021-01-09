@@ -131,6 +131,7 @@ setup(
             "mypy >=0.770",
             "pylint >=2.6.0, <3",
             "pytest >=5, <6",
+            "pytest-cov >=2.10.0, <3",
             "pytest-xdist >=1.32.0, <2",
             "langkit@" + LANGKIT,
         ]

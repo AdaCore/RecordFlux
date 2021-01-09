@@ -32,10 +32,13 @@ format:
 	black -l 100 $(python-packages)
 	isort $(python-packages)
 
-test: check test_python
+test: check test_python_coverage
 
 test_python: $(parser-installed)
 	python3 -m pytest -n$(shell nproc)  -vv --ignore=tests/data tests
+
+test_python_coverage:
+	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered --ignore=tests/data tests
 
 $(parser-installed):
 	pip3 install --user .[Devel]
