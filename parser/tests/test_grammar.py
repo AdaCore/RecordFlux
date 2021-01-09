@@ -2474,7 +2474,10 @@ def test_expression_complex(string: str, expected: Dict[str, str]) -> None:
 
 def test_private_type_declaration() -> None:
     string = "type X is private"
-    expected = {"_kind": "PrivateTypeDecl", "identifier": {"_kind": "UnqualifiedID", "_value": "X"}}
+    expected = {
+        "_kind": "FormalPrivateTypeDecl",
+        "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
+    }
     actual = parse(string, GrammarRule.session_parameter_rule)
     assert actual == expected
 
@@ -2485,7 +2488,7 @@ def test_private_type_declaration() -> None:
         (
             "X : Channel with Readable",
             {
-                "_kind": "ChannelDecl",
+                "_kind": "FormalChannelDecl",
                 "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "parameters": [{"_kind": "Readable", "_value": "Readable"}],
             },
@@ -2493,7 +2496,7 @@ def test_private_type_declaration() -> None:
         (
             "X : Channel with Writable",
             {
-                "_kind": "ChannelDecl",
+                "_kind": "FormalChannelDecl",
                 "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "parameters": [{"_kind": "Writable", "_value": "Writable"}],
             },
@@ -2501,7 +2504,7 @@ def test_private_type_declaration() -> None:
         (
             "X : Channel with Readable, Writable",
             {
-                "_kind": "ChannelDecl",
+                "_kind": "FormalChannelDecl",
                 "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "parameters": [
                     {"_kind": "Readable", "_value": "Readable"},
@@ -2522,7 +2525,7 @@ def test_channel_declaration(string: str, expected: Dict[str, str]) -> None:
         (
             "with function X return Y",
             {
-                "_kind": "FunctionDecl",
+                "_kind": "FormalFunctionDecl",
                 "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "parameters": None,
                 "return_type_identifier": {
@@ -2535,7 +2538,7 @@ def test_channel_declaration(string: str, expected: Dict[str, str]) -> None:
         (
             "with function X (A : B; C : D) return Y",
             {
-                "_kind": "FunctionDecl",
+                "_kind": "FormalFunctionDecl",
                 "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "parameters": {
                     "_kind": "Parameters",
@@ -3026,7 +3029,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Session"},
                 "parameters": [
                     {
-                        "_kind": "ChannelDecl",
+                        "_kind": "FormalChannelDecl",
                         "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                         "parameters": [
                             {"_kind": "Readable", "_value": "Readable"},
@@ -3034,11 +3037,11 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                         ],
                     },
                     {
-                        "_kind": "PrivateTypeDecl",
+                        "_kind": "FormalPrivateTypeDecl",
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                     },
                     {
-                        "_kind": "FunctionDecl",
+                        "_kind": "FormalFunctionDecl",
                         "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
                         "parameters": None,
                         "return_type_identifier": {

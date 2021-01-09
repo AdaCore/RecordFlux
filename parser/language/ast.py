@@ -37,20 +37,21 @@ class ID(AbstractID):
 
 
 @abstract
-class Type(RFLXNode):
+class Declaration(RFLXNode):
     """
-    Base class for type declarations (enums, integers, messages, arrays, derivations)
+    Base class for declarations (types, refinements, sessions)
     """
 
 
 @abstract
 class TypeDef(RFLXNode):
     """
-    Base class for type definitions
+    Base class for type definitions (integers, abstract messages, type derivations, arrays,
+    enumerations)
     """
 
 
-class TypeSpec(Type):
+class TypeDecl(Declaration):
     """
     Type specification (type Foo is ...)
     """
@@ -118,7 +119,7 @@ class ParenExpression(Expr):
     data = Field(type=Expr)
 
 
-class RefinementSpec(Type):
+class RefinementSpec(Declaration):
     """
     Refinement specification (for Message use (Field => Inner_Type))
     """
@@ -130,15 +131,15 @@ class RefinementSpec(Type):
 
 
 @abstract
-class TypeDecl(RFLXNode):
+class FormalDecl(RFLXNode):
     """
-    Base class for type declarations
+    Base class for generic formal session declarations
     """
 
 
-class PrivateTypeDecl(TypeDecl):
+class FormalPrivateTypeDecl(FormalDecl):
     """
-    Private session type declaration
+    Formal private session type declaration
     """
 
     identifier = Field(type=UnqualifiedID)
@@ -328,12 +329,12 @@ class State(RFLXNode):
     body = Field(type=BaseStateBody)
 
 
-class SessionSpec(Type):
+class SessionSpec(Declaration):
     """
     Session specification
     """
 
-    parameters = Field(type=TypeDecl.list)
+    parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
     aspects = Field(type=SessionAspects)
     declarations = Field(type=SessionDecl.list)
@@ -347,7 +348,7 @@ class PackageSpec(RFLXNode):
     """
 
     identifier = Field(type=UnqualifiedID)
-    declarations = Field(type=Type.list)
+    declarations = Field(type=Declaration.list)
     end_identifier = Field(type=UnqualifiedID)
 
 
@@ -621,9 +622,9 @@ class Parameters(RFLXNode):
     parameters = Field(type=Parameter.list)
 
 
-class FunctionDecl(TypeDecl):
+class FormalFunctionDecl(FormalDecl):
     """
-    Function declaration
+    Formal function declaration
     """
 
     identifier = Field(type=UnqualifiedID)
@@ -650,7 +651,7 @@ class Writable(ChannelAttribute):
     """
 
 
-class ChannelDecl(TypeDecl):
+class FormalChannelDecl(FormalDecl):
     """
     Channel declaration
     """

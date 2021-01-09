@@ -347,7 +347,7 @@ grammar.add_rules(
         "of",
         grammar.qualified_identifier,
     ),
-    type_declaration=ast.TypeSpec(
+    type_declaration=ast.TypeDecl(
         "type",
         grammar.unqualified_identifier,
         "is",
@@ -370,14 +370,14 @@ grammar.add_rules(
         ")",
         Opt(grammar.if_condition),
     ),
-    private_type_declaration=ast.PrivateTypeDecl(
+    private_type_declaration=ast.FormalPrivateTypeDecl(
         "type", grammar.unqualified_identifier, "is", "private"
     ),
     function_parameter=ast.Parameter(
         grammar.unqualified_identifier, ":", grammar.qualified_identifier
     ),
     function_parameter_list=ast.Parameters("(", List(grammar.function_parameter, sep=";"), ")"),
-    formal_function_declaration=ast.FunctionDecl(
+    formal_function_declaration=ast.FormalFunctionDecl(
         "with",
         "function",
         grammar.unqualified_identifier,
@@ -385,7 +385,7 @@ grammar.add_rules(
         "return",
         grammar.qualified_identifier,
     ),
-    channel_declaration=ast.ChannelDecl(
+    channel_declaration=ast.FormalChannelDecl(
         grammar.unqualified_identifier,
         ":",
         "Channel",

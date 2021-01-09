@@ -44,7 +44,7 @@ def test_modular_type() -> None:
         rule=librflxlang.GrammarRule.type_declaration_rule,
     )
     assert to_dict(unit.root) == {
-        "_kind": "TypeSpec",
+        "_kind": "TypeDecl",
         "definition": {
             "_kind": "ModularTypeDef",
             "mod": {
