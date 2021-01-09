@@ -155,13 +155,13 @@ class SessionAspects(RFLXNode):
 
 
 @abstract
-class SessionDecl(RFLXNode):
+class LocalDecl(RFLXNode):
     """
-    Base class for session declarations
+    Base class for session or state local declarations
     """
 
 
-class VariableDecl(SessionDecl):
+class VariableDecl(LocalDecl):
     """
     Session variable declaration
     """
@@ -171,7 +171,7 @@ class VariableDecl(SessionDecl):
     initializer = Field(type=Expr)
 
 
-class RenamingDecl(SessionDecl):
+class RenamingDecl(LocalDecl):
     """
     Session renaming declaration
     """
@@ -312,7 +312,7 @@ class StateBody(BaseStateBody):
     Body of a session state
     """
 
-    declarations = Field(type=SessionDecl.list)
+    declarations = Field(type=LocalDecl.list)
     actions = Field(type=Statement.list)
     conditional_transitions = Field(type=ConditionalTransition.list)
     final_transition = Field(type=Transition)
@@ -337,7 +337,7 @@ class SessionSpec(Declaration):
     parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
     aspects = Field(type=SessionAspects)
-    declarations = Field(type=SessionDecl.list)
+    declarations = Field(type=LocalDecl.list)
     states = Field(type=State.list)
     end_identifier = Field(type=UnqualifiedID)
 
