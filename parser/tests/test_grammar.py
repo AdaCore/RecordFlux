@@ -1012,7 +1012,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                         "package": None,
                     },
                 },
-                "operation": {"_kind": "QuantAll", "_value": "all"},
+                "operation": {"_kind": "QuantifierAll", "_value": "all"},
                 "parameter_identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "predicate": {
                     "_kind": "BinOp",
@@ -1048,7 +1048,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                         "package": None,
                     },
                 },
-                "operation": {"_kind": "QuantSome", "_value": "some"},
+                "operation": {"_kind": "QuantifierSome", "_value": "some"},
                 "parameter_identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 "predicate": {
                     "_kind": "BinOp",
@@ -1732,7 +1732,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                     },
                     "selector": {"_kind": "UnqualifiedID", "_value": "B"},
                 },
-                "operation": {"_kind": "QuantSome", "_value": "some"},
+                "operation": {"_kind": "QuantifierSome", "_value": "some"},
                 "parameter_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
                 "predicate": {
                     "_kind": "ParenExpression",
@@ -2156,7 +2156,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                             },
                             "selector": {"_kind": "UnqualifiedID", "_value": "H"},
                         },
-                        "operation": {"_kind": "QuantSome", "_value": "some"},
+                        "operation": {"_kind": "QuantifierSome", "_value": "some"},
                         "parameter_identifier": {"_kind": "UnqualifiedID", "_value": "S"},
                         "predicate": {
                             "_kind": "BinOp",

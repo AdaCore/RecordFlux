@@ -116,8 +116,8 @@ grammar.add_rules(
         "for",
         Or(
             # pylint: disable=no-member
-            ast.Quant.alt_all("all"),
-            ast.Quant.alt_some("some"),
+            ast.Quantifier.alt_all("all"),
+            ast.Quantifier.alt_some("some"),
         ),
         grammar.unqualified_identifier,
         "in",

@@ -660,7 +660,7 @@ class FormalChannelDecl(FormalDecl):
     parameters = Field(type=ChannelAttribute.list)
 
 
-class Quant(RFLXNode):
+class Quantifier(RFLXNode):
     """
     Quantifier kind
     """
@@ -677,7 +677,7 @@ class QuantifiedExpression(Expr):
     Quantified expression
     """
 
-    operation = Field(type=Quant)
+    operation = Field(type=Quantifier)
     parameter_identifier = Field(type=UnqualifiedID)
     iterable = Field(type=Expr)
     predicate = Field(type=Expr)
