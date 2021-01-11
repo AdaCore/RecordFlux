@@ -1,4 +1,3 @@
-with Ada.Unchecked_Deallocation;
 with Basalt.Strings_Generic;
 with Interfaces;
 with RFLX.IPv4.Packet;
@@ -44,9 +43,6 @@ is
              & Img (Address (1));
    end Image;
 
-   procedure Free_Bytes_Ptr is new Ada.Unchecked_Deallocation (Object => RFLX.RFLX_Builtin_Types.Bytes,
-                                                               Name   => RFLX.RFLX_Builtin_Types.Bytes_Ptr);
-
    procedure Ping (Addr : String)
    is
       package Socket is new Generic_Socket (RFLX.RFLX_Builtin_Types.Byte,
@@ -66,13 +62,13 @@ is
          or else Addr'Length > 15
          or else Buffer = null
       then
-         Free_Bytes_Ptr (Buffer);
+         RFLX.RFLX_Types.Free (Buffer);
          return;
       end if;
       ICMPv4.Get_Address (Addr, Address, Success);
       if not Success then
          Ada.Text_IO.Put_Line ("Failed to parse IP Address: " & Addr);
-         Free_Bytes_Ptr (Buffer);
+         RFLX.RFLX_Types.Free (Buffer);
          return;
       end if;
       Ada.Text_IO.Put_Line ("PING " & Addr);
@@ -84,14 +80,14 @@ is
          Socket.Send (Buffer.all (Buffer'First .. Last), Address, Success);
          if not Success then
             Ada.Text_IO.Put_Line ("Failed to send packet");
-            Free_Bytes_Ptr (Buffer);
+            RFLX.RFLX_Types.Free (Buffer);
             return;
          end if;
          Buffer.all := (others => 0);
          Socket.Receive (Buffer.all, Ignore_Last, Success);
          if not Success then
             Ada.Text_IO.Put_Line ("Receive failed");
-            Free_Bytes_Ptr (Buffer);
+            RFLX.RFLX_Types.Free (Buffer);
             return;
          end if;
          ICMPv4.Print (Buffer);

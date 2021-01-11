@@ -40,7 +40,7 @@ package body RFLX.Enumeration_Tests is
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Enumeration_Known;
@@ -70,7 +70,7 @@ package body RFLX.Enumeration_Tests is
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid Message");
 
       Enumeration.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Enumeration_Unknown;
@@ -103,8 +103,8 @@ package body RFLX.Enumeration_Tests is
               Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_Enumeration;
 
    overriding

@@ -70,7 +70,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (7), "Invalid message size");
 
       TLV.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Data;
@@ -102,7 +102,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (3), "Invalid message size");
 
       TLV.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Data_Zero;
@@ -126,7 +126,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (8)'Image, "Invalid Context.Last");
    end Test_Parsing_TLV_Error;
@@ -144,7 +144,7 @@ package body RFLX.TLV_Tests is
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Parsing_Invalid_TLV_Invalid_Tag;
@@ -174,8 +174,8 @@ package body RFLX.TLV_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_TLV_Data;
 
    procedure Test_Generating_TLV_Data_Generic (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -204,8 +204,8 @@ package body RFLX.TLV_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_TLV_Data_Generic;
 
    procedure Test_Generating_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -232,8 +232,8 @@ package body RFLX.TLV_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_TLV_Data_Zero;
 
    procedure Test_Generating_TLV_Error (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -259,8 +259,8 @@ package body RFLX.TLV_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_TLV_Error;
 
    procedure Test_Read_Write_Reset (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -317,7 +317,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (2)'Image, "Invalid length after writing");
 
       TLV.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Context.Last");
    end Test_Read_Write_Reset;

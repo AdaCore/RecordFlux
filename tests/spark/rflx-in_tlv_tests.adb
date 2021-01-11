@@ -2,6 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Types;
 
 with RFLX.TLV.Message;
 with RFLX.In_TLV.Contains;
@@ -33,7 +34,7 @@ package body RFLX.In_TLV_Tests is
       end if;
 
       TLV.Message.Take_Buffer (TLV_Message_Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (TLV_Message_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Null_In_TLV;

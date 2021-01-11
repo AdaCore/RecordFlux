@@ -59,7 +59,7 @@ package body RFLX.In_IPv4_Tests is
       end if;
 
       UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image,
               "Invalid IPv4_Packet_Context.Last");
@@ -104,7 +104,7 @@ package body RFLX.In_IPv4_Tests is
       end if;
 
       UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
               "Invalid Ethernet_Frame_Context.Last");
@@ -203,8 +203,8 @@ package body RFLX.In_IPv4_Tests is
       if IPv4.Packet.Has_Buffer (IPv4_Packet_Context) then
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
       end if;
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
 
       Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
               "Invalid Ethernet_Frame_Context.Last");

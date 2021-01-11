@@ -187,7 +187,7 @@ package body RFLX.IPv4_Tests is
       Assert (Valid, "Invalid packet");
 
       IPv4.Packet.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (352)'Image, "Invalid Context.Last");
    end Test_Parsing_IPv4;
@@ -245,7 +245,7 @@ package body RFLX.IPv4_Tests is
       Assert (Valid, "Invalid option");
 
       IPv4.Option.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Parsing_IPv4_Option;
@@ -338,8 +338,8 @@ package body RFLX.IPv4_Tests is
               Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_IPv4;
 
    procedure Test_Generating_IPv4_Option (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -374,8 +374,8 @@ package body RFLX.IPv4_Tests is
               Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating_IPv4_Option;
 
    overriding
