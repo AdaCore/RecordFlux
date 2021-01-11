@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
+with Ada.Unchecked_Deallocation;
 with RFLX.RFLX_Arithmetic;
 
 generic
@@ -73,5 +74,7 @@ is
                      Off  :        Offset) with
      Pre =>
        (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
+
+   procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 
 end RFLX.RFLX_Generic_Types;

@@ -70,7 +70,7 @@ package body RFLX.Derivation_Tests is
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message");
 
       Derivation.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Context.Last");
    end Test_Parsing;
@@ -101,8 +101,8 @@ package body RFLX.Derivation_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      Free_Bytes_Ptr (Expected);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Expected);
+      RFLX_Types.Free (Buffer);
    end Test_Generating;
 
    overriding

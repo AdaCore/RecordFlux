@@ -2,6 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Types;
 
 with RFLX.Expression.Message;
 
@@ -43,7 +44,7 @@ package body RFLX.Expression_Tests is
       Assert (Expression.Message.Structural_Valid_Message (Context), "Invalid Message");
 
       Expression.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Expression_Valid;
@@ -64,7 +65,7 @@ package body RFLX.Expression_Tests is
       Assert (not Expression.Message.Structural_Valid_Message (Context), "Structural Valid Message");
 
       Expression.Message.Take_Buffer (Context, Buffer);
-      Free_Bytes_Ptr (Buffer);
+      RFLX_Types.Free (Buffer);
 
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
    end Test_Expression_Invalid;
