@@ -347,8 +347,8 @@ class OpaqueValue(CompositeValue):
             try:
                 nested_msg.parse(value, check)
             except PyRFLXError as e:
-                e.append(
-                    f"Error while parsing nested message " f"{self._refinement_message.identifier}",
+                e.appendleft(
+                    f"Error while parsing nested message {self._refinement_message.identifier}",
                     Subsystem.PYRFLX,
                     Severity.ERROR,
                 )
@@ -446,7 +446,7 @@ class ArrayValue(CompositeValue):
                 try:
                     nested_message.parse(value, check)
                 except PyRFLXError as e:
-                    e.append(
+                    e.appendleft(
                         f"cannot parse nested messages in array of type "
                         f"{self._element_type.full_name}",
                         Subsystem.PYRFLX,
@@ -473,7 +473,7 @@ class ArrayValue(CompositeValue):
 
             self._value = new_value
         else:
-            raise PyRFLXError(f"Arrays of {self._element_type} currently not supported")
+            raise PyRFLXError(f"Arrays of {self._element_type.identifier} currently not supported")
 
     @property
     def size(self) -> Expr:
@@ -825,7 +825,7 @@ class MessageValue(TypeValue):
                         f" != {type(value).__name__}"
                     )
             except PyRFLXError as e:
-                e.append(
+                e.appendleft(
                     f"cannot set value for field {field_name}",
                     Subsystem.PYRFLX,
                     Severity.ERROR,

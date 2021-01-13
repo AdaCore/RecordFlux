@@ -1,6 +1,7 @@
+from collections import deque
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Deque, List, Optional, Tuple, Union
 
 from pyparsing import col, lineno
 
@@ -110,7 +111,7 @@ class RecordFluxError(Exception, Base):
 
     def __init__(self) -> None:
         super().__init__()
-        self.__errors: List[RecordFluxError.Entry] = []
+        self.__errors: Deque[RecordFluxError.Entry] = deque()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -140,13 +141,18 @@ class RecordFluxError(Exception, Base):
         return NotImplemented
 
     @property
-    def errors(self) -> List["RecordFluxError.Entry"]:
+    def errors(self) -> Deque["RecordFluxError.Entry"]:
         return self.__errors
 
     def append(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
         self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
+
+    def appendleft(
+        self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
+    ) -> None:
+        self.__errors.appendleft(RecordFluxError.Entry(message, subsystem, severity, location))
 
     def extend(
         self,
