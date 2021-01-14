@@ -565,13 +565,10 @@ is
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
-      and Ctx.First <= Types.Bit_Index'Last / 2
-      and Field_First (Ctx, Fld) <= Types.Bit_Index'Last / 2
       and Field_Size (Ctx, Fld) >= 0
-      and Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) <= Types.Bit_Length'Last / 2
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Ctx.Last >= Field_Last (Ctx, Fld))
+      and Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld))
     with
      Pre =>
        Has_Buffer (Ctx)

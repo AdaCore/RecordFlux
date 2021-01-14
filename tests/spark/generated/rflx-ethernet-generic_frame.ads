@@ -33,7 +33,7 @@ is
        Types.Byte_Index (First) >= Buffer_First
        and Types.Byte_Index (Last) <= Buffer_Last
        and First <= Last
-       and Last <= Types.Bit_Index'Last / 2;
+       and Last < Types.Bit_Index'Last;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -60,7 +60,7 @@ is
        not Ctx'Constrained
        and then Buffer /= null
        and then Buffer'Length > 0
-       and then Buffer'Last <= Types.Index'Last / 2,
+       and then Buffer'Last < Types.Index'Last,
      Post =>
        Has_Buffer (Ctx)
        and Buffer = null
@@ -81,7 +81,7 @@ is
        and then Types.Byte_Index (First) >= Buffer'First
        and then Types.Byte_Index (Last) <= Buffer'Last
        and then First <= Last
-       and then Last <= Types.Bit_Index'Last / 2,
+       and then Last < Types.Bit_Index'Last,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -137,7 +137,8 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field;
 
@@ -232,7 +233,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
-       and then Field_Last (Ctx, F_Destination) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Destination, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
@@ -261,7 +261,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
-       and then Field_Last (Ctx, F_Source) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Source, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
@@ -291,7 +290,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length_TPID)
-       and then Field_Last (Ctx, F_Type_Length_TPID) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Type_Length_TPID, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID),
@@ -330,7 +328,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TPID)
-       and then Field_Last (Ctx, F_TPID) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_TPID, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID),
@@ -362,7 +359,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TCI)
-       and then Field_Last (Ctx, F_TCI) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_TCI, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI),
@@ -395,7 +391,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length)
-       and then Field_Last (Ctx, F_Type_Length) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (F_Type_Length, To_Base (Val)))
        and then Valid (To_Base (Val))
        and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length),
@@ -438,7 +433,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload), Field_Size (Ctx, F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
@@ -464,7 +458,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Last (Ctx, F_Payload) <= Types.Bit_Index'Last / 2
        and then Field_Condition (Ctx, (Fld => F_Payload), Field_Size (Ctx, F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
@@ -558,7 +551,7 @@ private
       and then (Types.Byte_Index (First) >= Buffer_First
                 and Types.Byte_Index (Last) <= Buffer_Last
                 and First <= Last
-                and Last <= Types.Bit_Index'Last / 2)
+                and Last < Types.Bit_Index'Last)
       and then First <= Message_Last
       and then Message_Last <= Last
       and then (for all F in Field'First .. Field'Last =>
