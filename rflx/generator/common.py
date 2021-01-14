@@ -503,9 +503,7 @@ def public_context_predicate() -> ada.Expr:
             ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
         ),
         ada.LessEqual(ada.Variable("First"), ada.Variable("Last")),
-        ada.LessEqual(
-            ada.Variable("Last"), ada.Div(ada.Last(const.TYPES_BIT_INDEX), ada.Number(2))
-        ),
+        ada.Less(ada.Variable("Last"), ada.Last(const.TYPES_BIT_INDEX)),
     )
 
 

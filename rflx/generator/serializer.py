@@ -28,7 +28,6 @@ from rflx.ada import (
     In,
     Indexed,
     InOutParameter,
-    Last,
     LessEqual,
     Mod,
     NamedAggregate,
@@ -682,10 +681,6 @@ class SerializerGenerator:
             Not(Constrained("Ctx")),
             Call("Has_Buffer", [Variable("Ctx")]),
             Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
-            LessEqual(
-                Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
-                Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-            ),
         ]
 
     @staticmethod

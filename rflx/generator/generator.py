@@ -33,7 +33,6 @@ from rflx.ada import (
     DefaultInitialCondition,
     Depends,
     Discriminant,
-    Div,
     DynamicPredicate,
     EnumerationType,
     Equal,
@@ -55,6 +54,7 @@ from rflx.ada import (
     InstantiationUnit,
     Last,
     Length,
+    Less,
     LessEqual,
     Mod,
     ModularType,
@@ -663,10 +663,7 @@ class Generator:
                                 Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
                                 Greater(Length("Buffer"), Number(0)),
-                                LessEqual(
-                                    Last("Buffer"),
-                                    Div(Last(const.TYPES_INDEX), Number(2)),
-                                ),
+                                Less(Last("Buffer"), Last(const.TYPES_INDEX)),
                             )
                         ),
                         Postcondition(
@@ -749,10 +746,7 @@ class Generator:
                                     Last("Buffer"),
                                 ),
                                 LessEqual(Variable("First"), Variable("Last")),
-                                LessEqual(
-                                    Variable("Last"),
-                                    Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-                                ),
+                                Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
                             )
                         ),
                         Postcondition(
@@ -1138,8 +1132,12 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(
+                            AndThen(
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                                GreaterEqual(
+                                    Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
+                                    Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                                ),
                             )
                         )
                     ],
@@ -1646,35 +1644,23 @@ class Generator:
                     ),
                     And(
                         NotEqual(Variable("Ctx.Buffer"), Variable("null")),
-                        LessEqual(
-                            Variable("Ctx.First"),
-                            Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-                        ),
-                        LessEqual(
-                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(const.TYPES_BIT_INDEX), Number(2)),
-                        ),
                         GreaterEqual(
                             Call("Field_Size", [Variable("Ctx"), Variable("Fld")]), Number(0)
                         ),
-                        LessEqual(
-                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
-                        ),
-                        LessEqual(
+                        Less(
                             Add(
                                 Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                 Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                             ),
-                            Div(Last(const.TYPES_BIT_LENGTH), Number(2)),
+                            Last(const.TYPES_BIT_LENGTH),
                         ),
                         LessEqual(
                             Variable("Ctx.First"),
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         ),
                         GreaterEqual(
-                            Variable("Ctx.Last"),
-                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                            Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
+                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                         ),
                     ),
                     [
@@ -1814,13 +1800,6 @@ class Generator:
                                         Size(const.TYPES_BYTE),
                                     ),
                                     Number(1),
-                                ),
-                                LessEqual(
-                                    Call(
-                                        "Field_Last",
-                                        [Variable("Ctx"), Variable(f.affixed_name)],
-                                    ),
-                                    Div(Last(const.TYPES_BIT_INDEX), Number(2)),
                                 ),
                                 Call(
                                     "Field_Condition",

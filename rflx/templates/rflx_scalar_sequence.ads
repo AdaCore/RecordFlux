@@ -22,14 +22,14 @@ is
        and Types.Byte_Index (Last) <= Buffer_Last
        and First mod Types.Byte'Size = 1
        and First <= Last
-       and Last <= Types.Bit_Index'Last / 2;
+       and Last <= Types.Bit_Index'Last - 1;
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) with
      Pre =>
        (not Ctx'Constrained
         and then Buffer /= null
         and then Buffer'Length > 0
-        and then Buffer'Last <= Types.Index'Last / 2),
+        and then Buffer'Last < Types.Index'Last),
      Post =>
        (Has_Buffer (Ctx)
         and Valid (Ctx)
@@ -52,7 +52,7 @@ is
         and then Types.Byte_Index (Last) <= Buffer'Last
         and then First mod Types.Byte'Size = 1
         and then First <= Last
-        and then Last <= Types.Bit_Index'Last / 2),
+        and then Last <= Types.Bit_Index'Last - 1),
      Post =>
        (Buffer = null
         and Has_Buffer (Ctx)
@@ -169,7 +169,7 @@ private
         and Types.Byte_Index (Last) <= Buffer_Last
         and First mod Types.Byte'Size = 1
         and First <= Last
-        and Last <= (Types.Bit_Index'Last / 2)
+        and Last <= Types.Bit_Index'Last - 1
         and Sequence_Last >= First - 1
         and Sequence_Last <= Last);
 
