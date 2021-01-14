@@ -189,6 +189,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Tag (Ctx : Context) return RFLX.TLV.Tag with
      Pre =>
        Valid (Ctx, F_Tag);
@@ -196,6 +198,8 @@ is
    function Get_Length (Ctx : Context) return RFLX.TLV.Length with
      Pre =>
        Valid (Ctx, F_Length);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Value (Value : Types.Bytes);

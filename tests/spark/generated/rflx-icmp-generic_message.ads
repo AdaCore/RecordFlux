@@ -215,6 +215,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag with
      Pre =>
        Valid (Ctx, F_Tag);
@@ -274,6 +276,8 @@ is
    function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
      Pre =>
        Valid (Ctx, F_Transmit_Timestamp);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Data (Data : Types.Bytes);

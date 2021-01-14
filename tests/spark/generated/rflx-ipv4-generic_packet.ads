@@ -220,6 +220,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Version (Ctx : Context) return RFLX.IPv4.Version with
      Pre =>
        Valid (Ctx, F_Version);
@@ -279,6 +281,8 @@ is
    function Get_Destination (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
        Valid (Ctx, F_Destination);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Options (Options : Types.Bytes);

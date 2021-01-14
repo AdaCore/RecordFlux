@@ -193,6 +193,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port with
      Pre =>
        Valid (Ctx, F_Source_Port);
@@ -208,6 +210,8 @@ is
    function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum with
      Pre =>
        Valid (Ctx, F_Checksum);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Payload (Payload : Types.Bytes);
