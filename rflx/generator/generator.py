@@ -1267,6 +1267,8 @@ class Generator:
         return UnitPart(
             [],
             [
+                # WORKAROUND: Componolit/Workarounds#31
+                Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1299,7 +1301,8 @@ class Generator:
                             )
                         )
                     ],
-                )
+                ),
+                Pragma("Warnings", [Variable("On"), String("precondition is always False")]),
             ],
         )
 

@@ -189,9 +189,13 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Header (Ctx : Context) return RFLX.Arrays.Enumeration with
      Pre =>
        Valid (Ctx, F_Header);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Vector (Vector : Types.Bytes);

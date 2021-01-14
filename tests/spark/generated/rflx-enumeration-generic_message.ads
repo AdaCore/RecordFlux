@@ -182,9 +182,13 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Priority (Ctx : Context) return RFLX.Enumeration.Priority with
      Pre =>
        Valid (Ctx, F_Priority);
+
+   pragma Warnings (On, "precondition is always False");
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) with
      Pre =>

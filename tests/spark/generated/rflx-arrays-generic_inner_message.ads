@@ -187,9 +187,13 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Length (Ctx : Context) return RFLX.Arrays.Length with
      Pre =>
        Valid (Ctx, F_Length);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Payload (Payload : Types.Bytes);

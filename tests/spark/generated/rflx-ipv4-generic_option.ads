@@ -196,6 +196,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Copied (Ctx : Context) return Boolean with
      Pre =>
        Valid (Ctx, F_Copied);
@@ -211,6 +213,8 @@ is
    function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length with
      Pre =>
        Valid (Ctx, F_Option_Length);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Option_Data (Option_Data : Types.Bytes);

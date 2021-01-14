@@ -466,6 +466,8 @@ is
           when others =>
              Ctx.Cursors (Fld).Predecessor));
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
           when F_Tag =>
@@ -563,6 +565,8 @@ is
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, Fld)
        and Valid_Predecessor (Ctx, Fld);
+
+   pragma Warnings (On, "precondition is always False");
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
      ((case Fld is

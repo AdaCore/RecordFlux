@@ -30,6 +30,7 @@ from rflx.ada import (
     Or,
     Parameter,
     Postcondition,
+    Pragma,
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
@@ -37,6 +38,7 @@ from rflx.ada import (
     ReturnStatement,
     Selected,
     Slice,
+    String,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
@@ -652,15 +654,20 @@ class ParserGenerator:
 
         return UnitPart(
             [
-                SubprogramDeclaration(
-                    specification(f, t),
-                    [
-                        Precondition(
-                            Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
-                        )
-                    ],
-                )
-                for f, t in scalar_fields.items()
+                # WORKAROUND: Componolit/Workarounds#31
+                Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
+                *[
+                    SubprogramDeclaration(
+                        specification(f, t),
+                        [
+                            Precondition(
+                                Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            )
+                        ],
+                    )
+                    for f, t in scalar_fields.items()
+                ],
+                Pragma("Warnings", [Variable("On"), String("precondition is always False")]),
             ],
             [
                 ExpressionFunctionDeclaration(specification(f, t), result(f))

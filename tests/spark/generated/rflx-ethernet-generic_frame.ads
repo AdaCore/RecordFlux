@@ -197,6 +197,8 @@ is
 
    function Incomplete_Message (Ctx : Context) return Boolean;
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Get_Destination (Ctx : Context) return RFLX.Ethernet.Address with
      Pre =>
        Valid (Ctx, F_Destination);
@@ -220,6 +222,8 @@ is
    function Get_Type_Length (Ctx : Context) return RFLX.Ethernet.Type_Length with
      Pre =>
        Valid (Ctx, F_Type_Length);
+
+   pragma Warnings (On, "precondition is always False");
 
    generic
       with procedure Process_Payload (Payload : Types.Bytes);
