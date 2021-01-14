@@ -31,7 +31,7 @@ def test_empty_package() -> None:
             "declarations": [],
             "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
             "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
-            "_kind": "PackageSpec",
+            "_kind": "PackageNode",
         },
     }
 

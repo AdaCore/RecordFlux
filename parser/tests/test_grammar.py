@@ -3000,7 +3000,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                end Session
          """,
             {
-                "_kind": "SessionSpec",
+                "_kind": "SessionDecl",
                 "aspects": {
                     "_kind": "SessionAspects",
                     "final": {"_kind": "UnqualifiedID", "_value": "B"},

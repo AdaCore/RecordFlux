@@ -361,7 +361,7 @@ grammar.add_rules(
             grammar.array_type_definition,
         ),
     ),
-    type_refinement=ast.RefinementSpec(
+    type_refinement=ast.RefinementDecl(
         "for",
         grammar.qualified_identifier,
         "use",
@@ -471,7 +471,7 @@ grammar.add_rules(
         "is",
         Or(grammar.null_state_body, grammar.state_body),
     ),
-    session_declaration=ast.SessionSpec(
+    session_declaration=ast.SessionDecl(
         "generic",
         Opt(List(grammar.session_parameter, sep=";"), ";"),
         "session",
@@ -488,7 +488,7 @@ grammar.add_rules(
         grammar.type_declaration, grammar.type_refinement, grammar.session_declaration
     ),
     basic_declarations=Pick(List(grammar.basic_declaration, sep=";"), ";"),
-    package_declaration=ast.PackageSpec(
+    package_declaration=ast.Package(
         "package",
         grammar.unqualified_identifier,
         "is",

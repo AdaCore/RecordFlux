@@ -48,8 +48,7 @@ class Declaration(RFLXNode):
 @abstract
 class TypeDef(RFLXNode):
     """
-    Base class for type definitions (integers, abstract messages, type derivations, arrays,
-    enumerations)
+    Base class for type definitions (integers, messages, type derivations, arrays, enumerations)
     """
 
 
@@ -71,7 +70,7 @@ class Expr(RFLXNode):
 
 class Op(RFLXNode):
     """
-    Operators for expressions
+    Operators for binary expressions
     """
 
     enum_node = True
@@ -118,9 +117,9 @@ class ParenExpression(Expr):
     data = Field(type=Expr)
 
 
-class RefinementSpec(Declaration):
+class RefinementDecl(Declaration):
     """
-    Refinement specification (for Message use (Field => Inner_Type))
+    Refinement declaration (for Message use (Field => Inner_Type))
     """
 
     pdu = Field(type=ID)
@@ -323,7 +322,7 @@ class State(RFLXNode):
     body = Field(type=BaseStateBody)
 
 
-class SessionSpec(Declaration):
+class SessionDecl(Declaration):
 
     parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
@@ -333,7 +332,7 @@ class SessionSpec(Declaration):
     end_identifier = Field(type=UnqualifiedID)
 
 
-class PackageSpec(RFLXNode):
+class Package(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     declarations = Field(type=Declaration.list)
@@ -546,7 +545,7 @@ class Specification(RFLXNode):
     """
 
     context_clause = Field(type=ContextItem.list)
-    package_declaration = Field(type=PackageSpec)
+    package_declaration = Field(type=Package)
 
 
 class Parameter(RFLXNode):
