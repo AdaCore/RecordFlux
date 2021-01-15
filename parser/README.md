@@ -11,8 +11,10 @@ $ make install_parser
 or install the development version manually using `pip`:
 
 ```Console
-$ pip3 install .[Devel]
+$ pip3 install ".[Devel]"
 ```
+
+**Note:** Develop mode of setuptools (`pip -e`) is unsupported.
 
 The tests can then be executed using:
 
