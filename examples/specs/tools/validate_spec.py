@@ -226,7 +226,7 @@ class Validator:
             pdu_model.parse(message)
             result.parsed_message = pdu_model
         except RecordFluxError as e:
-            result.error_message = f"{e.__class__.__name__}: {e}"
+            result.error_message = str(e)
         return result
 
 
@@ -304,18 +304,10 @@ class ValidationResult:
         }
 
     def get_abbreviated_output(self) -> str:
-        parsed_message = self.__parser_result.parsed_message
-        if parsed_message is None:
-            identifier = "Message could not be parsed"
+        if self.__parser_result.error_message:
+            output = f"{self.classification.value}\n{self.__parser_result.error_message}"
         else:
-            identifier = parsed_message.identifier.__str__()
-
-        output = (
-            f"classification: {self.classification.value}, "
-            f"identifier: {identifier}, "
-            f"file name: {self.__original_message.file_name}, "
-            f"error: {self.__parser_result.error_message}"
-        )
+            output = f"{self.classification.value}"
         return output
 
 
