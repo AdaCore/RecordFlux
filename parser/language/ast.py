@@ -354,8 +354,8 @@ class Aspect(RFLXNode):
 
 class RangeTypeDef(IntegerTypeDef):
 
-    lower = Field(type=Expr)
-    upper = Field(type=Expr)
+    first = Field(type=Expr)
+    last = Field(type=Expr)
     size = Field(type=Aspect)
 
 
@@ -473,8 +473,8 @@ class ChecksumValueRange(BaseChecksumVal):
     Checksum value range
     """
 
-    lower = Field(type=Expr)
-    upper = Field(type=Expr)
+    first = Field(type=Expr)
+    last = Field(type=Expr)
 
 
 class ChecksumAssoc(RFLXNode):
