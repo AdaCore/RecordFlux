@@ -32,15 +32,16 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
         pip install --user -e .[devel]
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
@@ -108,16 +109,17 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
         sudo apt install graphviz
         python -m pip install --upgrade pip wheel
         pip install --user -e .[devel]
         mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
@@ -159,26 +161,19 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
-        sudo apt install graphviz
-        python -m pip install --upgrade pip wheel
-        pip install --user -e .[devel]
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
-        chmod +x $HOME/bin/gnatprove
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatpp
-        chmod +x $HOME/bin/gnatpp
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel] -vv
+        PATH="$HOME/bin:$PATH" pip install .[devel]
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -197,12 +192,10 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Install GNAT
-      run: |
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
-        echo "$HOME/bin" >> $GITHUB_PATH
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -214,12 +207,10 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Install GNAT
-      run: |
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v /tmp:/tmp -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
-        echo "$HOME/bin" >> $GITHUB_PATH
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Build runtime
       run: |
         git clone https://github.com/Componolit/ada-runtime
@@ -268,6 +259,10 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
@@ -322,6 +317,10 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
