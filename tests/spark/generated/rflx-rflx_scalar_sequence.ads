@@ -136,6 +136,8 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
+   function Available_Space (Ctx : Context) return Types.Bit_Length;
+
    function Sequence_Last (Ctx : Context) return Types.Bit_Length with
      Annotate =>
        (GNATprove, Inline_For_Proof),
@@ -146,11 +148,6 @@ is
        (GNATprove, Inline_For_Proof);
 
    function Byte_Size (Ctx : Context) return Types.Length with
-     Annotate =>
-       (GNATprove, Inline_For_Proof),
-     Ghost;
-
-   function Available_Space (Ctx : Context) return Types.Bit_Length with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -192,6 +189,9 @@ private
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
 
+   function Available_Space (Ctx : Context) return Types.Bit_Length is
+     (Ctx.Last - Ctx.Sequence_Last);
+
    function Sequence_Last (Ctx : Context) return Types.Bit_Length is
      (Ctx.Sequence_Last);
 
@@ -205,8 +205,5 @@ private
          0
       else
          Types.Length (Types.Byte_Index (Ctx.Sequence_Last) - Types.Byte_Index (Ctx.First)) + 1);
-
-   function Available_Space (Ctx : Context) return Types.Bit_Length is
-      (Ctx.Last - Ctx.Sequence_Last);
 
 end RFLX.RFLX_Scalar_Sequence;
