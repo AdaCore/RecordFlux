@@ -1164,3 +1164,18 @@ def test_message_size(message_size: MessageValue) -> None:
     assert message_size.valid_message
     assert message_size.get("A") == 2
     assert message_size.get("B") == b"\x01\x02"
+    message_size.set("A", 2)
+    message_size.set("B", b"\x01\x02")
+    assert message_size.valid_message
+
+
+def test_message_size_unverified() -> None:
+    pyrflx_ = PyRFLX.from_specs(
+        [f"{SPEC_DIR}/message_size.rflx"],
+        skip_model_verification=True,
+        skip_message_verification=True,
+    )
+    message = pyrflx_["Message_Size"]["Msg"]
+    message.set("A", 2)
+    message.set("B", b"\x01\x02")
+    assert message.valid_message

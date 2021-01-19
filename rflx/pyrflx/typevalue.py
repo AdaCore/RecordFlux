@@ -1110,10 +1110,13 @@ class MessageValue(TypeValue):
         if field:
             if isinstance(field.typeval, ScalarValue):
                 self._simplified_mapping[field.name_variable] = field.typeval.expr
+            last = field.last
+            assert isinstance(last, Number)
             self._simplified_mapping[field.name_size] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
-            self._simplified_mapping[field.name_last] = field.last
-            self._simplified_mapping[self.__message_last_name] = field.last
+            self._simplified_mapping[field.name_last] = last
+            self._simplified_mapping[self.__message_last_name] = last
+            self._simplified_mapping[self.__message_size_name] = last + Number(1)
             return
 
         self._simplified_mapping = {self.__message_first_name: Number(0)}
