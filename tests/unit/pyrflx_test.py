@@ -62,6 +62,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "Ethernet",
         "ICMP",
         "IPv4",
+        "Message_Size",
         "TLS_Alert",
         "TLS_Record",
         "TLV",
@@ -1156,3 +1157,10 @@ def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -
     assert msg.get("F2") == f2
     assert msg.get("F3") == f3
     assert data == msg.bytestring
+
+
+def test_message_size(message_size: MessageValue) -> None:
+    message_size.parse(b"\x02\x01\x02")
+    assert message_size.valid_message
+    assert message_size.get("A") == 2
+    assert message_size.get("B") == b"\x01\x02"
