@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        target: [dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
+        target: [packages, dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
     steps:
     - uses: actions/checkout@v2
       with:

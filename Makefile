@@ -25,7 +25,10 @@ endif
 
 all: check test prove
 
-check: check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
+check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
+
+check_packages:
+	tools/check_packages.py $(python-packages)
 
 check_dependencies:
 	tools/check_dependencies.py
