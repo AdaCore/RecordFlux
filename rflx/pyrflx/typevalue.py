@@ -566,6 +566,7 @@ class MessageValue(TypeValue):
         else:
             self._preset_fields(INITIAL.name)
         self.__message_last_name = Last("Message")
+        self.__message_size_name = Size("Message")
 
     def add_refinement(self, refinement: "RefinementValue") -> None:
         self._refinements = [*(self._refinements or []), refinement]
@@ -1126,12 +1127,22 @@ class MessageValue(TypeValue):
             if isinstance(v.last, Number):
                 self._simplified_mapping[v.name_last] = v.last
 
+        nxt = self._next_field(INITIAL.name)
+        while nxt:
+            last_field = nxt
+            nxt = self._next_field(last_field)
+            last = self._fields[last_field].last
+            if nxt == FINAL.name or not isinstance(last, Number):
+                break
+            if nxt:
+                continue
+            for l in self._type.outgoing(Field(last_field)):
+                if l.target == FINAL:
+                    self._simplified_mapping[self.__message_last_name] = last
+                    self._simplified_mapping[self.__message_size_name] = last + Number(1)
+
         # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
-
-        pre_final = self._prev_field("Final")
-        if pre_final and self._fields[pre_final].set:
-            self._simplified_mapping[self.__message_last_name] = self._fields[pre_final].last
 
     def __simplified(self, expr: Expr) -> Expr:
         if expr in {TRUE, FALSE}:
