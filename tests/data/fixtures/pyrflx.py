@@ -187,6 +187,6 @@ def fixture_message_size_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_["Message_Size"]
 
 
-@pytest.fixture(name="message_size")
-def fixture_message_size(message_size_package: pyrflx.Package) -> pyrflx.MessageValue:
+@pytest.fixture(name="message_size_value")
+def fixture_message_size_value(message_size_package: pyrflx.Package) -> pyrflx.MessageValue:
     return message_size_package["Msg"]
