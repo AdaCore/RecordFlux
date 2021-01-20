@@ -1159,14 +1159,14 @@ def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -
     assert data == msg.bytestring
 
 
-def test_message_size(message_size: MessageValue) -> None:
-    message_size.parse(b"\x02\x01\x02")
-    assert message_size.valid_message
-    assert message_size.get("A") == 2
-    assert message_size.get("B") == b"\x01\x02"
-    message_size.set("A", 2)
-    message_size.set("B", b"\x01\x02")
-    assert message_size.valid_message
+def test_message_size(message_size_value: MessageValue) -> None:
+    message_size_value.parse(b"\x02\x01\x02")
+    assert message_size_value.valid_message
+    assert message_size_value.get("A") == 2
+    assert message_size_value.get("B") == b"\x01\x02"
+    message_size_value.set("A", 2)
+    message_size_value.set("B", b"\x01\x02")
+    assert message_size_value.valid_message
 
 
 def test_message_size_unverified() -> None:

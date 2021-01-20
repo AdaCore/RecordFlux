@@ -1139,10 +1139,9 @@ class MessageValue(TypeValue):
                 break
             if nxt:
                 continue
-            for l in self._type.outgoing(Field(last_field)):
-                if l.target == FINAL:
-                    self._simplified_mapping[self.__message_last_name] = last
-                    self._simplified_mapping[self.__message_size_name] = last + Number(1)
+            if any(l.target == FINAL for l in self._type.outgoing(Field(last_field))):
+                self._simplified_mapping[self.__message_last_name] = last
+                self._simplified_mapping[self.__message_size_name] = last + Number(1)
 
         # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
