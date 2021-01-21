@@ -191,7 +191,9 @@ def test_cli_abort_on_error() -> None:
         ]
     )
     assert isinstance(ret, str)
-    assert re.match(r"^(tests/data/ethernet/frame/invalid/).+(\.raw) (classified as FalseNegative)$", ret)
+    assert re.match(
+        r"^(tests/data/ethernet/frame/invalid/).+(\.raw) (classified as FalseNegative)$", ret
+    )
 
 
 def test_cli_not_regular_file(tmpdir: Path) -> None:
