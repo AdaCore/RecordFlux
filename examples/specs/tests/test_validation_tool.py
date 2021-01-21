@@ -17,9 +17,9 @@ def test_cli_error_msg_not_in_package() -> None:
                 "-m",
                 "Ethernet::Message",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
         == 'message "Message" could not be found in package "Ethernet"'
@@ -36,9 +36,9 @@ def test_cli_spec_file_not_found() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
         == 'specification file not found: "non_existent_file.rflx"'
@@ -53,9 +53,9 @@ def test_cli_required_arg_not_provided() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
 
@@ -66,9 +66,9 @@ def test_cli_required_arg_not_provided() -> None:
                 "-s",
                 "in_ethernet.rflx",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
 
@@ -101,9 +101,9 @@ def test_cli_output_file_exists(tmp_path: Path) -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_file}",
             ]
@@ -163,9 +163,9 @@ def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path_restricted}/test.json",
             ]
@@ -184,14 +184,14 @@ def test_cli_abort_on_error() -> None:
             "-m",
             "Ethernet::Frame",
             "-v",
-            "tests/data/ethernet/invalid",
+            "tests/data/ethernet/frame/invalid",
             "-i",
-            "tests/data/ethernet/valid",
+            "tests/data/ethernet/frame/valid",
             "--abort-on-error",
         ]
     )
     assert isinstance(ret, str)
-    assert re.match(r"^(tests/data/ethernet/invalid/).+(\.raw) (classified as FalseNegative)$", ret)
+    assert re.match(r"^(tests/data/ethernet/frame/invalid/).+(\.raw) (classified as FalseNegative)$", ret)
 
 
 def test_cli_not_regular_file(tmpdir: Path) -> None:
@@ -223,9 +223,9 @@ def test_cli_invalid_identifier() -> None:
                 "-m",
                 "Ethernet.Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
         == 'invalid identifier "Ethernet.Frame" : id: error: "." in identifier parts'
@@ -242,9 +242,9 @@ def test_validation_positive() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
             ]
         )
         == 0
@@ -261,9 +261,9 @@ def test_validation_negative() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
                 "-i",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
             ]
         )
     ) == "8 messages were classified incorrectly"
@@ -279,9 +279,9 @@ def test_cli_full_json_output(tmp_path: Path) -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/invalid",
+                "tests/data/ethernet/frame/invalid",
                 "-i",
-                "tests/data/ethernet/valid",
+                "tests/data/ethernet/frame/valid",
                 "-o",
                 f"{tmp_path}/output.json",
             ]
