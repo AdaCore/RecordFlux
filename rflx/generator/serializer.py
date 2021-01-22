@@ -1,6 +1,5 @@
 from typing import Mapping, Sequence
 
-import rflx.expression as expr
 from rflx.ada import (
     ID,
     TRUE,
@@ -608,7 +607,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
             [
                 SubprogramBody(
@@ -630,7 +629,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
         )
 
@@ -697,7 +696,7 @@ class SerializerGenerator:
                     formal_parameters(f),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
             [
                 SubprogramBody(
@@ -721,7 +720,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
         )
 
@@ -750,7 +749,7 @@ class SerializerGenerator:
                     ],
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
             [
                 SubprogramBody(
@@ -759,7 +758,7 @@ class SerializerGenerator:
                     common.initialize_field_statements(message, f, self.prefix),
                 )
                 for f, t in message.types.items()
-                if isinstance(t, Opaque) and setter_required(message, f)
+                if isinstance(t, Opaque)
             ],
         )
 
@@ -912,11 +911,3 @@ class SerializerGenerator:
                 Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
             ),
         ]
-
-
-def setter_required(message: Message, field: Field) -> bool:
-    return any(
-        True
-        for l in message.incoming(field)
-        if expr.Size("Message") not in l.size and expr.Last("Message") not in l.size
-    )
