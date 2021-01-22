@@ -739,7 +739,19 @@ is
       Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, Predecessor => F_Option_Data);
    end Set_Option_Data_Empty;
 
-   procedure Set_Option_Data (Ctx : in out Context) is
+   procedure Set_Option_Data (Ctx : in out Context; Value : Types.Bytes) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Option_Data (Ctx);
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+   end Set_Option_Data;
+
+   procedure Generic_Set_Option_Data (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
       function Buffer_First return Types.Index is
@@ -749,7 +761,7 @@ is
    begin
       Initialize_Option_Data (Ctx);
       Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Option_Data;
+   end Generic_Set_Option_Data;
 
    procedure Initialize_Option_Data (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);

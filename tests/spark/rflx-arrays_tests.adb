@@ -908,7 +908,7 @@ package body RFLX.Arrays_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new Arrays.Inner_Message.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Arrays.Inner_Message.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context          : Arrays.Messages_Message.Context;
@@ -977,7 +977,7 @@ package body RFLX.Arrays_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new Arrays.Inner_Message.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Arrays.Inner_Message.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 3, 2, 4, 6);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Sequence_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0);

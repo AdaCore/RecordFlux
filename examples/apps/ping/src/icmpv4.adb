@@ -186,7 +186,7 @@ is
       begin
          Buffer := Data;
       end Process_Data;
-      procedure Set_Data is new RFLX.ICMP.Message.Set_Data (Process_Data, Valid_Length);
+      procedure Set_Data is new RFLX.ICMP.Message.Generic_Set_Data (Process_Data, Valid_Length);
    begin
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);

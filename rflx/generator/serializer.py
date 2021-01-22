@@ -28,6 +28,7 @@ from rflx.ada import (
     In,
     Indexed,
     InOutParameter,
+    Length,
     LessEqual,
     Mod,
     NamedAggregate,
@@ -46,6 +47,7 @@ from rflx.ada import (
     Size,
     Slice,
     Statement,
+    Sub,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
@@ -550,7 +552,93 @@ class SerializerGenerator:
 
     def create_opaque_setter_procedures(self, message: Message) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
-            return ProcedureSpecification(f"Set_{field.name}", [InOutParameter(["Ctx"], "Context")])
+            return ProcedureSpecification(
+                f"Set_{field.name}",
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Value"], const.TYPES_BYTES)],
+            )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification(f),
+                    [
+                        Precondition(
+                            AndThen(
+                                *self.setter_preconditions(f),
+                                *self.composite_setter_preconditions(message, f),
+                                Equal(
+                                    Length("Value"),
+                                    Add(
+                                        Sub(
+                                            Call(
+                                                const.TYPES_BYTE_INDEX,
+                                                [
+                                                    Call(
+                                                        "Field_Last",
+                                                        [
+                                                            Variable("Ctx"),
+                                                            Variable(f.affixed_name),
+                                                        ],
+                                                    )
+                                                ],
+                                            ),
+                                            Call(
+                                                const.TYPES_BYTE_INDEX,
+                                                [
+                                                    Call(
+                                                        "Field_First",
+                                                        [
+                                                            Variable("Ctx"),
+                                                            Variable(f.affixed_name),
+                                                        ],
+                                                    )
+                                                ],
+                                            ),
+                                        ),
+                                        Number(1),
+                                    ),
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                *self.composite_setter_postconditions(message, f),
+                            )
+                        ),
+                    ],
+                )
+                for f, t in message.types.items()
+                if isinstance(t, Opaque) and setter_required(message, f)
+            ],
+            [
+                SubprogramBody(
+                    specification(f),
+                    [
+                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
+                        *self.__field_byte_location_declarations(),
+                    ],
+                    [
+                        CallStatement(f"Initialize_{f.name}", [Variable("Ctx")]),
+                        Assignment(
+                            Slice(
+                                Selected(Variable("Ctx.Buffer"), "all"),
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
+                            ),
+                            Variable("Value"),
+                        ),
+                    ],
+                )
+                for f, t in message.types.items()
+                if isinstance(t, Opaque) and setter_required(message, f)
+            ],
+        )
+
+    def create_generic_opaque_setter_procedures(self, message: Message) -> UnitPart:
+        def specification(field: Field) -> ProcedureSpecification:
+            return ProcedureSpecification(
+                f"Generic_Set_{field.name}", [InOutParameter(["Ctx"], "Context")]
+            )
 
         def formal_parameters(field: Field) -> Sequence[FormalSubprogramDeclaration]:
             return [

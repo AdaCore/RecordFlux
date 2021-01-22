@@ -163,7 +163,11 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Set value of `Tag` field
 - `procedure Set_Length (Ctx : in out Context; Value : Length)`
     - Set value of `Length` field
-- `generic with procedure Process_Value (Value : out Types.Bytes); procedure Set_Value (Ctx : in out Context)`
+- `procedure Set_Value_Empty (Ctx : in out Context; Value : Types.Bytes)`
+    - Set empty `Value` field
+- `procedure Set_Value (Ctx : in out Context; Value : Types.Bytes)`
+    - Set content of `Value` field
+- `generic with procedure Process_Value (Value : out Types.Bytes); procedure Generic_Set_Value (Ctx : in out Context)`
     - Set content of `Value` field
 - `procedure Initialize_Value (Ctx : in out Context)`
     - Initialize `Value` field (precondition to switch context for generating contained message)
@@ -212,26 +216,12 @@ with RFLX.TLV.Message;
 procedure Main is
    Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context;
-   Data : RFLX.RFLX_Builtin_Types.Bytes (RFLX.RFLX_Builtin_Types.Index'First .. RFLX.RFLX_Builtin_Types.Index'First + 2**14);
-
-   function Valid_Data_Length (Length : RFLX.RFLX_Builtin_Types.Length) return Boolean is
-      (Length <= Data'Length);
-
-   procedure Write_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
-      Pre => Valid_Data_Length (Buffer'Length)
-   is
-   begin
-      Buffer := Data (Data'First .. Data'First + Buffer'Length - 1);
-   end Write_Data;
-
-   procedure Set_Value is new RFLX.TLV.Message.Set_Value (Write_Data, Valid_Data_Length);
 begin
    --  Generating message
    RFLX.TLV.Message.Initialize (Context, Buffer);
    RFLX.TLV.Message.Set_Tag (Context, RFLX.TLV.Msg_Data);
    RFLX.TLV.Message.Set_Length (Context, 4);
-   Data := (1, 2, 3, 4, others => 0);
-   Set_Value (Context);
+   RFLX.TLV.Message.Set_Value (Context, (1, 2, 3, 4));
 
    --  Checking generated message
    RFLX.TLV.Message.Take_Buffer (Context, Buffer);

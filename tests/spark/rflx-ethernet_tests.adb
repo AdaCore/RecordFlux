@@ -313,7 +313,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Ethernet.Frame.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
@@ -347,7 +347,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Ethernet.Frame.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_802.3.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
@@ -384,7 +384,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Ethernet.Frame.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_vlan_tag.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
@@ -433,7 +433,7 @@ package body RFLX.Ethernet_Tests is
       --  Simulate a type/length/TPID value that is determined at runtime
       function Dynamic_Type_Length is new Identity (Ethernet.Type_Length);
 
-      procedure Set_Payload is new Ethernet.Frame.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new Ethernet.Frame.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_vlan_tag.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);

@@ -382,6 +382,7 @@ class Generator:
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
         unit += self.__serializer.create_array_setter_procedures(message, sequence_fields)
         unit += self.__serializer.create_opaque_setter_procedures(message)
+        unit += self.__serializer.create_generic_opaque_setter_procedures(message)
         unit += self.__serializer.create_composite_initialize_procedures(message)
 
         unit += self.__create_switch_procedures(message, sequence_fields)

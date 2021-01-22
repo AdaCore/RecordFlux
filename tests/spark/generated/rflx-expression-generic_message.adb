@@ -263,7 +263,19 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
 
-   procedure Set_Payload (Ctx : in out Context) is
+   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Payload (Ctx);
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+   end Set_Payload;
+
+   procedure Generic_Set_Payload (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
       function Buffer_First return Types.Index is
@@ -273,7 +285,7 @@ is
    begin
       Initialize_Payload (Ctx);
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Payload;
+   end Generic_Set_Payload;
 
    procedure Initialize_Payload (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
