@@ -371,11 +371,6 @@ class AbstractMessage(mty.Type):
             if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
                 aggregate_constraints.extend(get_constraints(r.right, r.left))
 
-        message_constraints: List[expr.Expr] = [
-            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
-            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
-        ]
-
         scalar_constraints = [
             c
             for n, t in scalar_types
@@ -389,10 +384,16 @@ class AbstractMessage(mty.Type):
         ]
 
         return [
-            *message_constraints,
             *aggregate_constraints,
             *scalar_constraints,
             *type_size_constraints,
+        ]
+
+    @classmethod
+    def message_constraints(cls) -> List[expr.Expr]:
+        return [
+            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
+            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
         ]
 
     def __validate(self) -> None:
@@ -637,6 +638,110 @@ class Message(AbstractMessage):
                 return True
 
         return False
+
+    def size(self, field_values: Mapping[Field, expr.Expr]) -> expr.Expr:
+        def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
+            return {
+                f.left: f.right
+                for f in facts
+                if isinstance(f, (expr.Equal, expr.GreaterEqual)) and isinstance(f.left, expr.Name)
+            }
+
+        def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
+            if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
+                return expr.Variable(
+                    expression.name[5:],
+                    expression.negative,
+                    expression.immutable,
+                    expression.type_,
+                    location=expression.location,
+                )
+            return expression
+
+        fields = set(field_values)
+        values = [
+            expr.Equal(expr.Variable(f.name), v, location=v.location)
+            for f, v in field_values.items()
+        ]
+        aggregate_sizes = [
+            expr.Equal(expr.Size(f.name), expr.Number(len(v.elements) * 8), location=v.location)
+            for f, v in field_values.items()
+            if isinstance(v, expr.Aggregate)
+        ]
+        composite_sizes = [
+            expr.Equal(
+                expr.Size(f.name),
+                expr.Size(
+                    expr.Variable(
+                        "RFLX_" + v.identifier,
+                        type_=v.type_,
+                        location=v.location,
+                    )
+                ),
+            )
+            for f, v in field_values.items()
+            if isinstance(self.types[f], mty.Composite) and isinstance(v, expr.Variable)
+        ]
+        failures = []
+
+        for path in self.paths(FINAL):
+            if fields != set(l.target for l in path if l.target != FINAL):
+                continue
+            message_size = expr.Add(
+                *[
+                    expr.Size(link.target.name)
+                    for link in path
+                    if link.target != FINAL and link.first == expr.UNDEFINED
+                ]
+            )
+            link_expressions = [fact for link in path for fact in self.__link_expression(link)]
+            proof = expr.Equal(expr.Size("Message"), message_size).check(
+                [
+                    *aggregate_sizes,
+                    *composite_sizes,
+                    *link_expressions,
+                    *values,
+                    *self.type_constraints(expr.TRUE),
+                ]
+            )
+
+            if proof.result == expr.ProofResult.SAT:
+                return (
+                    message_size.substituted(mapping=to_mapping(aggregate_sizes + composite_sizes))
+                    .substituted(mapping=to_mapping(link_expressions))
+                    .substituted(mapping=to_mapping(values))
+                    .substituted(mapping=to_mapping(self.type_constraints(expr.TRUE)))
+                    .substituted(remove_variable_prefix)
+                    .simplified()
+                )
+
+            failures.append((path, proof.error))
+
+        error = RecordFluxError()
+        error.append(
+            f"unable to calculate size for message \"{self.identifier}'("
+            + ", ".join(f"{f.identifier} => {v}" for f, v in field_values.items())
+            + ')"',
+            Subsystem.MODEL,
+            Severity.ERROR,
+            self.location,
+        )
+        for path, proof_error in failures:
+            error.append(
+                "on path " + " -> ".join([l.target.name for l in path]),
+                Subsystem.MODEL,
+                Severity.INFO,
+                self.location,
+            )
+            error.extend(
+                [
+                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                    for m, locn in proof_error
+                ]
+            )
+        error.propagate()
+
+        assert False
 
     def __verify_expression_types(self) -> None:
         types: Dict[ID, mty.Type] = {}
@@ -945,7 +1050,7 @@ class Message(AbstractMessage):
                 for c in self.outgoing(f):
                     paths += 1
                     contradiction = c.condition
-                    constraints = self.type_constraints(contradiction)
+                    constraints = self.message_constraints() + self.type_constraints(contradiction)
                     proof = contradiction.check([*constraints, *facts])
                     if proof.result == expr.ProofResult.SAT:
                         continue
@@ -1134,7 +1239,13 @@ class Message(AbstractMessage):
                             last.location,
                         )
                     )
-                    proof = start_aligned.check([*facts, *self.type_constraints(start_aligned)])
+                    proof = start_aligned.check(
+                        [
+                            *facts,
+                            *self.message_constraints(),
+                            *self.type_constraints(start_aligned),
+                        ]
+                    )
                     if proof.result != expr.ProofResult.UNSAT:
                         path_message = " -> ".join([p.target.name for p in path])
                         self.error.append(
@@ -1154,7 +1265,11 @@ class Message(AbstractMessage):
                         )
                     )
                     proof = is_multiple_of_element_size.check(
-                        [*facts, *self.type_constraints(is_multiple_of_element_size)]
+                        [
+                            *facts,
+                            *self.message_constraints(),
+                            *self.type_constraints(is_multiple_of_element_size),
+                        ]
                     )
                     if proof.result != expr.ProofResult.UNSAT:
                         path_message = " -> ".join([p.target.name for p in path])
@@ -1421,6 +1536,7 @@ class UnprovenMessage(AbstractMessage):
                         merged_condition = expr.And(link.condition, final_link.condition)
                         proof = merged_condition.check(
                             [
+                                *inner_message.message_constraints(),
                                 *inner_message.type_constraints(merged_condition),
                                 inner_message.field_condition(final_link.source),
                             ]
