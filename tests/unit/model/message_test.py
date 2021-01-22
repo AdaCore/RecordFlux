@@ -59,6 +59,7 @@ from tests.data.models import (
     MODULAR_INTEGER,
     RANGE_INTEGER,
     SEQUENCE_MODULAR_VECTOR,
+    TLV_MESSAGE,
 )
 from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
 
@@ -2477,6 +2478,126 @@ def test_is_possibly_empty() -> None:
     assert not message.is_possibly_empty(a)
     assert not message.is_possibly_empty(b)
     assert message.is_possibly_empty(c)
+
+
+def test_size() -> None:
+    assert TLV_MESSAGE.size({Field("Tag"): Variable("Msg_Error")}) == Number(8)
+    assert (
+        TLV_MESSAGE.size(
+            {
+                Field("Tag"): Variable("Msg_Data"),
+                Field("Length"): Number(4),
+                Field("Value"): Aggregate(*[Number(0)] * 4),
+            }
+        )
+        == Number(56)
+    )
+    assert (
+        TLV_MESSAGE.size(
+            {
+                Field("Tag"): Variable("Msg_Data"),
+                Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
+                Field("Value"): Aggregate(*[Number(0)] * 3),
+            }
+        )
+        == Number(48)
+    )
+    assert (
+        TLV_MESSAGE.size(
+            {
+                Field("Tag"): Variable("Msg_Data"),
+                Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
+                Field("Value"): Variable("Z"),
+            }
+        )
+        == Add(Size("Z"), Number(24))
+    )
+
+    assert (
+        ETHERNET_FRAME.size(
+            {
+                Field("Destination"): Number(0),
+                Field("Source"): Number(0),
+                Field("Type_Length_TPID"): Number(46),
+                Field("Type_Length"): Number(46),
+                Field("Payload"): Aggregate(*[Number(0)] * 46),
+            }
+        )
+        == Number(480)
+    )
+    assert (
+        ETHERNET_FRAME.size(
+            {
+                Field("Destination"): Number(0),
+                Field("Source"): Number(0),
+                Field("Type_Length_TPID"): Number(0x8100),
+                Field("TPID"): Number(0x8100),
+                Field("TCI"): Number(0),
+                Field("Type_Length"): Number(46),
+                Field("Payload"): Aggregate(*[Number(0)] * 46),
+            }
+        )
+        == Number(512)
+    )
+    assert (
+        ETHERNET_FRAME.size(
+            {
+                Field("Destination"): Number(0),
+                Field("Source"): Number(0),
+                Field("Type_Length_TPID"): Number(1536),
+                Field("Type_Length"): Number(1536),
+                Field("Payload"): Aggregate(*[Number(0)] * 46),
+            }
+        )
+        == Number(480)
+    )
+    assert (
+        ETHERNET_FRAME.size(
+            {
+                Field("Destination"): Number(0),
+                Field("Source"): Number(0),
+                Field("Type_Length_TPID"): Number(1536),
+                Field("Type_Length"): Number(1536),
+                Field("Payload"): Variable("Payload"),
+            }
+        )
+        == Add(Size("Payload"), Number(112))
+    )
+
+
+def test_size_error() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^model: error: unable to calculate size for message "TLV::Message\'\(\)"$',
+    ):
+        TLV_MESSAGE.size({})
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'model: error: unable to calculate size for message "Ethernet::Frame\''
+            r"\(Destination => 0, Source => 0, Type_Length_TPID => 0, Type_Length => 0,"
+            r' Payload => \[\]\)"\n'
+            r"model: info: on path Destination -> Source -> Type_Length_TPID -> Type_Length"
+            r" -> Payload -> Final\n"
+            r'model: info: unsatisfied "Type_Length = 0"\n'
+            r'model: info: unsatisfied "Type_Length >= 46"\n'
+            r"model: info: on path Destination -> Source -> Type_Length_TPID -> Type_Length"
+            r" -> Payload -> Final\n"
+            r'model: info: unsatisfied "Type_Length = 0"\n'
+            r'model: info: unsatisfied "Type_Length >= 46"'
+            r"$"
+        ),
+    ):
+        ETHERNET_FRAME.size(
+            {
+                Field("Destination"): Number(0),
+                Field("Source"): Number(0),
+                Field("Type_Length_TPID"): Number(0),
+                Field("Type_Length"): Number(0),
+                Field("Payload"): Aggregate(),
+            }
+        )
 
 
 def test_derived_message_incorrect_base_name() -> None:
