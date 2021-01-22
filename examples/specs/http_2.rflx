@@ -125,7 +125,7 @@ package HTTP_2 is
          Bit_2_Unused : Zero_Bit;
          Flag_End_Stream_ACK : Boolean
             then Reserved_Bit_1
-               if ((Frame_Type = SETTINGS and Payload_Length = 6)
+               if ((Frame_Type = SETTINGS and Payload_Length mod 6 = 0)
                   or (Frame_Type = PING and Payload_Length = 8)
                   or Frame_Type = DATA
                   or Frame_Type = HEADERS
