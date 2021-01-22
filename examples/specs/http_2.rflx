@@ -78,9 +78,7 @@ package HTTP_2 is
 
    type Frame is
       message
-         Payload_Length : Payload_Length
-            then Frame_Type
-               if Message'Size = (Payload_Length + 9) * 8; -- ISSUE: Componolit/RecordFlux#517
+         Payload_Length : Payload_Length;
          Frame_Type : Frame_Type;
          Flag_End_Stream_ACK : Boolean
             then Bit_2_Unused
@@ -165,7 +163,8 @@ package HTTP_2 is
                   or Frame_Type = WINDOW_UPDATE
                   or (Frame_Type = PUSH_PROMISE and Flag_Padded = False);
          Settings_Parameters : Settings_Parameters
-            then null;
+            then null
+               if Message'Size = (Payload_Length + 9) * 8;
          Pad_Length : Pad_Length
             then Application_Data
                with Size => (Payload_Length - Pad_Length) * 8 - Pad_Length'Size
@@ -205,34 +204,39 @@ package HTTP_2 is
                if Frame_Type = HEADERS
                   and Flag_Padded = False and Payload_Length >= (Weight'Last - Exclusive_Flag'First + 1) / 8
             then null
-               if Frame_Type = PRIORITY;
+               if Frame_Type = PRIORITY and Message'Size = (Payload_Length + 9) * 8;
          Header_Block_Fragment : Opaque
             then Padding
                if (Frame_Type = HEADERS or Frame_Type = PUSH_PROMISE) and Flag_Padded = True
             then null
-               if Frame_Type = CONTINUATION
-                  or ((Frame_Type = PUSH_PROMISE or Frame_Type = HEADERS) and Flag_Padded = False);
+               if (Frame_Type = CONTINUATION
+                  or ((Frame_Type = PUSH_PROMISE or Frame_Type = HEADERS) and Flag_Padded = False))
+                  and Message'Size = (Payload_Length + 9) * 8;
          Application_Data : Opaque
             then Padding
                if Frame_Type = DATA and Flag_Padded = True
             then null
-               if (Frame_Type = DATA and Flag_Padded = False) or Frame_Type = PING;
+               if ((Frame_Type = DATA and Flag_Padded = False) or Frame_Type = PING)
+                  and Message'Size = (Payload_Length + 9) * 8;
          Padding : Opaque
             with Size => Pad_Length * 8;
          Error_Code : Error_Code
             then null
-               if Frame_Type = RST_STREAM
+               if Frame_Type = RST_STREAM and Message'Size = (Payload_Length + 9) * 8
             then null
                if Frame_Type = GOAWAY
                   and Payload_Length * 8 = (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size)
+                  and Message'Size = (Payload_Length + 9) * 8
             then Additional_Debug_Data
                with Size => (Payload_Length * 8 - (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size))
                if Frame_Type = GOAWAY
                   and Payload_Length * 8 > (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size);
          Additional_Debug_Data : Opaque
-            then null;
+            then null
+               if Message'Size = (Payload_Length + 9) * 8;
          Window_Size_Increment : Window_Size_Increment
-            then null;
+            then null
+               if Message'Size = (Payload_Length + 9) * 8;
       end message;
 
 end HTTP_2;
