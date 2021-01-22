@@ -49,7 +49,7 @@
   <proof prover="0"><result status="valid" steps="29208"/></proof>
   </goal>
   <goal name="def&#39;vc.11" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="298936"/></proof>
+  <proof prover="0"><result status="valid" steps="298940"/></proof>
   </goal>
   <goal name="def&#39;vc.12" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -95,7 +95,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.24" expl="check">
-  <proof prover="0" timelimit="1"><result status="timeout" steps="1388466"/></proof>
+  <proof prover="0" timelimit="1"><result status="timeout"/></proof>
   </goal>
   <goal name="def&#39;vc.25" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

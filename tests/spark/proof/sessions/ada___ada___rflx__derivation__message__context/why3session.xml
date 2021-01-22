@@ -10,7 +10,7 @@
  <goal name="def&#39;vc" expl="VC for def" proved="true">
  <transf name="split_goal_wp_conj" proved="true" >
   <goal name="def&#39;vc.0" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="153924"/></proof>
+  <proof prover="0"><result status="valid" steps="155223"/></proof>
   </goal>
   <goal name="def&#39;vc.1" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
