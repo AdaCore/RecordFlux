@@ -151,16 +151,14 @@ package body RFLX.TLV_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Value is new TLV.Message.Set_Value (Write_Data, Valid_Data_Length);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 1, 2, 3, 4);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
       Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 4);
-      Data := (0, 0, 0, 0);
-      Set_Value (Context);
+      TLV.Message.Set_Value (Context, (1, 2, 3, 4));
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
@@ -177,11 +175,40 @@ package body RFLX.TLV_Tests is
       Free_Bytes_Ptr (Buffer);
    end Test_Generating_TLV_Data;
 
+   procedure Test_Generating_TLV_Data_Generic (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      procedure Set_Value is new TLV.Message.Generic_Set_Value (Write_Data, Valid_Data_Length);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 4, 1, 2, 3, 4);
+      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
+      Context  : TLV.Message.Context;
+   begin
+      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Set_Tag (Context, TLV.Msg_Data);
+      TLV.Message.Set_Length (Context, 4);
+      Data := (1, 2, 3, 4);
+      Set_Value (Context);
+
+      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (not TLV.Message.Valid_Message (Context), "Valid message");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+              "Invalid binary representation");
+
+      Free_Bytes_Ptr (Expected);
+      Free_Bytes_Ptr (Buffer);
+   end Test_Generating_TLV_Data_Generic;
+
    procedure Test_Generating_TLV_Data_Zero (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Value is new TLV.Message.Set_Value (Write_Data, Valid_Data_Length);
       Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : TLV.Message.Context;
@@ -189,8 +216,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 0);
-      Data := (0, 0, 0, 0);
-      Set_Value (Context);
+      TLV.Message.Set_Value_Empty (Context);
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
@@ -243,6 +269,7 @@ package body RFLX.TLV_Tests is
       Register_Routine (T, Test_Parsing_TLV_Error'Access, "Parsing TLV Error Message");
       Register_Routine (T, Test_Parsing_Invalid_TLV_Invalid_Tag'Access, "Parsing Invalid TLV (invalid tag)");
       Register_Routine (T, Test_Generating_TLV_Data'Access, "Generating TLV Data Message");
+      Register_Routine (T, Test_Generating_TLV_Data_Generic'Access, "Generating TLV Data Message (generic setter)");
       Register_Routine (T, Test_Generating_TLV_Data_Zero'Access, "Generating TLV Data Message (zero length)");
       Register_Routine (T, Test_Generating_TLV_Error'Access, "Generating TLV Error Message");
    end Register_Tests;

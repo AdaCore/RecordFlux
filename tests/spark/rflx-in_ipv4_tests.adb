@@ -118,7 +118,7 @@ package body RFLX.In_IPv4_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Set_Payload is new UDP.Datagram.Set_Payload (Write_Data, Valid_Data_Length);
+      procedure Set_Payload is new UDP.Datagram.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected               : RFLX_Builtin_Types.Bytes_Ptr :=
          Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=

@@ -429,10 +429,35 @@ is
        and Context_Cursor (Ctx, F_TPID) = Context_Cursor (Ctx, F_TPID)'Old
        and Context_Cursor (Ctx, F_TCI) = Context_Cursor (Ctx, F_TCI)'Old;
 
+   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Field_Condition (Ctx, (Fld => F_Payload), Field_Size (Ctx, F_Payload))
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Value'Length = Types.Byte_Index (Field_Last (Ctx, F_Payload)) - Types.Byte_Index (Field_First (Ctx, F_Payload)) + 1,
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
+       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
+       and Structural_Valid (Ctx, F_Payload);
+
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
-   procedure Set_Payload (Ctx : in out Context) with
+   procedure Generic_Set_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)

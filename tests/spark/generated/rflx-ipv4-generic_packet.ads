@@ -1099,10 +1099,46 @@ is
             then
                Present (Ctx, F_Options));
 
+   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Field_Condition (Ctx, (Fld => F_Payload))
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Value'Length = Types.Byte_Index (Field_Last (Ctx, F_Payload)) - Types.Byte_Index (Field_First (Ctx, F_Payload)) + 1,
+     Post =>
+       Has_Buffer (Ctx)
+       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Get_Version (Ctx) = Get_Version (Ctx)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Structural_Valid (Ctx, F_Payload);
+
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
       with function Valid_Length (Length : Types.Length) return Boolean;
-   procedure Set_Payload (Ctx : in out Context) with
+   procedure Generic_Set_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)

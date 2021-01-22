@@ -496,7 +496,19 @@ is
       Ctx.Cursors (Successor (Ctx, F_Value)) := (State => S_Invalid, Predecessor => F_Value);
    end Set_Value_Empty;
 
-   procedure Set_Value (Ctx : in out Context) is
+   procedure Set_Value (Ctx : in out Context; Value : Types.Bytes) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Value);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Value);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Value (Ctx);
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+   end Set_Value;
+
+   procedure Generic_Set_Value (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Value);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Value);
       function Buffer_First return Types.Index is
@@ -506,7 +518,7 @@ is
    begin
       Initialize_Value (Ctx);
       Process_Value (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Value;
+   end Generic_Set_Value;
 
    procedure Initialize_Value (Ctx : in out Context) is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Value);
