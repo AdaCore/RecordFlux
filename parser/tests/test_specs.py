@@ -6,7 +6,8 @@ import pytest
 
 @pytest.mark.parametrize(
     "spec",
-    (Path("tests") / "data").rglob("*.rflx"),
+    [*(Path("tests") / "data").rglob("*.rflx")]
+    + [*(Path("contrib") / "RecordFlux-specifications").rglob("*.rflx")],
 )
 def test_file(spec: Path) -> None:
     ctx = librflxlang.AnalysisContext()

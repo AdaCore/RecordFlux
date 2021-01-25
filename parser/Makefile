@@ -30,10 +30,10 @@ format:
 test: check test_python_coverage
 
 test_python:
-	python3 -m pytest -n$(shell nproc)  -vv --ignore=tests/data tests
+	python3 -m pytest -n$(shell nproc)  -vv tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered --ignore=tests/data tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered tests
 
 install_parser:
 	pip3 install .[Devel]

@@ -2,5 +2,5 @@
 	path = contrib/gnatcoll-bindings
 	url = https://github.com/AdaCore/gnatcoll-bindings
 [submodule "tests/data/examples"]
-	path = tests/data/examples
+	path = contrib/RecordFlux-specifications
 	url = https://github.com/Componolit/RecordFlux-specifications.git
