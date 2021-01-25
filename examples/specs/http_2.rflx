@@ -80,10 +80,10 @@ package HTTP_2 is
       message
          Payload_Length : Payload_Length;
          Frame_Type : Frame_Type;
-         Bit_8_Unused : Zero_Bit;
          Bit_7_Unused : Zero_Bit;
+         Bit_6_Unused : Zero_Bit;
          Flag_Priority : Boolean
-            then Bit_5_Unused
+            then Bit_4_Unused
                if (Frame_Type = HEADERS
                   or ((Frame_Type = DATA
                      or Frame_Type = SETTINGS
@@ -95,7 +95,7 @@ package HTTP_2 is
                      or Frame_Type = PUSH_PROMISE
                      or Frame_Type = CONTINUATION
                   ) and Flag_Priority = False));
-         Bit_5_Unused : Zero_Bit;
+         Bit_4_Unused : Zero_Bit;
          Flag_Padded : Boolean
             then Flag_End_Headers
                if (Frame_Type = DATA
@@ -110,7 +110,7 @@ package HTTP_2 is
                      or Frame_Type = PRIORITY
                   ) and Flag_Padded = False));
          Flag_End_Headers : Boolean
-            then Bit_2_Unused
+            then Bit_1_Unused
                if (Frame_Type = HEADERS
                   or Frame_Type = PUSH_PROMISE
                   or Frame_Type = CONTINUATION
@@ -122,7 +122,7 @@ package HTTP_2 is
                      or Frame_Type = WINDOW_UPDATE
                      or Frame_Type = PRIORITY
                   ) and Flag_End_Headers = False));
-         Bit_2_Unused : Zero_Bit;
+         Bit_1_Unused : Zero_Bit;
          Flag_End_Stream_ACK : Boolean
             then Reserved_Bit_1
                if ((Frame_Type = SETTINGS and Payload_Length mod 6 = 0)
