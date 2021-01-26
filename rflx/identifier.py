@@ -1,6 +1,8 @@
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, TypeVar, Union
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
+
+Self = TypeVar("Self", bound="ID")
 
 
 class ID:
@@ -52,24 +54,24 @@ class ID:
     def __str__(self) -> str:
         return self._separator.join(self.parts)
 
-    def __add__(self, other: object) -> "ID":
+    def __add__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             return self.__class__(f"{self}{other}", self.__location(other))
         return NotImplemented
 
-    def __radd__(self, other: object) -> "ID":
+    def __radd__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             return self.__class__(f"{other}{self}", self.__location(other))
         return NotImplemented
 
-    def __mul__(self, other: object) -> "ID":
+    def __mul__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             if str(other) == "":
                 return self.__class__(self, self.__location(other))
             return self.__class__(f"{self}{self._separator}{other}", self.__location(other))
         return NotImplemented
 
-    def __rmul__(self, other: object) -> "ID":
+    def __rmul__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             if str(other) == "":
                 return self.__class__(self, self.__location(other))
@@ -92,11 +94,11 @@ class ID:
         return self._parts
 
     @property
-    def name(self) -> "ID":
+    def name(self: Self) -> Self:
         return self.__class__(self._parts[-1])
 
     @property
-    def parent(self) -> "ID":
+    def parent(self: Self) -> Self:
         return self.__class__(self._parts[:-1])
 
     @property
