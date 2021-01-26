@@ -6,34 +6,42 @@ package ARP is
    -- RFC 826
 
    type Hardware_Address_Space is
-   (
-      Hrd_Ethernet =>   1,
-      Hrd_HW_Exp1  =>  36,
-      Hrd_HW_Exp2  => 256
-   ) with Size => 16;
+      (HAS_ETHERNET =>   1,
+       HAS_HW_EXP1  =>  36,
+       HAS_HW_EXP2  => 256)
+   with Size => 16;
 
-   type Opcode is (Op_Request => 1, Op_Reply => 2) with Size => 16;
+   type Opcode is (OP_REQUEST => 1, OP_REPLY => 2) with Size => 16;
 
    type Address_Length is mod 2**8;
 
-   type IPv4 is
+   type Packet_IPv4 is
       message
+         --  Hardware address space
          Hrd : Hardware_Address_Space
-            then Pro if Hrd = Hrd_Ethernet;
-         Pro : Ethernet::Ether_Type;
-         HLn : Address_Length
+            then Pro if Hrd = HAS_ETHERNET;
+         --  Protocol address space
+         Pro : Ethernet::Ether_Type
+            then Hln if Pro = Ethernet::ET_IPV4;
+         --  Byte length of each hardware address
+         Hln : Address_Length
             --  ISSUE: Componolit/RecordFlux#559
-            --  then PLn if HLn = Ethernet::Address'Size / 8;
-            then PLn if HLn = 6;
-         PLn : Address_Length
+            --  then pln if Hln = Ethernet::Address'Size / 8;
+            then Pln if Hln = 6;
+         --  Byte length of each protocol address
+         Pln : Address_Length
             --  ISSUE: Componolit/RecordFlux#559
-            --  then Op if PLn = IPv4::Address'Size / 8;
-            then Op if PLn = 4;
+            --  then Op if Pln = IPv4::Address'Size / 8;
+            then Op if Pln = 4;
          Op  : Opcode;
-         SHA : Ethernet::Address;
-         SPA : IPv4::Address;
-         THA : Ethernet::Address;
-         TPA : IPv4::Address;
+         --  Hardware address of sender of this packet
+         Sha : Ethernet::Address;
+         --  Protocol address of sender of this packet
+         Spa : IPv4::Address;
+         --  Hardware address of target of this packet
+         Tha : Ethernet::Address;
+         --  Protocol address of target
+         Tpa : IPv4::Address;
       end message;
 
 end ARP;
