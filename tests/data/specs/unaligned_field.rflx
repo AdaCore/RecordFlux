@@ -9,4 +9,5 @@ package Unaligned_Field is
          F2 : T1;
          F3 : T2;
       end message;
+
 end Unaligned_Field;

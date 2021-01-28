@@ -1,4 +1,0 @@
-package Identical_Literals is
-   type T1 is (Foo, Bar) with Size => 1;
-   type T2 is (Bar, Baz) with Size => 1;
-end Identical_Literals;

@@ -39,15 +39,15 @@ NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
+    "TLV::Tag", [("MSG_DATA", Number(1)), ("MSG_ERROR", Number(3))], Number(2), False
 )
 TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(14)))
 TLV_MESSAGE = Message(
     "TLV::Message",
     [
         Link(INITIAL, Field("Tag")),
-        Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
-        Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
+        Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("MSG_DATA"))),
+        Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("MSG_ERROR"))),
         Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Value"), FINAL),
     ],

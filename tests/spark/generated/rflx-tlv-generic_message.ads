@@ -224,7 +224,7 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Value)
        and (if
-               Types.U64 (To_Base (Get_Tag (Ctx))) = Types.U64 (To_Base (Msg_Data))
+               Types.U64 (To_Base (Get_Tag (Ctx))) = Types.U64 (To_Base (MSG_DATA))
             then
                Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
@@ -436,7 +436,7 @@ private
                  then
                     (Valid (Cursors (F_Tag))
                      and then Cursors (F_Length).Predecessor = F_Tag
-                     and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))))
+                     and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (MSG_DATA))))
                 and then (if
                              Structural_Valid (Cursors (F_Value))
                           then
@@ -458,7 +458,7 @@ private
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
-                                and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Msg_Data))
+                                and then Types.U64 (Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (MSG_DATA))
                              then
                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.TLV.Length'Size
                                 and then Cursors (F_Length).Predecessor = F_Tag

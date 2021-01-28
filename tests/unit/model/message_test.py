@@ -2987,7 +2987,7 @@ def test_message_serialize() -> None:
                                 },
                                 "right": {
                                     "kind": "Variable",
-                                    "data": {"identifier": ["Msg_Error"], "negative": False},
+                                    "data": {"identifier": ["MSG_ERROR"], "negative": False},
                                 },
                             },
                         },
@@ -3015,7 +3015,7 @@ def test_message_serialize() -> None:
                                 },
                                 "right": {
                                     "kind": "Variable",
-                                    "data": {"identifier": ["Msg_Data"], "negative": False},
+                                    "data": {"identifier": ["MSG_DATA"], "negative": False},
                                 },
                             },
                         },

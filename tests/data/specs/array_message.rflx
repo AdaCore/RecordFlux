@@ -12,10 +12,10 @@ package Array_Message is
 
    type Message is
       message
-          Length : Byte
-             then Bar
-                with Size => Length * 8;
-          Bar : Bar;
+         Length : Byte
+            then Bar
+               with Size => Length * 8;
+         Bar : Bar;
       end message;
 
 end Array_Message;

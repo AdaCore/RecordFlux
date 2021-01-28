@@ -435,7 +435,7 @@ def test_declared_variable() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(
-                            expr.Variable("Defined"), expr.Variable("TLV::Msg_Data")
+                            expr.Variable("Defined"), expr.Variable("TLV::MSG_DATA")
                         ),
                     )
                 ],
@@ -1386,7 +1386,7 @@ def test_append() -> None:
                         "List",
                         expr.MessageAggregate(
                             "TLV::Message",
-                            {"Tag": expr.Variable("TLV::Msg_Error")},
+                            {"Tag": expr.Variable("TLV::MSG_ERROR")},
                         ),
                     )
                 ],
