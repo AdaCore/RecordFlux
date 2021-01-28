@@ -2,27 +2,27 @@ package HTTP_2 is
 
    type Payload_Length is mod 2**24;
 
-   type Frame_Type is (
-      DATA => 0,
-      HEADERS => 1,
-      PRIORITY => 2,
-      RST_STREAM => 3,
-      SETTINGS => 4,
-      PUSH_PROMISE => 5,
-      PING => 6,
-      GOAWAY => 7,
-      WINDOW_UPDATE => 8,
-      CONTINUATION => 9
-   ) with Size => 8;
+   type Frame_Type is
+      (DATA          => 0,
+       HEADERS       => 1,
+       PRIORITY      => 2,
+       RST_STREAM    => 3,
+       SETTINGS      => 4,
+       PUSH_PROMISE  => 5,
+       PING          => 6,
+       GOAWAY        => 7,
+       WINDOW_UPDATE => 8,
+       CONTINUATION  => 9)
+   with Size => 8;
 
-   type Settings_Identifier is (
-      SETTINGS_HEADER_TABLE_SIZE => 16#01#,
-      SETTINGS_ENABLE_PUSH => 16#02#,
-      SETTINGS_MAX_CONCURRENT_STREAMS => 16#03#,
-      SETTINGS_INITIAL_WINDOW_SIZE => 16#04#,
-      SETTINGS_MAX_FRAME_SIZE => 16#05#,
-      SETTINGS_MAX_HEADER_LIST_SIZE => 16#06#
-   ) with Size => 16;
+   type Settings_Identifier is
+      (HEADER_TABLE_SIZE      => 16#01#,
+       ENABLE_PUSH            => 16#02#,
+       MAX_CONCURRENT_STREAMS => 16#03#,
+       INITIAL_WINDOW_SIZE    => 16#04#,
+       MAX_FRAME_SIZE         => 16#05#,
+       MAX_HEADER_LIST_SIZE   => 16#06#)
+   with Size => 16;
 
    type Settings_Value_Generic is mod 2**32;
    type Settings_Value_Enable_Push is range 0 .. 1 with Size => 32;
@@ -32,22 +32,22 @@ package HTTP_2 is
    type Zero_Bit is range 0 .. 0 with Size => 1;
    type Stream_ID is mod 2**31;
    type Weight is mod 2**8;
-   type Error_Code is (
-      NO_ERROR => 16#00#,
-      PROTOCOL_ERROR => 16#01#,
-      INTERNAL_ERROR => 16#02#,
-      FLOW_CONTROL_ERROR => 16#03#,
-      SETTINGS_TIMEOUT => 16#04#,
-      STREAM_CLOSED => 16#05#,
-      FRAME_SIZE_ERROR => 16#06#,
-      REFUSED_STREAM => 16#07#,
-      CANCEL => 16#08#,
-      COMPRESSION_ERROR => 16#09#,
-      CONNECT_ERROR => 16#0A#,
-      ENHANCE_YOUR_CALM => 16#0B#,
-      INADEQUATE_SECURITY => 16#0C#,
-      HTTP_1_1_REQUIRED => 16#0D#
-   ) with Size => 32;
+   type Error_Code is
+      (NO_ERROR            => 16#00#,
+       PROTOCOL_ERROR      => 16#01#,
+       INTERNAL_ERROR      => 16#02#,
+       FLOW_CONTROL_ERROR  => 16#03#,
+       TIMEOUT             => 16#04#,
+       STREAM_CLOSED       => 16#05#,
+       FRAME_SIZE_ERROR    => 16#06#,
+       REFUSED_STREAM      => 16#07#,
+       CANCEL              => 16#08#,
+       COMPRESSION_ERROR   => 16#09#,
+       CONNECT_ERROR       => 16#0A#,
+       ENHANCE_YOUR_CALM   => 16#0B#,
+       INADEQUATE_SECURITY => 16#0C#,
+       HTTP_1_1_REQUIRED   => 16#0D#)
+   with Size => 32;
 
    type Window_Size_Increment is range 1 .. 2**31 - 1 with Size => 31;
    type Pad_Length is mod 2**8;
@@ -56,15 +56,15 @@ package HTTP_2 is
       message
          Settings_Identifier : Settings_Identifier
             then Settings_Value_Enable_Push
-               if Settings_Identifier = SETTINGS_ENABLE_PUSH
+               if Settings_Identifier = ENABLE_PUSH
             then Settings_Value_Initial_Window_Size
-               if Settings_Identifier = SETTINGS_INITIAL_WINDOW_SIZE
+               if Settings_Identifier = INITIAL_WINDOW_SIZE
             then Settings_Value_Max_Frame_Size
-               if Settings_Identifier = SETTINGS_MAX_FRAME_SIZE
+               if Settings_Identifier = MAX_FRAME_SIZE
             then Settings_Value_Generic
-               if Settings_Identifier = SETTINGS_HEADER_TABLE_SIZE
-                  or Settings_Identifier = SETTINGS_MAX_CONCURRENT_STREAMS
-                  or Settings_Identifier = SETTINGS_MAX_HEADER_LIST_SIZE;
+               if Settings_Identifier = HEADER_TABLE_SIZE
+                  or Settings_Identifier = MAX_CONCURRENT_STREAMS
+                  or Settings_Identifier = MAX_HEADER_LIST_SIZE;
          Settings_Value_Enable_Push : Settings_Value_Enable_Push
             then null;
          Settings_Value_Initial_Window_Size : Settings_Value_Initial_Window_Size

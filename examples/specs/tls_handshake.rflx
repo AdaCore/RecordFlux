@@ -1,19 +1,19 @@
 package TLS_Handshake is
 
-   type Handshake_Type is (
-      HANDSHAKE_CLIENT_HELLO => 1,
-      HANDSHAKE_SERVER_HELLO => 2,
-      HANDSHAKE_NEW_SESSION_TICKET => 4,
-      HANDSHAKE_END_OF_EARLY_DATA => 5,
-      HANDSHAKE_ENCRYPTED_EXTENSIONS => 8,
-      HANDSHAKE_CERTIFICATE => 11,
-      HANDSHAKE_CERTIFICATE_REQUEST => 13,
-      HANDSHAKE_CERTIFICATE_VERIFY => 15,
-      HANDSHAKE_FINISHED => 20,
-      HANDSHAKE_KEY_UPDATE => 24,
-      HANDSHAKE_COMPRESSED_CERTIFICATE => 25,  -- draft-ietf-tls-certificate-compression
-      HANDSHAKE_MESSAGE_HASH => 254
-   ) with Size => 8;
+   type Handshake_Type is
+      (HT_CLIENT_HELLO           =>   1,
+       HT_SERVER_HELLO           =>   2,
+       HT_NEW_SESSION_TICKET     =>   4,
+       HT_END_OF_EARLY_DATA      =>   5,
+       HT_ENCRYPTED_EXTENSIONS   =>   8,
+       HT_CERTIFICATE            =>  11,
+       HT_CERTIFICATE_REQUEST    =>  13,
+       HT_CERTIFICATE_VERIFY     =>  15,
+       HT_FINISHED               =>  20,
+       HT_KEY_UPDATE             =>  24,
+       HT_COMPRESSED_CERTIFICATE =>  25,  -- draft-ietf-tls-certificate-compression
+       HT_MESSAGE_HASH           => 254)
+   with Size => 8;
 
    type Length is mod 2**24;
 
@@ -27,30 +27,30 @@ package TLS_Handshake is
 
    -- Extensions
 
-   type Extension_Type is (
-      EXTENSION_SERVER_NAME => 0,
-      EXTENSION_MAX_FRAGMENT_LENGTH => 1,
-      EXTENSION_STATUS_REQUEST => 5,  -- unsupported
-      EXTENSION_SUPPORTED_GROUPS => 10,
-      EXTENSION_SIGNATURE_ALGORITHMS => 13,
-      EXTENSION_USE_SRTP => 14,  -- unsupported
-      EXTENSION_HEARTBEAT => 15,
-      EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION => 16,
-      EXTENSION_SIGNED_CERTIFICATE_TIMESTAMP => 18,  -- unsupported
-      EXTENSION_CLIENT_CERTIFICATE_TYPE => 19,  -- unsupported
-      EXTENSION_SERVER_CERTIFICATE_TYPE => 20,  -- unsupported
-      EXTENSION_PADDING => 21,  -- unsupported
-      EXTENSION_PRE_SHARED_KEY => 41,
-      EXTENSION_EARLY_DATA => 42,
-      EXTENSION_SUPPORTED_VERSIONS => 43,
-      EXTENSION_COOKIE => 44,
-      EXTENSION_PSK_KEY_EXCHANGE_MODES => 45,
-      EXTENSION_CERTIFICATE_AUTHORITIES => 47,
-      EXTENSION_OID_FILTERS => 48,
-      EXTENSION_POST_HANDSHAKE_AUTH => 49,
-      EXTENSION_SIGNATURE_ALGORITHMS_CERT => 50,
-      EXTENSION_KEY_SHARE => 51
-   ) with Size => 16, Always_Valid;
+   type Extension_Type is
+      (ET_SERVER_NAME                            =>  0,
+       ET_MAX_FRAGMENT_LENGTH                    =>  1,
+       ET_STATUS_REQUEST                         =>  5,  -- unsupported
+       ET_SUPPORTED_GROUPS                       => 10,
+       ET_SIGNATURE_ALGORITHMS                   => 13,
+       ET_USE_SRTP                               => 14,  -- unsupported
+       ET_HEARTBEAT                              => 15,
+       ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION => 16,
+       ET_SIGNED_CERTIFICATE_TIMESTAMP           => 18,  -- unsupported
+       ET_CLIENT_CERTIFICATE_TYPE                => 19,  -- unsupported
+       ET_SERVER_CERTIFICATE_TYPE                => 20,  -- unsupported
+       ET_PADDING                                => 21,  -- unsupported
+       ET_PRE_SHARED_KEY                         => 41,
+       ET_EARLY_DATA                             => 42,
+       ET_SUPPORTED_VERSIONS                     => 43,
+       ET_COOKIE                                 => 44,
+       ET_PSK_KEY_EXCHANGE_MODES                 => 45,
+       ET_CERTIFICATE_AUTHORITIES                => 47,
+       ET_OID_FILTERS                            => 48,
+       ET_POST_HANDSHAKE_AUTH                    => 49,
+       ET_SIGNATURE_ALGORITHMS_CERT              => 50,
+       ET_KEY_SHARE                              => 51)
+   with Size => 16, Always_Valid;
 
    type Data_Length is range 0 .. 2**16 - 1 with Size => 16;
 
@@ -87,24 +87,24 @@ package TLS_Handshake is
 
    -- Key Exchange Messages
 
-   type Protocol_Version is (
-      TLS_1_0 => 16#0301#,
-      TLS_1_1 => 16#0302#,
-      TLS_1_2 => 16#0303#,
-      TLS_1_3 => 16#0304#
-   ) with Size => 16, Always_Valid;
+   type Protocol_Version is
+      (TLS_1_0 => 16#0301#,
+       TLS_1_1 => 16#0302#,
+       TLS_1_2 => 16#0303#,
+       TLS_1_3 => 16#0304#)
+   with Size => 16, Always_Valid;
 
    type Legacy_Session_ID_Length is range 0 .. 32 with Size => 8;
 
    type Cipher_Suites_Length is range 2 .. 2**16 - 2 with Size => 16;
 
-   type Cipher_Suite is (
-      TLS_AES_128_GCM_SHA256 => 16#1301#,
-      TLS_AES_256_GCM_SHA384 => 16#1302#,
-      TLS_CHACHA20_POLY1305_SHA256 => 16#1303#,
-      TLS_AES_128_CCM_SHA256 => 16#1304#,
-      TLS_AES_128_CCM_8_SHA256 => 16#1305#
-   ) with Size => 16, Always_Valid;
+   type Cipher_Suite is
+      (TLS_AES_128_GCM_SHA256       => 16#1301#,
+       TLS_AES_256_GCM_SHA384       => 16#1302#,
+       TLS_CHACHA20_POLY1305_SHA256 => 16#1303#,
+       TLS_AES_128_CCM_SHA256       => 16#1304#,
+       TLS_AES_128_CCM_8_SHA256     => 16#1305#)
+   with Size => 16, Always_Valid;
 
    type Cipher_Suites is array of Cipher_Suite;
 
@@ -137,7 +137,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Client_Hello)
-      if Tag = HANDSHAKE_CLIENT_HELLO;
+      if Tag = HT_CLIENT_HELLO;
 
    type Legacy_Compression_Method is range 0 .. 0 with Size => 8;
    type Server_Hello_Extensions_Length is range 6 .. 2**16 - 1 with Size => 16;
@@ -166,7 +166,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Server_Hello)
-      if Tag = HANDSHAKE_SERVER_HELLO;
+      if Tag = HT_SERVER_HELLO;
 
    -- Server Parameters
 
@@ -180,7 +180,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Encrypted_Extensions)
-      if Tag = HANDSHAKE_ENCRYPTED_EXTENSIONS;
+      if Tag = HT_ENCRYPTED_EXTENSIONS;
 
    type Certificate_Request_Context_Length is range 0 .. 2**8 - 1 with Size => 8;
    type Certificate_Request_Extensions_Length is range 2 .. 2**16 - 1 with Size => 16;
@@ -196,7 +196,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Certificate_Request)
-      if Tag = HANDSHAKE_CERTIFICATE_REQUEST;
+      if Tag = HT_CERTIFICATE_REQUEST;
 
    -- Authentication Messages
 
@@ -229,32 +229,32 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Certificate)
-      if Tag = HANDSHAKE_CERTIFICATE;
+      if Tag = HT_CERTIFICATE;
 
-   type Signature_Scheme is (
-      -- RSASSA-PKCS1-v1_5 algorithms
-      RSA_PKCS1_SHA256 => 16#0401#,
-      RSA_PKCS1_SHA384 => 16#0501#,
-      RSA_PKCS1_SHA512 => 16#0601#,
-      -- ECDSA algorithms
-      ECDSA_SECP256R1_SHA256 => 16#0403#,
-      ECDSA_SECP384R1_SHA384 => 16#0503#,
-      ECDSA_SECP521R1_SHA512 => 16#0603#,
-      -- RSASSA-PSS algorithms with public key OID rsaEncryption
-      RSA_PSS_RSAE_SHA256 => 16#0804#,
-      RSA_PSS_RSAE_SHA384 => 16#0805#,
-      RSA_PSS_RSAE_SHA512 => 16#0806#,
-      -- EdDSA algorithms
-      ED25519 => 16#0807#,
-      ED448 => 16#0808#,
-      -- RSASSA-PSS algorithms with public key OID RSASSA-PSS
-      RSA_PSS_PSS_SHA256 => 16#0809#,
-      RSA_PSS_PSS_SHA384 => 16#080A#,
-      RSA_PSS_PSS_SHA512 => 16#080B#,
-      -- Legacy algorithms
-      RSA_PKCS1_SHA1 => 16#0201#,
-      ECDSA_SHA1 => 16#0203#
-   ) with Size => 16, Always_Valid;
+   type Signature_Scheme is
+      (-- RSASSA-PKCS1-v1_5 algorithms
+       RSA_PKCS1_SHA256       => 16#0401#,
+       RSA_PKCS1_SHA384       => 16#0501#,
+       RSA_PKCS1_SHA512       => 16#0601#,
+       -- ECDSA algorithms
+       ECDSA_SECP256R1_SHA256 => 16#0403#,
+       ECDSA_SECP384R1_SHA384 => 16#0503#,
+       ECDSA_SECP521R1_SHA512 => 16#0603#,
+       -- RSASSA-PSS algorithms with public key OID rsaEncryption
+       RSA_PSS_RSAE_SHA256    => 16#0804#,
+       RSA_PSS_RSAE_SHA384    => 16#0805#,
+       RSA_PSS_RSAE_SHA512    => 16#0806#,
+       -- EdDSA algorithms
+       ED25519                => 16#0807#,
+       ED448                  => 16#0808#,
+       -- RSASSA-PSS algorithms with public key OID RSASSA-PSS
+       RSA_PSS_PSS_SHA256     => 16#0809#,
+       RSA_PSS_PSS_SHA384     => 16#080A#,
+       RSA_PSS_PSS_SHA512     => 16#080B#,
+       -- Legacy algorithms
+       RSA_PKCS1_SHA1         => 16#0201#,
+       ECDSA_SHA1             => 16#0203#)
+   with Size => 16, Always_Valid;
 
    type Signature_Length is range 0 .. 2**16 - 1 with Size => 16;
 
@@ -267,7 +267,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Certificate_Verify)
-      if Tag = HANDSHAKE_CERTIFICATE_VERIFY;
+      if Tag = HT_CERTIFICATE_VERIFY;
 
    type Finished is
       message
@@ -276,14 +276,14 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Finished)
-      if Tag = HANDSHAKE_FINISHED;
+      if Tag = HT_FINISHED;
 
    -- End of Early Data
 
    type End_Of_Early_Data is null message;
 
    for Handshake use (Payload => End_Of_Early_Data)
-      if Tag = HANDSHAKE_END_OF_EARLY_DATA;
+      if Tag = HT_END_OF_EARLY_DATA;
 
    -- Post-Handshake Messages
 
@@ -309,7 +309,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => New_Session_Ticket)
-      if Tag = HANDSHAKE_NEW_SESSION_TICKET;
+      if Tag = HT_NEW_SESSION_TICKET;
 
    type Key_Update_Request is (UPDATE_NOT_REQUESTED => 0, UPDATE_REQUESTED => 1) with Size => 8;
 
@@ -319,7 +319,7 @@ package TLS_Handshake is
       end message;
 
    for Handshake use (Payload => Key_Update)
-      if Tag = HANDSHAKE_KEY_UPDATE;
+      if Tag = HT_KEY_UPDATE;
 
    -- Server Name Indication Extension
 
@@ -345,18 +345,18 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Server_Name_List)
-      if Tag = EXTENSION_SERVER_NAME;
+      if Tag = ET_SERVER_NAME;
    for EE_Extension use (Data => Server_Name_List)
-      if Tag = EXTENSION_SERVER_NAME;
+      if Tag = ET_SERVER_NAME;
 
    -- Max Fragment Length
 
-   type Max_Fragment_Length_Value is (
-      MAX_FRAGMENT_LENGTH_9 => 1,
-      MAX_FRAGMENT_LENGTH_10 => 2,
-      MAX_FRAGMENT_LENGTH_11 => 3,
-      MAX_FRAGMENT_LENGTH_12 => 4
-   ) with Size => 8;
+   type Max_Fragment_Length_Value is
+      (MAX_FRAGMENT_LENGTH_9  => 1,
+       MAX_FRAGMENT_LENGTH_10 => 2,
+       MAX_FRAGMENT_LENGTH_11 => 3,
+       MAX_FRAGMENT_LENGTH_12 => 4)
+   with Size => 8;
 
    type Max_Fragment_Length is
       message
@@ -364,9 +364,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Max_Fragment_Length)
-      if Tag = EXTENSION_MAX_FRAGMENT_LENGTH;
+      if Tag = ET_MAX_FRAGMENT_LENGTH;
    for EE_Extension use (Data => Max_Fragment_Length)
-      if Tag = EXTENSION_MAX_FRAGMENT_LENGTH;
+      if Tag = ET_MAX_FRAGMENT_LENGTH;
 
    -- Supported Versions Extension
 
@@ -386,11 +386,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Supported_Versions)
-      if Tag = EXTENSION_SUPPORTED_VERSIONS;
+      if Tag = ET_SUPPORTED_VERSIONS;
    for SH_Extension use (Data => Supported_Version)
-      if Tag = EXTENSION_SUPPORTED_VERSIONS;
+      if Tag = ET_SUPPORTED_VERSIONS;
    for HRR_Extension use (Data => Supported_Version)
-      if Tag = EXTENSION_SUPPORTED_VERSIONS;
+      if Tag = ET_SUPPORTED_VERSIONS;
 
    -- Cookie Extension
 
@@ -404,9 +404,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Cookie)
-      if Tag = EXTENSION_COOKIE;
+      if Tag = ET_COOKIE;
    for HRR_Extension use (Data => Cookie)
-      if Tag = EXTENSION_COOKIE;
+      if Tag = ET_COOKIE;
 
    -- Signature Algorithms Extension
 
@@ -421,9 +421,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Signature_Algorithms)
-      if Tag = EXTENSION_SIGNATURE_ALGORITHMS;
+      if Tag = ET_SIGNATURE_ALGORITHMS;
    for CR_Extension use (Data => Signature_Algorithms)
-      if Tag = EXTENSION_SIGNATURE_ALGORITHMS;
+      if Tag = ET_SIGNATURE_ALGORITHMS;
 
    type Signature_Algorithms_Cert is
       message
@@ -433,9 +433,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Signature_Algorithms_Cert)
-      if Tag = EXTENSION_SIGNATURE_ALGORITHMS_CERT;
+      if Tag = ET_SIGNATURE_ALGORITHMS_CERT;
    for CR_Extension use (Data => Signature_Algorithms_Cert)
-      if Tag = EXTENSION_SIGNATURE_ALGORITHMS_CERT;
+      if Tag = ET_SIGNATURE_ALGORITHMS_CERT;
 
    -- Heartbeat Extension
 
@@ -468,9 +468,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Certificate_Authorities)
-      if Tag = EXTENSION_CERTIFICATE_AUTHORITIES;
+      if Tag = ET_CERTIFICATE_AUTHORITIES;
    for CR_Extension use (Data => Certificate_Authorities)
-      if Tag = EXTENSION_CERTIFICATE_AUTHORITIES;
+      if Tag = ET_CERTIFICATE_AUTHORITIES;
 
    -- OID Filters Extension
 
@@ -498,33 +498,33 @@ package TLS_Handshake is
       end message;
 
    for CR_Extension use (Data => OID_Filters)
-      if Tag = EXTENSION_OID_FILTERS;
+      if Tag = ET_OID_FILTERS;
 
    -- Post-Handshake Client Authentication Extension
 
    type Post_Handshake_Auth is null message;
 
    for CH_Extension use (Data => Post_Handshake_Auth)
-      if Tag = EXTENSION_POST_HANDSHAKE_AUTH;
+      if Tag = ET_POST_HANDSHAKE_AUTH;
 
    -- Supported Groups Extension
 
    type Supported_Groups_Length is range 2 .. 2**16 - 1 with Size => 16;
 
-   type Named_Group is (
-      -- Elliptic Curve Groups (ECDHE)
-      SECP256R1 => 16#0017#,
-      SECP384R1 => 16#0018#,
-      SECP521R1 => 16#0019#,
-      X25519    => 16#001D#,
-      X448      => 16#001E#,
-      -- Finite Field Groups (DHE)
-      FFDHE2048 => 16#0100#,
-      FFDHE3072 => 16#0101#,
-      FFDHE4096 => 16#0102#,
-      FFDHE6144 => 16#0103#,
-      FFDHE8192 => 16#0104#
-   ) with Size => 16, Always_Valid;
+   type Named_Group is
+      (-- Elliptic Curve Groups (ECDHE)
+       SECP256R1 => 16#0017#,
+       SECP384R1 => 16#0018#,
+       SECP521R1 => 16#0019#,
+       X25519    => 16#001D#,
+       X448      => 16#001E#,
+       -- Finite Field Groups (DHE)
+       FFDHE2048 => 16#0100#,
+       FFDHE3072 => 16#0101#,
+       FFDHE4096 => 16#0102#,
+       FFDHE6144 => 16#0103#,
+       FFDHE8192 => 16#0104#)
+   with Size => 16, Always_Valid;
 
    type Named_Groups is array of Named_Group;
 
@@ -536,9 +536,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Supported_Groups)
-      if Tag = EXTENSION_SUPPORTED_GROUPS;
+      if Tag = ET_SUPPORTED_GROUPS;
    for EE_Extension use (Data => Supported_Groups)
-      if Tag = EXTENSION_SUPPORTED_GROUPS;
+      if Tag = ET_SUPPORTED_GROUPS;
 
    -- Key Share Extension
 
@@ -571,20 +571,20 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Key_Share_CH)
-      if Tag = EXTENSION_KEY_SHARE;
+      if Tag = ET_KEY_SHARE;
    for SH_Extension use (Data => Key_Share_SH)
-      if Tag = EXTENSION_KEY_SHARE;
+      if Tag = ET_KEY_SHARE;
    for HRR_Extension use (Data => Key_Share_HRR)
-      if Tag = EXTENSION_KEY_SHARE;
+      if Tag = ET_KEY_SHARE;
 
    -- Pre-Shared Key Exchange Modes Extension
 
    type PSK_Key_Exchange_Modes_Length is range 1 .. 255 with Size => 8;
 
-   type Key_Exchange_Mode is (
-      PSK_KE => 0,
-      PSK_DHE_KE => 1
-   ) with Size => 8, Always_Valid;
+   type Key_Exchange_Mode is
+      (PSK_KE     => 0,
+       PSK_DHE_KE => 1)
+   with Size => 8, Always_Valid;
 
    type Key_Exchange_Modes is array of Key_Exchange_Mode;
 
@@ -596,7 +596,7 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => PSK_Key_Exchange_Modes)
-      if Tag = EXTENSION_PSK_KEY_EXCHANGE_MODES;
+      if Tag = ET_PSK_KEY_EXCHANGE_MODES;
 
    -- Early Data Indication Extension
 
@@ -610,11 +610,11 @@ package TLS_Handshake is
    type Early_Data is null message;
 
    for CH_Extension use (Data => Early_Data)
-      if Tag = EXTENSION_EARLY_DATA;
+      if Tag = ET_EARLY_DATA;
    for EE_Extension use (Data => Early_Data)
-      if Tag = EXTENSION_EARLY_DATA;
+      if Tag = ET_EARLY_DATA;
    for NST_Extension use (Data => Early_Data_Indication)
-      if Tag = EXTENSION_EARLY_DATA;
+      if Tag = ET_EARLY_DATA;
 
    -- Pre-Shared Key Extension
 
@@ -663,9 +663,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Pre_Shared_Key_CH)
-      if Tag = EXTENSION_PRE_SHARED_KEY;
+      if Tag = ET_PRE_SHARED_KEY;
    for SH_Extension use (Data => Pre_Shared_Key_SH)
-      if Tag = EXTENSION_PRE_SHARED_KEY;
+      if Tag = ET_PRE_SHARED_KEY;
 
    -- Application-Layer Protocol Negotiation Extension
 
@@ -689,8 +689,8 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension use (Data => Protocol_Name_List)
-      if Tag = EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
+      if Tag = ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
    for EE_Extension use (Data => Protocol_Name_List)
-      if Tag = EXTENSION_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
+      if Tag = ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
 
 end TLS_Handshake;

@@ -1,39 +1,39 @@
 package ICMP is
 
-   type Tag is (
-      Echo_Reply => 0,
-      Echo_Request => 8,
-      Destination_Unreachable => 3,
-      Time_Exceeded => 11,
-      Parameter_Problem => 12,
-      Source_Quench => 4,
-      Redirect => 5,
-      Timestamp_Msg => 13,
-      Timestamp_Reply => 14,
-      Information_Request => 15,
-      Information_Reply => 16
-   ) with Size => 8;
+   type Tag is
+      (ECHO_REPLY              =>  0,
+       ECHO_REQUEST            =>  8,
+       DESTINATION_UNREACHABLE =>  3,
+       TIME_EXCEEDED           => 11,
+       PARAMETER_PROBLEM       => 12,
+       SOURCE_QUENCH           =>  4,
+       REDIRECT                =>  5,
+       TIMESTAMP_MSG           => 13,
+       TIMESTAMP_REPLY         => 14,
+       INFORMATION_REQUEST     => 15,
+       INFORMATION_REPLY       => 16)
+   with Size => 8;
 
-   type Code_Destination_Unreachable is (
-      Net_Unreachable => 0,
-      Host_Unreachable => 1,
-      Protocol_Unreachable => 2,
-      Port_Unreachable => 3,
-      Fragmentation_Needed_DF_Set => 4,
-      Source_Route_Failed => 5
-   ) with Size => 8;
+   type Code_Destination_Unreachable is
+      (NET_UNREACHABLE             => 0,
+       HOST_UNREACHABLE            => 1,
+       PROTOCOL_UNREACHABLE        => 2,
+       PORT_UNREACHABLE            => 3,
+       FRAGMENTATION_NEEDED_DF_SET => 4,
+       SOURCE_ROUTE_FAILED         => 5)
+   with Size => 8;
 
-   type Code_Time_Exceeded is (
-      TTL_Exceeded => 0,
-      Fragment_Reassembly_Time_Exceeded => 1
-   ) with Size => 8;
+   type Code_Time_Exceeded is
+      (TTL_EXCEEDED                      => 0,
+       FRAGMENT_REASSEMBLY_TIME_EXCEEDED => 1)
+   with Size => 8;
 
-   type Code_Redirect is (
-      Redirect_for_Network => 0,
-      Redirect_for_Host => 1,
-      Redirect_for_Service_Network => 2,
-      Redirect_for_Service_Host => 3
-   ) with Size => 8;
+   type Code_Redirect is
+      (REDIRECT_FOR_NETWORK         => 0,
+       REDIRECT_FOR_HOST            => 1,
+       REDIRECT_FOR_SERVICE_NETWORK => 2,
+       REDIRECT_FOR_SERVICE_HOST    => 3)
+   with Size => 8;
 
    type Code_Zero is range 0 .. 0 with Size => 8;
    type Checksum is mod 2**16;
@@ -49,20 +49,20 @@ package ICMP is
       message
          Tag : Tag
             then Code_Destination_Unreachable
-               if Tag = Destination_Unreachable
+               if Tag = DESTINATION_UNREACHABLE
             then Code_Time_Exceeded
-               if Tag = Time_Exceeded
+               if Tag = TIME_EXCEEDED
             then Code_Redirect
-               if Tag = Redirect
+               if Tag = REDIRECT
             then Code_Zero
-               if (Tag = Echo_Reply
-                   or Tag = Echo_Request
-                   or Tag = Source_Quench
-                   or Tag = Parameter_Problem
-                   or Tag = Timestamp_Msg
-                   or Tag = Timestamp_Reply
-                   or Tag = Information_Request
-                   or Tag = Information_Reply);
+               if (Tag = ECHO_REPLY
+                   or Tag = ECHO_REQUEST
+                   or Tag = SOURCE_QUENCH
+                   or Tag = PARAMETER_PROBLEM
+                   or Tag = TIMESTAMP_MSG
+                   or Tag = TIMESTAMP_REPLY
+                   or Tag = INFORMATION_REQUEST
+                   or Tag = INFORMATION_REPLY);
          Code_Destination_Unreachable : Code_Destination_Unreachable
             then Checksum;
          Code_Time_Exceeded : Code_Time_Exceeded
@@ -72,20 +72,20 @@ package ICMP is
          Code_Zero : Code_Zero;
          Checksum : Checksum
             then Unused_32
-               if (Tag = Destination_Unreachable
-                   or Tag = Source_Quench
-                   or Tag = Time_Exceeded)
+               if (Tag = DESTINATION_UNREACHABLE
+                   or Tag = SOURCE_QUENCH
+                   or Tag = TIME_EXCEEDED)
             then Identifier
-               if (Tag = Echo_Request
-                   or Tag = Echo_Reply
-                   or Tag = Timestamp_Msg
-                   or Tag = Timestamp_Reply
-                   or Tag = Information_Request
-                   or Tag = Information_Reply)
+               if (Tag = ECHO_REQUEST
+                   or Tag = ECHO_REPLY
+                   or Tag = TIMESTAMP_MSG
+                   or Tag = TIMESTAMP_REPLY
+                   or Tag = INFORMATION_REQUEST
+                   or Tag = INFORMATION_REPLY)
             then Pointer
-               if Tag = Parameter_Problem
+               if Tag = PARAMETER_PROBLEM
             then Gateway_Internet_Address
-               if Tag = Redirect;
+               if Tag = REDIRECT;
          Gateway_Internet_Address : Gateway_Internet_Address
             then Data
                with Size => 224;
@@ -99,12 +99,12 @@ package ICMP is
          Identifier : Identifier;
          Sequence_Number : Sequence_Number
             then Originate_Timestamp
-               if Tag = Timestamp_Msg or Tag = Timestamp_Reply
+               if Tag = TIMESTAMP_MSG or Tag = TIMESTAMP_REPLY
             then null
-               if Tag = Information_Request or Tag = Information_Reply
+               if Tag = INFORMATION_REQUEST or Tag = INFORMATION_REPLY
             then Data
                with Size => Message'Last - Sequence_Number'Last
-               if Tag = Echo_Reply or Tag = Echo_Request;
+               if Tag = ECHO_REPLY or Tag = ECHO_REQUEST;
          Originate_Timestamp : Timestamp;
          Receive_Timestamp : Timestamp;
          Transmit_Timestamp : Timestamp
