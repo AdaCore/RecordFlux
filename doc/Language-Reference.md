@@ -68,8 +68,18 @@ The set of values of an enumeration type consists of the list of declared enumer
 #### Example
 
 ```Ada RFLX declaration
-type Packet is (Msg_Error, Msg_Data) with Size => 1;
-type Day is (Mon => 1, Tue => 2, Wed => 3, Thu => 4, Fri => 5, Sat => 6, Sun => 7) with Size => 3;
+type Tag is
+   (MSG_ERROR,
+    MSG_DATA)
+with Size => 1;
+
+type Ether_Type is
+   (ET_IPV4            => 16#0800#,
+    ET_ARP             => 16#0806#,
+    ET_VLAN_TAG        => 16#8100#,
+    ET_IPV6            => 16#86DD#,
+    ET_VLAN_TAG_DOUBLE => 16#9100#)
+with Size => 16, Always_Valid;
 ```
 
 ## Message Type
