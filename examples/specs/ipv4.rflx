@@ -12,7 +12,7 @@ package IPv4 is
    type Header_Checksum is mod 2**16;
    type Address is mod 2**32;
 
-   type Option_Class is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
+   type Option_Class is (CONTROL => 0, DEBUGGING_AND_MEASUREMENT => 2) with Size => 2;
    type Option_Number is mod 2**5;
    type Option_Length is range 2 .. 2**8 - 1 with Size => 8;
 
@@ -22,16 +22,16 @@ package IPv4 is
          Option_Class : Option_Class;
          Option_Number : Option_Number
             then null
-               if Option_Class = Control and Option_Number = 1
+               if Option_Class = CONTROL and Option_Number = 1
             then Option_Length
                if Option_Number > 1;
          Option_Length : Option_Length;
          Option_Data : Opaque
             with Size => (Option_Length - 2) * 8
-            if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
-               or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
-               or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
-               or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
+            if (Option_Class = CONTROL and Option_Number = 2 and Option_Length = 11)
+               or (Option_Class = CONTROL and Option_Number = 8 and Option_Length = 4)
+               or (Option_Class = CONTROL and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+               or (Option_Class = DEBUGGING_AND_MEASUREMENT and Option_Number = 4);
       end message;
 
    type Options is array of Option;

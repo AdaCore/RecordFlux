@@ -1,7 +1,21 @@
 package TLS_Record is
 
-   type Content_Type is (INVALID => 0, CHANGE_CIPHER_SPEC => 20, ALERT => 21, HANDSHAKE => 22, APPLICATION_DATA => 23, HEARTBEAT => 24) with Size => 8;
-   type Protocol_Version is (TLS_1_0 => 16#0301#, TLS_1_1 => 16#0302#, TLS_1_2 => 16#0303#, TLS_1_3 => 16#0304#) with Size => 16;
+   type Content_Type is
+      (INVALID            =>  0,
+       CHANGE_CIPHER_SPEC => 20,
+       ALERT              => 21,
+       HANDSHAKE          => 22,
+       APPLICATION_DATA   => 23,
+       HEARTBEAT          => 24)
+   with Size => 8;
+
+   type Protocol_Version is
+      (TLS_1_0 => 16#0301#,
+       TLS_1_1 => 16#0302#,
+       TLS_1_2 => 16#0303#,
+       TLS_1_3 => 16#0304#)
+   with Size => 16;
+
    type Length is range 0 .. 2**14 + 256 with Size => 16;
 
    type TLS_Record is
