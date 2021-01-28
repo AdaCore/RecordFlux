@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+This tool checks the correctness of code examples in the documentation.
+"""
+
 import enum
 import os
 import pathlib
@@ -8,6 +12,7 @@ import sys
 
 import pyparsing
 
+import rflx.error
 import rflx.specification
 from tests.const import GENERATED_DIR, SPEC_DIR
 
@@ -86,11 +91,11 @@ def check_code(block: str, block_type: CodeBlockType) -> bool:
 
 
 def check_rflx_code(block: str, block_type: CodeBlockType) -> bool:
-    valid = True
-
     try:
         if block_type == CodeBlockType.RFLX:
-            rflx.specification.Parser().parse_string(block)
+            parser = rflx.specification.Parser()
+            parser.parse_string(block)
+            parser.create_model()
         elif block_type == CodeBlockType.RFLX_PARTIAL:
             rflx.specification.grammar.specification().parseString(block)
         elif block_type == CodeBlockType.RFLX_CONTEXT:
@@ -98,11 +103,14 @@ def check_rflx_code(block: str, block_type: CodeBlockType) -> bool:
         elif block_type == CodeBlockType.RFLX_DECLARATION:
             rflx.specification.grammar.basic_declarations().parseString(block)
     except (pyparsing.ParseException, pyparsing.ParseFatalException) as e:
-        valid = False
         print(pyparsing.ParseException.explain(e, 0))
         print(f"\naffected code block:\n\n{block}")
+        return False
+    except rflx.error.RecordFluxError as e:
+        print(f"{e}\n\naffected code block:\n\n{block}")
+        return False
 
-    return valid
+    return True
 
 
 def check_ada_code(block: str) -> bool:
