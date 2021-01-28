@@ -52,23 +52,23 @@ The following sample specification describes a protocol `TLV` with one message t
 - a field `Value_Length` of 14 bit length, and
 - a field `Value`, whose length is specified by the value in `Value_Length`.
 
-The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In case `Tag` has a value of `1` the fields `Value_Length` and `Value` follow. `Message` contains only the `Tag` field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
+The `Tag` can have two valid values: `1` (`MSG_DATA`) and `3` (`MSG_ERROR`). In case `Tag` has a value of `1` the fields `Value_Length` and `Value` follow. `Message` contains only the `Tag` field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
 
 The structure of messages is often non-linear because of optional fields. For this reason the specification uses a graph-based representation. The order of fields is defined by then clauses. Then clauses are also used to state conditions and aspects of the following field. A more detailed description can be found in the [Language Reference](doc/Language-Reference.md#message-type).
 
 ```Ada RFLX
 package TLV is
 
-   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
+   type Tag is (MSG_DATA => 1, MSG_ERROR => 3) with Size => 2;
    type Length is mod 2**14;
 
    type Message is
       message
          Tag    : Tag
             then Length
-               if Tag = Msg_Data
+               if Tag = MSG_DATA
             then null
-               if Tag = Msg_Error;
+               if Tag = MSG_ERROR;
          Length : Length
             then Value
                with Size => Length * 8;
@@ -117,8 +117,8 @@ Creating /tmp/generated/rflx.ads
 
 All scalar types defined in the specification are represented by a similar Ada type in the generated code. For `TLV` the following types are defined in the package `RFLX.TLV`:
 
-- `type Tag is (Msg_Data, Msg_Error) with Size => 2`
-- `for Tag use (Msg_Data => 1, Msg_Error => 3);`
+- `type Tag is (MSG_DATA, MSG_ERROR) with Size => 2`
+- `for Tag use (MSG_DATA => 1, MSG_ERROR => 3);`
 - `type Length is mod 2**14`
 
 All types and subprograms related to `Message` can be found in the package `RFLX.TLV.Message`:
@@ -187,7 +187,7 @@ begin
    RFLX.TLV.Message.Verify_Message (Context);
    if RFLX.TLV.Message.Structural_Valid_Message (Context) then
       case RFLX.TLV.Message.Get_Tag (Context) is
-         when RFLX.TLV.Msg_Data =>
+         when RFLX.TLV.MSG_DATA =>
             if RFLX.TLV.Message.Present (Context, RFLX.TLV.Message.F_Value) then
                Ada.Text_IO.Put_Line ("Data message with value of"
                                      & RFLX.TLV.Message.Get_Length (Context)'Img
@@ -195,7 +195,7 @@ begin
             else
                Ada.Text_IO.Put_Line ("Data message without value");
             end if;
-         when RFLX.TLV.Msg_Error =>
+         when RFLX.TLV.MSG_ERROR =>
             Ada.Text_IO.Put_Line ("Error message");
       end case;
    else
@@ -204,7 +204,7 @@ begin
 end Main;
 ```
 
-In case that a valid message is contained in `Buffer` the value of `Tag` is read. If the value of `Tag` is `Msg_Data` and the `Value` field is present, the content of `Value` can be accessed.
+In case that a valid message is contained in `Buffer` the value of `Tag` is read. If the value of `Tag` is `MSG_DATA` and the `Value` field is present, the content of `Value` can be accessed.
 
 A `TLV.Message` can be generated as follows:
 
@@ -219,7 +219,7 @@ procedure Main is
 begin
    --  Generating message
    RFLX.TLV.Message.Initialize (Context, Buffer);
-   RFLX.TLV.Message.Set_Tag (Context, RFLX.TLV.Msg_Data);
+   RFLX.TLV.Message.Set_Tag (Context, RFLX.TLV.MSG_DATA);
    RFLX.TLV.Message.Set_Length (Context, 4);
    RFLX.TLV.Message.Set_Value (Context, (1, 2, 3, 4));
 
@@ -255,7 +255,7 @@ def parse_message(input_bytes: bytes) -> MessageValue:
 
 def create_message() -> MessageValue:
     msg = TLV["Message"]
-    msg.set("Tag", "Msg_Data")
+    msg.set("Tag", "MSG_DATA")
     msg.set("Length", 4)
     msg.set("Value", b"\x01\x02\x03\x04")
     return msg
