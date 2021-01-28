@@ -37,8 +37,8 @@ The set of values of a range type consists of all numbers from the lower bound t
 #### Example
 
 ```Ada RFLX declaration
-type U16 is range 0 .. 2**16 - 1 with Size => 16;
-type U48 is mod 2**48;
+type Address is mod 2**48;
+type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
 ```
 
 ### Enumeration Type
@@ -127,15 +127,23 @@ A message type specifies the message format of a protocol. Each component corres
 ```Ada RFLX declaration
 type Frame is
    message
-      Destination : U48;
-      Source : U48;
-      EtherType : U16
+      Destination : Address;
+      Source : Address;
+      Type_Length_TPID : Type_Length
+         then TPID
+            with First => Type_Length_TPID'First
+            if Type_Length_TPID = 16#8100#
          then Payload
-            with Size => EtherType * 8
-            if EtherType <= 1500
+            with Size => Type_Length_TPID * 8
+            if Type_Length_TPID <= 1500
+         then Ether_Type
+            with First => Type_Length_TPID'First
+            if Type_Length_TPID >= 1536 and Type_Length_TPID /= 16#8100#;
+      TPID : TPID;
+      TCI : TCI;
+      Ether_Type : Ether_Type
          then Payload
-            with Size => Message'Last - EtherType'Last
-            if EtherType >= 1536;
+            with Size => Message'Last - Ether_Type'Last;
       Payload : Opaque
          then null
             if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
@@ -170,7 +178,7 @@ A type refinement describes under which condition a specific protocol message ca
 
 ```Ada RFLX declaration
 for Ethernet::Frame use (Payload => IPv4::Packet)
-   if EtherType = 16#0800#;
+   if Ether_Type = Ethernet::IPV4;
 ```
 
 ## Type Derivation
@@ -232,20 +240,37 @@ A package is a collection of types. By convention one protocol is specified in o
 ```Ada RFLX
 package Ethernet is
 
-   type U16 is range 0 .. 2**16 - 1 with Size => 16;
-   type U48 is mod 2**48;
+   type Address is mod 2**48;
+   type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+   type TPID is range 16#8100# .. 16#8100# with Size => 16;
+   type TCI is mod 2**16;
+   type Ether_Type is
+      (ET_IPV4            => 16#0800#,
+       ET_ARP             => 16#0806#,
+       ET_VLAN_TAG        => 16#8100#,
+       ET_IPV6            => 16#86DD#,
+       ET_VLAN_TAG_DOUBLE => 16#9100#)
+   with Size => 16, Always_Valid;
 
    type Frame is
       message
-         Destination : U48;
-         Source : U48;
-         EtherType : U16
+         Destination : Address;
+         Source : Address;
+         Type_Length_TPID : Type_Length
+            then TPID
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID = 16#8100#
             then Payload
-               with Size => EtherType * 8
-               if EtherType <= 1500
+               with Size => Type_Length_TPID * 8
+               if Type_Length_TPID <= 1500
+            then Ether_Type
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID >= 1536 and Type_Length_TPID /= 16#8100#;
+         TPID : TPID;
+         TCI : TCI;
+         Ether_Type : Ether_Type
             then Payload
-               with Size => Message'Last - EtherType'Last
-               if EtherType >= 1536;
+               with Size => Message'Last - Ether_Type'Last;
          Payload : Opaque
             then null
                if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
@@ -294,7 +319,7 @@ with IPv4;
 package In_Ethernet is
 
    for Ethernet::Frame use (Payload => IPv4::Packet)
-      if EtherType = 16#0800#;
+      if Ether_Type = Ethernet::ET_IPV4;
 
 end In_Ethernet;
 ```
