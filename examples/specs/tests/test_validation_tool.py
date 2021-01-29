@@ -254,6 +254,10 @@ def test_validation_positive() -> None:
 
 
 def test_validation_negative() -> None:
+    number = len(
+        list(Path("tests/data/ethernet/frame/invalid").glob("*"))
+        + list(Path("tests/data/ethernet/frame/valid").glob("*"))
+    )
     assert (
         cli(
             [
@@ -268,10 +272,15 @@ def test_validation_negative() -> None:
                 "tests/data/ethernet/frame/valid",
             ]
         )
-    ) == "8 messages were classified incorrectly"
+        == f"{number} messages were classified incorrectly"
+    )
 
 
 def test_cli_full_json_output(tmp_path: Path) -> None:
+    number = len(
+        list(Path("tests/data/ethernet/frame/invalid").glob("*"))
+        + list(Path("tests/data/ethernet/frame/valid").glob("*"))
+    )
     assert (
         cli(
             [
@@ -288,4 +297,5 @@ def test_cli_full_json_output(tmp_path: Path) -> None:
                 f"{tmp_path}/output.json",
             ]
         )
-    ) == "8 messages were classified incorrectly"
+        == f"{number} messages were classified incorrectly"
+    )
