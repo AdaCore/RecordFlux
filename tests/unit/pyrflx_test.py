@@ -120,7 +120,7 @@ def test_message_value_eq(tlv_package: Package) -> None:
 
 def test_message_value_bitstring(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.bitstring == Bitstring("")
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value.bitstring == Bitstring("01")
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.bitstring == Bitstring("0100000000000001")
@@ -151,12 +151,12 @@ def test_message_value_accessible_fields_initial_fields(
 
 
 def test_message_value_accessible_fields_tag_fields(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value.accessible_fields == ["Tag", "Length"]
 
 
 def test_message_value_accessible_fields_length_fields(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.accessible_fields == ["Tag", "Length", "Value"]
     tlv_message_value.set("Value", b"\x01")
@@ -164,41 +164,41 @@ def test_message_value_accessible_fields_length_fields(tlv_message_value: Messag
 
 
 def test_message_value_accessible_fields_error_fields(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.accessible_fields == ["Tag"]
 
 
 def test_message_value_accessible_fields_error_reset_fields(
     tlv_message_value: MessageValue,
 ) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.accessible_fields == ["Tag", "Length", "Value"]
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.accessible_fields == ["Tag"]
 
 
 def test_message_value_accessible_fields_fields_complex(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.accessible_fields == ["Tag"]
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.accessible_fields == ["Tag"]
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value.accessible_fields == ["Tag", "Length"]
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.accessible_fields == ["Tag", "Length", "Value"]
     tlv_message_value.set("Value", b"\x01")
     assert tlv_message_value.accessible_fields == ["Tag", "Length", "Value"]
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.accessible_fields == ["Tag"]
 
 
 def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
     assert not tlv_message_value.valid_message
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\xc0"
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert not tlv_message_value.valid_message
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Length", 1)
@@ -211,7 +211,7 @@ def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_valid_fields(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.valid_fields == []
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value.valid_fields == ["Tag"]
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.valid_fields == ["Tag", "Length"]
@@ -222,7 +222,7 @@ def test_message_value_valid_fields(tlv_message_value: MessageValue) -> None:
 def test_message_value_set_value(tlv_message_value: MessageValue) -> None:
     v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
     v2 = b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10"
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", v1)
     with pytest.raises(
@@ -240,16 +240,16 @@ def test_message_value_set_value(tlv_message_value: MessageValue) -> None:
 def test_message_value_generate(tlv_message_value: MessageValue) -> None:
     test_message_value_payload = b"\x01\x02\x03\x04\x05\x06\x07\x08"
     test_message_value_data = b"\x40\x08" + test_message_value_payload
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", test_message_value_payload)
     assert tlv_message_value.bytestring == test_message_value_data
 
 
 def test_message_value_change_field(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1)
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert "Length" in tlv_message_value.valid_fields
     tlv_message_value.set("Value", b"a")
     tlv_message_value.set("Length", 2)
@@ -259,7 +259,7 @@ def test_message_value_change_field(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_binary_length(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", bytes(8))
     assert tlv_message_value.bytestring == b"\x40\x08\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -267,10 +267,10 @@ def test_message_value_binary_length(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
     v1 = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", v1)
-    assert tlv_message_value.get("Tag") == "MSG_DATA"
+    assert tlv_message_value.get("Tag") == "Msg_Data"
     assert tlv_message_value.get("Length") == 8
     assert tlv_message_value.get("Value") == v1
 
@@ -281,12 +281,12 @@ def test_message_value_get_invalid_field(tlv_message_value: MessageValue) -> Non
 
 
 def test_message_value_set_invalid_field(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Value$"):
         tlv_message_value.set("Value", b"")
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Checksum$"):
         tlv_message_value.set("Checksum", 8)
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: cannot access field Length$"):
         tlv_message_value.set("Length", 8)
 
@@ -302,7 +302,7 @@ def test_message_value_invalid_value(tlv_message_value: MessageValue) -> None:
         ),
     ):
         tlv_message_value.set("Tag", 1)
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(
         PyRFLXError,
         match=(
@@ -317,7 +317,7 @@ def test_message_value_invalid_value(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_next(tlv_message_value: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value._next_field(INITIAL.name) == "Tag"
     assert tlv_message_value._next_field("Tag") == "Length"
     assert tlv_message_value._next_field(FINAL.name) == ""
@@ -325,16 +325,16 @@ def test_message_value_next(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_prev(tlv_message_value: MessageValue) -> None:
     # pylint: disable=protected-access
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value._prev_field("Tag") == INITIAL.name
     assert tlv_message_value._prev_field(INITIAL.name) == ""
-    tlv_message_value.set("Tag", "MSG_ERROR")
+    tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value._prev_field("Length") == ""
 
 
 def test_message_value_required_fields(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.required_fields == ["Tag"]
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value.required_fields == ["Length"]
     tlv_message_value.set("Length", 1)
     assert tlv_message_value.required_fields == ["Value"]
@@ -343,7 +343,7 @@ def test_message_value_required_fields(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_empty_opaque_field(tlv_message_value: MessageValue) -> None:
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 0)
     tlv_message_value.set("Value", b"")
     assert tlv_message_value.valid_message
@@ -372,7 +372,7 @@ def test_message_value_is_valid_opaque_field(
 ) -> None:
     # pylint: disable=protected-access
     assert not tlv_message_value._is_valid_opaque_field("Value")
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1000)
     assert tlv_message_value._is_valid_opaque_field("Value")
     ethernet_frame_value.set("Destination", 2 ** 48 - 1)
@@ -431,7 +431,7 @@ def test_message_value_parse_from_bitstring(
     enum_value.parse(b"\x01")
     assert enum_value.value == "One"
     msg_array = ArrayValue(Array("Test::MsgArray", tlv_message_value._type))
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
     tlv_message_value.set("Value", b"\x00\x00\x00\x00")
     msg_array.parse(tlv_message_value.bytestring)
@@ -767,7 +767,7 @@ def test_array_assign_invalid(
     ):
         type_array.assign([enum_value])
 
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(
         PyRFLXError,
         match=(
@@ -784,7 +784,7 @@ def test_array_assign_invalid(
     ):
         msg_array.assign([enum_value])
 
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
     tlv_message_value.set("Value", b"\x00\x00\x00\x00")
 
@@ -811,7 +811,7 @@ def test_array_assign_invalid(
     ):
         msg_array.parse(Bitstring("0001111"))
 
-    tlv_message_value.set("Tag", "MSG_DATA")
+    tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value._fields["Length"].typeval.assign(111111111111111, False)
     with pytest.raises(
         PyRFLXError,
@@ -1075,7 +1075,7 @@ def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
     tlv_msg = MessageValue(tlv_checksum_message)
     tlv_msg.set_checksum_function({"Checksum": lambda x, **y: 0})
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
-    tlv_msg.set("Tag", "MSG_DATA")
+    tlv_msg.set("Tag", "Msg_Data")
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Length", 5)
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])

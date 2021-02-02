@@ -211,9 +211,9 @@ def test_parse_enumeration_type_spec() -> None:
                     model.Enumeration(
                         "__PACKAGE__::Priority",
                         [
-                            ("LOW", expr.Number(1)),
-                            ("MEDIUM", expr.Number(4)),
-                            ("HIGH", expr.Number(7)),
+                            ("Low", expr.Number(1)),
+                            ("Medium", expr.Number(4)),
+                            ("High", expr.Number(7)),
                         ],
                         expr.Number(8),
                         True,

@@ -1,6 +1,6 @@
 package TLS_Heartbeat is
 
-   type Message_Type is (HEARTBEAT_REQUEST => 1, HEARTBEAT_RESPONSE => 2) with Size => 8;
+   type Message_Type is (Heartbeat_Request => 1, Heartbeat_Response => 2) with Size => 8;
    type Length is range 0 .. 2**14 - 20 with Size => 16;
 
    type Heartbeat_Message is

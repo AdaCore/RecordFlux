@@ -30,6 +30,6 @@ package Feature_Integration is
    type Derived_Message is new Message_In_Message::Message;
 
    for TLV_With_Checksum::Message use (Value => Message_Type::PDU)
-      if Tag = TLV_With_Checksum::MSG_DATA;
+      if Tag = TLV_With_Checksum::Msg_Data;
 
 end Feature_Integration;

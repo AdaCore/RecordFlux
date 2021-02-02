@@ -1,21 +1,21 @@
 package Enumeration_Type is
 
    type Day is
-      (MON => 1,
-       TUE => 2,
-       WED => 3,
-       THU => 4,
-       FRI => 5,
-       SAT => 6,
-       SUN => 7)
+      (Mon => 1,
+       Tue => 2,
+       Wed => 3,
+       Thu => 4,
+       Fri => 5,
+       Sat => 6,
+       Sun => 7)
    with Size => 3;
 
    type Gender is (M, F) with Size => 1, Always_Valid => False;
 
    type Priority is
-      (LOW    => 1,
-       MEDIUM => 4,
-       HIGH   => 7)
+      (Low    => 1,
+       Medium => 4,
+       High   => 7)
    with Always_Valid, Size => 8;
 
 end Enumeration_Type;

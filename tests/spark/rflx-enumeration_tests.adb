@@ -30,7 +30,7 @@ package body RFLX.Enumeration_Tests is
       if Enumeration.Message.Valid (Context, Enumeration.Message.F_Priority) then
          Prio := Enumeration.Message.Get_Priority (Context);
          if Prio.Known then
-            Assert (Prio.Enum'Image, Enumeration.Priority_Enum'Image (Enumeration.LOW), "Unexpected Priority");
+            Assert (Prio.Enum'Image, Enumeration.Priority_Enum'Image (Enumeration.Low), "Unexpected Priority");
          else
             Assert (False, "Invalid Priority.Known");
          end if;
@@ -85,7 +85,7 @@ package body RFLX.Enumeration_Tests is
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 
-      Enumeration.Message.Set_Priority (Context, Enumeration.LOW);
+      Enumeration.Message.Set_Priority (Context, Enumeration.Low);
 
       Assert (Enumeration.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid message");

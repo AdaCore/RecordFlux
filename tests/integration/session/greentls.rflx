@@ -15,7 +15,7 @@ package GreenTLS is
 
    for Content use (Data => TLS_Alert::Alert);
 
-   type Control_Message_Type is (KEY_UPDATE_CLIENT, KEY_UPDATE_SERVER, HEARTBEAT, ALERT) with Size => 8;
+   type Control_Message_Type is (Key_Update_Client, Key_Update_Server, Heartbeat, Alert) with Size => 8;
    type Control_Message_Length is range 0 .. 2**16 - 1 with Size => 16;
 
    type Control_Message is
@@ -42,9 +42,9 @@ package GreenTLS is
       end message;
 
    for Control_Message use (Data => Key_Update_Message)
-      if Tag = KEY_UPDATE_CLIENT or Tag = KEY_UPDATE_SERVER;
+      if Tag = Key_Update_Client or Tag = Key_Update_Server;
 
-   type Heartbeat_Mode is (HEARTBEAT_ENABLED, HEARTBEAT_DISABLED) with Size => 4;
+   type Heartbeat_Mode is (Heartbeat_Enabled, Heartbeat_Disabled) with Size => 4;
 
    type Heartbeat_Control_Message is
       message
@@ -53,7 +53,7 @@ package GreenTLS is
       end message;
 
    for Control_Message use (Data => Heartbeat_Control_Message)
-      if Tag = HEARTBEAT;
+      if Tag = Heartbeat;
 
    type Alert_Message is
       message
@@ -61,9 +61,14 @@ package GreenTLS is
       end message;
 
    for Control_Message use (Data => Alert_Message)
-      if Tag = ALERT;
+      if Tag = Alert;
 
-   type Application_Control_Message_Type is (APPLICATION_SHUTDOWN, APPLICATION_ALERT, APPLICATION_PROTOCOL, APPLICATION_NO_EARLY_DATA) with Size => 8;
+   type Application_Control_Message_Type is
+      (Application_Shutdown,
+       Application_Alert,
+       Application_Protocol,
+       Application_No_Early_Data)
+   with Size => 8;
 
    type Application_Control_Message_Length is range 0 .. 2**8 - 1 with Size => 8;
 
@@ -79,10 +84,10 @@ package GreenTLS is
    type Application_Shutdown_Message is null message;
 
    for Application_Control_Message use (Data => Application_Shutdown_Message)
-      if Tag = APPLICATION_SHUTDOWN;
+      if Tag = Application_Shutdown;
 
    for Application_Control_Message use (Data => Alert_Message)
-      if Tag = APPLICATION_ALERT;
+      if Tag = Application_Alert;
 
    type Application_Protocol_Message is
       message
@@ -90,12 +95,12 @@ package GreenTLS is
       end message;
 
    for Application_Control_Message use (Data => Application_Protocol_Message)
-      if Tag = APPLICATION_PROTOCOL;
+      if Tag = Application_Protocol;
 
    type Application_No_Early_Data_Message is null message;
 
    for Application_Control_Message use (Data => Application_No_Early_Data_Message)
-      if Tag = APPLICATION_NO_EARLY_DATA;
+      if Tag = Application_No_Early_Data;
 
    type Heartbeat_Data_Length is range 0 .. 2**14 with Size => 16;
 
@@ -109,7 +114,7 @@ package GreenTLS is
 
    type Configuration is
       message
-         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_KE and/or PSK_DHE_KE
+         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_Ke and/or PSK_Dhe_Ke
          Cipher_Suites_Length : TLS_Handshake::Cipher_Suites_Length
             then Cipher_Suites
                with Size => Cipher_Suites_Length * 8;
@@ -122,7 +127,7 @@ package GreenTLS is
             then Key_Shares
                if Signature_Algorithms_Cert_Enabled = False;
          Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
-         Key_Shares : TLS_Handshake::Key_Share_CH;
+         Key_Shares : TLS_Handshake::Key_Share_Ch;
          Protocols : TLS_Handshake::Protocol_Name_List;
          Server_Authentication_Enabled : Boolean;
          Post_Handshake_Auth_Enabled : Boolean;
@@ -145,14 +150,14 @@ package GreenTLS is
          Port : Port;
       end message;
 
-   type Keystore_Message_Type is (KEYSTORE_REQUEST, KEYSTORE_RESPONSE) with Size => 8;
-   type Keystore_Request_Type is (
-      KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS,
-      KEYSTORE_REQUEST_PSKS,
-      KEYSTORE_REQUEST_CERTIFICATES,
-      KEYSTORE_REQUEST_SIGNATURE,
-      KEYSTORE_REQUEST_NEW_SESSION_TICKET
-      ) with Size => 8;
+   type Keystore_Message_Type is (Keystore_Request, Keystore_Response) with Size => 8;
+   type Keystore_Request_Type is
+      (Keystore_Request_Server_Preferred_Groups,
+       Keystore_Request_PSKs,
+       Keystore_Request_Certificates,
+       Keystore_Request_Signature,
+       Keystore_Request_New_Session_Ticket)
+   with Size => 8;
    type Keystore_Payload_Length is range 0 .. 2**16 - 1 with Size => 16;
 
    type Keystore_Message is
@@ -166,12 +171,12 @@ package GreenTLS is
       end message;
 
    for Keystore_Message use (Payload => Connection)
-      if Tag = KEYSTORE_REQUEST and (Request = KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS or Request = KEYSTORE_REQUEST_PSKS);
+      if Tag = Keystore_Request and (Request = Keystore_Request_Server_Preferred_Groups or Request = Keystore_Request_PSKs);
 
    for Keystore_Message use (Payload => TLS_Handshake::Supported_Groups)
-      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_SERVER_PREFERRED_GROUPS;
+      if Tag = Keystore_Response and Request = Keystore_Request_Server_Preferred_Groups;
 
-   type Key_Type is (EXTERNAL, RESUMPTION) with Size => 8;
+   type Key_Type is (External, Resumption) with Size => 8;
 
    type PSK is
       message
@@ -195,7 +200,7 @@ package GreenTLS is
       end message;
 
    for Keystore_Message use (Payload => PSK_Message)
-      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_PSKS;
+      if Tag = Keystore_Response and Request = Keystore_Request_PSKs;
 
    type Certificate_Query is
       message
@@ -206,7 +211,7 @@ package GreenTLS is
       end message;
 
    for Keystore_Message use (Payload => Certificate_Query)
-      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_CERTIFICATES;
+      if Tag = Keystore_Request and Request = Keystore_Request_Certificates;
 
    type Certificate_ID is mod 2**16;
 
@@ -220,67 +225,67 @@ package GreenTLS is
       end message;
 
    for Keystore_Message use (Payload => Certificate)
-      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_CERTIFICATES;
+      if Tag = Keystore_Response and Request = Keystore_Request_Certificates;
 
    type Signature_Query is
       message
          ID : Certificate_ID;
-         Length : KM_Length
+         Length : Km_Length
             then Data
                with Size => Length * 8;
          Data : Opaque;
       end message;
 
    for Keystore_Message use (Payload => Signature_Query)
-      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_SIGNATURE;
+      if Tag = Keystore_Request and Request = Keystore_Request_Signature;
 
    for Keystore_Message use (Payload => TLS_Handshake::Certificate_Verify)
-      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_SIGNATURE;
+      if Tag = Keystore_Response and Request = Keystore_Request_Signature;
 
    type New_Session_Ticket is
       message
          Connection : Connection;
          Session : TLS_Handshake::New_Session_Ticket;
-         PSK_Length : KM_Length
+         PSK_Length : Km_Length
             then PSK
                with Size => PSK_Length * 8;
          PSK : Opaque;
       end message;
 
    for Keystore_Message use (Payload => New_Session_Ticket)
-      if Tag = KEYSTORE_REQUEST and Request = KEYSTORE_REQUEST_NEW_SESSION_TICKET;
+      if Tag = Keystore_Request and Request = Keystore_Request_New_Session_Ticket;
 
    type Done is null message;
 
    for Keystore_Message use (Payload => Done)
-      if Tag = KEYSTORE_RESPONSE and Request = KEYSTORE_REQUEST_NEW_SESSION_TICKET;
+      if Tag = Keystore_Response and Request = Keystore_Request_New_Session_Ticket;
 
-   type Certificate_Validation_Result is (
-      VALID_CERTIFICATE,
-      BAD_CERTIFICATE,
-      UNSUPPORTED_CERTIFICATE,
-      CERTIFICATE_REVOKED,
-      CERTIFICATE_EXPIRED,
-      CERTIFICATE_UNKNOWN
-   ) with Size => 8;
+   type Certificate_Validation_Result is
+      (Valid_Certificate,
+       Bad_Certificate,
+       Unsupported_Certificate,
+       Certificate_Revoked,
+       Certificate_Expired,
+       Certificate_Unknown)
+   with Size => 8;
 
-   type Signature_Validation_Result is (
-      VALID_SIGNATURE,
-      ILLEGAL_PARAMETER,
-      DECRYPT_ERROR
-   ) with Size => 8;
+   type Signature_Validation_Result is
+      (Valid_Signature,
+      Illegal_Parameter,
+      Decrypt_Error)
+   with Size => 8;
 
-   type RNG_Message_Type is (RNG_REQUEST, RNG_RESPONSE) with Size => 8;
+   type RNG_Message_Type is (RNG_Request, RNG_Response) with Size => 8;
 
    type RNG_Message is
       message
          Tag : RNG_Message_Type;
-         Length : KM_Length
+         Length : Km_Length
             then Data
                with Size => Length * 8
-               if Tag = RNG_RESPONSE
+               if Tag = RNG_Response
             then null
-               if Tag = RNG_REQUEST;
+               if Tag = RNG_Request;
          Data : Opaque;
       end message;
 

@@ -39,15 +39,15 @@ NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV::Tag", [("MSG_DATA", Number(1)), ("MSG_ERROR", Number(3))], Number(2), False
+    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
 )
 TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(14)))
 TLV_MESSAGE = Message(
     "TLV::Message",
     [
         Link(INITIAL, Field("Tag")),
-        Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("MSG_DATA"))),
-        Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("MSG_ERROR"))),
+        Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
+        Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
         Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Value"), FINAL),
     ],
@@ -125,7 +125,7 @@ ETHERNET_MODEL = Model(
 
 ENUMERATION_PRIORITY = Enumeration(
     "Enumeration::Priority",
-    [("LOW", Number(1)), ("MEDIUM", Number(4)), ("HIGH", Number(7))],
+    [("Low", Number(1)), ("Medium", Number(4)), ("High", Number(7))],
     Number(3),
     True,
 )
@@ -144,14 +144,14 @@ ARRAYS_RANGE_INTEGER = RangeInteger("Arrays::Range_Integer", Number(1), Number(1
 ARRAYS_RANGE_VECTOR = Array("Arrays::Range_Vector", ARRAYS_RANGE_INTEGER)
 ARRAYS_ENUMERATION = Enumeration(
     "Arrays::Enumeration",
-    [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
+    [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
     False,
 )
 ARRAYS_ENUMERATION_VECTOR = Array("Arrays::Enumeration_Vector", ARRAYS_ENUMERATION)
 ARRAYS_AV_ENUMERATION = Enumeration(
     "Arrays::AV_Enumeration",
-    [("AV_ZERO", Number(0)), ("AV_ONE", Number(1)), ("AV_TWO", Number(2))],
+    [("AV_Zero", Number(0)), ("AV_One", Number(1)), ("AV_Two", Number(2))],
     Number(8),
     True,
 )
@@ -264,7 +264,7 @@ MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
 RANGE_INTEGER = RangeInteger("P::Range", Number(1), Number(100), Number(8))
 ENUMERATION = Enumeration(
     "P::Enumeration",
-    [("ZERO", Number(0)), ("ONE", Number(1)), ("TWO", Number(2))],
+    [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
     False,
 )

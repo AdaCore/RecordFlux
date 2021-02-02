@@ -7,10 +7,10 @@ is
 
    type Tag_Base is mod 2**2;
 
-   type Tag is (MSG_DATA, MSG_ERROR) with
+   type Tag is (Msg_Data, Msg_Error) with
      Size =>
        2;
-   for Tag use (MSG_DATA => 1, MSG_ERROR => 3);
+   for Tag use (Msg_Data => 1, Msg_Error => 3);
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -31,9 +31,9 @@ is
 
    function To_Base (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
      ((case Enum is
-          when MSG_DATA =>
+          when Msg_Data =>
              1,
-          when MSG_ERROR =>
+          when Msg_Error =>
              3));
 
    pragma Warnings (Off, "unreachable branch");
@@ -41,9 +41,9 @@ is
    function To_Actual (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
      ((case Val is
           when 1 =>
-             MSG_DATA,
+             Msg_Data,
           when 3 =>
-             MSG_ERROR,
+             Msg_Error,
           when others =>
              Unreachable_TLV_Tag))
     with

@@ -118,7 +118,7 @@ def create_request(src: int, dst: int, seq: int) -> bytes:
     pkt.set("Flag_MF", "False")
     pkt.set("Fragment_Offset", 0)
     pkt.set("TTL", 64)
-    pkt.set("Protocol", "PROTOCOL_ICMP")
+    pkt.set("Protocol", "P_ICMP")
     pkt.set("Header_Checksum", 0)
     pkt.set("Source", src)
     pkt.set("Destination", dst)

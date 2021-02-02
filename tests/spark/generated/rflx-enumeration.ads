@@ -7,10 +7,10 @@ is
 
    type Priority_Base is mod 2**3;
 
-   type Priority_Enum is (LOW, MEDIUM, HIGH) with
+   type Priority_Enum is (Low, Medium, High) with
      Size =>
        3;
-   for Priority_Enum use (LOW => 1, MEDIUM => 4, HIGH => 7);
+   for Priority_Enum use (Low => 1, Medium => 4, High => 7);
 
    type Priority (Known : Boolean := False) is
       record
@@ -45,11 +45,11 @@ is
 
    function To_Base (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
      ((case Enum is
-          when LOW =>
+          when Low =>
              1,
-          when MEDIUM =>
+          when Medium =>
              4,
-          when HIGH =>
+          when High =>
              7));
 
    function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
@@ -58,11 +58,11 @@ is
    function To_Actual (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
      ((case Val is
           when 1 =>
-             (True, LOW),
+             (True, Low),
           when 4 =>
-             (True, MEDIUM),
+             (True, Medium),
           when 7 =>
-             (True, HIGH),
+             (True, High),
           when others =>
              (False, Val)))
     with
