@@ -114,7 +114,7 @@ package GreenTLS is
 
    type Configuration is
       message
-         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_Ke and/or PSK_Dhe_Ke
+         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_KE and/or PSK_DHE_KE
          Cipher_Suites_Length : TLS_Handshake::Cipher_Suites_Length
             then Cipher_Suites
                with Size => Cipher_Suites_Length * 8;
@@ -127,7 +127,7 @@ package GreenTLS is
             then Key_Shares
                if Signature_Algorithms_Cert_Enabled = False;
          Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
-         Key_Shares : TLS_Handshake::Key_Share_Ch;
+         Key_Shares : TLS_Handshake::Key_Share_CH;
          Protocols : TLS_Handshake::Protocol_Name_List;
          Server_Authentication_Enabled : Boolean;
          Post_Handshake_Auth_Enabled : Boolean;
@@ -230,7 +230,7 @@ package GreenTLS is
    type Signature_Query is
       message
          ID : Certificate_ID;
-         Length : Km_Length
+         Length : KM_Length
             then Data
                with Size => Length * 8;
          Data : Opaque;
@@ -246,7 +246,7 @@ package GreenTLS is
       message
          Connection : Connection;
          Session : TLS_Handshake::New_Session_Ticket;
-         PSK_Length : Km_Length
+         PSK_Length : KM_Length
             then PSK
                with Size => PSK_Length * 8;
          PSK : Opaque;
@@ -280,7 +280,7 @@ package GreenTLS is
    type RNG_Message is
       message
          Tag : RNG_Message_Type;
-         Length : Km_Length
+         Length : KM_Length
             then Data
                with Size => Length * 8
                if Tag = RNG_Response
