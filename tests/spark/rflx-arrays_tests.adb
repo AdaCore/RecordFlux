@@ -153,7 +153,7 @@ package body RFLX.Arrays_Tests is
 
          Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Arrays.ONE'Image, "Invalid value of element 1");
+         Assert (Element'Image, Arrays.One'Image, "Invalid value of element 1");
          Assert (Arrays.Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
          Arrays.Enumeration_Vector.Next (Sequence_Context);
@@ -162,7 +162,7 @@ package body RFLX.Arrays_Tests is
 
          Element := Arrays.Enumeration_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Arrays.TWO'Image, "Invalid value of element 2");
+         Assert (Element'Image, Arrays.Two'Image, "Invalid value of element 2");
          Assert (not Arrays.Enumeration_Vector.Has_Element (Sequence_Context),
                  "Invalid acceptance of further element");
          Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -195,7 +195,7 @@ package body RFLX.Arrays_Tests is
          Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
 
          Assert (Element.Known, "Unknown value of element 1");
-         Assert (Element.Enum'Image, Arrays.AV_ONE'Image, "Invalid value of element 1");
+         Assert (Element.Enum'Image, Arrays.AV_One'Image, "Invalid value of element 1");
          Assert (Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
          Arrays.AV_Enumeration_Vector.Next (Sequence_Context);
@@ -205,7 +205,7 @@ package body RFLX.Arrays_Tests is
          Element := Arrays.AV_Enumeration_Vector.Get_Element (Sequence_Context);
 
          Assert (Element.Known, "Unknown value of element 2");
-         Assert (Element.Enum'Image, Arrays.AV_TWO'Image, "Invalid value of element 2");
+         Assert (Element.Enum'Image, Arrays.AV_Two'Image, "Invalid value of element 2");
          Assert (not Arrays.AV_Enumeration_Vector.Has_Element (Sequence_Context),
                  "Invalid acceptance of further element");
          Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
@@ -493,8 +493,8 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_Enumeration_Vector (Context, Enumeration_Vector_Context);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.One);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.Two);
 
       Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
               "Invalid acceptance of further element");
@@ -510,8 +510,8 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_One));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_Two));
 
       Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
               "Invalid acceptance of further element");
@@ -578,8 +578,8 @@ package body RFLX.Arrays_Tests is
               "Valid Range_Vector before context update");
 
       Arrays.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.One);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.Two);
 
       Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
               "Invalid acceptance of further element in Enumeration_Vector");
@@ -587,8 +587,8 @@ package body RFLX.Arrays_Tests is
               "Valid Enumeration_Vector before context update");
 
       Arrays.AV_Enumeration_Vector.Initialize (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_One));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_Two));
 
       Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
               "Invalid acceptance of further element in AV_Enumeration_Vector");
@@ -680,8 +680,8 @@ package body RFLX.Arrays_Tests is
               "Valid Range_Vector before context update");
 
       Arrays.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.ONE);
-      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.TWO);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.One);
+      Arrays.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Arrays.Two);
 
       Assert (not Arrays.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
               "Invalid acceptance of further element in Enumeration_Vector");
@@ -689,8 +689,8 @@ package body RFLX.Arrays_Tests is
               "Valid Enumeration_Vector before context update");
 
       Arrays.AV_Enumeration_Vector.Initialize (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_ONE));
-      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_TWO));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_One));
+      Arrays.AV_Enumeration_Vector.Append_Element (AV_Enumeration_Vector_Context, Arrays.To_Actual (Arrays.AV_Two));
 
       Assert (not Arrays.AV_Enumeration_Vector.Has_Element (AV_Enumeration_Vector_Context),
               "Invalid acceptance of further element in AV_Enumeration_Vector");
@@ -1105,7 +1105,7 @@ package body RFLX.Arrays_Tests is
 
       Header := Message.Get_Header (Context);
 
-      Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+      Assert (Header'Image, Arrays.One'Image, "Invalid value of Header");
       Assert (Message.Present (Context, Message.F_Vector), "Invalid Vector or Buffer");
 
       Message.Switch_To_Vector (Context, Sequence_Context);
@@ -1168,7 +1168,7 @@ package body RFLX.Arrays_Tests is
 
       Header := Message.Get_Header (Context);
 
-      Assert (Header'Image, Arrays.ONE'Image, "Invalid value of Header");
+      Assert (Header'Image, Arrays.One'Image, "Invalid value of Header");
       Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
       Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
 
@@ -1191,7 +1191,7 @@ package body RFLX.Arrays_Tests is
    begin
       Message.Initialize (Context, Buffer);
 
-      Message.Set_Header (Context, Arrays.ONE);
+      Message.Set_Header (Context, Arrays.One);
       Message.Switch_To_Vector (Context, Sequence_Context);
       Arrays.Modular_Vector.Append_Element (Sequence_Context, 1);
       Arrays.Modular_Vector.Append_Element (Sequence_Context, 2);
@@ -1235,7 +1235,7 @@ package body RFLX.Arrays_Tests is
       package Message renames Arrays.Array_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
-      Message.Set_Header (Context, Arrays.ONE);
+      Message.Set_Header (Context, Arrays.One);
       Message.Set_Vector_Empty (Context);
 
       Assert (Message.Structural_Valid (Context, Message.F_Vector), "Invalid Modular_Vector");

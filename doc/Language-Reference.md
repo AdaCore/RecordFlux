@@ -68,17 +68,14 @@ The set of values of an enumeration type consists of the list of declared enumer
 #### Example
 
 ```Ada RFLX declaration
-type Tag is
-   (MSG_ERROR,
-    MSG_DATA)
-with Size => 1;
+type Tag is (Msg_Error, Msg_Data) with Size => 1;
 
 type Ether_Type is
-   (ET_IPV4            => 16#0800#,
+   (ET_IPv4            => 16#0800#,
     ET_ARP             => 16#0806#,
-    ET_VLAN_TAG        => 16#8100#,
-    ET_IPV6            => 16#86DD#,
-    ET_VLAN_TAG_DOUBLE => 16#9100#)
+    ET_VLAN_Tag        => 16#8100#,
+    ET_IPv6            => 16#86DD#,
+    ET_VLAN_Tag_Double => 16#9100#)
 with Size => 16, Always_Valid;
 ```
 
@@ -245,11 +242,11 @@ package Ethernet is
    type TPID is range 16#8100# .. 16#8100# with Size => 16;
    type TCI is mod 2**16;
    type Ether_Type is
-      (ET_IPV4            => 16#0800#,
+      (ET_IPv4            => 16#0800#,
        ET_ARP             => 16#0806#,
-       ET_VLAN_TAG        => 16#8100#,
-       ET_IPV6            => 16#86DD#,
-       ET_VLAN_TAG_DOUBLE => 16#9100#)
+       ET_VLAN_Tag        => 16#8100#,
+       ET_IPv6            => 16#86DD#,
+       ET_VLAN_Tag_Double => 16#9100#)
    with Size => 16, Always_Valid;
 
    type Frame is
@@ -319,7 +316,7 @@ with IPv4;
 package In_Ethernet is
 
    for Ethernet::Frame use (Payload => IPv4::Packet)
-      if Ether_Type = Ethernet::ET_IPV4;
+      if Ether_Type = Ethernet::ET_IPv4;
 
 end In_Ethernet;
 ```

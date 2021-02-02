@@ -106,10 +106,10 @@ is
 
    type Enumeration_Base is mod 2**8;
 
-   type Enumeration is (ZERO, ONE, TWO) with
+   type Enumeration is (Zero, One, Two) with
      Size =>
        8;
-   for Enumeration use (ZERO => 0, ONE => 1, TWO => 2);
+   for Enumeration use (Zero => 0, One => 1, Two => 2);
 
    pragma Warnings (Off, "precondition is * false");
 
@@ -130,11 +130,11 @@ is
 
    function To_Base (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
      ((case Enum is
-          when ZERO =>
+          when Zero =>
              0,
-          when ONE =>
+          when One =>
              1,
-          when TWO =>
+          when Two =>
              2));
 
    pragma Warnings (Off, "unreachable branch");
@@ -142,11 +142,11 @@ is
    function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
      ((case Val is
           when 0 =>
-             ZERO,
+             Zero,
           when 1 =>
-             ONE,
+             One,
           when 2 =>
-             TWO,
+             Two,
           when others =>
              Unreachable_Arrays_Enumeration))
     with
@@ -157,10 +157,10 @@ is
 
    type AV_Enumeration_Base is mod 2**8;
 
-   type AV_Enumeration_Enum is (AV_ZERO, AV_ONE, AV_TWO) with
+   type AV_Enumeration_Enum is (AV_Zero, AV_One, AV_Two) with
      Size =>
        8;
-   for AV_Enumeration_Enum use (AV_ZERO => 0, AV_ONE => 1, AV_TWO => 2);
+   for AV_Enumeration_Enum use (AV_Zero => 0, AV_One => 1, AV_Two => 2);
 
    type AV_Enumeration (Known : Boolean := False) is
       record
@@ -195,11 +195,11 @@ is
 
    function To_Base (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
      ((case Enum is
-          when AV_ZERO =>
+          when AV_Zero =>
              0,
-          when AV_ONE =>
+          when AV_One =>
              1,
-          when AV_TWO =>
+          when AV_Two =>
              2));
 
    function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
@@ -208,11 +208,11 @@ is
    function To_Actual (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
      ((case Val is
           when 0 =>
-             (True, AV_ZERO),
+             (True, AV_Zero),
           when 1 =>
-             (True, AV_ONE),
+             (True, AV_One),
           when 2 =>
-             (True, AV_TWO),
+             (True, AV_Two),
           when others =>
              (False, Val)))
     with

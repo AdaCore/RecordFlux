@@ -52,7 +52,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag'Image (TLV.MSG_DATA), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (TLV.To_Base (Tag) = 1, "Invalid conversion of Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
@@ -88,7 +88,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag'Image (TLV.MSG_DATA), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
             Length := TLV.Message.Get_Length (Context);
@@ -118,7 +118,7 @@ package body RFLX.TLV_Tests is
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
-         Assert (Tag'Image, TLV.Tag'Image (TLV.MSG_ERROR), "Unexpected Tag");
+         Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Error), "Unexpected Tag");
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
@@ -156,7 +156,7 @@ package body RFLX.TLV_Tests is
       Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
-      TLV.Message.Set_Tag (Context, TLV.MSG_DATA);
+      TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 4);
       TLV.Message.Set_Value (Context, (1, 2, 3, 4));
 
@@ -185,7 +185,7 @@ package body RFLX.TLV_Tests is
       Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
-      TLV.Message.Set_Tag (Context, TLV.MSG_DATA);
+      TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 4);
       Data := (1, 2, 3, 4);
       Set_Value (Context);
@@ -214,7 +214,7 @@ package body RFLX.TLV_Tests is
       Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
-      TLV.Message.Set_Tag (Context, TLV.MSG_DATA);
+      TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 0);
       TLV.Message.Set_Value_Empty (Context);
 
@@ -243,7 +243,7 @@ package body RFLX.TLV_Tests is
       Context  : TLV.Message.Context;
    begin
       TLV.Message.Initialize (Context, Buffer);
-      TLV.Message.Set_Tag (Context, TLV.MSG_ERROR);
+      TLV.Message.Set_Tag (Context, TLV.Msg_Error);
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid message");

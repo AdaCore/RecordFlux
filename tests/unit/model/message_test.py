@@ -77,7 +77,7 @@ M_NO_REF = UnprovenMessage(
             GreaterEqual(Variable("F2"), Number(200)),
             first=First("F2"),
         ),
-        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
+        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
         Link(Field("F4"), FINAL),
     ],
     {
@@ -139,7 +139,7 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
             GreaterEqual(Variable("F2"), Number(200)),
             first=First("F2"),
         ),
-        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("ONE"))),
+        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
         Link(Field("F4"), FINAL),
     ],
     {
@@ -1103,8 +1103,8 @@ def test_exclusive_valid() -> None:
 def test_exclusive_enum_valid() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("ONE"))),
-        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("TWO"))),
+        Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("One"))),
+        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("Two"))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -1117,15 +1117,15 @@ def test_exclusive_enum_valid() -> None:
 def test_exclusive_prefixed_enum_valid() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("ONE"))),
-        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("P::TWO"))),
+        Link(Field("F1"), FINAL, condition=Equal(Variable("F1"), Variable("One"))),
+        Link(Field("F1"), Field("F2"), condition=Equal(Variable("F1"), Variable("P::Two"))),
         Link(Field("F2"), FINAL),
     ]
     types = {
         Field("F1"): ENUMERATION,
         Field("F2"): Enumeration(
             "P2::Enumeration",
-            [("ONE", Number(2)), ("TWO", Number(1))],
+            [("One", Number(2)), ("Two", Number(1))],
             Number(8),
             False,
         ),
@@ -1440,7 +1440,7 @@ def test_tlv_valid_enum() -> None:
             Field("V"),
             size=Mul(Number(8), Variable("L")),
             condition=And(
-                NotEqual(Variable("T"), Variable("TWO")), LessEqual(Variable("L"), Number(8192))
+                NotEqual(Variable("T"), Variable("Two")), LessEqual(Variable("L"), Number(8192))
             ),
         ),
         Link(Field("V"), FINAL),
@@ -2568,7 +2568,7 @@ def test_merge_message_simple() -> None:
             "P::Smpl_Ref",
             [
                 Link(INITIAL, Field("NR_F1"), size=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
@@ -2620,7 +2620,7 @@ def test_merge_message_complex() -> None:
                     Field("F5"),
                     And(
                         LessEqual(Variable("F1"), Number(100)),
-                        Equal(Variable("NR_F3"), Variable("P::ONE")),
+                        Equal(Variable("NR_F3"), Variable("P::One")),
                     ),
                 ),
                 Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
@@ -2629,7 +2629,7 @@ def test_merge_message_complex() -> None:
                     Field("F6"),
                     And(
                         GreaterEqual(Variable("F1"), Number(200)),
-                        Equal(Variable("NR_F3"), Variable("P::ONE")),
+                        Equal(Variable("NR_F3"), Variable("P::One")),
                     ),
                 ),
                 Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
@@ -2674,11 +2674,11 @@ def test_merge_message_recursive() -> None:
                 Link(
                     Field("SR_NR_F3"),
                     Field("NR_F1"),
-                    Equal(Variable("SR_NR_F3"), Variable("P::ONE")),
+                    Equal(Variable("SR_NR_F3"), Variable("P::One")),
                     size=Number(16),
                 ),
                 Link(Field("SR_NR_F4"), Field("NR_F1"), size=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
                 Link(
@@ -2729,7 +2729,7 @@ def test_merge_message_simple_derived() -> None:
             M_SMPL_REF,
             [
                 Link(INITIAL, Field("NR_F1"), size=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::ONE"))),
+                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
@@ -2987,7 +2987,7 @@ def test_message_serialize() -> None:
                                 },
                                 "right": {
                                     "kind": "Variable",
-                                    "data": {"identifier": ["MSG_ERROR"], "negative": False},
+                                    "data": {"identifier": ["Msg_Error"], "negative": False},
                                 },
                             },
                         },
@@ -3015,7 +3015,7 @@ def test_message_serialize() -> None:
                                 },
                                 "right": {
                                     "kind": "Variable",
-                                    "data": {"identifier": ["MSG_DATA"], "negative": False},
+                                    "data": {"identifier": ["Msg_Data"], "negative": False},
                                 },
                             },
                         },

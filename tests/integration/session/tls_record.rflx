@@ -4,12 +4,12 @@ with TLS_Handshake;
 package TLS_Record is
 
    type Content_Type is
-      (INVALID            =>  0,
-       CHANGE_CIPHER_SPEC => 20,
-       ALERT              => 21,
-       HANDSHAKE          => 22,
-       APPLICATION_DATA   => 23,
-       HEARTBEAT          => 24)
+      (Invalid            =>  0,
+       Change_Cipher_Spec => 20,
+       Alert              => 21,
+       Handshake          => 22,
+       Application_Data   => 23,
+       Heartbeat          => 24)
    with Size => 8;
 
    type Protocol_Version is
@@ -28,20 +28,20 @@ package TLS_Record is
          Length : Length
             then Fragment
                with Size => Length * 8
-               if Tag /= APPLICATION_DATA and Length <= 2**14
+               if Tag /= Application_Data and Length <= 2**14
             then Encrypted_Record
                with Size => Length * 8
-               if Tag = APPLICATION_DATA and Legacy_Record_Version = TLS_1_2;
+               if Tag = Application_Data and Legacy_Record_Version = TLS_1_2;
          Fragment : Opaque
             then null;
          Encrypted_Record : Opaque;
       end message;
 
    for TLS_Record use (Fragment => TLS_Alert::Alert)
-       if Tag = ALERT;
+       if Tag = Alert;
 
    for TLS_Record use (Fragment => TLS_Handshake::Handshake)
-       if Tag = HANDSHAKE;
+       if Tag = Handshake;
 
    type TLS_Inner_Plaintext is
       message

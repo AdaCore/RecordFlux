@@ -11,7 +11,7 @@ package IPv4 is
    type Identification is mod 2**16;
    type Fragment_Offset is mod 2**13;
    type TTL is mod 2**8;
-   type Protocol is (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17) with Size => 8, Always_Valid;
+   type Protocol is (P_ICMP => 1, P_UDP => 17) with Size => 8, Always_Valid;
    type Header_Checksum is mod 2**16;
    type Address is mod 2**32;
    type Options is array of IPv4_Option::Option;
@@ -46,6 +46,6 @@ package IPv4 is
       end message;
 
    for Packet use (Payload => ICMP::Message)
-      if Protocol = PROTOCOL_ICMP;
+      if Protocol = P_ICMP;
 
 end IPv4;

@@ -201,7 +201,7 @@ is
       RFLX.IPv4.Packet.Set_Flag_MF (IP_Context, False);
       RFLX.IPv4.Packet.Set_Fragment_Offset (IP_Context, 0);
       RFLX.IPv4.Packet.Set_TTL (IP_Context, 64);
-      RFLX.IPv4.Packet.Set_Protocol (IP_Context, RFLX.IPv4.PROTOCOL_ICMP);
+      RFLX.IPv4.Packet.Set_Protocol (IP_Context, RFLX.IPv4.P_ICMP);
       RFLX.IPv4.Packet.Set_Header_Checksum (IP_Context, 0);
       RFLX.IPv4.Packet.Set_Source (IP_Context, 0);
       RFLX.IPv4.Packet.Set_Destination (IP_Context, Addr);
