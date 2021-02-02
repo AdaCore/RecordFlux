@@ -99,11 +99,11 @@ package TLS_Handshake is
    type Cipher_Suites_Length is range 2 .. 2**16 - 2 with Size => 16;
 
    type Cipher_Suite is
-      (TLS_AES_128_Gcm_SHA256       => 16#1301#,
-       TLS_AES_256_Gcm_SHA384       => 16#1302#,
-       TLS_Chacha20_Poly1305_SHA256 => 16#1303#,
-       TLS_AES_128_Ccm_SHA256       => 16#1304#,
-       TLS_AES_128_Ccm_8_SHA256     => 16#1305#)
+      (TLS_AES_128_GCM_SHA256       => 16#1301#,
+       TLS_AES_256_GCM_SHA384       => 16#1302#,
+       TLS_ChaCha20_Poly1305_SHA256 => 16#1303#,
+       TLS_AES_128_CCM_SHA256       => 16#1304#,
+       TLS_AES_128_CCM_8_SHA256     => 16#1305#)
    with Size => 16, Always_Valid;
 
    type Cipher_Suites is array of Cipher_Suite;
