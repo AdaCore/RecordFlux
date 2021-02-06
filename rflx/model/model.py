@@ -82,6 +82,10 @@ class Model(Base):
                     s.location,
                 )
                 if s.identifier in types:
+                    # The location is ignored when comparing two objects of the ID class. To
+                    # retrieve the location of the identifier of the conflicting type (i.e. the
+                    # key of the types dict) we have to iterate as Python has no way to return
+                    # the original key.
                     prev_loc = [d for d in types if d == s.identifier][0].location
                 else:
                     prev_loc = sessions[s.identifier].location
