@@ -331,9 +331,9 @@ def create_binop(
     left = create_math_expression(expression.f_left, filename, package)
     right = create_math_expression(expression.f_right, filename, package)
     if expression.f_op.kind_name in MATH_OPERATIONS:
-        return MATH_OPERATIONS[expression.f_op.kind_name](left, right, loc)
+        return MATH_OPERATIONS[expression.f_op.kind_name](left, right, location=loc)
     if expression.f_op.kind_name in MATH_COMPARISONS:
-        return MATH_COMPARISONS[expression.f_op.kind_name](left, right, loc)
+        return MATH_COMPARISONS[expression.f_op.kind_name](left, right, location=loc)
 
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
