@@ -314,30 +314,27 @@ OPERATIONS: Dict[str, Type[rexpr.BinExpr]] = {
 def create_binop(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
 ) -> rexpr.Expr:
+    loc = node_location(expression, filename)
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
             create_expression(expression.f_left, filename, package),
             create_expression(expression.f_right, filename, package),
-            location=node_location(expression, filename),
+            location=loc,
         )
     if expression.f_op.kind_name in BOOLEAN_OPERATIONS:
         return BOOLEAN_OPERATIONS[expression.f_op.kind_name](
             create_expression(expression.f_left, filename, package),
             create_expression(expression.f_right, filename, package),
-            location=node_location(expression, filename),
+            location=loc,
         )
+
+    left = create_math_expression(expression.f_left, filename, package)
+    right = create_math_expression(expression.f_right, filename, package)
     if expression.f_op.kind_name in MATH_OPERATIONS:
-        return MATH_OPERATIONS[expression.f_op.kind_name](
-            create_math_expression(expression.f_left, filename, package),
-            create_math_expression(expression.f_right, filename, package),
-            location=node_location(expression, filename),
-        )
+        return MATH_OPERATIONS[expression.f_op.kind_name](left, right, loc)
     if expression.f_op.kind_name in MATH_COMPARISONS:
-        return MATH_COMPARISONS[expression.f_op.kind_name](
-            create_math_expression(expression.f_left, filename, package),
-            create_math_expression(expression.f_right, filename, package),
-            location=node_location(expression, filename),
-        )
+        return MATH_COMPARISONS[expression.f_op.kind_name](left, right, loc)
+
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
