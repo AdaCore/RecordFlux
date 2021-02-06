@@ -21,6 +21,7 @@ from rflx.specification.parser import (
     create_expression,
     create_formal_declaration,
     create_math_expression,
+    create_state,
     create_statement,
     diagnostics_to_error,
 )
@@ -179,6 +180,14 @@ def parse_bool_expression(data: str, extended: bool) -> Expr:
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
     return create_bool_expression(unit.root)
+
+
+def parse_state(data: str) -> State:
+    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=GrammarRule.state_rule)
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_state(unit.root)
 
 
 def parse_declaration(data: str) -> Declaration:

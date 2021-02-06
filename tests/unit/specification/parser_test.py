@@ -37,10 +37,10 @@ def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None
     assert result == expected, filenames
 
 
-def assert_model_string(string: str, model: Model) -> None:
+def assert_model_string(string: str, expected: Model) -> None:
     p = parser.Parser()
     p.parse_string(string)
-    assert p.create_model() == model
+    assert p.create_model() == expected
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
@@ -289,37 +289,58 @@ def test_parse_enumeration_type_spec() -> None:
                                 "elements": [
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Mon"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Mon",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "1"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Tue"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Tue",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "2"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Wed"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Wed",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "3"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Thu"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Thu",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "4"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Fri"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Fri",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "5"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Sat"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Sat",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "6"},
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Sun"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Sun",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "7"},
                                     },
                                 ],
@@ -391,7 +412,10 @@ def test_parse_enumeration_type_spec() -> None:
                                         "_kind": "Variable",
                                         "identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "False",
+                                            },
                                             "package": None,
                                         },
                                     },
@@ -431,7 +455,10 @@ def test_parse_enumeration_type_spec() -> None:
                                 "elements": [
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Low"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Low",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "1"},
                                     },
                                     {
@@ -444,7 +471,10 @@ def test_parse_enumeration_type_spec() -> None:
                                     },
                                     {
                                         "_kind": "ElementValueAssoc",
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "High"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "High",
+                                        },
                                         "literal": {"_kind": "NumericLiteral", "_value": "7"},
                                     },
                                 ],
@@ -528,7 +558,10 @@ def test_parse_array_type_spec() -> None:
                                                                     "package": None,
                                                                 },
                                                             },
-                                                            "op": {"_kind": "OpMul", "_value": "*"},
+                                                            "op": {
+                                                                "_kind": "OpMul",
+                                                                "_value": "*",
+                                                            },
                                                             "right": {
                                                                 "_kind": "NumericLiteral",
                                                                 "_value": "8",
@@ -553,11 +586,17 @@ def test_parse_array_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bytes"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Bytes",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "Bytes"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Bytes",
+                                            },
                                             "package": None,
                                         },
                                     },
@@ -616,7 +655,10 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Foo",
+                                        },
                                         "thens": [
                                             {
                                                 "_kind": "ThenNode",
@@ -683,7 +725,10 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Bar",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -695,7 +740,10 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Baz",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -721,7 +769,10 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Bar",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -733,7 +784,10 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Baz",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -749,7 +803,10 @@ def test_parse_message_type_spec() -> None:
                     },
                     {
                         "_kind": "TypeDecl",
-                        "definition": {"_kind": "NullMessageTypeDef", "_value": "null " "message"},
+                        "definition": {
+                            "_kind": "NullMessageTypeDef",
+                            "_value": "null " "message",
+                        },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
                     },
                 ],
@@ -789,7 +846,10 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Foo",
+                                        },
                                         "thens": [
                                             {
                                                 "_kind": "ThenNode",
@@ -856,7 +916,10 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Bar",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -868,7 +931,10 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Baz",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -894,7 +960,10 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Bar",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -906,7 +975,10 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Baz",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1041,6 +1113,8 @@ def test_parse_type_derivation_spec() -> None:
 
 
 def test_parse_ethernet_spec() -> None:
+    # black does not manage to honor the line limit here
+    # pylint: disable=line-too-long
     spec = {
         "Ethernet": {
             "_kind": "Specification",
@@ -1131,7 +1205,10 @@ def test_parse_ethernet_spec() -> None:
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "Address"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Address",
+                                            },
                                             "package": None,
                                         },
                                     },
@@ -1146,7 +1223,10 @@ def test_parse_ethernet_spec() -> None:
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "Address"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Address",
+                                            },
                                             "package": None,
                                         },
                                     },
@@ -1279,7 +1359,10 @@ def test_parse_ethernet_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "TPID"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "TPID",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1291,7 +1374,10 @@ def test_parse_ethernet_spec() -> None:
                                         "_kind": "Component",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "TCI",
+                                        },
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1330,7 +1416,10 @@ def test_parse_ethernet_spec() -> None:
                                                                     "package": None,
                                                                 },
                                                             },
-                                                            "op": {"_kind": "OpMul", "_value": "*"},
+                                                            "op": {
+                                                                "_kind": "OpMul",
+                                                                "_value": "*",
+                                                            },
                                                             "right": {
                                                                 "_kind": "NumericLiteral",
                                                                 "_value": "8",
@@ -1391,7 +1480,10 @@ def test_parse_ethernet_spec() -> None:
                                                                     "_value": "Last",
                                                                 },
                                                             },
-                                                            "op": {"_kind": "OpSub", "_value": "-"},
+                                                            "op": {
+                                                                "_kind": "OpSub",
+                                                                "_value": "-",
+                                                            },
                                                             "right": {
                                                                 "_kind": "Attribute",
                                                                 "expression": {
@@ -1483,7 +1575,10 @@ def test_parse_ethernet_spec() -> None:
                                                                     "_value": "Size",
                                                                 },
                                                             },
-                                                            "op": {"_kind": "OpDiv", "_value": "/"},
+                                                            "op": {
+                                                                "_kind": "OpDiv",
+                                                                "_value": "/",
+                                                            },
                                                             "right": {
                                                                 "_kind": "NumericLiteral",
                                                                 "_value": "8",
@@ -1518,7 +1613,10 @@ def test_parse_ethernet_spec() -> None:
                                                                     "_value": "Size",
                                                                 },
                                                             },
-                                                            "op": {"_kind": "OpDiv", "_value": "/"},
+                                                            "op": {
+                                                                "_kind": "OpDiv",
+                                                                "_value": "/",
+                                                            },
                                                             "right": {
                                                                 "_kind": "NumericLiteral",
                                                                 "_value": "8",
@@ -1536,7 +1634,10 @@ def test_parse_ethernet_spec() -> None:
                                         ],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Opaque",
+                                            },
                                             "package": None,
                                         },
                                     },
@@ -1789,7 +1890,8 @@ def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
     p = parser.Parser()
 
     with pytest.raises(
-        RecordFluxError, match=rf"^{test_file}:1:13: parser: error: Expected ';', got Termination$"
+        RecordFluxError,
+        match=rf"^{test_file}:1:13: parser: error: Expected ';', got Termination$",
     ):
         p.parse(test_file)
 
