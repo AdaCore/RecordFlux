@@ -6,19 +6,14 @@ from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model.session import Session
 from rflx.specification import parser
-from rflx.specification.parser import (
-    GrammarRule,
-    create_id,
-    create_session,
-    create_state,
-    diagnostics_to_error,
-)
+from rflx.specification.parser import GrammarRule, create_id, create_session, diagnostics_to_error
 from tests.utils import (
     parse_bool_expression,
     parse_declaration,
     parse_expression,
     parse_formal_declaration,
     parse_math_expression,
+    parse_state,
     parse_statement,
 )
 
@@ -33,7 +28,7 @@ def parse_session(string: str, skip_validation: bool = False) -> Session:
     return create_session(unit.root, ID("Package"), skip_validation=skip_validation)
 
 
-def parse_id(data: str, rule: GrammarRule) -> expr.Expr:
+def parse_id(data: str, rule: GrammarRule) -> ID:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
     return create_id(unit.root)
@@ -687,7 +682,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
     ids=range(1, 5),
 )
 def test_state(string: str, expected: decl.Declaration) -> None:
-    actual = parse_expression(string, GrammarRule.state_rule, create_state)
+    actual = parse_state(string)
     assert actual == expected
     assert actual.location
 
@@ -710,7 +705,7 @@ def test_state(string: str, expected: decl.Declaration) -> None:
 )
 def test_state_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_expression(string, GrammarRule.state_rule, create_state)
+        parse_state(string)
 
 
 @pytest.mark.parametrize(
