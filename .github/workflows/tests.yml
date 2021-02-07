@@ -38,14 +38,11 @@ jobs:
         distrib: community
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip wheel
-        pip install --user -e .[devel]
-        mkdir $HOME/bin
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel]
+        pip install .[devel]
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -115,17 +112,13 @@ jobs:
         distrib: community
     - name: Install dependencies
       run: |
-        sudo apt install graphviz
-        python -m pip install --upgrade pip wheel
-        pip install --user -e .[devel]
-        mkdir $HOME/bin
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel] -vv
+        pip install .[devel] -vv
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
@@ -173,7 +166,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel]
+        pip install .[devel]
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -265,28 +258,14 @@ jobs:
         distrib: community
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip wheel
-        pip install --user -e .[devel]
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
-        chmod +x $HOME/bin/gnatprove
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
-        chmod +x $HOME/bin/run_spat
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel]
+        pip install .[devel]
     - name: Verify
       run: |
         make prove_${{ matrix.target }}
-    - name: Show proof results
-      if: ${{ always() }}
-      run: |
-        run_spat -Ptest -ca -ra
-        run_spat -Ptest -ca -ra -d
-        run_spat -Ptest -g
 
   verification_scheduled:
     name: Verification
@@ -323,25 +302,11 @@ jobs:
         distrib: community
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip wheel
-        pip install --user -e .[devel]
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gnatprove $@' > $HOME/bin/gnatprove
-        chmod +x $HOME/bin/gnatprove
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 run_spat $@' > $HOME/bin/run_spat
-        chmod +x $HOME/bin/run_spat
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        PATH="$HOME/bin:$PATH" pip install .[devel]
+        pip install .[devel]
     - name: Verify
       run: |
         make prove_${{ matrix.target }}
-    - name: Show proof results
-      if: ${{ always() }}
-      run: |
-        run_spat -Ptest -ca -ra
-        run_spat -Ptest -ca -ra -d
-        run_spat -Ptest -g
