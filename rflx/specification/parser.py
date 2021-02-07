@@ -897,7 +897,7 @@ def create_message_structure(
                 first = create_math_expression(aspect.f_value, filename)
             else:
                 error.append(
-                    f"Invalid aspect {aspect.f_identifier.text}",
+                    f'invalid aspect "{aspect.f_identifier.text}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(aspect.f_identifier, filename),
@@ -1122,7 +1122,7 @@ def create_enumeration(
                         always_valid = False
                     else:
                         error.append(
-                            f"Invalid Always_Valid expression: {av_expr}",
+                            f"invalid Always_Valid expression: {av_expr}",
                             Subsystem.PARSER,
                             Severity.ERROR,
                             node_location(a.f_value, filename),
@@ -1131,7 +1131,7 @@ def create_enumeration(
                     always_valid = True
         if not size:
             error.append(
-                f"No size set for {identifier}",
+                f'no size set for "{identifier}"',
                 Subsystem.PARSER,
                 Severity.ERROR,
                 identifier.location,
@@ -1404,9 +1404,10 @@ class Parser:
                         error.extend(new_type.error)
                     except RecordFluxError as e:
                         error.extend(e)
-                else:
-                    assert t.kind_name == "SessionDecl"
+                elif t.kind_name == "SessionDecl":
                     new_session = create_session(t, package_id, self.__types, filename)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)
+                else:
+                    raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
         error.propagate()

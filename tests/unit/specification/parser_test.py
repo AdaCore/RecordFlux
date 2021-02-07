@@ -1750,7 +1750,7 @@ def test_parse_error_invalid_location_expression() -> None:
                   end message;
             end Test;
         """,
-        r"^<stdin>:8:34: parser: error: Invalid aspect Foo$",
+        r'^<stdin>:8:34: parser: error: invalid aspect "Foo"$',
     )
 
 
@@ -2380,7 +2380,7 @@ def test_parse_error_invalid_range_aspect() -> None:
                 type T is (A, B) with Foo;
             end Test;
         """,
-            r"^<stdin>:3:22: parser: error: No size set for Test::T",
+            r'^<stdin>:3:22: parser: error: no size set for "Test::T"',
         ),
         (
             """
@@ -2389,8 +2389,8 @@ def test_parse_error_invalid_range_aspect() -> None:
             end Test;
         """,
             r"^"
-            "<stdin>:3:55: parser: error: Invalid Always_Valid expression: Invalid\n"
-            "<stdin>:3:22: parser: error: No size set for Test::T"
+            '<stdin>:3:55: parser: error: invalid Always_Valid expression: Invalid\n'
+            '<stdin>:3:22: parser: error: no size set for "Test::T"'
             r"$",
         ),
     ],
