@@ -40,32 +40,10 @@ from librflxlang import (
 
 import rflx.declaration as decl
 import rflx.expression as expr
-import rflx.model.session as rsess
+import rflx.model as model
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
-from rflx.model import (
-    BUILTIN_TYPES,
-    FINAL,
-    INITIAL,
-    INTERNAL_TYPES,
-    Array,
-    Enumeration,
-    Field,
-    Link,
-    Message,
-    Model,
-    ModularInteger,
-    Private,
-    RangeInteger,
-    Refinement,
-    Session,
-    Type as RFLXType,
-    UnprovenDerivedMessage,
-    UnprovenMessage,
-    is_builtin_type,
-    qualified_type_identifier,
-)
 from rflx.specification.const import RESERVED_WORDS
 
 from .cache import Cache
@@ -116,7 +94,7 @@ def create_description(description: Description = None) -> Optional[str]:
 
 def create_transition(
     transition: Transition, filename: Path = None, package: ID = None
-) -> rsess.Transition:
+) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
@@ -124,7 +102,7 @@ def create_transition(
     description = create_description(transition.f_description)
     if transition.kind_name == "ConditionalTransition":
         condition = create_bool_expression(transition.f_condition, filename, package)
-    return rsess.Transition(target, condition, description, node_location(transition, filename))
+    return model.Transition(target, condition, description, node_location(transition, filename))
 
 
 def create_reset(
@@ -176,11 +154,11 @@ def create_statement(
     )
 
 
-def create_state(state: State, filename: Path = None) -> rsess.State:
+def create_state(state: State, filename: Path = None) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(state.f_identifier, filename)
     if state.f_body.kind_name == "NullStateBody":
-        return rsess.State(identifier)
+        return model.State(identifier)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
         fail(
             "inconsistent state identifier: "
@@ -200,7 +178,7 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
     for d in state.f_body.f_declarations:
         declarations.append(create_declaration(d, filename))
     description = create_description(state.f_description)
-    return rsess.State(
+    return model.State(
         identifier=identifier,
         transitions=transitions,
         actions=actions,
@@ -213,10 +191,10 @@ def create_state(state: State, filename: Path = None) -> rsess.State:
 def create_session(
     session: SessionDecl,
     package: ID,
-    types: Sequence[RFLXType] = None,
+    types: Sequence[model.Type] = None,
     filename: Path = None,
     skip_validation: bool = False,
-) -> Session:
+) -> model.Session:
     types = types or []
     location = node_location(session, filename)
     if session.f_identifier.text != session.f_end_identifier.text:
@@ -228,8 +206,8 @@ def create_session(
             location,
         )
     states = [create_state(s, filename) for s in session.f_states]
-    return Session(
-        qualified_type_identifier(create_id(session.f_identifier, filename), package),
+    return model.Session(
+        model.qualified_type_identifier(create_id(session.f_identifier, filename), package),
         create_id(session.f_aspects.f_initial, filename),
         create_id(session.f_aspects.f_final, filename),
         states,
@@ -269,12 +247,12 @@ def create_id(identifier: NullID, filename: Path = None) -> ID:
 def create_array(
     identifier: ID,
     array: ArrayTypeDef,
-    types: Sequence[RFLXType],
+    types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> Array:
-    element_identifier = qualified_type_identifier(
+) -> model.Array:
+    element_identifier = model.qualified_type_identifier(
         create_id(array.f_element_type, filename), identifier.parent
     )
 
@@ -288,7 +266,7 @@ def create_array(
             element_identifier.location,
         )
 
-    return Array(identifier, element_type, node_location(array, filename))
+    return model.Array(identifier, element_type, node_location(array, filename))
 
 
 def create_numeric_literal(
@@ -426,7 +404,7 @@ def create_variable(
         return expr.Variable(create_id(expression.f_identifier), location=location)
     if package:
         return expr.Variable(
-            qualified_type_identifier(create_id(expression.f_identifier, filename), package),
+            model.qualified_type_identifier(create_id(expression.f_identifier, filename), package),
             location=location,
         )
     return expr.Variable(create_id(expression.f_identifier, filename), location=location)
@@ -536,7 +514,9 @@ def create_variable_decl(
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        model.qualified_type_identifier(
+            create_id(declaration.f_type_identifier, filename), package
+        ),
         initializer,
         location=location,
     )
@@ -549,7 +529,7 @@ def create_private_type_decl(
     location: Location = None,
 ) -> decl.FormalDeclaration:
     return decl.TypeDeclaration(
-        Private(create_id(declaration.f_identifier, filename), location=location)
+        model.Private(create_id(declaration.f_identifier, filename), location=location)
     )
 
 
@@ -583,7 +563,9 @@ def create_renaming_decl(
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        model.qualified_type_identifier(
+            create_id(declaration.f_type_identifier, filename), package
+        ),
         selected,
         location,
     )
@@ -601,7 +583,9 @@ def create_function_decl(
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    qualified_type_identifier(create_id(p.f_type_identifier, filename), package),
+                    model.qualified_type_identifier(
+                        create_id(p.f_type_identifier, filename), package
+                    ),
                 )
             )
     return decl.FunctionDeclaration(
@@ -778,12 +762,12 @@ def create_bool_expression(
 def create_modular(
     identifier: ID,
     modular: ModularTypeDef,
-    _types: Sequence[RFLXType],
+    _types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> ModularInteger:
-    return ModularInteger(
+) -> model.ModularInteger:
+    return model.ModularInteger(
         identifier,
         create_math_expression(modular.f_mod, filename, identifier.parent),
         node_location(modular, filename),
@@ -793,11 +777,11 @@ def create_modular(
 def create_range(
     identifier: ID,
     rangetype: RangeTypeDef,
-    _types: Sequence[RFLXType],
+    _types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> RangeInteger:
+) -> model.RangeInteger:
     if rangetype.f_size.f_identifier.text != "Size":
         fail(
             f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
@@ -806,7 +790,7 @@ def create_range(
             node_location(rangetype, filename),
         )
     size = create_math_expression(rangetype.f_size.f_value, filename, identifier.parent)
-    return RangeInteger(
+    return model.RangeInteger(
         identifier,
         create_math_expression(rangetype.f_first, filename, identifier.parent),
         create_math_expression(rangetype.f_last, filename, identifier.parent),
@@ -818,27 +802,27 @@ def create_range(
 def create_null_message(
     identifier: ID,
     message: MessageTypeDef,
-    _types: Sequence[RFLXType],
+    _types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> Message:
-    return Message(identifier, [], {}, location=node_location(message, filename))
+) -> model.Message:
+    return model.Message(identifier, [], {}, location=node_location(message, filename))
 
 
 def create_message(
     identifier: ID,
     message: MessageTypeDef,
-    types: Sequence[RFLXType],
+    types: Sequence[model.Type],
     skip_verification: bool,
     cache: Cache,
     filename: Path,
-) -> Message:
+) -> model.Message:
 
     error = RecordFluxError()
     components = message.f_components
 
-    field_types: Mapping[Field, RFLXType] = create_message_types(
+    field_types: Mapping[model.Field, model.Type] = create_message_types(
         identifier, components, types, filename
     )
     structure = create_message_structure(components, identifier.parent, error, filename)
@@ -848,7 +832,7 @@ def create_message(
 
     try:
         result = create_proven_message(
-            UnprovenMessage(
+            model.UnprovenMessage(
                 identifier, structure, field_types, aspects, node_location(message, filename)
             ).merged(),
             skip_verification,
@@ -863,26 +847,26 @@ def create_message(
 def create_message_types(
     identifier: ID,
     components: Components,
-    types: Sequence[RFLXType],
+    types: Sequence[model.Type],
     filename: Path = None,
-) -> Mapping[Field, RFLXType]:
+) -> Mapping[model.Field, model.Type]:
 
-    field_types: Dict[Field, RFLXType] = {}
+    field_types: Dict[model.Field, model.Type] = {}
 
     for component in components.f_components:
-        type_identifier = qualified_type_identifier(
+        type_identifier = model.qualified_type_identifier(
             create_id(component.f_type_identifier, filename), identifier.parent
         )
         field_type = [t for t in types if t.identifier == type_identifier]
         if field_type:
-            field_types[Field(create_id(component.f_identifier, filename))] = field_type[0]
+            field_types[model.Field(create_id(component.f_identifier, filename))] = field_type[0]
 
     return field_types
 
 
 def create_message_structure(
     components: Components, _package: ID, error: RecordFluxError, filename: Path = None
-) -> List[Link]:
+) -> List[model.Link]:
     # pylint: disable=too-many-branches, too-many-locals
 
     def extract_aspect(aspects: List[Aspect]) -> Tuple[expr.Expr, expr.Expr]:
@@ -902,9 +886,13 @@ def create_message_structure(
                 )
         return size, first
 
-    def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
+    def extract_then(
+        then: ThenNode,
+    ) -> Tuple[model.Field, expr.Expr, expr.Expr, expr.Expr, Location]:
         target = (
-            FINAL if then.f_target.text == "null" else Field(create_id(then.f_target, filename))
+            model.FINAL
+            if then.f_target.text == "null"
+            else model.Field(create_id(then.f_target, filename))
         )
         condition = (
             create_bool_expression(then.f_condition, filename) if then.f_condition else expr.TRUE
@@ -912,20 +900,25 @@ def create_message_structure(
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
 
-    structure: List[Link] = []
+    structure: List[model.Link] = []
 
     if components.f_initial_component:
-        structure.append(Link(INITIAL, *extract_then(components.f_initial_component.f_then)))
+        structure.append(
+            model.Link(model.INITIAL, *extract_then(components.f_initial_component.f_then))
+        )
     else:
         structure.append(
-            Link(INITIAL, Field(create_id(components.f_components[0].f_identifier, filename)))
+            model.Link(
+                model.INITIAL,
+                model.Field(create_id(components.f_components[0].f_identifier, filename)),
+            )
         )
 
     for i, component in enumerate(components.f_components):
         source_node = (
-            Field(create_id(component.f_identifier, filename))
+            model.Field(create_id(component.f_identifier, filename))
             if component.f_identifier
-            else INITIAL
+            else model.INITIAL
         )
         component_identifier = create_id(component.f_identifier, filename)
         if component.f_identifier.text.lower() == "message":
@@ -943,8 +936,8 @@ def create_message_structure(
                 if i + 1 < len(components.f_components)
                 else None
             )
-            target_node = Field(target_id) if target_id else FINAL
-            structure.append(Link(source_node, target_node))
+            target_node = model.Field(target_id) if target_id else model.FINAL
+            structure.append(model.Link(source_node, target_node))
 
         condition = (
             create_bool_expression(component.f_condition, filename)
@@ -1009,7 +1002,7 @@ def create_message_structure(
                     node_location(then.f_target, filename) if then.f_target else None,
                 )
                 continue
-            structure.append(Link(source_node, *extract_then(then)))
+            structure.append(model.Link(source_node, *extract_then(then)))
 
     return structure
 
@@ -1040,15 +1033,15 @@ def create_message_aspects(
 def create_derived_message(
     identifier: ID,
     derivation: TypeDerivationDef,
-    types: Sequence[RFLXType],
+    types: Sequence[model.Type],
     skip_verification: bool,
     cache: Cache,
     filename: Path,
-) -> Message:
+) -> model.Message:
     base_id = create_id(derivation.f_base, filename)
-    base_name = qualified_type_identifier(base_id, identifier.parent)
+    base_name = model.qualified_type_identifier(base_id, identifier.parent)
 
-    base_types: Sequence[RFLXType] = [t for t in types if t.identifier == base_name]
+    base_types: Sequence[model.Type] = [t for t in types if t.identifier == base_name]
 
     if not base_types:
         fail(
@@ -1058,7 +1051,7 @@ def create_derived_message(
             base_name.location,
         )
 
-    base_messages: Sequence[Message] = [t for t in base_types if isinstance(t, Message)]
+    base_messages: Sequence[model.Message] = [t for t in base_types if isinstance(t, model.Message)]
 
     if not base_messages:
         error = RecordFluxError()
@@ -1077,7 +1070,7 @@ def create_derived_message(
         error.propagate()
 
     return create_proven_message(
-        UnprovenDerivedMessage(
+        model.UnprovenDerivedMessage(
             identifier, base_messages[0], location=node_location(derivation, filename)
         ).merged(),
         skip_verification,
@@ -1088,11 +1081,11 @@ def create_derived_message(
 def create_enumeration(
     identifier: ID,
     enumeration: EnumerationTypeDef,
-    _types: Sequence[RFLXType],
+    _types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> Enumeration:
+) -> model.Enumeration:
     literals: List[Tuple[StrID, expr.Number]] = []
     error = RecordFluxError()
 
@@ -1147,14 +1140,14 @@ def create_enumeration(
 
     size, always_valid = create_aspects(enumeration.f_aspects)
 
-    return Enumeration(
+    return model.Enumeration(
         identifier, literals, size, always_valid, location=node_location(enumeration, filename)
     )
 
 
 def create_proven_message(
-    unproven_message: UnprovenMessage, skip_verification: bool, cache: Cache
-) -> Message:
+    unproven_message: model.UnprovenMessage, skip_verification: bool, cache: Cache
+) -> model.Message:
     proven_message = unproven_message.proven(
         skip_verification or cache.is_verified(unproven_message)
     )
@@ -1165,11 +1158,11 @@ def create_proven_message(
 
 
 def create_refinement(
-    refinement: RefinementDecl, package: ID, types: Sequence[RFLXType], filename: Path
-) -> Refinement:
-    messages = {t.identifier: t for t in types if isinstance(t, Message)}
+    refinement: RefinementDecl, package: ID, types: Sequence[model.Type], filename: Path
+) -> model.Refinement:
+    messages = {t.identifier: t for t in types if isinstance(t, model.Message)}
 
-    pdu = qualified_type_identifier(create_id(refinement.f_pdu, filename), package)
+    pdu = model.qualified_type_identifier(create_id(refinement.f_pdu, filename), package)
     if pdu not in messages:
         fail(
             f'undefined type "{pdu}" in refinement',
@@ -1178,7 +1171,7 @@ def create_refinement(
             node_location(refinement, filename),
         )
 
-    sdu = qualified_type_identifier(create_id(refinement.f_sdu, filename), package)
+    sdu = model.qualified_type_identifier(create_id(refinement.f_sdu, filename), package)
     if sdu not in messages:
         fail(
             f'undefined type "{sdu}" in refinement of "{pdu}"',
@@ -1192,10 +1185,10 @@ def create_refinement(
     else:
         condition = expr.TRUE
 
-    return Refinement(
+    return model.Refinement(
         package,
         messages[pdu],
-        Field(create_id(refinement.f_field, filename)),
+        model.Field(create_id(refinement.f_field, filename)),
         messages[sdu],
         condition,
         node_location(refinement, filename),
@@ -1238,7 +1231,7 @@ def check_naming(
                 node_location(package.f_identifier, origname),
             )
     for t in package.f_declarations:
-        if isinstance(t, TypeDecl) and is_builtin_type(create_id(t.f_identifier, name).name):
+        if isinstance(t, TypeDecl) and model.is_builtin_type(create_id(t.f_identifier, name).name):
             error.append(
                 f'illegal redefinition of built-in type "{t.f_identifier.text}"',
                 Subsystem.MODEL,
@@ -1251,8 +1244,11 @@ class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
         self.__specifications: OrderedDict[Path, Specification] = OrderedDict()
-        self.__types: List[RFLXType] = [*BUILTIN_TYPES.values(), *INTERNAL_TYPES.values()]
-        self.__sessions: List[Session] = []
+        self.__types: List[model.Type] = [
+            *model.BUILTIN_TYPES.values(),
+            *model.INTERNAL_TYPES.values(),
+        ]
+        self.__sessions: List[model.Session] = []
         self.__cache = Cache(cached)
 
     def __convert_unit(
@@ -1328,7 +1324,7 @@ class Parser:
                 check_naming(error, spec.f_package_declaration, f, origname)
         error.propagate()
 
-    def create_model(self) -> Model:
+    def create_model(self) -> model.Model:
         error = RecordFluxError()
         for origname, specification in reversed(self.__specifications.values()):
             try:
@@ -1336,7 +1332,7 @@ class Parser:
             except RecordFluxError as e:
                 error.extend(e)
         try:
-            result = Model(self.__types, self.__sessions)
+            result = model.Model(self.__types, self.__sessions)
         except RecordFluxError as e:
             error.extend(e)
 
@@ -1366,7 +1362,7 @@ class Parser:
 
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, TypeDecl):
-                identifier = qualified_type_identifier(
+                identifier = model.qualified_type_identifier(
                     create_id(t.f_identifier, filename), package_id
                 )
                 try:
