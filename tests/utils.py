@@ -146,16 +146,6 @@ def multilinestr(string: str) -> str:
     return string.replace(15 * " ", "")
 
 
-def parse_attribute_statement(data: str) -> Statement:
-    unit = AnalysisContext().get_from_buffer(
-        "<stdin>", data, rule=GrammarRule.attribute_statement_rule
-    )
-    error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
-        error.propagate()
-    return create_statement(unit.root)
-
-
 def parse_statement(data: str) -> Statement:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=GrammarRule.action_rule)
     error = RecordFluxError()
