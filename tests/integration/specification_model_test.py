@@ -248,7 +248,7 @@ def test_model_conflicting_refinements() -> None:
                            with Size => 8;
                      Foo : Opaque;
                   end message;
-               for PDU use (Foo => X);
+               for Test::PDU use (Foo => X);
                for PDU use (Foo => X);
             end Test;
         """,
