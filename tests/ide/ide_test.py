@@ -166,6 +166,6 @@ def test_parse_error_invalid_location() -> None:
     assert_error(
         path,
         [
-            f"{path}:7:21: parser: error: Invalid aspect Invalid",
+            f'{path}:7:21: parser: error: invalid aspect "Invalid"',
         ],
     )
