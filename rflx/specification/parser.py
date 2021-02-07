@@ -39,7 +39,7 @@ from librflxlang import (
 )
 
 import rflx.declaration as decl
-import rflx.expression as rexpr
+import rflx.expression as expr
 import rflx.model.session as rsess
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
@@ -120,7 +120,7 @@ def create_transition(
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
-    condition: rexpr.Expr = rexpr.TRUE
+    condition: expr.Expr = expr.TRUE
     description = create_description(transition.f_description)
     if transition.kind_name == "ConditionalTransition":
         condition = create_bool_expression(transition.f_condition, filename, package)
@@ -293,27 +293,27 @@ def create_array(
 
 def create_numeric_literal(
     expression: Expr, _filename: Path = None, _package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     num = expression.text.split("#")
     if len(num) == 1:
-        return rexpr.Number(int(num[0]), location=location)
+        return expr.Number(int(num[0]), location=location)
     if len(num) == 3:
         base = int(num[0])
-        return rexpr.Number(int(num[1], base), base=base, location=location)
+        return expr.Number(int(num[1], base), base=base, location=location)
     raise NotImplementedError(f"Invalid numeric literal: {expression.text}")
 
 
-OPERATIONS: Dict[str, Type[rexpr.BinExpr]] = {
-    "OpIn": rexpr.In,
-    "OpNotin": rexpr.NotIn,
-    "OpEq": rexpr.Equal,
-    "OpNeq": rexpr.NotEqual,
+OPERATIONS: Dict[str, Type[expr.BinExpr]] = {
+    "OpIn": expr.In,
+    "OpNotin": expr.NotIn,
+    "OpEq": expr.Equal,
+    "OpNeq": expr.NotEqual,
 }
 
 
 def create_binop(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     loc = node_location(expression, filename)
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
@@ -339,18 +339,18 @@ def create_binop(
 
 
 MATH_OPERATIONS = {
-    "OpPow": rexpr.Pow,
-    "OpAdd": rexpr.Add,
-    "OpSub": rexpr.Sub,
-    "OpMul": rexpr.Mul,
-    "OpDiv": rexpr.Div,
-    "OpMod": rexpr.Mod,
+    "OpPow": expr.Pow,
+    "OpAdd": expr.Add,
+    "OpSub": expr.Sub,
+    "OpMul": expr.Mul,
+    "OpDiv": expr.Div,
+    "OpMod": expr.Mod,
 }
 
 
 def create_math_binop(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename, package),
@@ -362,22 +362,22 @@ def create_math_binop(
     )
 
 
-MATH_COMPARISONS: Dict[str, Type[rexpr.Relation]] = {
-    "OpLt": rexpr.Less,
-    "OpGt": rexpr.Greater,
-    "OpLe": rexpr.LessEqual,
-    "OpGe": rexpr.GreaterEqual,
+MATH_COMPARISONS: Dict[str, Type[expr.Relation]] = {
+    "OpLt": expr.Less,
+    "OpGt": expr.Greater,
+    "OpLe": expr.LessEqual,
+    "OpGe": expr.GreaterEqual,
 }
 
 BOOLEAN_OPERATIONS = {
-    "OpAnd": rexpr.And,
-    "OpOr": rexpr.Or,
+    "OpAnd": expr.And,
+    "OpOr": expr.Or,
 }
 
 
 def create_bool_binop(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename, package),
@@ -403,45 +403,45 @@ def create_bool_binop(
 
 def create_paren_bool_expression(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     return create_bool_expression(expression.f_data, filename, package)
 
 
 def create_paren_math_expression(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     return create_math_expression(expression.f_data, filename, package)
 
 
 def create_paren_expression(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     return create_expression(expression.f_data, filename, package)
 
 
 def create_variable(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     if expression.f_identifier.text.lower() in ("true", "false"):
-        return rexpr.Variable(create_id(expression.f_identifier), location=location)
+        return expr.Variable(create_id(expression.f_identifier), location=location)
     if package:
-        return rexpr.Variable(
+        return expr.Variable(
             qualified_type_identifier(create_id(expression.f_identifier, filename), package),
             location=location,
         )
-    return rexpr.Variable(create_id(expression.f_identifier, filename), location=location)
+    return expr.Variable(create_id(expression.f_identifier, filename), location=location)
 
 
 def create_math_attribute(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     inner = create_expression(expression.f_expression, filename, package)
     if expression.f_kind.kind_name == "AttrLast":
-        return rexpr.Last(inner)
+        return expr.Last(inner)
     if expression.f_kind.kind_name == "AttrFirst":
-        return rexpr.First(inner)
+        return expr.First(inner)
     if expression.f_kind.kind_name == "AttrSize":
-        return rexpr.Size(inner)
+        return expr.Size(inner)
     raise NotImplementedError(
         f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}"
     )
@@ -449,24 +449,24 @@ def create_math_attribute(
 
 def create_attribute(
     expression: Expr, filename: Path = None, package: ID = None, _location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     inner = create_expression(expression.f_expression, filename, package)
     if expression.f_kind.kind_name == "AttrLast":
-        return rexpr.Last(inner)
+        return expr.Last(inner)
     if expression.f_kind.kind_name == "AttrFirst":
-        return rexpr.First(inner)
+        return expr.First(inner)
     if expression.f_kind.kind_name == "AttrSize":
-        return rexpr.Size(inner)
+        return expr.Size(inner)
     if expression.f_kind.kind_name == "AttrValidChecksum":
-        return rexpr.ValidChecksum(inner)
+        return expr.ValidChecksum(inner)
     if expression.f_kind.kind_name == "AttrHead":
-        return rexpr.Head(inner)
+        return expr.Head(inner)
     if expression.f_kind.kind_name == "AttrOpaque":
-        return rexpr.Opaque(inner)
+        return expr.Opaque(inner)
     if expression.f_kind.kind_name == "AttrPresent":
-        return rexpr.Present(inner)
+        return expr.Present(inner)
     if expression.f_kind.kind_name == "AttrValid":
-        return rexpr.Valid(inner)
+        return expr.Valid(inner)
     raise NotImplementedError(
         f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}"
     )
@@ -474,8 +474,8 @@ def create_attribute(
 
 def create_array_aggregate(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return rexpr.Aggregate(
+) -> expr.Expr:
+    return expr.Aggregate(
         *[create_math_expression(v, filename, package) for v in expression.f_values],
         location=location,
     )
@@ -483,8 +483,8 @@ def create_array_aggregate(
 
 def create_string_literal(
     expression: Expr, _filename: Path = None, _package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return rexpr.String(
+) -> expr.Expr:
+    return expr.String(
         expression.text.split('"')[1],
         location=location,
     )
@@ -492,8 +492,8 @@ def create_string_literal(
 
 def create_call(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return rexpr.Call(
+) -> expr.Expr:
+    return expr.Call(
         create_id(expression.f_identifier, filename),
         [create_expression(a, filename, package) for a in expression.f_arguments],
         location=location,
@@ -502,26 +502,26 @@ def create_call(
 
 def create_quantified_expression(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     param_id = create_id(expression.f_parameter_identifier, filename)
     iterable = create_expression(expression.f_iterable, filename, package)
     predicate = create_expression(expression.f_predicate, filename, package)
     if expression.f_operation.kind_name == "QuantifierAll":
-        return rexpr.ForAllIn(param_id, iterable, predicate, location)
+        return expr.ForAllIn(param_id, iterable, predicate, location)
     if expression.f_operation.kind_name == "QuantifierSome":
-        return rexpr.ForSomeIn(param_id, iterable, predicate, location)
+        return expr.ForSomeIn(param_id, iterable, predicate, location)
 
     raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
 
 
 def create_binding(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    bindings: Mapping[Union[str, ID], rexpr.Expr] = {
+) -> expr.Expr:
+    bindings: Mapping[Union[str, ID], expr.Expr] = {
         create_id(b.f_identifier, filename): create_expression(b.f_expression, filename, package)
         for b in expression.f_bindings
     }
-    return rexpr.Binding(
+    return expr.Binding(
         create_expression(expression.f_expression, filename, package), bindings, location
     )
 
@@ -580,7 +580,7 @@ def create_renaming_decl(
     declaration: RenamingDecl, filename: Path = None, package: ID = None, location: Location = None
 ) -> decl.BasicDeclaration:
     selected = create_expression(declaration.f_expression, filename, package)
-    assert isinstance(selected, rexpr.Selected)
+    assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
         qualified_type_identifier(create_id(declaration.f_type_identifier, filename), package),
@@ -614,31 +614,31 @@ def create_function_decl(
 
 def create_negation(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    expr = create_math_expression(expression.f_data, filename, package)
-    assert isinstance(expr, rexpr.Number)
-    return rexpr.Number(-expr.value, expr.base, location)
+) -> expr.Expr:
+    expression = create_math_expression(expression.f_data, filename, package)
+    assert isinstance(expression, expr.Number)
+    return expr.Number(-expression.value, expression.base, location)
 
 
 def create_concatenation(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     left = create_expression(expression.f_left, filename, package)
     right = create_expression(expression.f_right, filename, package)
-    assert isinstance(left, rexpr.Aggregate)
-    assert isinstance(right, rexpr.Aggregate)
-    return rexpr.Aggregate(*(left.elements + right.elements), location=location)
+    assert isinstance(left, expr.Aggregate)
+    assert isinstance(right, expr.Aggregate)
+    return expr.Aggregate(*(left.elements + right.elements), location=location)
 
 
 def create_comprehension(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     condition = (
         create_bool_expression(expression.f_condition, filename, package)
         if expression.f_condition
-        else rexpr.TRUE
+        else expr.TRUE
     )
-    return rexpr.Comprehension(
+    return expr.Comprehension(
         create_id(expression.f_iterator, filename),
         create_expression(expression.f_array, filename, package),
         create_expression(expression.f_selector, filename, package),
@@ -649,8 +649,8 @@ def create_comprehension(
 
 def create_selected(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return rexpr.Selected(
+) -> expr.Expr:
+    return expr.Selected(
         create_expression(expression.f_expression, filename, package),
         create_id(expression.f_selector, filename),
         location=location,
@@ -659,8 +659,8 @@ def create_selected(
 
 def create_conversion(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    return rexpr.Conversion(
+) -> expr.Expr:
+    return expr.Conversion(
         create_id(expression.f_target_identifier, filename),
         create_expression(expression.f_argument, filename, package),
         location=location,
@@ -669,8 +669,8 @@ def create_conversion(
 
 def create_message_aggregate(
     expression: Expr, filename: Path = None, package: ID = None, location: Location = None
-) -> rexpr.Expr:
-    values: Mapping[StrID, rexpr.Expr] = {}
+) -> expr.Expr:
+    values: Mapping[StrID, expr.Expr] = {}
     if expression.f_values.kind_name == "NullMessageAggregate":
         values = {}
     elif expression.f_values.kind_name == "MessageAggregateAssociations":
@@ -683,7 +683,7 @@ def create_message_aggregate(
     else:
         raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
 
-    return rexpr.MessageAggregate(
+    return expr.MessageAggregate(
         create_id(expression.f_identifier, filename),
         values,
         location=location,
@@ -710,7 +710,7 @@ EXPRESSION_MAP = {
 }
 
 
-def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> rexpr.Expr:
+def create_expression(expression: Expr, filename: Path = None, package: ID = None) -> expr.Expr:
 
     location = node_location(expression, filename)
     return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
@@ -741,7 +741,7 @@ def create_formal_declaration(
 
 def create_math_expression(
     expression: Expr, filename: Path = None, package: ID = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     location = node_location(expression, filename)
     handlers = {
         "NumericLiteral": create_numeric_literal,
@@ -760,7 +760,7 @@ def create_math_expression(
 
 def create_bool_expression(
     expression: Expr, filename: Path = None, package: ID = None
-) -> rexpr.Expr:
+) -> expr.Expr:
     location = node_location(expression, filename)
     handlers = {
         "BinOp": create_bool_binop,
@@ -885,9 +885,9 @@ def create_message_structure(
 ) -> List[Link]:
     # pylint: disable=too-many-branches, too-many-locals
 
-    def extract_aspect(aspects: List[Aspect]) -> Tuple[rexpr.Expr, rexpr.Expr]:
-        size: rexpr.Expr = rexpr.UNDEFINED
-        first: rexpr.Expr = rexpr.UNDEFINED
+    def extract_aspect(aspects: List[Aspect]) -> Tuple[expr.Expr, expr.Expr]:
+        size: expr.Expr = expr.UNDEFINED
+        first: expr.Expr = expr.UNDEFINED
         for aspect in aspects:
             if aspect.f_identifier.text == "Size":
                 size = create_math_expression(aspect.f_value, filename)
@@ -902,12 +902,12 @@ def create_message_structure(
                 )
         return size, first
 
-    def extract_then(then: ThenNode) -> Tuple[Field, rexpr.Expr, rexpr.Expr, rexpr.Expr, Location]:
+    def extract_then(then: ThenNode) -> Tuple[Field, expr.Expr, expr.Expr, expr.Expr, Location]:
         target = (
             FINAL if then.f_target.text == "null" else Field(create_id(then.f_target, filename))
         )
         condition = (
-            create_bool_expression(then.f_condition, filename) if then.f_condition else rexpr.TRUE
+            create_bool_expression(then.f_condition, filename) if then.f_condition else expr.TRUE
         )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
@@ -949,13 +949,13 @@ def create_message_structure(
         condition = (
             create_bool_expression(component.f_condition, filename)
             if component.f_condition
-            else rexpr.TRUE
+            else expr.TRUE
         )
         size, first = extract_aspect(component.f_aspects)
-        if first != rexpr.UNDEFINED or size != rexpr.UNDEFINED or condition != rexpr.TRUE:
+        if first != expr.UNDEFINED or size != expr.UNDEFINED or condition != expr.TRUE:
             for l in (l for l in structure if l.target.identifier == component_identifier):
-                if first != rexpr.UNDEFINED:
-                    if l.first == rexpr.UNDEFINED:
+                if first != expr.UNDEFINED:
+                    if l.first == expr.UNDEFINED:
                         l.first = first
                     else:
                         error.append(
@@ -973,8 +973,8 @@ def create_message_structure(
                             l.first.location,
                         )
 
-                if size != rexpr.UNDEFINED:
-                    if l.size == rexpr.UNDEFINED:
+                if size != expr.UNDEFINED:
+                    if l.size == expr.UNDEFINED:
                         l.size = size
                     else:
                         error.append(
@@ -991,10 +991,10 @@ def create_message_structure(
                             l.size.location,
                         )
 
-                if condition != rexpr.TRUE:
+                if condition != expr.TRUE:
                     l.condition = (
-                        rexpr.And(condition, l.condition, location=l.condition.location)
-                        if l.condition != rexpr.TRUE
+                        expr.And(condition, l.condition, location=l.condition.location)
+                        if l.condition != expr.TRUE
                         else condition
                     )
 
@@ -1016,7 +1016,7 @@ def create_message_structure(
 
 def create_message_aspects(
     checksum: ChecksumAspect, _package: ID = None, filename: Path = None
-) -> Mapping[ID, Sequence[rexpr.Expr]]:
+) -> Mapping[ID, Sequence[expr.Expr]]:
     result = {}
     if checksum:
         for assoc in checksum.f_associations:
@@ -1026,7 +1026,7 @@ def create_message_aspects(
                     exprs.append(create_math_expression(value.f_data, filename))
                 elif value.kind_name == "ChecksumValueRange":
                     exprs.append(
-                        rexpr.ValueRange(
+                        expr.ValueRange(
                             create_math_expression(value.f_first, filename),
                             create_math_expression(value.f_last, filename),
                         )
@@ -1093,10 +1093,10 @@ def create_enumeration(
     _cache: Cache,
     filename: Path,
 ) -> Enumeration:
-    literals: List[Tuple[StrID, rexpr.Number]] = []
+    literals: List[Tuple[StrID, expr.Number]] = []
     error = RecordFluxError()
 
-    def create_aspects(aspects: List[Aspect]) -> Tuple[rexpr.Expr, bool]:
+    def create_aspects(aspects: List[Aspect]) -> Tuple[expr.Expr, bool]:
         always_valid = False
         size = None
         for a in aspects:
@@ -1105,9 +1105,9 @@ def create_enumeration(
             if a.f_identifier.text == "Always_Valid":
                 if a.f_value:
                     av_expr = create_bool_expression(a.f_value, filename)
-                    if av_expr == rexpr.Variable("True"):
+                    if av_expr == expr.Variable("True"):
                         always_valid = True
-                    elif av_expr == rexpr.Variable("False"):
+                    elif av_expr == expr.Variable("False"):
                         always_valid = False
                     else:
                         error.append(
@@ -1133,11 +1133,11 @@ def create_enumeration(
         for e in enumeration.f_elements.f_elements:
             element_identifier = create_id(e.f_identifier, filename)
             value = create_math_expression(e.f_literal, filename)
-            assert isinstance(value, rexpr.Number)
+            assert isinstance(value, expr.Number)
             literals.append((element_identifier, value))
     elif enumeration.f_elements.kind_name == "PositionalEnumerationDef":
         literals = [
-            (create_id(e, filename), rexpr.Number(i))
+            (create_id(e, filename), expr.Number(i))
             for i, e in enumerate(enumeration.f_elements.f_elements)
         ]
     else:
@@ -1190,7 +1190,7 @@ def create_refinement(
     if refinement.f_condition:
         condition = create_bool_expression(refinement.f_condition, filename)
     else:
-        condition = rexpr.TRUE
+        condition = expr.TRUE
 
     return Refinement(
         package,
