@@ -87,7 +87,7 @@ def diagnostics_to_error(
     diagnostics: List[Diagnostic], error: RecordFluxError, specfile: Path = None
 ) -> bool:
     """
-    Return langkit diagnostics to RecordFlux error. Return True if error occured.
+    Append langkit diagnostics to RecordFlux error. Return True if error occured.
     """
 
     if len(diagnostics) == 0:
