@@ -188,34 +188,52 @@ def create_state(state: State, filename: Path = None) -> model.State:
     )
 
 
-def create_session(
-    session: SessionDecl,
-    package: ID,
-    types: Sequence[model.Type] = None,
-    filename: Path = None,
-    skip_validation: bool = False,
-) -> model.Session:
-    types = types or []
-    location = node_location(session, filename)
+def __check_session_identifier(session: SessionDecl, filename: Path = None) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
         fail(
             "inconsistent session identifier: "
             f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
             Subsystem.PARSER,
             Severity.ERROR,
-            location,
+            node_location(session, filename),
         )
-    states = [create_state(s, filename) for s in session.f_states]
+
+
+def create_unproven_session(
+    session: SessionDecl,
+    package: ID,
+    types: Sequence[model.Type] = None,
+    filename: Path = None,
+) -> model.UnprovenSession:
+    __check_session_identifier(session, filename)
+    return model.UnprovenSession(
+        model.qualified_type_identifier(create_id(session.f_identifier, filename), package),
+        create_id(session.f_aspects.f_initial, filename),
+        create_id(session.f_aspects.f_final, filename),
+        [create_state(s, filename) for s in session.f_states],
+        [create_declaration(d, filename) for d in session.f_declarations],
+        [create_formal_declaration(p, filename) for p in session.f_parameters],
+        types or [],
+        node_location(session, filename),
+    )
+
+
+def create_session(
+    session: SessionDecl,
+    package: ID,
+    types: Sequence[model.Type] = None,
+    filename: Path = None,
+) -> model.Session:
+    __check_session_identifier(session, filename)
     return model.Session(
         model.qualified_type_identifier(create_id(session.f_identifier, filename), package),
         create_id(session.f_aspects.f_initial, filename),
         create_id(session.f_aspects.f_final, filename),
-        states,
+        [create_state(s, filename) for s in session.f_states],
         [create_declaration(d, filename) for d in session.f_declarations],
         [create_formal_declaration(p, filename) for p in session.f_parameters],
-        types,
-        location,
-        skip_validation=skip_validation,
+        types or [],
+        node_location(session, filename),
     )
 
 

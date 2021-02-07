@@ -13,6 +13,7 @@ from rflx.specification.parser import (
     create_session,
     create_state,
     create_statement,
+    create_unproven_session,
     diagnostics_to_error,
 )
 from tests.utils import parse, parse_bool_expression, parse_expression, parse_math_expression
@@ -34,14 +35,24 @@ def parse_state(data: str) -> decl.Declaration:
     return parse(data, GrammarRule.state_rule, create_state)
 
 
-def parse_session(string: str, skip_validation: bool = False) -> model.Session:
+def parse_session(string: str) -> model.Session:
     unit = AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return create_session(unit.root, ID("Package"), skip_validation=skip_validation)
+    return create_session(unit.root, ID("Package"))
+
+
+def parse_unproven_session(string: str) -> model.UnprovenSession:
+    unit = AnalysisContext().get_from_buffer(
+        "<stdin>", string, rule=GrammarRule.session_declaration_rule
+    )
+    error = RecordFluxError()
+    if diagnostics_to_error(unit.diagnostics, error):
+        error.propagate()
+    return create_unproven_session(unit.root, ID("Package"))
 
 
 def parse_id(data: str, rule: GrammarRule) -> ID:
@@ -752,7 +763,7 @@ def test_state_error(string: str, error: str) -> None:
                   state B is null state;
                end Session
          """,
-            model.Session(
+            model.UnprovenSession(
                 ID("Package::Session"),
                 ID("A"),
                 ID("B"),
@@ -783,14 +794,13 @@ def test_state_error(string: str, error: str) -> None:
                 ],
                 [],
                 Location((2, 16), None, (23, 27)),
-                skip_validation=True,
             ),
         ),
     ],
     ids=[1],
 )
 def test_session_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_session(string, skip_validation=True)
+    actual = parse_unproven_session(string)
     assert actual == expected
     assert actual.location
 
