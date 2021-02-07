@@ -93,7 +93,7 @@ def test_qualified_identifier(string: str, expected: ID) -> None:
     ],
 )
 def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
-    actual = parse_math_expression(string, False)
+    actual = parse_math_expression(string, extended=False)
     assert actual == expected
     assert actual.location
 
@@ -195,7 +195,7 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
-    actual = parse_math_expression(string, False)
+    actual = parse_math_expression(string, extended=False)
     assert actual == expected
     assert actual.location
 
@@ -213,7 +213,7 @@ def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_relation(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, False)
+    actual = parse_bool_expression(string, extended=False)
     assert actual == expected
     assert actual.location
 
@@ -227,7 +227,7 @@ def test_expression_relation(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_boolean(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, False)
+    actual = parse_bool_expression(string, extended=False)
     assert actual == expected
     assert actual.location
 
@@ -240,7 +240,7 @@ def test_expression_boolean(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_math_expression(string, True)
+    actual = parse_math_expression(string, extended=True)
     assert actual == expected
     assert actual.location
 
@@ -254,7 +254,7 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(NotImplementedError, match=rf"^{error}$"):
-        parse_math_expression(string, False)
+        parse_math_expression(string, extended=False)
 
 
 @pytest.mark.parametrize(
@@ -265,7 +265,7 @@ def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_boolean_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, True)
+    actual = parse_bool_expression(string, extended=True)
     assert actual == expected
     assert actual.location
 
@@ -279,7 +279,7 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises((KeyError, NotImplementedError), match=rf"^{error}$"):
-        parse_bool_expression(string, False)
+        parse_bool_expression(string, extended=False)
 
 
 @pytest.mark.parametrize(
@@ -520,7 +520,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
     ],
 )
 def test_expression_complex(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, True)
+    actual = parse_bool_expression(string, extended=True)
     assert actual == expected
     assert actual.location
 
