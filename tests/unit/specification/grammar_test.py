@@ -6,16 +6,33 @@ from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model.session import Session
 from rflx.specification import parser
-from rflx.specification.parser import GrammarRule, create_id, create_session, diagnostics_to_error
-from tests.utils import (
-    parse_bool_expression,
-    parse_declaration,
-    parse_expression,
-    parse_formal_declaration,
-    parse_math_expression,
-    parse_state,
-    parse_statement,
+from rflx.specification.parser import (
+    GrammarRule,
+    create_declaration,
+    create_formal_declaration,
+    create_id,
+    create_session,
+    create_state,
+    create_statement,
+    diagnostics_to_error,
 )
+from tests.utils import parse, parse_bool_expression, parse_expression, parse_math_expression
+
+
+def parse_statement(data: str) -> stmt.Statement:
+    return parse(data, GrammarRule.action_rule, create_statement)
+
+
+def parse_declaration(data: str) -> decl.Declaration:
+    return parse(data, GrammarRule.declaration_rule, create_declaration)
+
+
+def parse_formal_declaration(data: str) -> decl.Declaration:
+    return parse(data, GrammarRule.session_parameter_rule, create_formal_declaration)
+
+
+def parse_state(data: str) -> decl.Declaration:
+    return parse(data, GrammarRule.state_rule, create_state)
 
 
 def parse_session(string: str, skip_validation: bool = False) -> Session:
