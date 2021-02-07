@@ -86,7 +86,7 @@ class State(Base):
         return self.__actions
 
 
-class Session(Base):
+class UnprovenSession(Base):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(
         self,
@@ -98,7 +98,6 @@ class Session(Base):
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
         location: Location = None,
-        skip_validation: bool = False,
     ):
         self.identifier = ID(identifier)
         self.initial = ID(initial)
@@ -130,8 +129,6 @@ class Session(Base):
             **mty.qualified_enum_literals(self.types.values(), self.package),
         }
 
-        if not skip_validation:
-            self.__validate()
         self.error.propagate()
 
     def __repr__(self) -> str:
@@ -151,7 +148,7 @@ class Session(Base):
     def package(self) -> ID:
         return self.identifier.parent
 
-    def __validate(self) -> None:
+    def _validate(self) -> None:
         self.__validate_states()
 
         self.__validate_declarations(self.__global_declarations, {})
@@ -437,3 +434,23 @@ class Session(Base):
                 declarations[v.identifier].reference()
             except KeyError:
                 pass
+
+
+class Session(UnprovenSession):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        identifier: StrID,
+        initial: StrID,
+        final: StrID,
+        states: Sequence[State],
+        declarations: Sequence[decl.BasicDeclaration],
+        parameters: Sequence[decl.FormalDeclaration],
+        types: Sequence[mty.Type],
+        location: Location = None,
+    ):
+        super().__init__(
+            identifier, initial, final, states, declarations, parameters, types, location
+        )
+        self._validate()
+        self.error.propagate()
