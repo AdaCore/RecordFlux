@@ -4,10 +4,9 @@ from librflxlang import AnalysisContext
 from rflx import declaration as decl, expression as expr, model, statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model.session import Session
-from rflx.specification import parser
 from rflx.specification.parser import (
     GrammarRule,
+    Parser,
     create_declaration,
     create_formal_declaration,
     create_id,
@@ -35,7 +34,7 @@ def parse_state(data: str) -> decl.Declaration:
     return parse(data, GrammarRule.state_rule, create_state)
 
 
-def parse_session(string: str, skip_validation: bool = False) -> Session:
+def parse_session(string: str, skip_validation: bool = False) -> model.Session:
     unit = AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=GrammarRule.session_declaration_rule
     )
@@ -753,7 +752,7 @@ def test_state_error(string: str, error: str) -> None:
                   state B is null state;
                end Session
          """,
-            Session(
+            model.Session(
                 ID("Package::Session"),
                 ID("A"),
                 ID("B"),
@@ -820,7 +819,7 @@ def test_session_declaration_error(string: str, error: str) -> None:
 
 
 def test_session() -> None:
-    p = parser.Parser()
+    p = Parser()
     p.parse_string(
         """
            package Test is
