@@ -11,7 +11,7 @@ package Feature_Integration is
       message
          Enumeration : Enumeration_Type::Priority
             then Integer
-               if Enumeration = Enumeration_Type::HIGH;
+               if Enumeration = Enumeration_Type::High;
          Integer : Integer_Type::Byte
             then Scalar_Array
                with Size => 8 * Integer;
