@@ -9,7 +9,7 @@ import pytest
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, Model, ModularInteger
+from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
 from rflx.specification import cache, parser
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 from tests.data import models
@@ -37,10 +37,10 @@ def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None
     assert result == expected, filenames
 
 
-def assert_model_string(string: str, expected: Model) -> None:
+def assert_ast_string(string: str, expected: Dict[str, Any]) -> None:
     p = parser.Parser()
     p.parse_string(string)
-    assert p.create_model() == expected
+    assert to_dict(list(p.specifications.items())[0][1]) == expected
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
@@ -1065,15 +1065,7 @@ def test_parse_type_refinement_spec() -> None:
 
 
 def test_parse_type_derivation_spec() -> None:
-    foo_message = model.Message(
-        identifier=ID("Test::Foo"),
-        structure=[
-            Link(Field("Initial"), Field("N")),
-            Link(Field("N"), Field("Final")),
-        ],
-        types={Field("N"): model.ModularInteger("Test::T", expr.Number(256))},
-    )
-    assert_model_string(
+    assert_ast_string(
         """
             package Test is
                type T is mod 256;
@@ -1084,31 +1076,63 @@ def test_parse_type_derivation_spec() -> None:
                type Bar is new Foo;
             end Test;
         """,
-        Model(
-            types=[
-                model.Enumeration(
-                    identifier=ID("__BUILTINS__::Boolean"),
-                    literals=[
-                        (ID("False"), expr.Number(0)),
-                        (ID("True"), expr.Number(1)),
-                    ],
-                    size=expr.Number(1),
-                    always_valid=False,
-                ),
-                model.Opaque(),
-                model.ModularInteger("Test::T", expr.Number(256)),
-                foo_message,
-                model.DerivedMessage(
-                    identifier=ID("Test::Bar"),
-                    base=foo_message,
-                    structure=[
-                        Link(Field("Initial"), Field("N")),
-                        Link(Field("N"), Field("Final")),
-                    ],
-                    types={Field("N"): model.ModularInteger("Test::T", expr.Number(256))},
-                ),
-            ],
-        ),
+        {
+            "_kind": "Specification",
+            "context_clause": [],
+            "package_declaration": {
+                "_kind": "PackageNode",
+                "declarations": [
+                    {
+                        "_kind": "TypeDecl",
+                        "definition": {
+                            "_kind": "ModularTypeDef",
+                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                    },
+                    {
+                        "_kind": "TypeDecl",
+                        "definition": {
+                            "_kind": "MessageTypeDef",
+                            "checksums": None,
+                            "components": {
+                                "_kind": "Components",
+                                "components": [
+                                    {
+                                        "_kind": "Component",
+                                        "aspects": [],
+                                        "condition": None,
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "N"},
+                                        "thens": [],
+                                        "type_identifier": {
+                                            "_kind": "ID",
+                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "package": None,
+                                        },
+                                    }
+                                ],
+                                "initial_component": None,
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                    },
+                    {
+                        "_kind": "TypeDecl",
+                        "definition": {
+                            "_kind": "TypeDerivationDef",
+                            "base": {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                                "package": None,
+                            },
+                        },
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                    },
+                ],
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Test"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Test"},
+            },
+        },
     )
 
 
@@ -2389,7 +2413,7 @@ def test_parse_error_invalid_range_aspect() -> None:
             end Test;
         """,
             r"^"
-            '<stdin>:3:55: parser: error: invalid Always_Valid expression: Invalid\n'
+            "<stdin>:3:55: parser: error: invalid Always_Valid expression: Invalid\n"
             '<stdin>:3:22: parser: error: no size set for "Test::T"'
             r"$",
         ),
