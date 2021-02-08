@@ -271,8 +271,8 @@ package GreenTLS is
 
    type Signature_Validation_Result is
       (Valid_Signature,
-      Illegal_Parameter,
-      Decrypt_Error)
+       Illegal_Parameter,
+       Decrypt_Error)
    with Size => 8;
 
    type RNG_Message_Type is (RNG_Request, RNG_Response) with Size => 8;
