@@ -15,6 +15,12 @@ is
       Buffer := null;
    end Initialize;
 
+   procedure Reset (Ctx : in out Context) is
+   begin
+      Ctx.Sequence_Last := Ctx.First - 1;
+      Ctx.State := S_Valid;
+   end Reset;
+
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
