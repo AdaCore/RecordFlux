@@ -69,6 +69,18 @@ is
      Depends =>
        (Ctx => (Buffer, Buffer_First, Buffer_Last, First, Last), Buffer => null);
 
+   procedure Reset (Ctx : in out Context) with
+     Pre =>
+       Has_Buffer (Ctx),
+     Post =>
+       (Has_Buffer (Ctx)
+        and Valid (Ctx)
+        and Ctx.Buffer_First = Ctx.Buffer_First'Old
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old
+        and Sequence_Last (Ctx) = Ctx.First - 1);
+
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
        Has_Buffer (Ctx),
