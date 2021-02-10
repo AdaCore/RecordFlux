@@ -1,0 +1,15 @@
+name: pull request
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  Checklist:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: mheap/require-checklist-action@v1
+        with:
+          requireChecklist: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
