@@ -99,8 +99,8 @@ def test_message_derivation_of_derived_type() -> None:
                type Baz is new Bar;
             end Test;
         """,
-        r'^<stdin>:5:28: model: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:4:28: model: info: illegal base message type "Test::Bar"$',
+        r'^<stdin>:5:21: model: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:4:21: model: info: illegal base message type "Test::Bar"$',
     )
 
 
@@ -133,7 +133,7 @@ def test_invalid_enumeration_type_size() -> None:
                type T is (FOO, BAR, BAZ) with Size => 1;
             end Test;
         """,
-        r'<stdin>:3:26: model: error: size of "T" too small',
+        r'<stdin>:3:21: model: error: size of "T" too small',
     )
 
 
@@ -171,7 +171,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
                type T2 is (BAR, BAZ) with Size => 1;
             end Test;
         """,
-        r"<stdin>:4:27: model: error: conflicting literals: BAR\n"
+        r"<stdin>:4:21: model: error: conflicting literals: BAR\n"
         r'<stdin>:3:33: model: info: previous occurrence of "BAR"',
     )
 

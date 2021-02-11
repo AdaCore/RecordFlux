@@ -61,6 +61,14 @@ def node_location(node: RFLXNode, filename: Path = None) -> Location:
     )
 
 
+def type_location(identifier: ID, node: RFLXNode) -> Location:
+    """
+    Create a location object covering the area from the start of an identifier to the end of a node.
+    """
+    assert identifier.location is not None
+    return Location(identifier.location.start, identifier.location.source, node_location(node).end)
+
+
 def diagnostics_to_error(
     diagnostics: List[Diagnostic], error: RecordFluxError, specfile: Path = None
 ) -> bool:
@@ -284,7 +292,7 @@ def create_array(
             element_identifier.location,
         )
 
-    return model.Array(identifier, element_type, node_location(array, filename))
+    return model.Array(identifier, element_type, type_location(identifier, array))
 
 
 def create_numeric_literal(
@@ -788,7 +796,7 @@ def create_modular(
     return model.ModularInteger(
         identifier,
         create_math_expression(modular.f_mod, filename, identifier.parent),
-        node_location(modular, filename),
+        type_location(identifier, modular),
     )
 
 
@@ -813,7 +821,7 @@ def create_range(
         create_math_expression(rangetype.f_first, filename, identifier.parent),
         create_math_expression(rangetype.f_last, filename, identifier.parent),
         size,
-        node_location(rangetype, filename),
+        type_location(identifier, rangetype),
     )
 
 
@@ -823,9 +831,9 @@ def create_null_message(
     _types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
-    filename: Path,
+    _filename: Path,
 ) -> model.Message:
-    return model.Message(identifier, [], {}, location=node_location(message, filename))
+    return model.Message(identifier, [], {}, location=type_location(identifier, message))
 
 
 def create_message(
@@ -851,7 +859,7 @@ def create_message(
     try:
         result = create_proven_message(
             model.UnprovenMessage(
-                identifier, structure, field_types, aspects, node_location(message, filename)
+                identifier, structure, field_types, aspects, type_location(identifier, message)
             ).merged(),
             skip_verification,
             cache,
@@ -1089,7 +1097,7 @@ def create_derived_message(
 
     return create_proven_message(
         model.UnprovenDerivedMessage(
-            identifier, base_messages[0], location=node_location(derivation, filename)
+            identifier, base_messages[0], location=type_location(identifier, derivation)
         ).merged(),
         skip_verification,
         cache,
@@ -1159,7 +1167,7 @@ def create_enumeration(
     size, always_valid = create_aspects(enumeration.f_aspects)
 
     return model.Enumeration(
-        identifier, literals, size, always_valid, location=node_location(enumeration, filename)
+        identifier, literals, size, always_valid, location=type_location(identifier, enumeration)
     )
 
 
