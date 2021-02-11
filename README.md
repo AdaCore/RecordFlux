@@ -277,6 +277,7 @@ By default the following dependencies are installed:
 - [icontract](https://github.com/Parquery/icontract)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
+- [RecordFlux parser](https://github.com/Componolit/RecordFlux-language)
 
 Additionally, [GNAT Community 2020](https://www.adacore.com/download) is needed for compiling and verifying generated SPARK code.
 
