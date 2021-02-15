@@ -130,7 +130,7 @@ def test_invalid_enumeration_type_size() -> None:
     assert_error_string(
         """
             package Test is
-               type T is (FOO, BAR, BAZ) with Size => 1;
+               type T is (Foo, Bar, Baz) with Size => 1;
             end Test;
         """,
         r'<stdin>:3:21: model: error: size of "T" too small',
@@ -141,7 +141,7 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
     assert_error_string(
         """
             package Test is
-               type T is (FOO => 0, BAR => 0) with Size => 1;
+               type T is (Foo => 0, Bar => 0) with Size => 1;
             end Test;
         """,
         r'<stdin>:3:44: model: error: duplicate enumeration value "0" in "T"\n'
@@ -153,7 +153,7 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
     assert_error_string(
         """
             package Test is
-               type T is (FOO => 0, FOO_1 => 1, BAR => 0, BAR_1 => 1) with Size => 8;
+               type T is (Foo => 0, Foo_1 => 1, Bar => 0, Bar_1 => 1) with Size => 8;
             end Test;
         """,
         r'<stdin>:3:56: model: error: duplicate enumeration value "0" in "T"\n'
@@ -167,12 +167,12 @@ def test_invalid_enumeration_type_identical_literals() -> None:
     assert_error_string(
         """
             package Test is
-               type T1 is (FOO, BAR) with Size => 1;
-               type T2 is (BAR, BAZ) with Size => 1;
+               type T1 is (Foo, Bar) with Size => 1;
+               type T2 is (Bar, Baz) with Size => 1;
             end Test;
         """,
-        r"<stdin>:4:21: model: error: conflicting literals: BAR\n"
-        r'<stdin>:3:33: model: info: previous occurrence of "BAR"',
+        r"<stdin>:4:21: model: error: conflicting literals: Bar\n"
+        r'<stdin>:3:33: model: info: previous occurrence of "Bar"',
     )
 
 
