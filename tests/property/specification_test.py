@@ -52,6 +52,9 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
                 | strategies.attributes(strategies.identifiers())
             )
         ),
+        strategies.boolean_relations(
+            st.one_of(strategies.aggregates(strategies.numbers()) | strategies.strings()),
+        ),
         strategies.boolean_expressions(
             st.one_of(
                 strategies.mathematical_expressions(

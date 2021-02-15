@@ -408,6 +408,19 @@ def relations(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Re
 
 
 @st.composite
+def boolean_relations(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+    relation = draw(
+        st.sampled_from(
+            [
+                expr.Equal,
+                expr.NotEqual,
+            ]
+        )
+    )
+    return relation(*draw(st.lists(elements, min_size=2, max_size=2)))
+
+
+@st.composite
 def boolean_expressions(draw: Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.And, expr.Or]))
     expression = draw(
