@@ -283,8 +283,8 @@ def create_array(
     )
 
     try:
-        element_type = [t for t in types if element_identifier == t.identifier][0]
-    except IndexError:
+        element_type = next(t for t in types if element_identifier == t.identifier)
+    except StopIteration:
         fail(
             f'undefined element type "{element_identifier}"',
             Subsystem.PARSER,
