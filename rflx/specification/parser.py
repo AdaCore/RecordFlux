@@ -100,37 +100,35 @@ def create_description(description: Description = None) -> Optional[str]:
     return None
 
 
-def create_transition(
-    transition: Transition, filename: Path = None, package: ID = None
-) -> model.Transition:
+def create_transition(transition: Transition, filename: Path = None) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
     condition: expr.Expr = expr.TRUE
     description = create_description(transition.f_description)
     if transition.kind_name == "ConditionalTransition":
-        condition = create_bool_expression(transition.f_condition, filename, package)
+        condition = create_bool_expression(transition.f_condition, filename)
     return model.Transition(target, condition, description, node_location(transition, filename))
 
 
 def create_reset(
-    reset: Statement, filename: Path = None, _package: ID = None, location: Location = None
+    reset: Statement, filename: Path = None, location: Location = None
 ) -> stmt.Statement:
     return stmt.Reset(create_id(reset.f_identifier, filename), location=location)
 
 
 def create_assignment(
-    assignment: Statement, filename: Path = None, package: ID = None, location: Location = None
+    assignment: Statement, filename: Path = None, location: Location = None
 ) -> stmt.Statement:
     return stmt.Assignment(
         create_id(assignment.f_identifier, filename),
-        create_expression(assignment.f_expression, filename, package),
+        create_expression(assignment.f_expression, filename),
         location,
     )
 
 
 def create_list_attribute(
-    expression: Statement, filename: Path = None, package: ID = None, location: Location = None
+    expression: Statement, filename: Path = None, location: Location = None
 ) -> stmt.Statement:
     attrs = {
         "Append": stmt.Append,
@@ -142,24 +140,20 @@ def create_list_attribute(
 
     return constructor(
         create_id(expression.f_identifier, filename),
-        create_expression(expression.f_expression, filename, package),
+        create_expression(expression.f_expression, filename),
         location=location,
     )
 
 
-def create_statement(
-    statement: Statement, filename: Path = None, package: ID = None
-) -> stmt.Statement:
+def create_statement(statement: Statement, filename: Path = None) -> stmt.Statement:
     handlers: Dict[
-        str, Callable[[Statement, Optional[Path], Optional[ID], Optional[Location]], stmt.Statement]
+        str, Callable[[Statement, Optional[Path], Optional[Location]], stmt.Statement]
     ] = {
         "Reset": create_reset,
         "Assignment": create_assignment,
         "ListAttribute": create_list_attribute,
     }
-    return handlers[statement.kind_name](
-        statement, filename, package, node_location(statement, filename)
-    )
+    return handlers[statement.kind_name](statement, filename, node_location(statement, filename))
 
 
 def create_state(state: State, filename: Path = None) -> model.State:
@@ -531,18 +525,16 @@ def create_binding(
 
 
 def create_variable_decl(
-    declaration: VariableDecl, filename: Path = None, package: ID = None, location: Location = None
+    declaration: VariableDecl, filename: Path = None, location: Location = None
 ) -> decl.BasicDeclaration:
     initializer = (
-        create_expression(declaration.f_initializer, filename, package)
+        create_expression(declaration.f_initializer, filename)
         if declaration.f_initializer
         else None
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(
-            create_id(declaration.f_type_identifier, filename), package
-        ),
+        model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename)),
         initializer,
         location=location,
     )
@@ -583,15 +575,13 @@ def create_channel_decl(
 
 
 def create_renaming_decl(
-    declaration: RenamingDecl, filename: Path = None, package: ID = None, location: Location = None
+    declaration: RenamingDecl, filename: Path = None, location: Location = None
 ) -> decl.BasicDeclaration:
-    selected = create_expression(declaration.f_expression, filename, package)
+    selected = create_expression(declaration.f_expression, filename, None)
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(
-            create_id(declaration.f_type_identifier, filename), package
-        ),
+        model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename), None),
         selected,
         location,
     )
@@ -726,15 +716,13 @@ def create_expression(expression: Expr, filename: Path = None, package: ID = Non
     return EXPRESSION_MAP[expression.kind_name](expression, filename, package, location)
 
 
-def create_declaration(
-    declaration: Expr, filename: Path = None, package: ID = None
-) -> decl.BasicDeclaration:
+def create_declaration(declaration: Expr, filename: Path = None) -> decl.BasicDeclaration:
     location = node_location(declaration, filename)
     handlers: Dict[str, Callable[..., decl.BasicDeclaration]] = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    return handlers[declaration.kind_name](declaration, filename, package, location)
+    return handlers[declaration.kind_name](declaration, filename, location)
 
 
 def create_formal_declaration(
