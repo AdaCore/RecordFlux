@@ -19,7 +19,9 @@ def test_name_conflict_types() -> None:
     assert_model_error(
         [
             ModularInteger(ID("P::T"), Number(256), location=Location((10, 20))),
-            RangeInteger(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
+            RangeInteger(
+                ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))
+            ),
         ],
         r"^"
         r'<stdin>:11:30: model: error: name conflict for type "P::T"\n'
