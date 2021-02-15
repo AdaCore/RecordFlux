@@ -118,7 +118,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel] -vv
+        pip install .[devel]
     - name: Configure kernel parameters
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
