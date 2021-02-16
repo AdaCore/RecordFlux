@@ -9,16 +9,16 @@ from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, Link, Message, Session, State
+from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message, State
 from rflx.statement import Assignment
 
 log = logging.getLogger(__name__)
 
 
 class Graph:
-    def __init__(self, data: Union[Session, Message]) -> None:
+    def __init__(self, data: Union[AbstractSession, Message]) -> None:
         self.__data = copy(data)
-        if isinstance(self.__data, Session):
+        if isinstance(self.__data, AbstractSession):
             self.__degree = {s.identifier.name: len(s.transitions) for s in self.__data.states}
             for s in self.__data.states:
                 for p in self.__data.states:
@@ -43,7 +43,7 @@ class Graph:
     def get(self) -> Dot:
         if isinstance(self.__data, Message):
             return self.__get_message
-        if isinstance(self.__data, Session):
+        if isinstance(self.__data, AbstractSession):
             return self.__get_session
         raise NotImplementedError(f"Unsupported data format {type(self.__data).__name__}")
 
@@ -71,7 +71,7 @@ class Graph:
 
     def __add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
 
-        assert isinstance(self.__data, Session)
+        assert isinstance(self.__data, AbstractSession)
 
         height = sqrt(self.__degree[state.identifier.name] + 1)
         width = 1.3 * sqrt(self.__degree[state.identifier.name] + 1)
@@ -155,7 +155,7 @@ class Graph:
     def __get_session(self) -> Dot:
         """Return pydot graph representation of session."""
 
-        assert isinstance(self.__data, Session)
+        assert isinstance(self.__data, AbstractSession)
 
         variables: Counter[ID] = collections.Counter()
         result = self.__graph_with_defaults("Session")

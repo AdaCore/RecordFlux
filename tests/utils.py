@@ -11,7 +11,7 @@ from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Generator
 from rflx.identifier import ID
-from rflx.model import Field, Link, Message, Model, Session, State, Type
+from rflx.model import Field, Link, Message, Model, State, Type, UnprovenSession
 from rflx.specification import Parser
 from rflx.specification.parser import (
     GrammarRule,
@@ -46,7 +46,7 @@ def assert_session_model_error(
     location: Location = Location((1, 1)),
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        Session(
+        UnprovenSession(
             "P::S",
             ID("Start", location=Location((1, 2))),
             ID("End", location=Location((1, 3))),
@@ -55,7 +55,7 @@ def assert_session_model_error(
             parameters,
             types,
             location=location,
-        )
+        ).proven()
 
 
 def assert_type_error(instance: Type, regex: str) -> None:

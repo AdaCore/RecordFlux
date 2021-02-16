@@ -29,10 +29,10 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
-    Session,
     State,
     Transition,
     UnprovenMessage,
+    UnprovenSession,
 )
 
 NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
@@ -279,7 +279,7 @@ MESSAGE = Message(
 )
 REFINEMENT = Refinement("In_Message", MESSAGE, Field("F"), MESSAGE)
 
-SESSION = Session(
+SESSION = UnprovenSession(
     identifier="P::S",
     initial="A",
     final="B",
@@ -290,4 +290,4 @@ SESSION = Session(
     declarations=[],
     parameters=[],
     types=[],
-)
+).proven()

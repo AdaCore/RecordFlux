@@ -14,9 +14,9 @@ from rflx.model import (
     Link,
     Message,
     ModularInteger,
-    Session,
     State,
     Transition,
+    UnprovenSession,
 )
 from rflx.statement import Assignment, Reset
 
@@ -180,7 +180,7 @@ def test_dot_graph_with_double_edge() -> None:
 
 
 def test_session_graph() -> None:
-    s = Session(
+    s = UnprovenSession(
         identifier="P::S",
         initial=ID("START"),
         final=ID("END"),
@@ -203,7 +203,7 @@ def test_session_graph() -> None:
         declarations=[VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN, OPAQUE],
-    )
+    ).proven()
     expected = """
         digraph "Session" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
