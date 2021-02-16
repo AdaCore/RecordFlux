@@ -67,6 +67,7 @@ package body RFLX.TLV_Tests is
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
+      Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (7), "Invalid message size");
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
@@ -98,6 +99,7 @@ package body RFLX.TLV_Tests is
       end if;
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
+      Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (3), "Invalid message size");
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
@@ -162,6 +164,7 @@ package body RFLX.TLV_Tests is
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
+      Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (7), "Invalid message size");
 
       TLV.Message.Take_Buffer (Context, Buffer);
 

@@ -24,6 +24,23 @@ is
       Ctx.Buffer := null;
    end Take_Buffer;
 
+   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) is
+   begin
+      if Buffer'Length > 0 then
+         Buffer := Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last));
+      else
+         Buffer := Ctx.Buffer.all (Types.Index'Last .. Types.Index'First);
+      end if;
+   end Copy;
+
+   function Byte_Size (Ctx : Context) return Types.Length is
+     ((if
+          Ctx.Message_Last = Ctx.First - 1
+       then
+          0
+       else
+          Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
+
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      (Ctx.Message_Last);
 
