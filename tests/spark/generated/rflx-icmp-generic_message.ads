@@ -12,7 +12,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
 
-   use type Types.Bytes, Types.Bytes_Ptr, Types.Index, Types.Bit_Index, Types.U64;
+   use type Types.Bytes, Types.Bytes_Ptr, Types.Length, Types.Index, Types.Bit_Index, Types.U64;
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
@@ -131,7 +131,14 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
+   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and Byte_Size (Ctx) = Buffer'Length;
+
    function Has_Buffer (Ctx : Context) return Boolean;
+
+   function Byte_Size (Ctx : Context) return Types.Length;
 
    function Message_Last (Ctx : Context) return Types.Bit_Index;
 

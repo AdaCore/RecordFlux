@@ -345,7 +345,9 @@ class Generator:
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
         unit += self.__create_take_buffer_procedure()
+        unit += self.__create_copy_procedure()
         unit += self.__create_has_buffer_function()
+        unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
@@ -403,6 +405,7 @@ class Generator:
                     *[
                         *([const.TYPES_BYTES] if composite_fields else []),
                         const.TYPES_BYTES_PTR,
+                        const.TYPES_LENGTH,
                         const.TYPES_INDEX,
                         const.TYPES_BIT_INDEX,
                         const.TYPES_U64,
@@ -898,6 +901,73 @@ class Generator:
                     specification,
                     [],
                     [Assignment("Buffer", Variable("Ctx.Buffer")), Assignment("Ctx.Buffer", NULL)],
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_copy_procedure() -> UnitPart:
+        specification = ProcedureSpecification(
+            "Copy",
+            [Parameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES)],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Equal(Call("Byte_Size", [Variable("Ctx")]), Length("Buffer")),
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        IfStatement(
+                            [
+                                (
+                                    Greater(Length("Buffer"), Number(0)),
+                                    [
+                                        Assignment(
+                                            "Buffer",
+                                            Indexed(
+                                                Variable("Ctx.Buffer.all"),
+                                                ValueRange(
+                                                    Call(
+                                                        const.TYPES_BYTE_INDEX,
+                                                        [Variable("Ctx.First")],
+                                                    ),
+                                                    Call(
+                                                        const.TYPES_BYTE_INDEX,
+                                                        [Variable("Ctx.Message_Last")],
+                                                    ),
+                                                ),
+                                            ),
+                                        )
+                                    ],
+                                ),
+                            ],
+                            [
+                                Assignment(
+                                    "Buffer",
+                                    Indexed(
+                                        Variable("Ctx.Buffer.all"),
+                                        ValueRange(
+                                            Last(const.TYPES_INDEX), First(const.TYPES_INDEX)
+                                        ),
+                                    ),
+                                )
+                            ],
+                        )
+                    ],
                 )
             ],
         )
@@ -1594,6 +1664,40 @@ class Generator:
                             )
                             for f in message.all_fields
                         ],
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_byte_size_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Byte_Size", const.TYPES_LENGTH, [Parameter(["Ctx"], "Context")]
+        )
+
+        return UnitPart(
+            [SubprogramDeclaration(specification)],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    If(
+                        [
+                            (
+                                Equal(
+                                    Variable("Ctx.Message_Last"),
+                                    Sub(Variable("Ctx.First"), Number(1)),
+                                ),
+                                Number(0),
+                            )
+                        ],
+                        Indexed(
+                            Variable(const.TYPES_LENGTH),
+                            Add(
+                                Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.Message_Last")]),
+                                -Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
+                                Number(1),
+                            ),
+                        ),
                     ),
                 )
             ],
