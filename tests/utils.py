@@ -4,7 +4,6 @@ import subprocess
 from typing import Any, Callable, Mapping, Sequence
 
 import pytest
-from librflxlang import AnalysisContext
 
 from rflx import declaration as decl
 from rflx.error import Location, RecordFluxError
@@ -14,6 +13,7 @@ from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, State, Type, UnprovenSession
 from rflx.specification import Parser
 from rflx.specification.parser import (
+    AnalysisContext,
     GrammarRule,
     create_bool_expression,
     create_expression,
