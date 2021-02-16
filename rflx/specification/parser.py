@@ -226,17 +226,7 @@ def create_session(
     types: Sequence[model.Type] = None,
     filename: Path = None,
 ) -> model.Session:
-    __check_session_identifier(session, filename)
-    return model.Session(
-        model.qualified_type_identifier(create_id(session.f_identifier, filename), package),
-        create_id(session.f_aspects.f_initial, filename),
-        create_id(session.f_aspects.f_final, filename),
-        [create_state(s, filename) for s in session.f_states],
-        [create_declaration(d, filename) for d in session.f_declarations],
-        [create_formal_declaration(p, filename) for p in session.f_parameters],
-        types or [],
-        node_location(session, filename),
-    )
+    return create_unproven_session(session, package, types, filename).proven()
 
 
 def create_id(identifier: NullID, filename: Path = None) -> ID:

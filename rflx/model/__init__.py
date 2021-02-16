@@ -11,7 +11,7 @@ from .message import (  # noqa: F401
     UnprovenMessage,
 )
 from .model import Model  # noqa: F401
-from .session import Session, State, Transition, UnprovenSession  # noqa: F401
+from .session import AbstractSession, Session, State, Transition, UnprovenSession  # noqa: F401
 from .type_ import (  # noqa: F401
     BOOLEAN,
     BUILTIN_LITERALS,
