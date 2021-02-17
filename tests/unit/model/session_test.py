@@ -14,7 +14,6 @@ from rflx.model import (
     AbstractSession,
     Array,
     Private,
-    Session,
     State,
     Transition,
     UnprovenSession,
@@ -2061,8 +2060,3 @@ def test_type_error_in_renaming_declaration() -> None:
 def test_invalid_abstract_session_instantiation() -> None:
     with pytest.raises(RuntimeError, match="^AbstractSession must not be instantiated"):
         AbstractSession("P::S", "A", "B", [], [], [], [])
-
-
-def test_invalid_session_instantiation() -> None:
-    with pytest.raises(RuntimeError, match="^Session must not be instantiated directly"):
-        Session("P::S", "A", "B", [], [], [], [])
