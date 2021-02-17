@@ -41,6 +41,7 @@ from rflx.ada import (
     First,
     FormalDeclaration,
     FormalPackageDeclaration,
+    FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericPackageInstantiation,
     Ghost,
@@ -344,8 +345,11 @@ class Generator:
         unit += self.__create_initialize_procedure()
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
+        unit += self.__create_reset_procedure(message)
         unit += self.__create_take_buffer_procedure()
         unit += self.__create_copy_procedure()
+        unit += self.__create_read_procedure()
+        unit += self.__create_write_procedure()
         unit += self.__create_has_buffer_function()
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
@@ -690,10 +694,6 @@ class Generator:
                                         [Variable("Ctx.Buffer_Last")],
                                     ),
                                 ),
-                                Equal(
-                                    Call("Message_Last", [Variable("Ctx")]),
-                                    Variable("Ctx.First"),
-                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -761,10 +761,6 @@ class Generator:
                                 Equal(Variable("Ctx.Buffer_Last"), Old(Last("Buffer"))),
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
-                                Equal(
-                                    Call("Message_Last", [Variable("Ctx")]),
-                                    Variable("Ctx.First"),
-                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -791,28 +787,7 @@ class Generator:
                                 Variable("Last"),
                                 Variable("First"),
                                 Variable("Buffer"),
-                                NamedAggregate(
-                                    (
-                                        message.fields[0].affixed_name,
-                                        NamedAggregate(
-                                            ("State", Variable("S_Invalid")),
-                                            (
-                                                "Predecessor",
-                                                Variable(INITIAL.affixed_name),
-                                            ),
-                                        ),
-                                    ),
-                                    (
-                                        "others",
-                                        NamedAggregate(
-                                            ("State", Variable("S_Invalid")),
-                                            (
-                                                "Predecessor",
-                                                Variable(FINAL.affixed_name),
-                                            ),
-                                        ),
-                                    ),
-                                ),
+                                context_cursors_initialization(message),
                             ),
                         ),
                         Assignment("Buffer", NULL),
@@ -833,6 +808,10 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
+                        Equal(
+                            Variable("Ctx.Message_Last"),
+                            Variable("Ctx.First"),
+                        ),
                         Call(
                             "Valid_Next",
                             [
@@ -862,6 +841,51 @@ class Generator:
                             for f in message.fields
                         ],
                     ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_reset_procedure(message: Message) -> UnitPart:
+        specification = ProcedureSpecification(
+            "Reset",
+            [InOutParameter(["Ctx"], "Context")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            Call("Has_Buffer", [Variable("Ctx")]),
+                        ),
+                        Postcondition(
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Variable("Ctx.First"),
+                                        Variable("Ctx.Last"),
+                                    ]
+                                ],
+                                Call("Initialized", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        Assignment("Ctx.Cursors", context_cursors_initialization(message)),
+                        Assignment("Ctx.Message_Last", Variable("Ctx.First")),
+                    ],
                 )
             ],
         )
@@ -967,6 +991,130 @@ class Generator:
                                 )
                             ],
                         )
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_read_procedure() -> UnitPart:
+        specification = ProcedureSpecification(
+            "Read",
+            [Parameter(["Ctx"], "Context")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                    [
+                        FormalSubprogramDeclaration(
+                            ProcedureSpecification(
+                                "Read",
+                                [Parameter(["Buffer"], const.TYPES_BYTES)],
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        CallStatement(
+                            "Read",
+                            [
+                                Indexed(
+                                    Variable("Ctx.Buffer.all"),
+                                    ValueRange(
+                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
+                                        Call(
+                                            const.TYPES_BYTE_INDEX, [Variable("Ctx.Message_Last")]
+                                        ),
+                                    ),
+                                )
+                            ],
+                        )
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_write_procedure() -> UnitPart:
+        specification = ProcedureSpecification(
+            "Write",
+            [InOutParameter(["Ctx"], "Context")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Variable("Ctx.First"),
+                                        Variable("Ctx.Last"),
+                                    ]
+                                ],
+                                Call("Initialized", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                    [
+                        FormalSubprogramDeclaration(
+                            ProcedureSpecification(
+                                "Write",
+                                [OutParameter(["Buffer"], const.TYPES_BYTES)],
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        CallStatement(
+                            "Reset",
+                            [
+                                Variable("Ctx"),
+                            ],
+                        ),
+                        CallStatement(
+                            "Write",
+                            [
+                                Indexed(
+                                    Variable("Ctx.Buffer.all"),
+                                    ValueRange(
+                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
+                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.Last")]),
+                                    ),
+                                )
+                            ],
+                        ),
                     ],
                 )
             ],
@@ -3143,6 +3291,31 @@ def contains_function_name(refinement: Refinement) -> str:
 
 def unreachable_function_name(type_name: str) -> str:
     return f"Unreachable_{flat_name(type_name)}"
+
+
+def context_cursors_initialization(message: Message) -> Expr:
+    return NamedAggregate(
+        (
+            message.fields[0].affixed_name,
+            NamedAggregate(
+                ("State", Variable("S_Invalid")),
+                (
+                    "Predecessor",
+                    Variable(INITIAL.affixed_name),
+                ),
+            ),
+        ),
+        (
+            "others",
+            NamedAggregate(
+                ("State", Variable("S_Invalid")),
+                (
+                    "Predecessor",
+                    Variable(FINAL.affixed_name),
+                ),
+            ),
+        ),
+    )
 
 
 def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:

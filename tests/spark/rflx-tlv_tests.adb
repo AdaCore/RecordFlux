@@ -263,6 +263,61 @@ package body RFLX.TLV_Tests is
       Free_Bytes_Ptr (Buffer);
    end Test_Generating_TLV_Error;
 
+   procedure Test_Read_Write_Reset (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
+      Context : TLV.Message.Context;
+   begin
+      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Verify_Message (Context);
+
+      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after initialization");
+
+      declare
+         pragma Warnings (Off, "subprogram ""Read"" has no effect");
+         procedure Read (Buffer : RFLX_Builtin_Types.Bytes) is
+         begin
+            Assert (Buffer, (1, 0, 4, 0, 0, 0, 0), "Invalid binary representation");
+         end Read;
+         pragma Warnings (On, "subprogram ""Read"" has no effect");
+         pragma Warnings (Off, "subprogram ""Message_Read"" has no effect");
+         procedure Message_Read is new TLV.Message.Read (Read);
+         pragma Warnings (On, "subprogram ""Message_Read"" has no effect");
+      begin
+         Message_Read (Context);
+      end;
+
+      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after reading");
+
+      TLV.Message.Reset (Context);
+
+      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
+
+      declare
+         procedure Write (Buffer : out RFLX_Builtin_Types.Bytes) is
+         begin
+            Assert (Buffer'Length = 7, "Invalid buffer length");
+            Buffer := (1, 0, 4, 0, 0, 0, 0);
+         end Write;
+         procedure Message_Write is new TLV.Message.Write (Write);
+      begin
+         Message_Write (Context);
+      end;
+
+      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after writing");
+
+      TLV.Message.Verify_Message (Context);
+
+      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after verification");
+
+      TLV.Message.Take_Buffer (Context, Buffer);
+      Free_Bytes_Ptr (Buffer);
+
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (56)'Image, "Invalid Context.Last");
+   end Test_Read_Write_Reset;
+
    overriding
    procedure Register_Tests (T : in out Test) is
       use AUnit.Test_Cases.Registration;
@@ -275,6 +330,7 @@ package body RFLX.TLV_Tests is
       Register_Routine (T, Test_Generating_TLV_Data_Generic'Access, "Generating TLV Data Message (generic setter)");
       Register_Routine (T, Test_Generating_TLV_Data_Zero'Access, "Generating TLV Data Message (zero length)");
       Register_Routine (T, Test_Generating_TLV_Error'Access, "Generating TLV Error Message");
+      Register_Routine (T, Test_Read_Write_Reset'Access, "Reading/Writing/Resetting Message");
    end Register_Tests;
 
 end RFLX.TLV_Tests;

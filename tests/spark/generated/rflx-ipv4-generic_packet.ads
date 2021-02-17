@@ -91,7 +91,6 @@ is
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
        and Ctx.Last = Types.Last_Bit_Index (Ctx.Buffer_Last)
-       and Message_Last (Ctx) = Ctx.First
        and Initialized (Ctx),
      Depends =>
        (Ctx => Buffer, Buffer => null);
@@ -112,13 +111,23 @@ is
        and Ctx.Buffer_Last = Buffer'Last'Old
        and Ctx.First = First
        and Ctx.Last = Last
-       and Message_Last (Ctx) = Ctx.First
        and Initialized (Ctx),
      Depends =>
        (Ctx => (Buffer, First, Last), Buffer => null);
 
    function Initialized (Ctx : Context) return Boolean with
      Ghost;
+
+   procedure Reset (Ctx : in out Context) with
+     Pre =>
+       Has_Buffer (Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Initialized (Ctx);
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
      Pre =>
@@ -140,6 +149,26 @@ is
      Pre =>
        Has_Buffer (Ctx)
        and Byte_Size (Ctx) = Buffer'Length;
+
+   generic
+      with procedure Read (Buffer : Types.Bytes);
+   procedure Read (Ctx : Context) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
+
+   generic
+      with procedure Write (Buffer : out Types.Bytes);
+   procedure Write (Ctx : in out Context) with
+     Pre =>
+       Has_Buffer (Ctx),
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Initialized (Ctx);
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
@@ -1674,7 +1703,8 @@ private
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
    function Initialized (Ctx : Context) return Boolean is
-     (Valid_Next (Ctx, F_Version)
+     (Ctx.Message_Last = Ctx.First
+      and then Valid_Next (Ctx, F_Version)
       and then Available_Space (Ctx, F_Version) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Version)
       and then Invalid (Ctx, F_IHL)
