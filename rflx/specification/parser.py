@@ -830,9 +830,7 @@ def create_message(
         identifier, components, types, filename
     )
     structure = create_message_structure(components, identifier.parent, error, filename)
-    aspects = {
-        ID("Checksum"): create_message_aspects(message.f_checksums, identifier.parent, filename)
-    }
+    aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
 
     try:
         result = create_proven_message(
@@ -1012,7 +1010,7 @@ def create_message_structure(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, _package: ID = None, filename: Path = None
+    checksum: ChecksumAspect, filename: Path = None
 ) -> Mapping[ID, Sequence[expr.Expr]]:
     result = {}
     if checksum:
