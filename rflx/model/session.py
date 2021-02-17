@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
 from rflx import declaration as decl, expression as expr, statement as stmt, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
@@ -440,7 +440,7 @@ class AbstractSession(Base):
 
 
 class Session(AbstractSession):
-    # pylint: disable=too-many-arguments, super-init-not-called
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         identifier: StrID,
@@ -452,11 +452,22 @@ class Session(AbstractSession):
         types: Sequence[mty.Type],
         location: Location = None,
     ):
-        raise RuntimeError("Session must not be instantiated directly")
+        super().__init__(
+            identifier, initial, final, states, declarations, parameters, types, location
+        )
+        self._validate()
+        self.error.propagate()
 
 
 class UnprovenSession(AbstractSession):
     def proven(self) -> Session:
-        self._validate()
-        self.error.propagate()
-        return cast(Session, self)
+        return Session(
+            self.identifier,
+            self.initial,
+            self.final,
+            self.states,
+            list(self.declarations.values()),
+            list(self.parameters.values()),
+            list(self.types.values()),
+            self.location,
+        )
