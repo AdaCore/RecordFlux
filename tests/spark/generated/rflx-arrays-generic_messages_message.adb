@@ -18,6 +18,12 @@ is
       Buffer := null;
    end Initialize;
 
+   procedure Reset (Ctx : in out Context) is
+   begin
+      Ctx.Cursors := (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
+      Ctx.Message_Last := Ctx.First;
+   end Reset;
+
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
@@ -32,6 +38,17 @@ is
          Buffer := Ctx.Buffer.all (Types.Index'Last .. Types.Index'First);
       end if;
    end Copy;
+
+   procedure Read (Ctx : Context) is
+   begin
+      Read (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last)));
+   end Read;
+
+   procedure Write (Ctx : in out Context) is
+   begin
+      Reset (Ctx);
+      Write (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Last)));
+   end Write;
 
    function Byte_Size (Ctx : Context) return Types.Length is
      ((if
