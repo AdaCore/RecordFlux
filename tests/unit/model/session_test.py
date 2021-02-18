@@ -8,16 +8,7 @@ import rflx.expression as expr
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import (
-    BOOLEAN,
-    OPAQUE,
-    AbstractSession,
-    Array,
-    Private,
-    State,
-    Transition,
-    UnprovenSession,
-)
+from rflx.model import BOOLEAN, OPAQUE, Array, Private, Session, State, Transition
 from tests.data.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
 
@@ -28,7 +19,7 @@ TLV_TAGS = Array("TLV::Tags", TLV_TAG)
 def test_str() -> None:
     assert_equal(
         str(
-            UnprovenSession(
+            Session(
                 "P::S",
                 "A",
                 "B",
@@ -63,7 +54,7 @@ def test_str() -> None:
                     decl.FunctionDeclaration("G", [decl.Argument("P", "T")], "Boolean"),
                 ],
                 [BOOLEAN, TLV_MESSAGE],
-            ).proven()
+            )
         ),
         multilinestr(
             """generic
@@ -103,7 +94,7 @@ def test_invalid_name() -> None:
         RecordFluxError,
         match=r'^<stdin>:10:20: model: error: invalid session name "P::S::X"$',
     ):
-        UnprovenSession(
+        Session(
             identifier=ID("P::S::X", location=Location((10, 20))),
             initial=ID("Start"),
             final=ID("End"),
@@ -114,7 +105,7 @@ def test_invalid_name() -> None:
             declarations=[],
             parameters=[],
             types=[],
-        ).proven()
+        )
 
 
 def test_empty_states() -> None:
@@ -144,7 +135,7 @@ def test_invalid_initial() -> None:
             r"$"
         ),
     ):
-        UnprovenSession(
+        Session(
             identifier="P::S",
             initial=ID("NonExistent", location=Location((1, 2))),
             final=ID("End"),
@@ -160,7 +151,7 @@ def test_invalid_initial() -> None:
             parameters=[],
             types=[],
             location=Location((1, 1)),
-        ).proven()
+        )
 
 
 def test_invalid_final() -> None:
@@ -173,7 +164,7 @@ def test_invalid_final() -> None:
             r"$"
         ),
     ):
-        UnprovenSession(
+        Session(
             identifier="P::S",
             initial=ID("Start"),
             final=ID("NonExistent", location=Location((1, 3))),
@@ -184,7 +175,7 @@ def test_invalid_final() -> None:
             declarations=[],
             parameters=[],
             types=[],
-        ).proven()
+        )
 
 
 def test_invalid_target_state() -> None:
@@ -433,7 +424,7 @@ def test_undefinded_type() -> None:
 
 
 def test_declared_variable() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -454,11 +445,11 @@ def test_declared_variable() -> None:
         declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
         parameters=[],
         types=[TLV_TAG],
-    ).proven()
+    )
 
 
 def test_declared_local_variable() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -478,7 +469,7 @@ def test_declared_local_variable() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-    ).proven()
+    )
 
 
 def test_undeclared_local_variable() -> None:
@@ -512,7 +503,7 @@ def test_undeclared_local_variable() -> None:
 
 
 def test_declared_local_variable_valid() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -532,11 +523,11 @@ def test_declared_local_variable_valid() -> None:
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
         types=[TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_declared_local_variable_message_field() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -558,7 +549,7 @@ def test_declared_local_variable_message_field() -> None:
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
         types=[TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_assignment_to_undeclared_variable() -> None:
@@ -796,7 +787,7 @@ def test_call_too_many_arguments() -> None:
 
 
 def test_channel_read() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -816,11 +807,11 @@ def test_channel_read() -> None:
             decl.ChannelDeclaration("Some_Channel", readable=True, writable=False),
         ],
         types=[TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_channel_write() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -840,7 +831,7 @@ def test_channel_write() -> None:
             decl.ChannelDeclaration("Some_Channel", readable=False, writable=True),
         ],
         types=[TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_channel_read_undeclared() -> None:
@@ -953,7 +944,7 @@ def test_channel_write_invalid_mode() -> None:
 
 
 def test_channel_function_data_available() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -977,7 +968,7 @@ def test_channel_function_data_available() -> None:
             decl.ChannelDeclaration("Channel", readable=True, writable=True),
         ],
         types=[BOOLEAN],
-    ).proven()
+    )
 
 
 def test_channel_function_data_available_invalid_mode() -> None:
@@ -1220,7 +1211,7 @@ def test_unused_function() -> None:
 
 
 def test_renaming() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1249,7 +1240,7 @@ def test_renaming() -> None:
         ],
         parameters=[],
         types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_renaming_invalid() -> None:
@@ -1319,7 +1310,7 @@ def test_renaming_undefined() -> None:
 
 
 def test_binding_as_function_parameter() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1348,11 +1339,11 @@ def test_binding_as_function_parameter() -> None:
             decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
-    ).proven()
+    )
 
 
 def test_for_all() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1377,11 +1368,11 @@ def test_for_all() -> None:
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
         types=[BOOLEAN, TLV_MESSAGES],
-    ).proven()
+    )
 
 
 def test_append() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1405,7 +1396,7 @@ def test_append() -> None:
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
         types=[TLV_TAG, TLV_MESSAGE, TLV_MESSAGES],
-    ).proven()
+    )
 
 
 def test_append_incompatible() -> None:
@@ -1458,7 +1449,7 @@ def test_append_message_unsupported() -> None:
 
 
 def test_extend() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1477,7 +1468,7 @@ def test_extend() -> None:
         ],
         parameters=[],
         types=[BOOLEAN, TLV_MESSAGES],
-    ).proven()
+    )
 
 
 def test_extend_incompatible() -> None:
@@ -1562,7 +1553,7 @@ def test_message_aggregate_with_undefined_type() -> None:
 
 
 def test_comprehension() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1592,7 +1583,7 @@ def test_comprehension() -> None:
         ],
         parameters=[],
         types=[BOOLEAN, TLV_MESSAGES, TLV_TAGS],
-    ).proven()
+    )
 
 
 def test_assignment_opaque_function_undef_parameter() -> None:
@@ -1626,7 +1617,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
 
 
 def test_assignment_opaque_function_result() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1652,11 +1643,11 @@ def test_assignment_opaque_function_result() -> None:
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
         types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_assignment_opaque_function_binding() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1683,11 +1674,11 @@ def test_assignment_opaque_function_binding() -> None:
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
         types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_conversion() -> None:
-    UnprovenSession(
+    Session(
         identifier="P::S",
         initial=ID("Start"),
         final=ID("End"),
@@ -1713,7 +1704,7 @@ def test_conversion() -> None:
         ],
         parameters=[],
         types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
-    ).proven()
+    )
 
 
 def test_conversion_undefined() -> None:
@@ -1818,7 +1809,7 @@ def test_conversion_invalid() -> None:
 
 
 def test_private_type() -> None:
-    UnprovenSession(
+    Session(
         identifier=ID("P::S"),
         initial=ID("Start"),
         final=ID("End"),
@@ -1840,7 +1831,7 @@ def test_private_type() -> None:
         declarations=[],
         parameters=[decl.TypeDeclaration(Private("P::T"))],
         types=[],
-    ).proven()
+    )
 
 
 def test_private_type_shadows_builtin_data_available() -> None:
@@ -2055,8 +2046,3 @@ def test_type_error_in_renaming_declaration() -> None:
             r"$"
         ),
     )
-
-
-def test_invalid_abstract_session_instantiation() -> None:
-    with pytest.raises(RuntimeError, match="^AbstractSession must not be instantiated"):
-        AbstractSession("P::S", "A", "B", [], [], [], [])
