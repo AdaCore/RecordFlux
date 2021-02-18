@@ -1,12 +1,15 @@
-from typing import Callable, Mapping, Optional, Sequence
+from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
 import rflx.ada as ada
 import rflx.expression as expr
+from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
 from rflx.model import (
     FINAL,
     INITIAL,
+    Array,
     Composite,
+    DerivedMessage,
     Enumeration,
     Field,
     Link,
@@ -649,6 +652,10 @@ def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
     return prefix * type_identifier
 
 
+def generic_name(identifier: ada.ID) -> ada.ID:
+    return ada.ID([*identifier.parts[:-1], f"Generic_{identifier.parts[-1]}"])
+
+
 def base_type_name(scalar_type: Scalar) -> ada.ID:
     if isinstance(scalar_type, ModularInteger):
         return ada.ID(scalar_type.name)
@@ -689,3 +696,91 @@ def size_dependent_condition(message: Message) -> bool:
         )
         > 0
     )
+
+
+def create_message_instantiation(
+    message: Message, types_package: ada.ID, prefix: str = ""
+) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
+    if isinstance(message, DerivedMessage):
+        name = generic_name(prefix * ada.ID(message.base.identifier))
+    else:
+        name = generic_name(prefix * ada.ID(message.identifier))
+
+    context: List[ada.ContextItem] = [
+        ada.WithClause(name),
+    ]
+
+    arrays = list(
+        unique(
+            prefix * ada.ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
+        )
+    )
+    context.extend(ada.WithClause(array) for array in arrays)
+    package = ada.GenericPackageInstantiation(
+        prefix * ada.ID(message.identifier), name, [types_package] + arrays
+    )
+
+    return (context, package)
+
+
+def create_array_instantiation(
+    array_type: Array,
+    types_package: ada.ID,
+    prefix: str = "",
+    flat: bool = False,
+) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
+    element_type = array_type.element_type
+    element_type_package = ada.ID(element_type.package.name)
+
+    array_context: List[ada.ContextItem] = []
+    array_package: ada.GenericPackageInstantiation
+    if isinstance(element_type, Message):
+        element_type_identifier = ada.ID(
+            element_type.identifier.flat if flat else prefix * element_type.identifier
+        )
+        array_context = [
+            ada.WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
+            *([] if flat else [ada.WithClause(element_type_identifier)]),
+        ]
+        array_package = ada.GenericPackageInstantiation(
+            ada.ID(array_type.identifier.flat if flat else prefix * array_type.identifier),
+            prefix * const.MESSAGE_SEQUENCE_PACKAGE,
+            [
+                types_package,
+                element_type_identifier * "Context",
+                element_type_identifier * "Initialize",
+                element_type_identifier * "Take_Buffer",
+                element_type_identifier * "Has_Buffer",
+                element_type_identifier * "Message_Last",
+                element_type_identifier * "Initialized",
+                element_type_identifier * "Structural_Valid_Message",
+            ],
+        )
+    elif isinstance(element_type, Scalar):
+        element_type_identifier = ada.ID(prefix * element_type.identifier)
+        array_context = [
+            ada.WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
+            ada.WithClause(prefix * element_type_package),
+        ]
+        array_package = ada.GenericPackageInstantiation(
+            ada.ID(array_type.identifier.flat if flat else prefix * array_type.identifier),
+            prefix * const.SCALAR_SEQUENCE_PACKAGE,
+            [
+                types_package,
+                element_type_identifier,
+                prefix
+                * element_type_package
+                * (
+                    base_type_name(element_type)
+                    if not isinstance(element_type, ModularInteger)
+                    else element_type.name
+                ),
+                prefix * element_type_package * "Valid",
+                prefix * element_type_package * "To_Actual",
+                prefix * element_type_package * "To_Base",
+            ],
+        )
+    else:
+        assert False, 'unexpected element type "{type(element_type)}"'
+
+    return (array_context, array_package)

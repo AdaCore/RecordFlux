@@ -1,8 +1,8 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 pragma SPARK_Mode;
-with RFLX.Arrays.Generic_Message;
 with RFLX.RFLX_Types;
+with RFLX.Arrays.Generic_Message;
 with RFLX.Arrays.Modular_Vector;
 with RFLX.Arrays.Range_Vector;
 with RFLX.Arrays.Enumeration_Vector;
