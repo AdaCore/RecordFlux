@@ -1,4 +1,5 @@
 import itertools
+from abc import abstractmethod
 from collections import defaultdict
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
@@ -88,6 +89,7 @@ class State(Base):
 
 class AbstractSession(Base):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
+    @abstractmethod
     def __init__(
         self,
         identifier: StrID,
@@ -99,9 +101,6 @@ class AbstractSession(Base):
         types: Sequence[mty.Type],
         location: Location = None,
     ):
-        # pylint: disable=unidiomatic-typecheck
-        if type(self) == AbstractSession:
-            raise RuntimeError("AbstractSession must not be instantiated")
         self.identifier = ID(identifier)
         self.initial = ID(initial)
         self.final = ID(final)
@@ -460,6 +459,23 @@ class Session(AbstractSession):
 
 
 class UnprovenSession(AbstractSession):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        identifier: StrID,
+        initial: StrID,
+        final: StrID,
+        states: Sequence[State],
+        declarations: Sequence[decl.BasicDeclaration],
+        parameters: Sequence[decl.FormalDeclaration],
+        types: Sequence[mty.Type],
+        location: Location = None,
+    ):
+        # pylint: disable=useless-super-delegation
+        super().__init__(
+            identifier, initial, final, states, declarations, parameters, types, location
+        )
+
     def proven(self) -> Session:
         return Session(
             self.identifier,
