@@ -105,7 +105,7 @@ from rflx.ada import (
     VariantPart,
     WithClause,
 )
-from rflx.common import file_name, flat_name
+from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.model import (
     FINAL,
@@ -2607,7 +2607,7 @@ class Generator:
         unit.declaration_context.append(WithClause(generic_pdu_identifier))
         unit.declaration.formal_parameters.append(
             FormalPackageDeclaration(
-                flat_name(refinement.pdu.full_name),
+                refinement.pdu.identifier.flat,
                 generic_pdu_identifier,
                 ["Types", "others => <>"],
             )
@@ -2623,7 +2623,7 @@ class Generator:
             unit.declaration_context.append(WithClause(generic_sdu_identifier))
             unit.declaration.formal_parameters.append(
                 FormalPackageDeclaration(
-                    flat_name(refinement.sdu.full_name),
+                    refinement.sdu.identifier.flat,
                     generic_sdu_identifier,
                     ["Types", "others => <>"],
                 ),
@@ -2907,7 +2907,7 @@ class Generator:
             )
             if incomplete:
                 conversion_cases.append(
-                    (Variable("others"), Call(unreachable_function_name(enum.full_name)))
+                    (Variable("others"), Call(unreachable_function_name(enum.identifier)))
                 )
 
             specification.extend(
@@ -2926,7 +2926,7 @@ class Generator:
     def __create_contains_function(
         refinement: Refinement, condition_fields: Mapping[Field, Type], null_sdu: bool
     ) -> SubprogramUnitPart:
-        pdu_identifier = expr.ID(flat_name(refinement.pdu.full_name))
+        pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -2971,8 +2971,8 @@ class Generator:
     def __create_switch_procedure(
         refinement: Refinement, condition_fields: Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_name = flat_name(refinement.pdu.full_name)
-        sdu_name = flat_name(refinement.sdu.full_name)
+        pdu_name = refinement.pdu.identifier.flat
+        sdu_name = refinement.sdu.identifier.flat
         pdu_context = f"{pdu_name}_PDU_Context"
         sdu_context = f"{sdu_name}_SDU_Context"
         refined_field_affixed_name = f"{pdu_name}.{refinement.field.affixed_name}"
@@ -3171,7 +3171,7 @@ class Generator:
         return [
             Pragma("Warnings", [Variable("Off"), String("precondition is * false")]),
             ExpressionFunctionDeclaration(
-                FunctionSpecification(unreachable_function_name(scalar_type.full_name), type_name),
+                FunctionSpecification(unreachable_function_name(scalar_type.identifier), type_name),
                 First(type_name)
                 if not base_name
                 else Aggregate(Variable("False"), First(base_name)),
@@ -3276,21 +3276,21 @@ def generic_name(identifier: ID) -> ID:
 
 
 def contains_function_name(refinement: Refinement) -> str:
-    sdu_name = str(
-        refinement.sdu.name
+    sdu_name = (
+        ID(refinement.sdu.name)
         if refinement.sdu.package == refinement.package
-        else refinement.sdu.full_name
+        else refinement.sdu.identifier
     )
-    pdu_name = str(
-        refinement.pdu.name
+    pdu_name = (
+        ID(refinement.pdu.name)
         if refinement.pdu.package == refinement.package
-        else refinement.pdu.full_name
+        else refinement.pdu.identifier
     )
-    return flat_name(f"{sdu_name}_In_{pdu_name}_{refinement.field.name}")
+    return f"{sdu_name.flat}_In_{pdu_name.flat}_{refinement.field.name}"
 
 
-def unreachable_function_name(type_name: str) -> str:
-    return f"Unreachable_{flat_name(type_name)}"
+def unreachable_function_name(type_identifier: expr.ID) -> str:
+    return f"Unreachable_{type_identifier.flat}"
 
 
 def context_cursors_initialization(message: Message) -> Expr:
@@ -3338,7 +3338,7 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
 def refinement_conditions(
     refinement: Refinement, pdu_context: str, condition_fields: Mapping[Field, Type], null_sdu: bool
 ) -> Sequence[expr.Expr]:
-    pdu_identifier = expr.ID(flat_name(refinement.pdu.full_name))
+    pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
 
     conditions: List[expr.Expr] = [
         expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])

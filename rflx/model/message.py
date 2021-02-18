@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Uni
 
 import rflx.typing_ as rty
 from rflx import expression as expr
-from rflx.common import Base, flat_name, indent, indent_next, verbose_repr
+from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
@@ -1564,7 +1564,7 @@ class Refinement(mty.Type):
 
         super().__init__(
             package * "__REFINEMENT__"
-            f"{flat_name(sdu.full_name)}__{flat_name(pdu.full_name)}__{field.name}__",
+            f"{sdu.identifier.flat}__{pdu.identifier.flat}__{field.name}__",
             location,
             error,
         )

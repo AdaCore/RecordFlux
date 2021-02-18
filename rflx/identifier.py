@@ -102,6 +102,10 @@ class ID:
         return self.__class__(self._parts[:-1])
 
     @property
+    def flat(self: Self) -> str:
+        return "_".join(self._parts)
+
+    @property
     def _separator(self) -> str:
         return "::"
 
