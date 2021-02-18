@@ -2527,30 +2527,18 @@ class Generator:
         )
 
     def __create_message_unit(self, message: Message) -> None:
-        if isinstance(message, DerivedMessage):
-            name = generic_name(self.__prefix * ID(message.base.identifier))
-        else:
-            name = generic_name(self.__prefix * ID(message.identifier))
-
-        context: List[ContextItem] = [
-            Pragma("SPARK_Mode"),
-            WithClause(name),
-            WithClause(self.__prefix * const.TYPES_PACKAGE),
-        ]
-
-        arrays = {
-            self.__prefix * ID(t.identifier): None
-            for t in message.types.values()
-            if isinstance(t, Array)
-        }
-        context.extend(WithClause(array) for array in arrays)
-        instantiation = GenericPackageInstantiation(
-            self.__prefix * ID(message.identifier),
-            name,
-            [self.__prefix * const.TYPES_PACKAGE] + list(arrays.keys()),
+        context, package = common.create_message_instantiation(
+            message, self.__prefix * const.TYPES_PACKAGE, self.__prefix
         )
-
-        self.__create_instantiation_unit(ID(message.identifier), context, instantiation)
+        self.__create_instantiation_unit(
+            ID(message.identifier),
+            [
+                Pragma("SPARK_Mode"),
+                WithClause(self.__prefix * const.TYPES_PACKAGE),
+                *context,
+            ],
+            package,
+        )
 
     def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
         unit_name = generic_name(refinement.package * const.REFINEMENT_PACKAGE)
@@ -2692,67 +2680,23 @@ class Generator:
             unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Array):
-            self.__create_array_unit(field_type, message_package)
+            self.__create_array_unit(field_type)
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
-    def __create_array_unit(self, array_type: Array, package_identifier: ID) -> None:
-        element_type = array_type.element_type
-        element_type_identifier = ID(element_type.identifier)
-        element_type_package = ID(element_type.package.name)
-
-        array_context: List[ContextItem] = []
-        array_package: GenericPackageInstantiation
-        if isinstance(element_type, Message):
-            array_context = [
+    def __create_array_unit(self, array_type: Array) -> None:
+        context, package = common.create_array_instantiation(
+            array_type, self.__prefix * const.TYPES_PACKAGE, self.__prefix
+        )
+        self.__create_instantiation_unit(
+            package.identifier,
+            [
                 Pragma("SPARK_Mode"),
-                WithClause(self.__prefix * const.MESSAGE_SEQUENCE_PACKAGE),
-                WithClause(self.__prefix * element_type_identifier),
                 WithClause(self.__prefix * const.TYPES_PACKAGE),
-            ]
-            array_package = GenericPackageInstantiation(
-                self.__prefix * ID(array_type.identifier),
-                self.__prefix * const.MESSAGE_SEQUENCE_PACKAGE,
-                [
-                    self.__prefix * const.TYPES_PACKAGE,
-                    self.__prefix * element_type_identifier * "Context",
-                    self.__prefix * element_type_identifier * "Initialize",
-                    self.__prefix * element_type_identifier * "Take_Buffer",
-                    self.__prefix * element_type_identifier * "Has_Buffer",
-                    self.__prefix * element_type_identifier * "Message_Last",
-                    self.__prefix * element_type_identifier * "Initialized",
-                    self.__prefix * element_type_identifier * "Structural_Valid_Message",
-                ],
-            )
-        elif isinstance(element_type, Scalar):
-            array_context = [
-                Pragma("SPARK_Mode"),
-                WithClause(self.__prefix * const.SCALAR_SEQUENCE_PACKAGE),
-                WithClause(self.__prefix * element_type_package),
-                WithClause(self.__prefix * const.TYPES_PACKAGE),
-            ]
-            array_package = GenericPackageInstantiation(
-                self.__prefix * package_identifier * array_type.name,
-                self.__prefix * const.SCALAR_SEQUENCE_PACKAGE,
-                [
-                    self.__prefix * const.TYPES_PACKAGE,
-                    self.__prefix * element_type_identifier,
-                    self.__prefix
-                    * element_type_package
-                    * (
-                        common.base_type_name(element_type)
-                        if not isinstance(element_type, ModularInteger)
-                        else element_type.name
-                    ),
-                    self.__prefix * element_type_package * "Valid",
-                    self.__prefix * element_type_package * "To_Actual",
-                    self.__prefix * element_type_package * "To_Base",
-                ],
-            )
-        else:
-            assert False, 'unexpected element type "{type(element_type)}"'
-
-        self.__create_instantiation_unit(array_package.identifier, array_context, array_package)
+                *context,
+            ],
+            package,
+        )
 
     def __integer_functions(self, integer: Integer) -> UnitPart:
         specification: List[Declaration] = []
