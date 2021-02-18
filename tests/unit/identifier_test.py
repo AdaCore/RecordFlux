@@ -103,6 +103,10 @@ def test_id_parent_error() -> None:
         ID("A").parent  # pylint: disable=expression-not-assigned
 
 
+def test_id_flat() -> None:
+    assert ID("A::B::C").flat == "A_B_C"
+
+
 def test_id_sorted() -> None:
     assert sorted([ID("B"), ID("A")]) == [ID("A"), ID("B")]
 

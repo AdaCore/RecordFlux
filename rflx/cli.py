@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Dict, List, Sequence, Union
 
 from rflx import __version__
-from rflx.common import flat_name
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
@@ -155,7 +154,7 @@ def graph(args: argparse.Namespace) -> None:
 
     for m in [*model.messages, *model.sessions]:
         assert isinstance(m, (Message, Session))
-        name = flat_name(str(m.identifier))
+        name = m.identifier.flat
         filename = args.directory.joinpath(name).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)
 

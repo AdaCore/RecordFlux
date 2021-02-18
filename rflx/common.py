@@ -64,10 +64,6 @@ def indent_next(string: str, indentation: int) -> str:
     return string.replace("\n", "\n" + indentation * " ")
 
 
-def flat_name(name: str) -> str:
-    return re.sub(r"(?:\.|::)", "_", name)
-
-
 def file_name(name: str) -> str:
     return re.sub(r"(?:\.|::)", "-", name.lower())
 
