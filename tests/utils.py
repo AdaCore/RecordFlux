@@ -1,6 +1,7 @@
 import pathlib
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 import pytest
@@ -145,7 +146,7 @@ def parse(data: str, rule: GrammarRule, convert: Callable[..., Any]) -> Any:
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return convert(unit.root)
+    return convert(unit.root, Path("<stdin>"))
 
 
 def parse_math_expression(data: str, extended: bool) -> Expr:

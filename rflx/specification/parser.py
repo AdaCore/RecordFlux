@@ -51,12 +51,12 @@ from .cache import Cache
 log = logging.getLogger(__name__)
 
 
-def node_location(node: RFLXNode, filename: Path = None) -> Location:
+def node_location(node: RFLXNode, filename: Path) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
         start=(start.start.line, start.start.column),
-        source=Path(str(filename) if filename else "<stdin>"),
+        source=filename,
         end=(end.end.line, end.end.column),
     )
 
@@ -66,7 +66,12 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
     Create a location object covering the area from the start of an identifier to the end of a node.
     """
     assert identifier.location is not None
-    return Location(identifier.location.start, identifier.location.source, node_location(node).end)
+    assert identifier.location.source is not None
+    return Location(
+        identifier.location.start,
+        identifier.location.source,
+        node_location(node, identifier.location.source).end,
+    )
 
 
 def diagnostics_to_error(
@@ -100,7 +105,7 @@ def create_description(description: Description = None) -> Optional[str]:
     return None
 
 
-def create_transition(transition: Transition, filename: Path = None) -> model.Transition:
+def create_transition(transition: Transition, filename: Path) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
@@ -111,25 +116,21 @@ def create_transition(transition: Transition, filename: Path = None) -> model.Tr
     return model.Transition(target, condition, description, node_location(transition, filename))
 
 
-def create_reset(
-    reset: Statement, filename: Path = None, location: Location = None
-) -> stmt.Statement:
-    return stmt.Reset(create_id(reset.f_identifier, filename), location=location)
-
-
-def create_assignment(
-    assignment: Statement, filename: Path = None, location: Location = None
-) -> stmt.Statement:
-    return stmt.Assignment(
-        create_id(assignment.f_identifier, filename),
-        create_expression(assignment.f_expression, filename),
-        location,
+def create_reset(reset: Statement, filename: Path) -> stmt.Statement:
+    return stmt.Reset(
+        create_id(reset.f_identifier, filename), location=node_location(reset, filename)
     )
 
 
-def create_list_attribute(
-    expression: Statement, filename: Path = None, location: Location = None
-) -> stmt.Statement:
+def create_assignment(assignment: Statement, filename: Path) -> stmt.Statement:
+    return stmt.Assignment(
+        create_id(assignment.f_identifier, filename),
+        create_expression(assignment.f_expression, filename),
+        node_location(assignment, filename),
+    )
+
+
+def create_list_attribute(expression: Statement, filename: Path) -> stmt.Statement:
     attrs = {
         "Append": stmt.Append,
         "Extend": stmt.Extend,
@@ -141,22 +142,20 @@ def create_list_attribute(
     return constructor(
         create_id(expression.f_identifier, filename),
         create_expression(expression.f_expression, filename),
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_statement(statement: Statement, filename: Path = None) -> stmt.Statement:
-    handlers: Dict[
-        str, Callable[[Statement, Optional[Path], Optional[Location]], stmt.Statement]
-    ] = {
+def create_statement(statement: Statement, filename: Path) -> stmt.Statement:
+    handlers: Dict[str, Callable[[Statement, Path], stmt.Statement]] = {
         "Reset": create_reset,
         "Assignment": create_assignment,
         "ListAttribute": create_list_attribute,
     }
-    return handlers[statement.kind_name](statement, filename, node_location(statement, filename))
+    return handlers[statement.kind_name](statement, filename)
 
 
-def create_state(state: State, filename: Path = None) -> model.State:
+def create_state(state: State, filename: Path) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(state.f_identifier, filename)
     if state.f_body.kind_name == "NullStateBody":
@@ -190,7 +189,7 @@ def create_state(state: State, filename: Path = None) -> model.State:
     )
 
 
-def __check_session_identifier(session: SessionDecl, filename: Path = None) -> None:
+def __check_session_identifier(session: SessionDecl, filename: Path) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
         fail(
             "inconsistent session identifier: "
@@ -204,8 +203,8 @@ def __check_session_identifier(session: SessionDecl, filename: Path = None) -> N
 def create_unproven_session(
     session: SessionDecl,
     package: ID,
+    filename: Path,
     types: Sequence[model.Type] = None,
-    filename: Path = None,
 ) -> model.UnprovenSession:
     __check_session_identifier(session, filename)
     return model.UnprovenSession(
@@ -223,13 +222,13 @@ def create_unproven_session(
 def create_session(
     session: SessionDecl,
     package: ID,
+    filename: Path,
     types: Sequence[model.Type] = None,
-    filename: Path = None,
 ) -> model.Session:
-    return create_unproven_session(session, package, types, filename).proven()
+    return create_unproven_session(session, package, filename, types).proven()
 
 
-def create_id(identifier: NullID, filename: Path = None) -> ID:
+def create_id(identifier: NullID, filename: Path) -> ID:
     if identifier.kind_name == "UnqualifiedID":
         if identifier.text.lower() in RESERVED_WORDS:
             fail(
@@ -279,9 +278,8 @@ def create_array(
     return model.Array(identifier, element_type, type_location(identifier, array))
 
 
-def create_numeric_literal(
-    expression: Expr, _filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_numeric_literal(expression: Expr, filename: Path) -> expr.Expr:
+    location = node_location(expression, filename)
     num = expression.text.split("#")
     if len(num) == 1:
         return expr.Number(int(num[0]), location=location)
@@ -299,7 +297,7 @@ OPERATIONS: Dict[str, Type[expr.BinExpr]] = {
 }
 
 
-def create_binop(expression: Expr, filename: Path = None, _location: Location = None) -> expr.Expr:
+def create_binop(expression: Expr, filename: Path) -> expr.Expr:
     loc = node_location(expression, filename)
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
@@ -334,9 +332,7 @@ MATH_OPERATIONS = {
 }
 
 
-def create_math_binop(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_math_binop(expression: Expr, filename: Path) -> expr.Expr:
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename),
@@ -361,9 +357,7 @@ BOOLEAN_OPERATIONS = {
 }
 
 
-def create_bool_binop(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_bool_binop(expression: Expr, filename: Path) -> expr.Expr:
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename),
@@ -387,35 +381,26 @@ def create_bool_binop(
     )
 
 
-def create_paren_bool_expression(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_paren_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
     return create_bool_expression(expression.f_data, filename)
 
 
-def create_paren_math_expression(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_paren_math_expression(expression: Expr, filename: Path) -> expr.Expr:
     return create_math_expression(expression.f_data, filename)
 
 
-def create_paren_expression(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_paren_expression(expression: Expr, filename: Path) -> expr.Expr:
     return create_expression(expression.f_data, filename)
 
 
-def create_variable(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_variable(expression: Expr, filename: Path) -> expr.Expr:
+    location = node_location(expression, filename)
     if expression.f_identifier.text.lower() in ("true", "false"):
-        return expr.Variable(create_id(expression.f_identifier), location=location)
+        return expr.Variable(create_id(expression.f_identifier, filename), location=location)
     return expr.Variable(create_id(expression.f_identifier, filename), location=location)
 
 
-def create_math_attribute(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_math_attribute(expression: Expr, filename: Path) -> expr.Expr:
     inner = create_expression(expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
@@ -428,9 +413,7 @@ def create_math_attribute(
     )
 
 
-def create_attribute(
-    expression: Expr, filename: Path = None, _location: Location = None
-) -> expr.Expr:
+def create_attribute(expression: Expr, filename: Path) -> expr.Expr:
     inner = create_expression(expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
@@ -453,38 +436,33 @@ def create_attribute(
     )
 
 
-def create_array_aggregate(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_array_aggregate(expression: Expr, filename: Path) -> expr.Expr:
     return expr.Aggregate(
         *[create_math_expression(v, filename) for v in expression.f_values],
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_string_literal(
-    expression: Expr, _filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_string_literal(expression: Expr, filename: Path) -> expr.Expr:
     return expr.String(
         expression.text.split('"')[1],
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_call(expression: Expr, filename: Path = None, location: Location = None) -> expr.Expr:
+def create_call(expression: Expr, filename: Path) -> expr.Expr:
     return expr.Call(
         create_id(expression.f_identifier, filename),
         [create_expression(a, filename) for a in expression.f_arguments],
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_quantified_expression(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_quantified_expression(expression: Expr, filename: Path) -> expr.Expr:
     param_id = create_id(expression.f_parameter_identifier, filename)
     iterable = create_expression(expression.f_iterable, filename)
     predicate = create_expression(expression.f_predicate, filename)
+    location = node_location(expression, filename)
     if expression.f_operation.kind_name == "QuantifierAll":
         return expr.ForAllIn(param_id, iterable, predicate, location)
     if expression.f_operation.kind_name == "QuantifierSome":
@@ -493,17 +471,19 @@ def create_quantified_expression(
     raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
 
 
-def create_binding(expression: Expr, filename: Path = None, location: Location = None) -> expr.Expr:
+def create_binding(expression: Expr, filename: Path) -> expr.Expr:
     bindings: Mapping[Union[str, ID], expr.Expr] = {
         create_id(b.f_identifier, filename): create_expression(b.f_expression, filename)
         for b in expression.f_bindings
     }
-    return expr.Binding(create_expression(expression.f_expression, filename), bindings, location)
+    return expr.Binding(
+        create_expression(expression.f_expression, filename),
+        bindings,
+        node_location(expression, filename),
+    )
 
 
-def create_variable_decl(
-    declaration: VariableDecl, filename: Path = None, location: Location = None
-) -> decl.BasicDeclaration:
+def create_variable_decl(declaration: VariableDecl, filename: Path) -> decl.BasicDeclaration:
     initializer = (
         create_expression(declaration.f_initializer, filename)
         if declaration.f_initializer
@@ -513,24 +493,24 @@ def create_variable_decl(
         create_id(declaration.f_identifier, filename),
         model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename)),
         initializer,
-        location=location,
+        location=node_location(declaration, filename),
     )
 
 
 def create_private_type_decl(
-    declaration: FormalPrivateTypeDecl,
-    filename: Path = None,
-    location: Location = None,
+    declaration: FormalPrivateTypeDecl, filename: Path
 ) -> decl.FormalDeclaration:
     return decl.TypeDeclaration(
-        model.Private(create_id(declaration.f_identifier, filename), location=location)
+        model.Private(
+            create_id(declaration.f_identifier, filename),
+            location=node_location(declaration, filename),
+        )
     )
 
 
 def create_channel_decl(
     declaration: FormalChannelDecl,
-    filename: Path = None,
-    location: Location = None,
+    filename: Path,
 ) -> decl.FormalDeclaration:
     readable = False
     writable = False
@@ -545,27 +525,24 @@ def create_channel_decl(
         create_id(declaration.f_identifier, filename),
         readable=readable,
         writable=writable,
-        location=location,
+        location=node_location(declaration, filename),
     )
 
 
-def create_renaming_decl(
-    declaration: RenamingDecl, filename: Path = None, location: Location = None
-) -> decl.BasicDeclaration:
+def create_renaming_decl(declaration: RenamingDecl, filename: Path) -> decl.BasicDeclaration:
     selected = create_expression(declaration.f_expression, filename)
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
         model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename), None),
         selected,
-        location,
+        node_location(declaration, filename),
     )
 
 
 def create_function_decl(
     declaration: FormalFunctionDecl,
-    filename: Path = None,
-    location: Location = None,
+    filename: Path,
 ) -> decl.FormalDeclaration:
     arguments = []
     if declaration.f_parameters:
@@ -580,31 +557,27 @@ def create_function_decl(
         create_id(declaration.f_identifier, filename),
         arguments,
         create_id(declaration.f_return_type_identifier, filename),
-        location,
+        node_location(declaration, filename),
     )
 
 
-def create_negation(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
-    expression = create_math_expression(expression.f_data, filename)
-    assert isinstance(expression, expr.Number)
-    return expr.Number(-expression.value, expression.base, location)
+def create_negation(expression: Expr, filename: Path) -> expr.Expr:
+    math_expr = create_math_expression(expression.f_data, filename)
+    assert isinstance(math_expr, expr.Number)
+    return expr.Number(-math_expr.value, math_expr.base, node_location(expression, filename))
 
 
-def create_concatenation(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_concatenation(expression: Expr, filename: Path) -> expr.Expr:
     left = create_expression(expression.f_left, filename)
     right = create_expression(expression.f_right, filename)
     assert isinstance(left, expr.Aggregate)
     assert isinstance(right, expr.Aggregate)
-    return expr.Aggregate(*(left.elements + right.elements), location=location)
+    return expr.Aggregate(
+        *(left.elements + right.elements), location=node_location(expression, filename)
+    )
 
 
-def create_comprehension(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_comprehension(expression: Expr, filename: Path) -> expr.Expr:
     condition = (
         create_bool_expression(expression.f_condition, filename)
         if expression.f_condition
@@ -615,33 +588,27 @@ def create_comprehension(
         create_expression(expression.f_array, filename),
         create_expression(expression.f_selector, filename),
         condition,
-        location,
+        node_location(expression, filename),
     )
 
 
-def create_selected(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_selected(expression: Expr, filename: Path) -> expr.Expr:
     return expr.Selected(
         create_expression(expression.f_expression, filename),
         create_id(expression.f_selector, filename),
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_conversion(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_conversion(expression: Expr, filename: Path) -> expr.Expr:
     return expr.Conversion(
         create_id(expression.f_target_identifier, filename),
         create_expression(expression.f_argument, filename),
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
-def create_message_aggregate(
-    expression: Expr, filename: Path = None, location: Location = None
-) -> expr.Expr:
+def create_message_aggregate(expression: Expr, filename: Path) -> expr.Expr:
     values: Mapping[StrID, expr.Expr] = {}
     if expression.f_values.kind_name == "NullMessageAggregate":
         values = {}
@@ -656,7 +623,7 @@ def create_message_aggregate(
     return expr.MessageAggregate(
         create_id(expression.f_identifier, filename),
         values,
-        location=location,
+        location=node_location(expression, filename),
     )
 
 
@@ -680,33 +647,30 @@ EXPRESSION_MAP = {
 }
 
 
-def create_expression(expression: Expr, filename: Path = None) -> expr.Expr:
-
-    location = node_location(expression, filename)
-    return EXPRESSION_MAP[expression.kind_name](expression, filename, location)
+def create_expression(expression: Expr, filename: Path) -> expr.Expr:
+    return EXPRESSION_MAP[expression.kind_name](expression, filename)
 
 
-def create_declaration(declaration: Expr, filename: Path = None) -> decl.BasicDeclaration:
+def create_declaration(declaration: Expr, filename: Path) -> decl.BasicDeclaration:
     location = node_location(declaration, filename)
     handlers: Dict[str, Callable[..., decl.BasicDeclaration]] = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    return handlers[declaration.kind_name](declaration, filename, location)
+    return handlers[declaration.kind_name](declaration, location)
 
 
-def create_formal_declaration(declaration: Expr, filename: Path = None) -> decl.FormalDeclaration:
+def create_formal_declaration(declaration: Expr, filename: Path) -> decl.FormalDeclaration:
     location = node_location(declaration, filename)
     handlers: Dict[str, Callable[..., decl.FormalDeclaration]] = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, filename, location)
+    return handlers[declaration.kind_name](declaration, location)
 
 
-def create_math_expression(expression: Expr, filename: Path = None) -> expr.Expr:
-    location = node_location(expression, filename)
+def create_math_expression(expression: Expr, filename: Path) -> expr.Expr:
     handlers = {
         "NumericLiteral": create_numeric_literal,
         "BinOp": create_math_binop,
@@ -719,11 +683,10 @@ def create_math_expression(expression: Expr, filename: Path = None) -> expr.Expr
         "SelectNode": create_selected,
         "ArrayAggregate": create_array_aggregate,
     }
-    return handlers[expression.kind_name](expression, filename, location)
+    return handlers[expression.kind_name](expression, filename)
 
 
-def create_bool_expression(expression: Expr, filename: Path = None) -> expr.Expr:
-    location = node_location(expression, filename)
+def create_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
     handlers = {
         "BinOp": create_bool_binop,
         "ParenExpression": create_paren_bool_expression,
@@ -734,7 +697,7 @@ def create_bool_expression(expression: Expr, filename: Path = None) -> expr.Expr
         "Binding": create_binding,
         "SelectNode": create_selected,
     }
-    return handlers[expression.kind_name](expression, filename, location)
+    return handlers[expression.kind_name](expression, filename)
 
 
 def create_modular(
@@ -824,7 +787,7 @@ def create_message_types(
     identifier: ID,
     components: Components,
     types: Sequence[model.Type],
-    filename: Path = None,
+    filename: Path,
 ) -> Mapping[model.Field, model.Type]:
 
     field_types: Dict[model.Field, model.Type] = {}
@@ -841,7 +804,7 @@ def create_message_types(
 
 
 def create_message_structure(
-    components: Components, error: RecordFluxError, filename: Path = None
+    components: Components, error: RecordFluxError, filename: Path
 ) -> List[model.Link]:
     # pylint: disable=too-many-branches, too-many-locals
 
@@ -984,7 +947,7 @@ def create_message_structure(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, filename: Path = None
+    checksum: ChecksumAspect, filename: Path
 ) -> Mapping[ID, Sequence[expr.Expr]]:
     result = {}
     if checksum:
@@ -1238,7 +1201,7 @@ class Parser:
             filename = parent / Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
             self.__specifications[filename] = (specfile, spec)
             for context in spec.f_context_clause:
-                item = create_id(context.f_item, specfile)
+                item = create_id(context.f_item, specfile or filename)
                 if item in transitions:
                     error.append(
                         f'dependency cycle when including "{transitions[0]}"',
@@ -1304,7 +1267,7 @@ class Parser:
         error = RecordFluxError()
         for origname, specification in reversed(self.__specifications.values()):
             try:
-                self.__evaluate_specification(specification, origname)
+                self.__evaluate_specification(specification, origname or Path("<stdin>"))
             except RecordFluxError as e:
                 error.extend(e)
         try:
@@ -1363,7 +1326,7 @@ class Parser:
                     except RecordFluxError as e:
                         error.extend(e)
                 elif t.kind_name == "SessionDecl":
-                    new_session = create_session(t, package_id, self.__types, filename)
+                    new_session = create_session(t, package_id, filename, self.__types)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)
                 else:
