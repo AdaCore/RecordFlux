@@ -1,0 +1,9 @@
+package P1 is
+   type Kind is mod 2**16;
+   type Frame is
+      message
+         Kind : Kind;
+         Payload : Opaque
+            with Size => Message'Last - Kind'Last;
+      end message;
+end P1;

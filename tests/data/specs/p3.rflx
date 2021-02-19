@@ -1,0 +1,9 @@
+with P2;
+package P3 is
+   type T is mod 2**32;
+   type Packet is
+      message
+         F1 : T;
+         F2 : P2::Length;
+      end message;
+end P3;
