@@ -113,7 +113,7 @@ class AbstractSession(Base):
 
         assert all(not isinstance(d, decl.FormalDeclaration) for d in self.declarations.values())
 
-        self.__global_declarations: Mapping[ID, decl.Declaration] = {
+        self._global_declarations: Mapping[ID, decl.Declaration] = {
             **self.parameters,
             **self.declarations,
         }
@@ -126,7 +126,7 @@ class AbstractSession(Base):
                 self.identifier.location,
             )
 
-        self.__literals = {
+        self._literals = {
             **mty.qualified_type_literals(self.types.values()),
             **mty.qualified_enum_literals(self.types.values(), self.package),
         }
@@ -150,20 +150,25 @@ class AbstractSession(Base):
     def package(self) -> ID:
         return self.identifier.parent
 
-    def _validate(self) -> None:
-        self.__validate_states()
 
-        self.__validate_declarations(self.__global_declarations, {})
-
-        for s in self.states:
-            self.__validate_declarations(s.declarations, self.__global_declarations)
-
-            declarations = {**self.__global_declarations, **s.declarations}
-
-            self.__validate_actions(s.actions, declarations)
-            self.__validate_transitions(s.transitions, declarations)
-
-        self.__validate_usage()
+class Session(AbstractSession):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        identifier: StrID,
+        initial: StrID,
+        final: StrID,
+        states: Sequence[State],
+        declarations: Sequence[decl.BasicDeclaration],
+        parameters: Sequence[decl.FormalDeclaration],
+        types: Sequence[mty.Type],
+        location: Location = None,
+    ):
+        super().__init__(
+            identifier, initial, final, states, declarations, parameters, types, location
+        )
+        self.__validate()
+        self.error.propagate()
 
     def __validate_states(self) -> None:
         if not self.states:
@@ -340,8 +345,8 @@ class AbstractSession(Base):
                             undefined_type(a.type_identifier, d.location)
                     d.argument_types = argument_types
 
-                if d.type_identifier in self.__global_declarations:
-                    self.__global_declarations[d.type_identifier].reference()
+                if d.type_identifier in self._global_declarations:
+                    self._global_declarations[d.type_identifier].reference()
 
             visible_declarations[k] = d
 
@@ -372,7 +377,7 @@ class AbstractSession(Base):
             self.__reference_variable_declaration(t.condition.variables(), declarations)
 
     def __validate_usage(self) -> None:
-        global_declarations = self.__global_declarations.items()
+        global_declarations = self._global_declarations.items()
         local_declarations = ((k, d) for s in self.states for k, d in s.declarations.items())
         for k, d in itertools.chain(global_declarations, local_declarations):
             if not d.is_referenced:
@@ -394,8 +399,8 @@ class AbstractSession(Base):
             if isinstance(expression, expr.Variable):
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
-                if identifier in self.__literals:
-                    expression.type_ = self.__literals[identifier].type_
+                if identifier in self._literals:
+                    expression.type_ = self._literals[identifier].type_
             if isinstance(expression, expr.Call):
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
@@ -437,25 +442,20 @@ class AbstractSession(Base):
             except KeyError:
                 pass
 
+    def __validate(self) -> None:
+        self.__validate_states()
 
-class Session(AbstractSession):
-    # pylint: disable=too-many-arguments
-    def __init__(
-        self,
-        identifier: StrID,
-        initial: StrID,
-        final: StrID,
-        states: Sequence[State],
-        declarations: Sequence[decl.BasicDeclaration],
-        parameters: Sequence[decl.FormalDeclaration],
-        types: Sequence[mty.Type],
-        location: Location = None,
-    ):
-        super().__init__(
-            identifier, initial, final, states, declarations, parameters, types, location
-        )
-        self._validate()
-        self.error.propagate()
+        self.__validate_declarations(self._global_declarations, {})
+
+        for s in self.states:
+            self.__validate_declarations(s.declarations, self._global_declarations)
+
+            declarations = {**self._global_declarations, **s.declarations}
+
+            self.__validate_actions(s.actions, declarations)
+            self.__validate_transitions(s.transitions, declarations)
+
+        self.__validate_usage()
 
 
 class UnprovenSession(AbstractSession):
