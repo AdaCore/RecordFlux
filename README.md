@@ -4,7 +4,6 @@
 [![Python Versions](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![Tests](https://github.com/Componolit/RecordFlux/workflows/tests/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
-[![Code Coverage](https://codecov.io/github/Componolit/RecordFlux/coverage.svg?branch=master)](https://codecov.io/github/Componolit/RecordFlux)
 
 RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers and message generators.
 
