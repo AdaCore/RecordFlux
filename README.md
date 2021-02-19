@@ -1,4 +1,4 @@
-# RecordFlux
+# [![RecordFlux](doc/img/logo.svg)](https://github.com/Componolit/RecordFlux/)
 
 [![PyPI](https://img.shields.io/pypi/v/RecordFlux?color=blue)](https://pypi.org/project/RecordFlux/)
 [![Python Versions](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://python.org/)
