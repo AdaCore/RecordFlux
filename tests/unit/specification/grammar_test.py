@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from librflxlang import AnalysisContext
 
@@ -42,7 +44,7 @@ def parse_session(string: str) -> model.Session:
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return create_session(unit.root, ID("Package"))
+    return create_session(unit.root, ID("Package"), Path("<stdin>"))
 
 
 def parse_unproven_session(string: str) -> model.UnprovenSession:
@@ -52,13 +54,13 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error):
         error.propagate()
-    return create_unproven_session(unit.root, ID("Package"))
+    return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"))
 
 
 def parse_id(data: str, rule: GrammarRule) -> ID:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
-    return create_id(unit.root)
+    return create_id(unit.root, Path("<stdin>"))
 
 
 @pytest.mark.parametrize(
