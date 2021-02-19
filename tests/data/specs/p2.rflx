@@ -1,0 +1,11 @@
+with P4;
+package P2 is
+   type Length is mod 2**16;
+   type Packet is
+      message
+         Length : Length;
+         Protocol : P4::Protocol_Number;
+         Payload : Opaque
+            with Size => 8 * Length;
+      end message;
+end P2;

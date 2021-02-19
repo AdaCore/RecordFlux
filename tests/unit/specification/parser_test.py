@@ -2421,3 +2421,65 @@ def test_parse_error_invalid_range_aspect() -> None:
 )
 def test_parse_error_invalid_enum(spec: str, error: str) -> None:
     assert_error_string(spec, error)
+
+
+def test_complex_dependencies() -> None:
+
+    p4_protocol_number = model.ModularInteger(
+        "P4::Protocol_Number", expr.Pow(expr.Number(2), expr.Number(16))
+    )
+
+    p1_kind = model.ModularInteger("P1::Kind", expr.Pow(expr.Number(2), expr.Number(16)))
+
+    p1_packet_structure = [
+        model.Link(model.INITIAL, model.Field("Kind")),
+        model.Link(
+            model.Field("Kind"),
+            model.Field("Payload"),
+            size=expr.Sub(expr.Last("Message"), expr.Last("Kind")),
+        ),
+        model.Link(model.Field("Payload"), model.FINAL),
+    ]
+
+    p1_packet_types = {
+        Field("Kind"): p1_kind,
+        Field("Payload"): OPAQUE,
+    }
+
+    p1_packet = model.Message("P1::Frame", p1_packet_structure, p1_packet_types)
+
+    p2_length = model.ModularInteger("P2::Length", expr.Pow(expr.Number(2), expr.Number(16)))
+
+    p2_packet_structure = [
+        model.Link(model.INITIAL, model.Field("Length")),
+        model.Link(model.Field("Length"), model.Field("Protocol")),
+        model.Link(
+            model.Field("Protocol"),
+            model.Field("Payload"),
+            size=expr.Mul(expr.Number(8), expr.Variable("Length")),
+        ),
+        model.Link(model.Field("Payload"), model.FINAL),
+    ]
+
+    p2_packet_types = {
+        Field("Length"): p2_length,
+        Field("Protocol"): p4_protocol_number,
+        Field("Payload"): OPAQUE,
+    }
+
+    p2_packet = model.Message("P2::Packet", p2_packet_structure, p2_packet_types)
+
+    p3_packet_structure = [
+        model.Link(model.INITIAL, model.Field("F1")),
+        model.Link(model.Field("F1"), model.Field("F2")),
+        model.Link(model.Field("F2"), model.FINAL),
+    ]
+
+    p3_packet_types = {
+        Field("F1"): model.ModularInteger("P3::T", expr.Pow(expr.Number(2), expr.Number(32))),
+        Field("F2"): p2_length,
+    }
+
+    p3_packet = model.Message("P3::Packet", p3_packet_structure, p3_packet_types)
+
+    assert_messages_files([f"{SPEC_DIR}/in_p1.rflx"], [p2_packet, p3_packet, p1_packet])
