@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 from librflxlang import (
     AnalysisContext,
@@ -1187,7 +1187,9 @@ def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> No
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[str, Tuple[Path, Specification]] = OrderedDict()
+        self.__specifications: OrderedDict[
+            str, Tuple[Path, Specification, List[str]]
+        ] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1200,11 +1202,11 @@ class Parser:
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
+        withed_files = []
 
         if spec:
             check_naming(error, spec.f_package_declaration, filename)
             packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
-            self.__specifications[packagefile] = (filename, spec)
             for context in spec.f_context_clause:
                 item = create_id(context.f_item, filename)
                 if item in transitions:
@@ -1227,16 +1229,15 @@ class Parser:
                     )
                     continue
                 withed_file = filename.parent / f"{str(item).lower()}.rflx"
-                error.extend(self.__parse_specfile(withed_file, transitions + [item]))
+                withed_files.append(withed_file.name)
+                if withed_file.name not in self.__specifications:
+                    error.extend(self.__parse_specfile(withed_file, transitions + [item]))
+            self.__specifications[packagefile] = (filename, spec, withed_files)
 
         return error
 
     def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
-        if filename.name in self.__specifications:
-            self.__specifications.move_to_end(filename.name)
-            return error
-
         transitions = transitions or []
 
         log.info("Parsing %s", filename)
@@ -1245,11 +1246,37 @@ class Parser:
             return error
         return self.__convert_unit(unit.root, filename, transitions)
 
+    def __sort_specs_topologically(self) -> None:
+        """
+        (Reverse) Topologically sort specifications using Kahn's algorithm.
+        """
+
+        result: List[str] = []
+        incoming: Dict[str, Set[str]] = {f: set() for f in self.__specifications.keys()}
+        for filename, (_, _, deps) in self.__specifications.items():
+            for d in deps:
+                if d in incoming:
+                    incoming[d].add(filename)
+
+        specs = [f for f, i in incoming.items() if len(i) == 0]
+        visited = set(specs)
+
+        while specs:
+            s = specs.pop(0)
+            result.insert(0, s)
+            for e in self.__specifications[s][2]:
+                visited.add(e)
+                if e in incoming and incoming[e] <= visited:
+                    specs.append(e)
+
+        self.__specifications = OrderedDict((f, self.__specifications[f]) for f in result)
+
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
 
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
+        self.__sort_specs_topologically()
         error.propagate()
 
     def parse_string(
@@ -1261,11 +1288,12 @@ class Parser:
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
             error = self.__convert_unit(unit.root, STDIN)
+            self.__sort_specs_topologically()
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for filename, spec in reversed(self.__specifications.values()):
+        for filename, spec, _ in self.__specifications.values():
             try:
                 self.__evaluate_specification(spec, filename)
             except RecordFluxError as e:
@@ -1282,7 +1310,7 @@ class Parser:
     def specifications(self) -> Dict[str, Specification]:
         return {
             spec.f_package_declaration.f_identifier.text: spec
-            for _, spec in self.__specifications.values()
+            for _, spec, _ in self.__specifications.values()
         }
 
     def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
