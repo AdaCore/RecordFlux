@@ -42,14 +42,14 @@ StrID = Union[str, ID]
 
 
 class Precedence(Enum):
-    undefined = 0
-    boolean_operator = 1
-    relational_operator = 2
-    binary_adding_operator = 3
-    unary_adding_operator = 4
-    multiplying_operator = 5
-    highest_precedence_operator = 6
-    literal = 7
+    UNDEFINED = 0
+    BOOLEAN_OPERATOR = 1
+    RELATIONAL_OPERATOR = 2
+    BINARY_ADDING_OPERATOR = 3
+    UNARY_ADDING_OPERATOR = 4
+    MULTIPLYING_OPERATOR = 5
+    HIGHEST_PRECEDENCE_OPERATOR = 6
+    LITERAL = 7
 
 
 class Expr(Base):
@@ -90,7 +90,7 @@ class Not(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.highest_precedence_operator
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
 
 class BinExpr(Expr):
@@ -161,7 +161,7 @@ class BoolAssExpr(AssExpr):
 class And(BoolAssExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.boolean_operator
+        return Precedence.BOOLEAN_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -177,7 +177,7 @@ class AndThen(And):
 class Or(BoolAssExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.boolean_operator
+        return Precedence.BOOLEAN_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -217,7 +217,7 @@ class Number(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class Add(AssExpr):
@@ -232,7 +232,7 @@ class Add(AssExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.binary_adding_operator
+        return Precedence.BINARY_ADDING_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -242,7 +242,7 @@ class Add(AssExpr):
 class Mul(AssExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -252,7 +252,7 @@ class Mul(AssExpr):
 class Sub(BinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.binary_adding_operator
+        return Precedence.BINARY_ADDING_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -262,7 +262,7 @@ class Sub(BinExpr):
 class Div(BinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -272,7 +272,7 @@ class Div(BinExpr):
 class Pow(BinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.highest_precedence_operator
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -282,7 +282,7 @@ class Pow(BinExpr):
 class Mod(BinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     @property
     def symbol(self) -> str:
@@ -305,7 +305,7 @@ class Name(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class Variable(Name):
@@ -483,7 +483,7 @@ class Aggregate(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class String(Aggregate):
@@ -496,7 +496,7 @@ class String(Aggregate):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class NamedAggregate(Expr):
@@ -517,7 +517,7 @@ class NamedAggregate(Expr):
 class Relation(BinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.relational_operator
+        return Precedence.RELATIONAL_OPERATOR
 
 
 class Less(Relation):
@@ -597,7 +597,7 @@ class IfExpr(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 def Case(control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]) -> Expr:
@@ -630,7 +630,7 @@ class CaseExpr(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class QuantifiedExpr(Expr):
@@ -648,7 +648,7 @@ class QuantifiedExpr(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     @property
     @abstractmethod
@@ -716,7 +716,7 @@ class Conversion(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
 
 class Declaration(Base):
