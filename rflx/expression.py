@@ -23,27 +23,27 @@ class Z3TypeError(TypeError):
 
 
 class Precedence(Enum):
-    undefined = 0
-    boolean_operator = 1
-    relational_operator = 2
-    binary_adding_operator = 3
-    unary_adding_operator = 4
-    multiplying_operator = 5
-    highest_precedence_operator = 6
-    literal = 7
+    UNDEFINED = 0
+    BOOLEAN_OPERATOR = 1
+    RELATIONAL_OPERATOR = 2
+    BINARY_ADDING_OPERATOR = 3
+    UNARY_ADDING_OPERATOR = 4
+    MULTIPLYING_OPERATOR = 5
+    HIGHEST_PRECEDENCE_OPERATOR = 6
+    LITERAL = 7
 
 
 class ProofResult(Enum):
-    sat = z3.sat
-    unsat = z3.unsat
-    unknown = z3.unknown
+    SAT = z3.sat
+    UNSAT = z3.unsat
+    UNKNOWN = z3.unknown
 
 
 class Proof:
     def __init__(self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None):
         self.__expr = expr
         self.__facts = facts or []
-        self.__result = ProofResult.unsat
+        self.__result = ProofResult.UNSAT
 
         solver = z3.Solver()
         solver.add(self.__expr.z3expr())
@@ -58,7 +58,7 @@ class Proof:
 
     @property
     def error(self) -> List[Tuple[str, Optional[Location]]]:
-        assert self.__result == ProofResult.unsat
+        assert self.__result == ProofResult.UNSAT
         solver = z3.Solver()
         solver.set(unsat_core=True)
         facts = {f"H{index}": fact for index, fact in enumerate(self.__facts)}
@@ -207,7 +207,7 @@ class BooleanLiteral(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def simplified(self) -> Expr:
         return self
@@ -274,7 +274,7 @@ class Not(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.highest_precedence_operator
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
     def simplified(self) -> Expr:
         for relation, inverse_relation in [
@@ -401,7 +401,7 @@ class AssExpr(Expr):
     def __le__(self, other: object) -> bool:
         if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
-                return all([x <= y for x, y in zip(self.terms, other.terms)])
+                return all(x <= y for x, y in zip(self.terms, other.terms))
             return False
         return NotImplemented
 
@@ -417,7 +417,7 @@ class AssExpr(Expr):
     def __ge__(self, other: object) -> bool:
         if isinstance(other, AssExpr):
             if len(self.terms) == len(other.terms):
-                return all([x >= y for x, y in zip(self.terms, other.terms)])
+                return all(x >= y for x, y in zip(self.terms, other.terms))
             return False
         return NotImplemented
 
@@ -538,7 +538,7 @@ class And(BoolAssExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.boolean_operator
+        return Precedence.BOOLEAN_OPERATOR
 
     def simplified(self) -> Expr:
         simplified_expr = super().simplified()
@@ -583,7 +583,7 @@ class Or(BoolAssExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.boolean_operator
+        return Precedence.BOOLEAN_OPERATOR
 
     def simplified(self) -> Expr:
         simplified_expr = super().simplified()
@@ -725,7 +725,7 @@ class Number(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def simplified(self) -> Expr:
         return self
@@ -769,7 +769,7 @@ class Add(MathAssExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.binary_adding_operator
+        return Precedence.BINARY_ADDING_OPERATOR
 
     def operation(self, left: int, right: int) -> int:
         return left + right
@@ -816,7 +816,7 @@ class Mul(MathAssExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     def operation(self, left: int, right: int) -> int:
         return left * right
@@ -856,7 +856,7 @@ class MathBinExpr(BinExpr):
 class Sub(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.binary_adding_operator
+        return Precedence.BINARY_ADDING_OPERATOR
 
     def simplified(self) -> Expr:
         left = self.left.simplified()
@@ -884,7 +884,7 @@ class Sub(MathBinExpr):
 class Div(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     def simplified(self) -> Expr:
         left = self.left.simplified()
@@ -912,7 +912,7 @@ class Div(MathBinExpr):
 class Pow(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.highest_precedence_operator
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
     def simplified(self) -> Expr:
         left = self.left.simplified()
@@ -940,7 +940,7 @@ class Pow(MathBinExpr):
 class Mod(MathBinExpr):
     @property
     def precedence(self) -> Precedence:
-        return Precedence.multiplying_operator
+        return Precedence.MULTIPLYING_OPERATOR
 
     def simplified(self) -> Expr:
         left = self.left.simplified()
@@ -983,7 +983,7 @@ class Name(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     @property
     @abstractmethod
@@ -1445,7 +1445,7 @@ class Aggregate(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
@@ -1486,7 +1486,7 @@ class String(Aggregate):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
@@ -1524,7 +1524,7 @@ class Relation(BinExpr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.relational_operator
+        return Precedence.RELATIONAL_OPERATOR
 
 
 class Less(Relation):
@@ -1773,7 +1773,7 @@ class QuantifiedExpression(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     @property
     @abstractmethod
@@ -1959,7 +1959,7 @@ class Conversion(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
@@ -2066,7 +2066,7 @@ class Comprehension(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.literal
+        return Precedence.LITERAL
 
     def ada_expr(self) -> ada.Expr:
         raise NotImplementedError

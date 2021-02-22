@@ -957,7 +957,7 @@ def test_aggregate_str() -> None:
 
 
 def test_aggregate_precedence() -> None:
-    assert Aggregate(Number(1), Number(2)).precedence == Precedence.literal
+    assert Aggregate(Number(1), Number(2)).precedence == Precedence.LITERAL
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])

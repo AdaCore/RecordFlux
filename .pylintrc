@@ -12,7 +12,8 @@ disable=missing-docstring,
         bad-continuation,
         unnecessary-lambda,
         inconsistent-return-statements,
-        unsubscriptable-object  # ISSUE: PyCQA/pylint#3045
+        unsubscriptable-object,  # ISSUE: PyCQA/pylint#3045
+        duplicate-code,  # ISSUE: PyCQA/pylint#4118
 
 [BASIC]
 
