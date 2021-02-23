@@ -49,6 +49,7 @@ from rflx.specification.const import RESERVED_WORDS
 from .cache import Cache
 
 log = logging.getLogger(__name__)
+STDIN = Path("<stdin>")
 
 
 def node_location(node: RFLXNode, filename: Path) -> Location:
@@ -75,7 +76,7 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path = None
+    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path = STDIN
 ) -> bool:
     """
     Append langkit diagnostics to RecordFlux error. Return True if error occured.
@@ -1134,10 +1135,7 @@ def create_refinement(
     )
 
 
-def check_naming(
-    error: RecordFluxError, package: PackageNode, _filename: Path, origname: Path = None
-) -> None:
-    name = origname or Path("<stdin>")
+def check_naming(error: RecordFluxError, package: PackageNode, _filename: Path, name: Path) -> None:
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
@@ -1159,15 +1157,15 @@ def check_naming(
             Severity.INFO,
             node_location(package.f_identifier, name),
         )
-    if origname:
+    if name != STDIN:
         expected_filename = f"{identifier.lower()}.rflx"
-        if origname.name != expected_filename:
+        if name.name != expected_filename:
             error.append(
                 f'file name does not match unit name "{identifier}",'
                 f' should be "{expected_filename}"',
                 Subsystem.PARSER,
                 Severity.ERROR,
-                node_location(package.f_identifier, origname),
+                node_location(package.f_identifier, name),
             )
     for t in package.f_declarations:
         if isinstance(t, TypeDecl) and model.is_builtin_type(create_id(t.f_identifier, name).name):
@@ -1182,9 +1180,7 @@ def check_naming(
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[
-            Path, Tuple[Optional[Path], Specification]
-        ] = OrderedDict()
+        self.__specifications: OrderedDict[Path, Tuple[Path, Specification]] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1193,19 +1189,18 @@ class Parser:
         self.__cache = Cache(cached)
 
     def __convert_unit(
-        self, spec: Specification, filename: Path = None, transitions: List[ID] = None
+        self, spec: Specification, filename: Path = STDIN, transitions: List[ID] = None
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
 
         if spec:
-            parent = filename.parent if filename else Path(".")
-            packagefile = parent / Path(
+            packagefile = filename.parent / Path(
                 f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
             )
             self.__specifications[packagefile] = (filename, spec)
             for context in spec.f_context_clause:
-                item = create_id(context.f_item, filename or packagefile)
+                item = create_id(context.f_item, filename)
                 if item in transitions:
                     error.append(
                         f'dependency cycle when including "{transitions[0]}"',
@@ -1271,7 +1266,7 @@ class Parser:
         error = RecordFluxError()
         for packagefile, specification in reversed(self.__specifications.values()):
             try:
-                self.__evaluate_specification(specification, packagefile or Path("<stdin>"))
+                self.__evaluate_specification(specification, packagefile)
             except RecordFluxError as e:
                 error.extend(e)
         try:
