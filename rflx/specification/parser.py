@@ -1135,7 +1135,7 @@ def create_refinement(
     )
 
 
-def check_naming(error: RecordFluxError, package: PackageNode, _filename: Path, name: Path) -> None:
+def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> None:
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.append(
@@ -1160,6 +1160,7 @@ def check_naming(error: RecordFluxError, package: PackageNode, _filename: Path, 
     if name != STDIN:
         expected_filename = f"{identifier.lower()}.rflx"
         if name.name != expected_filename:
+
             error.append(
                 f'file name does not match unit name "{identifier}",'
                 f' should be "{expected_filename}"',
@@ -1245,8 +1246,8 @@ class Parser:
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
 
-        for f, (packagefile, spec) in self.__specifications.items():
-            check_naming(error, spec.f_package_declaration, f, packagefile)
+        for packagefile, spec in self.__specifications.values():
+            check_naming(error, spec.f_package_declaration, packagefile)
         error.propagate()
 
     def parse_string(
@@ -1258,15 +1259,15 @@ class Parser:
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root)
-            for f, (packagefile, spec) in self.__specifications.items():
-                check_naming(error, spec.f_package_declaration, f, packagefile)
+            for packagefile, spec in self.__specifications.values():
+                check_naming(error, spec.f_package_declaration, packagefile)
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for packagefile, specification in reversed(self.__specifications.values()):
+        for packagefile, spec in reversed(self.__specifications.values()):
             try:
-                self.__evaluate_specification(specification, packagefile)
+                self.__evaluate_specification(spec, packagefile)
             except RecordFluxError as e:
                 error.extend(e)
         try:
