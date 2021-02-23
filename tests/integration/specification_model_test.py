@@ -240,7 +240,6 @@ def test_model_conflicting_refinements() -> None:
     assert_error_string(
         """
             package Test is
-               type X is null message;
                type PDU is
                   message
                      null
@@ -248,12 +247,12 @@ def test_model_conflicting_refinements() -> None:
                            with Size => 8;
                      Foo : Opaque;
                   end message;
-               for Test::PDU use (Foo => X);
-               for PDU use (Foo => X);
+               for Test::PDU use (Foo => Test::PDU);
+               for PDU use (Foo => PDU);
             end Test;
         """,
-        r'^<stdin>:12:16: model: error: conflicting refinement of "Test::PDU" with "Test::X"\n'
-        r"<stdin>:11:16: model: info: previous occurrence of refinement",
+        r'^<stdin>:11:16: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
+        r"<stdin>:10:16: model: info: previous occurrence of refinement",
     )
 
 
