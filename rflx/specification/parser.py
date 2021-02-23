@@ -75,7 +75,7 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: List[Diagnostic], error: RecordFluxError, specfile: Path = None
+    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path = None
 ) -> bool:
     """
     Append langkit diagnostics to RecordFlux error. Return True if error occured.
@@ -92,7 +92,7 @@ def diagnostics_to_error(
             Severity.ERROR,
             Location(
                 start=(loc.start.line, loc.start.column),
-                source=specfile,
+                source=filename,
                 end=(loc.end.line, loc.end.column),
             ),
         )
@@ -1182,7 +1182,9 @@ def check_naming(
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[Path, Specification] = OrderedDict()
+        self.__specifications: OrderedDict[
+            Path, Tuple[Optional[Path], Specification]
+        ] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1191,17 +1193,19 @@ class Parser:
         self.__cache = Cache(cached)
 
     def __convert_unit(
-        self, spec: Specification, specfile: Path = None, transitions: List[ID] = None
+        self, spec: Specification, filename: Path = None, transitions: List[ID] = None
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
 
         if spec:
-            parent = specfile.parent if specfile else Path(".")
-            filename = parent / Path(f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx")
-            self.__specifications[filename] = (specfile, spec)
+            parent = filename.parent if filename else Path(".")
+            packagefile = parent / Path(
+                f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
+            )
+            self.__specifications[packagefile] = (filename, spec)
             for context in spec.f_context_clause:
-                item = create_id(context.f_item, specfile or filename)
+                item = create_id(context.f_item, filename or packagefile)
                 if item in transitions:
                     error.append(
                         f'dependency cycle when including "{transitions[0]}"',
@@ -1221,24 +1225,24 @@ class Parser:
                         ]
                     )
                     continue
-                withed_file = filename.parent / f"{str(item).lower()}.rflx"
+                withed_file = packagefile.parent / f"{str(item).lower()}.rflx"
                 error.extend(self.__parse_specfile(withed_file, transitions + [item]))
 
         return error
 
-    def __parse_specfile(self, specfile: Path, transitions: List[ID] = None) -> RecordFluxError:
+    def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
-        if specfile in self.__specifications:
-            self.__specifications.move_to_end(specfile)
+        if filename in self.__specifications:
+            self.__specifications.move_to_end(filename)
             return error
 
         transitions = transitions or []
 
-        log.info("Parsing %s", specfile)
-        unit = AnalysisContext().get_from_file(str(specfile))
-        if diagnostics_to_error(unit.diagnostics, error, specfile):
+        log.info("Parsing %s", filename)
+        unit = AnalysisContext().get_from_file(str(filename))
+        if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
-        return self.__convert_unit(unit.root, specfile, transitions)
+        return self.__convert_unit(unit.root, filename, transitions)
 
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
@@ -1246,8 +1250,8 @@ class Parser:
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
 
-        for f, (origname, spec) in self.__specifications.items():
-            check_naming(error, spec.f_package_declaration, f, origname)
+        for f, (packagefile, spec) in self.__specifications.items():
+            check_naming(error, spec.f_package_declaration, f, packagefile)
         error.propagate()
 
     def parse_string(
@@ -1259,15 +1263,15 @@ class Parser:
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root)
-            for f, (origname, spec) in self.__specifications.items():
-                check_naming(error, spec.f_package_declaration, f, origname)
+            for f, (packagefile, spec) in self.__specifications.items():
+                check_naming(error, spec.f_package_declaration, f, packagefile)
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for origname, specification in reversed(self.__specifications.values()):
+        for packagefile, specification in reversed(self.__specifications.values()):
             try:
-                self.__evaluate_specification(specification, origname or Path("<stdin>"))
+                self.__evaluate_specification(specification, packagefile or Path("<stdin>"))
             except RecordFluxError as e:
                 error.extend(e)
         try:
