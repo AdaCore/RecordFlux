@@ -169,8 +169,7 @@ is
 
    function Sequence_Last (Ctx : Context) return Types.Bit_Length with
      Annotate =>
-       (GNATprove, Inline_For_Proof),
-     Ghost;
+       (GNATprove, Inline_For_Proof);
 
    function Size (Ctx : Context) return Types.Bit_Length with
      Annotate =>
@@ -178,8 +177,7 @@ is
 
    function Byte_Size (Ctx : Context) return Types.Length with
      Annotate =>
-       (GNATprove, Inline_For_Proof),
-     Ghost;
+       (GNATprove, Inline_For_Proof);
 
 private
 
