@@ -97,6 +97,7 @@ is
        and then Buffer'Length > 0
        and then Types.Byte_Index (First) >= Buffer'First
        and then Types.Byte_Index (Last) <= Buffer'Last
+       and then First mod Types.Byte'Size = 1
        and then First <= Last
        and then Last < Types.Bit_Index'Last,
      Post =>
@@ -1803,6 +1804,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Message_Last = Ctx.First
       and then Valid_Next (Ctx, F_Tag)
+      and then Field_First (Ctx, F_Tag) mod Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Tag)
       and then Invalid (Ctx, F_Code_Destination_Unreachable)

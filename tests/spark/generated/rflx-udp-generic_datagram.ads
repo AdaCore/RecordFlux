@@ -75,6 +75,7 @@ is
        and then Buffer'Length > 0
        and then Types.Byte_Index (First) >= Buffer'First
        and then Types.Byte_Index (Last) <= Buffer'Last
+       and then First mod Types.Byte'Size = 1
        and then First <= Last
        and then Last < Types.Bit_Index'Last,
      Post =>
@@ -628,6 +629,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Message_Last = Ctx.First
       and then Valid_Next (Ctx, F_Source_Port)
+      and then Field_First (Ctx, F_Source_Port) mod Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Source_Port) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Source_Port)
       and then Invalid (Ctx, F_Destination_Port)
