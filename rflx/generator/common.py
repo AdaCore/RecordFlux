@@ -686,15 +686,11 @@ def sequence_name(message: Message, field: Field) -> ada.ID:
 
 
 def size_dependent_condition(message: Message) -> bool:
-    return (
-        len(
-            [
-                l
-                for link in message.structure
-                for l in link.condition.findall(lambda x: isinstance(x, expr.Size))
-            ]
-        )
-        > 0
+    field_sizes = {expr.Size(f.name) for f in message.fields}
+    return any(
+        size in field_sizes
+        for link in message.structure
+        for size in link.condition.findall(lambda x: isinstance(x, expr.Size))
     )
 
 
