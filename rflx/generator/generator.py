@@ -749,6 +749,7 @@ class Generator:
                                     Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                                     Last("Buffer"),
                                 ),
+                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
                                 LessEqual(Variable("First"), Variable("Last")),
                                 Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
                             )
@@ -801,6 +802,7 @@ class Generator:
         specification = FunctionSpecification(
             "Initialized", "Boolean", [Parameter(["Ctx"], "Context")]
         )
+        first_field = message.fields[0]
 
         return UnitPart(
             [SubprogramDeclaration(specification, [Ghost()])],
@@ -816,15 +818,16 @@ class Generator:
                             "Valid_Next",
                             [
                                 Variable("Ctx"),
-                                Variable(message.fields[0].affixed_name),
+                                Variable(first_field.affixed_name),
                             ],
                         ),
+                        byte_aligned_field(first_field),
                         Equal(
                             Call(
                                 "Available_Space",
                                 [
                                     Variable("Ctx"),
-                                    Variable(message.fields[0].affixed_name),
+                                    Variable(first_field.affixed_name),
                                 ],
                             ),
                             Add(
@@ -2049,16 +2052,7 @@ class Generator:
                                     ),
                                     Number(0),
                                 ),
-                                Equal(
-                                    Mod(
-                                        Call(
-                                            "Field_First",
-                                            [Variable("Ctx"), Variable(f.affixed_name)],
-                                        ),
-                                        Size(const.TYPES_BYTE),
-                                    ),
-                                    Number(1),
-                                ),
+                                byte_aligned_field(f),
                                 Call(
                                     "Field_Condition",
                                     [
@@ -3331,3 +3325,16 @@ def refinement_conditions(
     )
 
     return conditions
+
+
+def byte_aligned_field(field: Field) -> Expr:
+    return Equal(
+        Mod(
+            Call(
+                "Field_First",
+                [Variable("Ctx"), Variable(field.affixed_name)],
+            ),
+            Size(const.TYPES_BYTE),
+        ),
+        Number(1),
+    )
