@@ -74,6 +74,8 @@ def test_multiple_errors() -> None:
             f'{path}:86:9: model: error: unsupported element type size of array "A3"',
             f'{path}:85:9: model: info: type "E6" has size 4, must be multiple of 8',
             f'{path}:93:30: model: error: invalid First for field "Final"',
+            f"{path}:96:9: model: error: message size must be multiple of 8 bit",
+            f"{path}:96:9: model: info: on path Field",
             f'{path}:103:26: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
             f'{path}:106:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
@@ -174,5 +176,7 @@ def test_parse_error_invalid_location() -> None:
         path,
         [
             f'{path}:7:21: parser: error: invalid aspect "Invalid"',
+            f"{path}:3:9: model: error: message size must be multiple of 8 bit",
+            f"{path}:3:9: model: info: on path Y",
         ],
     )

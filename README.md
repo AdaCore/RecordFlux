@@ -58,8 +58,8 @@ The structure of messages is often non-linear because of optional fields. For th
 ```Ada RFLX
 package TLV is
 
-   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 2;
-   type Length is mod 2**14;
+   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
+   type Length is mod 2**16;
 
    type Message is
       message
@@ -179,7 +179,7 @@ with RFLX.RFLX_Builtin_Types;
 with RFLX.TLV.Message;
 
 procedure Main is
-   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(64, 4, 0, 0, 0, 0);
+   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context;
 begin
    RFLX.TLV.Message.Initialize (Context, Buffer);
@@ -213,7 +213,7 @@ with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX
 with RFLX.TLV.Message;
 
 procedure Main is
-   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0);
+   Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context;
 begin
    --  Generating message
@@ -224,7 +224,7 @@ begin
 
    --  Checking generated message
    RFLX.TLV.Message.Take_Buffer (Context, Buffer);
-   if Buffer.all = (64, 4, 1, 2, 3, 4) then
+   if Buffer.all = (1, 0, 4, 1, 2, 3, 4) then
       Ada.Text_IO.Put_Line ("Expected");
    else
       Ada.Text_IO.Put_Line ("Unexpected");
@@ -260,7 +260,7 @@ def create_message() -> MessageValue:
     return msg
 
 
-if parse_message(b"\x40\x04\x01\x02\x03\x04") != create_message():
+if parse_message(b"\x01\x00\x04\x01\x02\x03\x04") != create_message():
     sys.exit("Error")
 ```
 

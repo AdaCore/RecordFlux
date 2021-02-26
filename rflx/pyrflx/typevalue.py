@@ -1036,9 +1036,7 @@ class MessageValue(TypeValue):
 
     def _unchecked_bytestring(self) -> bytes:
         bits = str(self.bitstring)
-        if len(bits) < 8:
-            bits = bits.ljust(8, "0")
-
+        assert len(bits) % 8 == 0
         return b"".join(
             [int(bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(bits), 8)]
         )

@@ -613,6 +613,7 @@ class Message(AbstractMessage):
             self.__prove_coverage()
             self.__prove_overlays()
             self.__prove_field_positions()
+            self.__prove_message_size()
 
             self.error.propagate()
 
@@ -1179,6 +1180,48 @@ class Message(AbstractMessage):
                             f.identifier.location,
                         )
                         return
+
+    def __prove_message_size(self) -> None:
+        """
+        Prove that all message paths lead to a message with a size that is a multiple of 8 bit.
+        """
+        type_constraints = self.type_constraints(expr.TRUE)
+        field_size_constraints = [
+            expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
+            for f, t in self.types.items()
+            if isinstance(t, (mty.Opaque, mty.Array))
+        ]
+
+        for path in [p[:-1] for p in self.paths(FINAL) if p]:
+            message_size = expr.Add(
+                *[
+                    expr.Size(link.target.name)
+                    for link in path
+                    if link.target != FINAL and link.first == expr.UNDEFINED
+                ]
+            )
+            facts = [
+                *[fact for link in path for fact in self.__link_expression(link)],
+                *type_constraints,
+                *field_size_constraints,
+            ]
+            proof = expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)).check(
+                facts
+            )
+            if proof.result == expr.ProofResult.SAT:
+                self.error.append(
+                    "message size must be multiple of 8 bit",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.identifier.location,
+                )
+                self.error.append(
+                    "on path " + " -> ".join(l.target.name for l in path),
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    self.identifier.location,
+                )
+                return
 
     def __prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
         conditions = [l.condition for l in path if l.condition != expr.TRUE]
