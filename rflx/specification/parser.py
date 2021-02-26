@@ -1196,6 +1196,7 @@ class Parser:
         error = RecordFluxError()
 
         if spec:
+            check_naming(error, spec.f_package_declaration, filename)
             packagefile = filename.parent / Path(
                 f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
             )
@@ -1245,9 +1246,6 @@ class Parser:
 
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
-
-        for packagefile, spec in self.__specifications.values():
-            check_naming(error, spec.f_package_declaration, packagefile)
         error.propagate()
 
     def parse_string(
@@ -1259,15 +1257,13 @@ class Parser:
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error):
             error = self.__convert_unit(unit.root)
-            for packagefile, spec in self.__specifications.values():
-                check_naming(error, spec.f_package_declaration, packagefile)
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for packagefile, spec in reversed(self.__specifications.values()):
+        for filename, spec in reversed(self.__specifications.values()):
             try:
-                self.__evaluate_specification(spec, packagefile)
+                self.__evaluate_specification(spec, filename)
             except RecordFluxError as e:
                 error.extend(e)
         try:
