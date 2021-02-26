@@ -44,7 +44,7 @@ package GreenTLS is
    for Control_Message use (Data => Key_Update_Message)
       if Tag = Key_Update_Client or Tag = Key_Update_Server;
 
-   type Heartbeat_Mode is (Heartbeat_Enabled, Heartbeat_Disabled) with Size => 4;
+   type Heartbeat_Mode is (Heartbeat_Enabled, Heartbeat_Disabled) with Size => 8;
 
    type Heartbeat_Control_Message is
       message
@@ -112,6 +112,8 @@ package GreenTLS is
          Data : Opaque;
       end message;
 
+   type Padding is range 0 .. 0 with Size => 2;
+
    type Configuration is
       message
          PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;  -- FIXME: must only contain PSK_KE and/or PSK_DHE_KE
@@ -136,6 +138,7 @@ package GreenTLS is
          Max_Fragment_Length_Enabled : Boolean;
          Max_Fragment_Length : TLS_Handshake::Max_Fragment_Length_Value;
          Heartbeat_Mode : Heartbeat_Mode;
+         Padding : Padding;
       end message;
 
    type Name_Length is range 1 .. 253 with Size => 8;

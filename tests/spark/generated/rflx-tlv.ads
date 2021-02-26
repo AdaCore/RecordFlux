@@ -5,11 +5,11 @@ package RFLX.TLV with
   SPARK_Mode
 is
 
-   type Tag_Base is mod 2**2;
+   type Tag_Base is mod 2**8;
 
    type Tag is (Msg_Data, Msg_Error) with
      Size =>
-       2;
+       8;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
 
    pragma Warnings (Off, "precondition is * false");
@@ -52,9 +52,9 @@ is
 
    pragma Warnings (On, "unreachable branch");
 
-   type Length is mod 2**14 with
+   type Length is mod 2**16 with
      Size =>
-       14;
+       16;
 
    pragma Warnings (Off, "precondition is * false");
 

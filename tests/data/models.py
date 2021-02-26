@@ -39,9 +39,9 @@ NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(2), False
+    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), False
 )
-TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(14)))
+TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(16)))
 TLV_MESSAGE = Message(
     "TLV::Message",
     [
@@ -126,7 +126,7 @@ ETHERNET_MODEL = Model(
 ENUMERATION_PRIORITY = Enumeration(
     "Enumeration::Priority",
     [("Low", Number(1)), ("Medium", Number(4)), ("High", Number(7))],
-    Number(3),
+    Number(8),
     True,
 )
 ENUMERATION_MESSAGE = Message(

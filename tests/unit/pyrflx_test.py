@@ -121,11 +121,11 @@ def test_message_value_eq(tlv_package: Package) -> None:
 def test_message_value_bitstring(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.bitstring == Bitstring("")
     tlv_message_value.set("Tag", "Msg_Data")
-    assert tlv_message_value.bitstring == Bitstring("01")
+    assert tlv_message_value.bitstring == Bitstring("00000001")
     tlv_message_value.set("Length", 1)
-    assert tlv_message_value.bitstring == Bitstring("0100000000000001")
+    assert tlv_message_value.bitstring == Bitstring("000000010000000000000001")
     tlv_message_value.set("Value", b"\x01")
-    assert tlv_message_value.bitstring == Bitstring("010000000000000100000001")
+    assert tlv_message_value.bitstring == Bitstring("00000001000000000000000100000001")
 
 
 def test_message_value_all_fields(
@@ -197,7 +197,7 @@ def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
-    assert tlv_message_value.bytestring == b"\xc0"
+    assert tlv_message_value.bytestring == b"\x03"
     tlv_message_value.set("Tag", "Msg_Data")
     assert not tlv_message_value.valid_message
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
@@ -206,7 +206,7 @@ def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
     tlv_message_value.set("Value", b"\x01")
     assert tlv_message_value.valid_message
-    assert tlv_message_value.bytestring == b"\x40\x01\x01"
+    assert tlv_message_value.bytestring == b"\x01\x00\x01\x01"
 
 
 def test_message_value_valid_fields(tlv_message_value: MessageValue) -> None:
@@ -239,7 +239,7 @@ def test_message_value_set_value(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_generate(tlv_message_value: MessageValue) -> None:
     test_message_value_payload = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-    test_message_value_data = b"\x40\x08" + test_message_value_payload
+    test_message_value_data = b"\x01\x00\x08" + test_message_value_payload
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", test_message_value_payload)
@@ -262,7 +262,7 @@ def test_message_value_binary_length(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", bytes(8))
-    assert tlv_message_value.bytestring == b"\x40\x08\x00\x00\x00\x00\x00\x00\x00\x00"
+    assert tlv_message_value.bytestring == b"\x01\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00"
 
 
 def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
@@ -347,7 +347,7 @@ def test_message_value_empty_opaque_field(tlv_message_value: MessageValue) -> No
     tlv_message_value.set("Length", 0)
     tlv_message_value.set("Value", b"")
     assert tlv_message_value.valid_message
-    assert tlv_message_value.bytestring == b"\x40\x00"
+    assert tlv_message_value.bytestring == b"\x01\x00\x00"
 
 
 def test_message_value_field_eq() -> None:
@@ -444,7 +444,7 @@ def test_message_value_parse_from_bitstring_invalid(tlv_message_value: MessageVa
         Bitstring("123")
     assert Bitstring("01") + Bitstring("00") == Bitstring("0100")
 
-    test_bytes = b"\x40"
+    test_bytes = b"\x01"
     with pytest.raises(
         PyRFLXError,
         match=(
@@ -809,7 +809,7 @@ def test_array_assign_invalid(
             "$"
         ),
     ):
-        msg_array.parse(Bitstring("0001111"))
+        msg_array.parse(Bitstring("00000000000000"))
 
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value._fields["Length"].typeval.assign(111111111111111, False)
@@ -1131,7 +1131,7 @@ def test_refinement_with_checksum() -> None:
     tlv_package = pyrflx_["TLV_With_Checksum"]
     refinement_package.set_checksum_functions({"Message": {"Checksum": msg_checksum}})
     tlv_package.set_checksum_functions({"Message": {"Checksum": tlv_checksum}})
-    data = b"\x08\xff\x40\x02\x01\x02\x00\x00\x00\x00"
+    data = b"\x09\xff\x01\x00\x02\x01\x02\x00\x00\x00\x00"
     message = refinement_package["Message"]
     message.set_checksum_function({"Checksum": msg_checksum})
     message.parse(data)

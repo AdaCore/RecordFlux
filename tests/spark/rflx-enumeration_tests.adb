@@ -19,7 +19,7 @@ package body RFLX.Enumeration_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(32, 0);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0);
       Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
@@ -49,7 +49,7 @@ package body RFLX.Enumeration_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(160, 0);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 0);
       Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
@@ -79,13 +79,13 @@ package body RFLX.Enumeration_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 32);
+      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 4);
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context  : Enumeration.Message.Context;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 
-      Enumeration.Message.Set_Priority (Context, Enumeration.Low);
+      Enumeration.Message.Set_Priority (Context, Enumeration.Medium);
 
       Assert (Enumeration.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid message");

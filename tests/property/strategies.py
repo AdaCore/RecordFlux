@@ -183,7 +183,7 @@ def messages(
     unique_identifiers: Generator[ID, None, None],
     not_null: bool = False,
 ) -> Message:
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-statements
 
     @dataclass
     class FieldPair:
@@ -266,15 +266,11 @@ def messages(
                 field_size = int(types_[source].size) if isinstance(types_[source], Scalar) else 0
                 target_alignment = (alignments[source] + field_size) % 8
                 potential_targets = [
-                    f
-                    for f in fields_[i + 1 :]
-                    if alignments[f] == target_alignment and f != out[0].target
+                    f for f in fields_[i + 1 :] if alignments[f] == target_alignment
                 ]
-                target = draw(
-                    st.sampled_from(
-                        potential_targets if potential_targets else [out[0].target, FINAL]
-                    )
-                )
+                if target_alignment == 0:
+                    potential_targets.append(FINAL)
+                target = draw(st.sampled_from(potential_targets))
                 pair = FieldPair(
                     source, target, types_[source], types_[target] if target != FINAL else None
                 )
@@ -288,8 +284,17 @@ def messages(
                 )
 
         loose_ends = [f for f in fields_ if all(l.source != f for l in structure)]
-        for l in loose_ends:
-            structure.append(Link(l, FINAL))
+        for field in loose_ends:
+            field_size = int(types_[f].size) if isinstance(types_[f], Scalar) else 0
+            padding = (alignments[field] + field_size) % 8
+            if padding == 0:
+                structure.append(Link(field, FINAL))
+            else:
+                f = draw(fields())
+                t = draw(scalars(unique_identifiers, align_to_8=padding))
+                types_[f] = t
+                structure.append(Link(field, f))
+                structure.append(Link(f, FINAL))
 
     message = UnprovenMessage(next(unique_identifiers), structure, types_)
 

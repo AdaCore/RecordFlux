@@ -19,7 +19,7 @@ package body RFLX.In_TLV_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer              : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(64, 0);
+      Buffer              : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 0);
       TLV_Message_Context : TLV.Message.Context;
       Valid               : Boolean;
    begin
@@ -35,7 +35,7 @@ package body RFLX.In_TLV_Tests is
       TLV.Message.Take_Buffer (TLV_Message_Context, Buffer);
       Free_Bytes_Ptr (Buffer);
 
-      Assert (TLV_Message_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (16)'Image, "Invalid Context.Last");
+      Assert (TLV_Message_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Null_In_TLV;
 
    overriding

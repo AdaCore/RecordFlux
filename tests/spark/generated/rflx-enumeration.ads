@@ -5,11 +5,11 @@ package RFLX.Enumeration with
   SPARK_Mode
 is
 
-   type Priority_Base is mod 2**3;
+   type Priority_Base is mod 2**8;
 
    type Priority_Enum is (Low, Medium, High) with
      Size =>
-       3;
+       8;
    for Priority_Enum use (Low => 1, Medium => 4, High => 7);
 
    type Priority (Known : Boolean := False) is

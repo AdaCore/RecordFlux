@@ -402,14 +402,14 @@ def test_tlv() -> None:
 
 
 def test_tlv_parsing_tlv_data(tlv_message_value: pyrflx.MessageValue) -> None:
-    test_bytes = b"\x40\x04\x00\x00\x00\x00"
+    test_bytes = b"\x01\x00\x04\x00\x00\x00\x00"
     tlv_message_value.parse(test_bytes)
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == test_bytes
 
 
 def test_tlv_parsing_tlv_data_zero(tlv_message_value: pyrflx.MessageValue) -> None:
-    test_bytes = b"\x40\x00"
+    test_bytes = b"\x01\x00\x00"
     tlv_message_value.parse(test_bytes)
     assert tlv_message_value.get("Tag") == "Msg_Data"
     assert tlv_message_value.get("Length") == 0
@@ -417,7 +417,7 @@ def test_tlv_parsing_tlv_data_zero(tlv_message_value: pyrflx.MessageValue) -> No
 
 
 def test_tlv_parsing_tlv_error(tlv_message_value: pyrflx.MessageValue) -> None:
-    test_bytes = b"\xc0"
+    test_bytes = b"\x03"
     tlv_message_value.parse(test_bytes)
     assert tlv_message_value.get("Tag") == "Msg_Error"
     assert tlv_message_value.valid_message
@@ -439,7 +439,7 @@ def test_tlv_parsing_invalid_tlv_invalid_tag(tlv_message_value: pyrflx.MessageVa
 
 
 def test_tlv_generating_tlv_data(tlv_message_value: pyrflx.MessageValue) -> None:
-    expected = b"\x40\x04\x00\x00\x00\x00"
+    expected = b"\x01\x00\x04\x00\x00\x00\x00"
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
     tlv_message_value.set("Value", b"\x00\x00\x00\x00")
@@ -456,7 +456,7 @@ def test_tlv_generating_tlv_data_zero(tlv_message_value: pyrflx.MessageValue) ->
 def test_tlv_generating_tlv_error(tlv_message_value: pyrflx.MessageValue) -> None:
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
-    assert tlv_message_value.bytestring == b"\xc0"
+    assert tlv_message_value.bytestring == b"\x03"
 
 
 def test_tls(tmp_path: Path) -> None:
