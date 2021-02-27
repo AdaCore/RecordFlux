@@ -76,7 +76,7 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path = STDIN
+    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path
 ) -> bool:
     """
     Append langkit diagnostics to RecordFlux error. Return True if error occured.
@@ -1190,7 +1190,7 @@ class Parser:
         self.__cache = Cache(cached)
 
     def __convert_unit(
-        self, spec: Specification, filename: Path = STDIN, transitions: List[ID] = None
+        self, spec: Specification, filename: Path, transitions: List[ID] = None
     ) -> RecordFluxError:
         transitions = transitions or []
         error = RecordFluxError()
@@ -1253,8 +1253,8 @@ class Parser:
     ) -> None:
         error = RecordFluxError()
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
-        if not diagnostics_to_error(unit.diagnostics, error):
-            error = self.__convert_unit(unit.root)
+        if not diagnostics_to_error(unit.diagnostics, error, STDIN):
+            error = self.__convert_unit(unit.root, STDIN)
         error.propagate()
 
     def create_model(self) -> model.Model:

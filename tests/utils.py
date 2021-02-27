@@ -1,7 +1,6 @@
 import pathlib
 import shutil
 import subprocess
-from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 import pytest
@@ -14,6 +13,7 @@ from rflx.identifier import ID
 from rflx.model import Field, Link, Message, Model, Session, State, Type
 from rflx.specification import Parser
 from rflx.specification.parser import (
+    STDIN,
     AnalysisContext,
     GrammarRule,
     create_bool_expression,
@@ -144,9 +144,9 @@ def multilinestr(string: str) -> str:
 def parse(data: str, rule: GrammarRule, convert: Callable[..., Any]) -> Any:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
+    if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
-    return convert(unit.root, Path("<stdin>"))
+    return convert(unit.root, STDIN)
 
 
 def parse_math_expression(data: str, extended: bool) -> Expr:
