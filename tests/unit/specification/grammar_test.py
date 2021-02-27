@@ -7,6 +7,7 @@ from rflx import declaration as decl, expression as expr, model, statement as st
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.specification.parser import (
+    STDIN,
     GrammarRule,
     Parser,
     create_declaration,
@@ -42,7 +43,7 @@ def parse_session(string: str) -> model.Session:
         "<stdin>", string, rule=GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
+    if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     return create_session(unit.root, ID("Package"), Path("<stdin>"))
 
@@ -52,7 +53,7 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
         "<stdin>", string, rule=GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
+    if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"))
 

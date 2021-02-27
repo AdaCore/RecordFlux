@@ -15,7 +15,7 @@ from librflxlang import AnalysisContext, GrammarRule
 import rflx.error
 import rflx.specification
 from rflx.error import RecordFluxError
-from rflx.specification.parser import diagnostics_to_error
+from rflx.specification.parser import STDIN, diagnostics_to_error
 from tests.const import GENERATED_DIR, SPEC_DIR
 
 
@@ -95,7 +95,7 @@ def check_code(block: str, block_type: CodeBlockType) -> bool:
 def parse(data: str, rule: GrammarRule) -> None:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error):
+    if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
 
 
