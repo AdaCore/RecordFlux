@@ -1181,7 +1181,7 @@ def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> No
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[Path, Tuple[Path, Specification]] = OrderedDict()
+        self.__specifications: OrderedDict[str, Tuple[Path, Specification]] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1197,9 +1197,7 @@ class Parser:
 
         if spec:
             check_naming(error, spec.f_package_declaration, filename)
-            packagefile = filename.parent / Path(
-                f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
-            )
+            packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
             self.__specifications[packagefile] = (filename, spec)
             for context in spec.f_context_clause:
                 item = create_id(context.f_item, filename)
@@ -1222,15 +1220,15 @@ class Parser:
                         ]
                     )
                     continue
-                withed_file = packagefile.parent / f"{str(item).lower()}.rflx"
+                withed_file = filename.parent / f"{str(item).lower()}.rflx"
                 error.extend(self.__parse_specfile(withed_file, transitions + [item]))
 
         return error
 
     def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
-        if filename in self.__specifications:
-            self.__specifications.move_to_end(filename)
+        if filename.name in self.__specifications:
+            self.__specifications.move_to_end(filename.name)
             return error
 
         transitions = transitions or []
