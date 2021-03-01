@@ -2483,3 +2483,35 @@ def test_complex_dependencies() -> None:
     p3_packet = model.Message("P3::Packet", p3_packet_structure, p3_packet_types)
 
     assert_messages_files([f"{SPEC_DIR}/in_p1.rflx"], [p2_packet, p3_packet, p1_packet])
+
+
+def test_parse_error_duplicate_spec_file_file() -> None:
+    p = parser.Parser()
+    p.parse(SPEC_DIR / "message_type.rflx")
+    with pytest.raises(
+        RecordFluxError,
+        match='parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
+        'parser: error: previous specification "tests/data/specs/message_type.rflx"',
+    ):
+        p.parse(SPEC_DIR / "subdir/message_type.rflx")
+
+
+def test_parse_error_duplicate_spec_stdin_file() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """
+        package Message_Type is
+            type T is mod 2**32;
+            type M is
+                message
+                    F : T;
+                end message;
+        end Message_Type;
+        """
+    )
+    with pytest.raises(
+        RecordFluxError,
+        match='parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
+        'parser: error: previous specification "<stdin>"',
+    ):
+        p.parse(SPEC_DIR / "subdir/message_type.rflx")
