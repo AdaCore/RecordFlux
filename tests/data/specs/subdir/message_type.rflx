@@ -1,0 +1,11 @@
+package Message_Type is
+
+   type T is mod 256;
+
+   type Simple_PDU is
+      message
+         Bar : T;
+         Baz : T;
+      end message;
+
+end Message_Type;
