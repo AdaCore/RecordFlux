@@ -32,12 +32,17 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.target }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
-        pip install pytest-xdist ${{ matrix.target }}
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        python -m pip install --upgrade pip
+        pip install wheel pytest-xdist ${{ matrix.target }}
+        pip install RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -68,18 +73,18 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
-        pip install pytest-xdist
-        mkdir $HOME/bin
-        echo -e '#!/bin/sh\ndocker run -u $(id -u):$(id -g) -v $HOME:$HOME -w $PWD componolit/ci:gnat-community-2020 gprbuild $@' > $HOME/bin/gprbuild
-        chmod +x $HOME/bin/gprbuild
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "$HOME/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
+        python -m pip install --upgrade pip
+        pip install wheel pytest-xdist
+        pip install RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
     - name: Test
       run: |
         python3 -m pytest -n $(nproc) -vv
