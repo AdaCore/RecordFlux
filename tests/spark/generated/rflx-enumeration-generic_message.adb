@@ -14,14 +14,14 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    procedure Reset (Ctx : in out Context) is
    begin
       Ctx.Cursors := (F_Priority => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
-      Ctx.Message_Last := Ctx.First;
+      Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -57,9 +57,6 @@ is
           0
        else
           Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
-
-   function Message_Last (Ctx : Context) return Types.Bit_Index is
-     (Ctx.Message_Last);
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -162,7 +159,11 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
-               Ctx.Message_Last := Field_Last (Ctx, Fld);
+               pragma Assert ((if
+                                  Fld = F_Priority
+                               then
+                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else

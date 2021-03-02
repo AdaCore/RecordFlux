@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from typing import Mapping, Sequence
 
 from rflx.ada import (
@@ -30,6 +32,7 @@ from rflx.ada import (
     Length,
     LessEqual,
     Mod,
+    Mul,
     NamedAggregate,
     Not,
     NullStatement,
@@ -292,7 +295,7 @@ class SerializerGenerator:
                                     if isinstance(t, Enumeration) and t.always_valid
                                     else Variable("Val"),
                                 ),
-                                *self.setter_postconditions(message, f),
+                                *self.public_setter_postconditions(message, f),
                                 *[
                                     Equal(
                                         Call(
@@ -349,7 +352,7 @@ class SerializerGenerator:
                                 Variable("Last"),
                             ],
                         ),
-                        Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
+                        self.__set_message_last(message, f),
                         Assignment(
                             Indexed(Variable("Ctx.Cursors"), Variable(f.affixed_name)),
                             NamedAggregate(
@@ -418,7 +421,8 @@ class SerializerGenerator:
                             ),
                             Postcondition(
                                 And(
-                                    *self.composite_setter_postconditions(message, f),
+                                    *self.composite_setter_postconditions(f),
+                                    *self.public_setter_postconditions(message, f),
                                 )
                             ),
                         ],
@@ -450,7 +454,7 @@ class SerializerGenerator:
                             True,
                         ),
                     ],
-                    self.__set_array_field(f),
+                    self.__set_array_field(message, f),
                 )
                 for f, t in message.types.items()
                 if message.is_possibly_empty(f)
@@ -500,7 +504,8 @@ class SerializerGenerator:
                         ),
                         Postcondition(
                             And(
-                                *self.composite_setter_postconditions(message, f),
+                                *self.composite_setter_postconditions(f),
+                                *self.public_setter_postconditions(message, f),
                                 If(
                                     [
                                         (
@@ -532,7 +537,7 @@ class SerializerGenerator:
                         *self.__field_byte_location_declarations(),
                     ],
                     [
-                        *self.__set_array_field(f),
+                        *self.__set_array_field(message, f),
                         CallStatement(
                             f"{common.sequence_name(message, f)}.Copy",
                             [
@@ -601,7 +606,8 @@ class SerializerGenerator:
                         ),
                         Postcondition(
                             And(
-                                *self.composite_setter_postconditions(message, f),
+                                *self.composite_setter_postconditions(f),
+                                *self.public_setter_postconditions(message, f),
                             )
                         ),
                     ],
@@ -617,7 +623,7 @@ class SerializerGenerator:
                         *self.__field_byte_location_declarations(),
                     ],
                     [
-                        CallStatement(f"Initialize_{f.name}", [Variable("Ctx")]),
+                        CallStatement(f"Initialize_{f.name}_Private", [Variable("Ctx")]),
                         Assignment(
                             Slice(
                                 Selected(Variable("Ctx.Buffer"), "all"),
@@ -689,7 +695,8 @@ class SerializerGenerator:
                         ),
                         Postcondition(
                             And(
-                                *self.composite_setter_postconditions(message, f),
+                                *self.composite_setter_postconditions(f),
+                                *self.public_setter_postconditions(message, f),
                             )
                         ),
                     ],
@@ -706,7 +713,7 @@ class SerializerGenerator:
                         *self.__field_byte_location_declarations(),
                     ],
                     [
-                        CallStatement(f"Initialize_{f.name}", [Variable("Ctx")]),
+                        CallStatement(f"Initialize_{f.name}_Private", [Variable("Ctx")]),
                         CallStatement(
                             f"Process_{f.name}",
                             [
@@ -725,7 +732,12 @@ class SerializerGenerator:
         )
 
     def create_composite_initialize_procedures(self, message: Message) -> UnitPart:
-        def specification(field: Field) -> ProcedureSpecification:
+        def specification_private(field: Field) -> ProcedureSpecification:
+            return ProcedureSpecification(
+                f"Initialize_{field.name}_Private", [InOutParameter(["Ctx"], "Context")]
+            )
+
+        def specification_public(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Initialize_{field.name}", [InOutParameter(["Ctx"], "Context")]
             )
@@ -733,7 +745,7 @@ class SerializerGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification(f),
+                    specification_public(f),
                     [
                         Precondition(
                             AndThen(
@@ -743,7 +755,8 @@ class SerializerGenerator:
                         ),
                         Postcondition(
                             And(
-                                *self.composite_setter_postconditions(message, f),
+                                *self.composite_setter_postconditions(f),
+                                *self.public_setter_postconditions(message, f),
                             )
                         ),
                     ],
@@ -752,13 +765,37 @@ class SerializerGenerator:
                 if isinstance(t, Opaque)
             ],
             [
-                SubprogramBody(
-                    specification(f),
-                    common.field_bit_location_declarations(Variable(f.affixed_name)),
-                    common.initialize_field_statements(message, f, self.prefix),
-                )
+                s
                 for f, t in message.types.items()
                 if isinstance(t, Opaque)
+                for s in [
+                    SubprogramBody(
+                        specification_private(f),
+                        common.field_bit_location_declarations(Variable(f.affixed_name)),
+                        common.initialize_field_statements(message, f, self.prefix),
+                        [
+                            Precondition(
+                                AndThen(
+                                    *self.setter_preconditions(f),
+                                    *self.composite_setter_preconditions(message, f),
+                                )
+                            ),
+                            Postcondition(
+                                And(
+                                    *self.composite_setter_postconditions(f),
+                                    *self.private_setter_postconditions(message, f),
+                                )
+                            ),
+                        ],
+                    ),
+                    SubprogramBody(
+                        specification_public(f),
+                        [],
+                        [
+                            CallStatement(specification_private(f).identifier, [Variable("Ctx")]),
+                        ],
+                    ),
+                ]
             ],
         )
 
@@ -770,13 +807,46 @@ class SerializerGenerator:
             Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
         ]
 
+    def private_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
+        return [
+            Equal(
+                Variable("Ctx.Message_Last"),
+                Call(
+                    "Field_Last",
+                    [Variable("Ctx"), Variable(field.affixed_name)],
+                ),
+            ),
+            *self.setter_postconditions(message, field),
+        ]
+
+    def public_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
+        return [
+            *(
+                [
+                    If(
+                        [
+                            (
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                                Equal(
+                                    Call("Message_Last", [Variable("Ctx")]),
+                                    Call(
+                                        "Field_Last",
+                                        [Variable("Ctx"), Variable(field.affixed_name)],
+                                    ),
+                                ),
+                            )
+                        ]
+                    )
+                ]
+                if field in message.direct_predecessors(FINAL)
+                else []
+            ),
+            *self.setter_postconditions(message, field),
+        ]
+
     @staticmethod
     def setter_postconditions(message: Message, field: Field) -> Sequence[Expr]:
         return [
-            Equal(
-                Call("Message_Last", [Variable("Ctx")]),
-                Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
-            ),
             *[
                 Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
                 for p in message.successors(field)
@@ -804,10 +874,10 @@ class SerializerGenerator:
             ],
         ]
 
-    def composite_setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
+    @staticmethod
+    def composite_setter_postconditions(field: Field) -> Sequence[Expr]:
         return [
             Call("Has_Buffer", [Variable("Ctx")]),
-            *self.setter_postconditions(message, field),
             Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),
         ]
 
@@ -845,6 +915,16 @@ class SerializerGenerator:
             Equal(
                 Mod(
                     Call(
+                        "Field_Last",
+                        [Variable("Ctx"), Variable(field.affixed_name)],
+                    ),
+                    Size(const.TYPES_BYTE),
+                ),
+                Number(0),
+            ),
+            Equal(
+                Mod(
+                    Call(
                         "Field_Size",
                         [Variable("Ctx"), Variable(field.affixed_name)],
                     ),
@@ -855,13 +935,32 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def __set_array_field(field: Field) -> Sequence[Statement]:
+    def __set_message_last(message: Message, field: Field) -> Statement:
+        return (
+            Assignment(Variable("Ctx.Message_Last"), Variable("Last"))
+            if field in message.direct_predecessors(FINAL)
+            else Assignment(
+                Variable("Ctx.Message_Last"),
+                Mul(
+                    Div(
+                        Add(
+                            Variable("Last"),
+                            Number(7),
+                        ),
+                        Number(8),
+                    ),
+                    Number(8),
+                ),
+            )
+        )
+
+    def __set_array_field(self, message: Message, field: Field) -> Sequence[Statement]:
         return [
             CallStatement(
                 "Reset_Dependent_Fields",
                 [Variable("Ctx"), Variable(field.affixed_name)],
             ),
-            Assignment(Variable("Ctx.Message_Last"), Variable("Last")),
+            self.__set_message_last(message, field),
             Assignment(
                 Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
                 NamedAggregate(

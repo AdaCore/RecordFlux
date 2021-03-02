@@ -20,13 +20,14 @@ is
 
    use type Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index;
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is private with
      Default_Initial_Condition =>
        Types.Byte_Index (First) >= Buffer_First
        and Types.Byte_Index (Last) <= Buffer_Last
-       and First mod Types.Byte'Size = 1
        and First <= Last
-       and Last <= Types.Bit_Index'Last - 1;
+       and Last <= Types.Bit_Index'Last - 1
+       and First mod Types.Byte'Size = 1
+       and Last mod Types.Byte'Size = 0;
 
    procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) with
      Pre =>
@@ -54,9 +55,10 @@ is
         and then Buffer'Last = Buffer_Last
         and then Types.Byte_Index (First) >= Buffer'First
         and then Types.Byte_Index (Last) <= Buffer'Last
-        and then First mod Types.Byte'Size = 1
         and then First <= Last
-        and then Last <= Types.Bit_Index'Last - 1),
+        and then Last <= Types.Bit_Index'Last - 1
+        and then First mod Types.Byte'Size = 1
+        and then Last mod Types.Byte'Size = 0),
      Post =>
        (Buffer = null
         and Has_Buffer (Ctx)
@@ -148,7 +150,7 @@ is
        (Has_Buffer (Ctx)
         and not Element_Has_Buffer (Element_Ctx)
         and (if Element_Valid_Message (Element_Ctx)'Old then Valid (Ctx))
-        and Sequence_Last (Ctx) = (if Element_Valid_Message (Element_Ctx)'Old then Element_Last (Element_Ctx)'Old else Sequence_Last (Ctx)'Old)
+        and Sequence_Last (Ctx) = Types.Bit_Length'(if Element_Valid_Message (Element_Ctx) then Element_Last (Element_Ctx) else Sequence_Last (Ctx))'Old
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old
@@ -177,7 +179,7 @@ private
 
    type Context_State is (S_Valid, S_Invalid);
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is
       record
          Sequence_Last : Types.Bit_Length := First - 1;
          Buffer        : Types.Bytes_Ptr := null;
@@ -189,11 +191,13 @@ private
            and Buffer'Last = Buffer_Last))
         and Types.Byte_Index (First) >= Buffer_First
         and Types.Byte_Index (Last) <= Buffer_Last
-        and First mod Types.Byte'Size = 1
         and First <= Last
         and Last <= Types.Bit_Index'Last - 1
-        and Sequence_Last >= First - 1
-        and Sequence_Last <= Last);
+        and First - 1 <= Sequence_Last
+        and Sequence_Last <= Last
+        and First mod Types.Byte'Size = 1
+        and Last mod Types.Byte'Size = 0
+        and Sequence_Last mod Types.Byte'Size = 0);
 
    function Has_Element (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid and Ctx.Sequence_Last < Ctx.Last);

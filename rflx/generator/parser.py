@@ -12,6 +12,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    Div,
     Equal,
     Expr,
     ExpressionFunctionDeclaration,
@@ -23,6 +24,8 @@ from rflx.ada import (
     Indexed,
     InOutParameter,
     Less,
+    Mod,
+    Mul,
     NamedAggregate,
     Number,
     ObjectDeclaration,
@@ -37,6 +40,7 @@ from rflx.ada import (
     Result,
     ReturnStatement,
     Selected,
+    Size,
     Slice,
     String,
     Subprogram,
@@ -189,8 +193,42 @@ class ParserGenerator:
         )
 
         set_cursors_statements = [
+            PragmaStatement(
+                "Assert",
+                [
+                    If(
+                        [
+                            (
+                                Or(
+                                    *[
+                                        Equal(Variable("Fld"), Variable(f.affixed_name))
+                                        for f in message.direct_predecessors(FINAL)
+                                    ]
+                                ),
+                                Equal(
+                                    Mod(
+                                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                                        Size(const.TYPES_BYTE),
+                                    ),
+                                    Number(0),
+                                ),
+                            )
+                        ]
+                    )
+                ],
+            ),
             Assignment(
-                Variable("Ctx.Message_Last"), Call("Field_Last", [Variable("Ctx"), Variable("Fld")])
+                Variable("Ctx.Message_Last"),
+                Mul(
+                    Div(
+                        Add(
+                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                            Number(7),
+                        ),
+                        Number(8),
+                    ),
+                    Number(8),
+                ),
             ),
             IfStatement(
                 [

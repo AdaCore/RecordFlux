@@ -14,14 +14,14 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    procedure Reset (Ctx : in out Context) is
    begin
       Ctx.Cursors := (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
-      Ctx.Message_Last := Ctx.First;
+      Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -57,9 +57,6 @@ is
           0
        else
           Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
-
-   function Message_Last (Ctx : Context) return Types.Bit_Index is
-     (Ctx.Message_Last);
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -791,7 +788,13 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
-               Ctx.Message_Last := Field_Last (Ctx, Fld);
+               pragma Assert ((if
+                                  Fld = F_Data
+                                  or Fld = F_Sequence_Number
+                                  or Fld = F_Transmit_Timestamp
+                               then
+                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -1403,7 +1406,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Tag);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Tag) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Tag).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Tag)) := (State => S_Invalid, Predecessor => F_Tag);
    end Set_Tag;
@@ -1414,7 +1417,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Destination_Unreachable);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Code_Destination_Unreachable) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Destination_Unreachable).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Destination_Unreachable)) := (State => S_Invalid, Predecessor => F_Code_Destination_Unreachable);
    end Set_Code_Destination_Unreachable;
@@ -1425,7 +1428,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Redirect);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Code_Redirect) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Redirect).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Redirect)) := (State => S_Invalid, Predecessor => F_Code_Redirect);
    end Set_Code_Redirect;
@@ -1436,7 +1439,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Time_Exceeded);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Code_Time_Exceeded) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Time_Exceeded).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Time_Exceeded)) := (State => S_Invalid, Predecessor => F_Code_Time_Exceeded);
    end Set_Code_Time_Exceeded;
@@ -1447,7 +1450,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Code_Zero);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Code_Zero) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Code_Zero).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Code_Zero)) := (State => S_Invalid, Predecessor => F_Code_Zero);
    end Set_Code_Zero;
@@ -1458,7 +1461,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Checksum);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Checksum) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Checksum).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Checksum)) := (State => S_Invalid, Predecessor => F_Checksum);
    end Set_Checksum;
@@ -1469,7 +1472,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Gateway_Internet_Address);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Gateway_Internet_Address) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Gateway_Internet_Address).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Gateway_Internet_Address)) := (State => S_Invalid, Predecessor => F_Gateway_Internet_Address);
    end Set_Gateway_Internet_Address;
@@ -1480,7 +1483,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Identifier);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Identifier) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Identifier).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Identifier)) := (State => S_Invalid, Predecessor => F_Identifier);
    end Set_Identifier;
@@ -1491,7 +1494,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Pointer);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Pointer) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Pointer).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Pointer)) := (State => S_Invalid, Predecessor => F_Pointer);
    end Set_Pointer;
@@ -1502,7 +1505,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Unused_32);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Unused_32) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Unused_32).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Unused_32)) := (State => S_Invalid, Predecessor => F_Unused_32);
    end Set_Unused_32;
@@ -1524,7 +1527,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Unused_24);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Unused_24) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Unused_24).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Unused_24)) := (State => S_Invalid, Predecessor => F_Unused_24);
    end Set_Unused_24;
@@ -1535,7 +1538,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Originate_Timestamp);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Originate_Timestamp) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Originate_Timestamp).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Originate_Timestamp)) := (State => S_Invalid, Predecessor => F_Originate_Timestamp);
    end Set_Originate_Timestamp;
@@ -1546,7 +1549,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Receive_Timestamp);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Receive_Timestamp) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Receive_Timestamp).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Receive_Timestamp)) := (State => S_Invalid, Predecessor => F_Receive_Timestamp);
    end Set_Receive_Timestamp;
@@ -1572,31 +1575,31 @@ is
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Set_Data_Empty;
 
-   procedure Set_Data (Ctx : in out Context; Value : Types.Bytes) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Data (Ctx);
-      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
-   end Set_Data;
-
-   procedure Generic_Set_Data (Ctx : in out Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Data (Ctx);
-      Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Generic_Set_Data;
-
-   procedure Initialize_Data (Ctx : in out Context) is
+   procedure Initialize_Data_Private (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Data)
+       and then Field_Condition (Ctx, (Fld => F_Data))
+       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
+       and then Field_First (Ctx, F_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Data) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Data) mod Types.Byte'Size = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Data)
+       and Ctx.Message_Last = Field_Last (Ctx, F_Data)
+       and Invalid (Ctx, F_Receive_Timestamp)
+       and Invalid (Ctx, F_Transmit_Timestamp)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
+   is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
    begin
@@ -2041,6 +2044,35 @@ is
                                                                              and then Ctx.Cursors (F_Data).First = Ctx.Cursors (F_Unused_32).Last + 1))))));
       Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Data), Predecessor => Ctx.Cursors (F_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
+   end Initialize_Data_Private;
+
+   procedure Initialize_Data (Ctx : in out Context) is
+   begin
+      Initialize_Data_Private (Ctx);
    end Initialize_Data;
+
+   procedure Set_Data (Ctx : in out Context; Value : Types.Bytes) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Data_Private (Ctx);
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+   end Set_Data;
+
+   procedure Generic_Set_Data (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Data_Private (Ctx);
+      Process_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Generic_Set_Data;
 
 end RFLX.ICMP.Generic_Message;

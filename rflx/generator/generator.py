@@ -387,9 +387,9 @@ class Generator:
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
         unit += self.__serializer.create_array_setter_procedures(message, sequence_fields)
+        unit += self.__serializer.create_composite_initialize_procedures(message)
         unit += self.__serializer.create_opaque_setter_procedures(message)
         unit += self.__serializer.create_generic_opaque_setter_procedures(message)
-        unit += self.__serializer.create_composite_initialize_procedures(message)
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_complete_functions(message, sequence_fields)
@@ -570,7 +570,10 @@ class Generator:
             Discriminant(
                 ["Buffer_First", "Buffer_Last"], const.TYPES_INDEX, First(const.TYPES_INDEX)
             ),
-            Discriminant(["First", "Last"], const.TYPES_BIT_INDEX, First(const.TYPES_BIT_INDEX)),
+            Discriminant(["First"], const.TYPES_BIT_INDEX, First(const.TYPES_BIT_INDEX)),
+            Discriminant(
+                ["Last"], const.TYPES_BIT_INDEX, Add(First(const.TYPES_BIT_INDEX), Number(7))
+            ),
         ]
 
         return UnitPart(
@@ -586,7 +589,11 @@ class Generator:
                 RecordType(
                     "Context",
                     [
-                        Component("Message_Last", const.TYPES_BIT_INDEX, Variable("First")),
+                        Component(
+                            "Message_Last",
+                            const.TYPES_BIT_LENGTH,
+                            Sub(Variable("First"), Number(1)),
+                        ),
                         Component("Buffer", const.TYPES_BYTES_PTR, NULL),
                         Component(
                             "Cursors",
@@ -749,9 +756,10 @@ class Generator:
                                     Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                                     Last("Buffer"),
                                 ),
-                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
                                 LessEqual(Variable("First"), Variable("Last")),
                                 Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
+                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+                                Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
                             )
                         ),
                         Postcondition(
@@ -786,7 +794,7 @@ class Generator:
                                 Variable("Buffer_Last"),
                                 Variable("First"),
                                 Variable("Last"),
-                                Variable("First"),
+                                Sub(Variable("First"), Number(1)),
                                 Variable("Buffer"),
                                 context_cursors_initialization(message),
                             ),
@@ -812,7 +820,7 @@ class Generator:
                     AndThen(
                         Equal(
                             Variable("Ctx.Message_Last"),
-                            Variable("Ctx.First"),
+                            Sub(Variable("Ctx.First"), Number(1)),
                         ),
                         Call(
                             "Valid_Next",
@@ -887,7 +895,7 @@ class Generator:
                     [],
                     [
                         Assignment("Ctx.Cursors", context_cursors_initialization(message)),
-                        Assignment("Ctx.Message_Last", Variable("Ctx.First")),
+                        Assignment("Ctx.Message_Last", Sub(Variable("Ctx.First"), Number(1))),
                     ],
                 )
             ],
@@ -1857,12 +1865,24 @@ class Generator:
     @staticmethod
     def __create_message_last_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Message_Last", const.TYPES_BIT_INDEX, [Parameter(["Ctx"], "Context")]
+            "Message_Last", const.TYPES_BIT_LENGTH, [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
-            [ExpressionFunctionDeclaration(specification, Variable("Ctx.Message_Last"))],
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                ),
+            ],
+            private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Message_Last"))],
         )
 
     @staticmethod
@@ -2465,7 +2485,8 @@ class Generator:
             "Boolean",
             [
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
-                Parameter(["First", "Last", "Message_Last"], const.TYPES_BIT_INDEX),
+                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+                Parameter(["Message_Last"], const.TYPES_BIT_LENGTH),
                 AccessParameter(["Buffer"], const.TYPES_BYTES, constant=True),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],
