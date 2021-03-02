@@ -14,14 +14,14 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    procedure Reset (Ctx : in out Context) is
    begin
       Ctx.Cursors := (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
-      Ctx.Message_Last := Ctx.First;
+      Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -57,9 +57,6 @@ is
           0
        else
           Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
-
-   function Message_Last (Ctx : Context) return Types.Bit_Index is
-     (Ctx.Message_Last);
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -256,7 +253,11 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
-               Ctx.Message_Last := Field_Last (Ctx, Fld);
+               pragma Assert ((if
+                                  Fld = F_AV_Enumeration_Vector
+                               then
+                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -407,7 +408,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Length).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
    end Set_Length;
@@ -417,7 +418,7 @@ is
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
    begin
       Reset_Dependent_Fields (Ctx, F_Modular_Vector);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
    end Set_Modular_Vector_Empty;
@@ -431,7 +432,7 @@ is
         (Types.Byte_Index (Last));
    begin
       Reset_Dependent_Fields (Ctx, F_Modular_Vector);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
       Modular_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
@@ -446,7 +447,7 @@ is
         (Types.Byte_Index (Last));
    begin
       Reset_Dependent_Fields (Ctx, F_Range_Vector);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Range_Vector), Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
       Range_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
@@ -461,7 +462,7 @@ is
         (Types.Byte_Index (Last));
    begin
       Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Enumeration_Vector), Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_Enumeration_Vector);
       Enumeration_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));

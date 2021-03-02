@@ -14,14 +14,14 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First, Buffer, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    procedure Reset (Ctx : in out Context) is
    begin
       Ctx.Cursors := (F_Copied => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
-      Ctx.Message_Last := Ctx.First;
+      Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
@@ -57,9 +57,6 @@ is
           0
        else
           Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
-
-   function Message_Last (Ctx : Context) return Types.Bit_Index is
-     (Ctx.Message_Last);
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -285,7 +282,12 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
-               Ctx.Message_Last := Field_Last (Ctx, Fld);
+               pragma Assert ((if
+                                  Fld = F_Option_Data
+                                  or Fld = F_Option_Number
+                               then
+                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -437,7 +439,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Copied);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Copied) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Copied).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Copied)) := (State => S_Invalid, Predecessor => F_Copied);
    end Set_Copied;
@@ -448,7 +450,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Class);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Option_Class) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Option_Class).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Class)) := (State => S_Invalid, Predecessor => F_Option_Class);
    end Set_Option_Class;
@@ -470,7 +472,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Option_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := Last;
+      Ctx.Message_Last := ((Last + 7) / 8) * 8;
       Ctx.Cursors (F_Option_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Option_Length).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Length)) := (State => S_Invalid, Predecessor => F_Option_Length);
    end Set_Option_Length;
@@ -485,31 +487,31 @@ is
       Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, Predecessor => F_Option_Data);
    end Set_Option_Data_Empty;
 
-   procedure Set_Option_Data (Ctx : in out Context; Value : Types.Bytes) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Option_Data (Ctx);
-      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
-   end Set_Option_Data;
-
-   procedure Generic_Set_Option_Data (Ctx : in out Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-   begin
-      Initialize_Option_Data (Ctx);
-      Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Generic_Set_Option_Data;
-
-   procedure Initialize_Option_Data (Ctx : in out Context) is
+   procedure Initialize_Option_Data_Private (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Option_Data)
+       and then Field_Condition (Ctx, (Fld => F_Option_Data))
+       and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
+       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Option_Data) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Option_Data)
+       and Ctx.Message_Last = Field_Last (Ctx, F_Option_Data)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
+       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
+       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+   is
       First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
       Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
    begin
@@ -560,6 +562,35 @@ is
                                                                              and then Ctx.Cursors (F_Option_Data).First = Ctx.Cursors (F_Option_Length).Last + 1))))));
       Ctx.Cursors (F_Option_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Option_Data), Predecessor => Ctx.Cursors (F_Option_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, Predecessor => F_Option_Data);
+   end Initialize_Option_Data_Private;
+
+   procedure Initialize_Option_Data (Ctx : in out Context) is
+   begin
+      Initialize_Option_Data_Private (Ctx);
    end Initialize_Option_Data;
+
+   procedure Set_Option_Data (Ctx : in out Context; Value : Types.Bytes) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Option_Data_Private (Ctx);
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+   end Set_Option_Data;
+
+   procedure Generic_Set_Option_Data (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Option_Data);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Option_Data);
+      function Buffer_First return Types.Index is
+        (Types.Byte_Index (First));
+      function Buffer_Last return Types.Index is
+        (Types.Byte_Index (Last));
+   begin
+      Initialize_Option_Data_Private (Ctx);
+      Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Generic_Set_Option_Data;
 
 end RFLX.IPv4.Generic_Option;

@@ -1,7 +1,7 @@
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
 with RFLX.RFLX_Types;
 
 with RFLX.Enumeration.Message;
@@ -79,9 +79,10 @@ package body RFLX.Enumeration_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Expected : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 4);
-      Buffer   : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
-      Context  : Enumeration.Message.Context;
+      Expected     : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First => 4);
+      Buffer       : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+      Context      : Enumeration.Message.Context;
+      Message_Last : RFLX_Builtin_Types.Bit_Length;
    begin
       Enumeration.Message.Initialize (Context, Buffer);
 
@@ -90,15 +91,15 @@ package body RFLX.Enumeration_Tests is
       Assert (Enumeration.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid message");
 
+      Message_Last := Enumeration.Message.Message_Last (Context);
       Enumeration.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Enumeration.Message.Message_Last (Context))
+      Assert (Message_Last >= RFLX_Types.Bit_Index'First, "Invalid range for Message_Last");
+      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all
-                (RFLX_Types.Byte_Index (Context.First)
-                 .. RFLX_Types.Byte_Index (Enumeration.Message.Message_Last (Context))),
+      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 

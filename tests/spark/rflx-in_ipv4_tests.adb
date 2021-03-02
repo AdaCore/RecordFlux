@@ -127,6 +127,7 @@ package body RFLX.In_IPv4_Tests is
       Ethernet_Frame_Context : Ethernet.Frame.Context;
       IPv4_Packet_Context    : IPv4.Packet.Context;
       UDP_Datagram_Context   : UDP.Datagram.Context;
+      Message_Last           : RFLX_Builtin_Types.Bit_Length;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
       Ethernet.Frame.Set_Destination (Ethernet_Frame_Context, 16#FFFFFFFFFFFF#);
@@ -158,6 +159,8 @@ package body RFLX.In_IPv4_Tests is
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
+         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Options) = 0);
+         pragma Assert (IPv4.Packet.Field_Last (IPv4_Packet_Context, IPv4.Packet.F_Options) = 272);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
          pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
@@ -179,6 +182,7 @@ package body RFLX.In_IPv4_Tests is
             Set_Payload (UDP_Datagram_Context);
 
             --  WORKAROUND: Componolit/Workarounds#32
+            Message_Last := UDP.Datagram.Message_Last (UDP_Datagram_Context);
             pragma Warnings (Off, "unused assignment to ""UDP_Datagram_Context""");
             pragma Warnings (Off, """UDP_Datagram_Context"" is set by ""*"" but not used after the call");
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
@@ -186,7 +190,7 @@ package body RFLX.In_IPv4_Tests is
             pragma Warnings (On, "unused assignment to ""UDP_Datagram_Context""");
 
             Assert (RFLX_Builtin_Types.Length'Image
-                    (RFLX_Types.Byte_Index (UDP.Datagram.Message_Last (UDP_Datagram_Context))
+                    (RFLX_Types.Byte_Index (Message_Last)
                        - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1),
                     Expected'Length'Img,
                     "Invalid buffer length");

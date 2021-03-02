@@ -31,12 +31,14 @@ is
      Default_Initial_Condition =>
        False;
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is private with
      Default_Initial_Condition =>
        Types.Byte_Index (First) >= Buffer_First
        and Types.Byte_Index (Last) <= Buffer_Last
        and First <= Last
-       and Last < Types.Bit_Index'Last;
+       and Last < Types.Bit_Index'Last
+       and First mod Types.Byte'Size = 1
+       and Last mod Types.Byte'Size = 0;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -78,9 +80,10 @@ is
        and then Buffer'Length > 0
        and then Types.Byte_Index (First) >= Buffer'First
        and then Types.Byte_Index (Last) <= Buffer'Last
-       and then First mod Types.Byte'Size = 1
        and then First <= Last
-       and then Last < Types.Bit_Index'Last,
+       and then Last < Types.Bit_Index'Last
+       and then First mod Types.Byte'Size = 1
+       and then Last mod Types.Byte'Size = 0,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -151,7 +154,10 @@ is
 
    function Byte_Size (Ctx : Context) return Types.Length;
 
-   function Message_Last (Ctx : Context) return Types.Bit_Index;
+   function Message_Last (Ctx : Context) return Types.Bit_Length with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -272,7 +278,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Copied)
        and Get_Copied (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Copied)
        and Invalid (Ctx, F_Option_Class)
        and Invalid (Ctx, F_Option_Number)
        and Invalid (Ctx, F_Option_Length)
@@ -298,7 +303,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Class)
        and Get_Option_Class (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Class)
        and Invalid (Ctx, F_Option_Number)
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
@@ -325,7 +329,10 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Number)
        and Get_Option_Number (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Number)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Number))
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
        and (if
@@ -356,7 +363,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Length)
        and Get_Option_Length (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
        and (if
                (Types.U64 (To_Base (Get_Option_Class (Ctx))) = Types.U64 (To_Base (Debugging_And_Measurement))
@@ -395,11 +401,16 @@ is
        and then Field_Condition (Ctx, (Fld => F_Option_Data))
        and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
        and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data)
+       and Structural_Valid (Ctx, F_Option_Data)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -409,8 +420,35 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Option_Data);
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
+
+   procedure Initialize_Option_Data (Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Option_Data)
+       and then Field_Condition (Ctx, (Fld => F_Option_Data))
+       and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
+       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Option_Data) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Option_Data)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
+       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
+       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
 
    procedure Set_Option_Data (Ctx : in out Context; Value : Types.Bytes) with
      Pre =>
@@ -420,11 +458,16 @@ is
        and then Field_Condition (Ctx, (Fld => F_Option_Data))
        and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
        and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Value'Length = Types.Byte_Index (Field_Last (Ctx, F_Option_Data)) - Types.Byte_Index (Field_First (Ctx, F_Option_Data)) + 1,
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data)
+       and Structural_Valid (Ctx, F_Option_Data)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -434,8 +477,7 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Option_Data);
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
 
    generic
       with procedure Process_Option_Data (Option_Data : out Types.Bytes);
@@ -448,11 +490,16 @@ is
        and then Field_Condition (Ctx, (Fld => F_Option_Data))
        and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
        and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0
        and then Valid_Length (Types.Length (Field_Size (Ctx, F_Option_Data) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data)
+       and Structural_Valid (Ctx, F_Option_Data)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -462,32 +509,7 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Option_Data);
-
-   procedure Initialize_Option_Data (Ctx : in out Context) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Option_Data)
-       and then Field_Condition (Ctx, (Fld => F_Option_Data))
-       and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
-       and then Field_First (Ctx, F_Option_Data) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Option_Data) mod Types.Byte'Size = 0,
-     Post =>
-       Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
-       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
-       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
-       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
-       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Structural_Valid (Ctx, F_Option_Data);
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
@@ -550,7 +572,7 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
-   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last, Message_Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Message_Last : Types.Bit_Length; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
      ((if
           Buffer /= null
        then
@@ -559,9 +581,14 @@ private
       and then (Types.Byte_Index (First) >= Buffer_First
                 and Types.Byte_Index (Last) <= Buffer_Last
                 and First <= Last
-                and Last < Types.Bit_Index'Last)
-      and then First <= Message_Last
+                and Last < Types.Bit_Index'Last
+                and First mod Types.Byte'Size = 1
+                and Last mod Types.Byte'Size = 0)
+      and then First - 1 <= Message_Last
       and then Message_Last <= Last
+      and then First mod Types.Byte'Size = 1
+      and then Last mod Types.Byte'Size = 0
+      and then Message_Last mod Types.Byte'Size = 0
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
@@ -663,9 +690,9 @@ private
                                                                        and then Cursors (F_Option_Data).Predecessor = F_Option_Length
                                                                        and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))));
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is
       record
-         Message_Last : Types.Bit_Index := First;
+         Message_Last : Types.Bit_Length := First - 1;
          Buffer : Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
@@ -673,7 +700,7 @@ private
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
    function Initialized (Ctx : Context) return Boolean is
-     (Ctx.Message_Last = Ctx.First
+     (Ctx.Message_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Copied)
       and then Field_First (Ctx, F_Copied) mod Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Copied) = Ctx.Last - Ctx.First + 1
@@ -685,6 +712,9 @@ private
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
+
+   function Message_Last (Ctx : Context) return Types.Bit_Length is
+     (Ctx.Message_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

@@ -33,12 +33,14 @@ is
      Default_Initial_Condition =>
        False;
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is private with
      Default_Initial_Condition =>
        Types.Byte_Index (First) >= Buffer_First
        and Types.Byte_Index (Last) <= Buffer_Last
        and First <= Last
-       and Last < Types.Bit_Index'Last;
+       and Last < Types.Bit_Index'Last
+       and First mod Types.Byte'Size = 1
+       and Last mod Types.Byte'Size = 0;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -102,9 +104,10 @@ is
        and then Buffer'Length > 0
        and then Types.Byte_Index (First) >= Buffer'First
        and then Types.Byte_Index (Last) <= Buffer'Last
-       and then First mod Types.Byte'Size = 1
        and then First <= Last
-       and then Last < Types.Bit_Index'Last,
+       and then Last < Types.Bit_Index'Last
+       and then First mod Types.Byte'Size = 1
+       and then Last mod Types.Byte'Size = 0,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -175,7 +178,10 @@ is
 
    function Byte_Size (Ctx : Context) return Types.Length;
 
-   function Message_Last (Ctx : Context) return Types.Bit_Index;
+   function Message_Last (Ctx : Context) return Types.Bit_Length with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -347,7 +353,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Version)
        and Get_Version (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Version)
        and Invalid (Ctx, F_IHL)
        and Invalid (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
@@ -385,7 +390,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_IHL)
        and Get_IHL (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_IHL)
        and Invalid (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
@@ -424,7 +428,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_DSCP)
        and Get_DSCP (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_DSCP)
        and Invalid (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
@@ -464,7 +467,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_ECN)
        and Get_ECN (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_ECN)
        and Invalid (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
@@ -505,7 +507,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Total_Length)
        and Get_Total_Length (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Total_Length)
        and Invalid (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
@@ -550,7 +551,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identification)
        and Get_Identification (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Identification)
        and Invalid (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
@@ -593,7 +593,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_R)
        and Get_Flag_R (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_R)
        and Invalid (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
@@ -640,7 +639,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_DF)
        and Get_Flag_DF (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_DF)
        and Invalid (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
@@ -685,7 +683,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_MF)
        and Get_Flag_MF (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Flag_MF)
        and Invalid (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
@@ -731,7 +728,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Fragment_Offset)
        and Get_Fragment_Offset (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Fragment_Offset)
        and Invalid (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
@@ -778,7 +774,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TTL)
        and Get_TTL (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_TTL)
        and Invalid (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
@@ -826,7 +821,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Protocol)
        and Get_Protocol (Ctx) = (True, Val)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Protocol)
        and Invalid (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
@@ -875,7 +869,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Header_Checksum)
        and Get_Header_Checksum (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Header_Checksum)
        and Invalid (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
@@ -925,7 +918,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
        and Get_Source (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Source)
        and Invalid (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
@@ -976,7 +968,6 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
        and Get_Destination (Ctx) = Val
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Options) = F_Destination
@@ -1024,11 +1015,12 @@ is
        and then Field_Condition (Ctx, (Fld => F_Options))
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
        and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Options) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Options) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Options)
+       and Structural_Valid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1052,8 +1044,7 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Options);
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
 
    procedure Set_Payload_Empty (Ctx : in out Context) with
      Pre =>
@@ -1063,11 +1054,16 @@ is
        and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Payload) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
+       and Structural_Valid (Ctx, F_Payload)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1088,8 +1084,7 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Payload);
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
 
    procedure Set_Options (Ctx : in out Context; Seq_Ctx : Options_Sequence.Context) with
      Pre =>
@@ -1099,13 +1094,14 @@ is
        and then Field_Condition (Ctx, (Fld => F_Options))
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
        and then Field_First (Ctx, F_Options) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Options) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Options) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Options) = Options_Sequence.Size (Seq_Ctx)
        and then Options_Sequence.Has_Buffer (Seq_Ctx)
        and then Options_Sequence.Valid (Seq_Ctx),
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Options)
+       and Structural_Valid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1130,13 +1126,12 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Options)
        and (if
                Field_Size (Ctx, F_Options) > 0
             then
                Present (Ctx, F_Options));
 
-   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) with
+   procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -1144,11 +1139,15 @@ is
        and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Value'Length = Types.Byte_Index (Field_Last (Ctx, F_Payload)) - Types.Byte_Index (Field_First (Ctx, F_Payload)) + 1,
+       and then Field_Last (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
+       and Structural_Valid (Ctx, F_Payload)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1169,8 +1168,47 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Payload);
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
+
+   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Field_Condition (Ctx, (Fld => F_Payload))
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
+       and then Value'Length = Types.Byte_Index (Field_Last (Ctx, F_Payload)) - Types.Byte_Index (Field_First (Ctx, F_Payload)) + 1,
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Payload)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Get_Version (Ctx) = Get_Version (Ctx)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
 
    generic
       with procedure Process_Payload (Payload : out Types.Bytes);
@@ -1183,11 +1221,16 @@ is
        and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Payload) mod Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0
        and then Valid_Length (Types.Length (Field_Size (Ctx, F_Payload) / Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
+       and Structural_Valid (Ctx, F_Payload)
+       and (if
+               Structural_Valid_Message (Ctx)
+            then
+               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1208,43 +1251,7 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Payload);
-
-   procedure Initialize_Payload (Ctx : in out Context) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
-     Post =>
-       Has_Buffer (Ctx)
-       and Message_Last (Ctx) = Field_Last (Ctx, F_Payload)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
-       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
-       and Get_Version (Ctx) = Get_Version (Ctx)'Old
-       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Structural_Valid (Ctx, F_Payload);
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
 
    procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out Options_Sequence.Context) with
      Pre =>
@@ -1423,7 +1430,7 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
-   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last, Message_Last : Types.Bit_Index; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index; Message_Last : Types.Bit_Length; Buffer : access constant Types.Bytes; Cursors : Field_Cursors) return Boolean is
      ((if
           Buffer /= null
        then
@@ -1432,9 +1439,14 @@ private
       and then (Types.Byte_Index (First) >= Buffer_First
                 and Types.Byte_Index (Last) <= Buffer_Last
                 and First <= Last
-                and Last < Types.Bit_Index'Last)
-      and then First <= Message_Last
+                and Last < Types.Bit_Index'Last
+                and First mod Types.Byte'Size = 1
+                and Last mod Types.Byte'Size = 0)
+      and then First - 1 <= Message_Last
       and then Message_Last <= Last
+      and then First mod Types.Byte'Size = 1
+      and then Last mod Types.Byte'Size = 0
+      and then Message_Last mod Types.Byte'Size = 0
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
@@ -1694,9 +1706,9 @@ private
                                                                                                                                                                                                                                    and then Cursors (F_Payload).Predecessor = F_Options
                                                                                                                                                                                                                                    and then Cursors (F_Payload).First = Cursors (F_Options).Last + 1))))))))))))))))));
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
+   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First : Types.Bit_Index := Types.Bit_Index'First; Last : Types.Bit_Index := Types.Bit_Index'First + 7) is
       record
-         Message_Last : Types.Bit_Index := First;
+         Message_Last : Types.Bit_Length := First - 1;
          Buffer : Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
@@ -1704,7 +1716,7 @@ private
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
    function Initialized (Ctx : Context) return Boolean is
-     (Ctx.Message_Last = Ctx.First
+     (Ctx.Message_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Version)
       and then Field_First (Ctx, F_Version) mod Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Version) = Ctx.Last - Ctx.First + 1
@@ -1728,6 +1740,9 @@ private
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
+
+   function Message_Last (Ctx : Context) return Types.Bit_Length is
+     (Ctx.Message_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

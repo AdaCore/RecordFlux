@@ -77,6 +77,7 @@ package body RFLX.In_Ethernet_Tests is
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 59 => 0);
       Ethernet_Frame_Context : Ethernet.Frame.Context;
       IPv4_Packet_Context    : IPv4.Packet.Context;
+      Message_Last           : RFLX_Builtin_Types.Bit_Length;
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
       Ethernet.Frame.Set_Destination (Ethernet_Frame_Context, 16#FFFFFFFFFFFF#);
@@ -108,6 +109,8 @@ package body RFLX.In_Ethernet_Tests is
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
+         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Options) = 0);
+         pragma Assert (IPv4.Packet.Field_Last (IPv4_Packet_Context, IPv4.Packet.F_Options) = 272);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
@@ -117,6 +120,7 @@ package body RFLX.In_Ethernet_Tests is
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
          Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
 
+         Message_Last := IPv4.Packet.Message_Last (IPv4_Packet_Context);
          --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
          pragma Warnings (Off, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
@@ -124,11 +128,11 @@ package body RFLX.In_Ethernet_Tests is
          pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
 
-         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4.Packet.Message_Last (IPv4_Packet_Context))
+         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
                  - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
                  "Invalid buffer length");
          Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
-                 .. RFLX_Types.Byte_Index (Ethernet.Frame.Message_Last (Ethernet_Frame_Context))), Expected.all,
+                 .. RFLX_Types.Byte_Index (Message_Last)), Expected.all,
                  "Invalid binary representation");
       end if;
 
