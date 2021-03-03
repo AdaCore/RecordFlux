@@ -125,7 +125,7 @@ def validation_main(
         except RecordFluxError as e:
             return str(e)
 
-    def validate(original_message: bytes, original_message_is_valid: bool) -> bool:
+    def validate(original_message: bytes, original_message_is_valid: bool, msg_path: Path) -> bool:
         parser_result = rflx_parse_message_from_bytes(original_message)
         parsed_successfully = isinstance(parser_result, MessageValue)
         validation_success = False
@@ -145,7 +145,7 @@ def validation_main(
         if validation_success:
             output_writer.passed(
                 parser_result,
-                path,
+                msg_path,
                 original_message,
                 original_message_is_valid,
                 parsed_message_is_valid,
@@ -153,7 +153,7 @@ def validation_main(
         else:
             output_writer.failed(
                 parser_result,
-                path,
+                msg_path,
                 original_message,
                 original_message_is_valid,
                 parsed_message_is_valid,
@@ -174,7 +174,7 @@ def validation_main(
                 continue
             for path in paths:
                 original_message = get_message_from_path(path)
-                val_success = validate(original_message, paths == valid_message_paths)
+                val_success = validate(original_message, paths == valid_message_paths, path)
                 if not val_success and abort_on_error:
                     return
 
