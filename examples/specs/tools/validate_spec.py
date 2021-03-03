@@ -127,20 +127,17 @@ def validation_main(
 
     def validate(original_message: bytes, original_message_is_valid: bool, msg_path: Path) -> bool:
         parser_result = rflx_parse_message_from_bytes(original_message)
-        parsed_successfully = isinstance(parser_result, MessageValue)
-        validation_success = False
         parsed_message_is_valid = False
 
+        if isinstance(parser_result, MessageValue):
+            parsed_message_is_valid = (
+                parser_result.bytestring == original_message and parser_result.valid_message
+            )
+
         if original_message_is_valid:
-            if parsed_successfully:
-                assert isinstance(parser_result, MessageValue)
-                is_valid = (
-                    parser_result.bytestring == original_message and parser_result.valid_message
-                )
-                validation_success = is_valid
-                parsed_message_is_valid = is_valid
+            validation_success = parsed_message_is_valid
         else:
-            validation_success = not parsed_successfully
+            validation_success = not parsed_message_is_valid
 
         if validation_success:
             output_writer.passed(
