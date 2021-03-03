@@ -169,18 +169,12 @@ def validation_main(
     )
 
     with OutputWriter(full_output_path) as output_writer:
-
-        if valid_message_paths is not None:
-            for path in valid_message_paths:
+        for paths in [valid_message_paths, invalid_message_paths]:
+            if paths is None:
+                continue
+            for path in paths:
                 original_message = get_message_from_path(path)
-                val_success = validate(original_message, True)
-                if not val_success and abort_on_error:
-                    return
-
-        if invalid_message_paths is not None:
-            for path in invalid_message_paths:
-                original_message = get_message_from_path(path)
-                val_success = validate(original_message, False)
+                val_success = validate(original_message, paths == valid_message_paths)
                 if not val_success and abort_on_error:
                     return
 
