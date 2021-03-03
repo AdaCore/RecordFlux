@@ -189,6 +189,15 @@ private
         and Sequence_Last >= First - 1
         and Sequence_Last <= Last);
 
+   function Has_Element (Ctx : Context) return Boolean is
+     (Ctx.State = S_Valid and Ctx.Sequence_Last < Ctx.Last);
+
+   function Valid (Ctx : Context) return Boolean is
+     (Ctx.State = S_Valid);
+
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
+
    function Sequence_Last (Ctx : Context) return Types.Bit_Length is
       (Ctx.Sequence_Last);
 

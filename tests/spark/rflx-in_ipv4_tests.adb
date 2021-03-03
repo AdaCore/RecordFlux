@@ -160,6 +160,7 @@ package body RFLX.In_IPv4_Tests is
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
+         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
          IPv4.Packet.Initialize_Payload (IPv4_Packet_Context);
 
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
@@ -174,6 +175,7 @@ package body RFLX.In_IPv4_Tests is
             UDP.Datagram.Set_Checksum (UDP_Datagram_Context, 16#014E#);
             Data := (others => 0);
             pragma Assert (UDP.Datagram.Field_First (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 337);
+            pragma Assert (UDP.Datagram.Field_Size (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 144);
             Set_Payload (UDP_Datagram_Context);
 
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);

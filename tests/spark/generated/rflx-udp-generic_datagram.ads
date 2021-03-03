@@ -589,6 +589,219 @@ private
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
+   function Initialized (Ctx : Context) return Boolean is
+     (Valid_Next (Ctx, F_Source_Port)
+      and then Available_Space (Ctx, F_Source_Port) = Ctx.Last - Ctx.First + 1
+      and then Invalid (Ctx, F_Source_Port)
+      and then Invalid (Ctx, F_Destination_Port)
+      and then Invalid (Ctx, F_Length)
+      and then Invalid (Ctx, F_Checksum)
+      and then Invalid (Ctx, F_Payload));
+
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
+
+   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Source_Port =>
+                    True,
+                 when others =>
+                    False),
+          when F_Source_Port =>
+             (case Fld is
+                 when F_Destination_Port =>
+                    True,
+                 when others =>
+                    False),
+          when F_Destination_Port =>
+             (case Fld is
+                 when F_Length =>
+                    True,
+                 when others =>
+                    False),
+          when F_Length =>
+             (case Fld is
+                 when F_Checksum =>
+                    True,
+                 when others =>
+                    False),
+          when F_Checksum =>
+             (case Fld is
+                 when F_Payload =>
+                    True,
+                 when others =>
+                    False),
+          when F_Payload | F_Final =>
+             False));
+
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
+          when F_Initial | F_Source_Port | F_Destination_Port | F_Length | F_Checksum | F_Payload =>
+             True,
+          when F_Final =>
+             False));
+
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Source_Port =>
+                    RFLX.UDP.Port'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Source_Port =>
+             (case Fld is
+                 when F_Destination_Port =>
+                    RFLX.UDP.Port'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Destination_Port =>
+             (case Fld is
+                 when F_Length =>
+                    RFLX.UDP.Length_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Length =>
+             (case Fld is
+                 when F_Checksum =>
+                    RFLX.UDP.Checksum'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Checksum =>
+             (case Fld is
+                 when F_Payload =>
+                    (Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) - 8) * 8,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Payload | F_Final =>
+             0));
+
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     ((case Fld is
+          when F_Source_Port =>
+             Ctx.First,
+          when F_Destination_Port =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Source_Port
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Length =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Destination_Port
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Checksum =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Length
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Payload =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Checksum
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length)));
+
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
+
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
+     ((case Fld is
+          when F_Initial =>
+             F_Initial,
+          when others =>
+             Ctx.Cursors (Fld).Predecessor));
+
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_Source_Port =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_Destination_Port =>
+             (Valid (Ctx.Cursors (F_Source_Port))
+              and Ctx.Cursors (Fld).Predecessor = F_Source_Port),
+          when F_Length =>
+             (Valid (Ctx.Cursors (F_Destination_Port))
+              and Ctx.Cursors (Fld).Predecessor = F_Destination_Port),
+          when F_Checksum =>
+             (Valid (Ctx.Cursors (F_Length))
+              and Ctx.Cursors (Fld).Predecessor = F_Length),
+          when F_Payload =>
+             (Valid (Ctx.Cursors (F_Checksum))
+              and Ctx.Cursors (Fld).Predecessor = F_Checksum),
+          when F_Final =>
+             (Structural_Valid (Ctx.Cursors (F_Payload))
+              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
+
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
+     (Valid_Predecessor (Ctx, Fld)
+      and then Path_Condition (Ctx, Fld));
+
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
+
+   function Present (Ctx : Context; Fld : Field) return Boolean is
+     (Structural_Valid (Ctx.Cursors (Fld))
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+       or Ctx.Cursors (Fld).State = S_Structural_Valid));
+
+   function Valid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Valid
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Invalid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Invalid
+      or Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Structural_Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Source_Port)
+      and then Valid (Ctx, F_Destination_Port)
+      and then Valid (Ctx, F_Length)
+      and then Valid (Ctx, F_Checksum)
+      and then Structural_Valid (Ctx, F_Payload));
+
+   function Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Source_Port)
+      and then Valid (Ctx, F_Destination_Port)
+      and then Valid (Ctx, F_Length)
+      and then Valid (Ctx, F_Checksum)
+      and then Valid (Ctx, F_Payload));
+
+   function Incomplete_Message (Ctx : Context) return Boolean is
+     (Incomplete (Ctx, F_Source_Port)
+      or Incomplete (Ctx, F_Destination_Port)
+      or Incomplete (Ctx, F_Length)
+      or Incomplete (Ctx, F_Checksum)
+      or Incomplete (Ctx, F_Payload));
+
+   function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port is
+     (To_Actual (Ctx.Cursors (F_Source_Port).Value.Source_Port_Value));
+
+   function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port is
+     (To_Actual (Ctx.Cursors (F_Destination_Port).Value.Destination_Port_Value));
+
+   function Get_Length (Ctx : Context) return RFLX.UDP.Length is
+     (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
+
+   function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum is
+     (To_Actual (Ctx.Cursors (F_Checksum).Value.Checksum_Value));
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 

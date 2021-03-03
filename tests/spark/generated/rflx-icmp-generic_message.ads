@@ -1764,6 +1764,871 @@ private
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
+   function Initialized (Ctx : Context) return Boolean is
+     (Valid_Next (Ctx, F_Tag)
+      and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
+      and then Invalid (Ctx, F_Tag)
+      and then Invalid (Ctx, F_Code_Destination_Unreachable)
+      and then Invalid (Ctx, F_Code_Redirect)
+      and then Invalid (Ctx, F_Code_Time_Exceeded)
+      and then Invalid (Ctx, F_Code_Zero)
+      and then Invalid (Ctx, F_Checksum)
+      and then Invalid (Ctx, F_Gateway_Internet_Address)
+      and then Invalid (Ctx, F_Identifier)
+      and then Invalid (Ctx, F_Pointer)
+      and then Invalid (Ctx, F_Unused_32)
+      and then Invalid (Ctx, F_Sequence_Number)
+      and then Invalid (Ctx, F_Unused_24)
+      and then Invalid (Ctx, F_Originate_Timestamp)
+      and then Invalid (Ctx, F_Data)
+      and then Invalid (Ctx, F_Receive_Timestamp)
+      and then Invalid (Ctx, F_Transmit_Timestamp));
+
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
+
+   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Tag =>
+                    True,
+                 when others =>
+                    False),
+          when F_Tag =>
+             (case Fld is
+                 when F_Code_Destination_Unreachable =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable)),
+                 when F_Code_Redirect =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect)),
+                 when F_Code_Time_Exceeded =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded)),
+                 when F_Code_Zero =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)),
+                 when others =>
+                    False),
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             (case Fld is
+                 when F_Checksum =>
+                    True,
+                 when others =>
+                    False),
+          when F_Checksum =>
+             (case Fld is
+                 when F_Gateway_Internet_Address =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect)),
+                 when F_Identifier =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)),
+                 when F_Pointer =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem)),
+                 when F_Unused_32 =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)),
+                 when others =>
+                    False),
+          when F_Gateway_Internet_Address =>
+             (case Fld is
+                 when F_Data =>
+                    True,
+                 when others =>
+                    False),
+          when F_Identifier =>
+             (case Fld is
+                 when F_Sequence_Number =>
+                    True,
+                 when others =>
+                    False),
+          when F_Pointer =>
+             (case Fld is
+                 when F_Unused_24 =>
+                    True,
+                 when others =>
+                    False),
+          when F_Unused_32 =>
+             (case Fld is
+                 when F_Data =>
+                    True,
+                 when others =>
+                    False),
+          when F_Sequence_Number =>
+             (case Fld is
+                 when F_Data =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)),
+                 when F_Originate_Timestamp =>
+                    Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)),
+                 when others =>
+                    False),
+          when F_Unused_24 =>
+             (case Fld is
+                 when F_Data =>
+                    True,
+                 when others =>
+                    False),
+          when F_Originate_Timestamp =>
+             (case Fld is
+                 when F_Receive_Timestamp =>
+                    True,
+                 when others =>
+                    False),
+          when F_Data =>
+             False,
+          when F_Receive_Timestamp =>
+             (case Fld is
+                 when F_Transmit_Timestamp =>
+                    True,
+                 when others =>
+                    False),
+          when F_Transmit_Timestamp | F_Final =>
+             False));
+
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
+          when F_Initial =>
+             True,
+          when F_Tag =>
+             Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Redirect))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Information_Request))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Source_Quench))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+             or Types.U64 (Val.Tag_Value) = Types.U64 (To_Base (Echo_Request)),
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             True,
+          when F_Checksum =>
+             Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)),
+          when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
+             True,
+          when F_Sequence_Number =>
+             Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+             or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)),
+          when F_Unused_24 | F_Originate_Timestamp | F_Data | F_Receive_Timestamp | F_Transmit_Timestamp =>
+             True,
+          when F_Final =>
+             False));
+
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Tag =>
+                    RFLX.ICMP.Tag_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Tag =>
+             (case Fld is
+                 when F_Code_Destination_Unreachable =>
+                    RFLX.ICMP.Code_Destination_Unreachable_Base'Size,
+                 when F_Code_Redirect =>
+                    RFLX.ICMP.Code_Redirect_Base'Size,
+                 when F_Code_Time_Exceeded =>
+                    RFLX.ICMP.Code_Time_Exceeded_Base'Size,
+                 when F_Code_Zero =>
+                    RFLX.ICMP.Code_Zero_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             (case Fld is
+                 when F_Checksum =>
+                    RFLX.ICMP.Checksum'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Checksum =>
+             (case Fld is
+                 when F_Gateway_Internet_Address =>
+                    RFLX.ICMP.Gateway_Internet_Address'Size,
+                 when F_Identifier =>
+                    RFLX.ICMP.Identifier'Size,
+                 when F_Pointer =>
+                    RFLX.ICMP.Pointer'Size,
+                 when F_Unused_32 =>
+                    RFLX.ICMP.Unused_32_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Gateway_Internet_Address =>
+             (case Fld is
+                 when F_Data =>
+                    224,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Identifier =>
+             (case Fld is
+                 when F_Sequence_Number =>
+                    RFLX.ICMP.Sequence_Number'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Pointer =>
+             (case Fld is
+                 when F_Unused_24 =>
+                    RFLX.ICMP.Unused_24_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Unused_32 =>
+             (case Fld is
+                 when F_Data =>
+                    224,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Sequence_Number =>
+             (case Fld is
+                 when F_Data =>
+                    Types.Bit_Length (Ctx.Last) - Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last),
+                 when F_Originate_Timestamp =>
+                    RFLX.ICMP.Timestamp'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Unused_24 =>
+             (case Fld is
+                 when F_Data =>
+                    224,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Originate_Timestamp =>
+             (case Fld is
+                 when F_Receive_Timestamp =>
+                    RFLX.ICMP.Timestamp'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Data =>
+             0,
+          when F_Receive_Timestamp =>
+             (case Fld is
+                 when F_Transmit_Timestamp =>
+                    RFLX.ICMP.Timestamp'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Transmit_Timestamp | F_Final =>
+             0));
+
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     ((case Fld is
+          when F_Tag =>
+             Ctx.First,
+          when F_Code_Destination_Unreachable =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Tag
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Code_Redirect =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Tag
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Code_Time_Exceeded =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Tag
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Code_Zero =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Tag
+                 and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Checksum =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Code_Destination_Unreachable
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Code_Redirect
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Code_Time_Exceeded
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Code_Zero
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Gateway_Internet_Address =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Checksum
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Identifier =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Checksum
+                 and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Pointer =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Checksum
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Unused_32 =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Checksum
+                 and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Sequence_Number =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Identifier
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Unused_24 =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Pointer
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Originate_Timestamp =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
+                 and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Data =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
+                 and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                           or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Unused_24
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Unused_32
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Receive_Timestamp =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Originate_Timestamp
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Transmit_Timestamp =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Receive_Timestamp
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length)));
+
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
+
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
+     ((case Fld is
+          when F_Initial =>
+             F_Initial,
+          when others =>
+             Ctx.Cursors (Fld).Predecessor));
+
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_Tag =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             (Valid (Ctx.Cursors (F_Tag))
+              and Ctx.Cursors (Fld).Predecessor = F_Tag),
+          when F_Checksum =>
+             (Valid (Ctx.Cursors (F_Code_Destination_Unreachable))
+              and Ctx.Cursors (Fld).Predecessor = F_Code_Destination_Unreachable)
+             or (Valid (Ctx.Cursors (F_Code_Redirect))
+                 and Ctx.Cursors (Fld).Predecessor = F_Code_Redirect)
+             or (Valid (Ctx.Cursors (F_Code_Time_Exceeded))
+                 and Ctx.Cursors (Fld).Predecessor = F_Code_Time_Exceeded)
+             or (Valid (Ctx.Cursors (F_Code_Zero))
+                 and Ctx.Cursors (Fld).Predecessor = F_Code_Zero),
+          when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
+             (Valid (Ctx.Cursors (F_Checksum))
+              and Ctx.Cursors (Fld).Predecessor = F_Checksum),
+          when F_Sequence_Number =>
+             (Valid (Ctx.Cursors (F_Identifier))
+              and Ctx.Cursors (Fld).Predecessor = F_Identifier),
+          when F_Unused_24 =>
+             (Valid (Ctx.Cursors (F_Pointer))
+              and Ctx.Cursors (Fld).Predecessor = F_Pointer),
+          when F_Originate_Timestamp =>
+             (Valid (Ctx.Cursors (F_Sequence_Number))
+              and Ctx.Cursors (Fld).Predecessor = F_Sequence_Number),
+          when F_Data =>
+             (Valid (Ctx.Cursors (F_Gateway_Internet_Address))
+              and Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address)
+             or (Valid (Ctx.Cursors (F_Sequence_Number))
+                 and Ctx.Cursors (Fld).Predecessor = F_Sequence_Number)
+             or (Valid (Ctx.Cursors (F_Unused_24))
+                 and Ctx.Cursors (Fld).Predecessor = F_Unused_24)
+             or (Valid (Ctx.Cursors (F_Unused_32))
+                 and Ctx.Cursors (Fld).Predecessor = F_Unused_32),
+          when F_Receive_Timestamp =>
+             (Valid (Ctx.Cursors (F_Originate_Timestamp))
+              and Ctx.Cursors (Fld).Predecessor = F_Originate_Timestamp),
+          when F_Transmit_Timestamp =>
+             (Valid (Ctx.Cursors (F_Receive_Timestamp))
+              and Ctx.Cursors (Fld).Predecessor = F_Receive_Timestamp),
+          when F_Final =>
+             (Structural_Valid (Ctx.Cursors (F_Data))
+              and Ctx.Cursors (Fld).Predecessor = F_Data)
+             or (Valid (Ctx.Cursors (F_Sequence_Number))
+                 and Ctx.Cursors (Fld).Predecessor = F_Sequence_Number)
+             or (Valid (Ctx.Cursors (F_Transmit_Timestamp))
+                 and Ctx.Cursors (Fld).Predecessor = F_Transmit_Timestamp)));
+
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
+     (Valid_Predecessor (Ctx, Fld)
+      and then Path_Condition (Ctx, Fld));
+
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
+
+   function Present (Ctx : Context; Fld : Field) return Boolean is
+     (Structural_Valid (Ctx.Cursors (Fld))
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+       or Ctx.Cursors (Fld).State = S_Structural_Valid));
+
+   function Valid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Valid
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Invalid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Invalid
+      or Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Structural_Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Tag)
+      and then ((Valid (Ctx, F_Code_Destination_Unreachable)
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                 and then Valid (Ctx, F_Checksum)
+                 and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                            and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                            and then Structural_Valid (Ctx, F_Data))
+                           or (Valid (Ctx, F_Identifier)
+                               and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                               and then Valid (Ctx, F_Sequence_Number)
+                               and then ((Structural_Valid (Ctx, F_Data)
+                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                         or (Valid (Ctx, F_Originate_Timestamp)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                             and then Valid (Ctx, F_Receive_Timestamp)
+                                             and then Valid (Ctx, F_Transmit_Timestamp))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                           or (Valid (Ctx, F_Pointer)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                               and then Valid (Ctx, F_Unused_24)
+                               and then Structural_Valid (Ctx, F_Data))
+                           or (Valid (Ctx, F_Unused_32)
+                               and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                               and then Structural_Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Redirect)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Structural_Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Structural_Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Time_Exceeded)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Structural_Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Structural_Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Zero)
+                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Structural_Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Structural_Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Structural_Valid (Ctx, F_Data))))));
+
+   function Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Tag)
+      and then ((Valid (Ctx, F_Code_Destination_Unreachable)
+                 and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                 and then Valid (Ctx, F_Checksum)
+                 and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                            and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                            and then Valid (Ctx, F_Data))
+                           or (Valid (Ctx, F_Identifier)
+                               and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                               and then Valid (Ctx, F_Sequence_Number)
+                               and then ((Valid (Ctx, F_Data)
+                                          and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                    or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                         or (Valid (Ctx, F_Originate_Timestamp)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                             and then Valid (Ctx, F_Receive_Timestamp)
+                                             and then Valid (Ctx, F_Transmit_Timestamp))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                           or (Valid (Ctx, F_Pointer)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                               and then Valid (Ctx, F_Unused_24)
+                               and then Valid (Ctx, F_Data))
+                           or (Valid (Ctx, F_Unused_32)
+                               and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                         or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                               and then Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Redirect)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Time_Exceeded)
+                    and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Valid (Ctx, F_Data))))
+                or (Valid (Ctx, F_Code_Zero)
+                    and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                              or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request)))
+                    and then Valid (Ctx, F_Checksum)
+                    and then ((Valid (Ctx, F_Gateway_Internet_Address)
+                               and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Redirect))
+                               and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Identifier)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply)))
+                                  and then Valid (Ctx, F_Sequence_Number)
+                                  and then ((Valid (Ctx, F_Data)
+                                             and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Reply))
+                                                       or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Echo_Request))))
+                                            or (Valid (Ctx, F_Originate_Timestamp)
+                                                and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Msg))
+                                                          or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Timestamp_Reply)))
+                                                and then Valid (Ctx, F_Receive_Timestamp)
+                                                and then Valid (Ctx, F_Transmit_Timestamp))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Request))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Information_Reply))))
+                              or (Valid (Ctx, F_Pointer)
+                                  and then Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Parameter_Problem))
+                                  and then Valid (Ctx, F_Unused_24)
+                                  and then Valid (Ctx, F_Data))
+                              or (Valid (Ctx, F_Unused_32)
+                                  and then (Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Time_Exceeded))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Destination_Unreachable))
+                                            or Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = Types.U64 (To_Base (Source_Quench)))
+                                  and then Valid (Ctx, F_Data))))));
+
+   function Incomplete_Message (Ctx : Context) return Boolean is
+     (Incomplete (Ctx, F_Tag)
+      or Incomplete (Ctx, F_Code_Destination_Unreachable)
+      or Incomplete (Ctx, F_Code_Redirect)
+      or Incomplete (Ctx, F_Code_Time_Exceeded)
+      or Incomplete (Ctx, F_Code_Zero)
+      or Incomplete (Ctx, F_Checksum)
+      or Incomplete (Ctx, F_Gateway_Internet_Address)
+      or Incomplete (Ctx, F_Identifier)
+      or Incomplete (Ctx, F_Pointer)
+      or Incomplete (Ctx, F_Unused_32)
+      or Incomplete (Ctx, F_Sequence_Number)
+      or Incomplete (Ctx, F_Unused_24)
+      or Incomplete (Ctx, F_Originate_Timestamp)
+      or Incomplete (Ctx, F_Data)
+      or Incomplete (Ctx, F_Receive_Timestamp)
+      or Incomplete (Ctx, F_Transmit_Timestamp));
+
+   function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag is
+     (To_Actual (Ctx.Cursors (F_Tag).Value.Tag_Value));
+
+   function Get_Code_Destination_Unreachable (Ctx : Context) return RFLX.ICMP.Code_Destination_Unreachable is
+     (To_Actual (Ctx.Cursors (F_Code_Destination_Unreachable).Value.Code_Destination_Unreachable_Value));
+
+   function Get_Code_Redirect (Ctx : Context) return RFLX.ICMP.Code_Redirect is
+     (To_Actual (Ctx.Cursors (F_Code_Redirect).Value.Code_Redirect_Value));
+
+   function Get_Code_Time_Exceeded (Ctx : Context) return RFLX.ICMP.Code_Time_Exceeded is
+     (To_Actual (Ctx.Cursors (F_Code_Time_Exceeded).Value.Code_Time_Exceeded_Value));
+
+   function Get_Code_Zero (Ctx : Context) return RFLX.ICMP.Code_Zero is
+     (To_Actual (Ctx.Cursors (F_Code_Zero).Value.Code_Zero_Value));
+
+   function Get_Checksum (Ctx : Context) return RFLX.ICMP.Checksum is
+     (To_Actual (Ctx.Cursors (F_Checksum).Value.Checksum_Value));
+
+   function Get_Gateway_Internet_Address (Ctx : Context) return RFLX.ICMP.Gateway_Internet_Address is
+     (To_Actual (Ctx.Cursors (F_Gateway_Internet_Address).Value.Gateway_Internet_Address_Value));
+
+   function Get_Identifier (Ctx : Context) return RFLX.ICMP.Identifier is
+     (To_Actual (Ctx.Cursors (F_Identifier).Value.Identifier_Value));
+
+   function Get_Pointer (Ctx : Context) return RFLX.ICMP.Pointer is
+     (To_Actual (Ctx.Cursors (F_Pointer).Value.Pointer_Value));
+
+   function Get_Unused_32 (Ctx : Context) return RFLX.ICMP.Unused_32 is
+     (To_Actual (Ctx.Cursors (F_Unused_32).Value.Unused_32_Value));
+
+   function Get_Sequence_Number (Ctx : Context) return RFLX.ICMP.Sequence_Number is
+     (To_Actual (Ctx.Cursors (F_Sequence_Number).Value.Sequence_Number_Value));
+
+   function Get_Unused_24 (Ctx : Context) return RFLX.ICMP.Unused_24 is
+     (To_Actual (Ctx.Cursors (F_Unused_24).Value.Unused_24_Value));
+
+   function Get_Originate_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
+     (To_Actual (Ctx.Cursors (F_Originate_Timestamp).Value.Originate_Timestamp_Value));
+
+   function Get_Receive_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
+     (To_Actual (Ctx.Cursors (F_Receive_Timestamp).Value.Receive_Timestamp_Value));
+
+   function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
+     (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value.Transmit_Timestamp_Value));
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 

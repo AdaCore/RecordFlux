@@ -30,9 +30,6 @@ is
       end if;
    end Copy;
 
-   function Has_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Ctx.Sequence_Last < Ctx.Last);
-
    procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context) is
       Buffer : Types.Bytes_Ptr := Ctx.Buffer;
    begin
@@ -58,11 +55,5 @@ is
          Ctx.State := S_Invalid;
       end if;
    end Update;
-
-   function Valid (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid);
-
-   function Has_Buffer (Ctx : Context) return Boolean is
-     (Ctx.Buffer /= null);
 
 end RFLX.RFLX_Message_Sequence;

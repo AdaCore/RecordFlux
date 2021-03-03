@@ -635,6 +635,294 @@ private
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
+   function Initialized (Ctx : Context) return Boolean is
+     (Valid_Next (Ctx, F_Copied)
+      and then Available_Space (Ctx, F_Copied) = Ctx.Last - Ctx.First + 1
+      and then Invalid (Ctx, F_Copied)
+      and then Invalid (Ctx, F_Option_Class)
+      and then Invalid (Ctx, F_Option_Number)
+      and then Invalid (Ctx, F_Option_Length)
+      and then Invalid (Ctx, F_Option_Data));
+
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
+
+   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Copied =>
+                    True,
+                 when others =>
+                    False),
+          when F_Copied =>
+             (case Fld is
+                 when F_Option_Class =>
+                    True,
+                 when others =>
+                    False),
+          when F_Option_Class =>
+             (case Fld is
+                 when F_Option_Number =>
+                    True,
+                 when others =>
+                    False),
+          when F_Option_Number =>
+             (case Fld is
+                 when F_Option_Length =>
+                    Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1,
+                 when others =>
+                    False),
+          when F_Option_Length =>
+             (case Fld is
+                 when F_Option_Data =>
+                    (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                     and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                    or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                        and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                             or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                             or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                    or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                        and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                        and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                    or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                        and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                        and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8),
+                 when others =>
+                    False),
+          when F_Option_Data | F_Final =>
+             False));
+
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
+          when F_Initial | F_Copied | F_Option_Class =>
+             True,
+          when F_Option_Number =>
+             (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+              and Types.U64 (Val.Option_Number_Value) = 1)
+             or Types.U64 (Val.Option_Number_Value) > 1,
+          when F_Option_Length =>
+             (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+              and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+             or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                 and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+             or (Types.U64 (Val.Option_Length_Value) = 11
+                 and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+             or (Types.U64 (Val.Option_Length_Value) = 4
+                 and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8),
+          when F_Option_Data =>
+             True,
+          when F_Final =>
+             False));
+
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Copied =>
+                    RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Copied =>
+             (case Fld is
+                 when F_Option_Class =>
+                    RFLX.IPv4.Option_Class_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Option_Class =>
+             (case Fld is
+                 when F_Option_Number =>
+                    RFLX.IPv4.Option_Number'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Option_Number =>
+             (case Fld is
+                 when F_Option_Length =>
+                    RFLX.IPv4.Option_Length_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Option_Length =>
+             (case Fld is
+                 when F_Option_Data =>
+                    (Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Option_Data | F_Final =>
+             0));
+
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     ((case Fld is
+          when F_Copied =>
+             Ctx.First,
+          when F_Option_Class =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Copied
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Option_Number =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Option_Class
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Option_Length =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Option_Number
+                 and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length),
+          when F_Option_Data =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Option_Length
+                 and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                            and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                           or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                               and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                               and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8))
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length)));
+
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
+
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
+     ((case Fld is
+          when F_Initial =>
+             F_Initial,
+          when others =>
+             Ctx.Cursors (Fld).Predecessor));
+
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_Copied =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_Option_Class =>
+             (Valid (Ctx.Cursors (F_Copied))
+              and Ctx.Cursors (Fld).Predecessor = F_Copied),
+          when F_Option_Number =>
+             (Valid (Ctx.Cursors (F_Option_Class))
+              and Ctx.Cursors (Fld).Predecessor = F_Option_Class),
+          when F_Option_Length =>
+             (Valid (Ctx.Cursors (F_Option_Number))
+              and Ctx.Cursors (Fld).Predecessor = F_Option_Number),
+          when F_Option_Data =>
+             (Valid (Ctx.Cursors (F_Option_Length))
+              and Ctx.Cursors (Fld).Predecessor = F_Option_Length),
+          when F_Final =>
+             (Structural_Valid (Ctx.Cursors (F_Option_Data))
+              and Ctx.Cursors (Fld).Predecessor = F_Option_Data)
+             or (Valid (Ctx.Cursors (F_Option_Number))
+                 and Ctx.Cursors (Fld).Predecessor = F_Option_Number)));
+
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
+     (Valid_Predecessor (Ctx, Fld)
+      and then Path_Condition (Ctx, Fld));
+
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
+
+   function Present (Ctx : Context; Fld : Field) return Boolean is
+     (Structural_Valid (Ctx.Cursors (Fld))
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+       or Ctx.Cursors (Fld).State = S_Structural_Valid));
+
+   function Valid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Valid
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Invalid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Invalid
+      or Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Structural_Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Copied)
+      and then Valid (Ctx, F_Option_Class)
+      and then Valid (Ctx, F_Option_Number)
+      and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
+                or (Valid (Ctx, F_Option_Length)
+                    and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
+                    and then Structural_Valid (Ctx, F_Option_Data)
+                    and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                              or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                                  and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                                  and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)))));
+
+   function Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Copied)
+      and then Valid (Ctx, F_Option_Class)
+      and then Valid (Ctx, F_Option_Number)
+      and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
+                or (Valid (Ctx, F_Option_Length)
+                    and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
+                    and then Valid (Ctx, F_Option_Data)
+                    and then ((Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Debugging_And_Measurement))
+                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+                              or (Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                                  and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                                  and Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = Types.U64 (To_Base (Control))
+                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)))));
+
+   function Incomplete_Message (Ctx : Context) return Boolean is
+     (Incomplete (Ctx, F_Copied)
+      or Incomplete (Ctx, F_Option_Class)
+      or Incomplete (Ctx, F_Option_Number)
+      or Incomplete (Ctx, F_Option_Length)
+      or Incomplete (Ctx, F_Option_Data));
+
+   function Get_Copied (Ctx : Context) return Boolean is
+     (To_Actual (Ctx.Cursors (F_Copied).Value.Copied_Value));
+
+   function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class is
+     (To_Actual (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
+
+   function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number is
+     (To_Actual (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value));
+
+   function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length is
+     (To_Actual (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value));
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 

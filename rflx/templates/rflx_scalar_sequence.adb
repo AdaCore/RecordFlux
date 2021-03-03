@@ -54,12 +54,6 @@ is
       Ctx.Sequence_Last := Ctx.Sequence_Last + Element_Base_Type'Size;
    end Next;
 
-   function Has_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Ctx.Last - Ctx.Sequence_Last >= Element_Base_Type'Size);
-
-   function Valid_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Valid (Ctx.Next_Element));
-
    function Get_Element (Ctx : Context) return Element_Type is
      (To_Actual (Ctx.Next_Element));
 
@@ -79,11 +73,5 @@ is
       end if;
       Ctx.Sequence_Last := Ctx.Sequence_Last + Element_Base_Type'Size;
    end Append_Element;
-
-   function Valid (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid);
-
-   function Has_Buffer (Ctx : Context) return Boolean is
-     (Ctx.Buffer /= null);
 
 end {prefix}RFLX_Scalar_Sequence;

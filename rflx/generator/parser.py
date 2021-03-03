@@ -421,7 +421,7 @@ class ParserGenerator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
@@ -450,7 +450,7 @@ class ParserGenerator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     And(
@@ -500,7 +500,7 @@ class ParserGenerator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
@@ -528,7 +528,7 @@ class ParserGenerator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Equal(
@@ -547,7 +547,7 @@ class ParserGenerator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Or(
@@ -577,7 +577,7 @@ class ParserGenerator:
                     [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     valid_message_condition(message, structural=True),
@@ -598,7 +598,7 @@ class ParserGenerator:
                     [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     valid_message_condition(message),
@@ -614,7 +614,7 @@ class ParserGenerator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Or(
@@ -669,7 +669,7 @@ class ParserGenerator:
                 ],
                 Pragma("Warnings", [Variable("On"), String("precondition is always False")]),
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(specification(f, t), result(f))
                 for f, t in scalar_fields.items()
             ],

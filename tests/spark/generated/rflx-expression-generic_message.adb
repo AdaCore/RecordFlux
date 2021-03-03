@@ -18,64 +18,14 @@ is
       Buffer := null;
    end Initialize;
 
-   function Initialized (Ctx : Context) return Boolean is
-     (Valid_Next (Ctx, F_Payload)
-      and then Available_Space (Ctx, F_Payload) = Ctx.Last - Ctx.First + 1
-      and then Invalid (Ctx, F_Payload));
-
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   function Has_Buffer (Ctx : Context) return Boolean is
-     (Ctx.Buffer /= null);
-
    function Message_Last (Ctx : Context) return Types.Bit_Index is
      (Ctx.Message_Last);
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Payload =>
-                    True),
-          when F_Payload | F_Final =>
-             False));
-
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
-     ((case Val.Fld is
-          when F_Initial =>
-             True,
-          when F_Payload =>
-             Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))),
-          when F_Final =>
-             False));
-
-   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Payload =>
-                    16),
-          when F_Payload | F_Final =>
-             0));
-
-   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     ((case Fld is
-          when F_Payload =>
-             Ctx.First));
-
-   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
-     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -95,23 +45,6 @@ is
        and Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Payload =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
-
-   function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Predecessor (Ctx, Fld)
-      and then Path_Condition (Ctx, Fld));
-
-   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
-     (Ctx.Last - Field_First (Ctx, Fld) + 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -225,36 +158,6 @@ is
    begin
       Verify (Ctx, F_Payload);
    end Verify_Message;
-
-   function Present (Ctx : Context; Fld : Field) return Boolean is
-     (Structural_Valid (Ctx.Cursors (Fld))
-      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
-
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
-     ((Ctx.Cursors (Fld).State = S_Valid
-       or Ctx.Cursors (Fld).State = S_Structural_Valid));
-
-   function Valid (Ctx : Context; Fld : Field) return Boolean is
-     (Ctx.Cursors (Fld).State = S_Valid
-      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
-
-   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
-     (Ctx.Cursors (Fld).State = S_Incomplete);
-
-   function Invalid (Ctx : Context; Fld : Field) return Boolean is
-     (Ctx.Cursors (Fld).State = S_Invalid
-      or Ctx.Cursors (Fld).State = S_Incomplete);
-
-   function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Structural_Valid (Ctx, F_Payload)
-      and then Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))));
-
-   function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Payload)
-      and then Equal (Ctx, F_Payload, (Types.Byte'Val (1), Types.Byte'Val (2))));
-
-   function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Payload));
 
    procedure Get_Payload (Ctx : Context) is
       First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Payload).First);

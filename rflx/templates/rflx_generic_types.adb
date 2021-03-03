@@ -142,9 +142,8 @@ is
                                                       LSE_Offset,
                                                       Byte'Size * Natural (I - LSE_Index));
          pragma Loop_Invariant (I - LSE_Index <= 7);
-         pragma Loop_Invariant (if Byte'Size + Byte'Size * (I - LSE_Index) = U64'Size
-                                then Result <= U64'Last
-                                else Result < 2**(Byte'Size + Byte'Size * Natural (I - LSE_Index)));
+         pragma Loop_Invariant (if Byte'Size + Byte'Size * (I - LSE_Index) /= U64'Size
+                                then Result < 2**(Byte'Size + Byte'Size * Natural (I - LSE_Index)));
       end loop;
 
       if MSE_Size > LSE_Offset then
