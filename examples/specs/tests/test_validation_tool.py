@@ -191,9 +191,7 @@ def test_cli_abort_on_error() -> None:
         ]
     )
     assert isinstance(ret, str)
-    assert re.match(
-        r"^(tests/data/ethernet/frame/invalid/).+(\.raw) (classified as FalseNegative)$", ret
-    )
+    assert re.match(r"^(1 messages were classified incorrectly)$", ret)
 
 
 def test_cli_not_regular_file(tmpdir: Path) -> None:
@@ -253,6 +251,27 @@ def test_validation_positive() -> None:
     )
 
 
+def test_validation_positive_full_output(tmp_path: Path) -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-v",
+                "tests/data/ethernet/frame/valid",
+                "-i",
+                "tests/data/ethernet/frame/invalid",
+                "-o",
+                f"{tmp_path}/output.json",
+            ]
+        )
+        == 0
+    )
+
+
 def test_validation_negative() -> None:
     number = len(
         list(Path("tests/data/ethernet/frame/invalid").glob("*"))
@@ -276,7 +295,7 @@ def test_validation_negative() -> None:
     )
 
 
-def test_cli_full_json_output(tmp_path: Path) -> None:
+def test_validation_negative_full_output(tmp_path: Path) -> None:
     number = len(
         list(Path("tests/data/ethernet/frame/invalid").glob("*"))
         + list(Path("tests/data/ethernet/frame/valid").glob("*"))
