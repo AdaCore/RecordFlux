@@ -1,0 +1,90 @@
+package PPPoE is
+
+   -- RFC 2516
+
+   type Tag_Type is
+      (End_Of_List        => 16#0000#,
+       Service_Name       => 16#0101#,
+       AC_Name            => 16#0102#,
+       Host_Uniq          => 16#0103#,
+       AC_Cookie          => 16#0104#,
+       Vendor_Specific    => 16#0105#,
+       Relay_Session_ID   => 16#0110#,
+       Service_Name_Error => 16#0201#,
+       AC_System_Error    => 16#0202#,
+       Generic_Error      => 16#0203#)
+   with Size => 16;
+
+   type Tag_Length is mod 2**16;
+   type Vendor_ID is mod 2**32;
+
+   type Tag is
+      message
+         Typ : Tag_Type;
+         Len : Tag_Length
+            then null
+               if Typ = End_Of_List and Len = 0
+            then Value
+               with Size => 8 * Len
+               if Typ = Service_Name
+                  or Typ = AC_Name
+                  or Typ = Host_Uniq
+                  or Typ = AC_Cookie
+                  or Typ = Relay_Session_ID
+                  or Typ = Service_Name_Error 
+                  or Typ = AC_System_Error 
+                  or Typ = Generic_Error 
+            then Vendor_ID
+               if Typ = Vendor_Specific and Len >= 4;
+         Vendor_ID : Vendor_ID
+            then Value
+               with Size => 8 * Len - Vendor_ID'Size;
+         Value : Opaque;
+      end message;
+
+   type Tags is array of Tag;
+
+   type Version is range 1 .. 1 with Size => 4;
+   type Message_Type is range 1 .. 1 with Size => 4;
+   type Session_ID is range 0 .. 2**16 - 2 with Size => 16;
+   type Length is mod 2**16;
+
+   type Code is
+      (PPP_Session                           => 16#00#,
+       Active_Discovery_Offer                => 16#07#,
+       Active_Discovery_Initialization       => 16#09#,
+       Active_Discovery_Request              => 16#19#,
+       Active_Discovery_Session_Confirmation => 16#65#,
+       Active_Discovery_Terminate            => 16#A7#)
+   with Size => 8;
+
+   type Discovery is
+      message
+         Version : Version;
+         Typ : Message_Type;
+         Code : Code;
+         Session_ID : Session_ID;
+         Length : Length;
+         Tags : Tags
+            with Size => 8 * Length
+            then null
+               if Code = Active_Discovery_Initialization and Session_ID = 0 and Message'Size <= 1484
+               or Code = Active_Discovery_Offer and Session_ID = 0
+               or Code = Active_Discovery_Request and Session_ID = 0
+               or Code = Active_Discovery_Session_Confirmation;
+      end message;
+
+   type Session is
+      message
+         Version : Version;
+         Typ : Message_Type;
+         Code : Code
+            then Session_ID
+               if Code = PPP_Session;
+         Session_ID : Session_ID;
+         Length : Length;
+         Payload : Opaque
+            with Size => 8 * Length;
+      end message;
+
+end PPPoE;

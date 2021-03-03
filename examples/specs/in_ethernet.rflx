@@ -2,6 +2,7 @@ with Ethernet;
 with IPv4;
 with IPv6;
 with ARP;
+with PPPoE;
 
 package In_Ethernet is
 
@@ -13,5 +14,11 @@ package In_Ethernet is
 
    for Ethernet::Frame use (Payload => ARP::Packet_IPv4)
       if Ether_Type = Ethernet::ET_ARP;
+
+   for Ethernet::Frame use (Payload => PPPoE::Discovery)
+      if Ether_Type = Ethernet::ET_PPPOE_DISCOVERY;
+
+   for Ethernet::Frame use (Payload => PPPoE::Session)
+      if Ether_Type = Ethernet::ET_PPPOE_SESSION;
 
 end In_Ethernet;
