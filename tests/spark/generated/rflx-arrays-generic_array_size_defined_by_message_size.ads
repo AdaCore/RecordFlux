@@ -446,6 +446,136 @@ private
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
 
+   function Initialized (Ctx : Context) return Boolean is
+     (Valid_Next (Ctx, F_Header)
+      and then Available_Space (Ctx, F_Header) = Ctx.Last - Ctx.First + 1
+      and then Invalid (Ctx, F_Header)
+      and then Invalid (Ctx, F_Vector));
+
+   function Has_Buffer (Ctx : Context) return Boolean is
+     (Ctx.Buffer /= null);
+
+   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Header =>
+                    True,
+                 when others =>
+                    False),
+          when F_Header =>
+             (case Fld is
+                 when F_Vector =>
+                    True,
+                 when others =>
+                    False),
+          when F_Vector | F_Final =>
+             False));
+
+   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
+     ((case Val.Fld is
+          when F_Initial | F_Header | F_Vector =>
+             True,
+          when F_Final =>
+             False));
+
+   function Field_Size (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Header =>
+                    RFLX.Arrays.Enumeration_Base'Size,
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Header =>
+             (case Fld is
+                 when F_Vector =>
+                    Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1),
+                 when others =>
+                    Types.Unreachable_Bit_Length),
+          when F_Vector | F_Final =>
+             0));
+
+   function Field_First (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     ((case Fld is
+          when F_Header =>
+             Ctx.First,
+          when F_Vector =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Header
+              then
+                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
+              else
+                 Types.Unreachable_Bit_Length)));
+
+   function Field_Last (Ctx : Context; Fld : Field) return Types.Bit_Index is
+     (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
+
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
+     ((case Fld is
+          when F_Initial =>
+             F_Initial,
+          when others =>
+             Ctx.Cursors (Fld).Predecessor));
+
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_Header =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_Vector =>
+             (Valid (Ctx.Cursors (F_Header))
+              and Ctx.Cursors (Fld).Predecessor = F_Header),
+          when F_Final =>
+             (Structural_Valid (Ctx.Cursors (F_Vector))
+              and Ctx.Cursors (Fld).Predecessor = F_Vector)));
+
+   function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
+     (Valid_Predecessor (Ctx, Fld)
+      and then Path_Condition (Ctx, Fld));
+
+   function Available_Space (Ctx : Context; Fld : Field) return Types.Bit_Length is
+     (Ctx.Last - Field_First (Ctx, Fld) + 1);
+
+   function Present (Ctx : Context; Fld : Field) return Boolean is
+     (Structural_Valid (Ctx.Cursors (Fld))
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+     ((Ctx.Cursors (Fld).State = S_Valid
+       or Ctx.Cursors (Fld).State = S_Structural_Valid));
+
+   function Valid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Valid
+      and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
+
+   function Incomplete (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Invalid (Ctx : Context; Fld : Field) return Boolean is
+     (Ctx.Cursors (Fld).State = S_Invalid
+      or Ctx.Cursors (Fld).State = S_Incomplete);
+
+   function Structural_Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Header)
+      and then Structural_Valid (Ctx, F_Vector));
+
+   function Valid_Message (Ctx : Context) return Boolean is
+     (Valid (Ctx, F_Header)
+      and then Valid (Ctx, F_Vector));
+
+   function Incomplete_Message (Ctx : Context) return Boolean is
+     (Incomplete (Ctx, F_Header)
+      or Incomplete (Ctx, F_Vector));
+
+   function Get_Header (Ctx : Context) return RFLX.Arrays.Enumeration is
+     (To_Actual (Ctx.Cursors (F_Header).Value.Header_Value));
+
+   function Complete_Vector (Ctx : Context; Seq_Ctx : Modular_Vector_Sequence.Context) return Boolean is
+     (Modular_Vector_Sequence.Valid (Seq_Ctx)
+      and Modular_Vector_Sequence.Size (Seq_Ctx) = Field_Size (Ctx, F_Vector));
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
 

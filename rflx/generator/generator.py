@@ -826,7 +826,7 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification, [Ghost()])],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
@@ -945,7 +945,7 @@ class Generator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1022,7 +1022,7 @@ class Generator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1108,7 +1108,7 @@ class Generator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1144,7 +1144,7 @@ class Generator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
@@ -1211,7 +1211,7 @@ class Generator:
                     ],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1235,7 +1235,7 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1533,7 +1533,9 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))],
+            private=[
+                ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))
+            ],
         )
 
     @staticmethod
@@ -1549,7 +1551,7 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
@@ -1623,7 +1625,7 @@ class Generator:
                     [Precondition(Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]))],
                 )
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     Add(
@@ -2002,7 +2004,7 @@ class Generator:
                 )
                 for f in sequence_fields
             ],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification(f),
                     And(
@@ -2865,7 +2867,7 @@ class Generator:
 
         return UnitPart(
             [SubprogramDeclaration(specification)],
-            [
+            private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(

@@ -111,6 +111,7 @@ package body RFLX.In_Ethernet_Tests is
          IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
          Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
          pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
+         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
          Set_Payload (IPv4_Packet_Context);
 
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
