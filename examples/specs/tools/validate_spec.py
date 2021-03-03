@@ -3,11 +3,9 @@
 import argparse
 import json
 import sys
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from types import TracebackType
-from typing import Dict, Iterator, List, Optional, Sequence, TextIO, Type, Union
+from typing import IO, Dict, Iterator, List, Optional, Sequence, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
@@ -79,82 +77,116 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f"output file already exists: {args.json_output}"
 
     try:
-        validation_main(args)
+        identifier = ID(args.message_identifier)
+    except RecordFluxError as e:
+        return f'invalid identifier "{args.message_identifier}" : {e}'
+
+    try:
+        pdu_message = PyRFLX.from_specs(
+            [str(args.specification)], skip_model_verification=args.no_verification
+        )[str(identifier.parent)][str(identifier.name)]
+    except KeyError:
+        return f'message "{identifier.name}" could not be found in package "{identifier.parent}"'
+
+    except FileNotFoundError as e:
+        return f"specification {e}"
+
+    try:
+        validation_main(
+            pdu_message,
+            args.directory_invalid,
+            args.directory_valid,
+            args.json_output,
+            args.abort_on_error,
+        )
     except ValidationError as e:
         return f"{e}"
 
     return 0
 
 
-def validation_main(args: argparse.Namespace) -> None:
-    # pylint: disable=too-many-locals
-    def get_message_to_validate(message_path: Path, is_valid: bool) -> "OriginalMessage":
+def validation_main(
+    pdu_message: MessageValue,
+    path_invalid: Optional[Path],
+    path_valid: Optional[Path],
+    full_output_path: Optional[Path],
+    abort_on_error: bool,
+) -> None:
+    def get_message_from_path(message_path: Path) -> bytes:
         if not message_path.is_file():
             raise ValidationError(f"{message_path} is not a regular file")
-        message_bytes = message_path.read_bytes()
-        message = OriginalMessage(message_bytes, is_valid, message_path.name)
-        return message
+        return message_path.read_bytes()
 
-    root_message_id: str = args.message_identifier
-    path_spec: Path = args.specification
-    path_invalid: Optional[Path] = args.directory_invalid
-    path_valid: Optional[Path] = args.directory_valid
-    full_output_path: Optional[Path] = args.json_output
-    abort_on_error: bool = args.abort_on_error
-    no_verification: bool = args.no_verification
+    def rflx_parse_message_from_bytes(message: bytes) -> Union[str, MessageValue]:
+        pdu_model: MessageValue = pdu_message.clone()
+        try:
+            pdu_model.parse(message)
+            return pdu_model
+        except RecordFluxError as e:
+            return str(e)
 
-    path_generators: Dict[Path, Iterator[Path]] = {}
-    for path in [path_valid, path_invalid]:
-        if path is not None:
-            path_generators[path] = path.glob("*")
+    def validate(original_message: bytes, original_message_is_valid: bool) -> bool:
+        parser_result = rflx_parse_message_from_bytes(original_message)
+        parsed_successfully = isinstance(parser_result, MessageValue)
+        validation_success = False
+        parsed_message_is_valid = False
 
-    try:
-        identifier = ID(root_message_id)
-    except RecordFluxError as e:
-        raise ValidationError(f'invalid identifier "{root_message_id}" : {e}') from e
+        if original_message_is_valid:
+            if parsed_successfully:
+                assert isinstance(parser_result, MessageValue)
+                is_valid = (
+                    parser_result.bytestring == original_message and parser_result.valid_message
+                )
+                validation_success = is_valid
+                parsed_message_is_valid = is_valid
+        else:
+            validation_success = not parsed_successfully
 
-    message_name = str(identifier.name)
-    package_name = str(identifier.parent)
-    try:
-        pdu_message = PyRFLX.from_specs([str(path_spec)], skip_model_verification=no_verification)[
-            package_name
-        ][message_name]
-    except KeyError as e:
-        raise ValidationError(
-            f'message "{message_name}" could not be found in package "{package_name}"'
-        ) from e
-    except FileNotFoundError as e:
-        raise ValidationError(f"specification {e}") from e
+        if validation_success:
+            output_writer.passed(
+                parser_result,
+                path,
+                original_message,
+                original_message_is_valid,
+                parsed_message_is_valid,
+            )
+        else:
+            output_writer.failed(
+                parser_result,
+                path,
+                original_message,
+                original_message_is_valid,
+                parsed_message_is_valid,
+            )
 
-    classified_incorrectly = 0
-    with JsonOutputWriter(full_output_path) as json_output_writer:
-        validator = Validator(pdu_message)
-        for path, path_generator in path_generators.items():
-            for message_file_path in path_generator:
-                msg = get_message_to_validate(message_file_path, path == path_valid)
-                validation_result = validator.validate_message(msg)
-                json_output_writer.write(validation_result)
-                if validation_result.classification in [
-                    Classification.FP,
-                    Classification.FN,
-                ]:
-                    print(f"{message_file_path}: FAILED")
-                    print(f"{validation_result.get_abbreviated_output()}\n")
-                    if abort_on_error:
-                        raise ValidationError(
-                            f"{message_file_path} classified as "
-                            f"{validation_result.classification.value}"
-                        )
-                    classified_incorrectly += 1
-                else:
-                    print(f"{message_file_path}: PASSED")
+        return validation_success
 
-    if classified_incorrectly != 0:
-        raise ValidationError(f"{classified_incorrectly} messages were classified incorrectly")
+    valid_message_paths: Optional[Iterator[Path]] = (
+        path_valid.glob("*") if path_valid is not None else path_valid
+    )
+    invalid_message_paths: Optional[Iterator[Path]] = (
+        path_invalid.glob("*") if path_invalid is not None else path_invalid
+    )
+
+    with OutputWriter(full_output_path) as output_writer:
+
+        if valid_message_paths is not None:
+            for path in valid_message_paths:
+                original_message = get_message_from_path(path)
+                val_success = validate(original_message, True)
+                if not val_success and abort_on_error:
+                    return
+
+        if invalid_message_paths is not None:
+            for path in invalid_message_paths:
+                original_message = get_message_from_path(path)
+                val_success = validate(original_message, False)
+                if not val_success and abort_on_error:
+                    return
 
 
-class JsonOutputWriter:
-    file: Optional[TextIO]
+class OutputWriter:
+    file: Optional[IO]
 
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
@@ -166,8 +198,9 @@ class JsonOutputWriter:
             self.count = 0
         else:
             self.file = file
+        self.classified_incorrectly = 0
 
-    def __enter__(self) -> "JsonOutputWriter":
+    def __enter__(self) -> "OutputWriter":
         return self
 
     def __exit__(
@@ -180,111 +213,88 @@ class JsonOutputWriter:
             self.file.write("\n]")
             self.file.close()
 
-    def write(self, validation_result: "ValidationResult") -> None:
+        if self.classified_incorrectly != 0:
+            raise ValidationError(
+                f"{self.classified_incorrectly} messages were classified incorrectly"
+            )
+
+    def failed(
+        self,
+        parser_result: Union[str, MessageValue],
+        message_file_path: Path,
+        original_message: bytes,
+        valid_original_message: bool,
+        valid_parser_result: bool,
+    ) -> None:
+        print(f"{str(message_file_path):<80} FAILED")
+        print(f"provided as: {valid_original_message}\t recognized as: {valid_parser_result}")
+        if isinstance(parser_result, str):
+            print(f"{parser_result}")
+        else:
+            print("error: invalid message")
+        self.classified_incorrectly += 1
+        if self.file is not None:
+            json_out = self.__get_json_output(
+                message_file_path,
+                original_message,
+                parser_result,
+                valid_original_message,
+                valid_parser_result,
+                False,
+            )
+            self.__write_json_output(json_out)
+
+    def passed(
+        self,
+        parser_result: Union[str, MessageValue],
+        message_file_path: Path,
+        original_message: bytes,
+        valid_original_message: bool,
+        valid_parser_result: bool,
+    ) -> None:
+        print(f"{str(message_file_path):<80} {'PASSED'}")
+
+        if self.file is not None:
+            json_out = self.__get_json_output(
+                message_file_path,
+                original_message,
+                parser_result,
+                valid_original_message,
+                valid_parser_result,
+                True,
+            )
+            self.__write_json_output(json_out)
+
+    def __write_json_output(self, values: Dict[str, object]) -> None:
         if self.file is not None:
             if self.count != 0:
                 self.file.write(",\n")
             json.dump(
-                validation_result.get_json_output(),
+                values,
                 self.file,
                 indent="\t",
             )
             self.count += 1
 
-
-class Validator:
-    def __init__(self, pdu_message: MessageValue) -> None:
-        self.__pdu_message = pdu_message
-
-    def validate_message(self, original_message: "OriginalMessage") -> "ValidationResult":
-        parser_result = self.__parse_message(original_message.bytes)
-        validation_result = ValidationResult(parser_result, original_message)
-        parsed_message = parser_result.parsed_message
-
-        if isinstance(parsed_message, MessageValue):
-            validation_result.correct_serialization = (
-                parsed_message.bytestring == original_message.bytes
-            )
-        else:
-            validation_result.correct_serialization = False
-
-        is_valid = parser_result.is_valid and validation_result.correct_serialization
-
-        if is_valid and original_message.is_valid:
-            validation_result.classification = Classification.TP
-        elif is_valid and not original_message.is_valid:
-            validation_result.classification = Classification.FP
-        elif not is_valid and original_message.is_valid:
-            validation_result.classification = Classification.FN
-        else:
-            validation_result.classification = Classification.TN
-
-        return validation_result
-
-    def __parse_message(self, message: bytes) -> "ParserResult":
-        pdu_model: MessageValue = self.__pdu_message.clone()
-        result = ParserResult()
-        try:
-            pdu_model.parse(message)
-            result.parsed_message = pdu_model
-        except RecordFluxError as e:
-            result.error_message = str(e)
-        return result
-
-
-@dataclass
-class OriginalMessage:
-    bytes: bytes
-    is_valid: bool
-    file_name: str
-
-
-class ParserResult:
-    def __init__(self) -> None:
-        self.__parsed_message: Optional[MessageValue] = None
-        self.__error_message: str = ""
-        self.__msg_valid: Optional[bool] = None
-
-    @property
-    def parsed_message(self) -> Optional[MessageValue]:
-        return self.__parsed_message
-
-    @parsed_message.setter
-    def parsed_message(self, parsed_message: MessageValue) -> None:
-        self.__parsed_message = parsed_message
-        self.__msg_valid = parsed_message.valid_message
-
-    @property
-    def error_message(self) -> str:
-        return self.__error_message
-
-    @error_message.setter
-    def error_message(self, error_message: str) -> None:
-        self.__error_message = error_message
-        self.__msg_valid = False
-
-    @property
-    def is_valid(self) -> Optional[bool]:
-        return self.__msg_valid
-
-
-class ValidationResult:
-    def __init__(self, parser_result: ParserResult, original_message: OriginalMessage):
-        self.__parser_result: ParserResult = parser_result
-        self.__original_message: OriginalMessage = original_message
-        self.classification: Classification = Classification.NI
-        self.correct_serialization: Optional[bool] = None
-
-    def get_json_output(self) -> Dict[str, object]:
-        parsed_message = self.__parser_result.parsed_message
-        parsed_field_values: Dict[
-            str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]
-        ] = {}
-        if parsed_message is not None:
-            parsed_field_values.fromkeys(parsed_message.fields)
-            for field_name in parsed_message.fields:
+    @staticmethod
+    def __get_json_output(
+        file_name: Path,
+        original_message: bytes,
+        parsed_message: Union[MessageValue, str],
+        valid_original_message: bool,
+        valid_parser_result: bool,
+        correct_serialization: bool,
+    ) -> Dict[str, object]:
+        def get_field_values(
+            msg: MessageValue,
+        ) -> Dict[str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]]:
+            parsed_field_values: Dict[
+                str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]
+            ] = {}
+            parsed_field_values.fromkeys(msg.fields)
+            for field_name in msg.fields:
                 try:
-                    field_value = parsed_message.get(field_name)
+                    field_value = msg.get(field_name)
                 except PyRFLXError as e:
                     field_value = str(f"{e} or not set")
                 if isinstance(field_value, MessageValue):
@@ -292,24 +302,22 @@ class ValidationResult:
                 elif isinstance(field_value, bytes):
                     field_value = field_value.hex()
                 parsed_field_values[field_name] = field_value
+            return parsed_field_values
 
-        return {
-            "file name": self.__original_message.file_name,
-            "original": self.__original_message.bytes.hex(),
-            "parsed": parsed_message.bytestring.hex() if parsed_message is not None else "",
-            "parsed_field_values": parsed_field_values,
-            "error_message": self.__parser_result.error_message,
-            "provided_as": self.__original_message.is_valid,
-            "recognized_as": self.__parser_result.is_valid,
-            "classification": self.classification.value,
-            "serialized_correctly": self.correct_serialization,
+        output = {
+            "file name": str(file_name),
+            "provided as": valid_original_message,
+            "recognized as": valid_parser_result,
+            "original": original_message.hex(),
         }
 
-    def get_abbreviated_output(self) -> str:
-        if self.__parser_result.error_message:
-            output = f"{self.classification.value}\n{self.__parser_result.error_message}"
+        if isinstance(parsed_message, MessageValue):
+            output["parsed"] = parsed_message.bytestring.hex()
+            output["parsed field values"] = get_field_values(parsed_message)
+            output["serialized correctly"] = correct_serialization
         else:
-            output = f"{self.classification.value}"
+            output["parsed"] = parsed_message
+
         return output
 
 
@@ -320,14 +328,6 @@ class ValidationError(Exception):
 
     def __str__(self) -> str:
         return self.message
-
-
-class Classification(Enum):
-    TN = "TrueNegative"
-    TP = "TruePositive"
-    FP = "FalsePositive"
-    FN = "FalseNegative"
-    NI = "NotInitialized"
 
 
 if __name__ == "__main__":
