@@ -1232,6 +1232,21 @@ class Parser:
                 withed_files.append(withed_file.name)
                 if withed_file.name not in self.__specifications:
                     error.extend(self.__parse_specfile(withed_file, transitions + [item]))
+
+            if (
+                packagefile in self.__specifications
+                and filename != self.__specifications[packagefile][0]
+            ):
+                error.append(
+                    f'duplicate specification "{filename}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                )
+                error.append(
+                    f'previous specification "{self.__specifications[packagefile][0]}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                )
             self.__specifications[packagefile] = (filename, spec, withed_files)
 
         return error
