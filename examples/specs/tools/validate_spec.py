@@ -252,112 +252,39 @@ class OutputWriter:
             self.file.write("\n]")
             self.file.close()
 
-        if self.classified_incorrectly != 0:
+        if exception_value is None and self.classified_incorrectly != 0:
             raise ValidationError(
                 f"{self.classified_incorrectly} messages were classified incorrectly"
             )
 
-    def failed(
-        self,
-        parser_result: Union[str, MessageValue],
-        message_file_path: Path,
-        original_message: bytes,
-        valid_original_message: bool,
-        valid_parser_result: bool,
-    ) -> None:
-        print(f"{str(message_file_path):<80} FAILED")
-        print(f"provided as: {valid_original_message}\t recognized as: {valid_parser_result}")
-        if isinstance(parser_result, str):
-            print(f"{parser_result}")
+    def write_result(self, validation_result: ValidationResult) -> None:
+        self.__write_console_output(validation_result)
+        if self.file is not None:
+            self.__write_json_output(validation_result)
+
+    def __write_console_output(self, result: ValidationResult) -> None:
+        if result.validation_success:
+            print(f"{str(result.message_file_path):<80} {'PASSED'}")
         else:
-            print("error: invalid message")
-        self.classified_incorrectly += 1
-        if self.file is not None:
-            json_out = self.__get_json_output(
-                message_file_path,
-                original_message,
-                parser_result,
-                valid_original_message,
-                valid_parser_result,
-                False,
+            print(f"{str(result.message_file_path):<80} FAILED")
+            print(
+                f"provided as: {result.valid_original_message}\t "
+                f"recognized as: {result.valid_parser_result}"
             )
-            self.__write_json_output(json_out)
+            if result.parser_error is not None:
+                print(f"{result.parser_error}")
+            self.classified_incorrectly += 1
 
-    def passed(
-        self,
-        parser_result: Union[str, MessageValue],
-        message_file_path: Path,
-        original_message: bytes,
-        valid_original_message: bool,
-        valid_parser_result: bool,
-    ) -> None:
-        print(f"{str(message_file_path):<80} {'PASSED'}")
-
-        if self.file is not None:
-            json_out = self.__get_json_output(
-                message_file_path,
-                original_message,
-                parser_result,
-                valid_original_message,
-                valid_parser_result,
-                True,
-            )
-            self.__write_json_output(json_out)
-
-    def __write_json_output(self, values: Dict[str, object]) -> None:
+    def __write_json_output(self, result: ValidationResult) -> None:
         if self.file is not None:
             if self.count != 0:
                 self.file.write(",\n")
             json.dump(
-                values,
+                result.as_json(),
                 self.file,
                 indent="\t",
             )
             self.count += 1
-
-    @staticmethod
-    def __get_json_output(
-        file_name: Path,
-        original_message: bytes,
-        parsed_message: Union[MessageValue, str],
-        valid_original_message: bool,
-        valid_parser_result: bool,
-        correct_serialization: bool,
-    ) -> Dict[str, object]:
-        def get_field_values(
-            msg: MessageValue,
-        ) -> Dict[str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]]:
-            parsed_field_values: Dict[
-                str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]
-            ] = {}
-            parsed_field_values.fromkeys(msg.fields)
-            for field_name in msg.fields:
-                try:
-                    field_value = msg.get(field_name)
-                except PyRFLXError as e:
-                    field_value = str(f"{e} or not set")
-                if isinstance(field_value, MessageValue):
-                    field_value = field_value.bytestring.hex()
-                elif isinstance(field_value, bytes):
-                    field_value = field_value.hex()
-                parsed_field_values[field_name] = field_value
-            return parsed_field_values
-
-        output = {
-            "file name": str(file_name),
-            "provided as": valid_original_message,
-            "recognized as": valid_parser_result,
-            "original": original_message.hex(),
-        }
-
-        if isinstance(parsed_message, MessageValue):
-            output["parsed"] = parsed_message.bytestring.hex()
-            output["parsed field values"] = get_field_values(parsed_message)
-            output["serialized correctly"] = correct_serialization
-        else:
-            output["parsed"] = parsed_message
-
-        return output
 
 
 class ValidationError(Exception):
