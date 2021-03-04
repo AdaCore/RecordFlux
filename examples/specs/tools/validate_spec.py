@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import IO, Dict, Iterator, List, Optional, Sequence, Type, Union
@@ -112,51 +113,14 @@ def validation_main(
     full_output_path: Optional[Path],
     abort_on_error: bool,
 ) -> None:
-    def get_message_from_path(message_path: Path) -> bytes:
-        if not message_path.is_file():
-            raise ValidationError(f"{message_path} is not a regular file")
-        return message_path.read_bytes()
-
-    def rflx_parse_message_from_bytes(message: bytes) -> Union[str, MessageValue]:
-        pdu_model: MessageValue = pdu_message.clone()
-        try:
-            pdu_model.parse(message)
-            return pdu_model
-        except RecordFluxError as e:
-            return str(e)
-
-    def validate(original_message: bytes, original_message_is_valid: bool, msg_path: Path) -> bool:
-        parser_result = rflx_parse_message_from_bytes(original_message)
-        parsed_message_is_valid = False
-
-        if isinstance(parser_result, MessageValue):
-            parsed_message_is_valid = (
-                parser_result.bytestring == original_message and parser_result.valid_message
-            )
-
-        if original_message_is_valid:
-            validation_success = parsed_message_is_valid
-        else:
-            validation_success = not parsed_message_is_valid
-
-        if validation_success:
-            output_writer.passed(
-                parser_result,
-                msg_path,
-                original_message,
-                original_message_is_valid,
-                parsed_message_is_valid,
-            )
-        else:
-            output_writer.failed(
-                parser_result,
-                msg_path,
-                original_message,
-                original_message_is_valid,
-                parsed_message_is_valid,
-            )
-
-        return validation_success
+    def validate_directory(path_iterator: Iterator[Path], is_valid_directory: bool) -> int:
+        classified_incorrectly = 0
+        for path in path_iterator:
+            validation_result = __validate_message(path, is_valid_directory, pdu_message)
+            output_writer.write_result(validation_result)
+            if not validation_result.validation_success and abort_on_error:
+                raise ValidationError(f"aborted: message {path} was classified incorrectly")
+        return classified_incorrectly
 
     valid_message_paths: Optional[Iterator[Path]] = (
         path_valid.glob("*") if path_valid is not None else path_valid
@@ -166,14 +130,98 @@ def validation_main(
     )
 
     with OutputWriter(full_output_path) as output_writer:
-        for paths in [valid_message_paths, invalid_message_paths]:
-            if paths is None:
-                continue
-            for path in paths:
-                original_message = get_message_from_path(path)
-                val_success = validate(original_message, paths == valid_message_paths, path)
-                if not val_success and abort_on_error:
-                    return
+        if valid_message_paths is not None:
+            validate_directory(valid_message_paths, True)
+        if invalid_message_paths is not None:
+            validate_directory(invalid_message_paths, False)
+
+
+def __validate_message(
+    message_path: Path, valid_original_message: bool, model: MessageValue
+) -> "ValidationResult":
+    if not message_path.is_file():
+        raise ValidationError(f"{message_path} is not a regular file")
+    original_message = message_path.read_bytes()
+
+    parser_result: Optional[MessageValue] = None
+    parser_error: Optional[str] = None
+
+    pdu_model: MessageValue = model.clone()
+    try:
+        pdu_model.parse(original_message)
+        parser_result = pdu_model
+        valid_parser_result = (
+            parser_result.bytestring == original_message and parser_result.valid_message
+        )
+        if not valid_parser_result:
+            parser_error = "Invalid message"
+    except RecordFluxError as e:
+        parser_error = str(e)
+        valid_parser_result = False
+
+    validation_success: bool
+    if valid_original_message:
+        validation_success = valid_parser_result
+    else:
+        validation_success = not valid_parser_result
+
+    result = ValidationResult(
+        validation_success,
+        parser_result,
+        parser_error,
+        message_path,
+        original_message,
+        valid_original_message,
+        valid_parser_result,
+    )
+
+    return result
+
+
+@dataclass
+class ValidationResult:
+    validation_success: bool
+    parser_result: Optional[MessageValue]
+    parser_error: Optional[str]
+    message_file_path: Path
+    original_message: bytes
+    valid_original_message: bool
+    valid_parser_result: bool
+
+    def as_json(self) -> Dict[str, object]:
+        def get_field_values(
+            msg: MessageValue,
+        ) -> Dict[str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]]:
+            parsed_field_values: Dict[
+                str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]
+            ] = {}
+            parsed_field_values.fromkeys(msg.fields)
+            for field_name in msg.fields:
+                try:
+                    field_value = msg.get(field_name)
+                except PyRFLXError as e:
+                    field_value = str(f"{e} or not set")
+                if isinstance(field_value, MessageValue):
+                    field_value = field_value.bytestring.hex()
+                elif isinstance(field_value, bytes):
+                    field_value = field_value.hex()
+                parsed_field_values[field_name] = field_value
+            return parsed_field_values
+
+        output = {
+            "file name": str(self.message_file_path),
+            "provided as": self.valid_original_message,
+            "recognized as": self.valid_parser_result,
+            "original": self.original_message.hex(),
+        }
+
+        if self.parser_result is not None:
+            output["parsed"] = self.parser_result.bytestring.hex()
+            output["parsed field values"] = get_field_values(self.parser_result)
+        if self.parser_error is not None:
+            output["error"] = self.parser_error
+
+        return output
 
 
 class OutputWriter:
