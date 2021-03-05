@@ -108,9 +108,9 @@ def cli(argv: List[str]) -> Union[int, str]:
 
 def validation_main(
     pdu_message: MessageValue,
-    path_invalid: Optional[Path],
-    path_valid: Optional[Path],
-    full_output_path: Optional[Path],
+    directory_invalid: Optional[Path],
+    directory_valid: Optional[Path],
+    json_output: Optional[Path],
     abort_on_error: bool,
 ) -> None:
     def validate_directory(path_iterator: Iterator[Path], is_valid_directory: bool) -> int:
@@ -123,13 +123,13 @@ def validation_main(
         return classified_incorrectly
 
     valid_message_paths: Optional[Iterator[Path]] = (
-        path_valid.glob("*") if path_valid is not None else path_valid
+        directory_valid.glob("*") if directory_valid is not None else directory_valid
     )
     invalid_message_paths: Optional[Iterator[Path]] = (
-        path_invalid.glob("*") if path_invalid is not None else path_invalid
+        directory_invalid.glob("*") if directory_invalid is not None else directory_invalid
     )
 
-    with OutputWriter(full_output_path) as output_writer:
+    with OutputWriter(json_output) as output_writer:
         if valid_message_paths is not None:
             validate_directory(valid_message_paths, True)
         if invalid_message_paths is not None:
