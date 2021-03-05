@@ -15,3 +15,6 @@ prove:
 
 clean:
 	rm -rf generated/* obj python
+
+clean_proof:
+	rm -rf proof/*

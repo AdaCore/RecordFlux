@@ -115,6 +115,10 @@ remove-prefix = $(VERBOSE) \
 	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
 	mv $@.tmp $@
 
+clean_proof:
+	rm -rf tests/spark/proof/*
+	$(MAKE) -C examples/apps/ping clean_proof
+
 $(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
 	$(remove-prefix)
 
