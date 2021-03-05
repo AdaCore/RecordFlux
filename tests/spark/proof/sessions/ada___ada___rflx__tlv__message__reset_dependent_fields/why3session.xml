@@ -24,7 +24,7 @@
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.4" expl="precondition" proved="true">
+  <goal name="def&#39;vc.4" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -40,9 +40,8 @@
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.8" expl="postcondition" proved="true">
-  <transf name="trivial_true" proved="true" >
-  </transf>
+  <goal name="def&#39;vc.8" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" steps="11492"/></proof>
   </goal>
   <goal name="def&#39;vc.9" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -52,23 +51,24 @@
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.11" expl="postcondition" proved="true">
+  <goal name="def&#39;vc.11" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" steps="11492"/></proof>
+  </goal>
+  <goal name="def&#39;vc.12" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
-  </goal>
-  <goal name="def&#39;vc.12" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="11492"/></proof>
   </goal>
   <goal name="def&#39;vc.13" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.14" expl="postcondition" proved="true">
+  <goal name="def&#39;vc.14" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.15" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="11492"/></proof>
+  <goal name="def&#39;vc.15" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.16" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

@@ -69,16 +69,16 @@
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.18" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="192314"/></proof>
+  <goal name="def&#39;vc.18" expl="postcondition" proved="true">
+  <transf name="trivial_true" proved="true" >
+  </transf>
   </goal>
   <goal name="def&#39;vc.19" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.20" expl="precondition" proved="true">
-  <transf name="trivial_true" proved="true" >
-  </transf>
+  <proof prover="0"><result status="valid" steps="192314"/></proof>
   </goal>
   <goal name="def&#39;vc.21" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -92,7 +92,7 @@
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
-  <goal name="def&#39;vc.24" expl="postcondition" proved="true">
+  <goal name="def&#39;vc.24" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>

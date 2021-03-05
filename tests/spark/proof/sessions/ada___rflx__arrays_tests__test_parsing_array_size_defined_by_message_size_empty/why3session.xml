@@ -53,7 +53,7 @@
   <proof prover="0"><result status="valid" steps="21815"/></proof>
   </goal>
   <goal name="def&#39;vc.12" expl="assertion" proved="true">
-  <proof prover="0"><result status="valid" steps="229330"/></proof>
+  <proof prover="0"><result status="valid" steps="229079"/></proof>
   </goal>
   <goal name="def&#39;vc.13" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

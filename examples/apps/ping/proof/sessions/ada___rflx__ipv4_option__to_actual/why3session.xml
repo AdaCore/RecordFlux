@@ -2,7 +2,7 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="CVC4" version="1.6-gnatprove" timelimit="1" steplimit="15035" memlimit="1000"/>
+<prover id="0" name="CVC4" version="1.6-gnatprove" timelimit="1" steplimit="0" memlimit="1000"/>
 <file format="gnat-json">
 <path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
 <path name="gnatprove"/><path name="ada___rflx__ipv4_option__to_actual.gnat-json"/>
@@ -39,14 +39,14 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.8" expl="check" proved="true">
-  <proof prover="0"><result status="valid" steps="592"/></proof>
+  <proof prover="0" steplimit="15035"><result status="valid" steps="592"/></proof>
   </goal>
   <goal name="def&#39;vc.9" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.10" expl="precondition" proved="true">
-  <proof prover="0" timelimit="90"><result status="valid" steps="592"/></proof>
+  <proof prover="0" timelimit="90" steplimit="15035"><result status="valid" steps="592"/></proof>
   </goal>
   <goal name="def&#39;vc.11" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
