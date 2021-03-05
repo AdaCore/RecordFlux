@@ -178,7 +178,12 @@ package body RFLX.In_IPv4_Tests is
             pragma Assert (UDP.Datagram.Field_Size (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 144);
             Set_Payload (UDP_Datagram_Context);
 
+            --  WORKAROUND: Componolit/Workarounds#32
+            pragma Warnings (Off, "unused assignment to ""UDP_Datagram_Context""");
+            pragma Warnings (Off, """UDP_Datagram_Context"" is set by ""*"" but not used after the call");
             UDP.Datagram.Take_Buffer (UDP_Datagram_Context, Buffer);
+            pragma Warnings (On, """UDP_Datagram_Context"" is set by ""*"" but not used after the call");
+            pragma Warnings (On, "unused assignment to ""UDP_Datagram_Context""");
 
             Assert (RFLX_Builtin_Types.Length'Image
                     (RFLX_Types.Byte_Index (UDP.Datagram.Message_Last (UDP_Datagram_Context))

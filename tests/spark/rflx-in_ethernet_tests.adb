@@ -117,7 +117,12 @@ package body RFLX.In_Ethernet_Tests is
          Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
          Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
 
+         --  WORKAROUND: Componolit/Workarounds#32
+         pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
+         pragma Warnings (Off, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
          IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
+         pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
 
          Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (IPv4.Packet.Message_Last (IPv4_Packet_Context))
                  - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
