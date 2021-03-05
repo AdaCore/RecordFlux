@@ -113,14 +113,12 @@ def validation_main(
     json_output: Optional[Path],
     abort_on_error: bool,
 ) -> None:
-    def validate_directory(path_iterator: Iterator[Path], is_valid_directory: bool) -> int:
-        classified_incorrectly = 0
+    def validate_directory(path_iterator: Iterator[Path], is_valid_directory: bool) -> None:
         for path in path_iterator:
             validation_result = __validate_message(path, is_valid_directory, pdu_message)
             output_writer.write_result(validation_result)
             if not validation_result.validation_success and abort_on_error:
                 raise ValidationError(f"aborted: message {path} was classified incorrectly")
-        return classified_incorrectly
 
     valid_message_paths: Optional[Iterator[Path]] = (
         directory_valid.glob("*") if directory_valid is not None else directory_valid
