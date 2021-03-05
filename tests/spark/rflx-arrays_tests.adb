@@ -86,8 +86,11 @@ package body RFLX.Arrays_Tests is
                  "Valid Modular_Vector before context update");
          Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Modular_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Modular_Vector),
@@ -127,8 +130,11 @@ package body RFLX.Arrays_Tests is
          Assert (not Message.Valid (Context, Message.F_Range_Vector),
                  "Valid Range_Vector before context update");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Range_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Range_Vector),
@@ -168,8 +174,11 @@ package body RFLX.Arrays_Tests is
          Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
                  "Valid Enumeration_Vector before context update");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -211,8 +220,11 @@ package body RFLX.Arrays_Tests is
          Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
                  "Valid AV_Enumeration_Vector before context update");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
@@ -282,8 +294,11 @@ package body RFLX.Arrays_Tests is
                  "Valid Modular_Vector before context update");
          Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Modular_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Modular_Vector),
@@ -328,8 +343,11 @@ package body RFLX.Arrays_Tests is
                  "Valid Range_Vector before context update");
          Assert (Message.Complete_Range_Vector (Context, Sequence_Context), "Incomplete Range_Vector");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Range_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Range_Vector),
@@ -376,8 +394,11 @@ package body RFLX.Arrays_Tests is
          Assert (Message.Complete_Enumeration_Vector (Context, Sequence_Context),
                  "Incomplete Enumeration_Vector");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -426,8 +447,11 @@ package body RFLX.Arrays_Tests is
          Assert (Message.Complete_AV_Enumeration_Vector (Context, Sequence_Context),
                  "Incomplete AV_Enumeration_Vector");
 
+         --  WORKAROUND: Componolit/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
+         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
          Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
@@ -436,8 +460,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
       Free_Bytes_Ptr (Buffer);
    end Test_Parsing_Scalar_Array_Loop;
@@ -468,8 +495,11 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid (Context, Message.F_Modular_Vector),
               "Valid Modular_Vector before context update");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Modular_Vector_Context""");
+      pragma Warnings (Off, """Modular_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_Modular_Vector (Context, Modular_Vector_Context);
+      pragma Warnings (On, """Modular_Vector_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Modular_Vector_Context""");
 
       Assert (Message.Valid (Context, Message.F_Modular_Vector),
@@ -484,8 +514,11 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid (Context, Message.F_Range_Vector),
               "Valid Range_Vector before context update");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Range_Vector_Context""");
+      pragma Warnings (Off, """Range_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_Range_Vector (Context, Range_Vector_Context);
+      pragma Warnings (On, """Range_Vector_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Range_Vector_Context""");
 
       Assert (Message.Valid (Context, Message.F_Range_Vector),
@@ -501,8 +534,11 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
               "Valid Enumeration_Vector before context update");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Enumeration_Vector_Context""");
+      pragma Warnings (Off, """Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_Enumeration_Vector (Context, Enumeration_Vector_Context);
+      pragma Warnings (On, """Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Enumeration_Vector_Context""");
 
       Assert (Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -518,16 +554,23 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
               "Valid AV_Enumeration_Vector before context update");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
+      pragma Warnings (Off, """AV_Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
+      pragma Warnings (Off, """AV_Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
 
       Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
               "Invalid AV_Enumeration_Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message after complete generating");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
       Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
@@ -629,7 +672,9 @@ package body RFLX.Arrays_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
+      pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       Arrays.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
       Arrays.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
       Arrays.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
@@ -731,7 +776,9 @@ package body RFLX.Arrays_Tests is
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
+      pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       Arrays.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
       Arrays.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
       Arrays.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
@@ -784,8 +831,11 @@ package body RFLX.Arrays_Tests is
       Assert (Length'Image, Arrays.Length'Image (1), "Unexpected Length of element 1");
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 2");
@@ -803,8 +853,11 @@ package body RFLX.Arrays_Tests is
       Assert (Inner_Message.Structural_Valid_Message (Element_Context),
               "Structural invalid element 2");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
@@ -814,8 +867,11 @@ package body RFLX.Arrays_Tests is
       Assert (Message.Complete_Messages (Context, Sequence_Context),
               "Invalid Messages_Message");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Messages),
@@ -823,8 +879,11 @@ package body RFLX.Arrays_Tests is
       Assert (Message.Has_Buffer (Context) and then Message.Valid_Message (Context),
               "Invalid Message after complete parsing");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
       Free_Bytes_Ptr (Buffer);
@@ -888,8 +947,11 @@ package body RFLX.Arrays_Tests is
               "Valid Messages before context update");
       Assert (Message.Complete_Messages (Context, Sequence_Context), "Invalid Messages_Message");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Messages),
@@ -897,8 +959,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
       Free_Bytes_Ptr (Buffer);
@@ -930,8 +995,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Missing element 2");
@@ -943,8 +1011,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
@@ -954,8 +1025,11 @@ package body RFLX.Arrays_Tests is
       Assert (Message.Complete_Messages (Context, Sequence_Context),
               "Incomplete Messages");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Messages),
@@ -998,8 +1072,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (Arrays.Inner_Messages.Has_Element (Sequence_Context), "Invalid element 1");
@@ -1011,8 +1088,11 @@ package body RFLX.Arrays_Tests is
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
+      pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Update (Sequence_Context, Element_Context);
+      pragma Warnings (On, """Element_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Element_Context""");
 
       Assert (not Arrays.Inner_Messages.Has_Element (Sequence_Context),
@@ -1037,8 +1117,11 @@ package body RFLX.Arrays_Tests is
               Expected.all,
               "Invalid binary representation");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Free_Bytes_Ptr (Expected);
@@ -1077,8 +1160,11 @@ package body RFLX.Arrays_Tests is
               Expected.all,
               "Invalid binary representation");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Arrays.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Free_Bytes_Ptr (Expected);
@@ -1136,16 +1222,22 @@ package body RFLX.Arrays_Tests is
               "Valid Vector before context update");
       Assert (Message.Complete_Vector (Context, Sequence_Context), "Incomplete Vector");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Vector (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Vector),
               "Invalid Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
       Free_Bytes_Ptr (Buffer);
@@ -1172,8 +1264,11 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
       Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
       Free_Bytes_Ptr (Buffer);
@@ -1203,8 +1298,11 @@ package body RFLX.Arrays_Tests is
       Assert (not Message.Valid (Context, Message.F_Vector),
               "Valid Modular_Vector before context update");
 
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Vector (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Vector),
