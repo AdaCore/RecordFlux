@@ -20,6 +20,7 @@
   </goal>
   <goal name="def&#39;vc.2" expl="assertion">
   <proof prover="1" timelimit="1"><result status="timeout"/></proof>
+  <proof prover="2" timelimit="1" steplimit="0"><result status="unknown" steps="582"/></proof>
   </goal>
   <goal name="def&#39;vc.3" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

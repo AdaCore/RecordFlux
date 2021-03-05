@@ -4,7 +4,7 @@
 <why3session shape_version="6">
 <prover id="0" name="altergo" version="1.30-gnatprove" timelimit="90" steplimit="239854" memlimit="1000"/>
 <prover id="1" name="Z3" version="4.5.1-gnatprove" timelimit="90" steplimit="192333200" memlimit="1000"/>
-<prover id="2" name="CVC4" version="1.6-gnatprove" timelimit="90" steplimit="8409890" memlimit="1000"/>
+<prover id="2" name="CVC4" version="1.6-gnatprove" timelimit="1" steplimit="8409890" memlimit="1000"/>
 <file format="gnat-json">
 <path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
 <path name="gnatprove"/><path name="ada___rflx__rflx_types__u64_extract__d.gnat-json"/>
@@ -21,6 +21,7 @@
   </goal>
   <goal name="def&#39;vc.2" expl="assertion">
   <proof prover="1" timelimit="1"><result status="timeout"/></proof>
+  <proof prover="2" steplimit="0"><result status="unknown" steps="1229"/></proof>
   </goal>
   <goal name="def&#39;vc.3" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -74,7 +75,7 @@
   <goal name="def&#39;vc.17" expl="precondition" proved="true">
   <proof prover="0"><result status="failure"/></proof>
   <proof prover="1"><result status="outofmemory"/></proof>
-  <proof prover="2"><result status="valid" steps="841"/></proof>
+  <proof prover="2" timelimit="90"><result status="valid" steps="841"/></proof>
   </goal>
   <goal name="def&#39;vc.18" expl="precondition" proved="true">
   <proof prover="1"><result status="valid" steps="37189"/></proof>
