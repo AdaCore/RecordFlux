@@ -2719,8 +2719,8 @@ class Generator:
     ) -> UnitPart:
         pdu_name = flat_name(refinement.pdu.full_name)
         sdu_name = flat_name(refinement.sdu.full_name)
-        pdu_context = f"{pdu_name}_Context"
-        sdu_context = f"{sdu_name}_Context"
+        pdu_context = f"{pdu_name}_PDU_Context"
+        sdu_context = f"{sdu_name}_SDU_Context"
         refined_field_affixed_name = f"{pdu_name}.{refinement.field.affixed_name}"
 
         specification = ProcedureSpecification(

@@ -29,26 +29,26 @@ is
 
    use type IPv4_Packet.Field_Cursors;
 
-   procedure Switch_To_Payload (IPv4_Packet_Context : in out IPv4_Packet.Context; UDP_Datagram_Context : out UDP_Datagram.Context) with
+   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out IPv4_Packet.Context; UDP_Datagram_SDU_Context : out UDP_Datagram.Context) with
      Pre =>
-       not IPv4_Packet_Context'Constrained
-       and not UDP_Datagram_Context'Constrained
-       and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-       and IPv4_Packet.Present (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and IPv4_Packet.Valid (IPv4_Packet_Context, IPv4_Packet.F_Protocol)
-       and UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context),
+       not IPv4_Packet_PDU_Context'Constrained
+       and not UDP_Datagram_SDU_Context'Constrained
+       and IPv4_Packet.Has_Buffer (IPv4_Packet_PDU_Context)
+       and IPv4_Packet.Present (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and IPv4_Packet.Valid (IPv4_Packet_PDU_Context, IPv4_Packet.F_Protocol)
+       and UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context),
      Post =>
-       not IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-       and UDP_Datagram.Has_Buffer (UDP_Datagram_Context)
-       and IPv4_Packet_Context.Buffer_First = UDP_Datagram_Context.Buffer_First
-       and IPv4_Packet_Context.Buffer_Last = UDP_Datagram_Context.Buffer_Last
-       and UDP_Datagram_Context.First = IPv4_Packet.Field_First (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and UDP_Datagram_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and UDP_Datagram.Initialized (UDP_Datagram_Context)
-       and IPv4_Packet_Context.Buffer_First = IPv4_Packet_Context.Buffer_First'Old
-       and IPv4_Packet_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last'Old
-       and IPv4_Packet_Context.First = IPv4_Packet_Context.First'Old
-       and IPv4_Packet.Context_Cursors (IPv4_Packet_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_Context)'Old;
+       not IPv4_Packet.Has_Buffer (IPv4_Packet_PDU_Context)
+       and UDP_Datagram.Has_Buffer (UDP_Datagram_SDU_Context)
+       and IPv4_Packet_PDU_Context.Buffer_First = UDP_Datagram_SDU_Context.Buffer_First
+       and IPv4_Packet_PDU_Context.Buffer_Last = UDP_Datagram_SDU_Context.Buffer_Last
+       and UDP_Datagram_SDU_Context.First = IPv4_Packet.Field_First (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and UDP_Datagram_SDU_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and UDP_Datagram.Initialized (UDP_Datagram_SDU_Context)
+       and IPv4_Packet_PDU_Context.Buffer_First = IPv4_Packet_PDU_Context.Buffer_First'Old
+       and IPv4_Packet_PDU_Context.Buffer_Last = IPv4_Packet_PDU_Context.Buffer_Last'Old
+       and IPv4_Packet_PDU_Context.First = IPv4_Packet_PDU_Context.First'Old
+       and IPv4_Packet.Context_Cursors (IPv4_Packet_PDU_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_PDU_Context)'Old;
 
    function ICMP_Message_In_IPv4_Packet_Payload (Ctx : IPv4_Packet.Context) return Boolean is
      (IPv4_Packet.Has_Buffer (Ctx)
@@ -57,25 +57,25 @@ is
       and then IPv4_Packet.Get_Protocol (Ctx).Known
       and then IPv4_Packet.Get_Protocol (Ctx).Enum = IPv4.PROTOCOL_ICMP);
 
-   procedure Switch_To_Payload (IPv4_Packet_Context : in out IPv4_Packet.Context; ICMP_Message_Context : out ICMP_Message.Context) with
+   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out IPv4_Packet.Context; ICMP_Message_SDU_Context : out ICMP_Message.Context) with
      Pre =>
-       not IPv4_Packet_Context'Constrained
-       and not ICMP_Message_Context'Constrained
-       and IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-       and IPv4_Packet.Present (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and IPv4_Packet.Valid (IPv4_Packet_Context, IPv4_Packet.F_Protocol)
-       and ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_Context),
+       not IPv4_Packet_PDU_Context'Constrained
+       and not ICMP_Message_SDU_Context'Constrained
+       and IPv4_Packet.Has_Buffer (IPv4_Packet_PDU_Context)
+       and IPv4_Packet.Present (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and IPv4_Packet.Valid (IPv4_Packet_PDU_Context, IPv4_Packet.F_Protocol)
+       and ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context),
      Post =>
-       not IPv4_Packet.Has_Buffer (IPv4_Packet_Context)
-       and ICMP_Message.Has_Buffer (ICMP_Message_Context)
-       and IPv4_Packet_Context.Buffer_First = ICMP_Message_Context.Buffer_First
-       and IPv4_Packet_Context.Buffer_Last = ICMP_Message_Context.Buffer_Last
-       and ICMP_Message_Context.First = IPv4_Packet.Field_First (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and ICMP_Message_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_Context, IPv4_Packet.F_Payload)
-       and ICMP_Message.Initialized (ICMP_Message_Context)
-       and IPv4_Packet_Context.Buffer_First = IPv4_Packet_Context.Buffer_First'Old
-       and IPv4_Packet_Context.Buffer_Last = IPv4_Packet_Context.Buffer_Last'Old
-       and IPv4_Packet_Context.First = IPv4_Packet_Context.First'Old
-       and IPv4_Packet.Context_Cursors (IPv4_Packet_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_Context)'Old;
+       not IPv4_Packet.Has_Buffer (IPv4_Packet_PDU_Context)
+       and ICMP_Message.Has_Buffer (ICMP_Message_SDU_Context)
+       and IPv4_Packet_PDU_Context.Buffer_First = ICMP_Message_SDU_Context.Buffer_First
+       and IPv4_Packet_PDU_Context.Buffer_Last = ICMP_Message_SDU_Context.Buffer_Last
+       and ICMP_Message_SDU_Context.First = IPv4_Packet.Field_First (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and ICMP_Message_SDU_Context.Last = IPv4_Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4_Packet.F_Payload)
+       and ICMP_Message.Initialized (ICMP_Message_SDU_Context)
+       and IPv4_Packet_PDU_Context.Buffer_First = IPv4_Packet_PDU_Context.Buffer_First'Old
+       and IPv4_Packet_PDU_Context.Buffer_Last = IPv4_Packet_PDU_Context.Buffer_Last'Old
+       and IPv4_Packet_PDU_Context.First = IPv4_Packet_PDU_Context.First'Old
+       and IPv4_Packet.Context_Cursors (IPv4_Packet_PDU_Context) = IPv4_Packet.Context_Cursors (IPv4_Packet_PDU_Context)'Old;
 
 end RFLX.In_IPv4.Generic_Contains;
