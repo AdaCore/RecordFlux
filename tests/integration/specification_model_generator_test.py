@@ -297,3 +297,24 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
         """
     )
     utils.assert_compilable_code(p.create_model(), tmp_path)
+
+
+def test_refinement_with_self(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+           package Test is
+              type Tag is (T1 => 1) with Size => 8;
+              type Len is mod 2**8;
+              type Packet is
+                 message
+                    Tag : Tag;
+                    Len : Len;
+                    Val : Opaque
+                       with Size => 8 * Len;
+                 end message;
+              for Packet use (Val => Packet)
+                 if Tag = T1;
+           end Test;
+        """,
+        tmp_path,
+    )
