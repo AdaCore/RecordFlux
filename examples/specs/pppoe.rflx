@@ -68,10 +68,26 @@ package PPPoE is
          Tags : Tags
             with Size => 8 * Length
             then null
+               --  We cannot express that:
+               --  "The PADI packet MUST contain exactly one TAG of TAG_TYPE Service-Name"
+               --  [for T in Tags => T when T.Typ = Service_Name]'Length = 1
                if Code = Active_Discovery_Initialization and Session_ID = 0 and Message'Size <= 1484
+               --  We cannot express that:
+               --  "The PADO packet MUST contain one AC-Name TAG containing the Access
+               --  Concentrator's name, a Service-Name TAG identical to the one in the
+               --  PADI"
+               --  [for T in Tags => T when T.Typ = AC_Name]'Length = 1
+               --  and [for T in Tags => T when T.Typ = Service_Name]'Length = 1
                or Code = Active_Discovery_Offer and Session_ID = 0
+               --  We cannot express that:
+               --  "The PADR packet MUST contain exactly one TAG of TAG_TYPE Service-Name"
+               --  [for T in Tags => T when T.Typ = Service_Name]'Length = 1
                or Code = Active_Discovery_Request and Session_ID = 0
-               or Code = Active_Discovery_Session_Confirmation;
+               --  We cannot express that:
+               --  "The PADS packet contains exactly one TAG of TAG_TYPE Service-Name"
+               --  [for T in Tags => T when T.Typ = Service_Name]'Length = 1
+               or Code = Active_Discovery_Session_Confirmation
+               or Code = Active_Discovery_Terminate;
       end message;
 
    type Session is
