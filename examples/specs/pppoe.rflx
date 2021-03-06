@@ -1,3 +1,5 @@
+with PPP;
+
 package PPPoE is
 
    -- RFC 2516
@@ -102,5 +104,7 @@ package PPPoE is
          Payload : Opaque
             with Size => 8 * Length;
       end message;
+
+   for Session use (Payload => PPP::Encapsulation);
 
 end PPPoE;

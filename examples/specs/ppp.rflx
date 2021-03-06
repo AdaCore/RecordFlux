@@ -1,0 +1,19 @@
+package PPP is
+
+   type Protocol is
+      (Padding_Protocol                            => 16#0000#,
+       Internet_Protocol_Control_Protocol          => 16#8021#,
+       IPv6_Control_Protocol                       => 16#8057#,
+       Link_Control_Protocol                       => 16#C021#,
+       Password_Authentication_Protocol            => 16#C023#,
+       Link_Quality_Report                         => 16#C025#,
+       Challenge_Handshake_Authentication_Protocol => 16#C223#) with Size => 16;
+
+   type Encapsulation is
+      message
+         Protocol : Protocol;
+         Information : Opaque
+            with Size => Message'Last - Protocol'Last;
+      end message;
+
+end PPP;
