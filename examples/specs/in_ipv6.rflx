@@ -6,9 +6,9 @@ with IANA;
 package In_IPv6 is
 
    for IPv6::Packet use (Data => UDP::Datagram)
-      if Next_Header = IANA::PROT_UDP;
+      if Next_Header = IANA::Prot_UDP;
 
    for IPv6::Packet use (Data => ICMPv6::Message)
-      if Next_Header = IANA::PROT_IPV6_ICMP;
+      if Next_Header = IANA::Prot_IPv6_ICMP;
 
 end In_IPv6;
