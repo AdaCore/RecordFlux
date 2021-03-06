@@ -280,97 +280,97 @@ package IPv6 is
 
    --  Hop-by-Hop Options Header
    for Hop_By_Hop_Options_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = IANA::PROT_HOPOPT;
+      if Next_Header = IANA::Prot_HOPOPT;
 
    for Hop_By_Hop_Options_Header use (Data => Routing_Header)
-      if Next_Header = IANA::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::Prot_IPv6_Route;
 
    for Hop_By_Hop_Options_Header use (Data => Fragment_Header)
-      if Next_Header = IANA::PROT_IPv6_FRAG;
+      if Next_Header = IANA::Prot_IPv6_Frag;
 
    for Hop_By_Hop_Options_Header use (Data => Null_Header)
-      if Next_Header = IANA::PROT_IPv6_NONXT;
+      if Next_Header = IANA::Prot_IPv6_NoNxt;
 
    for Hop_By_Hop_Options_Header use (Data => Destination_Options_Header)
-      if Next_Header = IANA::PROT_IPv6_OPTS;
+      if Next_Header = IANA::Prot_IPv6_Opts;
 
    for Hop_By_Hop_Options_Header use (Data => Packet)
-      if Next_Header = IANA::PROT_IPv6;
+      if Next_Header = IANA::Prot_IPv6;
 
    --  Routing header
    for Routing_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = IANA::PROT_HOPOPT;
+      if Next_Header = IANA::Prot_HOPOPT;
 
    for Routing_Header use (Data => Routing_Header)
-      if Next_Header = IANA::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::Prot_IPv6_Route;
 
    for Routing_Header use (Data => Fragment_Header)
-      if Next_Header = IANA::PROT_IPv6_FRAG;
+      if Next_Header = IANA::Prot_IPv6_Frag;
 
    for Routing_Header use (Data => Null_Header)
-      if Next_Header = IANA::PROT_IPv6_NONXT;
+      if Next_Header = IANA::Prot_IPv6_NoNxt;
 
    for Routing_Header use (Data => Destination_Options_Header)
-      if Next_Header = IANA::PROT_IPv6_OPTS;
+      if Next_Header = IANA::Prot_IPv6_Opts;
 
    for Routing_Header use (Data => Packet)
-      if Next_Header = IANA::PROT_IPv6;
+      if Next_Header = IANA::Prot_IPv6;
 
    --  Fragment Header
    for Fragment_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = IANA::PROT_HOPOPT;
+      if Next_Header = IANA::Prot_HOPOPT;
 
    for Fragment_Header use (Data => Routing_Header)
-      if Next_Header = IANA::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::Prot_IPv6_Route;
 
    for Fragment_Header use (Data => Fragment_Header)
-      if Next_Header = IANA::PROT_IPv6_FRAG;
+      if Next_Header = IANA::Prot_IPv6_Frag;
 
    for Fragment_Header use (Data => Null_Header)
-      if Next_Header = IANA::PROT_IPv6_NONXT;
+      if Next_Header = IANA::Prot_IPv6_NoNxt;
 
    for Fragment_Header use (Data => Destination_Options_Header)
-      if Next_Header = IANA::PROT_IPv6_OPTS;
+      if Next_Header = IANA::Prot_IPv6_Opts;
 
    for Fragment_Header use (Data => Packet)
-      if Next_Header = IANA::PROT_IPv6;
+      if Next_Header = IANA::Prot_IPv6;
 
    --  Destination Options Header
    for Destination_Options_Header use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = IANA::PROT_HOPOPT;
+      if Next_Header = IANA::Prot_HOPOPT;
 
    for Destination_Options_Header use (Data => Routing_Header)
-      if Next_Header = IANA::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::Prot_IPv6_Route;
 
    for Destination_Options_Header use (Data => Fragment_Header)
-      if Next_Header = IANA::PROT_IPv6_FRAG;
+      if Next_Header = IANA::Prot_IPv6_Frag;
 
    for Destination_Options_Header use (Data => Null_Header)
-      if Next_Header = IANA::PROT_IPv6_NONXT;
+      if Next_Header = IANA::Prot_IPv6_NoNxt;
 
    for Destination_Options_Header use (Data => Destination_Options_Header)
-      if Next_Header = IANA::PROT_IPv6_OPTS;
+      if Next_Header = IANA::Prot_IPv6_Opts;
 
    for Destination_Options_Header use (Data => Packet)
-      if Next_Header = IANA::PROT_IPv6;
+      if Next_Header = IANA::Prot_IPv6;
 
    --  Packet
    for Packet use (Data => Hop_By_Hop_Options_Header)
-      if Next_Header = IANA::PROT_HOPOPT;
+      if Next_Header = IANA::Prot_HOPOPT;
 
    for Packet use (Data => Routing_Header)
-      if Next_Header = IANA::PROT_IPv6_ROUTE;
+      if Next_Header = IANA::Prot_IPv6_Route;
 
    for Packet use (Data => Fragment_Header)
-      if Next_Header = IANA::PROT_IPv6_FRAG;
+      if Next_Header = IANA::Prot_IPv6_Frag;
 
    for Packet use (Data => Null_Header)
-      if Next_Header = IANA::PROT_IPv6_NONXT;
+      if Next_Header = IANA::Prot_IPv6_NoNxt;
 
    for Packet use (Data => Destination_Options_Header)
-      if Next_Header = IANA::PROT_IPv6_OPTS;
+      if Next_Header = IANA::Prot_IPv6_Opts;
 
    for Packet use (Data => Packet)
-      if Next_Header = IANA::PROT_IPv6;
+      if Next_Header = IANA::Prot_IPv6;
 
 end IPv6;
