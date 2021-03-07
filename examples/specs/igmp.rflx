@@ -27,12 +27,13 @@ package IGMP is
          Checksum : Checksum;
          Group_Address : IPv4::Address;
          Additional_Data : Opaque
-            with Size => Message'Last - Group_Address'Last
-            then null
-               if Checksum'Valid_Checksum;
-      end message
-         with Checksum => (Checksum => (Typ'First .. Checksum'First - 1,
-                                        Checksum'Size,
-                                        Checksum'Last + 1 .. Message'Last));
+            with Size => Message'Last - Group_Address'Last;
+            --  then null
+            --     if Checksum'Valid_Checksum;
+      end message;
+         --  ISSUE: Componolit/RecordFlux-specifications#45
+         --  with Checksum => (Checksum => (Typ'First .. Checksum'First - 1,
+         --                                 Checksum'Size,
+         --                                 Checksum'Last + 1 .. Message'Last));
 
 end IGMP;
