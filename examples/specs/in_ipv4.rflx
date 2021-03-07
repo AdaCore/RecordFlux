@@ -2,6 +2,7 @@ with Protocol_Numbers;
 with IPv4;
 with UDP;
 with ICMP;
+with IGMP;
 
 package In_IPv4 is
 
@@ -10,5 +11,8 @@ package In_IPv4 is
 
    for IPv4::Packet use (Payload => ICMP::Message)
       if Protocol = Protocol_Numbers::ICMP;
+
+   for IPv4::Packet use (Payload => IGMP::Message)
+      if Protocol = IANA::Prot_IGMP and TTL = 1;
 
 end In_IPv4;

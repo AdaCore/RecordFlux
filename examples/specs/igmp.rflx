@@ -1,0 +1,38 @@
+with IPv4;
+
+package IGMP is
+
+   -- RFC 2236
+
+   type IGMP_Type is
+      (Membership_Query            => 16#11#,
+       Version_1_Membership_Report => 16#12#,
+       Version_2_Membership_Report => 16#16#,
+       Version_2_Leave_Group       => 16#17#) with Size => 8;
+
+   type Time is mod 2**8;
+   type Checksum is mod 2**16;
+   type Reserved_8 is range 0 .. 0 with Size => 8;
+   
+   type Message is
+      message
+         Typ : IGMP_Type
+            then Max_Resp_Time
+               if Typ = Membership_Query
+            then Reserved
+               if Typ /= Membership_Query;
+         Max_Resp_Time : Time
+            then Checksum;
+         Reserved : Reserved_8;
+         Checksum : Checksum;
+         Group_Address : IPv4::Address;
+         Additional_Data : Opaque
+            with Size => Message'Last - Group_Address'Last
+            then null
+               if Checksum'Valid_Checksum;
+      end message
+         with Checksum => (Checksum => (Typ'First .. Checksum'First - 1,
+                                        Checksum'Size,
+                                        Checksum'Last + 1 .. Message'Last));
+
+end IGMP;
