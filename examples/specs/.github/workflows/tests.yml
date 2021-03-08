@@ -2,11 +2,13 @@ name: tests
 
 on:
   push:
+  pull_request:
   schedule:
     - cron:  '0 2 * * *'
 
 jobs:
   Checks:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -48,6 +50,7 @@ jobs:
         make check_${{ matrix.target }}
 
   Tests:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
