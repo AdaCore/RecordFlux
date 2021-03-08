@@ -1,0 +1,7 @@
+RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
+black
+flake8
+isort
+mypy
+pylint
+pytest-xdist
