@@ -1,4 +1,4 @@
-RecordFlux@git+https://github.com/Componolit/RecordFlux.git@develop
+RecordFlux@git+https://github.com/Componolit/RecordFlux.git@main
 black
 flake8
 isort

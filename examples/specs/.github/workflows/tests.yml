@@ -28,7 +28,7 @@ jobs:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Determine current HEAD of RecordFlux
       run:
-        echo "RFLX_HEAD=$(git ls-remote https://github.com/Componolit/RecordFlux.git develop | cut -c1-7)" >> $GITHUB_ENV
+        echo "RFLX_HEAD=$(git ls-remote https://github.com/Componolit/RecordFlux.git main | cut -c1-7)" >> $GITHUB_ENV
     - name: Cache Python dependencies
       uses: actions/cache@v2
       with:
@@ -69,7 +69,7 @@ jobs:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Determine current HEAD of RecordFlux
       run:
-        echo "RFLX_HEAD=$(git ls-remote https://github.com/Componolit/RecordFlux.git develop | cut -c1-7)" >> $GITHUB_ENV
+        echo "RFLX_HEAD=$(git ls-remote https://github.com/Componolit/RecordFlux.git main | cut -c1-7)" >> $GITHUB_ENV
     - name: Cache Python dependencies
       uses: actions/cache@v2
       with:
