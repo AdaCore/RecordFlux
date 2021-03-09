@@ -47,6 +47,7 @@ class Token(LexerToken):
     Function = WithText()
     State = WithText()
     Transition = WithText()
+    Exception = WithText()
     Renames = WithText()
     Channel = WithText()
     Readable = WithText()
@@ -194,6 +195,7 @@ rflx_lexer.add_rules(
     (Literal("function"), Token.Function),
     (Literal("state"), Token.State),
     (Literal("transition"), Token.Transition),
+    (Literal("exception"), Token.Exception),
     (Literal("renames"), Token.Renames),
     (Literal("Channel"), Token.Channel),
     (Literal("Readable"), Token.Readable),

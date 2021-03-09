@@ -461,6 +461,7 @@ grammar.add_rules(
         "transition",
         List(grammar.conditional_transition, empty_valid=True),
         grammar.transition,
+        Opt("exception", grammar.transition),
         "end",
         grammar.unqualified_identifier,
     ),

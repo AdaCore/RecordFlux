@@ -309,6 +309,7 @@ class StateBody(BaseStateBody):
     actions = Field(type=Statement.list)
     conditional_transitions = Field(type=ConditionalTransition.list)
     final_transition = Field(type=Transition)
+    exception_transition = Field(type=Transition)
     end_identifier = Field(type=UnqualifiedID)
 
 

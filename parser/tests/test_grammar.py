@@ -2786,6 +2786,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                     "conditional_transitions": [],
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": None,
                     "final_transition": {
                         "_kind": "Transition",
                         "description": None,
@@ -2840,6 +2841,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                     ],
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": None,
                     "final_transition": {
                         "_kind": "Transition",
                         "description": None,
@@ -2902,6 +2904,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                     ],
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": None,
                     "final_transition": {
                         "_kind": "Transition",
                         "description": {
@@ -2953,6 +2956,80 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                         }
                     ],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": None,
+                    "final_transition": {
+                        "_kind": "Transition",
+                        "description": None,
+                        "target": {"_kind": "UnqualifiedID", "_value": "B"},
+                    },
+                },
+                "description": None,
+                "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+            },
+        ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               exception
+                  then C
+               end A
+         """,
+            {
+                "_kind": "State",
+                "body": {
+                    "_kind": "StateBody",
+                    "actions": [],
+                    "conditional_transitions": [],
+                    "declarations": [],
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": {
+                        "_kind": "Transition",
+                        "description": None,
+                        "target": {"_kind": "UnqualifiedID", "_value": "C"},
+                    },
+                    "final_transition": {
+                        "_kind": "Transition",
+                        "description": None,
+                        "target": {"_kind": "UnqualifiedID", "_value": "B"},
+                    },
+                },
+                "description": None,
+                "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+            },
+        ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               exception
+                  then C
+                     with Desc => "rfc2549.txt+12:3-45:6"
+               end A
+         """,
+            {
+                "_kind": "State",
+                "body": {
+                    "_kind": "StateBody",
+                    "actions": [],
+                    "conditional_transitions": [],
+                    "declarations": [],
+                    "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    "exception_transition": {
+                        "_kind": "Transition",
+                        "description": {
+                            "_kind": "Description",
+                            "content": {
+                                "_kind": "StringLiteral",
+                                "_value": '"rfc2549.txt+12:3-45:6"',
+                            },
+                        },
+                        "target": {"_kind": "UnqualifiedID", "_value": "C"},
+                    },
                     "final_transition": {
                         "_kind": "Transition",
                         "description": None,
@@ -2964,7 +3041,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
             },
         ),
     ],
-    ids=range(1, 5),
+    ids=range(1, 7),
 )
 def test_state(string: str, expected: Dict[str, str]) -> None:
     actual = parse(string, GrammarRule.state_rule)
@@ -3120,6 +3197,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                                 }
                             ],
                             "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                            "exception_transition": None,
                             "final_transition": {
                                 "_kind": "Transition",
                                 "description": None,
