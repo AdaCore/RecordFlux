@@ -186,26 +186,22 @@ class ValidationResult:
     valid_original_message: bool
     valid_parser_result: bool
 
-    def as_json(self) -> Dict[str, object]:
-        def get_field_values(
-            msg: MessageValue,
-        ) -> Dict[str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]]:
-            parsed_field_values: Dict[
-                str, Union[MessageValue, Sequence[TypeValue], int, str, bytes]
-            ] = {}
-            parsed_field_values.fromkeys(msg.fields)
-            for field_name in msg.fields:
-                try:
-                    field_value = msg.get(field_name)
-                except PyRFLXError as e:
-                    field_value = str(f"{e} or not set")
+    def __get_parser_result_field_values(self) -> Dict[str, object]:
+        parsed_field_values: Dict[str, object] = {}
+        for field_name in self.parser_result.fields:
+            try:
+                field_value = self.parser_result.get(field_name)
                 if isinstance(field_value, MessageValue):
                     field_value = field_value.bytestring.hex()
-                elif isinstance(field_value, bytes):
+                if isinstance(field_value, bytes):
                     field_value = field_value.hex()
                 parsed_field_values[field_name] = field_value
-            return parsed_field_values
+            except PyRFLXError as e:
+                error = f"{e} or not set"
+                parsed_field_values[field_name] = error
+        return parsed_field_values
 
+    def as_json(self) -> Dict[str, object]:
         output = {
             "file name": str(self.message_file_path),
             "provided as": self.valid_original_message,
@@ -215,7 +211,7 @@ class ValidationResult:
 
         if self.parser_result is not None:
             output["parsed"] = self.parser_result.bytestring.hex()
-            output["parsed field values"] = get_field_values(self.parser_result)
+            output["parsed field values"] = self.__get_parser_result_field_values()
         if self.parser_error is not None:
             output["error"] = self.parser_error
 
