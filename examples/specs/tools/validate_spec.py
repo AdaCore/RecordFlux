@@ -6,11 +6,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import IO, Dict, Iterator, List, Optional, Sequence, Type, Union
+from typing import IO, Dict, List, Optional, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
-from rflx.pyrflx import PyRFLX, PyRFLXError, TypeValue
+from rflx.pyrflx import PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 
 
@@ -151,14 +151,8 @@ def __validate_message(
         parser_error = str(e)
         valid_parser_result = False
 
-    validation_success: bool
-    if valid_original_message:
-        validation_success = valid_parser_result
-    else:
-        validation_success = not valid_parser_result
-
-    result = ValidationResult(
-        validation_success,
+    return ValidationResult(
+        valid_original_message == valid_parser_result,
         parser_result,
         parser_error,
         message_path,
@@ -166,8 +160,6 @@ def __validate_message(
         valid_original_message,
         valid_parser_result,
     )
-
-    return result
 
 
 @dataclass
@@ -181,6 +173,8 @@ class ValidationResult:
     valid_parser_result: bool
 
     def __get_parser_result_field_values(self) -> Dict[str, object]:
+        if self.parser_result is None:
+            return {}
         parsed_field_values: Dict[str, object] = {}
         for field_name in self.parser_result.fields:
             try:
