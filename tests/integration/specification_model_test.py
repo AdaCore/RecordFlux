@@ -5,6 +5,7 @@ import pytest
 
 from rflx.error import RecordFluxError
 from rflx.specification import parser
+from tests.const import SPEC_DIR
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
@@ -351,4 +352,10 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
            end Test;
         """
     )
+    p.create_model()
+
+
+def test_dependency_order() -> None:
+    p = parser.Parser()
+    p.parse(Path(f"{SPEC_DIR}/in_p1.rflx"))
     p.create_model()
