@@ -2,6 +2,7 @@
 
 import logging
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
@@ -1184,12 +1185,17 @@ def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> No
             )
 
 
+@dataclass(frozen=True)
+class SpecificationNode:
+    filename: Path
+    spec: Specification
+    withed_files: List[str]
+
+
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
         self.skip_verification = skip_verification
-        self.__specifications: OrderedDict[
-            str, Tuple[Path, Specification, List[str]]
-        ] = OrderedDict()
+        self.__specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1235,7 +1241,7 @@ class Parser:
 
             if (
                 packagefile in self.__specifications
-                and filename != self.__specifications[packagefile][0]
+                and filename != self.__specifications[packagefile].filename
             ):
                 error.append(
                     f'duplicate specification "{filename}"',
@@ -1243,11 +1249,11 @@ class Parser:
                     Severity.ERROR,
                 )
                 error.append(
-                    f'previous specification "{self.__specifications[packagefile][0]}"',
+                    f'previous specification "{self.__specifications[packagefile].filename}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                 )
-            self.__specifications[packagefile] = (filename, spec, withed_files)
+            self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 
         return error
 
@@ -1268,8 +1274,8 @@ class Parser:
 
         result: List[str] = []
         incoming: Dict[str, Set[str]] = {f: set() for f in self.__specifications.keys()}
-        for filename, (_, _, deps) in self.__specifications.items():
-            for d in deps:
+        for filename, spec_node in self.__specifications.items():
+            for d in spec_node.withed_files:
                 if d in incoming:
                     incoming[d].add(filename)
 
@@ -1279,7 +1285,7 @@ class Parser:
         while specs:
             s = specs.pop(0)
             result.insert(0, s)
-            for e in self.__specifications[s][2]:
+            for e in self.__specifications[s].withed_files:
                 visited.add(e)
                 if e in incoming and incoming[e] <= visited:
                     specs.append(e)
@@ -1308,9 +1314,9 @@ class Parser:
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for filename, spec, _ in self.__specifications.values():
+        for spec_node in self.__specifications.values():
             try:
-                self.__evaluate_specification(spec, filename)
+                self.__evaluate_specification(spec_node.spec, spec_node.filename)
             except RecordFluxError as e:
                 error.extend(e)
         try:
@@ -1324,8 +1330,8 @@ class Parser:
     @property
     def specifications(self) -> Dict[str, Specification]:
         return {
-            spec.f_package_declaration.f_identifier.text: spec
-            for _, spec, _ in self.__specifications.values()
+            spec_node.spec.f_package_declaration.f_identifier.text: spec_node.spec
+            for spec_node in self.__specifications.values()
         }
 
     def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
