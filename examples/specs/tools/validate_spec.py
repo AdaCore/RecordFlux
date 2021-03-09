@@ -185,8 +185,7 @@ class ValidationResult:
                     field_value = field_value.hex()
                 parsed_field_values[field_name] = field_value
             except PyRFLXError as e:
-                error = f"{e} or not set"
-                parsed_field_values[field_name] = error
+                parsed_field_values[field_name] = f"{e} or not set"
         return parsed_field_values
 
     def as_json(self) -> Dict[str, object]:
