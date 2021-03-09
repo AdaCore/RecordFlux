@@ -6,15 +6,80 @@ on:
     - cron:  '0 2 * * *'
 
 jobs:
-  tests:
-    name: Tests
+  checks:
+    name: Checks
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+      matrix:
+        target: [black, isort, flake8, pylint, mypy]
     steps:
     - uses: actions/checkout@v2
       with:
          submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Determine exact Python version
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
+    - name: Install dependencies
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        pip install .[devel]
+    - name: Check
+      run: |
+        make check_${{ matrix.target }}
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+         submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Determine exact Python version
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
+    - name: Install dependencies
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        pip install .[devel]
     - name: Test
       run: |
-        docker run -v $PWD:/data -w /data componolit/ci:gnat-community-2020 /bin/sh -c "apt-get update && apt-get install -y libgmp-dev python3-pip patchelf && pip3 install .[Devel] && make test"
+        make test
