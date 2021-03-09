@@ -1427,6 +1427,7 @@ def test_append() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Append(
@@ -1452,6 +1453,7 @@ def test_append_incompatible() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20)))
@@ -1475,6 +1477,7 @@ def test_append_message_unsupported() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Append("List", expr.Variable("Element", location=Location((10, 20))))
@@ -1504,6 +1507,7 @@ def test_extend() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[stmt.Extend("List", expr.Variable("Element"))],
             ),
@@ -1524,6 +1528,7 @@ def test_extend_incompatible() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20)))
@@ -1547,6 +1552,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Assignment(
@@ -1573,6 +1579,7 @@ def test_message_aggregate_with_undefined_type() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Assignment(
@@ -1608,6 +1615,7 @@ def test_comprehension() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Result",
@@ -2113,4 +2121,50 @@ def test_type_error_in_renaming_declaration() -> None:
             r"<stdin>:10:20: model: info: found type universal integer \(1\)"
             r"$"
         ),
+    )
+
+
+def test_missing_exception_transition() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                declarations=[],
+                actions=[
+                    stmt.Append(
+                        "List",
+                        expr.MessageAggregate(
+                            "TLV::Message",
+                            {"Tag": expr.Variable("TLV::Msg_Error")},
+                        ),
+                    )
+                ],
+                location=Location((10, 20)),
+            ),
+            State("End"),
+        ],
+        declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
+        parameters=[],
+        types=[TLV_TAG, TLV_MESSAGE, TLV_MESSAGES],
+        regex=r'^<stdin>:10:20: model: error: missing exception transition in state "Start"$',
+    )
+
+
+def test_unnecessary_exception_transition() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End"), location=Location((10, 20))),
+                declarations=[],
+                actions=[],
+            ),
+            State("End"),
+        ],
+        declarations=[],
+        parameters=[],
+        types=[],
+        regex=r'^<stdin>:10:20: model: error: unnecessary exception transition in state "Start"$',
     )
