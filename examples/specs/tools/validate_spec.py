@@ -113,25 +113,19 @@ def validation_main(
     json_output: Optional[Path],
     abort_on_error: bool,
 ) -> None:
-    def validate_directory(path_iterator: Iterator[Path], is_valid_directory: bool) -> None:
-        for path in path_iterator:
-            validation_result = __validate_message(path, is_valid_directory, pdu_message)
-            output_writer.write_result(validation_result)
-            if not validation_result.validation_success and abort_on_error:
-                raise ValidationError(f"aborted: message {path} was classified incorrectly")
-
-    valid_message_paths: Optional[Iterator[Path]] = (
-        directory_valid.glob("*") if directory_valid is not None else directory_valid
-    )
-    invalid_message_paths: Optional[Iterator[Path]] = (
-        directory_invalid.glob("*") if directory_invalid is not None else directory_invalid
-    )
+    valid_message_paths = directory_valid.glob("*") if directory_valid is not None else []
+    invalid_message_paths = directory_invalid.glob("*") if directory_invalid is not None else []
 
     with OutputWriter(json_output) as output_writer:
-        if valid_message_paths is not None:
-            validate_directory(valid_message_paths, True)
-        if invalid_message_paths is not None:
-            validate_directory(invalid_message_paths, False)
+        for path_iterator, is_valid_directory in [
+            (valid_message_paths, True),
+            (invalid_message_paths, False),
+        ]:
+            for path in path_iterator:
+                validation_result = __validate_message(path, is_valid_directory, pdu_message)
+                output_writer.write_result(validation_result)
+                if not validation_result.validation_success and abort_on_error:
+                    raise ValidationError(f"aborted: message {path} was classified incorrectly")
 
 
 def __validate_message(
