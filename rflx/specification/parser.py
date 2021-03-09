@@ -173,6 +173,11 @@ def create_state(state: State, filename: Path) -> model.State:
     for t in state.f_body.f_conditional_transitions:
         transitions.append(create_transition(t, filename))
     transitions.append(create_transition(state.f_body.f_final_transition, filename))
+    exception_transition = (
+        create_transition(state.f_body.f_exception_transition, filename)
+        if state.f_body.f_exception_transition
+        else None
+    )
     actions = []
     for a in state.f_body.f_actions:
         actions.append(create_statement(a, filename))
@@ -183,6 +188,7 @@ def create_state(state: State, filename: Path) -> model.State:
     return model.State(
         identifier=identifier,
         transitions=transitions,
+        exception_transition=exception_transition,
         actions=actions,
         declarations=declarations,
         description=description,

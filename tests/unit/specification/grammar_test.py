@@ -708,8 +708,45 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                 actions=[],
             ),
         ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               exception
+                  then C
+               end A
+         """,
+            model.State(
+                "A",
+                transitions=[model.Transition("B")],
+                exception_transition=model.Transition("C"),
+                declarations=[],
+                actions=[],
+            ),
+        ),
+        (
+            """
+               state A is
+               begin
+               transition
+                  then B
+               exception
+                  then C
+                     with Desc => "rfc2549.txt+12:3-45:6"
+               end A
+         """,
+            model.State(
+                "A",
+                transitions=[model.Transition("B")],
+                exception_transition=model.Transition("C", description="rfc2549.txt+12:3-45:6"),
+                declarations=[],
+                actions=[],
+            ),
+        ),
     ],
-    ids=range(1, 5),
+    ids=range(1, 7),
 )
 def test_state(string: str, expected: decl.Declaration) -> None:
     actual = parse_state(string)

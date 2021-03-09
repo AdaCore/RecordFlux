@@ -45,6 +45,7 @@ class State(Base):
         self,
         identifier: StrID,
         transitions: Sequence[Transition] = None,
+        exception_transition: Transition = None,
         actions: Sequence[stmt.Statement] = None,
         declarations: Sequence[decl.Declaration] = None,
         description: str = None,
@@ -57,8 +58,11 @@ class State(Base):
         else:
             assert not actions and not declarations
 
+        assert exception_transition.condition == expr.TRUE if exception_transition else True
+
         self.__identifier = ID(identifier)
         self.__transitions = transitions or []
+        self.__exception_transition = exception_transition
         self.__actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.description = description
@@ -89,8 +93,26 @@ class State(Base):
         return self.__transitions or []
 
     @property
+    def exception_transition(self) -> Optional[Transition]:
+        return self.__exception_transition
+
+    @property
     def actions(self) -> Sequence[stmt.Statement]:
         return self.__actions
+
+    @property
+    def has_exceptions(self) -> bool:
+        return any(
+            isinstance(a, (stmt.Append, stmt.Extend))
+            or (
+                isinstance(a, stmt.Assignment)
+                and isinstance(
+                    a.expression,
+                    (expr.Selected, expr.Head, expr.Comprehension, expr.MessageAggregate),
+                )
+            )
+            for a in self.__actions
+        )
 
 
 class AbstractSession(Base):
@@ -375,12 +397,28 @@ class Session(AbstractSession):
             self.__reference_variable_declaration(a.variables(), declarations)
 
     def __validate_transitions(
-        self, transitions: Sequence[Transition], declarations: Mapping[ID, decl.Declaration]
+        self, state: State, declarations: Mapping[ID, decl.Declaration]
     ) -> None:
-        for t in transitions:
+        for t in state.transitions:
             t.condition = t.condition.substituted(lambda x: self.__typify_variable(x, declarations))
             self.error.extend(t.condition.check_type(rty.BOOLEAN))
             self.__reference_variable_declaration(t.condition.variables(), declarations)
+
+        if not state.exception_transition and state.has_exceptions:
+            self.error.append(
+                f'missing exception transition in state "{state.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                state.location,
+            )
+
+        if state.exception_transition and not state.has_exceptions:
+            self.error.append(
+                f'unnecessary exception transition in state "{state.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                state.exception_transition.location,
+            )
 
     def __validate_usage(self) -> None:
         global_declarations = self._global_declarations.items()
@@ -459,7 +497,7 @@ class Session(AbstractSession):
             declarations = {**self._global_declarations, **s.declarations}
 
             self.__validate_actions(s.actions, declarations)
-            self.__validate_transitions(s.transitions, declarations)
+            self.__validate_transitions(s, declarations)
 
         self.__validate_usage()
 

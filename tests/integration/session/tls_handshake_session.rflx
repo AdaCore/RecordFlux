@@ -162,6 +162,8 @@ package TLS_Handshake_Session is
          then Start_PSK
             if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
          then Error_Internal_Error
+      exception
+         then Error_Internal_Error
       end Create_Client_Hello_Extensions;
 
       state Start_Post_Handshake_Auth_Extension is
@@ -174,6 +176,8 @@ package TLS_Handshake_Session is
             if TLS_Handshake::PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes_Modes
          then Start_PSK
             if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         then Error_Internal_Error
+      exception
          then Error_Internal_Error
       end Start_Post_Handshake_Auth_Extension;
 
@@ -194,6 +198,8 @@ package TLS_Handshake_Session is
          then Start_PSK
             if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
          then Start_Send
+      exception
+         then Error_Internal_Error
       end Start_DHE;
 
       state Start_DHE_Signature_Algorithms is
@@ -206,6 +212,8 @@ package TLS_Handshake_Session is
          then Start_PSK
             if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
          then Start_Send
+      exception
+         then Error_Internal_Error
       end Start_DHE_Signature_Algorithms;
 
       state Start_PSK is
@@ -234,6 +242,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Pre_Shared_Key_CH'Valid = False
          then Start_Get_Random
+      exception
+         then Error_Internal_Error
       end Start_PSK_Extension_Check;
 
       state Start_Get_Random is
@@ -266,6 +276,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Extensions_List'Valid = False
          then Start_Send
+      exception
+         then Error_Internal_Error
       end Start_PSK_Extensions;
 
       state Start_Send is
@@ -372,6 +384,8 @@ package TLS_Handshake_Session is
                    E.Tag = TLS_Handshake::ET_Pre_Shared_Key
                    and TLS_Handshake::Pre_Shared_Key_CH (E.Data).Identities'Size < Identity_Index)
          then Wait_SH_Extensions_PSK_Request
+      exception
+         then Error_Internal_Error
       end Wait_SH_Extensions_PSK;
 
       state Wait_SH_Extensions_PSK_Request is
@@ -401,6 +415,8 @@ package TLS_Handshake_Session is
             if (for some E in Server_Hello_Message.Extensions =>
                    E.Tag = TLS_Handshake::ET_Key_Share)
          then Set_Record_Keys
+      exception
+         then Error_Internal_Error
       end Wait_SH_Extensions_PSK_Validation;
 
       state Wait_SH_Extensions_DHE is
@@ -413,6 +429,8 @@ package TLS_Handshake_Session is
             if (for some S in TLS_Handshake::Key_Share_CH ([for E in Client_Hello_Message.Extensions => E when E.Tag = TLS_Handshake::ET_Key_Share]'Head.Data).Shares =>
                    S.Group = Selected_Group) = False
          then Set_Record_Keys
+      exception
+         then Error_Internal_Error
       end Wait_SH_Extensions_DHE;
 
       state Wait_SH_Parse_HRR is
@@ -439,6 +457,8 @@ package TLS_Handshake_Session is
                    and (for some S in Client_Shares =>
                            S.Group = TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group))
          then Wait_SH_Prepare_CH
+      exception
+         then Error_Internal_Error
       end Wait_SH_Parse_HRR;
 
       state Wait_SH_Prepare_CH
@@ -451,6 +471,8 @@ package TLS_Handshake_Session is
          and E.Tag /= TLS_Handshake::ET_Pre_Shared_Key]);
       transition
          then Wait_SH_Prepare_CH_Dispatch
+      exception
+         then Error_Internal_Error
       end Wait_SH_Prepare_CH;
 
       state Wait_SH_Prepare_CH_Dispatch is
@@ -481,6 +503,8 @@ package TLS_Handshake_Session is
          CH_Key_Share_Prepared := True;
       transition
          then Wait_SH_Prepare_CH_Dispatch
+      exception
+         then Error_Internal_Error
       end Wait_SH_Prepare_CH_Key_Share;
 
       state Wait_SH_Prepare_CH_Cookie
@@ -491,6 +515,8 @@ package TLS_Handshake_Session is
          CH_Cookie_Prepared := True;
       transition
          then Wait_SH_Prepare_CH_Dispatch
+      exception
+         then Error_Internal_Error
       end Wait_SH_Prepare_CH_Cookie;
 
       state Wait_SH_Prepare_CH_PSK
@@ -522,6 +548,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Pre_Shared_Key_CH'Valid = False
          then Wait_SH_PSK_Extensions
+      exception
+         then Error_Internal_Error
       end Wait_SH_PSK_Extension_Check;
 
       state Wait_SH_PSK_Extensions is
@@ -543,6 +571,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Extensions_List'Valid = False
          then Wait_SH_Prepare_CH_Dispatch
+      exception
+         then Error_Internal_Error
       end Wait_SH_PSK_Extensions;
 
       state Wait_SH_No_PSK_Extension is
@@ -573,6 +603,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Success = False
          then Wait_SH
+      exception
+         then Error_Internal_Error
       end Wait_SH_Send_CH;
 
       state Set_Record_Keys is
@@ -687,6 +719,8 @@ package TLS_Handshake_Session is
             with Desc => "rfc6066.txt+378:19-379:9"
             if Server_Name_Extension.Data_Length > 0
          then Wait_EE_Parse_Extensions
+      exception
+         then Error_Internal_Error
       end Wait_EE_Process_Server_Name;
 
       state Wait_EE_Process_Max_Fragment_Length is
@@ -698,6 +732,8 @@ package TLS_Handshake_Session is
             with Desc => "rfc6066.txt+435:50-438:32"
             if Configuration.Max_Fragment_Length /= Max_Fragment_Length
          then Wait_EE_Parse_Extensions
+      exception
+         then Error_Internal_Error
       end Wait_EE_Process_Max_Fragment_Length;
 
       state Wait_EE_Process_Supported_Groups
@@ -723,6 +759,8 @@ package TLS_Handshake_Session is
          then Error_Internal_Error
             if Success = False
          then Wait_EE_Parse_Extensions
+      exception
+         then Error_Internal_Error
       end Wait_EE_Process_Heartbeat;
 
       state Wait_EE_Process_Application_Layer_Protocol_Negotiation is
@@ -745,6 +783,8 @@ package TLS_Handshake_Session is
             if (for all P in Configuration.Protocols_Protocol_Name_List =>
                    P.Name /= Protocol.Name)
          then Wait_EE_Parse_Extensions
+      exception
+         then Error_Internal_Error
       end Wait_EE_Process_Application_Layer_Protocol_Negotiation;
 
       state Wait_EE_Process_Early_Data
@@ -808,6 +848,8 @@ package TLS_Handshake_Session is
          then Parse_CR
             if Certificate_Request_Message'Valid = True
          then Error_Decode_Error
+      exception
+         then Error_Internal_Error
       end Wait_Cert_CR;
 
       state Parse_CR is
@@ -815,6 +857,8 @@ package TLS_Handshake_Session is
          Certificate_Request := TLS_Handshake::Certificate_Request'(Certificate_Request_Context_Length => Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => Certificate_Request_Message.Extensions_Length, Extensions => Certificate_Request_Message.Extensions);
       transition
          then Parse_CR_Extensions
+      exception
+         then Error_Internal_Error
       end Parse_CR;
 
       state Parse_CR_Extensions is
@@ -1169,6 +1213,8 @@ package TLS_Handshake_Session is
          Certificate_Request := TLS_Handshake::Certificate_Request'(Certificate_Request_Context_Length => PHA_Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => PHA_Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => PHA_Certificate_Request_Message.Extensions_Length, Extensions => PHA_Certificate_Request_Message.Extensions);
       transition
          then Connected_PHA_Parse_CR_Extensions
+      exception
+         then Error_Internal_Error
       end Connected_PHA_Parse_CR;
 
       state Connected_PHA_Parse_CR_Extensions is
