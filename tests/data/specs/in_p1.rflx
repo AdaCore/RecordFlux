@@ -1,9 +1,13 @@
 with P1;
 with P2;
 with P3;
+
 package In_P1 is
+
    for P1::Frame use (Payload => P2::Packet)
       if Kind = 1;
+
    for P1::Frame use (Payload => P3::Packet)
       if Kind = 2;
+
 end In_P1;
