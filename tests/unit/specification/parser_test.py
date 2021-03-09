@@ -2424,7 +2424,6 @@ def test_parse_error_invalid_enum(spec: str, error: str) -> None:
 
 
 def test_complex_dependencies() -> None:
-
     p4_protocol_number = model.ModularInteger(
         "P4::Protocol_Number", expr.Pow(expr.Number(2), expr.Number(16))
     )
@@ -2490,8 +2489,8 @@ def test_parse_error_duplicate_spec_file_file() -> None:
     p.parse(SPEC_DIR / "message_type.rflx")
     with pytest.raises(
         RecordFluxError,
-        match='parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
-        'parser: error: previous specification "tests/data/specs/message_type.rflx"',
+        match='^parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
+        'parser: error: previous specification "tests/data/specs/message_type.rflx"$',
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
 
@@ -2511,7 +2510,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
     )
     with pytest.raises(
         RecordFluxError,
-        match='parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
-        'parser: error: previous specification "<stdin>"',
+        match='^parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
+        'parser: error: previous specification "<stdin>"$',
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
