@@ -2429,8 +2429,9 @@ def test_parse_error_duplicate_spec_file_file() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            '^parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
-            'parser: error: previous specification "tests/data/specs/message_type.rflx"$'
+            "^tests/data/specs/subdir/message_type.rflx:1:9: parser: error: duplicate"
+            " specification\n"
+            "tests/data/specs/message_type.rflx:1:9: parser: info: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -2452,8 +2453,9 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            '^parser: error: duplicate specification "tests/data/specs/subdir/message_type.rflx"\n'
-            'parser: error: previous specification "<stdin>"$'
+            "^tests/data/specs/subdir/message_type.rflx:1:9: parser: error: duplicate"
+            " specification\n"
+            "<stdin>:2:17: parser: info: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")

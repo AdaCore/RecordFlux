@@ -1244,14 +1244,19 @@ class Parser:
                 and filename != self.__specifications[packagefile].filename
             ):
                 error.append(
-                    f'duplicate specification "{filename}"',
+                    "duplicate specification",
                     Subsystem.PARSER,
                     Severity.ERROR,
+                    node_location(spec.f_package_declaration.f_identifier, filename),
                 )
                 error.append(
-                    f'previous specification "{self.__specifications[packagefile].filename}"',
+                    "previous specification",
                     Subsystem.PARSER,
-                    Severity.ERROR,
+                    Severity.INFO,
+                    node_location(
+                        self.__specifications[packagefile].spec.f_package_declaration.f_identifier,
+                        self.__specifications[packagefile].filename,
+                    ),
                 )
             self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 
