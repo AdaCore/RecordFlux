@@ -19,7 +19,6 @@ class Cache:
 
         self._verification: Dict[str, str] = {}
 
-        self._initialize_cache()
         self._load_cache()
 
     def is_verified(self, message: AbstractMessage) -> bool:
@@ -42,18 +41,15 @@ class Cache:
             self._verification[message.full_name] = message_hash
             self._write_cache()
 
-    @staticmethod
-    def _initialize_cache() -> None:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        if not (CACHE_DIR / VERIFICATION_FILE).exists():
-            with open(CACHE_DIR / VERIFICATION_FILE, "w") as f:
-                json.dump({}, f)
-
     def _load_cache(self) -> None:
-        with open(CACHE_DIR / VERIFICATION_FILE) as f:
-            self._verification = json.load(f)
+        try:
+            with open(CACHE_DIR / VERIFICATION_FILE) as f:
+                self._verification = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
 
     def _write_cache(self) -> None:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
         with open(CACHE_DIR / VERIFICATION_FILE, "w") as f:
             json.dump(self._verification, f)
 

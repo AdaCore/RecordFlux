@@ -8,24 +8,21 @@ from tests.data.models import TLV_MESSAGE
 def test_init(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path / "Test"
     cache.Cache()
-    assert (tmp_path / "Test").is_dir()
-    assert (tmp_path / "Test" / cache.VERIFICATION_FILE).is_file()
+    assert not (tmp_path / "Test").exists()
 
 
-def test_init_existing(tmp_path: Path) -> None:
+def test_init_valid(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
     with open(tmp_path / cache.VERIFICATION_FILE, "x") as f:
         f.write("{}")
     cache.Cache()
-    assert tmp_path.is_dir()
-    assert (tmp_path / cache.VERIFICATION_FILE).is_file()
 
 
-def test_init_disabled(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path / "Test"
-    cache.Cache(enabled=False)
-    assert not (tmp_path / "Test").is_dir()
-    assert not (tmp_path / "Test" / cache.VERIFICATION_FILE).is_file()
+def test_init_invalid(tmp_path: Path) -> None:
+    cache.CACHE_DIR = tmp_path
+    with open(tmp_path / cache.VERIFICATION_FILE, "x") as f:
+        f.write("invalid")
+    cache.Cache()
 
 
 def test_verified(tmp_path: Path) -> None:
