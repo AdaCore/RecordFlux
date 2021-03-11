@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from types import TracebackType
-from typing import IO, Dict, Iterator, List, Optional, Sequence, Type, Union
+from typing import Dict, Iterator, List, Optional, Sequence, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
@@ -154,7 +154,7 @@ def validation_main(args: argparse.Namespace) -> None:
 
 
 class JsonOutputWriter:
-    file: Optional[IO]
+    file: Optional[TextIO]
 
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
