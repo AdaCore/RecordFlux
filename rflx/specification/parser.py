@@ -1201,7 +1201,7 @@ class Parser:
             *model.INTERNAL_TYPES.values(),
         ]
         self.__sessions: List[model.Session] = []
-        self.__cache = Cache(cached)
+        self.__cache = Cache(not skip_verification and cached)
 
     def __convert_unit(
         self, spec: Specification, filename: Path, transitions: List[ID] = None
