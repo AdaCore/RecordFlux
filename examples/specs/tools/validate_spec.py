@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import IO, Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
@@ -207,7 +207,7 @@ class ValidationResult:
 
 
 class OutputWriter:
-    file: Optional[IO]
+    file: Optional[TextIO]
 
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
