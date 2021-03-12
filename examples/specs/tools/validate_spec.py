@@ -115,11 +115,12 @@ def validate(
 ) -> int:
 
     with OutputWriter(json_output) as output_writer:
-        for path_iterator, is_valid_directory in [
-            (valid_message_paths, True),
-            (invalid_message_paths, False),
+        for directory_path, is_valid_directory in [
+            (directory_valid, True),
+            (directory_invalid, False),
         ]:
-            for path in path_iterator:
+            directory = directory_path.glob("*") if directory_path is not None else []
+            for path in directory:
                 validation_result = __validate_message(path, is_valid_directory, message_value)
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success and abort_on_error:
