@@ -83,7 +83,7 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f'invalid identifier "{args.message_identifier}" : {e}'
 
     try:
-        pdu_message = PyRFLX.from_specs(
+        message_value = PyRFLX.from_specs(
             [str(args.specification)], skip_model_verification=args.no_verification
         )[str(identifier.parent)][str(identifier.name)]
     except KeyError:
@@ -93,8 +93,8 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f"specification {e}"
 
     try:
-        validation_main(
-            pdu_message,
+        validate(
+            message_value,
             args.directory_invalid,
             args.directory_valid,
             args.json_output,
@@ -106,15 +106,13 @@ def cli(argv: List[str]) -> Union[int, str]:
     return 0
 
 
-def validation_main(
-    pdu_message: MessageValue,
+def validate(
+    message_value: MessageValue,
     directory_invalid: Optional[Path],
     directory_valid: Optional[Path],
     json_output: Optional[Path],
     abort_on_error: bool,
-) -> None:
-    valid_message_paths = directory_valid.glob("*") if directory_valid is not None else []
-    invalid_message_paths = directory_invalid.glob("*") if directory_invalid is not None else []
+) -> int:
 
     with OutputWriter(json_output) as output_writer:
         for path_iterator, is_valid_directory in [
@@ -122,10 +120,12 @@ def validation_main(
             (invalid_message_paths, False),
         ]:
             for path in path_iterator:
-                validation_result = __validate_message(path, is_valid_directory, pdu_message)
+                validation_result = __validate_message(path, is_valid_directory, message_value)
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success and abort_on_error:
                     raise ValidationError(f"aborted: message {path} was classified incorrectly")
+
+    return 0
 
 
 def __validate_message(
