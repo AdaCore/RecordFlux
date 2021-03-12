@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from rflx.pyrflx import PyRFLX
 
-from tools.validate_spec import cli
+from tools.validate_spec import validate
 
 DATA_PATH = Path("tests/data/")
 
@@ -22,25 +22,27 @@ def test_validate_spec(spec: str) -> None:
     pyrflx = PyRFLX.from_specs([spec], True)
 
     for package in pyrflx:
-        for message in package:
+        for message_value in package:
             test_data_dir = (
                 DATA_PATH
-                / str(message.identifier.parent).lower()
-                / str(message.identifier.name).lower()
+                / str(message_value.identifier.parent).lower()
+                / str(message_value.identifier.name).lower()
             )
 
             if not test_data_dir.is_dir():
-                warnings.warn(f"No example data found for {message.identifier}")
+                warnings.warn(f"No example data found for {message_value.identifier}")
                 continue
 
-            invalid_data_dir = test_data_dir / "invalid"
-            valid_data_dir = test_data_dir / "valid"
+            directory_invalid = test_data_dir / "invalid"
+            directory_valid = test_data_dir / "valid"
 
-            arguments = ["validate_spec", "-s", spec, "-m", str(message.identifier)]
-            if invalid_data_dir.is_dir():
-                arguments.extend(["-i", str(invalid_data_dir)])
-            if valid_data_dir.is_dir():
-                arguments.extend(["-v", str(valid_data_dir)])
-            arguments.append("--no-verification")
-
-            assert cli(arguments) == 0
+            assert (
+                validate(
+                    message_value,
+                    directory_invalid,
+                    directory_valid,
+                    json_output=None,
+                    abort_on_error=False,
+                )
+                == 0
+            )
