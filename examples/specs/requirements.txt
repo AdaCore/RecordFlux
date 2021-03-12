@@ -5,3 +5,4 @@ isort
 mypy
 pylint
 pytest-xdist
+scapy
