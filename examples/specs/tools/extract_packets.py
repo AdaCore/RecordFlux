@@ -6,17 +6,33 @@ representation of each packet into a separate file.
 """
 
 import argparse
+import pkgutil
+import pyclbr
 import sys
 from math import ceil, log
 from pathlib import Path
 from pydoc import locate
 from typing import Sequence, Union
 
+import scapy.layers  # type: ignore
 from scapy.utils import hexdump, rdpcap  # type: ignore
 
 
 def main(argv: Sequence[str]) -> Union[bool, str]:
+    available_layers = [
+        f"{p.name}.{c}"
+        for p in pkgutil.iter_modules(scapy.layers.__path__)
+        for c in pyclbr.readmodule(f"scapy.layers.{p.name}")
+    ]
+
     arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument(
+        "-l",
+        "--layers",
+        action="version",
+        version=" ".join(available_layers),
+        help="show list of all available Scapy layers",
+    )
     arg_parser.add_argument(
         "layer",
         metavar="LAYER",
@@ -35,6 +51,12 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
 
     if not args.output.is_dir():
         return f'output directory "{args.output}" is not a directory'
+
+    if args.layer not in available_layers:
+        return (
+            f'unknown layer "{args.layer}"'
+            " (use --layers to show a list of all available Scapy layers)"
+        )
 
     layer = locate(f"scapy.layers.{args.layer}")
 
