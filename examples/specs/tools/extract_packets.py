@@ -27,7 +27,17 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
     arg_parser.add_argument("output", metavar="OUTPUT_DIRECTORY", type=Path)
     args = arg_parser.parse_args(argv[1:])
 
+    if "." not in args.layer:
+        return "layer must be in the form <package>.<class> (e.g., dhcp.BOOTP)"
+
+    if not args.output.exists():
+        return f'output directory "{args.output}" does not exist'
+
+    if not args.output.is_dir():
+        return f'output directory "{args.output}" is not a directory'
+
     layer = locate(f"scapy.layers.{args.layer}")
+
     if layer is None:
         return f'layer "{args.layer}" not found'
 
