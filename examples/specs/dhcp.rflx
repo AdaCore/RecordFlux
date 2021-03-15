@@ -1,0 +1,484 @@
+with IPv4;
+
+--  Dynamic Host Configuration Protocol (RFC 2131)
+
+package DHCP is
+
+   --  DHCP Options and BOOTP Vendor Extensions (RFC 1533)
+
+   --  ISSUE: Componolit/RecordFlux-specifications#58
+   --  The full list of Codes is defined in
+   --  https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#options.
+   type Code is
+      (--  BOOTP Vendor Information Extensions (RFC 1497)
+       Pad_Option                                              =>   0,
+       End_Option                                              => 255,
+       Subnet_Mask_Option                                      =>   1,
+       Time_Offset_Option                                      =>   2,
+       Router_Option                                           =>   3,
+       Time_Server_Option                                      =>   4,
+       Name_Server_Option                                      =>   5,
+       Domain_Name_Server_Option                               =>   6,
+       Log_Server_Option                                       =>   7,
+       Cookie_Server_Option                                    =>   8,
+       LPR_Server_Option                                       =>   9,
+       Impress_Server_Option                                   =>  10,
+       Resource_Location_Server_Option                         =>  11,
+       Host_Name_Option                                        =>  12,
+       Boot_File_Size_Option                                   =>  13,
+       Merit_Dump_File_Option                                  =>  14,
+       Domain_Name_Option                                      =>  15,
+       Swap_Server_Option                                      =>  16,
+       Root_Path_Option                                        =>  17,
+       Extensions_Path_Option                                  =>  18,
+       --  IP Layer Parameters per Host (RFC 1533)
+       IP_Forwarding_Option                                    =>  19,
+       Non_Local_Source_Routing_Option                         =>  20,
+       Policy_Filter_Option                                    =>  21,
+       Maximum_Datagram_Reassembly_Size_Option                 =>  22,
+       Default_IP_Time_To_Live_Option                          =>  23,
+       Path_MTU_Aging_Timeout_Option                           =>  24,
+       Path_MTU_Plateau_Table_Option                           =>  25,
+       --  IP Layer Parameters per Interface (RFC 1533)
+       Interface_MTU_Option                                    =>  26,
+       All_Subnets_Are_Local_Option                            =>  27,
+       Broadcast_Address_Option                                =>  28,
+       Perform_Mask_Discovery_Option                           =>  29,
+       Mask_Supplier_Option                                    =>  30,
+       Perform_Router_Discovery_Option                         =>  31,
+       Router_Solicitation_Address_Option                      =>  32,
+       Static_Route_Option                                     =>  33,
+       --  Link Layer Parameters per Interface (RFC 1533)
+       Trailer_Encapsulation_Option                            =>  34,
+       ARP_Cache_Timeout_Option                                =>  35,
+       Ethernet_Encapsulation_Option                           =>  36,
+       --  TCP Parameters (RFC 1533)
+       TCP_Default_TTL_Option                                  =>  37,
+       TCP_Keepalive_Interval_Option                           =>  38,
+       TCP_Keepalive_Garbage_Option                            =>  39,
+       --  Application and Service Parameters (RFC 1533)
+       Network_Information_Service_Domain_Option               =>  40,
+       Network_Information_Servers_Option                      =>  41,
+       Network_Time_Protocol_Servers_Option                    =>  42,
+       Vendor_Specific_Information_Option                      =>  43,
+       NetBIOS_Over_TCP_IP_Name_Server_Option                  =>  44,
+       NetBIOS_Over_TCP_IP_Datagram_Distribution_Server_Option =>  45,
+       NetBIOS_Over_TCP_IP_Node_Type_Option                    =>  46,
+       NetBIOS_Over_TCP_IP_Scope_Option                        =>  47,
+       X_Window_System_Font_Server_Option                      =>  48,
+       X_Window_System_Display_Manager_Option                  =>  49,
+       --  DHCP Extensions (RFC 1533)
+       Requested_IP_Address_Option                             =>  50,
+       IP_Address_Lease_Time_Option                            =>  51,
+       Option_Overload_Option                                  =>  52,
+       DHCP_Message_Type_Option                                =>  53,
+       Server_Identifier_Option                                =>  54,
+       Parameter_Request_List_Option                           =>  55,
+       Message_Option                                          =>  56,
+       Maximum_DHCP_Message_Size_Option                        =>  57,
+       Renewal_Time_Value_Option                               =>  58,
+       Rebinding_Time_Value_Option                             =>  59,
+       Class_Identifier_Option                                 =>  60,
+       Client_Identifier_Option                                =>  61)
+   with Size => 8;
+
+   type Len is range 1 .. 255 with Size => 8;
+   type Subnet_Mask is mod 2 ** 32;
+   type Time_Offset is mod 2 ** 32;  --  ISSUE: Componolit/RecordFlux#262
+   type Routers is sequence of IPv4::Address;
+   type Time_Servers is sequence of IPv4::Address;
+   type Name_Servers is sequence of IPv4::Address;
+   type Domain_Name_Servers is sequence of IPv4::Address;
+   type Log_Servers is sequence of IPv4::Address;
+   type Cookie_Servers is sequence of IPv4::Address;
+   type LPR_Servers is sequence of IPv4::Address;
+   type Impress_Servers is sequence of IPv4::Address;
+   type Resource_Location_Servers is sequence of IPv4::Address;
+   type Boot_File_Size is mod 2 ** 16;
+   type Enabled_Disabled is (Enabled => 1, Disabled => 0) with Size => 8;
+   type Maximum_Datagram_Reassembly_Size is mod 2 ** 16;
+   type Default_IP_Time_To_Live is range 1 .. 255 with Size => 8;
+   type Path_MTU_Aging_Timeout is mod 2 ** 32;
+   type MTU is range 68 .. 2 ** 16 - 1 with Size => 16;
+   type Path_MTU_Plateau_Table is sequence of MTU;
+
+   type Static_Route is
+      message
+         Destination : IPv4::Address;
+         Router : IPv4::Address;
+      end message;
+
+   type Static_Routes is sequence of Static_Route;
+
+   type Ethernet_Encapsulation is
+      (Ethernet_2_Encapsulation => 0,
+       IEEE_802_3_Encapsulation => 1)
+   with Size => 8;
+
+   type TTL is range 1 .. 255 with Size => 8;
+   type Network_Information_Servers is sequence of IPv4::Address;
+   type Network_Time_Protocol_Servers is sequence of IPv4::Address;
+   type NetBIOS_Over_TCP_IP_Name_Servers is sequence of IPv4::Address;
+   type NetBIOS_Over_TCP_IP_Datagram_Distribution_Servers is sequence of IPv4::Address;
+
+   type NetBIOS_Over_TCP_IP_Node_Type is
+      (B_Node => 1,
+       P_Node => 2,
+       M_Node => 4,
+       H_Node => 8)
+   with Size => 8;
+
+   type X_Window_System_Font_Servers is sequence of IPv4::Address;
+   type X_Window_System_Display_Managers is sequence of IPv4::Address;
+   type Lease_Time is mod 2 ** 32;
+
+   type Option_Overload is
+      (File_Overload           => 1,
+       Sname_Overload          => 2,
+       File_And_Sname_Overload => 3)
+   with Size => 8;
+
+   --  ISSUE: Componolit/RecordFlux-specifications#58
+   --  The full list of Codes is defined in
+   --  https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#message-type-53.
+   type DHCP_Message_Type is
+      (DHCPDISCOVER => 1,
+       DHCPOFFER    => 2,
+       DHCPREQUEST  => 3,
+       DHCPDECLINE  => 4,
+       DHCPACK      => 5,
+       DHCPNAK      => 6,
+       DHCPRELEASE  => 7)
+   with Size => 8;
+
+   type Option_Codes is sequence of Code;
+   type Maximum_DHCP_Message_Size is range 576 .. 2 ** 16 - 1 with Size => 16;
+   type Time_Interval is mod 2 ** 32;
+
+   type Option is
+      message
+         Code : Code
+            then null
+               if Code = Pad_Option or Code = End_Option
+            then Len
+               if Code /= Pad_Option and Code /= End_Option;
+         Len : Len
+            then Subnet_Mask
+               if Code = Subnet_Mask_Option and Len * 8 = DHCP::Subnet_Mask'Size
+            then Time_Offset
+               if Code = Time_Offset_Option and Len * 8 = DHCP::Time_Offset'Size
+            then Routers
+               if Code = Router_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Time_Servers
+               if Code = Time_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Name_Servers
+               if Code = Name_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Domain_Name_Servers
+               if Code = Domain_Name_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Log_Servers
+               if Code = Log_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Cookie_Servers
+               if Code = Cookie_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then LPR_Servers
+               if Code = LPR_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Impress_Servers
+               if Code = Impress_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Resource_Location_Servers
+               if Code = Resource_Location_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Host_Name
+               if Code = Host_Name_Option
+            then Boot_File_Size
+               if Code = Boot_File_Size_Option and Len * 8 = DHCP::Boot_File_Size'Size
+            then Merit_Dump_File
+               if Code = Merit_Dump_File_Option
+            then Domain_Name
+               if Code = Domain_Name_Option
+            then Swap_Server
+               if Code = Swap_Server_Option and Len * 8 = IPv4::Address'Size
+            then Root_Path
+               if Code = Root_Path_Option
+            then Extensions_Path
+               if Code = Extensions_Path_Option
+            then IP_Forwarding
+               if Code = IP_Forwarding_Option
+            then Non_Local_Source_Routing
+               if Code = Non_Local_Source_Routing_Option
+            then Policy_Filter
+               if Code = Policy_Filter_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Maximum_Datagram_Reassembly_Size
+               if Code = Maximum_Datagram_Reassembly_Size_Option
+            then Default_IP_Time_To_Live
+               if Code = Default_IP_Time_To_Live_Option
+            then Path_MTU_Aging_Timeout
+               if Code = Path_MTU_Aging_Timeout_Option
+            then Path_MTU_Plateau_Table
+               if Code = Path_MTU_Plateau_Table_Option and Len * 8 mod DHCP::MTU'Size = 0
+            then Interface_MTU
+               if Code = Interface_MTU_Option
+            then All_Subnets_Are_Local
+               if Code = All_Subnets_Are_Local_Option
+            then Broadcast_Address
+               if Code = Broadcast_Address_Option
+            then Perform_Mask_Discovery
+               if Code = Perform_Mask_Discovery_Option
+            then Mask_Supplier
+               if Code = Mask_Supplier_Option
+            then Perform_Router_Discovery
+               if Code = Perform_Router_Discovery_Option
+            then Router_Solicitation_Address
+               if Code = Router_Solicitation_Address_Option
+            then Static_Routes
+               if Code = Static_Route_Option and Len * 8 mod (2 * IPv4::Address'Size) = 0
+               --  ISSUE: Componolit/RecordFlux#404
+               --  2 * IPv4::Address'Size should be replaced by Static_Route'Size
+            then Trailer_Encapsulation
+               if Code = Trailer_Encapsulation_Option
+            then ARP_Cache_Timeout
+               if Code = ARP_Cache_Timeout_Option
+            then Ethernet_Encapsulation
+               if Code = Ethernet_Encapsulation_Option
+            then TCP_Default_TTL
+               if Code = TCP_Default_TTL_Option
+            then TCP_Keepalive_Interval
+               if Code = TCP_Keepalive_Interval_Option
+            then TCP_Keepalive_Garbage
+               if Code = TCP_Keepalive_Garbage_Option
+            then Network_Information_Service_Domain
+               if Code = Network_Information_Service_Domain_Option
+            then Network_Information_Servers
+               if Code = Network_Information_Servers_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Network_Time_Protocol_Servers
+               if Code = Network_Time_Protocol_Servers_Option and Len * 8 mod IPv4::Address'Size = 0
+            then Vendor_Specific_Information
+               if Code = Vendor_Specific_Information_Option
+            then NetBIOS_Over_TCP_IP_Name_Servers
+               if Code = NetBIOS_Over_TCP_IP_Name_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then NetBIOS_Over_TCP_IP_Datagram_Distribution_Servers
+               if Code = NetBIOS_Over_TCP_IP_Datagram_Distribution_Server_Option and Len * 8 mod IPv4::Address'Size = 0
+            then NetBIOS_Over_TCP_IP_Node_Type
+               if Code = NetBIOS_Over_TCP_IP_Node_Type_Option
+            then NetBIOS_Over_TCP_IP_Scope
+               if Code = NetBIOS_Over_TCP_IP_Scope_Option
+            then X_Window_System_Font_Servers
+               if Code = X_Window_System_Font_Server_Option
+            then X_Window_System_Display_Managers
+               if Code = X_Window_System_Display_Manager_Option
+            then Requested_IP_Address
+               if Code = Requested_IP_Address_Option and Len * 8 = IPv4::Address'Size
+            then IP_Address_Lease_Time
+               if Code = IP_Address_Lease_Time_Option and Len * 8 = DHCP::Lease_Time'Size
+            then Option_Overload
+               if Code = Option_Overload_Option and Len * 8 = DHCP::Option_Overload'Size
+            then DHCP_Message_Type
+               if Code = DHCP_Message_Type_Option and Len * 8 = DHCP::DHCP_Message_Type'Size
+            then Server_Identifier
+               if Code = Server_Identifier_Option and Len * 8 = IPv4::Address'Size
+            then Parameter_Request_List
+               if Code = Parameter_Request_List_Option
+            then Error_Message
+               if Code = Message_Option
+            then Maximum_DHCP_Message_Size
+               if Code = Maximum_DHCP_Message_Size_Option and Len * 8 = DHCP::Maximum_DHCP_Message_Size'Size
+            then Renewal_Time_Value
+               if Code = Renewal_Time_Value_Option and Len * 8 = DHCP::Time_Interval'Size
+            then Rebinding_Time_Value
+               if Code = Rebinding_Time_Value_Option and Len * 8 = DHCP::Time_Interval'Size
+            then Class_Identifier
+               if Code = Class_Identifier_Option
+            then Client_Identifier
+               if Code = Client_Identifier_Option;
+         Subnet_Mask : Subnet_Mask
+            then null;
+         Time_Offset : Time_Offset
+            then null;
+         Routers : Routers
+            with Size => Len * 8
+            then null;
+         Time_Servers : Time_Servers
+            with Size => Len * 8
+            then null;
+         Name_Servers : Name_Servers
+            with Size => Len * 8
+            then null;
+         Domain_Name_Servers : Domain_Name_Servers
+            with Size => Len * 8
+            then null;
+         Log_Servers : Log_Servers
+            with Size => Len * 8
+            then null;
+         Cookie_Servers : Cookie_Servers
+            with Size => Len * 8
+            then null;
+         LPR_Servers : LPR_Servers
+            with Size => Len * 8
+            then null;
+         Impress_Servers : Impress_Servers
+            with Size => Len * 8
+            then null;
+         Resource_Location_Servers : Resource_Location_Servers
+            with Size => Len * 8
+            then null;
+         Host_Name : Opaque
+            with Size => Len * 8
+            then null;
+         Boot_File_Size : Boot_File_Size
+            then null;
+         Merit_Dump_File : Opaque
+            with Size => Len * 8
+            then null;
+         Domain_Name : Opaque
+            with Size => Len * 8
+            then null;
+         Swap_Server : IPv4::Address
+            then null;
+         Root_Path : Opaque
+            with Size => Len * 8
+            then null;
+         Extensions_Path : Opaque
+            with Size => Len * 8
+            then null;
+         IP_Forwarding : Enabled_Disabled
+            then null;
+         Non_Local_Source_Routing : Enabled_Disabled
+            then null;
+         Policy_Filter : Opaque
+            with Size => Len * 8
+            then null;
+         Maximum_Datagram_Reassembly_Size : Maximum_Datagram_Reassembly_Size
+            then null;
+         Default_IP_Time_To_Live : Default_IP_Time_To_Live
+            then null;
+         Path_MTU_Aging_Timeout : Path_MTU_Aging_Timeout
+            then null;
+         Path_MTU_Plateau_Table : Path_MTU_Plateau_Table
+            with Size => Len * 8
+            then null;
+         Interface_MTU : MTU
+            then null;
+         All_Subnets_Are_Local : Enabled_Disabled
+            then null;
+         Broadcast_Address : IPv4::Address
+            then null;
+         Perform_Mask_Discovery : Enabled_Disabled
+            then null;
+         Mask_Supplier : Enabled_Disabled
+            then null;
+         Perform_Router_Discovery : Enabled_Disabled
+            then null;
+         Router_Solicitation_Address : IPv4::Address
+            then null;
+         Static_Routes : Static_Routes
+            with Size => Len * 8
+            then null;
+         Trailer_Encapsulation : Enabled_Disabled
+            then null;
+         ARP_Cache_Timeout : Time_Interval
+            then null;
+         Ethernet_Encapsulation : Ethernet_Encapsulation
+            then null;
+         TCP_Default_TTL : TTL
+            then null;
+         TCP_Keepalive_Interval : Time_Interval
+            then null;
+         TCP_Keepalive_Garbage : Enabled_Disabled
+            then null;
+         Network_Information_Service_Domain : Opaque
+            with Size => Len * 8
+            then null;
+         Network_Information_Servers : Network_Information_Servers
+            with Size => Len * 8
+            then null;
+         Network_Time_Protocol_Servers : Network_Time_Protocol_Servers
+            with Size => Len * 8
+            then null;
+         Vendor_Specific_Information : Opaque
+            with Size => Len * 8
+            then null;
+         NetBIOS_Over_TCP_IP_Name_Servers : NetBIOS_Over_TCP_IP_Name_Servers
+            with Size => Len * 8
+            then null;
+         NetBIOS_Over_TCP_IP_Datagram_Distribution_Servers : NetBIOS_Over_TCP_IP_Datagram_Distribution_Servers
+            with Size => Len * 8
+            then null;
+         NetBIOS_Over_TCP_IP_Node_Type : NetBIOS_Over_TCP_IP_Node_Type
+            then null;
+         NetBIOS_Over_TCP_IP_Scope : Opaque
+            with Size => Len * 8
+            then null;
+         X_Window_System_Font_Servers : X_Window_System_Font_Servers
+            with Size => Len * 8
+            then null;
+         X_Window_System_Display_Managers : X_Window_System_Display_Managers
+            with Size => Len * 8
+            then null;
+         Requested_IP_Address : IPv4::Address
+            then null;
+         IP_Address_Lease_Time : Lease_Time
+            then null;
+         Option_Overload : Option_Overload
+            then null;
+         DHCP_Message_Type : DHCP_Message_Type
+            then null;
+         Server_Identifier : IPv4::Address
+            then null;
+         Parameter_Request_List : Option_Codes
+            with Size => Len * 8
+            then null;
+         Error_Message : Opaque
+            with Size => Len * 8
+            then null;
+         Maximum_DHCP_Message_Size : Maximum_DHCP_Message_Size
+            then null;
+         Renewal_Time_Value : Time_Interval
+            then null;
+         Rebinding_Time_Value : Time_Interval
+            then null;
+         Class_Identifier : Opaque
+            with Size => Len * 8
+            then null;
+         Client_Identifier : Opaque
+            with Size => Len * 8
+            then null;
+      end message;
+
+   --  DHCP Message (RFC 2131, 2)
+
+   type Message_Op_Code is (BOOTREQUEST => 1, BOOTREPLY => 2) with Size => 8;
+   --  ISSUE: Componolit/RecordFlux-specifications#58
+   --  The full list of Hardware Types is defined in
+   --  https://www.iana.org/assignments/arp-parameters/arp-parameters.xml#arp-parameters-2.
+   type Hardware_Address_Type is (HT_Reserved => 0, HT_Ethernet_10 => 1) with Size => 8, Always_Valid;
+   type Hardware_Address_Length is (HL_Ethernet => 6) with Size => 8;
+   type Hops is mod 2 ** 8;
+   type Transaction_ID is mod 2 ** 32;
+   type Secs is mod 2 ** 16;
+   type Reserved_Flags is range 0 .. 0 with Size => 15;
+   type Magic_Cookie is range 16#63825363# .. 16#63825363# with Size => 32;
+   type Options is sequence of Option;
+
+   type Message is
+      message
+         Op : Message_Op_Code;
+         Htype : Hardware_Address_Type;
+         Hlen : Hardware_Address_Length;
+         Hops : Hops;
+         Xid : Transaction_ID;
+         Secs : Secs;
+         Broadcast_Flag : Boolean;
+         Reserved_Flags : Reserved_Flags;
+         Ciaddr : IPv4::Address;
+         Yiaddr : IPv4::Address;
+         Siaddr : IPv4::Address;
+         Giaddr : IPv4::Address;
+         Chaddr : Opaque
+            with Size => 16 * 8;
+         Sname  : Opaque
+            with Size => 64 * 8;
+         File   : Opaque
+            with Size => 128 * 8;
+         Magic_Cookie : Magic_Cookie;
+         Options : Options
+            with Size => Message'Last - Magic_Cookie'Last;
+      end message;
+
+end DHCP;
