@@ -1,5 +1,4 @@
 with IANA;
-with IPv6_Address;
 
 package IPv6 is
 
@@ -12,6 +11,18 @@ package IPv6 is
    type Reserved_15 is range 0 .. 0 with Size => 15;
    type Reserved_20 is range 0 .. 0 with Size => 20;
    type Reserved_32 is range 0 .. 0 with Size => 32;
+
+   --  IPv6 address (RFC 4291, 2.5)
+
+   type Address is
+      message
+         null
+            then Data
+               with Size => 128;
+         Data : Opaque;
+      end message;
+
+   type Addresses is array of Address;
 
    --  Options (RFC 8200, 4.2)
 
@@ -110,7 +121,7 @@ package IPv6 is
          Segments_Left : Segments_Count;
          Reserved : Reserved_32
             if Segments_Left = 1;
-         Home_Address : IPv6_Address::Address;
+         Home_Address : Address;
       end message;
 
    for Routing_Base_Header use (Data => Routing_Header_Type_2)
@@ -208,11 +219,11 @@ package IPv6 is
          Last_Entry : SRH_Last_Entry_Index;
          Flags : Reserved_8;
          Tag : SRH_Tag;
-         Segments : IPv6_Address::Addresses
+         Segments : Addresses
             --  Last Entry contains the index (zero based), in the Segment List, of the last
             --  element of the Segment List.
             --  ISSUE: Componolit/RecordFlux#404
-            --  with Size => IPv6_Address::Address'Size * (Last_Entry + 1);
+            --  with Size => Address'Size * (Last_Entry + 1);
             with Size => 128 * (Last_Entry + 1);
       end message;
 
@@ -264,8 +275,8 @@ package IPv6 is
          Payload_Length : Payload_Length;
          Next_Header : IANA::Protocol_Number;
          Hop_Limit : Hop_Limit;
-         Source : IPv6_Address::Address;
-         Destination : IPv6_Address::Address
+         Source : Address;
+         Destination : Address
             then Payload 
                with Size => 8 * Payload_Length;
          Payload : Opaque;
