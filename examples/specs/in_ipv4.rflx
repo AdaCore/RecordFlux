@@ -6,9 +6,9 @@ with ICMP;
 package In_IPv4 is
 
    for IPv4::Packet use (Payload => UDP::Datagram)
-      if Protocol = IANA::Prot_UDP;
+      if Protocol = IANA::UDP;
 
    for IPv4::Packet use (Payload => ICMP::Message)
-      if Protocol = IANA::Prot_ICMP;
+      if Protocol = IANA::ICMP;
 
 end In_IPv4;
