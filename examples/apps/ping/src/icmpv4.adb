@@ -188,7 +188,9 @@ is
       end Process_Data;
       procedure Set_Data is new RFLX.ICMP.Message.Generic_Set_Data (Process_Data, Valid_Length);
    begin
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
+      pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
       RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
@@ -224,6 +226,7 @@ is
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
       end if;
       Last := RFLX.RFLX_Types.Byte_Index (RFLX.IPv4.Packet.Message_Last (IP_Context));
+      pragma Warnings (On, """*_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""*_Context""");
    end Generate;
 
@@ -240,7 +243,9 @@ is
       Source       : RFLX.IPv4.Address;
       Seq          : RFLX.ICMP.Sequence_Number;
    begin
+      --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
+      pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
       RFLX.IPv4.Packet.Verify_Message (IP_Context);
       if
@@ -264,6 +269,7 @@ is
       Seq := RFLX.ICMP.Message.Get_Sequence_Number (ICMP_Context);
       RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
       Ada.Text_IO.Put_Line (Image (Length) & " bytes from " & Image (Source) & ": icmp_seq=" & Image (Seq));
+      pragma Warnings (On, """*_Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""*_Context""");
    end Print;
 
