@@ -16,9 +16,16 @@ from typing import Dict, List, Tuple
 def to_identifier(text: str) -> str:
     src = "-_ ./"
     dst = "_____"
-    result = re.sub(r"(.*)\s+\(deprecated\)", r"Deprecated_\1", text)
-    result = result.translate(result.maketrans(src, dst))
-    result = re.sub(r"\+", "_Plus", result)
+    tmp = re.sub(r"(.*)\s+\(deprecated\)", r"Deprecated_\1", text)
+    tmp = re.sub(r"^(\d)", r"Prot_\1", tmp)
+    tmp = tmp.translate(tmp.maketrans(src, dst))
+    tmp = re.sub(r"\+", "_Plus", tmp)
+    # Always capitalize the first character
+    capitalize = True
+    result = ""
+    for c in tmp:
+        result += c if not capitalize else c.upper()
+        capitalize = c == "_"
     return result
 
 
@@ -125,7 +132,7 @@ for i, (pval, (pname, pdescr, pxrefs)) in enumerate(protocols.items()):
             print(f"       --   {LINE}")
     if duplicates[pname] > 1:
         pname = f"{pname}_{pval}"
-    print(f"       Prot_{pname} => {pval}", end="")
+    print(f"       {pname} => {pval}", end="")
 
 print(")")
 print(f"   with Size => {bits}, Always_Valid;")
