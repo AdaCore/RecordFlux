@@ -7,10 +7,11 @@ This is the parser for the [RecordFlux](https://github.com/Componolit/RecordFlux
 As a prerequisite to build the parser, the following dependencies need to be installed:
 
 - [GNAT Community Edition](https://www.adacore.com/download) >= 2020
-- patchelf
-- libgmp-dev (Debian) or gmp-devel (Fedora)
+- [patchelf](https://github.com/NixOS/patchelf)
+- [GNU MP Arithmetic Library](https://gmplib.org/) + development tools. These are provided as packages for various distributions e.g. libgmp-dev (Debian/Ubuntu), gmp-devel (Fedora) or gmp (Arch)
 
-Add `<GNAT-directory>/bin` to the PATH environment variable. It is recommended to prepend it to the existing $PATH.
+**Note**: GNAT must be added to the PATH environment variable after installation: `export PATH=<GNAT-directory>/bin:$PATH`.
+
 
 To run the tests, the RecordFlux language package and its dependencies must also be installed. Either use the respective make target:
 
