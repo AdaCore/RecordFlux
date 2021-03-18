@@ -8,7 +8,7 @@ As a prerequisite to build the parser, the following dependencies need to be ins
 
 - [GNAT Community Edition](https://www.adacore.com/download) >= 2020
 - [patchelf](https://github.com/NixOS/patchelf)
-- [GNU MP Arithmetic Library](https://gmplib.org/) + development tools. These are provided as packages for various distributions e.g. libgmp-dev (Debian/Ubuntu), gmp-devel (Fedora) or gmp (Arch)
+- [GNU MP Arithmetic Library](https://gmplib.org/) This is provided as a package for various distributions e.g. libgmp-dev (Debian/Ubuntu), gmp-devel (Fedora) or gmp (Arch Linux).
 
 **Note**: GNAT must be added to the PATH environment variable after installation: `export PATH=<GNAT-directory>/bin:$PATH`.
 
