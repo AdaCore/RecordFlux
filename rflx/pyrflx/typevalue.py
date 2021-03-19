@@ -705,7 +705,7 @@ class MessageValue(TypeValue):
 
         def set_field_without_size(field_name: str, field: MessageValue.Field) -> Tuple[int, int]:
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
-            assert isinstance(field.typeval, OpaqueValue)
+            assert isinstance(field.typeval, CompositeValue)
             first = self._get_first(field_name)
             assert first is not None
             field.first = first
@@ -725,7 +725,7 @@ class MessageValue(TypeValue):
         while current_field_name != FINAL.name:
             current_field = self._fields[current_field_name]
             size = self._get_size(current_field_name)
-            if isinstance(current_field.typeval, OpaqueValue) and size is None:
+            if isinstance(current_field.typeval, CompositeValue) and size is None:
                 (
                     last_field_first_in_bitstr,
                     current_field_first_in_bitstr,
@@ -858,8 +858,8 @@ class MessageValue(TypeValue):
                 break
 
             if (self.__simplified(self._type.field_condition(Field(nxt))) == TRUE) and (
-                self._is_valid_opaque_field(nxt)
-                if isinstance(self._fields[nxt].typeval, OpaqueValue)
+                self._is_valid_composite_field(nxt)
+                if isinstance(self._fields[nxt].typeval, CompositeValue)
                 else size is not None
             ):
                 fields.append(nxt)
@@ -1051,8 +1051,7 @@ class MessageValue(TypeValue):
     def fields(self) -> List[str]:
         return [f.name for f in self._type.fields]
 
-    def _is_valid_opaque_field(self, field: str) -> bool:
-
+    def _is_valid_composite_field(self, field: str) -> bool:
         assert isinstance(self._fields[field].typeval, CompositeValue)
         incoming = self._type.incoming(Field(field))
 

@@ -371,17 +371,17 @@ def test_message_value_is_valid_opaque_field(
     tlv_message_value: MessageValue, ethernet_frame_value: MessageValue
 ) -> None:
     # pylint: disable=protected-access
-    assert not tlv_message_value._is_valid_opaque_field("Value")
+    assert not tlv_message_value._is_valid_composite_field("Value")
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1000)
-    assert tlv_message_value._is_valid_opaque_field("Value")
+    assert tlv_message_value._is_valid_composite_field("Value")
     ethernet_frame_value.set("Destination", 2 ** 48 - 1)
     ethernet_frame_value.set("Source", 0)
     ethernet_frame_value.set("Type_Length_TPID", 1501)
-    assert not ethernet_frame_value._is_valid_opaque_field("Payload")
+    assert not ethernet_frame_value._is_valid_composite_field("Payload")
     ethernet_frame_value.set("Type_Length_TPID", 1500)
     ethernet_frame_value.set("Type_Length", 1500)
-    assert ethernet_frame_value._is_valid_opaque_field("Payload")
+    assert ethernet_frame_value._is_valid_composite_field("Payload")
 
 
 def test_message_value_parse(ethernet_frame_value: MessageValue) -> None:
