@@ -1007,7 +1007,9 @@ class MessageValue(TypeValue):
 
     def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
-            raise PyRFLXError(f"field {field_name} not valid")
+            if field_name not in self.fields:
+                raise PyRFLXError(f'"{field_name}" is not a field of this message')
+            raise PyRFLXError(f'"{field_name}" is not set')
         field = self._fields[field_name]
         if isinstance(field.typeval, OpaqueValue) and field.typeval.nested_message is not None:
             return field.typeval.nested_message
