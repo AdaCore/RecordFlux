@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
-from rflx.pyrflx import PyRFLX, PyRFLXError
+from rflx.pyrflx import PyRFLX
 from rflx.pyrflx.typevalue import MessageValue
 
 
@@ -130,19 +130,15 @@ def validate(
 
 
 def __validate_message(
-    message_path: Path, valid_original_message: bool, model: MessageValue
+    message_path: Path, valid_original_message: bool, message_value: MessageValue
 ) -> "ValidationResult":
     if not message_path.is_file():
         raise ValidationError(f"{message_path} is not a regular file")
     original_message = message_path.read_bytes()
-
-    parser_result: Optional[MessageValue] = None
     parser_error: Optional[str] = None
-
-    pdu_model: MessageValue = model.clone()
+    parser_result: MessageValue = message_value.clone()
     try:
-        pdu_model.parse(original_message)
-        parser_result = pdu_model
+        parser_result.parse(original_message)
         valid_parser_result = (
             parser_result.bytestring == original_message and parser_result.valid_message
         )
@@ -166,27 +162,22 @@ def __validate_message(
 @dataclass
 class ValidationResult:
     validation_success: bool
-    parser_result: Optional[MessageValue]
+    parser_result: MessageValue
     parser_error: Optional[str]
     message_file_path: Path
     original_message: bytes
     valid_original_message: bool
     valid_parser_result: bool
 
-    def __get_parser_result_field_values(self) -> Dict[str, object]:
-        if self.parser_result is None:
-            return {}
+    def __get_field_values(self) -> Dict[str, object]:
         parsed_field_values: Dict[str, object] = {}
-        for field_name in self.parser_result.fields:
-            try:
-                field_value = self.parser_result.get(field_name)
-                if isinstance(field_value, MessageValue):
-                    field_value = field_value.bytestring.hex()
-                if isinstance(field_value, bytes):
-                    field_value = field_value.hex()
-                parsed_field_values[field_name] = field_value
-            except PyRFLXError as e:
-                parsed_field_values[field_name] = f"{e} or not set"
+        for field_name in self.parser_result.valid_fields:
+            field_value = self.parser_result.get(field_name)
+            if isinstance(field_value, MessageValue):
+                field_value = field_value.bytestring.hex()
+            if isinstance(field_value, bytes):
+                field_value = field_value.hex()
+            parsed_field_values[field_name] = field_value
         return parsed_field_values
 
     def as_json(self) -> Dict[str, object]:
@@ -196,10 +187,9 @@ class ValidationResult:
             "recognized as": self.valid_parser_result,
             "original": self.original_message.hex(),
         }
-
-        if self.parser_result is not None:
+        if self.parser_result.valid_message:
             output["parsed"] = self.parser_result.bytestring.hex()
-            output["parsed field values"] = self.__get_parser_result_field_values()
+        output["parsed field values"] = self.__get_field_values()
         if self.parser_error is not None:
             output["error"] = self.parser_error
 
