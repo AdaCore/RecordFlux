@@ -1116,7 +1116,12 @@ class MessageValue(TypeValue):
             self._simplified_mapping[self.__message_size_name] = last + Number(1)
             return
 
-        self._simplified_mapping = {self.__message_first_name: Number(0)}
+        self._simplified_mapping = {
+            Size(field_type.full_name): field_type.size
+            for field_type in self._type.types.values()
+            if isinstance(field_type, Scalar)
+        }
+        self._simplified_mapping[self.__message_first_name] = Number(0)
         for v in self._fields.values():
             if isinstance(v.typeval, ScalarValue) and v.set:
                 self._simplified_mapping[v.name_variable] = v.typeval.expr
