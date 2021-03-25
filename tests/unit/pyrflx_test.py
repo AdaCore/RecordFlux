@@ -277,8 +277,13 @@ def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_get_invalid_field(tlv_message_value: MessageValue) -> None:
-    with pytest.raises(PyRFLXError, match=r"^pyrflx: error: field nofield not valid$"):
+    with pytest.raises(
+        PyRFLXError, match=r'^pyrflx: error: "nofield" is not a field of this message$'
+    ):
         tlv_message_value.get("nofield")
+
+    with pytest.raises(PyRFLXError, match=r'^pyrflx: error: "Length" is not set$'):
+        tlv_message_value.get("Length")
 
 
 def test_message_value_set_invalid_field(tlv_message_value: MessageValue) -> None:
