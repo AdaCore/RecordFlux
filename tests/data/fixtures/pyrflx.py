@@ -24,6 +24,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/tlv.rflx",
             f"{SPEC_DIR}/tlv_with_checksum.rflx",
             f"{SPEC_DIR}/message_size.rflx",
+            f"{SPEC_DIR}/message_type_size_condition.rflx",
         ],
         skip_model_verification=True,
     )
@@ -190,3 +191,15 @@ def fixture_message_size_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
 @pytest.fixture(name="message_size_value")
 def fixture_message_size_value(message_size_package: pyrflx.Package) -> pyrflx.MessageValue:
     return message_size_package["Msg"]
+
+
+@pytest.fixture(name="message_type_size_package", scope="session")
+def fixture_message_type_size(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_["Message_Type_Size_Condition"]
+
+
+@pytest.fixture(name="message_type_size_value")
+def fixture_message_type_size_value(
+    message_type_size_package: pyrflx.Package,
+) -> pyrflx.MessageValue:
+    return message_type_size_package["Message"]

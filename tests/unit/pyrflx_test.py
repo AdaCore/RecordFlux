@@ -72,6 +72,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "Null_Message",
         "TLV_With_Checksum",
         "No_Conditionals",
+        "Message_Type_Size_Condition",
     }
 
 
@@ -1179,3 +1180,10 @@ def test_message_size_unverified() -> None:
     message.set("A", 2)
     message.set("B", b"\x01\x02")
     assert message.valid_message
+
+
+def test_message_type_size_condition(message_type_size_value: MessageValue) -> None:
+    message_type_size_value.parse(b"\x08\x02")
+    assert message_type_size_value.valid_message
+    assert message_type_size_value.get("F1") == 8
+    assert message_type_size_value.get("F2") == 2
