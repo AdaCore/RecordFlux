@@ -13,14 +13,13 @@ package IPv4_Option is
                if Option_Class = Control and Option_Number = 1
             then Option_Length
                if Option_Number > 1;
-         Option_Length : Option_Length
-            then Option_Data
-               with Size => (Option_Length - 2) * 8
-               if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
-                  or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
-                  or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
-                  or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
-         Option_Data : Opaque;
+         Option_Length : Option_Length;
+         Option_Data : Opaque
+            with Size => (Option_Length - 2) * 8
+            if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
+               or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
+               or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+               or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
       end message;
 
 end IPv4_Option;

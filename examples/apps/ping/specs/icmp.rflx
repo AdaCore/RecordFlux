@@ -1,39 +1,39 @@
 package ICMP is
 
-   type Tag is (
-      Echo_Reply => 0,
-      Echo_Request => 8,
-      Destination_Unreachable => 3,
-      Time_Exceeded => 11,
-      Parameter_Problem => 12,
-      Source_Quench => 4,
-      Redirect => 5,
-      Timestamp_Msg => 13,
-      Timestamp_Reply => 14,
-      Information_Request => 15,
-      Information_Reply => 16
-   ) with Size => 8;
+   type Tag is
+      (Echo_Reply              => 0,
+       Echo_Request            => 8,
+       Destination_Unreachable => 3,
+       Time_Exceeded           => 11,
+       Parameter_Problem       => 12,
+       Source_Quench           => 4,
+       Redirect                => 5,
+       Timestamp_Msg           => 13,
+       Timestamp_Reply         => 14,
+       Information_Request     => 15,
+       Information_Reply       => 16)
+   with Size => 8;
 
-   type Code_Destination_Unreachable is (
-      Net_Unreachable => 0,
-      Host_Unreachable => 1,
-      Protocol_Unreachable => 2,
-      Port_Unreachable => 3,
-      Fragmentation_Needed_DF_Set => 4,
-      Source_Route_Failed => 5
-   ) with Size => 8;
+   type Code_Destination_Unreachable is
+      (Net_Unreachable             => 0,
+       Host_Unreachable            => 1,
+       Protocol_Unreachable        => 2,
+       Port_Unreachable            => 3,
+       Fragmentation_Needed_DF_Set => 4,
+       Source_Route_Failed         => 5)
+   with Size => 8;
 
-   type Code_Time_Exceeded is (
-      TTL_Exceeded => 0,
-      Fragment_Reassembly_Time_Exceeded => 1
-   ) with Size => 8;
+   type Code_Time_Exceeded is
+      (TTL_Exceeded                      => 0,
+       Fragment_Reassembly_Time_Exceeded => 1)
+   with Size => 8;
 
-   type Code_Redirect is (
-      Redirect_for_Network => 0,
-      Redirect_for_Host => 1,
-      Redirect_for_Service_Network => 2,
-      Redirect_for_Service_Host => 3
-   ) with Size => 8;
+   type Code_Redirect is
+      (Redirect_for_Network         => 0,
+       Redirect_for_Host            => 1,
+       Redirect_for_Service_Network => 2,
+       Redirect_for_Service_Host    => 3)
+   with Size => 8;
 
    type Code_Zero is range 0 .. 0 with Size => 8;
    type Checksum is mod 2**16;
