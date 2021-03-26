@@ -53,14 +53,14 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.12" expl="check" proved="true">
-  <proof prover="0" steplimit="15035"><result status="valid" steps="590"/></proof>
+  <proof prover="0"><result status="valid" steps="590"/></proof>
   </goal>
   <goal name="def&#39;vc.13" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.14" expl="precondition" proved="true">
-  <proof prover="0" timelimit="90" steplimit="15035"><result status="valid" steps="590"/></proof>
+  <proof prover="0" timelimit="90"><result status="valid" steps="590"/></proof>
   </goal>
   <goal name="def&#39;vc.15" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

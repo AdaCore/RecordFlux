@@ -19,11 +19,8 @@
   </goal>
   <goal name="def&#39;vc.2" expl="assertion">
   <proof prover="0" timelimit="1"><result status="timeout"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.3" expl="postcondition" proved="true">
-  <proof prover="0" steplimit="909075" obsolete="true"><result status="valid" steps="1729"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>

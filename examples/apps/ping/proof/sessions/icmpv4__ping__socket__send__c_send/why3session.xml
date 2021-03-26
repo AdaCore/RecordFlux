@@ -2,8 +2,7 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="1" steplimit="169387600" memlimit="1000"/>
-<prover id="1" name="CVC4" version="1.6-gnatprove" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="0" name="CVC4" version="1.6-gnatprove" timelimit="1" steplimit="0" memlimit="1000"/>
 <file format="gnat-json">
 <path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
 <path name="gnatprove"/><path name="icmpv4__ping__socket__send__c_send.gnat-json"/>
@@ -15,23 +14,21 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.1" expl="precondition" proved="true">
-  <proof prover="0" timelimit="90"><result status="valid" steps="14305"/></proof>
+  <proof prover="0" timelimit="90"><result status="valid" steps="63"/></proof>
   </goal>
   <goal name="def&#39;vc.2" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.3" expl="assertion">
-  <proof prover="0"><result status="unknown" steps="22872"/></proof>
-  <proof prover="1"><result status="unknown" steps="1282"/></proof>
+  <proof prover="0"><result status="unknown" steps="1282"/></proof>
   </goal>
   <goal name="def&#39;vc.4" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.5" expl="assertion">
-  <proof prover="0"><result status="unknown" steps="22865"/></proof>
-  <proof prover="1"><result status="unknown" steps="1282"/></proof>
+  <proof prover="0"><result status="unknown" steps="1282"/></proof>
   </goal>
   <goal name="def&#39;vc.6" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
