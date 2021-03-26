@@ -6,7 +6,7 @@ test_python:
 test_spark:
 	rflx generate -d generated specs/ipv4.rflx
 	gprbuild -Pping
-	sudo -n timeout 3 obj/ping 127.0.0.1 | grep -q "84 bytes from 127.0.0.1: icmp_seq=0"
+	sudo -n timeout 3 obj/ping 127.0.0.1 | grep -q "64 bytes from 127.0.0.1: icmp_seq=0"
 
 prove:
 	rflx generate -d generated specs/ipv4.rflx
