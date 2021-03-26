@@ -11,8 +11,6 @@
  <transf name="split_goal_wp_conj" proved="true" >
   <goal name="def&#39;vc.0" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="4077"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.1" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -23,17 +21,13 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.3" expl="postcondition" proved="true">
-  <proof prover="0" steplimit="909075" obsolete="true"><result status="valid" steps="4077"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.4" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="16"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.5" expl="postcondition" proved="true">
-  <proof prover="0" steplimit="909075" obsolete="true"><result status="valid" steps="16"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>

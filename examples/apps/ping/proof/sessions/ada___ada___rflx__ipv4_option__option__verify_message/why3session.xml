@@ -18,7 +18,6 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.2" expl="postcondition" proved="true">
-  <proof prover="0" steplimit="115765" obsolete="true"><result status="valid" steps="14"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -47,12 +46,10 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.9" expl="precondition" proved="true">
-  <proof prover="0" steplimit="115765" obsolete="true"><result status="valid" steps="14"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.10" expl="precondition" proved="true">
-  <proof prover="0" steplimit="115765" obsolete="true"><result status="valid" steps="19"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -65,7 +62,6 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.13" expl="postcondition" proved="true">
-  <proof prover="0" steplimit="115765" obsolete="true"><result status="valid" steps="19"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -74,26 +70,18 @@
   </goal>
   <goal name="def&#39;vc.15" expl="postcondition" proved="true">
   <proof prover="0"><result status="valid" steps="14"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.16" expl="postcondition" proved="true">
   <proof prover="0"><result status="valid" steps="19"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.17" expl="postcondition" proved="true">
   <proof prover="0"><result status="valid" steps="19"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
   <goal name="def&#39;vc.18" expl="postcondition" proved="true">
   <proof prover="0"><result status="valid" steps="19"/></proof>
   </goal>
   <goal name="def&#39;vc.19" expl="postcondition" proved="true">
   <proof prover="0"><result status="valid" steps="19"/></proof>
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
  </transf>
  </goal>
