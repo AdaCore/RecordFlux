@@ -16,7 +16,7 @@ is
 
    package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
    function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.ICMP.Sequence_Number);
-   function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.IPv4.Total_Length);
+   function Image is new Basalt.Strings_Generic.Image_Ranged (RFLX.RFLX_Builtin_Types.Length);
 
    function Image (Addr : RFLX.IPv4.Address) return String with
       Post   => Image'Result'First = 1
@@ -38,10 +38,10 @@ is
          O        := Addr_Var and 16#ff#;
          Addr_Var := Addr_Var / 256;
       end loop;
-      return Img (Address (1)) & "."
-             & Img (Address (2)) & "."
+      return Img (Address (4)) & "."
              & Img (Address (3)) & "."
-             & Img (Address (4));
+             & Img (Address (2)) & "."
+             & Img (Address (1));
    end Image;
 
    procedure Free_Bytes_Ptr is new Ada.Unchecked_Deallocation (Object => RFLX.RFLX_Builtin_Types.Bytes,
@@ -159,7 +159,7 @@ is
          end case;
       end loop;
       for I in Address'Range loop
-         Addr := Addr + RFLX.IPv4.Address (Int.Shift_Left (Int.Unsigned_32 (Address (I)), (I - 1) * 8));
+         Addr := Addr + RFLX.IPv4.Address (Int.Shift_Left (Int.Unsigned_32 (Address (5 - I)), (I - 1) * 8));
       end loop;
       Valid := True;
    end Get_Address;
@@ -237,9 +237,10 @@ is
    procedure Print (Buf : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr)
    is
       use type RFLX.ICMP.Tag;
+      use type RFLX.RFLX_Builtin_Types.Bit_Length;
       IP_Context   : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
-      Length       : RFLX.IPv4.Total_Length;
+      Length       : RFLX.RFLX_Builtin_Types.Length;
       Source       : RFLX.IPv4.Address;
       Seq          : RFLX.ICMP.Sequence_Number;
    begin
@@ -255,7 +256,6 @@ is
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
          return;
       end if;
-      Length := RFLX.IPv4.Packet.Get_Total_Length (IP_Context);
       Source := RFLX.IPv4.Packet.Get_Source (IP_Context);
       RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
       RFLX.ICMP.Message.Verify_Message (ICMP_Context);
@@ -266,6 +266,8 @@ is
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          return;
       end if;
+      Length := RFLX.RFLX_Builtin_Types.Length ((RFLX.ICMP.Message.Message_Last (ICMP_Context)
+                                                 - ICMP_Context.First + 1) / 8);
       Seq := RFLX.ICMP.Message.Get_Sequence_Number (ICMP_Context);
       RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
       Ada.Text_IO.Put_Line (Image (Length) & " bytes from " & Image (Source) & ": icmp_seq=" & Image (Seq));
