@@ -266,6 +266,12 @@ if parse_message(b"\x01\x00\x04\x01\x02\x03\x04") != create_message():
 
 ## Installation
 
+As a prerequisite, the following dependencies need to be installed:
+
+- [GNAT Community](https://www.adacore.com/download) >= 2020
+- [patchelf](https://github.com/NixOS/patchelf)
+- [GMP](https://gmplib.org/) This is provided as a package for various distributions, e.g., libgmp-dev (Debian/Ubuntu), gmp-devel (Fedora) or gmp (Arch Linux).
+
 RecordFlux can be installed from PyPI:
 
 ```Console
@@ -278,8 +284,6 @@ By default the following dependencies are installed:
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
 - [RecordFlux parser](https://github.com/Componolit/RecordFlux-language)
-
-Additionally, [GNAT Community 2020](https://www.adacore.com/download) is needed for compiling and verifying generated SPARK code.
 
 Optionally, the GNAT Studio IDE integration for RecordFlux can be installed. It enables syntax highlighting for RecordFlux specifications and allows for running RecordFlux from within GNAT Studio. In the RecordFlux source directory do:
 
