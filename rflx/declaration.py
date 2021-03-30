@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class Declaration(Base):
-    descriptive_name: ClassVar[str]
+    DESCRIPTIVE_NAME: ClassVar[str]
 
     def __init__(self, identifier: StrID, location: Location = None):
         self.identifier = ID(identifier)
@@ -76,7 +76,7 @@ class TypeCheckableDeclaration(Declaration):
 
 
 class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
-    descriptive_name: ClassVar[str] = "variable"
+    DESCRIPTIVE_NAME: ClassVar[str] = "variable"
 
     def __init__(
         self,
@@ -110,7 +110,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
 
 
 class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
-    descriptive_name: ClassVar[str] = "renaming"
+    DESCRIPTIVE_NAME: ClassVar[str] = "renaming"
 
     def __init__(
         self,
@@ -183,7 +183,7 @@ class Argument(Base):
 
 
 class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
-    descriptive_name: ClassVar[str] = "function"
+    DESCRIPTIVE_NAME: ClassVar[str] = "function"
 
     def __init__(
         self,
@@ -213,7 +213,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
 
 
 class ChannelDeclaration(FormalDeclaration):
-    descriptive_name: ClassVar[str] = "channel"
+    DESCRIPTIVE_NAME: ClassVar[str] = "channel"
 
     def __init__(
         self,
@@ -250,7 +250,7 @@ class ChannelDeclaration(FormalDeclaration):
 
 
 class TypeDeclaration(FormalDeclaration):
-    descriptive_name: ClassVar[str] = "type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "type"
 
     def __init__(self, type_: "mty.Type"):
         super().__init__(type_.identifier, type_.location)

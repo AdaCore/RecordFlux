@@ -304,7 +304,7 @@ class Session(AbstractSession):
         for k, d in declarations.items():
             if any(str(d.identifier).upper() == str(f).upper() for f in CHANNEL_FUNCTIONS):
                 self.error.append(
-                    f'{d.descriptive_name} declaration shadows built-in function "{k}"',
+                    f'{d.DESCRIPTIVE_NAME} declaration shadows built-in function "{k}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     d.location,
@@ -426,7 +426,7 @@ class Session(AbstractSession):
         for k, d in itertools.chain(global_declarations, local_declarations):
             if not d.is_referenced:
                 self.error.append(
-                    f'unused {d.descriptive_name} "{k}"',
+                    f'unused {d.DESCRIPTIVE_NAME} "{k}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     d.location,

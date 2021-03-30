@@ -49,10 +49,10 @@ class Bounds:
 
 
 class Type:
-    descriptive_name: ty.ClassVar[str]
+    DESCRIPTIVE_NAME: ty.ClassVar[str]
 
     def __str__(self) -> str:
-        return self.descriptive_name
+        return self.DESCRIPTIVE_NAME
 
     @abstractmethod
     def is_compatible(self, other: "Type") -> bool:
@@ -68,7 +68,7 @@ class Type:
 
 @dataclass(frozen=True)
 class Undefined(Type):
-    descriptive_name: ty.ClassVar[str] = "undefined"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "undefined"
 
     def is_compatible(self, other: Type) -> bool:
         return False
@@ -79,7 +79,7 @@ class Undefined(Type):
 
 @dataclass(frozen=True)
 class Any(Type):
-    descriptive_name: ty.ClassVar[str] = "any type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "any type"
 
     def is_compatible(self, other: Type) -> bool:
         return not isinstance(other, Undefined)
@@ -103,10 +103,10 @@ class IndependentType(Any):
 
 @dataclass(frozen=True)
 class Enumeration(IndependentType):
-    descriptive_name: ty.ClassVar[str] = "enumeration type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "enumeration type"
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
 
 
 BOOLEAN = Enumeration(str(const.BUILTINS_PACKAGE * "Boolean"))
@@ -114,7 +114,7 @@ BOOLEAN = Enumeration(str(const.BUILTINS_PACKAGE * "Boolean"))
 
 @dataclass(frozen=True)
 class AnyInteger(Any):
-    descriptive_name: ty.ClassVar[str] = "integer type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or isinstance(other, AnyInteger)
@@ -137,11 +137,11 @@ class UndefinedInteger(AnyInteger):
 
 @dataclass(frozen=True)
 class UniversalInteger(AnyInteger):
-    descriptive_name: ty.ClassVar[str] = "type universal integer"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "type universal integer"
     bounds: Bounds = Bounds(None, None)
 
     def __str__(self) -> str:
-        return f"{self.descriptive_name} ({self.bounds})"
+        return f"{self.DESCRIPTIVE_NAME} ({self.bounds})"
 
     def is_compatible_strong(self, other: Type) -> bool:
         return isinstance(other, UniversalInteger) or (
@@ -164,12 +164,12 @@ class UniversalInteger(AnyInteger):
 
 @dataclass(frozen=True)
 class Integer(AnyInteger):
-    descriptive_name: ty.ClassVar[str] = "integer type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
     name: str
     bounds: Bounds = Bounds(None, None)
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}" ({self.bounds})'
+        return f'{self.DESCRIPTIVE_NAME} "{self.name}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
         return self == other or (
@@ -191,16 +191,16 @@ class Integer(AnyInteger):
 
 
 class Composite(Any):
-    descriptive_name: ty.ClassVar[str] = "composite type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "composite type"
 
 
 @dataclass(frozen=True)
 class Aggregate(Composite):
-    descriptive_name: ty.ClassVar[str] = "aggregate"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "aggregate"
     element: Type
 
     def __str__(self) -> str:
-        return f"{self.descriptive_name} with element {self.element}"
+        return f"{self.DESCRIPTIVE_NAME} with element {self.element}"
 
     def is_compatible(self, other: Type) -> bool:
         return (
@@ -221,12 +221,12 @@ class Aggregate(Composite):
 
 @dataclass(frozen=True)
 class Array(Composite):
-    descriptive_name: ty.ClassVar[str] = "array type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "array type"
     name: str
     element: Type
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}" with element {self.element}'
+        return f'{self.DESCRIPTIVE_NAME} "{self.name}" with element {self.element}'
 
     def is_compatible(self, other: Type) -> bool:
         return (
@@ -252,14 +252,14 @@ OPAQUE = Array("Opaque", Integer("Byte", Bounds(0, 255)))
 
 @dataclass(frozen=True)
 class Message(IndependentType):
-    descriptive_name: ty.ClassVar[str] = "message type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "message type"
     name: str
     field_combinations: ty.Set[ty.Tuple[str, ...]] = dataclass_field(default_factory=set)
     field_types: ty.Mapping[str, Type] = dataclass_field(default_factory=dict)
     refinements: ty.Sequence[ty.Tuple[str, "Message"]] = dataclass_field(default_factory=list)
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
 
     @property
     def fields(self) -> ty.Set[str]:
@@ -268,15 +268,15 @@ class Message(IndependentType):
 
 @dataclass(frozen=True)
 class Private(IndependentType):
-    descriptive_name: ty.ClassVar[str] = "private type"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "private type"
 
     def __str__(self) -> str:
-        return f'{self.descriptive_name} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
 
 
 @dataclass(frozen=True)
 class Channel(Any):
-    descriptive_name: ty.ClassVar[str] = "channel"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "channel"
     readable: bool
     writable: bool
 
@@ -286,7 +286,7 @@ class Channel(Any):
             (False, True): "writable ",
             (True, True): "readable and writable ",
         }
-        return f"{mode[(self.readable, self.writable)]}{self.descriptive_name}"
+        return f"{mode[(self.readable, self.writable)]}{self.DESCRIPTIVE_NAME}"
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or (
@@ -362,9 +362,9 @@ def check_type_instance(
 
     if not isinstance(actual, expected) and actual != Any():
         desc = (
-            " or ".join(e.descriptive_name for e in expected)
+            " or ".join(e.DESCRIPTIVE_NAME for e in expected)
             if isinstance(expected, tuple)
-            else expected.descriptive_name
+            else expected.DESCRIPTIVE_NAME
         )
         error.append(
             f"expected {desc}",
