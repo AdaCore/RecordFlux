@@ -103,6 +103,7 @@ is
    procedure Copy (Ctx : Context; Buffer : out Types.Bytes) with
      Pre =>
        (Has_Buffer (Ctx)
+        and Valid (Ctx)
         and Byte_Size (Ctx) = Buffer'Length);
 
    function Has_Element (Ctx : Context) return Boolean with
