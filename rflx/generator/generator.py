@@ -953,8 +953,9 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            And(
+                            AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
                                 Equal(Call("Byte_Size", [Variable("Ctx")]), Length("Buffer")),
                             )
                         ),
