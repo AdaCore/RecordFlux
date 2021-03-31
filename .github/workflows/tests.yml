@@ -210,7 +210,7 @@ jobs:
         cd ada-runtime
         git checkout 280a4867f1d872412aec00f35aa28b35ff295e60
         cd ..
-        docker run -u $(id -u):$(id -g) -v $PWD:/app -w /app componolit/ci:gnat-community-2020 /bin/sh -c "make -C ada-runtime"
+        make -C ada-runtime
     - name: Build
       run: |
         gprbuild -Ptest --RTS=ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
