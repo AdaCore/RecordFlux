@@ -12,6 +12,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    CaseStatement,
     Div,
     Equal,
     Expr,
@@ -27,6 +28,7 @@ from rflx.ada import (
     Mod,
     Mul,
     NamedAggregate,
+    NullStatement,
     Number,
     ObjectDeclaration,
     Old,
@@ -42,6 +44,7 @@ from rflx.ada import (
     Selected,
     Size,
     Slice,
+    Statement,
     String,
     Subprogram,
     SubprogramBody,
@@ -104,20 +107,26 @@ class ParserGenerator:
         return UnitPart(
             [],
             [
-                ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        "Composite_Field", "Boolean", [Parameter(["Fld"], "Field")]
-                    ),
-                    Case(
-                        Variable("Fld"),
-                        [
-                            (
-                                Variable(f.affixed_name),
-                                TRUE if f in composite_fields else FALSE,
-                            )
-                            for f in message.fields
-                        ],
-                    ),
+                *(
+                    [
+                        ExpressionFunctionDeclaration(
+                            FunctionSpecification(
+                                "Composite_Field", "Boolean", [Parameter(["Fld"], "Field")]
+                            ),
+                            Case(
+                                Variable("Fld"),
+                                [
+                                    (
+                                        Variable(f.affixed_name),
+                                        TRUE if f in composite_fields else FALSE,
+                                    )
+                                    for f in message.fields
+                                ],
+                            ),
+                        )
+                    ]
+                    if scalar_fields and composite_fields
+                    else []
                 ),
                 SubprogramBody(
                     FunctionSpecification(
@@ -168,7 +177,12 @@ class ParserGenerator:
             ],
         )
 
-    def create_verify_procedure(self, message: Message) -> UnitPart:
+    def create_verify_procedure(
+        self,
+        message: Message,
+        scalar_fields: Mapping[Field, Scalar],
+        composite_fields: Sequence[Field],
+    ) -> UnitPart:
         specification = ProcedureSpecification(
             "Verify", [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
         )
@@ -234,50 +248,15 @@ class ParserGenerator:
                 [
                     (
                         Call("Composite_Field", [Variable("Fld")]),
-                        [
-                            Assignment(
-                                Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                NamedAggregate(
-                                    ("State", Variable("S_Structural_Valid")),
-                                    (
-                                        "First",
-                                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                                    ),
-                                    (
-                                        "Last",
-                                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                                    ),
-                                    ("Value", Variable("Value")),
-                                    (
-                                        "Predecessor",
-                                        Selected(
-                                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                            "Predecessor",
-                                        ),
-                                    ),
-                                ),
-                            )
-                        ],
+                        [set_context_cursor_composite(scalar_fields, composite_fields)],
                     )
                 ],
-                [
-                    Assignment(
-                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                        NamedAggregate(
-                            ("State", Variable("S_Valid")),
-                            ("First", Call("Field_First", [Variable("Ctx"), Variable("Fld")])),
-                            ("Last", Call("Field_Last", [Variable("Ctx"), Variable("Fld")])),
-                            ("Value", Variable("Value")),
-                            (
-                                "Predecessor",
-                                Selected(
-                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
-                                ),
-                            ),
-                        ),
-                    )
-                ],
-            ),
+                [set_context_cursor_scalar()],
+            )
+            if scalar_fields and composite_fields
+            else set_context_cursor_scalar()
+            if scalar_fields and not composite_fields
+            else set_context_cursor_composite(scalar_fields, composite_fields),
             # WORKAROUND:
             # Limitation of GNAT Community 2019 / SPARK Pro 20.0
             # Provability of predicate is increased by adding part of
@@ -828,4 +807,83 @@ def valid_message_condition(
         .substituted(common.substitution(message))
         .simplified()
         .ada_expr()
+    )
+
+
+def set_context_cursor_scalar() -> Assignment:
+    return Assignment(
+        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
+        NamedAggregate(
+            ("State", Variable("S_Valid")),
+            ("First", Call("Field_First", [Variable("Ctx"), Variable("Fld")])),
+            ("Last", Call("Field_Last", [Variable("Ctx"), Variable("Fld")])),
+            ("Value", Variable("Value")),
+            (
+                "Predecessor",
+                Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
+            ),
+        ),
+    )
+
+
+def set_context_cursor_composite(
+    scalar_fields: Mapping[Field, Scalar], composite_fields: Sequence[Field]
+) -> Statement:
+    # WORKAROUND:
+    # Limitation of GNAT Community 2020
+    # The provability of the predicate of `Ctx` is increased by
+    # duplicating the assignment inside of a case statement.
+    return (
+        CaseStatement(
+            Variable("Fld"),
+            [
+                *[
+                    (
+                        Variable(f.affixed_name),
+                        [set_context_cursor_composite_field(f.affixed_name)],
+                    )
+                    for f in composite_fields
+                ],
+                *([(Variable("others"), [NullStatement()])] if scalar_fields else []),
+            ],
+        )
+        if len(composite_fields) > 1
+        else set_context_cursor_composite_field("Fld")
+    )
+
+
+def set_context_cursor_composite_field(field_name: str) -> Assignment:
+    return Assignment(
+        Indexed(
+            Variable("Ctx.Cursors"),
+            Variable(field_name),
+        ),
+        NamedAggregate(
+            ("State", Variable("S_Structural_Valid")),
+            (
+                "First",
+                Call(
+                    "Field_First",
+                    [Variable("Ctx"), Variable(field_name)],
+                ),
+            ),
+            (
+                "Last",
+                Call(
+                    "Field_Last",
+                    [Variable("Ctx"), Variable(field_name)],
+                ),
+            ),
+            ("Value", Variable("Value")),
+            (
+                "Predecessor",
+                Selected(
+                    Indexed(
+                        Variable("Ctx.Cursors"),
+                        Variable(field_name),
+                    ),
+                    "Predecessor",
+                ),
+            ),
+        ),
     )

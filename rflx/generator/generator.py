@@ -370,7 +370,7 @@ class Generator:
         unit += self.__create_reset_dependent_fields_procedure(message)
 
         unit += self.__parser.create_internal_functions(message, scalar_fields, composite_fields)
-        unit += self.__parser.create_verify_procedure(message)
+        unit += self.__parser.create_verify_procedure(message, scalar_fields, composite_fields)
         unit += self.__parser.create_verify_message_procedure(message)
         unit += self.__parser.create_present_function()
         unit += self.__parser.create_structural_valid_function()

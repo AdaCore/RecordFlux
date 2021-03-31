@@ -116,11 +116,6 @@ is
       end case;
    end Reset_Dependent_Fields;
 
-   function Composite_Field (Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Priority =>
-             False));
-
    function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
      Pre =>
        Has_Buffer (Ctx)
@@ -164,11 +159,7 @@ is
                                then
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               if Composite_Field (Fld) then
-                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
-               else
-                  Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
-               end if;
+               Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                pragma Assert ((if
                                   Structural_Valid (Ctx.Cursors (F_Priority))
                                then
