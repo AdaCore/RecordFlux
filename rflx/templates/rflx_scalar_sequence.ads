@@ -97,6 +97,7 @@ is
    procedure Copy (Ctx : Context; Buffer : out Types.Bytes) with
      Pre =>
        (Has_Buffer (Ctx)
+        and Valid (Ctx)
         and Byte_Size (Ctx) = Buffer'Length);
 
    procedure Next (Ctx : in out Context) with
