@@ -802,7 +802,14 @@ is
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
-                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+                  case Fld is
+                     when F_Options =>
+                        Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Options), Last => Field_Last (Ctx, F_Options), Value => Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+                     when F_Payload =>
+                        Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Payload), Last => Field_Last (Ctx, F_Payload), Value => Value, Predecessor => Ctx.Cursors (F_Payload).Predecessor);
+                     when others =>
+                        null;
+                  end case;
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
