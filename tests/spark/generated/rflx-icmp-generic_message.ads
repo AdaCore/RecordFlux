@@ -147,7 +147,8 @@ is
    procedure Copy (Ctx : Context; Buffer : out Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and Byte_Size (Ctx) = Buffer'Length;
+       and then Structural_Valid_Message (Ctx)
+       and then Byte_Size (Ctx) = Buffer'Length;
 
    generic
       with procedure Read (Buffer : Types.Bytes);
