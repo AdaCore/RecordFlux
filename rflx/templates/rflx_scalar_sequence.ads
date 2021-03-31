@@ -150,17 +150,11 @@ is
 
    function Available_Space (Ctx : Context) return Types.Bit_Length;
 
-   function Sequence_Last (Ctx : Context) return Types.Bit_Length with
-     Annotate =>
-       (GNATprove, Inline_For_Proof);
+   function Sequence_Last (Ctx : Context) return Types.Bit_Length;
 
-   function Size (Ctx : Context) return Types.Bit_Length with
-     Annotate =>
-       (GNATprove, Inline_For_Proof);
+   function Size (Ctx : Context) return Types.Bit_Length;
 
-   function Byte_Size (Ctx : Context) return Types.Length with
-     Annotate =>
-       (GNATprove, Inline_For_Proof);
+   function Byte_Size (Ctx : Context) return Types.Length;
 
 private
 
