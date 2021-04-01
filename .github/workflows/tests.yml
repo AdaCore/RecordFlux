@@ -6,12 +6,26 @@ on:
     - cron:  '0 2 * * *'
 
 jobs:
-  Checks:
+  skip_check_general:
+    name: Skip Check General
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths_ignore: '["*.gpr", "examples/apps/**", "tests/spark/**"]'
+
+  checks:
+    name: Checks
+    needs: skip_check_general
+    if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7]
         target: [packages, dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +34,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.7
     - name: Determine exact Python version
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
@@ -47,11 +61,11 @@ jobs:
       run: |
         make check_${{ matrix.target }}
 
-  Installation:
+  installation:
+    name: Installation
+    needs: skip_check_general
+    if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -59,7 +73,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip wheel
@@ -68,8 +82,23 @@ jobs:
         python setup.py sdist
         pip install RecordFlux --no-deps --no-index --find-links dist/
 
+  skip_check_python:
+    name: Skip Check Python
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths: '["rflx/**", "tests/**"]'
+          paths_ignore: '["tests/spark/**"]'
+
   tests_python:
     name: Tests
+    needs: skip_check_python
+    if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -84,8 +113,6 @@ jobs:
           - target: "python_optimized"
             python-version: 3.7
           - target: "python_coverage"
-            python-version: 3.7
-          - target: "examples"
             python-version: 3.7
     steps:
     - uses: actions/checkout@v2
@@ -126,15 +153,15 @@ jobs:
       run: |
         make test_${{ matrix.target }}
 
-  tests_python_verification:
-    name: Tests
+  verification_python_scheduled:
+    name: Verification
     if: github.event.schedule
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         target: ["python_verification"]
-        python-version: [3.8]
+        python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -171,8 +198,22 @@ jobs:
       run: |
         make test_${{ matrix.target }}
 
+  skip_check_spark:
+    name: Skip Check SPARK
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths: '["*.gpr", "tests/spark/**"]'
+
   tests_spark:
     name: Tests
+    needs: skip_check_spark
+    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -195,6 +236,8 @@ jobs:
 
   runtime_compatibility:
     name: Runtime compatibility
+    needs: skip_check_spark
+    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -215,24 +258,25 @@ jobs:
       run: |
         gprbuild -Ptest --RTS=ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
 
-  verification:
+  verification_spark:
     name: Verification
+    needs: skip_check_spark
+    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - "tests TEST=builtin_types"
-          - "tests TEST=custom_types"
-          - "tests TEST=ethernet"
-          - "tests TEST=ipv4"
-          - "tests TEST=tlv"
-          - "tests TEST=in_tlv"
-          - "tests TEST=enumeration"
-          - "tests TEST=arrays"
-          - "tests TEST=derivation"
-          - "tests TEST=expression"
-          - "apps"
+        test:
+          - "builtin_types"
+          - "custom_types"
+          - "ethernet"
+          - "ipv4"
+          - "tlv"
+          - "in_tlv"
+          - "enumeration"
+          - "arrays"
+          - "derivation"
+          - "expression"
     steps:
     - uses: actions/checkout@v2
       with:
@@ -265,18 +309,18 @@ jobs:
         pip install .[devel]
     - name: Verify
       run: |
-        make prove_${{ matrix.target }}
+        make prove_tests TEST=${{ matrix.test }}
 
-  verification_scheduled:
+  verification_spark_scheduled:
     name: Verification
     if: github.event.schedule
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - "tests TEST=in_ethernet"
-          - "tests TEST=in_ipv4"
+        test:
+          - "in_ethernet"
+          - "in_ipv4"
     steps:
     - uses: actions/checkout@v2
       with:
@@ -309,4 +353,106 @@ jobs:
         pip install .[devel]
     - name: Verify
       run: |
-        make prove_${{ matrix.target }}
+        make prove_tests TEST=${{ matrix.test }}
+
+  skip_check_apps:
+    name: Skip Check Apps
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths: '["defaults.gpr", "examples/apps/**", "rflx/**"]'
+
+  tests_apps:
+    name: Tests (apps)
+    needs: skip_check_apps
+    if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Determine exact Python version
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
+    - name: Install dependencies
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
+        sudo apt install graphviz libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        pip install .[devel]
+    - name: Configure kernel parameters
+      run: |
+        sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
+    - name: Test
+      run: |
+        make test_apps
+
+  verification_apps:
+    name: Verification (apps)
+    needs: skip_check_apps
+    if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Determine exact Python version
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      uses: ada-actions/toolchain@ce2020
+      with:
+        distrib: community
+    - name: Install dependencies
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        pip install .[devel]
+    - name: Verify
+      run: |
+        make prove_apps
