@@ -29,22 +29,22 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.5" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13391"/></proof>
+  <proof prover="0"><result status="valid" steps="13531"/></proof>
   </goal>
   <goal name="def&#39;vc.6" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13669"/></proof>
+  <proof prover="0"><result status="valid" steps="13809"/></proof>
   </goal>
   <goal name="def&#39;vc.7" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13729"/></proof>
+  <proof prover="0"><result status="valid" steps="13869"/></proof>
   </goal>
   <goal name="def&#39;vc.8" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13962"/></proof>
+  <proof prover="0"><result status="valid" steps="14102"/></proof>
   </goal>
   <goal name="def&#39;vc.9" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="14066"/></proof>
+  <proof prover="0"><result status="valid" steps="14206"/></proof>
   </goal>
   <goal name="def&#39;vc.10" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="14182"/></proof>
+  <proof prover="0"><result status="valid" steps="14322"/></proof>
   </goal>
   <goal name="def&#39;vc.11" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

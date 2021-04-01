@@ -18,17 +18,17 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.2" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="44761"/></proof>
+  <proof prover="0"><result status="valid" steps="45654"/></proof>
   </goal>
   <goal name="def&#39;vc.3" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.4" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="48126"/></proof>
+  <proof prover="0"><result status="valid" steps="49247"/></proof>
   </goal>
   <goal name="def&#39;vc.5" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="45965"/></proof>
+  <proof prover="0"><result status="valid" steps="46852"/></proof>
   </goal>
   <goal name="def&#39;vc.6" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >

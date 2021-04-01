@@ -14,10 +14,10 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.1" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13870"/></proof>
+  <proof prover="0"><result status="valid" steps="13658"/></proof>
   </goal>
   <goal name="def&#39;vc.2" expl="precondition" proved="true">
-  <proof prover="0"><result status="valid" steps="13919"/></proof>
+  <proof prover="0"><result status="valid" steps="13707"/></proof>
   </goal>
   <goal name="def&#39;vc.3" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -32,10 +32,10 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.6" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" steps="91318"/></proof>
+  <proof prover="0"><result status="valid" steps="90450"/></proof>
   </goal>
   <goal name="def&#39;vc.7" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" steps="92230"/></proof>
+  <proof prover="0"><result status="valid" steps="91414"/></proof>
   </goal>
   <goal name="def&#39;vc.8" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
