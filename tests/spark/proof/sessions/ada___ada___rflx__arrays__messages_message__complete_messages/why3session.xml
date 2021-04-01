@@ -25,7 +25,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.4" expl="precondition" proved="true">
-  <proof prover="0" timelimit="90"><result status="valid" steps="10037"/></proof>
+  <proof prover="0" timelimit="90"><result status="valid" steps="11529"/></proof>
   </goal>
   <goal name="def&#39;vc.5" expl="precondition" proved="true">
   <transf name="trivial_true" proved="true" >

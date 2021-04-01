@@ -35,7 +35,7 @@
   <proof prover="0"><result status="valid" steps="762"/></proof>
   </goal>
   <goal name="def&#39;vc.7" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" steps="2494"/></proof>
+  <proof prover="0"><result status="valid" steps="2140"/></proof>
   </goal>
   <goal name="def&#39;vc.8" expl="postcondition" proved="true">
   <transf name="trivial_true" proved="true" >
