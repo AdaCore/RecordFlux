@@ -252,7 +252,7 @@ class EnumValue(ScalarValue):
         value_as_number = Number(int(value))
         if value_as_number not in self.literals.values():
             if self._type.always_valid:
-                self._value = "UNKNOWN", value_as_number
+                self._value = f"RFLX_UNKNOWN_{self.name.upper()}", value_as_number
             else:
                 raise PyRFLXError(f"Number {value_as_number.value} is not a valid enum value")
         else:
@@ -267,6 +267,11 @@ class EnumValue(ScalarValue):
 
     def clone(self) -> "TypeValue":
         return self.__class__(self._type, self.__imported)
+
+    @property
+    def numeric_value(self) -> Number:
+        self._raise_initialized()
+        return self._value[1]
 
     @property
     def value(self) -> str:
@@ -551,7 +556,7 @@ class MessageValue(TypeValue):
                 for k, v in t.items()
             }
         )
-
+        self.__additional_enum_literals: Dict[Name, Expr] = {}
         self.__message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
@@ -818,6 +823,13 @@ class MessageValue(TypeValue):
             try:
                 if isinstance(value, Bitstring):
                     field.typeval.parse(value)
+                    if (
+                        isinstance(field.typeval, EnumValue)
+                        and Variable(field.typeval.value) not in self.__type_literals
+                    ):
+                        self.__additional_enum_literals[
+                            Variable(field.typeval.value)
+                        ] = field.typeval.numeric_value
                 elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value)
                 else:
@@ -1161,6 +1173,9 @@ class MessageValue(TypeValue):
             if expression in self.__type_literals:
                 assert isinstance(expression, Name)
                 return self.__type_literals[expression]
+            if expression in self.__additional_enum_literals:
+                assert isinstance(expression, Name)
+                return self.__additional_enum_literals[expression]
             return expression
 
         return expr.substituted(func=subst).substituted(func=subst).simplified()
