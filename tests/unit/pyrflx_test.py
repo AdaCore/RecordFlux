@@ -73,6 +73,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "TLV_With_Checksum",
         "No_Conditionals",
         "Message_Type_Size_Condition",
+        "Always_Valid_Aspect",
     }
 
 
@@ -1192,3 +1193,13 @@ def test_message_type_size_condition(message_type_size_value: MessageValue) -> N
     assert message_type_size_value.valid_message
     assert message_type_size_value.get("F1") == 8
     assert message_type_size_value.get("F2") == 2
+
+
+def test_always_valid_aspect(  # pylint: disable=invalid-name
+    message_always_valid_aspect_value: MessageValue,
+) -> None:
+    message_always_valid_aspect_value.parse(b"\x04\x25\xAB")
+    assert message_always_valid_aspect_value.valid_message
+    assert message_always_valid_aspect_value.get("F1") == "RFLX_UNKNOWN_ENUM_1"
+    assert message_always_valid_aspect_value.get("F2") == "RFLX_UNKNOWN_ENUM_2"
+    assert message_always_valid_aspect_value.get("F3") == 171
