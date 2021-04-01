@@ -1,0 +1,32 @@
+package Always_Valid_Aspect is
+
+   type Enum_1 is
+      (V1 => 1,
+       V2 => 2,
+       V3 => 3)
+   with Size => 8, Always_Valid;
+
+   type Enum_2 is
+      (V4 => 4,
+       V5 => 5,
+       V6 => 6)
+   with Size => 8, Always_Valid;
+
+   type T is mod 2**8;
+
+   type Message is
+      message
+         F1 : Enum_1
+            then null
+               if F1 = V1 or F1 = V2
+            then F2
+               if F1 /= V1 and F1 /= V2;
+         F2 : Enum_2
+            then null
+               if F2 = V4 or F2 = V5
+            then F3
+               if F2 /= V4 and F2 /= V5;
+         F3 : T;
+      end message;
+
+end Always_Valid_Aspect;

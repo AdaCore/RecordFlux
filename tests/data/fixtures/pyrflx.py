@@ -25,6 +25,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/tlv_with_checksum.rflx",
             f"{SPEC_DIR}/message_size.rflx",
             f"{SPEC_DIR}/message_type_size_condition.rflx",
+            f"{SPEC_DIR}/always_valid_aspect.rflx",
         ],
         skip_model_verification=True,
     )
@@ -203,3 +204,15 @@ def fixture_message_type_size_value(
     message_type_size_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
     return message_type_size_package["Message"]
+
+
+@pytest.fixture(name="always_valid_aspect_package", scope="session")
+def fixture_always_valid_aspect_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_["Always_Valid_Aspect"]
+
+
+@pytest.fixture(name="message_always_valid_aspect_value")
+def fixture_always_valid_aspect_value(
+    always_valid_aspect_package: pyrflx.Package,
+) -> pyrflx.MessageValue:
+    return always_valid_aspect_package["Message"]
