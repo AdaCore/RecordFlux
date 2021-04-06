@@ -330,6 +330,7 @@ class Generator:
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
         unit += self.__create_reset_procedure(message)
+        unit += self.__create_restricted_reset_procedure(message)
         unit += self.__create_take_buffer_procedure()
         unit += self.__create_copy_procedure()
         unit += self.__create_read_procedure()
@@ -900,6 +901,79 @@ class Generator:
                     [
                         Assignment("Ctx.Cursors", context_cursors_initialization(message)),
                         Assignment("Ctx.Message_Last", Sub(Variable("Ctx.First"), Number(1))),
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_restricted_reset_procedure(message: Message) -> UnitPart:
+        specification = ProcedureSpecification(
+            "Reset",
+            [
+                InOutParameter(["Ctx"], "Context"),
+                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                Not(Constrained("Ctx")),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                GreaterEqual(
+                                    Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+                                    Variable("Ctx.Buffer_First"),
+                                ),
+                                LessEqual(
+                                    Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+                                    Variable("Ctx.Buffer_Last"),
+                                ),
+                                LessEqual(Variable("First"), Variable("Last")),
+                                Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
+                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+                                Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                    ]
+                                ],
+                                Equal(Variable("Ctx.First"), Variable("First")),
+                                Equal(Variable("Ctx.Last"), Variable("Last")),
+                                Call("Initialized", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        Assignment(
+                            "Ctx",
+                            Aggregate(
+                                Variable("Ctx.Buffer_First"),
+                                Variable("Ctx.Buffer_Last"),
+                                Variable("First"),
+                                Variable("Last"),
+                                Sub(Variable("First"), Number(1)),
+                                Variable("Ctx.Buffer"),
+                                context_cursors_initialization(message),
+                            ),
+                        ),
                     ],
                 )
             ],

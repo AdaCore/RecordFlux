@@ -24,6 +24,11 @@ is
       Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
+   procedure Reset (Ctx : in out Context; First, Last : RFLX_Types.Bit_Index) is
+   begin
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, Ctx.Buffer, (F_Payload => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+   end Reset;
+
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;

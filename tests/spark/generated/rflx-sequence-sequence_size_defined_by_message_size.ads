@@ -103,6 +103,24 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Initialized (Ctx);
 
+   procedure Reset (Ctx : in out Context; First, Last : RFLX_Types.Bit_Index) with
+     Pre =>
+       not Ctx'Constrained
+       and Has_Buffer (Ctx)
+       and RFLX_Types.Byte_Index (First) >= Ctx.Buffer_First
+       and RFLX_Types.Byte_Index (Last) <= Ctx.Buffer_Last
+       and First <= Last
+       and Last < RFLX_Types.Bit_Index'Last
+       and First mod RFLX_Types.Byte'Size = 1
+       and Last mod RFLX_Types.Byte'Size = 0,
+     Post =>
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = First
+       and Ctx.Last = Last
+       and Initialized (Ctx);
+
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
        Has_Buffer (Ctx),
