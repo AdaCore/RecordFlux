@@ -24,13 +24,20 @@ class ID:
 
         error = RecordFluxError()
         if not self._parts:
-            error.append("empty identifier", Subsystem.ID, Severity.ERROR)
+            error.append("empty identifier", Subsystem.ID, Severity.ERROR, location)
         elif "" in self._parts:
-            error.append("empty part in identifier", Subsystem.ID, Severity.ERROR)
+            error.append(
+                f'empty part in identifier "{self}"', Subsystem.ID, Severity.ERROR, location
+            )
         else:
             for c in [" ", ".", ":"]:
                 if any(c in part for part in self._parts):
-                    error.append(f'"{c}" in identifier parts', Subsystem.ID, Severity.ERROR)
+                    error.append(
+                        f'"{c}" in identifier parts of "{self}"',
+                        Subsystem.ID,
+                        Severity.ERROR,
+                        location,
+                    )
         error.propagate()
 
     def __eq__(self, other: object) -> bool:
