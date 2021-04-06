@@ -21,7 +21,6 @@ jobs:
   checks:
     name: Checks
     needs: skip_check_general
-    if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -29,16 +28,20 @@ jobs:
         target: [packages, dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -47,10 +50,12 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
     - name: Install dependencies
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -58,6 +63,7 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install .[devel]
     - name: Check
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         make check_${{ matrix.target }}
 
@@ -98,7 +104,6 @@ jobs:
   tests_python:
     name: Tests
     needs: skip_check_python
-    if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -116,16 +121,20 @@ jobs:
             python-version: 3.7
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -134,10 +143,12 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
     - name: Install dependencies
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -147,9 +158,11 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install .[devel]
     - name: Configure kernel parameters
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
     - name: Test
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
         make test_${{ matrix.target }}
 
@@ -213,7 +226,6 @@ jobs:
   tests_spark:
     name: Tests
     needs: skip_check_spark
-    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -224,13 +236,16 @@ jobs:
           - "spark_optimized"
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Install toolchain
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
     - name: Test
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         make test_${{ matrix.target }}
 
@@ -261,7 +276,6 @@ jobs:
   verification_spark:
     name: Verification
     needs: skip_check_spark
-    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -279,16 +293,20 @@ jobs:
           - "expression"
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -297,10 +315,12 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
     - name: Install dependencies
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -308,6 +328,7 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install .[devel]
     - name: Verify
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         make prove_tests TEST=${{ matrix.test }}
 
@@ -370,7 +391,6 @@ jobs:
   tests_apps:
     name: Tests (apps)
     needs: skip_check_apps
-    if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -381,16 +401,20 @@ jobs:
           - 3.9
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -399,10 +423,12 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
     - name: Install dependencies
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -412,9 +438,11 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install .[devel]
     - name: Configure kernel parameters
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
     - name: Test
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         make test_apps
 
