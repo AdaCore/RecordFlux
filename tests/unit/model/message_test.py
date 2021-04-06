@@ -58,8 +58,14 @@ from tests.data.models import (
     ETHERNET_FRAME,
     MODULAR_INTEGER,
     RANGE_INTEGER,
+    SEQUENCE_INNER_MESSAGE,
+    SEQUENCE_INNER_MESSAGES,
+    SEQUENCE_LENGTH,
+    SEQUENCE_MESSAGES_MESSAGE,
     SEQUENCE_MODULAR_VECTOR,
+    TLV_LENGTH,
     TLV_MESSAGE,
+    TLV_TAG,
 )
 from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
 
@@ -3006,6 +3012,22 @@ def test_paths() -> None:
             Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
         ),
     }
+
+
+def test_message_all_types() -> None:
+    assert TLV_MESSAGE.all_types == [
+        TLV_MESSAGE,
+        TLV_TAG,
+        TLV_LENGTH,
+        OPAQUE,
+    ]
+    assert SEQUENCE_MESSAGES_MESSAGE.all_types == [
+        SEQUENCE_MESSAGES_MESSAGE,
+        SEQUENCE_LENGTH,
+        SEQUENCE_INNER_MESSAGES,
+        SEQUENCE_INNER_MESSAGE,
+        OPAQUE,
+    ]
 
 
 def test_message_str() -> None:

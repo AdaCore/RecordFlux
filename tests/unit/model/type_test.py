@@ -39,6 +39,13 @@ def test_type_type() -> None:
     assert NewType("P::T").type_ == rty.Undefined()
 
 
+def test_type_all_types() -> None:
+    class NewType(Type):
+        pass
+
+    assert NewType("P::T").all_types == [NewType("P::T")]
+
+
 def test_modular_size() -> None:
     assert ModularInteger("P::T", Pow(Number(2), Number(32))).size == Number(32)
     assert ModularInteger("P::T", Pow(Number(2), Number(32))).size_expr == Number(32)
@@ -286,6 +293,19 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
         r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
         r"<stdin>:3:32: model: info: previous occurrence",
     )
+
+
+def test_sequence_all_types() -> None:
+    assert models.SEQUENCE_MODULAR_VECTOR.all_types == [
+        models.SEQUENCE_MODULAR_VECTOR,
+        models.SEQUENCE_MODULAR_INTEGER,
+    ]
+    assert models.SEQUENCE_INNER_MESSAGES.all_types == [
+        models.SEQUENCE_INNER_MESSAGES,
+        models.SEQUENCE_INNER_MESSAGE,
+        models.SEQUENCE_LENGTH,
+        OPAQUE,
+    ]
 
 
 def test_sequence_invalid_element_type() -> None:

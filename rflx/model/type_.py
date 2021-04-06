@@ -29,6 +29,9 @@ class Type(Base):
         self.identifier = identifier
         self.location = location
 
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
     @property
     def full_name(self) -> str:
         return str(self.identifier)
@@ -44,6 +47,14 @@ class Type(Base):
     @property
     def type_(self) -> rty.Type:
         return rty.Undefined()
+
+    @property
+    def all_types(self) -> ty.List["Type"]:
+        """
+        Return a list consisting of the type and all types on which the type depends. The
+        dependencies are determined recursively.
+        """
+        return [self]
 
 
 class Scalar(Type):
@@ -508,6 +519,10 @@ class Sequence(Composite):
     @property
     def element_size(self) -> expr.Expr:
         return expr.Size(self.element_type.name)
+
+    @property
+    def all_types(self) -> ty.List["Type"]:
+        return [self, *self.element_type.all_types]
 
 
 class Opaque(Composite):
