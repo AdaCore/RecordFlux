@@ -9,7 +9,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import rflx.typing_ as rty
 from rflx import expression as expr
-from rflx.common import Base, indent, indent_next, verbose_repr
+from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
@@ -135,6 +135,9 @@ class AbstractMessage(mty.Type):
             except RecordFluxError:
                 pass
 
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return (
@@ -192,6 +195,10 @@ class AbstractMessage(mty.Type):
             t.field_types,
             [(r.field.name, r.sdu.type_) for r in refinements],
         )
+
+    @property
+    def all_types(self) -> List[mty.Type]:
+        return [self, *unique(a for t in self.types.values() for a in t.all_types)]
 
     @abstractmethod
     def copy(
