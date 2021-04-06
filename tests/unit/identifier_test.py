@@ -25,32 +25,36 @@ def test_id_invalid_empty() -> None:
 
 
 def test_id_invalid_empty_string() -> None:
-    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier ""$'):
         ID("")
 
 
 def test_id_invalid_empty_part() -> None:
-    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "A::::B"$'):
         ID("A::::B")
 
 
 def test_id_invalid_empty_first_part() -> None:
-    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "::A::B"$'):
         ID("::A::B")
 
 
 def test_id_invalid_empty_last_part() -> None:
-    with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
+    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "A::B::"$'):
         ID("A::B::")
 
 
 def test_id_invalid_whitespace() -> None:
-    with pytest.raises(RecordFluxError, match=r'^id: error: " " in identifier parts$'):
+    with pytest.raises(
+        RecordFluxError, match=r'^id: error: " " in identifier parts of "A::B C::D"$'
+    ):
         ID("A::B C::D")
 
 
 def test_id_invalid_colon() -> None:
-    with pytest.raises(RecordFluxError, match=r'^id: error: ":" in identifier parts$'):
+    with pytest.raises(
+        RecordFluxError, match=r'^id: error: ":" in identifier parts of "A::B:C::D"$'
+    ):
         ID("A::B:C::D")
 
 
