@@ -150,16 +150,16 @@ is
        and then Structural_Valid_Message (Ctx);
 
    generic
-      with procedure Write (Buffer : out RFLX_Types.Bytes);
+      with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length);
    procedure Write (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       not Ctx'Constrained
+       and Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
        and Initialized (Ctx);
 
    function Has_Buffer (Ctx : Context) return Boolean;

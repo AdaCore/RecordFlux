@@ -1152,7 +1152,8 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            AndThen(
+                            And(
+                                Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                             )
                         ),
@@ -1165,7 +1166,6 @@ class Generator:
                                         Variable("Ctx.Buffer_First"),
                                         Variable("Ctx.Buffer_Last"),
                                         Variable("Ctx.First"),
-                                        Variable("Ctx.Last"),
                                     ]
                                 ],
                                 Call("Initialized", [Variable("Ctx")]),
@@ -1176,7 +1176,10 @@ class Generator:
                         FormalSubprogramDeclaration(
                             ProcedureSpecification(
                                 "Write",
-                                [OutParameter(["Buffer"], const.TYPES_BYTES)],
+                                [
+                                    OutParameter(["Buffer"], const.TYPES_BYTES),
+                                    OutParameter(["Length"], const.TYPES_LENGTH),
+                                ],
                             )
                         ),
                     ],
@@ -1185,14 +1188,8 @@ class Generator:
             [
                 SubprogramBody(
                     specification,
-                    [],
+                    [ObjectDeclaration(["Length"], const.TYPES_LENGTH)],
                     [
-                        CallStatement(
-                            "Reset",
-                            [
-                                Variable("Ctx"),
-                            ],
-                        ),
                         CallStatement(
                             "Write",
                             [
@@ -1202,7 +1199,25 @@ class Generator:
                                         Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
                                         Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.Last")]),
                                     ),
-                                )
+                                ),
+                                Variable("Length"),
+                            ],
+                        ),
+                        CallStatement(
+                            "Reset",
+                            [
+                                Variable("Ctx"),
+                                Variable("Ctx.First"),
+                                Call(
+                                    const.TYPES_LAST_BIT_INDEX,
+                                    [
+                                        Add(
+                                            Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
+                                            Call(const.TYPES_INDEX, [Variable("Length")]),
+                                            -Number(1),
+                                        ),
+                                    ],
+                                ),
                             ],
                         ),
                     ],
@@ -2646,11 +2661,7 @@ class Generator:
         else:
             unit = self.__create_unit(
                 unit_name,
-                [
-                    WithClause(self.__prefix * const.TYPES_PACKAGE),
-                ]
-                if not null_sdu
-                else [],
+                [WithClause(self.__prefix * const.TYPES_PACKAGE)] if not null_sdu else [],
             )
 
         assert isinstance(unit, PackageUnit), "unexpected unit type"
