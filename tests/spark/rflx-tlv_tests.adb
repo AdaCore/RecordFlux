@@ -298,10 +298,11 @@ package body RFLX.TLV_Tests is
       Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
 
       declare
-         procedure Write (Buffer : out RFLX_Builtin_Types.Bytes) is
+         procedure Write (Buffer : out RFLX_Builtin_Types.Bytes; Length : out RFLX_Builtin_Types.Length) is
          begin
             Assert (Buffer'Length = 7, "Invalid buffer length");
             Buffer := (1, 0, 2, 0, 0, 0, 0);
+            Length := Buffer'Length;
          end Write;
          procedure Message_Write is new TLV.Message.Write (Write);
       begin

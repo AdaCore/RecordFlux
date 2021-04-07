@@ -50,9 +50,10 @@ is
    end Read;
 
    procedure Write (Ctx : in out Context) is
+      Length : RFLX_Types.Length;
    begin
-      Reset (Ctx);
-      Write (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Last)));
+      Write (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Last)), Length);
+      Reset (Ctx, Ctx.First, RFLX_Types.Last_Bit_Index (RFLX_Types.Byte_Index (Ctx.First) + RFLX_Types.Index (Length) - 1));
    end Write;
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
