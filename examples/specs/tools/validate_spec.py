@@ -121,7 +121,7 @@ def validate(
         ]:
             directory = sorted(directory_path.glob("*")) if directory_path is not None else []
             for path in directory:
-                validation_result = __validate_message(path, is_valid_directory, message_value)
+                validation_result = _validate_message(path, is_valid_directory, message_value)
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success and abort_on_error:
                     raise ValidationError(f"aborted: message {path} was classified incorrectly")
@@ -129,7 +129,7 @@ def validate(
     return 0
 
 
-def __validate_message(
+def _validate_message(
     message_path: Path, valid_original_message: bool, message_value: MessageValue
 ) -> "ValidationResult":
     if not message_path.is_file():

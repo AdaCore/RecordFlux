@@ -6,7 +6,7 @@ from typing import Iterator
 import pytest
 from rflx.pyrflx import PyRFLX
 
-from tools.validate_spec import __validate_message, cli
+from tools.validate_spec import _validate_message, cli
 
 
 def test_cli_error_msg_not_in_package() -> None:
@@ -246,7 +246,7 @@ def test_validation_original_and_parsed_not_equal() -> None:
     ethernet_too_short_value = PyRFLX.from_specs(["ethernet.rflx"], skip_model_verification=True)[
         "Ethernet"
     ]["Frame"]
-    validation_result = __validate_message(
+    validation_result = _validate_message(
         Path("tests/data/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
         True,
         ethernet_too_short_value,
