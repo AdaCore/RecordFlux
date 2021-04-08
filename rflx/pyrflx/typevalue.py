@@ -522,7 +522,7 @@ class MessageValue(TypeValue):
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
-        self._covered_links: List[Link] = []
+        self._path: List[Link] = []
 
         self._fields: Mapping[str, MessageValue.Field] = (
             state.fields
@@ -613,8 +613,8 @@ class MessageValue(TypeValue):
         return self.identifier == other.identifier
 
     @property
-    def covered_links(self) -> Sequence[Link]:
-        return self._covered_links
+    def path(self) -> Sequence[Link]:
+        return self._path
 
     def inner_messages(self) -> List["MessageValue"]:
         sdu_messages: List["MessageValue"] = []
@@ -646,7 +646,7 @@ class MessageValue(TypeValue):
 
         next_link = self._next_link(field_name)
         if coverage and next_link is not None:
-            self._covered_links.append(next_link)
+            self._path.append(next_link)
         if next_link is None and field_name == INITIAL.name:
             # the INITIAL field has no outgoing links in case of a NULL message
             return FINAL.name
