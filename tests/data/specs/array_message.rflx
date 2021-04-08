@@ -18,4 +18,15 @@ package Array_Message is
          Bar : Bar;
       end message;
 
+   type Message_With_SDU is
+      message
+         Length : Byte
+            then Bar
+               with Size => Length * 8;
+         Bar : Bar
+            then Payload
+               with Size => 8;
+         Payload : Opaque;
+      end message;
+
 end Array_Message;

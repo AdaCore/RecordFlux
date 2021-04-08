@@ -1,0 +1,7 @@
+with Array_Message;
+
+package In_Array_Message is
+
+   for Array_Message::Message_With_SDU use (Payload => Array_Message::Foo);
+
+end In_Array_Message;
