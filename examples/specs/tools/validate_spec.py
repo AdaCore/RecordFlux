@@ -119,7 +119,7 @@ def validate(
             (directory_valid, True),
             (directory_invalid, False),
         ]:
-            directory = directory_path.glob("*") if directory_path is not None else []
+            directory = sorted(directory_path.glob("*")) if directory_path is not None else []
             for path in directory:
                 validation_result = __validate_message(path, is_valid_directory, message_value)
                 output_writer.write_result(validation_result)
@@ -143,7 +143,7 @@ def __validate_message(
             parser_result.bytestring == original_message and parser_result.valid_message
         )
         if not valid_parser_result:
-            parser_error = "Invalid message"
+            parser_error = "original binary and message parsed by PyRFLX do not match"
     except RecordFluxError as e:
         parser_error = str(e)
         valid_parser_result = False
@@ -231,12 +231,11 @@ class OutputWriter:
 
     def write_result(self, validation_result: ValidationResult) -> None:
         self.__write_console_output(validation_result)
-        if self.file is not None:
-            self.__write_json_output(validation_result)
+        self.__write_json_output(validation_result)
 
     def __write_console_output(self, result: ValidationResult) -> None:
         if result.validation_success:
-            print(f"{str(result.message_file_path):<80} {'PASSED'}")
+            print(f"{str(result.message_file_path):<80} PASSED")
         else:
             print(f"{str(result.message_file_path):<80} FAILED")
             print(
@@ -244,7 +243,7 @@ class OutputWriter:
                 f"recognized as: {result.valid_parser_result}"
             )
             if result.parser_error is not None:
-                print(f"{result.parser_error}")
+                print(result.parser_error)
             self.classified_incorrectly += 1
 
     def __write_json_output(self, result: ValidationResult) -> None:
