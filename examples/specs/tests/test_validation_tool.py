@@ -1,4 +1,5 @@
 import re
+from filecmp import cmp
 from pathlib import Path
 from typing import Iterator
 
@@ -296,6 +297,7 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
         )
         == 0
     )
+    assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_positive.json")
 
 
 def test_validation_negative() -> None:
@@ -346,3 +348,4 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
         )
         == f"{number} messages were classified incorrectly"
     )
+    assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_negative.json")
