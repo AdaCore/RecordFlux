@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 from pathlib import Path
+from typing import Sequence
 
 import pytest
 
@@ -1203,3 +1204,49 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
     assert message_always_valid_aspect_value.get("F1") == "RFLX_UNKNOWN_ENUM_1"
     assert message_always_valid_aspect_value.get("F2") == "RFLX_UNKNOWN_ENUM_2"
     assert message_always_valid_aspect_value.get("F3") == 171
+
+
+def test_get_all_sdu_messages(
+    array_message_with_sdu_value: MessageValue, in_array_message_package: Package
+) -> None:
+    array_message_one = in_array_message_package["Foo"]
+    array_message_one.set("Byte", 5)
+    array_message_two = in_array_message_package["Foo"]
+    array_message_two.set("Byte", 6)
+    sdu_message = in_array_message_package["Foo"]
+    sdu_message.set("Byte", 7)
+
+    array_contents: Sequence[TypeValue] = [array_message_one, array_message_two]
+    array_message_with_sdu_value.set("Length", 2)
+    array_message_with_sdu_value.set("Bar", array_contents)
+    array_message_with_sdu_value.set("Payload", sdu_message.bytestring)
+
+    assert array_message_with_sdu_value.valid_message
+
+    all_contained_messages = array_message_with_sdu_value.inner_messages()
+    assert len(all_contained_messages) == 3
+    assert all(isinstance(m, MessageValue) for m in all_contained_messages)
+    assert {m.get("Byte") for m in all_contained_messages} == {5, 6, 7}
+
+
+def test_get_covered_links(icmp_message_value: MessageValue) -> None:
+    test_bytes = (
+        b"\x08\x00\xe1\x1e\x00\x11\x00\x01\x4a\xfc\x0d\x00\x00\x00\x00\x00"
+        b"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+        b"\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f"
+        b"\x30\x31\x32\x33\x34\x35\x36\x37"
+    )
+    icmp_message_value.parse(test_bytes)
+    covered_links = icmp_message_value.covered_links
+    field_pairs = [
+        ("Tag", "Code_Zero"),
+        ("Code_Zero", "Checksum"),
+        ("Checksum", "Identifier"),
+        ("Identifier", "Sequence_Number"),
+        ("Sequence_Number", "Data"),
+        ("Data", "Final"),
+    ]
+
+    assert len(covered_links) == 6
+    for link, field_pair in zip(covered_links, field_pairs):
+        assert link.source.name == field_pair[0] and link.target.name == field_pair[1]
