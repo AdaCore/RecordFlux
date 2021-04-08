@@ -3,8 +3,9 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
+from rflx.pyrflx import PyRFLX
 
-from tools.validate_spec import cli
+from tools.validate_spec import __validate_message, cli
 
 
 def test_cli_error_msg_not_in_package() -> None:
@@ -20,6 +21,7 @@ def test_cli_error_msg_not_in_package() -> None:
                 "tests/data/ethernet/frame/valid",
                 "-i",
                 "tests/data/ethernet/frame/invalid",
+                "--no-verification",
             ]
         )
         == 'message "Message" could not be found in package "Ethernet"'
@@ -82,6 +84,7 @@ def test_cli_no_test_data_provided() -> None:
                 "in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
+                "--no-verification",
             ]
         )
         == "must provide directory with valid and/or invalid messages"
@@ -168,6 +171,7 @@ def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
                 "tests/data/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path_restricted}/test.json",
+                "--no-verification",
             ]
         )
         == f"cannot open output file {tmp_path_restricted}/test.json:"
@@ -188,12 +192,13 @@ def test_cli_abort_on_error() -> None:
             "-i",
             "tests/data/ethernet/frame/valid",
             "--abort-on-error",
+            "--no-verification",
         ]
     )
     assert isinstance(ret, str)
     assert re.match(
-        r"^(aborted: message tests/data/ethernet/frame/invalid/).+(\.raw) "
-        r"(was classified incorrectly)$",
+        r"^aborted: message tests/data/ethernet/frame/invalid/.+\.raw "
+        r"was classified incorrectly$",
         ret,
     )
 
@@ -236,6 +241,21 @@ def test_cli_invalid_identifier() -> None:
     )
 
 
+def test_validation_original_and_parsed_not_equal() -> None:
+    ethernet_too_short_value = PyRFLX.from_specs(["ethernet.rflx"], skip_model_verification=True)[
+        "Ethernet"
+    ]["Frame"]
+    validation_result = __validate_message(
+        Path("tests/data/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
+        True,
+        ethernet_too_short_value,
+    )
+    assert (
+        validation_result.parser_error
+        == "original binary and message parsed by PyRFLX do not match"
+    )
+
+
 def test_validation_positive() -> None:
     assert (
         cli(
@@ -249,6 +269,7 @@ def test_validation_positive() -> None:
                 "tests/data/ethernet/frame/valid",
                 "-i",
                 "tests/data/ethernet/frame/invalid",
+                "--no-verification",
             ]
         )
         == 0
@@ -270,6 +291,7 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
                 "tests/data/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path}/output.json",
+                "--no-verification",
             ]
         )
         == 0
@@ -293,6 +315,7 @@ def test_validation_negative() -> None:
                 "tests/data/ethernet/frame/invalid",
                 "-i",
                 "tests/data/ethernet/frame/valid",
+                "--no-verification",
             ]
         )
         == f"{number} messages were classified incorrectly"
@@ -318,6 +341,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
                 "tests/data/ethernet/frame/valid",
                 "-o",
                 f"{tmp_path}/output.json",
+                "--no-verification",
             ]
         )
         == f"{number} messages were classified incorrectly"
