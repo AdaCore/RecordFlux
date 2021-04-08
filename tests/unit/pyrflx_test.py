@@ -1237,7 +1237,7 @@ def test_get_covered_links(icmp_message_value: MessageValue) -> None:
         b"\x30\x31\x32\x33\x34\x35\x36\x37"
     )
     icmp_message_value.parse(test_bytes)
-    covered_links = icmp_message_value.covered_links
+    covered_links = icmp_message_value.path
     field_pairs = [
         ("Tag", "Code_Zero"),
         ("Code_Zero", "Checksum"),
