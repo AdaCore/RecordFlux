@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
-from rflx.pyrflx import PyRFLX
+from rflx.pyrflx import PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 
 
@@ -144,7 +144,7 @@ def __validate_message(
         )
         if not valid_parser_result:
             parser_error = "original binary and message parsed by PyRFLX do not match"
-    except RecordFluxError as e:
+    except PyRFLXError as e:
         parser_error = str(e)
         valid_parser_result = False
 
