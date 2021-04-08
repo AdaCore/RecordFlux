@@ -32,6 +32,7 @@ from rflx.model import (
     Enumeration,
     Field,
     Integer,
+    Link,
     Message,
     Opaque,
     Refinement,
@@ -501,6 +502,10 @@ class ArrayValue(CompositeValue):
     def accepted_type(self) -> type:
         return list
 
+    @property
+    def element_type(self) -> Type:
+        return self._element_type
+
 
 class MessageValue(TypeValue):
     # pylint: disable=too-many-instance-attributes
@@ -517,6 +522,7 @@ class MessageValue(TypeValue):
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
+        self._covered_links: List[Link] = []
 
         self._fields: Mapping[str, MessageValue.Field] = (
             state.fields
@@ -606,22 +612,45 @@ class MessageValue(TypeValue):
     def equal_type(self, other: Type) -> bool:
         return self.identifier == other.identifier
 
+    @property
+    def covered_links(self) -> Sequence[Link]:
+        return self._covered_links
+
+    def inner_messages(self) -> List["MessageValue"]:
+        sdu_messages: List["MessageValue"] = []
+        for field in self._fields.values():
+            typeval = field.typeval
+            if isinstance(typeval, ArrayValue) and isinstance(typeval.element_type, Message):
+                assert isinstance(typeval.value, list)
+                sdu_messages.extend(typeval.value)
+            if isinstance(typeval, OpaqueValue) and typeval.nested_message is not None:
+                sdu_messages.append(typeval.nested_message)
+        return sdu_messages
+
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
 
-    def _next_field(self, fld: str) -> str:
-        if fld == FINAL.name:
-            return ""
-        if self._skip_verification and self._fields[fld].next:
-            return self._fields[fld].next
-        if fld == INITIAL.name:
-            links = self._type.outgoing(INITIAL)
-            return links[0].target.name if links else FINAL.name
+    def _next_link(self, source_field_name: str) -> Optional[Link]:
+        field = Field(source_field_name)
+        # structure is empty for NULL messages
+        if field == FINAL or not self._type.structure:
+            return None
+        for link in self._type.outgoing(field):
+            if self.__simplified(link.condition) == TRUE:
+                return link
+        return None
 
-        for l in self._type.outgoing(Field(fld)):
-            if self.__simplified(l.condition) == TRUE:
-                return l.target.name
-        return ""
+    def _next_field(self, field_name: str, coverage: bool = False) -> str:
+        if self._skip_verification and field_name != FINAL.name and self._fields[field_name].next:
+            return self._fields[field_name].next
+
+        next_link = self._next_link(field_name)
+        if coverage and next_link is not None:
+            self._covered_links.append(next_link)
+        if next_link is None and field_name == INITIAL.name:
+            # the INITIAL field has no outgoing links in case of a NULL message
+            return FINAL.name
+        return next_link.target.name if next_link is not None else ""
 
     def _prev_field(self, fld: str) -> str:
         if fld == INITIAL.name:
@@ -749,7 +778,7 @@ class MessageValue(TypeValue):
                         f"Bitstring representing the message is too short - "
                         f"stopped while parsing field: {current_field_name}"
                     ) from None
-            current_field_name = self._next_field(current_field_name)
+            current_field_name = self._next_field(current_field_name, coverage=True)
 
     def _set_unchecked(
         self, field_name: str, value: Union[bytes, int, str, Sequence[TypeValue]]
