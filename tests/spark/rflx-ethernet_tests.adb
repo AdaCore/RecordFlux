@@ -2,12 +2,14 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.Ethernet.Frame;
 
 package body RFLX.Ethernet_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Index, RFLX.RFLX_Builtin_Types.Bit_Length;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -333,7 +335,7 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
@@ -369,7 +371,7 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
@@ -408,7 +410,7 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
               Expected.all,
@@ -459,7 +461,7 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),

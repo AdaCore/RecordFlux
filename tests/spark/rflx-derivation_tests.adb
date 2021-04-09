@@ -1,13 +1,15 @@
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.Derivation.Message;
 with RFLX.TLV; use type RFLX.TLV.Tag_Base;
 
 package body RFLX.Derivation_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Index, RFLX.RFLX_Builtin_Types.Bit_Length;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -95,7 +97,7 @@ package body RFLX.Derivation_Tests is
 
       Derivation.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Context.Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
               - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
       Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,

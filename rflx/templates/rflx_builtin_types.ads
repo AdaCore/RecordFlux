@@ -6,7 +6,7 @@ is
 
    type Length is new Natural;
 
-   subtype Index is Length range 1 .. Length'Last;
+   type Index is new Length range 1 .. Length'Last;
 
    type Byte is mod 2**8;
 

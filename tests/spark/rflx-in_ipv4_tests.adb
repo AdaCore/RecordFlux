@@ -2,7 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.UDP.Datagram;
@@ -12,6 +12,8 @@ with RFLX.In_Ethernet.Contains;
 with RFLX.In_IPv4.Contains;
 
 package body RFLX.In_IPv4_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Index, RFLX.RFLX_Builtin_Types.Bit_Length;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -189,7 +191,7 @@ package body RFLX.In_IPv4_Tests is
             pragma Warnings (On, """UDP_Datagram_Context"" is set by ""*"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""UDP_Datagram_Context""");
 
-            Assert (RFLX_Builtin_Types.Length'Image
+            Assert (RFLX_Builtin_Types.Index'Image
                     (RFLX_Types.Byte_Index (Message_Last)
                        - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1),
                     Expected'Length'Img,

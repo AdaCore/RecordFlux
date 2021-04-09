@@ -2,7 +2,7 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.IPv4.Packet;
@@ -10,6 +10,8 @@ with RFLX.Ethernet.Frame;
 with RFLX.In_Ethernet.Contains;
 
 package body RFLX.In_Ethernet_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Index, RFLX.RFLX_Builtin_Types.Bit_Length;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -128,7 +130,7 @@ package body RFLX.In_Ethernet_Tests is
          pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
 
-         Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+         Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
                  - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
                  "Invalid buffer length");
          Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)

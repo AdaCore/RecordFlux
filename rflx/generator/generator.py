@@ -574,9 +574,7 @@ class Generator:
                 ["Buffer_First", "Buffer_Last"], const.TYPES_INDEX, First(const.TYPES_INDEX)
             ),
             Discriminant(["First"], const.TYPES_BIT_INDEX, First(const.TYPES_BIT_INDEX)),
-            Discriminant(
-                ["Last"], const.TYPES_BIT_INDEX, Add(First(const.TYPES_BIT_INDEX), Number(7))
-            ),
+            Discriminant(["Last"], const.TYPES_BIT_LENGTH, First(const.TYPES_BIT_LENGTH)),
         ]
 
         return UnitPart(
@@ -739,7 +737,8 @@ class Generator:
             [
                 OutParameter(["Ctx"], "Context"),
                 InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
-                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+                Parameter(["First"], const.TYPES_BIT_INDEX),
+                Parameter(["Last"], const.TYPES_BIT_LENGTH),
             ],
         )
 
@@ -761,7 +760,7 @@ class Generator:
                                     Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                                     Last("Buffer"),
                                 ),
-                                LessEqual(Variable("First"), Variable("Last")),
+                                LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
                                 Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
                                 Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
                                 Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
@@ -912,7 +911,8 @@ class Generator:
             "Reset",
             [
                 InOutParameter(["Ctx"], "Context"),
-                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+                Parameter(["First"], const.TYPES_BIT_INDEX),
+                Parameter(["Last"], const.TYPES_BIT_LENGTH),
             ],
         )
 
@@ -933,8 +933,8 @@ class Generator:
                                     Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
                                     Variable("Ctx.Buffer_Last"),
                                 ),
-                                LessEqual(Variable("First"), Variable("Last")),
-                                Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
+                                LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
+                                Less(Variable("Last"), Last(const.TYPES_BIT_LENGTH)),
                                 Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
                                 Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
                             )
@@ -1212,8 +1212,16 @@ class Generator:
                                     const.TYPES_LAST_BIT_INDEX,
                                     [
                                         Add(
-                                            Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
-                                            Call(const.TYPES_INDEX, [Variable("Length")]),
+                                            Call(
+                                                const.TYPES_LENGTH,
+                                                [
+                                                    Call(
+                                                        const.TYPES_BYTE_INDEX,
+                                                        [Variable("Ctx.First")],
+                                                    )
+                                                ],
+                                            ),
+                                            Variable("Length"),
                                             -Number(1),
                                         ),
                                     ],
@@ -2577,7 +2585,8 @@ class Generator:
             "Boolean",
             [
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
-                Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
+                Parameter(["First"], const.TYPES_BIT_INDEX),
+                Parameter(["Last"], const.TYPES_BIT_LENGTH),
                 Parameter(["Message_Last"], const.TYPES_BIT_LENGTH),
                 Parameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Cursors"], "Field_Cursors"),
@@ -3070,7 +3079,7 @@ class Generator:
                         ),
                         ObjectDeclaration(
                             ["Last"],
-                            const.TYPES_BIT_INDEX,
+                            const.TYPES_BIT_LENGTH,
                             Call(
                                 pdu_identifier * "Field_Last",
                                 [

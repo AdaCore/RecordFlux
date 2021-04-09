@@ -15,13 +15,13 @@ is
       Input_File : Byte_IO.File_Type;
       Buffer : constant Bytes_Ptr := new Bytes (1 .. Index (Ada.Directories.Size (Name)));
       Value : Byte := 0;
-      I : Length := 0;
+      I : Index := 1;
    begin
       Byte_IO.Open (Input_File, Byte_IO.In_File, Name);
       while not Byte_IO.End_Of_File (Input_File) loop
-         I := I + 1;
          Byte_IO.Read (Input_File, Value);
          Buffer.all (I) := Value;
+         I := I + 1;
       end loop;
       Byte_IO.Close (Input_File);
       return Buffer;

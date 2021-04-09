@@ -1,7 +1,7 @@
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.TLV.Message;

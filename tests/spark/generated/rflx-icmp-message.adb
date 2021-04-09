@@ -10,7 +10,7 @@ is
       Initialize (Ctx, Buffer, RFLX_Types.First_Bit_Index (Buffer'First), RFLX_Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First, Last : RFLX_Types.Bit_Index) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -24,7 +24,7 @@ is
       Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
-   procedure Reset (Ctx : in out Context; First, Last : RFLX_Types.Bit_Index) is
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, Ctx.Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
    end Reset;
@@ -53,7 +53,7 @@ is
       Length : RFLX_Types.Length;
    begin
       Write (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Last)), Length);
-      Reset (Ctx, Ctx.First, RFLX_Types.Last_Bit_Index (RFLX_Types.Byte_Index (Ctx.First) + RFLX_Types.Index (Length) - 1));
+      Reset (Ctx, Ctx.First, RFLX_Types.Last_Bit_Index (RFLX_Types.Length (RFLX_Types.Byte_Index (Ctx.First)) + Length - 1));
    end Write;
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
