@@ -4,13 +4,15 @@ with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.IPv4.Packet;
 with RFLX.IPv4.Option;
 
 package body RFLX.IPv4_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Index;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -330,7 +332,7 @@ package body RFLX.IPv4_Tests is
       Message_Last := IPv4.Packet.Message_Last (Context);
       IPv4.Packet.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");
@@ -366,7 +368,7 @@ package body RFLX.IPv4_Tests is
       Message_Last := IPv4.Option.Message_Last (Context);
       IPv4.Option.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");

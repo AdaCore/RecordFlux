@@ -1,12 +1,14 @@
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bit_Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.Enumeration.Message;
 
 package body RFLX.Enumeration_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Index, RFLX.RFLX_Builtin_Types.Bit_Length;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
@@ -95,7 +97,7 @@ package body RFLX.Enumeration_Tests is
       Enumeration.Message.Take_Buffer (Context, Buffer);
 
       Assert (Message_Last >= RFLX_Types.Bit_Index'First, "Invalid range for Message_Last");
-      Assert (RFLX_Builtin_Types.Length'Image (RFLX_Types.Byte_Index (Message_Last)
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
               - RFLX_Types.Byte_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");

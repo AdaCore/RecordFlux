@@ -7,7 +7,7 @@ is
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out IPv4.Packet.Context; UDP_Datagram_SDU_Context : out UDP.Datagram.Context) is
       First : constant RFLX_Types.Bit_Index := IPv4.Packet.Field_First (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
-      Last : constant RFLX_Types.Bit_Index := IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
+      Last : constant RFLX_Types.Bit_Length := IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       IPv4.Packet.Take_Buffer (IPv4_Packet_PDU_Context, Buffer);
@@ -18,7 +18,7 @@ is
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out IPv4.Packet.Context; ICMP_Message_SDU_Context : out ICMP.Message.Context) is
       First : constant RFLX_Types.Bit_Index := IPv4.Packet.Field_First (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
-      Last : constant RFLX_Types.Bit_Index := IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
+      Last : constant RFLX_Types.Bit_Length := IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       IPv4.Packet.Take_Buffer (IPv4_Packet_PDU_Context, Buffer);

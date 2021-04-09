@@ -1,8 +1,10 @@
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes;
+with RFLX.RFLX_Builtin_Types;
 
 package SPARK.Assertions with
   SPARK_Mode
 is
+
+   use type RFLX.RFLX_Builtin_Types.Bytes;
 
    pragma Warnings (Off, "postcondition does not check the outcome of calling ""Assert""");
 

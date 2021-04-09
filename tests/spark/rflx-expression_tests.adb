@@ -1,12 +1,14 @@
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
-with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_Builtin_Types.Length;
+with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.Expression.Message;
 
 package body RFLX.Expression_Tests is
+
+   use type RFLX.RFLX_Builtin_Types.Bytes, RFLX.RFLX_Builtin_Types.Index;
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
