@@ -376,7 +376,6 @@ class OpaqueValue(CompositeValue):
 
     @property
     def nested_message(self) -> Optional["MessageValue"]:
-        self._raise_initialized()
         return self._nested_message
 
     @property
@@ -509,6 +508,7 @@ class ArrayValue(CompositeValue):
 
 class MessageValue(TypeValue):
     # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-public-methods
 
     _type: Message
 
@@ -611,6 +611,10 @@ class MessageValue(TypeValue):
 
     def equal_type(self, other: Type) -> bool:
         return self.identifier == other.identifier
+
+    @property
+    def structure(self) -> Sequence[Link]:
+        return self._type.structure
 
     @property
     def path(self) -> Sequence[Link]:

@@ -1250,3 +1250,7 @@ def test_get_covered_links(icmp_message_value: MessageValue) -> None:
     assert len(covered_links) == 6
     for link, field_pair in zip(covered_links, field_pairs):
         assert link.source.name == field_pair[0] and link.target.name == field_pair[1]
+
+
+def test_get_structure(icmp_message_value: MessageValue) -> None:
+    assert len(icmp_message_value.structure) == 25
