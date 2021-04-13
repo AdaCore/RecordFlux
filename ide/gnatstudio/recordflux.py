@@ -364,7 +364,7 @@ def display_message_graph(filename):
     loc = GPS.EditorBuffer.get().current_view().cursor()
     column = loc.column()
     line = loc.line()
-    name = GPS.File(filename).base_name()
+    name = GPS.File(filename).name()
     message_name = get_message_name(locations, name, line, column)
     if not message_name:
         GPS.MDI.dialog(
