@@ -253,7 +253,7 @@ def test_validation_original_and_parsed_not_equal() -> None:
     )
     assert (
         validation_result.parser_error
-        == "original binary and message parsed by PyRFLX do not match"
+        == "message parsed by PyRFLX is shorter than the original message"
     )
 
 

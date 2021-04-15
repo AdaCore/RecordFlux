@@ -139,11 +139,13 @@ def _validate_message(
     parser_result: MessageValue = message_value.clone()
     try:
         parser_result.parse(original_message)
-        valid_parser_result = (
-            parser_result.bytestring == original_message and parser_result.valid_message
-        )
+        valid_parser_result = parser_result.bytestring == original_message
         if not valid_parser_result:
-            parser_error = "original binary and message parsed by PyRFLX do not match"
+            assert parser_result.valid_message
+            assert len(parser_result.bytestring) <= len(original_message)
+            assert original_message.startswith(parser_result.bytestring)
+            parser_error = "message parsed by PyRFLX is shorter than the original message"
+
     except PyRFLXError as e:
         parser_error = str(e)
         valid_parser_result = False
