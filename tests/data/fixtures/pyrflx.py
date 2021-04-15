@@ -25,7 +25,6 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/tlv_with_checksum.rflx",
             f"{SPEC_DIR}/message_size.rflx",
             f"{SPEC_DIR}/message_type_size_condition.rflx",
-            f"{SPEC_DIR}/in_array_message.rflx",
             f"{SPEC_DIR}/always_valid_aspect.rflx",
         ],
         skip_model_verification=True,
@@ -180,21 +179,16 @@ def fixture_array_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_["Array_Message"]
 
 
-@pytest.fixture(name="array_message_value")
+@pytest.fixture(name="message_array_value")
 def fixture_array_message_value(array_message_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return array_message_package["Message"]
+    return array_message_package["Message_Array"]
 
 
-@pytest.fixture(name="in_array_message_package", scope="session")
-def fixture_in_array_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Array_Message"]
-
-
-@pytest.fixture(name="array_message_with_sdu_value")
-def fixture_array_message_with_sdu_value(
-    in_array_message_package: pyrflx.Package,
+@pytest.fixture(name="message_array_refinement_value")
+def fixture_array_message_refinement_value(
+    array_message_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
-    return in_array_message_package["Message_With_SDU"]
+    return array_message_package["Message_Array_And_Refinement"]
 
 
 @pytest.fixture(name="message_size_package", scope="session")

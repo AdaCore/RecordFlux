@@ -262,16 +262,16 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
 
 
 def test_no_verification_array_nested_messages(
-    array_message_package: Package, array_message_value: MessageValue
+    array_message_package: Package, message_array_value: MessageValue
 ) -> None:
-    array_message_one = array_message_package["Foo"]
+    array_message_one = array_message_package["Array_Member"]
     array_message_one.set("Byte", 5)
-    array_message_two = array_message_package["Foo"]
+    array_message_two = array_message_package["Array_Member"]
     array_message_two.set("Byte", 6)
-    foos: List[TypeValue] = [array_message_one, array_message_two]
-    array_message_value.set("Length", 2)
-    array_message_value.set("Bar", foos)
-    assert array_message_value.valid_message
+    array: List[TypeValue] = [array_message_one, array_message_two]
+    message_array_value.set("Length", 2)
+    message_array_value.set("Array_Field", array)
+    assert message_array_value.valid_message
 
     pyrflx_ = PyRFLX.from_specs(
         [f"{SPEC_DIR}/array_message.rflx"],
@@ -279,16 +279,16 @@ def test_no_verification_array_nested_messages(
         skip_message_verification=True,
     )
     array_message_package_unv = pyrflx_["Array_Message"]
-    array_message_unv = array_message_package_unv["Message"]
-    array_message_one_unv = array_message_package_unv["Foo"]
-    array_message_one_unv.set("Byte", 5)
-    array_message_two_unv = array_message_package_unv["Foo"]
-    array_message_two_unv.set("Byte", 6)
-    foos_unv: List[TypeValue] = [array_message_one_unv, array_message_two_unv]
+    array_message_unv = array_message_package_unv["Message_Array"]
+    array_member_one_unv = array_message_package_unv["Array_Member"]
+    array_member_one_unv.set("Byte", 5)
+    array_member_two_unv = array_message_package_unv["Array_Member"]
+    array_member_two_unv.set("Byte", 6)
+    array_unv: List[TypeValue] = [array_member_one_unv, array_member_two_unv]
     array_message_unv.set("Length", 2)
-    array_message_unv.set("Bar", foos_unv)
+    array_message_unv.set("Array_Field", array_unv)
     assert array_message_unv.valid_message
-    assert array_message_unv.bytestring == array_message_value.bytestring
+    assert array_message_unv.bytestring == message_array_value.bytestring
 
 
 def icmp_checksum_function(message: bytes, **kwargs: object) -> int:

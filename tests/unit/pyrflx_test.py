@@ -688,16 +688,16 @@ def test_invalid_value() -> None:
         TypeValue.construct(t)
 
 
-def test_array_messages(array_message_package: Package, array_message_value: MessageValue) -> None:
-    array_message_one = array_message_package["Foo"]
-    array_message_one.set("Byte", 5)
-    array_message_two = array_message_package["Foo"]
-    array_message_two.set("Byte", 6)
-    foos = [array_message_one, array_message_two]
-    array_message_value.set("Length", 2)
-    array_message_value.set("Bar", foos)
-    assert array_message_value.valid_message
-    assert array_message_value.bytestring == b"\x02\x05\x06"
+def test_array_messages(message_array_value: MessageValue, array_message_package: Package) -> None:
+    array_member_one = array_message_package["Array_Member"]
+    array_member_one.set("Byte", 5)
+    array_member_two = array_message_package["Array_Member"]
+    array_member_two.set("Byte", 6)
+    array = [array_member_one, array_member_two]
+    message_array_value.set("Length", 2)
+    message_array_value.set("Array_Field", array)
+    assert message_array_value.valid_message
+    assert message_array_value.bytestring == b"\x02\x05\x06"
 
 
 @pytest.fixture(name="array_type_package", scope="session")
@@ -739,13 +739,13 @@ def test_array_preserve_value(enum_value: EnumValue) -> None:
 
 
 def test_array_parse_from_bytes(
-    array_message_value: MessageValue, array_type_foo_value: MessageValue
+    message_array_value: MessageValue, array_type_foo_value: MessageValue
 ) -> None:
-    array_message_value.parse(b"\x02\x05\x06")
-    assert array_message_value.bytestring == b"\x02\x05\x06"
+    message_array_value.parse(b"\x02\x05\x06")
+    assert message_array_value.bytestring == b"\x02\x05\x06"
     array_type_foo_value.parse(b"\x03\x05\x06\x07")
     assert array_type_foo_value.bytestring == b"\x03\x05\x06\x07"
-    array_message_value = array_message_value.clone()
+    array_message_value = message_array_value.clone()
     array_message_value.parse(b"\x02\x05\x06", False)
     assert array_message_value.bytestring == b"\x02\x05\x06"
 
@@ -1206,27 +1206,28 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
     assert message_always_valid_aspect_value.get("F3") == 171
 
 
-def test_get_all_sdu_messages(
-    array_message_with_sdu_value: MessageValue, in_array_message_package: Package
+def test_get_inner_messages(
+    array_message_package: Package, message_array_refinement_value: MessageValue
 ) -> None:
-    array_message_one = in_array_message_package["Foo"]
+    array_message_one = array_message_package["Array_Member"]
     array_message_one.set("Byte", 5)
-    array_message_two = in_array_message_package["Foo"]
+    array_message_two = array_message_package["Array_Member"]
     array_message_two.set("Byte", 6)
-    sdu_message = in_array_message_package["Foo"]
+    sdu_message = array_message_package["Array_Member"]
     sdu_message.set("Byte", 7)
 
+    message_foo_value = message_array_refinement_value
     array_contents: Sequence[TypeValue] = [array_message_one, array_message_two]
-    array_message_with_sdu_value.set("Length", 2)
-    array_message_with_sdu_value.set("Bar", array_contents)
-    array_message_with_sdu_value.set("Payload", sdu_message.bytestring)
+    message_foo_value.set("Length", 2)
+    message_foo_value.set("Array_Field", array_contents)
+    message_foo_value.set("Payload", sdu_message.bytestring)
+    assert message_foo_value.valid_message
 
-    assert array_message_with_sdu_value.valid_message
+    inner_messages = message_foo_value.inner_messages()
+    assert len(inner_messages) == 3
+    assert all(isinstance(m, MessageValue) for m in inner_messages)
+    assert {m.get("Byte") for m in inner_messages} == {5, 6, 7}
 
-    all_contained_messages = array_message_with_sdu_value.inner_messages()
-    assert len(all_contained_messages) == 3
-    assert all(isinstance(m, MessageValue) for m in all_contained_messages)
-    assert {m.get("Byte") for m in all_contained_messages} == {5, 6, 7}
 
 
 def test_get_covered_links(icmp_message_value: MessageValue) -> None:
