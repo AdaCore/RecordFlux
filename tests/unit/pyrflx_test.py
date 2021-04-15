@@ -1253,4 +1253,4 @@ def test_get_covered_links(icmp_message_value: MessageValue) -> None:
 
 
 def test_get_structure(icmp_message_value: MessageValue) -> None:
-    assert len(icmp_message_value.structure) == 25
+    assert isinstance(icmp_message_value.model, Message)

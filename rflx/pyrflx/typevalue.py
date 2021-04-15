@@ -613,31 +613,32 @@ class MessageValue(TypeValue):
         return self.identifier == other.identifier
 
     @property
-    def structure(self) -> Sequence[Link]:
-        return self._type.structure
+    def model(self) -> Message:
+        return self._type
 
     @property
     def path(self) -> Sequence[Link]:
         return self._path
 
     def inner_messages(self) -> List["MessageValue"]:
-        sdu_messages: List["MessageValue"] = []
+        messages: List["MessageValue"] = []
         for field in self._fields.values():
             typeval = field.typeval
             if isinstance(typeval, ArrayValue) and isinstance(typeval.element_type, Message):
                 assert isinstance(typeval.value, list)
-                sdu_messages.extend(typeval.value)
+                messages.extend(typeval.value)
             if isinstance(typeval, OpaqueValue) and typeval.nested_message is not None:
-                sdu_messages.append(typeval.nested_message)
-        return sdu_messages
+                messages.append(typeval.nested_message)
+        return messages
 
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
 
     def _next_link(self, source_field_name: str) -> Optional[Link]:
         field = Field(source_field_name)
-        # structure is empty for NULL messages
         if field == FINAL or not self._type.structure:
+            # structure is empty in case of NULL message
+            # ISSUE: Componolit/RecordFlux#643
             return None
         for link in self._type.outgoing(field):
             if self.__simplified(link.condition) == TRUE:
@@ -652,7 +653,8 @@ class MessageValue(TypeValue):
         if coverage and next_link is not None:
             self._path.append(next_link)
         if next_link is None and field_name == INITIAL.name:
-            # the INITIAL field has no outgoing links in case of a NULL message
+            # the INITIAL field has no outgoing links in case of NULL message
+            # ISSUE: Componolit/RecordFlux#643
             return FINAL.name
         return next_link.target.name if next_link is not None else ""
 
