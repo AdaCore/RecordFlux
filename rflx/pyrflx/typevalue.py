@@ -645,13 +645,14 @@ class MessageValue(TypeValue):
                 return link
         return None
 
-    def _next_field(self, field_name: str, coverage: bool = False) -> str:
+    def _next_field(self, field_name: str, append_to_path: bool = False) -> str:
         if self._skip_verification and field_name != FINAL.name and self._fields[field_name].next:
             return self._fields[field_name].next
 
         next_link = self._next_link(field_name)
-        if coverage and next_link is not None:
+        if append_to_path and next_link is not None:
             self._path.append(next_link)
+
         if next_link is None and field_name == INITIAL.name:
             # the INITIAL field has no outgoing links in case of NULL message
             # ISSUE: Componolit/RecordFlux#643
@@ -784,7 +785,7 @@ class MessageValue(TypeValue):
                         f"Bitstring representing the message is too short - "
                         f"stopped while parsing field: {current_field_name}"
                     ) from None
-            current_field_name = self._next_field(current_field_name, coverage=True)
+            current_field_name = self._next_field(current_field_name, append_to_path=True)
 
     def _set_unchecked(
         self, field_name: str, value: Union[bytes, int, str, Sequence[TypeValue]]
