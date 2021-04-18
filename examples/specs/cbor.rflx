@@ -20,7 +20,7 @@ package CBOR is
    type Quad is mod 2**64;
 
    type Tag_Small is
-      (Standard_Data        =>  0,
+      (Standard_Date        =>  0,
        Epoch_Based_Data     =>  1,
        Unsigned_Bignum      =>  2,
        Negative_Bignum      =>  3,
@@ -39,17 +39,31 @@ package CBOR is
        MIME_Message         => 36)
    with Size => 8;
 
+   type Simple_Special is
+      (Simple_False     => 20,
+       Simple_True      => 21,
+       Simple_Null      => 22,
+       Simple_Undefined => 23)
+   with Size => 5;
+
+   type Simple_Big is range 24 .. 255 with Size => 8;
+
    type Head is
       message
          Major_Type : Major_Type;
          Additional : Additional
             then null
-               if (Additional < 24 and Major_Type = Unsigned_Integer)
-                  or (Additional = 31 and Major_Type = Float_Or_Simple)
+               if Additional < 24 and
+                     (Major_Type = Unsigned_Integer
+                      or Major_Type = Negative_Integer)
+            then null
+               if Additional <= 19 and Major_Type = Float_Or_Simple
+            then Simple_Special
+               if Additional > 19 and Additional < 24 and Major_Type = Float_Or_Simple
             then Tag_Small
                if Additional < 24 and Major_Type = Tag_Type
             then Tag_Big
-               if Additional = 31 and Major_Type = Tag_Type
+               if Additional >= 24 and Major_Type = Tag_Type
             then Data
                with Size => Message'Size - (Additional'Last - Major_Type'First + 1)
                   if Additional = 31
@@ -64,8 +78,10 @@ package CBOR is
                           or Major_Type = Text_String
                           or Major_Type = Array_Data
                           or Major_Type = Map)
+            then Simple_Big
+               if (Major_Type = Float_Or_Simple) and Additional = 24
             then Data_1
-               if Additional = 24
+               if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 24
             then Data_2
                if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 25
             then Float
@@ -96,10 +112,15 @@ package CBOR is
          Tag_Small : Tag_Small
             with First => Additional'First
                then Next
-                  with Size => Message'Size - (Tag_Small'Last - Message'First + 1)
-                     if Tag_Small = Unsigned_Bignum;
+                  with Size => Message'Size - (Tag_Small'Last - Message'First + 1);
          Tag_Big : Tag_Big
+            then Next
+               with Size => Message'Size - (Tag_Big'Last - Message'First + 1);
+         Simple_Big : Simple_Big
             then null;
+         Simple_Special : Simple_Special
+            with First => Additional'First
+               then null;
          Next : Opaque;
       end message;
 
