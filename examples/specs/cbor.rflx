@@ -64,6 +64,25 @@ package CBOR is
                if Additional < 24 and Major_Type = Tag_Type
             then Tag_Big
                if Additional >= 24 and Major_Type = Tag_Type
+            then null
+               if Additional = 0
+                  and (Major_Type = Byte_String
+                       or Major_Type = Text_String
+                       or Major_Type = Array_Data
+                       or Major_Type = Map)
+            then Data
+               with Size => 8 * Additional
+                  if Additional > 0
+                     and Additional < 24
+                     and (Major_Type = Text_String
+                          or Major_Type = Byte_String)
+            then Data
+               --  ISSUE: Componolit/RecordFlux#51
+               --  Size actually contains the number of elements in the map / array
+               with Size => 8 * Additional
+                  if Additional > 0 and Additional < 24
+                     and (Major_Type = Array_Data
+                          or Major_Type = Map)
             then Data
                with Size => Message'Size - (Additional'Last - Major_Type'First + 1)
                   if Additional = 31
@@ -71,17 +90,12 @@ package CBOR is
                           or Major_Type = Text_String
                           or Major_Type = Array_Data
                           or Major_Type = Map)
-            then Data
-               with Size => 8 * Additional
-                  if Additional < 24
-                     and (Major_Type = Byte_String
-                          or Major_Type = Text_String
-                          or Major_Type = Array_Data
-                          or Major_Type = Map)
             then Simple_Big
                if (Major_Type = Float_Or_Simple) and Additional = 24
             then Data_1
-               if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 24
+               if (Major_Type = Unsigned_Integer
+                   or Major_Type = Negative_Integer
+                   or Major_Type = Array_Data) and Additional = 24
             then Data_2
                if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 25
             then Float
@@ -98,7 +112,11 @@ package CBOR is
                with Size => 64
                   if Major_Type = Float_Or_Simple and Additional = 27;
          Data_1 : Byte
-            then null;
+            then null
+               if Major_Type /= Array_Data
+            then Data
+               with Size => 8 * Data_1
+                  if Major_Type = Array_Data;
          Data_2 : Word
             then null;
          Data_4 : Double
@@ -124,6 +142,17 @@ package CBOR is
          Next : Opaque;
       end message;
 
+   type Heads is array of Head;
+
+   type Heads_Message is
+      message
+         Heads : Heads
+            with Size => Message'Size;
+      end message;
+
    for Head use (Next => Head);
+
+   for Head use (Data => Heads_Message)
+      if Major_Type = Array_Data;
 
 end CBOR;
