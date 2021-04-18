@@ -1,0 +1,108 @@
+package CBOR is
+
+   -- RFC 8949
+
+   type Major_Type is
+      (Unsigned_Integer => 0,
+       Negative_Integer => 1,
+       Byte_String      => 2,
+       Text_String      => 3,
+       Array_Data       => 4,
+       Map              => 5,
+       Tag_Type         => 6,
+       Float_Or_Simple  => 7)
+   with Size => 3;
+
+   type Additional is mod 2**5;
+   type Byte is mod 2**8;
+   type Word is mod 2**16;
+   type Double is mod 2**32;
+   type Quad is mod 2**64;
+
+   type Tag_Small is
+      (Standard_Data        =>  0,
+       Epoch_Based_Data     =>  1,
+       Unsigned_Bignum      =>  2,
+       Negative_Bignum      =>  3,
+       Decimal_Fraction     =>  4,
+       Bigfloat             =>  5,
+       Encode_As_Base64_URL => 21,
+       Encode_As_Base64     => 22,
+       Encode_As_Base16     => 23)
+   with Size => 5;
+
+   type Tag_Big is
+      (Encoded_CBOR         => 24,
+       URI                  => 32,
+       Base64_URL           => 33,
+       Base64               => 34,
+       MIME_Message         => 36)
+   with Size => 8;
+
+   type Head is
+      message
+         Major_Type : Major_Type;
+         Additional : Additional
+            then null
+               if (Additional < 24 and Major_Type = Unsigned_Integer)
+                  or (Additional = 31 and Major_Type = Float_Or_Simple)
+            then Tag_Small
+               if Additional < 24 and Major_Type = Tag_Type
+            then Tag_Big
+               if Additional = 31 and Major_Type = Tag_Type
+            then Data
+               with Size => Message'Size - (Additional'Last - Major_Type'First + 1)
+                  if Additional = 31
+                     and (Major_Type = Byte_String
+                          or Major_Type = Text_String
+                          or Major_Type = Array_Data
+                          or Major_Type = Map)
+            then Data
+               with Size => 8 * Additional
+                  if Additional < 24
+                     and (Major_Type = Byte_String
+                          or Major_Type = Text_String
+                          or Major_Type = Array_Data
+                          or Major_Type = Map)
+            then Data_1
+               if Additional = 24
+            then Data_2
+               if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 25
+            then Float
+               with Size => 16
+                  if Major_Type = Float_Or_Simple and Additional = 25
+            then Data_4
+               if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 26
+            then Float
+               with Size => 32
+                  if Major_Type = Float_Or_Simple and Additional = 26
+            then Data_8
+               if (Major_Type = Unsigned_Integer or Major_Type = Negative_Integer) and Additional = 27
+            then Float
+               with Size => 64
+                  if Major_Type = Float_Or_Simple and Additional = 27;
+         Data_1 : Byte
+            then null;
+         Data_2 : Word
+            then null;
+         Data_4 : Double
+            then null;
+         Data_8 : Quad
+            then null;
+         Float : Opaque
+            then null;
+         Data : Opaque
+            then null;
+         Tag_Small : Tag_Small
+            with First => Additional'First
+               then Next
+                  with Size => Message'Size - (Tag_Small'Last - Message'First + 1)
+                     if Tag_Small = Unsigned_Bignum;
+         Tag_Big : Tag_Big
+            then null;
+         Next : Opaque;
+      end message;
+
+   for Head use (Next => Head);
+
+end CBOR;
