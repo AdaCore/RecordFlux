@@ -618,6 +618,11 @@ class MessageValue(TypeValue):
 
     @property
     def path(self) -> Sequence[Link]:
+        """
+        The returned path is only correct, if the parse() method is used to set the field values.
+        If fields are set manually using the set() method, path is empty. If the set() method is
+        used to manipulate fields that have already been set by parse(), path is incorrect.
+        """
         return self._path
 
     def inner_messages(self) -> List["MessageValue"]:
