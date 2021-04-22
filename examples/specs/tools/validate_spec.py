@@ -2,15 +2,17 @@
 
 import argparse
 import json
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import Dict, List, Optional, TextIO, Type, Union
 
-from rflx.error import RecordFluxError
+from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.pyrflx import PyRFLX, PyRFLXError
+from rflx.model import Link
+from rflx.pyrflx import Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 
 
@@ -64,6 +66,20 @@ def cli(argv: List[str]) -> Union[int, str]:
         ),
     )
 
+    parser.add_argument(
+        "-c",
+        "--coverage",
+        action="store_true",
+        help="print the combined link-coverage of all provided messages",
+    )
+
+    parser.add_argument(
+        "--target-coverage",
+        type=float,
+        default=0,
+        help="abort with exitcode 1 if the coverage threshold is not reached",
+    )
+
     parser.add_argument("--no-verification", action="store_true", help="skip model verification")
 
     args = parser.parse_args(argv[1:])
@@ -83,14 +99,20 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f'invalid identifier "{args.message_identifier}" : {e}'
 
     try:
-        message_value = PyRFLX.from_specs(
+        pyrflx = PyRFLX.from_specs(
             [str(args.specification)], skip_model_verification=args.no_verification
-        )[str(identifier.parent)][str(identifier.name)]
+        )
+    except FileNotFoundError as e:
+        return f"specification {e}"
+
+    try:
+        message_value = pyrflx[str(identifier.parent)][str(identifier.name)]
     except KeyError:
         return f'message "{identifier.name}" could not be found in package "{identifier.parent}"'
 
-    except FileNotFoundError as e:
-        return f"specification {e}"
+    coverage_info = (
+        CoverageInformation(list(pyrflx), args.target_coverage) if args.coverage else None
+    )
 
     try:
         validate(
@@ -99,6 +121,7 @@ def cli(argv: List[str]) -> Union[int, str]:
             args.directory_valid,
             args.json_output,
             args.abort_on_error,
+            coverage_info,
         )
     except ValidationError as e:
         return f"{e}"
@@ -112,6 +135,7 @@ def validate(
     directory_valid: Optional[Path],
     json_output: Optional[Path],
     abort_on_error: bool,
+    coverage_info: Optional["CoverageInformation"],
 ) -> int:
 
     with OutputWriter(json_output) as output_writer:
@@ -122,10 +146,13 @@ def validate(
             directory = sorted(directory_path.glob("*")) if directory_path is not None else []
             for path in directory:
                 validation_result = _validate_message(path, is_valid_directory, message_value)
+                if coverage_info is not None:
+                    coverage_info.update(validation_result.parser_result)
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success and abort_on_error:
                     raise ValidationError(f"aborted: message {path} was classified incorrectly")
-
+        if coverage_info is not None:
+            output_writer.write_coverage(coverage_info)
     return 0
 
 
@@ -159,6 +186,74 @@ def _validate_message(
         valid_original_message,
         valid_parser_result,
     )
+
+
+class CoverageInformation:
+    def __init__(self, packages: List[Package], target_coverage: float) -> None:
+        self._total_message_coverage: Dict[str, Dict[Link, bool]] = {}
+        self.spec_files: Dict[str, List[str]] = {}
+        self.target_coverage = target_coverage
+        for package in packages:
+            for message in package:
+                assert isinstance(message, MessageValue)
+                self._total_message_coverage[str(message.identifier)] = {
+                    link: False for link in message.model.structure
+                }
+
+                assert isinstance(message.model.location, Location)
+                assert isinstance(message.model.location.source, Path)
+                file_name = message.model.location.source.name
+                if file_name in self.spec_files:
+                    self.spec_files[file_name].append(str(message.identifier))
+                else:
+                    self.spec_files[file_name] = [str(message.identifier)]
+
+    def update(self, message_value: MessageValue) -> None:
+        messages = message_value.inner_messages() + [message_value]
+        for message in messages:
+            for link in message.path:
+                self._total_message_coverage[str(message.identifier)][link] = True
+
+    @property
+    def total_links(self) -> int:
+        return sum([len(structure) for structure in self._total_message_coverage.values()])
+
+    @property
+    def total_covered_links(self) -> int:
+        return sum(
+            [
+                list(structure.values()).count(True)
+                for structure in self._total_message_coverage.values()
+            ]
+        )
+
+    def file_total_links(self, file_name: str) -> int:
+        assert file_name in self.spec_files
+        return sum(
+            [len(self._total_message_coverage[message]) for message in self.spec_files[file_name]]
+        )
+
+    def file_covered_links(self, file_name: str) -> int:
+        assert file_name in self.spec_files
+        return sum(
+            [
+                list(self._total_message_coverage[message].values()).count(True)
+                for message in self.spec_files[file_name]
+            ]
+        )
+
+    def file_uncovered_links(self, file_name: str) -> List[Link]:
+        assert file_name in self.spec_files
+        uncovered = []
+        for message in self.spec_files[file_name]:
+            uncovered.extend(
+                [
+                    link
+                    for link, covered in self._total_message_coverage[message].items()
+                    if not covered
+                ]
+            )
+        return uncovered
 
 
 @dataclass
@@ -212,6 +307,8 @@ class OutputWriter:
         else:
             self.file = file
         self.classified_incorrectly = 0
+        self.reached_coverage = 0.00
+        self.target_coverage = 0.00
 
     def __enter__(self) -> "OutputWriter":
         return self
@@ -226,10 +323,67 @@ class OutputWriter:
             self.file.write("\n]")
             self.file.close()
 
-        if exception_value is None and self.classified_incorrectly != 0:
-            raise ValidationError(
-                f"{self.classified_incorrectly} messages were classified incorrectly"
+        if exception_value is None:
+            err = ValidationError()
+            if self.classified_incorrectly != 0:
+                err.append(f"{self.classified_incorrectly} messages were classified incorrectly")
+            if self.reached_coverage < self.target_coverage:
+                err.append(
+                    f"missed target coverage of {self.target_coverage:.2%}, "
+                    f"reached {self.reached_coverage:.2%}"
+                )
+            if len(err.messages) > 0:
+                raise err
+
+    def write_coverage(self, coverage_info: CoverageInformation) -> None:
+        self.__write_coverage_short(coverage_info)
+        self.__write_coverage_full(coverage_info)
+        self.reached_coverage = coverage_info.total_covered_links / coverage_info.total_links
+        self.target_coverage = coverage_info.target_coverage
+
+    @staticmethod
+    def __write_coverage_short(total_coverage: CoverageInformation) -> None:
+        print("\n")
+        print("-" * 80)
+        print(f"{'RecordFlux Validation Coverage Report' : ^80}")
+        print(f"Directory: {os.getcwd()}")
+        print("-" * 80)
+        print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
+        for file, _ in total_coverage.spec_files.items():
+            file_links = total_coverage.file_total_links(file)
+            file_covered_links = total_coverage.file_covered_links(file)
+            print(
+                f"{file : <40} {file_links : >10} {file_covered_links : >10} "
+                f"{file_covered_links / file_links :>15.2%}"
             )
+        print("-" * 80)
+        total_links = total_coverage.total_links
+        total_covered_links = total_coverage.total_covered_links
+        print(
+            f"{'TOTAL' : <40} {total_links: >10} {total_covered_links : >10} "
+            f"{total_covered_links / total_links :15.2%}"
+        )
+        print("-" * 80)
+
+    @staticmethod
+    def __write_coverage_full(total_coverage: CoverageInformation) -> None:
+        print("\n")
+        print("=" * 80)
+        print(f"{'Link Coverage' : ^80}")
+        print("=" * 80)
+        for file, _ in total_coverage.spec_files.items():
+            print("\n")
+            print(f"{file : ^80}")
+            print("-" * 80)
+            uncovered_links = total_coverage.file_uncovered_links(file)
+            if len(uncovered_links) == 0:
+                print(f"{'all links covered':^80}")
+                continue
+            for link in uncovered_links:
+                print(
+                    f"{str(link.location) if link.location is not None else '':<17}"
+                    f": missing link {link.source.name:^25} -> {link.target.name:^20}"
+                )
 
     def write_result(self, validation_result: ValidationResult) -> None:
         self.__write_console_output(validation_result)
@@ -261,12 +415,17 @@ class OutputWriter:
 
 
 class ValidationError(Exception):
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: Optional[str] = None) -> None:
         super().__init__()
-        self.message = message
+        self.messages: List[str] = []
+        if isinstance(message, str):
+            self.messages.append(message)
 
     def __str__(self) -> str:
-        return self.message
+        return "\n".join(e for e in self.messages)
+
+    def append(self, message: str) -> None:
+        self.messages.append(message)
 
 
 if __name__ == "__main__":
