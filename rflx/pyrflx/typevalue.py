@@ -724,6 +724,7 @@ class MessageValue(TypeValue):
 
     def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
         assert not self._skip_verification
+        self._path.clear()
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         current_field_name = self._next_field(INITIAL.name)
