@@ -1238,6 +1238,7 @@ def test_get_path(icmp_message_value: MessageValue) -> None:
     icmp_message_value.parse(test_bytes)
     path = icmp_message_value.path
     field_pairs = [
+        ("Initial", "Tag"),
         ("Tag", "Code_Zero"),
         ("Code_Zero", "Checksum"),
         ("Checksum", "Identifier"),
@@ -1245,8 +1246,6 @@ def test_get_path(icmp_message_value: MessageValue) -> None:
         ("Sequence_Number", "Data"),
         ("Data", "Final"),
     ]
-
-    assert len(path) == 6
     assert [(l.source.name, l.target.name) for l in path] == field_pairs
 
 

@@ -727,7 +727,7 @@ class MessageValue(TypeValue):
         self._path.clear()
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
-        current_field_name = self._next_field(INITIAL.name)
+        current_field_name = self._next_field(INITIAL.name, append_to_path=True)
         last_field_first_in_bitstr = current_field_first_in_bitstr = 0
 
         def get_current_pos_in_bitstr(field_name: str) -> int:
