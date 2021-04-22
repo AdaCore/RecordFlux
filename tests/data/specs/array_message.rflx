@@ -3,12 +3,12 @@ package Array_Message is
    type Byte is mod 256;
    type Bytes is array of Byte;
 
-   type Array_Member is
+   type Array_Element is
       message
          Byte : Byte;
       end message;
 
-   type Test_Array is array of Array_Member;
+   type Test_Array is array of Array_Element;
 
    type Message_Array is
       message
@@ -29,6 +29,6 @@ package Array_Message is
          Payload : Opaque;
       end message;
 
-   for Message_Array_And_Refinement use (Payload => Array_Member);
+   for Message_Array_And_Refinement use (Payload => Array_Element);
 
 end Array_Message;

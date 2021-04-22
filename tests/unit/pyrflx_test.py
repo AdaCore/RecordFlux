@@ -689,11 +689,11 @@ def test_invalid_value() -> None:
 
 
 def test_array_messages(message_array_value: MessageValue, array_message_package: Package) -> None:
-    array_member_one = array_message_package["Array_Member"]
-    array_member_one.set("Byte", 5)
-    array_member_two = array_message_package["Array_Member"]
-    array_member_two.set("Byte", 6)
-    array = [array_member_one, array_member_two]
+    array_element_one = array_message_package["Array_Element"]
+    array_element_one.set("Byte", 5)
+    array_element_two = array_message_package["Array_Element"]
+    array_element_two.set("Byte", 6)
+    array = [array_element_one, array_element_two]
     message_array_value.set("Length", 2)
     message_array_value.set("Array_Field", array)
     assert message_array_value.valid_message
@@ -1209,21 +1209,20 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
 def test_get_inner_messages(
     array_message_package: Package, message_array_refinement_value: MessageValue
 ) -> None:
-    array_message_one = array_message_package["Array_Member"]
-    array_message_one.set("Byte", 5)
-    array_message_two = array_message_package["Array_Member"]
-    array_message_two.set("Byte", 6)
-    sdu_message = array_message_package["Array_Member"]
-    sdu_message.set("Byte", 7)
+    array_element_one = array_message_package["Array_Element"]
+    array_element_one.set("Byte", 5)
+    array_element_two = array_message_package["Array_Element"]
+    array_element_two.set("Byte", 6)
+    array_element_three = array_message_package["Array_Element"]
+    array_element_three.set("Byte", 7)
 
-    message_foo_value = message_array_refinement_value
-    array_contents: Sequence[TypeValue] = [array_message_one, array_message_two]
-    message_foo_value.set("Length", 2)
-    message_foo_value.set("Array_Field", array_contents)
-    message_foo_value.set("Payload", sdu_message.bytestring)
-    assert message_foo_value.valid_message
+    array_contents: Sequence[TypeValue] = [array_element_one, array_element_two]
+    message_array_refinement_value.set("Length", 2)
+    message_array_refinement_value.set("Array_Field", array_contents)
+    message_array_refinement_value.set("Payload", array_element_three.bytestring)
+    assert message_array_refinement_value.valid_message
 
-    inner_messages = message_foo_value.inner_messages()
+    inner_messages = message_array_refinement_value.inner_messages()
     assert len(inner_messages) == 3
     assert all(isinstance(m, MessageValue) for m in inner_messages)
     assert {m.get("Byte") for m in inner_messages} == {5, 6, 7}
@@ -1237,7 +1236,7 @@ def test_get_path(icmp_message_value: MessageValue) -> None:
         b"\x30\x31\x32\x33\x34\x35\x36\x37"
     )
     icmp_message_value.parse(test_bytes)
-    covered_links = icmp_message_value.path
+    path = icmp_message_value.path
     field_pairs = [
         ("Tag", "Code_Zero"),
         ("Code_Zero", "Checksum"),
@@ -1247,10 +1246,9 @@ def test_get_path(icmp_message_value: MessageValue) -> None:
         ("Data", "Final"),
     ]
 
-    assert len(covered_links) == 6
-    for link, field_pair in zip(covered_links, field_pairs):
-        assert link.source.name == field_pair[0] and link.target.name == field_pair[1]
+    assert len(path) == 6
+    assert [(l.source.name, l.target.name) for l in path] == field_pairs
 
 
-def test_get_structure(icmp_message_value: MessageValue) -> None:
+def test_get_model(icmp_message_value: MessageValue) -> None:
     assert isinstance(icmp_message_value.model, Message)

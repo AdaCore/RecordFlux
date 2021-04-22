@@ -264,9 +264,9 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
 def test_no_verification_array_nested_messages(
     array_message_package: Package, message_array_value: MessageValue
 ) -> None:
-    array_message_one = array_message_package["Array_Member"]
+    array_message_one = array_message_package["Array_Element"]
     array_message_one.set("Byte", 5)
-    array_message_two = array_message_package["Array_Member"]
+    array_message_two = array_message_package["Array_Element"]
     array_message_two.set("Byte", 6)
     array: List[TypeValue] = [array_message_one, array_message_two]
     message_array_value.set("Length", 2)
@@ -280,11 +280,11 @@ def test_no_verification_array_nested_messages(
     )
     array_message_package_unv = pyrflx_["Array_Message"]
     array_message_unv = array_message_package_unv["Message_Array"]
-    array_member_one_unv = array_message_package_unv["Array_Member"]
-    array_member_one_unv.set("Byte", 5)
-    array_member_two_unv = array_message_package_unv["Array_Member"]
-    array_member_two_unv.set("Byte", 6)
-    array_unv: List[TypeValue] = [array_member_one_unv, array_member_two_unv]
+    array_element_one_unv = array_message_package_unv["Array_Element"]
+    array_element_one_unv.set("Byte", 5)
+    array_element_two_unv = array_message_package_unv["Array_Element"]
+    array_element_two_unv.set("Byte", 6)
+    array_unv: List[TypeValue] = [array_element_one_unv, array_element_two_unv]
     array_message_unv.set("Length", 2)
     array_message_unv.set("Array_Field", array_unv)
     assert array_message_unv.valid_message
