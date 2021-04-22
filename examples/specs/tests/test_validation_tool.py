@@ -349,3 +349,47 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
         == f"{number} messages were classified incorrectly"
     )
     assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_negative.json")
+
+
+def test_validation_coverage() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "ipv4.rflx",
+                "-m",
+                "IPv4::Packet",
+                "-v",
+                "tests/data/ipv4/packet/valid",
+                "-i",
+                "tests/data/ipv4/packet/invalid",
+                "--coverage",
+                "--target-coverage=1",
+                "--no-verification",
+            ]
+        )
+        == 0
+    )
+
+
+def test_validation_positive_coverage_threshold_missed() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-i",
+                "tests/data/ethernet/frame/invalid",
+                "-v",
+                "tests/data/ethernet/frame/valid",
+                "-c",
+                "--target-coverage=0.8",
+                "--no-verification",
+            ]
+        )
+        == "missed target coverage of 80.00%, reached 22.06%"
+    )
