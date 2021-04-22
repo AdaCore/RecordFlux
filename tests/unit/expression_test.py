@@ -51,6 +51,8 @@ from rflx.expression import (
     Pow,
     Precedence,
     Present,
+    Proof,
+    ProofResult,
     Selected,
     Size,
     String,
@@ -2267,3 +2269,15 @@ def test_variable_serialize() -> None:
         "kind": "Variable",
         "data": {"identifier": ["Y"], "negative": True},
     }
+
+
+def test_proof_invalid_logic() -> None:
+    expr = Less(Mod(Variable("X"), Variable("Y")), Number(100))
+    p = Proof(expr, logic="QF_IDL")
+    assert p.result == ProofResult.UNKNOWN
+    assert p.error == [
+        (
+            "Benchmark is not in QF_IDL (integer difference logic).",
+            None,
+        )
+    ]
