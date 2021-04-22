@@ -43,6 +43,7 @@ def test_validate_spec(spec: str) -> None:
                     directory_valid,
                     json_output=None,
                     abort_on_error=False,
+                    coverage_info=None,
                 )
                 == 0
             )
