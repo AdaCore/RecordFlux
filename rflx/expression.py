@@ -40,17 +40,23 @@ class ProofResult(Enum):
 
 
 class Proof:
-    def __init__(self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None):
+    def __init__(
+        self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None, logic: str = "QF_NIA"
+    ):
         self.__expr = expr
         self.__facts = facts or []
         self.__result = ProofResult.UNSAT
+        self.__logic = logic
+        self.__unknown_reason: Optional[str] = None
 
-        solver = z3.Solver()
+        solver = z3.SolverFor(self.__logic)
         solver.add(self.__expr.z3expr())
         for f in self.__facts:
             solver.add(f.z3expr())
 
         self.__result = ProofResult(solver.check())
+        if self.__result == ProofResult.UNKNOWN:
+            self.__unknown_reason = solver.reason_unknown()
 
     @property
     def result(self) -> ProofResult:
@@ -58,8 +64,11 @@ class Proof:
 
     @property
     def error(self) -> List[Tuple[str, Optional[Location]]]:
-        assert self.__result == ProofResult.UNSAT
-        solver = z3.Solver()
+        assert self.__result != ProofResult.SAT
+        if self.__result == ProofResult.UNKNOWN:
+            assert self.__unknown_reason is not None
+            return [(self.__unknown_reason, None)]
+        solver = z3.SolverFor(self.__logic)
         solver.set(unsat_core=True)
         facts = {f"H{index}": fact for index, fact in enumerate(self.__facts)}
         for name, fact in facts.items():
