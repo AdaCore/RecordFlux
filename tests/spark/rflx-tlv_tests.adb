@@ -290,6 +290,8 @@ package body RFLX.TLV_Tests is
       end;
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after reading");
+      Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
+      Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (4)'Image, "Invalid length after reading");
 
       TLV.Message.Reset (Context);
 
@@ -299,7 +301,7 @@ package body RFLX.TLV_Tests is
          procedure Write (Buffer : out RFLX_Builtin_Types.Bytes) is
          begin
             Assert (Buffer'Length = 7, "Invalid buffer length");
-            Buffer := (1, 0, 4, 0, 0, 0, 0);
+            Buffer := (1, 0, 2, 0, 0, 0, 0);
          end Write;
          procedure Message_Write is new TLV.Message.Write (Write);
       begin
@@ -311,6 +313,8 @@ package body RFLX.TLV_Tests is
       TLV.Message.Verify_Message (Context);
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after verification");
+      Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
+      Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (2)'Image, "Invalid length after writing");
 
       TLV.Message.Take_Buffer (Context, Buffer);
       Free_Bytes_Ptr (Buffer);
