@@ -39,11 +39,11 @@ def test_validate_spec(spec: str) -> None:
             assert (
                 validate(
                     message_value,
+                    pyrflx,
                     directory_invalid,
                     directory_valid,
                     json_output=None,
                     abort_on_error=False,
-                    coverage_info=None,
                 )
                 == 0
             )

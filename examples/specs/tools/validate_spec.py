@@ -5,6 +5,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from types import TracebackType
 from typing import Dict, List, Optional, TextIO, Type, Union
@@ -106,22 +107,15 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f"specification {e}"
 
     try:
-        message_value = pyrflx[str(identifier.parent)][str(identifier.name)]
-    except KeyError:
-        return f'message "{identifier.name}" could not be found in package "{identifier.parent}"'
-
-    coverage_info = (
-        CoverageInformation(list(pyrflx), args.target_coverage) if args.coverage else None
-    )
-
-    try:
         validate(
-            message_value,
+            identifier,
+            pyrflx,
             args.directory_invalid,
             args.directory_valid,
             args.json_output,
             args.abort_on_error,
-            coverage_info,
+            args.coverage,
+            args.target_coverage,
         )
     except ValidationError as e:
         return f"{e}"
@@ -130,13 +124,30 @@ def cli(argv: List[str]) -> Union[int, str]:
 
 
 def validate(
-    message_value: MessageValue,
+    msg_identifier: ID,
+    pyrflx: PyRFLX,
     directory_invalid: Optional[Path],
     directory_valid: Optional[Path],
     json_output: Optional[Path],
-    abort_on_error: bool,
-    coverage_info: Optional["CoverageInformation"],
+    abort_on_error: bool = False,
+    coverage: bool = False,
+    target_coverage: float = 0.00,
 ) -> int:
+    # pylint: disable = too-many-arguments, too-many-locals
+
+    if target_coverage < 0 or target_coverage > 100:
+        raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
+
+    try:
+        message_value = pyrflx[str(msg_identifier.parent)][str(msg_identifier.name)]
+    except KeyError as e:
+        raise ValidationError(
+            f'message "{msg_identifier.name}" could not be found '
+            f'in package "{msg_identifier.parent}"'
+        ) from e
+
+    incorrectly_classified = 0
+    coverage_info = CoverageInformation(list(pyrflx), coverage)
 
     with OutputWriter(json_output) as output_writer:
         for directory_path, is_valid_directory in [
@@ -146,13 +157,24 @@ def validate(
             directory = sorted(directory_path.glob("*")) if directory_path is not None else []
             for path in directory:
                 validation_result = _validate_message(path, is_valid_directory, message_value)
-                if coverage_info is not None:
-                    coverage_info.update(validation_result.parser_result)
+                coverage_info.update(validation_result.parser_result)
                 output_writer.write_result(validation_result)
-                if not validation_result.validation_success and abort_on_error:
-                    raise ValidationError(f"aborted: message {path} was classified incorrectly")
-        if coverage_info is not None:
-            output_writer.write_coverage(coverage_info)
+                if not validation_result.validation_success:
+                    incorrectly_classified += 1
+                    if abort_on_error:
+                        raise ValidationError(f"aborted: message {path} was classified incorrectly")
+        coverage_info.print_coverage()
+
+    err = ValidationError()
+    if incorrectly_classified != 0:
+        err.append(f"{incorrectly_classified} messages were classified incorrectly")
+    if coverage and coverage_info.total_covered_links / coverage_info.total_links < target_coverage:
+        err.append(
+            f"missed target coverage of {target_coverage:.2%}, "
+            f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
+        )
+    if len(err.messages) > 0:
+        raise err
     return 0
 
 
@@ -189,71 +211,122 @@ def _validate_message(
 
 
 class CoverageInformation:
-    def __init__(self, packages: List[Package], target_coverage: float) -> None:
-        self._total_message_coverage: Dict[str, Dict[Link, bool]] = {}
-        self.spec_files: Dict[str, List[str]] = {}
-        self.target_coverage = target_coverage
-        for package in packages:
-            for message in package:
-                assert isinstance(message, MessageValue)
-                self._total_message_coverage[str(message.identifier)] = {
-                    link: False for link in message.model.structure
-                }
+    def __init__(self, packages: List[Package], coverage: bool) -> None:
+        self.__total_message_coverage: Dict[str, Dict[Link, bool]] = {}
+        self.__spec_files: Dict[str, List[str]] = {}
+        self.__coverage = coverage
 
-                assert isinstance(message.model.location, Location)
-                assert isinstance(message.model.location.source, Path)
-                file_name = message.model.location.source.name
-                if file_name in self.spec_files:
-                    self.spec_files[file_name].append(str(message.identifier))
-                else:
-                    self.spec_files[file_name] = [str(message.identifier)]
+        if self.__coverage:
+            for package in packages:
+                for message in package:
+                    assert isinstance(message, MessageValue)
+                    self.__total_message_coverage[str(message.identifier)] = {
+                        link: False for link in message.model.structure
+                    }
+
+                    assert isinstance(message.model.location, Location)
+                    assert isinstance(message.model.location.source, Path)
+                    file_name = message.model.location.source.name
+                    if file_name in self.__spec_files:
+                        self.__spec_files[file_name].append(str(message.identifier))
+                    else:
+                        self.__spec_files[file_name] = [str(message.identifier)]
 
     def update(self, message_value: MessageValue) -> None:
-        messages = message_value.inner_messages() + [message_value]
-        for message in messages:
-            for link in message.path:
-                self._total_message_coverage[str(message.identifier)][link] = True
+        if self.__coverage:
+            messages = message_value.inner_messages() + [message_value]
+            for message in messages:
+                for link in message.path:
+                    self.__total_message_coverage[str(message.identifier)][link] = True
 
-    @property
+    @cached_property
     def total_links(self) -> int:
-        return sum([len(structure) for structure in self._total_message_coverage.values()])
+        return sum([len(structure) for structure in self.__total_message_coverage.values()])
 
-    @property
+    @cached_property
     def total_covered_links(self) -> int:
         return sum(
             [
                 list(structure.values()).count(True)
-                for structure in self._total_message_coverage.values()
+                for structure in self.__total_message_coverage.values()
             ]
         )
 
     def file_total_links(self, file_name: str) -> int:
-        assert file_name in self.spec_files
+        assert file_name in self.__spec_files
         return sum(
-            [len(self._total_message_coverage[message]) for message in self.spec_files[file_name]]
+            [
+                len(self.__total_message_coverage[message])
+                for message in self.__spec_files[file_name]
+            ]
         )
 
     def file_covered_links(self, file_name: str) -> int:
-        assert file_name in self.spec_files
+        assert file_name in self.__spec_files
         return sum(
             [
-                list(self._total_message_coverage[message].values()).count(True)
-                for message in self.spec_files[file_name]
+                list(self.__total_message_coverage[message].values()).count(True)
+                for message in self.__spec_files[file_name]
             ]
         )
 
     def file_uncovered_links(self, file_name: str) -> List[Link]:
-        assert file_name in self.spec_files
+        assert file_name in self.__spec_files
         uncovered = []
-        for message in self.spec_files[file_name]:
+        for message in self.__spec_files[file_name]:
             uncovered.extend(
                 [
                     link
-                    for link, covered in self._total_message_coverage[message].items()
+                    for link, covered in self.__total_message_coverage[message].items()
                     if not covered
                 ]
             )
         return uncovered
+
+    def print_coverage(self) -> None:
+        if self.__coverage:
+            self.__print_coverage_overview()
+            self.__print_link_coverage()
+
+    def __print_coverage_overview(self) -> None:
+        print("\n")
+        print("-" * 80)
+        print(f"{'RecordFlux Validation Coverage Report' : ^80}")
+        print(f"Directory: {os.getcwd()}")
+        print("-" * 80)
+        print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
+        for file, _ in self.__spec_files.items():
+            file_links = self.file_total_links(file)
+            file_covered_links = self.file_covered_links(file)
+            print(
+                f"{file : <40} {file_links : >10} {file_covered_links : >10} "
+                f"{file_covered_links / file_links :>15.2%}"
+            )
+        print("-" * 80)
+        print(
+            f"{'TOTAL' : <40} {self.total_links: >10} {self.total_covered_links : >10} "
+            f"{self.total_covered_links / self.total_links :15.2%}"
+        )
+        print("-" * 80)
+
+    def __print_link_coverage(self) -> None:
+        print("\n")
+        print("=" * 80)
+        print(f"{'Link Coverage' : ^80}")
+        print("=" * 80)
+        for file, _ in self.__spec_files.items():
+            print("\n")
+            print(f"{file : ^80}")
+            print("-" * 80)
+            uncovered_links = self.file_uncovered_links(file)
+            if len(uncovered_links) == 0:
+                print(f"{'all links covered':^80}")
+                continue
+            for link in uncovered_links:
+                print(
+                    f"{str(link.location) if link.location is not None else 'no location info':<17}"
+                    f": missing link {link.source.name:^25} -> {link.target.name:^20}"
+                )
 
 
 @dataclass
@@ -292,6 +365,18 @@ class ValidationResult:
 
         return output
 
+    def print_console_output(self) -> None:
+        if self.validation_success:
+            print(f"{str(self.message_file_path):<80} PASSED")
+        else:
+            print(f"{str(self.message_file_path):<80} FAILED")
+            print(
+                f"provided as: {self.valid_original_message}\t "
+                f"recognized as: {self.valid_parser_result}"
+            )
+            if self.parser_error is not None:
+                print(self.parser_error)
+
 
 class OutputWriter:
     file: Optional[TextIO]
@@ -307,8 +392,6 @@ class OutputWriter:
         else:
             self.file = file
         self.classified_incorrectly = 0
-        self.reached_coverage = 0.00
-        self.target_coverage = 0.00
 
     def __enter__(self) -> "OutputWriter":
         return self
@@ -323,84 +406,9 @@ class OutputWriter:
             self.file.write("\n]")
             self.file.close()
 
-        if exception_value is None:
-            err = ValidationError()
-            if self.classified_incorrectly != 0:
-                err.append(f"{self.classified_incorrectly} messages were classified incorrectly")
-            if self.reached_coverage < self.target_coverage:
-                err.append(
-                    f"missed target coverage of {self.target_coverage:.2%}, "
-                    f"reached {self.reached_coverage:.2%}"
-                )
-            if len(err.messages) > 0:
-                raise err
-
-    def write_coverage(self, coverage_info: CoverageInformation) -> None:
-        self.__write_coverage_short(coverage_info)
-        self.__write_coverage_full(coverage_info)
-        self.reached_coverage = coverage_info.total_covered_links / coverage_info.total_links
-        self.target_coverage = coverage_info.target_coverage
-
-    @staticmethod
-    def __write_coverage_short(total_coverage: CoverageInformation) -> None:
-        print("\n")
-        print("-" * 80)
-        print(f"{'RecordFlux Validation Coverage Report' : ^80}")
-        print(f"Directory: {os.getcwd()}")
-        print("-" * 80)
-        print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
-        for file, _ in total_coverage.spec_files.items():
-            file_links = total_coverage.file_total_links(file)
-            file_covered_links = total_coverage.file_covered_links(file)
-            print(
-                f"{file : <40} {file_links : >10} {file_covered_links : >10} "
-                f"{file_covered_links / file_links :>15.2%}"
-            )
-        print("-" * 80)
-        total_links = total_coverage.total_links
-        total_covered_links = total_coverage.total_covered_links
-        print(
-            f"{'TOTAL' : <40} {total_links: >10} {total_covered_links : >10} "
-            f"{total_covered_links / total_links :15.2%}"
-        )
-        print("-" * 80)
-
-    @staticmethod
-    def __write_coverage_full(total_coverage: CoverageInformation) -> None:
-        print("\n")
-        print("=" * 80)
-        print(f"{'Link Coverage' : ^80}")
-        print("=" * 80)
-        for file, _ in total_coverage.spec_files.items():
-            print("\n")
-            print(f"{file : ^80}")
-            print("-" * 80)
-            uncovered_links = total_coverage.file_uncovered_links(file)
-            if len(uncovered_links) == 0:
-                print(f"{'all links covered':^80}")
-                continue
-            for link in uncovered_links:
-                print(
-                    f"{str(link.location) if link.location is not None else '':<17}"
-                    f": missing link {link.source.name:^25} -> {link.target.name:^20}"
-                )
-
     def write_result(self, validation_result: ValidationResult) -> None:
-        self.__write_console_output(validation_result)
+        validation_result.print_console_output()
         self.__write_json_output(validation_result)
-
-    def __write_console_output(self, result: ValidationResult) -> None:
-        if result.validation_success:
-            print(f"{str(result.message_file_path):<80} PASSED")
-        else:
-            print(f"{str(result.message_file_path):<80} FAILED")
-            print(
-                f"provided as: {result.valid_original_message}\t "
-                f"recognized as: {result.valid_parser_result}"
-            )
-            if result.parser_error is not None:
-                print(result.parser_error)
-            self.classified_incorrectly += 1
 
     def __write_json_output(self, result: ValidationResult) -> None:
         if self.file is not None:
