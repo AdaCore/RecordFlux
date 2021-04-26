@@ -32,8 +32,9 @@ def to_identifier(text: str) -> str:
 URL = "https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml"
 NAMESPACES = {"IANA": "http://www.iana.org/assignments"}
 
-response = urllib.request.urlopen(URL)
-xmldoc = response.read().decode("utf-8")
+with urllib.request.urlopen(URL) as response:
+    xmldoc = response.read().decode("utf-8")
+
 root = et.fromstring(xmldoc)
 
 registry = root.find("IANA:registry", NAMESPACES)
