@@ -314,6 +314,30 @@ def test_model_illegal_first_aspect_at_initial_link() -> None:
     )
 
 
+def test_model_errors_in_type_and_session() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2**256;
+
+               generic
+               session S with
+                  Initial => A,
+                  Final => A
+               is
+               begin
+               end S;
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*64\)\n'
+        r"<stdin>:5:16: model: error: empty states\n"
+        r'<stdin>:7:30: model: error: initial state "A" does not exist in "Test::S"\n'
+        r'<stdin>:8:28: model: error: final state "A" does not exist in "Test::S"'
+        r"$",
+    )
+
+
 def test_message_with_two_size_fields() -> None:
     p = parser.Parser()
     p.parse_string(

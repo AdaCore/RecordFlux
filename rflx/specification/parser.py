@@ -774,7 +774,7 @@ def create_message(
     field_types: Mapping[model.Field, model.Type] = create_message_types(
         identifier, components, types, filename
     )
-    structure = create_message_structure(components, error, filename)
+    structure = create_message_structure(error, components, filename)
     aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
 
     try:
@@ -812,7 +812,7 @@ def create_message_types(
 
 
 def create_message_structure(
-    components: Components, error: RecordFluxError, filename: Path
+    error: RecordFluxError, components: Components, filename: Path
 ) -> List[model.Link]:
     # pylint: disable=too-many-branches, too-many-locals
 
@@ -1204,10 +1204,13 @@ class Parser:
         self.__cache = Cache(not skip_verification and cached)
 
     def __convert_unit(
-        self, spec: Specification, filename: Path, transitions: List[ID] = None
-    ) -> RecordFluxError:
+        self,
+        error: RecordFluxError,
+        spec: Specification,
+        filename: Path,
+        transitions: List[ID] = None,
+    ) -> None:
         transitions = transitions or []
-        error = RecordFluxError()
         withed_files = []
 
         if spec:
@@ -1260,8 +1263,6 @@ class Parser:
                 )
             self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 
-        return error
-
     def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
         transitions = transitions or []
@@ -1270,7 +1271,8 @@ class Parser:
         unit = AnalysisContext().get_from_file(str(filename))
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
-        return self.__convert_unit(unit.root, filename, transitions)
+        self.__convert_unit(error, unit.root, filename, transitions)
+        return error
 
     def __sort_specs_topologically(self) -> None:
         """
@@ -1313,17 +1315,14 @@ class Parser:
         error = RecordFluxError()
         unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
-            error = self.__convert_unit(unit.root, STDIN)
+            self.__convert_unit(error, unit.root, STDIN)
             self.__sort_specs_topologically()
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
         for spec_node in self.__specifications.values():
-            try:
-                self.__evaluate_specification(spec_node.spec, spec_node.filename)
-            except RecordFluxError as e:
-                error.extend(e)
+            self.__evaluate_specification(error, spec_node.spec, spec_node.filename)
         try:
             result = model.Model(self.__types, self.__sessions)
         except RecordFluxError as e:
@@ -1339,7 +1338,9 @@ class Parser:
             for spec_node in self.__specifications.values()
         }
 
-    def __evaluate_specification(self, spec: Specification, filename: Path) -> None:
+    def __evaluate_specification(
+        self, error: RecordFluxError, spec: Specification, filename: Path
+    ) -> None:
         handlers = {
             "ArrayTypeDef": create_array,
             "ModularTypeDef": create_modular,
@@ -1350,7 +1351,6 @@ class Parser:
             "EnumerationTypeDef": create_enumeration,
         }
         log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
-        error = RecordFluxError()
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
@@ -1380,9 +1380,11 @@ class Parser:
                     except RecordFluxError as e:
                         error.extend(e)
                 elif t.kind_name == "SessionDecl":
-                    new_session = create_session(t, package_id, filename, self.__types)
-                    self.__sessions.append(new_session)
-                    error.extend(new_session.error)
+                    try:
+                        new_session = create_session(t, package_id, filename, self.__types)
+                        self.__sessions.append(new_session)
+                        error.extend(new_session.error)
+                    except RecordFluxError as e:
+                        error.extend(e)
                 else:
                     raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
-        error.propagate()
