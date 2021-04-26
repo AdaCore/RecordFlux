@@ -109,9 +109,5 @@ class ID:
     def _separator(self) -> str:
         return "::"
 
-    @property
-    def serialize(self) -> Sequence[str]:
-        return self._parts
-
 
 StrID = Union[str, ID]

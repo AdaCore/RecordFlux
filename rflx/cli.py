@@ -34,13 +34,6 @@ def main(argv: List[str]) -> Union[int, str]:
     )
     parser_check.set_defaults(func=check)
 
-    parser_export = subparsers.add_parser("export", help="export model as JSON")
-    parser_export.add_argument(
-        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
-    )
-    parser_export.add_argument("-o", "--output", help="output file", type=Path, required=True)
-    parser_export.set_defaults(func=export)
-
     parser_generate = subparsers.add_parser("generate", help="generate code")
     parser_generate.add_argument(
         "-p",
@@ -173,9 +166,3 @@ def graph(args: argparse.Namespace) -> None:
     filename = args.directory.joinpath("locations.json")
     with open(filename, "w") as f:
         json.dump(locations, f)
-
-
-def export(args: argparse.Namespace) -> None:
-    model = parse(args.files)
-    with open(args.output, "w") as f:
-        json.dump(model.serialize, f, indent=3)

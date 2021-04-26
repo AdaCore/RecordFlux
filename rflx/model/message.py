@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -29,9 +29,6 @@ class Field(Base):
 
     def __lt__(self, other: "Field") -> int:
         return self.identifier < other.identifier
-
-    def __str__(self) -> str:
-        return str(self.identifier)
 
     @property
     def name(self) -> str:
@@ -175,17 +172,6 @@ class AbstractMessage(mty.Type):
             if fields:
                 fields += ";"
         return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
-
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": "Message",
-            "data": {
-                "identifier": self.identifier.serialize,
-                "structure": [l.serialize for l in self.structure],
-                "types": {f.name: t.identifier.serialize for f, t in self.types.items()},
-            },
-        }
 
     @property
     def type_(self) -> rty.Message:
@@ -1631,20 +1617,6 @@ class Refinement(mty.Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
-
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": "Refinement",
-            "data": {
-                "identifier": self.identifier.serialize,
-                "package": self.package.serialize,
-                "pdu": self.pdu.identifier.serialize,
-                "field": self.field.serialize,
-                "sdu": self.sdu.identifier.serialize,
-                "condition": self.condition.serialize,
-            },
-        }
 
 
 def derived_message_structure(base: Union[UnprovenMessage, Message]) -> Sequence[Link]:
