@@ -102,18 +102,6 @@ def test_range_last() -> None:
     assert integer.last_expr == Sub(Pow(Number(2), Number(32)), Number(1))
 
 
-def test_range_serialize() -> None:
-    assert models.RANGE_INTEGER.serialize == {
-        "data": {
-            "identifier": ["P", "Range"],
-            "first": {"data": {"base": 0, "value": 1}, "kind": "Number"},
-            "last": {"data": {"base": 0, "value": 100}, "kind": "Number"},
-            "size": {"data": {"base": 0, "value": 8}, "kind": "Number"},
-        },
-        "kind": "RangeInteger",
-    }
-
-
 def test_range_invalid_first_variable() -> None:
     assert_type_error(
         RangeInteger(
@@ -272,16 +260,6 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
         r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
         r"<stdin>:3:32: model: info: previous occurrence",
     )
-
-
-def test_array_serialize() -> None:
-    assert models.ARRAYS_MODULAR_VECTOR.serialize == {
-        "kind": "Array",
-        "data": {
-            "identifier": ["Arrays", "Modular_Vector"],
-            "element_type": ["Arrays", "Modular_Integer"],
-        },
-    }
 
 
 def test_array_invalid_element_type() -> None:

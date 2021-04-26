@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
@@ -150,16 +150,6 @@ class ModularInteger(Integer):
             ]
         return [expr.TRUE]
 
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": self.__class__.__name__,
-            "data": {
-                "identifier": self.identifier.serialize,
-                "modulus": self.modulus.serialize,
-            },
-        }
-
 
 class RangeInteger(Integer):
     def __init__(
@@ -303,18 +293,6 @@ class RangeInteger(Integer):
     def base_last(self) -> expr.Expr:
         return expr.Sub(expr.Pow(expr.Number(2), self.size), expr.Number(1))
 
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": self.__class__.__name__,
-            "data": {
-                "identifier": self.identifier.serialize,
-                "first": self.first.serialize,
-                "last": self.last.serialize,
-                "size": self.size.serialize,
-            },
-        }
-
 
 class Enumeration(Scalar):
     def __init__(
@@ -454,18 +432,6 @@ class Enumeration(Scalar):
             return result
         return [expr.TRUE]
 
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": self.__class__.__name__,
-            "data": {
-                "identifier": self.identifier.serialize,
-                "literals": {str(l): v.serialize for l, v in self.literals.items()},
-                "size": self.size.serialize,
-                "always_valid": self.always_valid,
-            },
-        }
-
 
 class Composite(Type):
     @property
@@ -526,16 +492,6 @@ class Array(Composite):
     def element_size(self) -> expr.Expr:
         return expr.Size(self.element_type.name)
 
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            "kind": self.__class__.__name__,
-            "data": {
-                "identifier": self.identifier.serialize,
-                "element_type": self.element_type.identifier.serialize,
-            },
-        }
-
 
 class Opaque(Composite):
     def __init__(self, location: Location = None) -> None:
@@ -554,10 +510,6 @@ class Opaque(Composite):
     @property
     def element_size(self) -> expr.Expr:
         return expr.Number(8)
-
-    @property
-    def serialize(self) -> Dict[str, Any]:
-        return {"kind": self.__class__.__name__, "data": {}}
 
 
 class Private(Type):

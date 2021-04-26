@@ -2260,17 +2260,6 @@ def test_indexed_neg() -> None:
     )
 
 
-def test_variable_serialize() -> None:
-    assert Variable("X").serialize == {
-        "kind": "Variable",
-        "data": {"identifier": ["X"], "negative": False},
-    }
-    assert Variable("Y", negative=True).serialize == {
-        "kind": "Variable",
-        "data": {"identifier": ["Y"], "negative": True},
-    }
-
-
 def test_proof_invalid_logic() -> None:
     expr = Less(Mod(Variable("X"), Variable("Y")), Number(100))
     p = Proof(expr, logic="QF_IDL")
