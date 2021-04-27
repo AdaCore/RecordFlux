@@ -1371,20 +1371,19 @@ class Parser:
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
+            elif isinstance(t, RefinementDecl):
+                try:
+                    new_type = create_refinement(t, package_id, self.__types, filename)
+                    self.__types.append(new_type)
+                    error.extend(new_type.error)
+                except RecordFluxError as e:
+                    error.extend(e)
+            elif isinstance(t, SessionDecl):
+                try:
+                    new_session = create_session(t, package_id, filename, self.__types)
+                    self.__sessions.append(new_session)
+                    error.extend(new_session.error)
+                except RecordFluxError as e:
+                    error.extend(e)
             else:
-                if t.kind_name == "RefinementDecl":
-                    try:
-                        new_type = create_refinement(t, package_id, self.__types, filename)
-                        self.__types.append(new_type)
-                        error.extend(new_type.error)
-                    except RecordFluxError as e:
-                        error.extend(e)
-                elif t.kind_name == "SessionDecl":
-                    try:
-                        new_session = create_session(t, package_id, filename, self.__types)
-                        self.__sessions.append(new_session)
-                        error.extend(new_session.error)
-                    except RecordFluxError as e:
-                        error.extend(e)
-                else:
-                    raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
+                raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
