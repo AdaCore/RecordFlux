@@ -357,15 +357,15 @@ def test_validation_coverage() -> None:
             [
                 "validate_spec",
                 "-s",
-                "ipv4.rflx",
+                "tests/coverage/ethernet.rflx",
                 "-m",
-                "IPv4::Packet",
+                "Ethernet::Frame",
                 "-v",
-                "tests/data/ipv4/packet/valid",
+                "tests/coverage/ethernet/frame/valid",
                 "-i",
-                "tests/data/ipv4/packet/invalid",
+                "tests/coverage/ethernet/frame/invalid",
                 "--coverage",
-                "--target-coverage=1",
+                "--target-coverage=100",
                 "--no-verification",
             ]
         )
@@ -373,21 +373,21 @@ def test_validation_coverage() -> None:
     )
 
 
-def test_validation_positive_coverage_threshold_missed() -> None:
+def test_coverage_threshold_missed() -> None:
     assert (
         cli(
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/coverage/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/coverage/ethernet/frame/invalid",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/coverage/ethernet/frame/valid",
                 "-c",
-                "--target-coverage=0.8",
+                "--target-coverage=80",
                 "--no-verification",
             ]
         )

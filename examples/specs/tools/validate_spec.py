@@ -171,9 +171,12 @@ def validate(
     err = ValidationError()
     if incorrectly_classified != 0:
         err.append(f"{incorrectly_classified} messages were classified incorrectly")
-    if coverage and coverage_info.total_covered_links / coverage_info.total_links < target_coverage:
+    if (
+        coverage
+        and coverage_info.total_covered_links / coverage_info.total_links < target_coverage / 100
+    ):
         err.append(
-            f"missed target coverage of {target_coverage:.2%}, "
+            f"missed target coverage of {target_coverage/100:.2%}, "
             f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
         )
     if len(err.messages) > 0:
@@ -281,7 +284,8 @@ class CoverageInformation:
     def print_coverage(self) -> None:
         if self.__coverage:
             self.__print_coverage_overview()
-            self.__print_link_coverage()
+            if self.total_covered_links / self.total_links != 1:
+                self.__print_link_coverage()
 
     def __print_coverage_overview(self) -> None:
         print("\n")
@@ -307,14 +311,14 @@ class CoverageInformation:
     def __print_link_coverage(self) -> None:
         print("\n")
         print("=" * 80)
-        print(f"{'Link Coverage' : ^80}")
+        print(f"{'Missing Link Coverage' : ^80}")
         print("=" * 80)
         for file in self.__spec_files:
-            print("\n")
-            print(f"{file : ^80}")
-            print("-" * 80)
             uncovered_links = self.file_uncovered_links(file)
             if len(uncovered_links) != 0:
+                print("\n")
+                print(f"{file : ^80}")
+                print("-" * 80)
                 for link in uncovered_links:
                     print(
                         f"{str(link.location):<17}"
