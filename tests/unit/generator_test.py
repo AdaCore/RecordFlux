@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Callable, Tuple
 
+import pkg_resources
 import pytest
 
 import rflx.expression as expr
@@ -76,6 +77,22 @@ def test_library_files_no_prefix(tmp_path: Path) -> None:
     generator.write_library_files(tmp_path)
     for filename in const.LIBRARY_FILES:
         assert (tmp_path / filename).exists()
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_missing_template_directory(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
+    with pytest.raises(AssertionError, match="^template directory not found"):
+        generator = Generator(Model())
+        generator.write_library_files(tmp_path)
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_missing_template_files(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
+    with pytest.raises(AssertionError, match="^template file not found"):
+        generator = Generator(Model())
+        generator.write_library_files(tmp_path)
 
 
 def test_top_level_package(tmp_path: Path) -> None:

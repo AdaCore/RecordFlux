@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import traceback
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Sequence, Union
@@ -87,6 +88,22 @@ def main(argv: List[str]) -> Union[int, str]:
         args.func(args)
     except RecordFluxError as e:
         return f"{e}"
+    except Exception:  # pylint: disable = broad-except
+        return f"""
+------------------------------ RecordFlux Bug ------------------------------
+RecordFlux {__version__}
+
+{' '.join(argv)}
+
+{traceback.format_exc()}
+----------------------------------------------------------------------------
+
+A bug was detected. Please report this issue on GitHub:
+
+https://github.com/Componolit/RecordFlux/issues/new?labels=bug
+
+Include the complete content of the bug box shown above and all input files
+in the report."""
 
     return 0
 
