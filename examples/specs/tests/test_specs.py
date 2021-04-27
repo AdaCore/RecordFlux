@@ -38,12 +38,13 @@ def test_validate_spec(spec: str) -> None:
 
             assert (
                 validate(
-                    message_value,
+                    message_value.identifier,
                     pyrflx,
                     directory_invalid,
                     directory_valid,
                     json_output=None,
                     abort_on_error=False,
+                    coverage=True,
                 )
                 == 0
             )
