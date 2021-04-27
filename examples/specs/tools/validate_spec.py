@@ -314,14 +314,12 @@ class CoverageInformation:
             print(f"{file : ^80}")
             print("-" * 80)
             uncovered_links = self.file_uncovered_links(file)
-            if len(uncovered_links) == 0:
-                print(f"{'all links covered':^80}")
-                continue
-            for link in uncovered_links:
-                print(
-                    f"{str(link.location) if link.location is not None else 'no location info':<17}"
-                    f": missing link {link.source.name:^25} -> {link.target.name:^20}"
-                )
+            if len(uncovered_links) != 0:
+                for link in uncovered_links:
+                    print(
+                        f"{str(link.location):<17}"
+                        f": missing link {link.source.name:^25} -> {link.target.name:^20}"
+                    )
 
 
 @dataclass
