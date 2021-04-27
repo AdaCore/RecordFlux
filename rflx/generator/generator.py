@@ -107,6 +107,7 @@ from rflx.ada import (
 )
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
+from rflx.error import Subsystem, fail, warn
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -141,9 +142,16 @@ CONFIGURATION_PRAGMAS = [
 
 
 class Generator:
-    def __init__(self, model: Model, prefix: str = "", reproducible: bool = False) -> None:
+    def __init__(
+        self,
+        model: Model,
+        prefix: str = "",
+        reproducible: bool = False,
+        ignore_unsupported_checksum: bool = False,
+    ) -> None:
         self.__prefix = str(ID(prefix)) if prefix else ""
         self.__reproducible = reproducible
+        self.__ignore_unsupported_checksum = ignore_unsupported_checksum
         self.__parser = ParserGenerator(self.__prefix)
         self.__serializer = SerializerGenerator(self.__prefix)
 
@@ -203,11 +211,17 @@ class Generator:
 
             elif isinstance(t, Message):
                 # ISSUE: Componolit/RecordFlux#276
-                if t.checksums:
-                    print(
-                        "warning: checksums not supported by SPARK code generator"
-                        " and therefore ignored"
-                    )
+                for c in t.checksums:
+                    if not self.__ignore_unsupported_checksum:
+                        fail(
+                            "unsupported checksum (consider --ignore-unsupported-checksum option)",
+                            Subsystem.GENERATOR,
+                            location=c.location,
+                        )
+                    else:
+                        warn(
+                            "unsupported checksum ignored", Subsystem.GENERATOR, location=c.location
+                        )
 
                 if isinstance(t, DerivedMessage):
                     self.__create_derived_message(t)

@@ -13,8 +13,10 @@ from rflx.expression import (
     Pow,
     Size,
     Sub,
+    ValidChecksum,
     Variable,
 )
+from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -55,6 +57,36 @@ TLV_MESSAGE = Message(
     skip_proof=True,
 )
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
+
+TLV_WITH_CHECKSUM_TAG = Enumeration(
+    "TLV_With_Checksum::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), False
+)
+TLV_WITH_CHECKSUM_LENGTH = ModularInteger("TLV_With_Checksum::Length", Pow(Number(2), Number(16)))
+TLV_WITH_CHECKSUM_CHECKSUM = ModularInteger(
+    "TLV_With_Checksum::Checksum", Pow(Number(2), Number(16))
+)
+TLV_WITH_CHECKSUM_MESSAGE = Message(
+    "TLV_With_Checksum::Message",
+    [
+        Link(INITIAL, Field("Tag")),
+        Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
+        Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
+        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
+        Link(Field("Value"), Field("Checksum")),
+        Link(Field("Checksum"), FINAL, ValidChecksum("Checksum")),
+    ],
+    {
+        Field("Tag"): TLV_WITH_CHECKSUM_TAG,
+        Field("Length"): TLV_WITH_CHECKSUM_LENGTH,
+        Field("Value"): Opaque(),
+        Field("Checksum"): TLV_WITH_CHECKSUM_CHECKSUM,
+    },
+    aspects={ID("Checksum"): {ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]}},
+    skip_proof=True,
+)
+TLV_WITH_CHECKSUM_MODEL = Model(
+    [TLV_WITH_CHECKSUM_TAG, TLV_WITH_CHECKSUM_LENGTH, TLV_WITH_CHECKSUM_MESSAGE]
+)
 
 NULL_MESSAGE_IN_TLV_MESSAGE = Refinement("In_TLV", TLV_MESSAGE, Field("Value"), NULL_MESSAGE)
 NULL_MESSAGE_IN_TLV_MESSAGE_MODEL = Model(

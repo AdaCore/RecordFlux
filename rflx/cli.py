@@ -49,6 +49,11 @@ def main(argv: List[str]) -> Union[int, str]:
         "-d", "--directory", help="output directory", default=".", type=Path
     )
     parser_generate.add_argument(
+        "--ignore-unsupported-checksum",
+        help="ignore checksum aspects during code generation",
+        action="store_true",
+    )
+    parser_generate.add_argument(
         "files", metavar="FILE", type=Path, nargs="*", help="specification file"
     )
     parser_generate.set_defaults(func=generate)
@@ -103,7 +108,10 @@ def generate(args: argparse.Namespace) -> None:
     model = parse(args.files)
 
     generator = Generator(
-        model, args.prefix, reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None
+        model,
+        args.prefix,
+        reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
+        ignore_unsupported_checksum=args.ignore_unsupported_checksum,
     )
     generator.write_units(args.directory)
     if not args.no_library:
