@@ -1,7 +1,8 @@
+from abc import abstractmethod
 from collections import deque
 from enum import Enum, auto
 from pathlib import Path
-from typing import Deque, List, Optional, Tuple, Union
+from typing import Deque, List, Optional, Tuple, TypeVar, Union
 
 from rflx.common import Base, verbose_repr
 
@@ -68,7 +69,10 @@ class Severity(Enum):
         return str.lower(self.name)
 
 
-class RecordFluxError(Exception, Base):
+Self = TypeVar("Self", bound="BaseError")
+
+
+class BaseError(Exception, Base):
     class Entry(Base):
         def __init__(
             self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
@@ -94,15 +98,16 @@ class RecordFluxError(Exception, Base):
         def location(self) -> Optional[Location]:
             return self.__location
 
+    @abstractmethod
     def __init__(self) -> None:
         super().__init__()
-        self.__errors: Deque[RecordFluxError.Entry] = deque()
+        self.__errors: Deque[BaseError.Entry] = deque()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
 
     def __str__(self) -> str:
-        def locn(entry: RecordFluxError.Entry) -> str:
+        def locn(entry: BaseError.Entry) -> str:
             if entry.location:
                 return f"{entry.location}: "
             return ""
@@ -111,45 +116,43 @@ class RecordFluxError(Exception, Base):
             f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
         )
 
-    def __add__(self, other: object) -> "RecordFluxError":
-        if isinstance(other, RecordFluxError):
-            error = RecordFluxError()
+    def __add__(self: Self, other: object) -> Self:
+        if isinstance(other, BaseError):
+            error = self.__class__()
             error.extend(self)
             error.extend(other)
             return error
         return NotImplemented
 
-    def __iadd__(self, other: object) -> "RecordFluxError":
-        if isinstance(other, RecordFluxError):
+    def __iadd__(self: Self, other: object) -> Self:
+        if isinstance(other, BaseError):
             self.extend(other)
             return self
         return NotImplemented
 
     @property
-    def errors(self) -> Deque["RecordFluxError.Entry"]:
+    def errors(self) -> Deque["BaseError.Entry"]:
         return self.__errors
 
     def append(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
-        self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
+        self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
 
     def appendleft(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
-        self.__errors.appendleft(RecordFluxError.Entry(message, subsystem, severity, location))
+        self.__errors.appendleft(BaseError.Entry(message, subsystem, severity, location))
 
     def extend(
         self,
-        entries: Union[
-            List[Tuple[str, Subsystem, Severity, Optional[Location]]], "RecordFluxError"
-        ],
+        entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
     ) -> None:
-        if isinstance(entries, RecordFluxError):
+        if isinstance(entries, BaseError):
             self.__errors.extend(entries.errors)
         else:
             for message, subsystem, severity, location in entries:
-                self.__errors.append(RecordFluxError.Entry(message, subsystem, severity, location))
+                self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
 
     def check(self) -> bool:
         return len(self.__errors) > 0
@@ -159,15 +162,50 @@ class RecordFluxError(Exception, Base):
             raise self
 
 
+class RecordFluxError(BaseError):
+    """Error indicating an issue in an input or a known limitation."""
+
+    def __init__(self) -> None:  # pylint: disable = useless-super-delegation
+        super().__init__()
+
+
+class FatalError(BaseError):
+    """Error indicating a bug.
+
+    This exception should never be caught outside of RecordFlux.
+    """
+
+    def __init__(self) -> None:  # pylint: disable = useless-super-delegation
+        super().__init__()
+
+
 def fail(
     message: str,
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
     location: Location = None,
 ) -> None:
-    e = RecordFluxError()
-    e.append(message, subsystem, severity, location)
-    e.propagate()
+    _fail(RecordFluxError(), message, subsystem, severity, location)
+
+
+def fatal_fail(
+    message: str,
+    subsystem: Subsystem,
+    severity: Severity = Severity.ERROR,
+    location: Location = None,
+) -> None:
+    _fail(FatalError(), message, subsystem, severity, location)
+
+
+def _fail(
+    error: BaseError,
+    message: str,
+    subsystem: Subsystem,
+    severity: Severity = Severity.ERROR,
+    location: Location = None,
+) -> None:
+    error.append(message, subsystem, severity, location)
+    error.propagate()
 
 
 def warn(
