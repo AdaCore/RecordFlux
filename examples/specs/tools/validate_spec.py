@@ -1,6 +1,7 @@
 #!/usr/bin/env -S python3 -O
 
 import argparse
+import itertools
 import json
 import os
 import sys
@@ -241,47 +242,42 @@ class CoverageInformation:
 
     @cached_property
     def total_links(self) -> int:
-        return sum([len(structure) for structure in self.__total_message_coverage.values()])
+        return sum(len(structure) for structure in self.__total_message_coverage.values())
 
     @cached_property
     def total_covered_links(self) -> int:
         return sum(
-            [
-                list(structure.values()).count(True)
-                for structure in self.__total_message_coverage.values()
-            ]
+            list(structure.values()).count(True)
+            for structure in self.__total_message_coverage.values()
         )
 
     def file_total_links(self, file_name: str) -> int:
         assert file_name in self.__spec_files
         return sum(
-            [
-                len(self.__total_message_coverage[message])
-                for message in self.__spec_files[file_name]
-            ]
+            len(self.__total_message_coverage[message]) for message in self.__spec_files[file_name]
         )
 
     def file_covered_links(self, file_name: str) -> int:
         assert file_name in self.__spec_files
         return sum(
-            [
-                list(self.__total_message_coverage[message].values()).count(True)
-                for message in self.__spec_files[file_name]
-            ]
+            list(self.__total_message_coverage[message].values()).count(True)
+            for message in self.__spec_files[file_name]
         )
 
     def file_uncovered_links(self, file_name: str) -> List[Link]:
         assert file_name in self.__spec_files
-        uncovered = []
-        for message in self.__spec_files[file_name]:
-            uncovered.extend(
-                [
-                    link
-                    for link, covered in self.__total_message_coverage[message].items()
-                    if not covered
+        return list(
+            itertools.chain(
+                *[
+                    [
+                        link
+                        for link, covered in self.__total_message_coverage[message].items()
+                        if not covered
+                    ]
+                    for message in self.__spec_files[file_name]
                 ]
             )
-        return uncovered
+        )
 
     def print_coverage(self) -> None:
         if self.__coverage:
