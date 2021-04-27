@@ -5,13 +5,14 @@ import itertools
 import json
 import os
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 from types import TracebackType
 from typing import Dict, List, Optional, TextIO, Type, Union
 
-from rflx.error import Location, RecordFluxError
+from rflx.error import RecordFluxError
 from rflx.identifier import ID
 from rflx.model import Link
 from rflx.pyrflx import Package, PyRFLX, PyRFLXError
@@ -79,7 +80,8 @@ def cli(argv: List[str]) -> Union[int, str]:
         "--target-coverage",
         type=float,
         default=0,
-        help="abort with exitcode 1 if the coverage threshold is not reached",
+        help="abort with exitcode 1 if the coverage threshold is not reached, "
+        "target coverage expected in percentage",
     )
 
     parser.add_argument("--no-verification", action="store_true", help="skip model verification")
@@ -213,32 +215,29 @@ def _validate_message(
 
 class CoverageInformation:
     def __init__(self, packages: List[Package], coverage: bool) -> None:
-        self.__total_message_coverage: Dict[str, Dict[Link, bool]] = {}
-        self.__spec_files: Dict[str, List[str]] = {}
+        self.__total_message_coverage: Dict[ID, Dict[Link, bool]] = {}
+        self.__spec_files: Dict[str, List[ID]] = defaultdict(lambda: [])
         self.__coverage = coverage
 
         if self.__coverage:
             for package in packages:
                 for message in package:
                     assert isinstance(message, MessageValue)
-                    self.__total_message_coverage[str(message.identifier)] = {
+                    self.__total_message_coverage[message.identifier] = {
                         link: False for link in message.model.structure
                     }
 
-                    assert isinstance(message.model.location, Location)
-                    assert isinstance(message.model.location.source, Path)
+                    assert message.model.location is not None
+                    assert message.model.location.source is not None
                     file_name = message.model.location.source.name
-                    if file_name in self.__spec_files:
-                        self.__spec_files[file_name].append(str(message.identifier))
-                    else:
-                        self.__spec_files[file_name] = [str(message.identifier)]
+                    self.__spec_files[file_name].append(message.identifier)
 
     def update(self, message_value: MessageValue) -> None:
         if self.__coverage:
             messages = message_value.inner_messages() + [message_value]
             for message in messages:
                 for link in message.path:
-                    self.__total_message_coverage[str(message.identifier)][link] = True
+                    self.__total_message_coverage[message.identifier][link] = True
 
     @cached_property
     def total_links(self) -> int:
@@ -291,7 +290,7 @@ class CoverageInformation:
         print(f"Directory: {os.getcwd()}")
         print("-" * 80)
         print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
-        for file, _ in self.__spec_files.items():
+        for file in self.__spec_files:
             file_links = self.file_total_links(file)
             file_covered_links = self.file_covered_links(file)
             print(
@@ -310,7 +309,7 @@ class CoverageInformation:
         print("=" * 80)
         print(f"{'Link Coverage' : ^80}")
         print("=" * 80)
-        for file, _ in self.__spec_files.items():
+        for file in self.__spec_files:
             print("\n")
             print(f"{file : ^80}")
             print("-" * 80)
