@@ -1,7 +1,7 @@
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
 bin = obj/ping
-generate = rflx generate -d generated $(specs)
+generate = rflx generate -d generated --ignore-unsupported-checksum $(specs)
 build = gprbuild -Pping
 
 .PHONY: test test_python test_spark build prove generate clean clean_proof

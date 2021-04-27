@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Tuple
+from typing import Any, Callable, Tuple
 
 import pytest
 
@@ -34,6 +34,23 @@ def generate(model: Model) -> Generator:
 def test_invalid_prefix() -> None:
     with pytest.raises(RecordFluxError, match=r"^id: error: empty part in identifier$"):
         Generator(Model(), "A..B")
+
+
+def test_unsupported_checksum() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^generator: error: unsupported checksum"
+            r" \(consider --ignore-unsupported-checksum option\)$"
+        ),
+    ):
+        Generator(models.TLV_WITH_CHECKSUM_MODEL)
+
+
+def test_ignore_unsupported_checksum(capsys: Any) -> None:
+    Generator(models.TLV_WITH_CHECKSUM_MODEL, ignore_unsupported_checksum=True)
+    captured = capsys.readouterr()
+    assert "generator: warning: unsupported checksum ignored" in captured.out
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")

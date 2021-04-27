@@ -48,6 +48,7 @@ class Location(Base):
 class Subsystem(Enum):
     PARSER = auto()
     MODEL = auto()
+    GENERATOR = auto()
     CLI = auto()
     GRAPH = auto()
     PYRFLX = auto()
@@ -167,3 +168,14 @@ def fail(
     e = RecordFluxError()
     e.append(message, subsystem, severity, location)
     e.propagate()
+
+
+def warn(
+    message: str,
+    subsystem: Subsystem,
+    severity: Severity = Severity.WARNING,
+    location: Location = None,
+) -> None:
+    e = RecordFluxError()
+    e.append(message, subsystem, severity, location)
+    print(e)
