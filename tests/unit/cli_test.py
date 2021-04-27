@@ -1,7 +1,7 @@
+import re
 from pathlib import Path
 from typing import Any
 
-import pkg_resources
 import pytest
 
 import rflx.specification
@@ -18,6 +18,10 @@ def raise_parser_error() -> None:
 
 def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
+
+
+def raise_exception() -> None:
+    raise Exception("TEST")
 
 
 def test_main_noarg() -> None:
@@ -112,18 +116,6 @@ def test_main_generate_non_existent_directory() -> None:
     )
 
 
-def test_main_generate_missing_template_directory(monkeypatch: Any, tmp_path: Path) -> None:
-    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
-    with pytest.raises(AssertionError, match="^template directory not found"):
-        cli.main(["rflx", "generate", "-d", str(tmp_path), SPEC_FILE])
-
-
-def test_main_generate_missing_template_files(monkeypatch: Any, tmp_path: Path) -> None:
-    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
-    with pytest.raises(AssertionError, match="^template file not found"):
-        cli.main(["rflx", "generate", "-d", str(tmp_path), SPEC_FILE])
-
-
 def test_main_graph(tmp_path: Path) -> None:
     assert cli.main(["rflx", "graph", "-d", str(tmp_path), SPEC_FILE]) == 0
 
@@ -155,4 +147,13 @@ def test_main_graph_non_existent_directory() -> None:
 def test_main_graph_no_output_files(tmp_path: Path) -> None:
     assert (
         cli.main(["rflx", "graph", "-d", str(tmp_path), str(SPEC_DIR / "empty_package.rflx")]) == 0
+    )
+
+
+def test_main_unexpected_exception(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(cli, "generate", lambda x: raise_exception())
+    assert re.fullmatch(
+        r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
+        str(cli.main(["rflx", "generate", "-d", str(tmp_path), SPEC_FILE])),
+        re.DOTALL,
     )
