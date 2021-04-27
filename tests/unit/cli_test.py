@@ -6,7 +6,7 @@ import pytest
 
 import rflx.specification
 from rflx import cli
-from rflx.error import Location, Severity, Subsystem, fail
+from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
 from tests.const import SPEC_DIR
 
 SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
@@ -20,8 +20,8 @@ def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
 
 
-def raise_exception() -> None:
-    raise Exception("TEST")
+def raise_fatal_error() -> None:
+    fatal_fail("TEST", Subsystem.CLI)
 
 
 def test_main_noarg() -> None:
@@ -151,7 +151,7 @@ def test_main_graph_no_output_files(tmp_path: Path) -> None:
 
 
 def test_main_unexpected_exception(monkeypatch: Any, tmp_path: Path) -> None:
-    monkeypatch.setattr(cli, "generate", lambda x: raise_exception())
+    monkeypatch.setattr(cli, "generate", lambda x: raise_fatal_error())
     assert re.fullmatch(
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
         str(cli.main(["rflx", "generate", "-d", str(tmp_path), SPEC_FILE])),
