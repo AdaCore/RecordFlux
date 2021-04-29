@@ -2,7 +2,7 @@ import os
 import re
 from filecmp import cmp
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 import pytest
 from rflx.pyrflx import PyRFLX
@@ -352,7 +352,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
     assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_negative.json")
 
 
-def test_validation_coverage(capsys) -> None:
+def test_validation_coverage(capsys: Any) -> None:
     assert (
         cli(
             [
@@ -378,7 +378,7 @@ def test_validation_coverage(capsys) -> None:
     assert captured_output.out == valid_output
 
 
-def test_coverage_threshold_missed(capsys) -> None:
+def test_coverage_threshold_missed(capsys: Any) -> None:
     assert (
         cli(
             [
