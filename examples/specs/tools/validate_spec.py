@@ -7,7 +7,6 @@ import os
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import cached_property
 from pathlib import Path
 from types import TracebackType
 from typing import Dict, List, Optional, TextIO, Type, Union
@@ -235,23 +234,19 @@ class CoverageInformation:
                     file_name = message.model.location.source.name
                     self.__spec_files[file_name].append(message.identifier)
 
+        self.total_links = sum(
+            len(structure) for structure in self.__total_message_coverage.values()
+        )
+        self.total_covered_links = 0
+
     def update(self, message_value: MessageValue) -> None:
         if self.__coverage:
             messages = message_value.inner_messages() + [message_value]
             for message in messages:
                 for link in message.path:
-                    self.__total_message_coverage[message.identifier][link] = True
-
-    @cached_property
-    def total_links(self) -> int:
-        return sum(len(structure) for structure in self.__total_message_coverage.values())
-
-    @cached_property
-    def total_covered_links(self) -> int:
-        return sum(
-            list(structure.values()).count(True)
-            for structure in self.__total_message_coverage.values()
-        )
+                    if not self.__total_message_coverage[message.identifier][link]:
+                        self.total_covered_links += 1
+                        self.__total_message_coverage[message.identifier][link] = True
 
     def file_total_links(self, file_name: str) -> int:
         assert file_name in self.__spec_files
