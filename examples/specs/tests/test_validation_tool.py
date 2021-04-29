@@ -1,3 +1,4 @@
+import os
 import re
 from filecmp import cmp
 from pathlib import Path
@@ -351,7 +352,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
     assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_negative.json")
 
 
-def test_validation_coverage() -> None:
+def test_validation_coverage(capsys) -> None:
     assert (
         cli(
             [
@@ -371,9 +372,13 @@ def test_validation_coverage() -> None:
         )
         == 0
     )
+    captured_output = capsys.readouterr()
+    with open("tests/coverage/valid_cov_output_ethernet.txt", "r") as f:
+        valid_output = valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
+    assert captured_output.out == valid_output
 
 
-def test_coverage_threshold_missed() -> None:
+def test_coverage_threshold_missed(capsys) -> None:
     assert (
         cli(
             [
@@ -393,3 +398,7 @@ def test_coverage_threshold_missed() -> None:
         )
         == "missed target coverage of 80.00%, reached 22.06%"
     )
+    captured_output = capsys.readouterr()
+    with open("tests/coverage/valid_cov_output_in_ethernet.txt", "r") as f:
+        valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
+    assert captured_output.out == valid_output
