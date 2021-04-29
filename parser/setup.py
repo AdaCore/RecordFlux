@@ -9,10 +9,8 @@ from typing import Any
 import setuptools.command.build_py as orig
 from setuptools import setup
 
-LANGKIT = "git+https://github.com/AdaCore/langkit.git@v21.0.0#egg=langkit"
-
-
 base_dir = os.path.dirname(os.path.abspath(__file__))
+LANGKIT = f"langkit @ file://localhost/{base_dir}/contrib/langkit#egg=langkit"
 
 
 # Hack: To be able to place the shared libraries into the Python package
@@ -117,8 +115,7 @@ setup(
         "Topic :: System :: Networking",
     ],
     python_requires=">=3.7",
-    setup_requires=["langkit@" + LANGKIT],
-    dependency_links=[LANGKIT],
+    setup_requires=[LANGKIT],
     extras_require={
         "devel": [
             "black ==20.8b1",
@@ -129,7 +126,7 @@ setup(
             "pytest >=5, <6",
             "pytest-cov >=2.10.0, <3",
             "pytest-xdist >=1.32.0, <2",
-            "langkit@" + LANGKIT,
+            LANGKIT,
         ]
     },
     cmdclass={"build_py": BuildWithParser, "generate_parser": BuildParser},
