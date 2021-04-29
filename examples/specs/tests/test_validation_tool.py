@@ -16,13 +16,13 @@ def test_cli_error_msg_not_in_package() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Message",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "--no-verification",
             ]
         )
@@ -40,9 +40,9 @@ def test_cli_spec_file_not_found() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
             ]
         )
         == 'specification file not found: "non_existent_file.rflx"'
@@ -57,9 +57,9 @@ def test_cli_required_arg_not_provided() -> None:
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
             ]
         )
 
@@ -68,11 +68,11 @@ def test_cli_required_arg_not_provided() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
             ]
         )
 
@@ -83,7 +83,7 @@ def test_cli_no_test_data_provided() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "--no-verification",
@@ -102,13 +102,13 @@ def test_cli_output_file_exists(tmp_path: Path) -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_file}",
             ]
@@ -122,14 +122,14 @@ def test_cli_path_does_not_exist() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-i",
-                "tests/data/ethernet/non_existent_dir",
+                "tests/validation_tool/ethernet/non_existent_dir",
             ]
         )
-    ) == "tests/data/ethernet/non_existent_dir does not exist or is not a directory"
+    ) == "tests/validation_tool/ethernet/non_existent_dir does not exist or is not a directory"
 
 
 def test_cli_path_is_not_directory(tmp_path: Path) -> None:
@@ -141,7 +141,7 @@ def test_cli_path_is_not_directory(tmp_path: Path) -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-i",
@@ -164,13 +164,13 @@ def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path_restricted}/test.json",
                 "--no-verification",
@@ -186,20 +186,20 @@ def test_cli_abort_on_error() -> None:
         [
             "validate_spec",
             "-s",
-            "in_ethernet.rflx",
+            "tests/validation_tool/in_ethernet.rflx",
             "-m",
             "Ethernet::Frame",
             "-v",
-            "tests/data/ethernet/frame/invalid",
+            "tests/validation_tool/ethernet/frame/invalid",
             "-i",
-            "tests/data/ethernet/frame/valid",
+            "tests/validation_tool/ethernet/frame/valid",
             "--abort-on-error",
             "--no-verification",
         ]
     )
     assert isinstance(ret, str)
     assert re.match(
-        r"^aborted: message tests/data/ethernet/frame/invalid/.+\.raw "
+        r"^aborted: message tests/validation_tool/ethernet/frame/invalid.+\.raw "
         r"was classified incorrectly$",
         ret,
     )
@@ -213,7 +213,7 @@ def test_cli_not_regular_file(tmpdir: Path) -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
@@ -230,13 +230,13 @@ def test_cli_invalid_identifier() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet.Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
             ]
         )
         == 'invalid identifier "Ethernet.Frame" : id: error: "." in identifier parts'
@@ -248,7 +248,7 @@ def test_validation_original_and_parsed_not_equal() -> None:
         "Ethernet"
     ]["Frame"]
     validation_result = _validate_message(
-        Path("tests/data/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
+        Path("tests/validation_tool/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
         True,
         ethernet_too_short_value,
     )
@@ -264,13 +264,13 @@ def test_validation_positive() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "--no-verification",
             ]
         )
@@ -284,13 +284,13 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path}/output.json",
                 "--no-verification",
@@ -298,7 +298,7 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
         )
         == 0
     )
-    assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_positive.json")
+    assert cmp(f"{tmp_path}/output.json", "tests/validation_tool/valid_full_output_positive.json")
 
 
 def test_validation_negative() -> None:
@@ -311,13 +311,13 @@ def test_validation_negative() -> None:
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-i",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "--no-verification",
             ]
         )
@@ -327,21 +327,21 @@ def test_validation_negative() -> None:
 
 def test_validation_negative_full_output(tmp_path: Path) -> None:
     number = len(
-        list(Path("tests/data/ethernet/frame/invalid").glob("*"))
-        + list(Path("tests/data/ethernet/frame/valid").glob("*"))
+        list(Path("tests/validation_tool/ethernet/frame/invalid").glob("*"))
+        + list(Path("tests/validation_tool/ethernet/frame/valid").glob("*"))
     )
     assert (
         cli(
             [
                 "validate_spec",
                 "-s",
-                "in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/data/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-i",
-                "tests/data/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-o",
                 f"{tmp_path}/output.json",
                 "--no-verification",
@@ -349,7 +349,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
         )
         == f"{number} messages were classified incorrectly"
     )
-    assert cmp(f"{tmp_path}/output.json", "tests/data/valid_full_output_negative.json")
+    assert cmp(f"{tmp_path}/output.json", "tests/validation_tool/valid_full_output_negative.json")
 
 
 def test_validation_coverage(capsys: Any) -> None:
@@ -358,13 +358,13 @@ def test_validation_coverage(capsys: Any) -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/coverage/ethernet.rflx",
+                "tests/validation_tool/ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-v",
-                "tests/coverage/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-i",
-                "tests/coverage/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "--coverage",
                 "--target-coverage=100",
                 "--no-verification",
@@ -373,8 +373,8 @@ def test_validation_coverage(capsys: Any) -> None:
         == 0
     )
     captured_output = capsys.readouterr()
-    with open("tests/coverage/valid_cov_output_ethernet.txt", "r") as f:
-        valid_output = valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
+    with open("tests/validation_tool/valid_cov_output_ethernet.txt", "r") as f:
+        valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
     assert captured_output.out == valid_output
 
 
@@ -384,13 +384,13 @@ def test_coverage_threshold_missed(capsys: Any) -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/coverage/in_ethernet.rflx",
+                "tests/validation_tool/in_ethernet.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-i",
-                "tests/coverage/ethernet/frame/invalid",
+                "tests/validation_tool/ethernet/frame/invalid",
                 "-v",
-                "tests/coverage/ethernet/frame/valid",
+                "tests/validation_tool/ethernet/frame/valid",
                 "-c",
                 "--target-coverage=80",
                 "--no-verification",
@@ -399,6 +399,6 @@ def test_coverage_threshold_missed(capsys: Any) -> None:
         == "missed target coverage of 80.00%, reached 22.06%"
     )
     captured_output = capsys.readouterr()
-    with open("tests/coverage/valid_cov_output_in_ethernet.txt", "r") as f:
+    with open("tests/validation_tool/valid_cov_output_in_ethernet.txt", "r") as f:
         valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
     assert captured_output.out == valid_output

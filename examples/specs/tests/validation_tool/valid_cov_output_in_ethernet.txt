@@ -1,16 +1,16 @@
-tests/coverage/ethernet/frame/valid/802.3-LLC-CDP.raw                            PASSED
-tests/coverage/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw                  PASSED
-tests/coverage/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw              PASSED
-tests/coverage/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                       PASSED
-tests/coverage/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                       PASSED
-tests/coverage/ethernet/frame/valid/ethernet_802.3.raw                           PASSED
-tests/coverage/ethernet/frame/valid/ethernet_double_vlan_tag.raw                 PASSED
-tests/coverage/ethernet/frame/valid/ethernet_ipv4_udp.raw                        PASSED
-tests/coverage/ethernet/frame/valid/ethernet_vlan_tag.raw                        PASSED
-tests/coverage/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw          PASSED
-tests/coverage/ethernet/frame/invalid/ethernet_invalid_too_long.raw              PASSED
-tests/coverage/ethernet/frame/invalid/ethernet_invalid_too_short.raw             PASSED
-tests/coverage/ethernet/frame/invalid/ethernet_undefined.raw                     PASSED
+tests/validation_tool/ethernet/frame/valid/802.3-LLC-CDP.raw                     PASSED
+tests/validation_tool/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw           PASSED
+tests/validation_tool/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw       PASSED
+tests/validation_tool/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                PASSED
+tests/validation_tool/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                PASSED
+tests/validation_tool/ethernet/frame/valid/ethernet_802.3.raw                    PASSED
+tests/validation_tool/ethernet/frame/valid/ethernet_double_vlan_tag.raw          PASSED
+tests/validation_tool/ethernet/frame/valid/ethernet_ipv4_udp.raw                 PASSED
+tests/validation_tool/ethernet/frame/valid/ethernet_vlan_tag.raw                 PASSED
+tests/validation_tool/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw   PASSED
+tests/validation_tool/ethernet/frame/invalid/ethernet_invalid_too_long.raw       PASSED
+tests/validation_tool/ethernet/frame/invalid/ethernet_invalid_too_short.raw      PASSED
+tests/validation_tool/ethernet/frame/invalid/ethernet_undefined.raw              PASSED
 
 
 --------------------------------------------------------------------------------
@@ -39,18 +39,18 @@ None             : missing link          Initial          ->        Copied
 None             : missing link       Option_Class        ->    Option_Number    
 None             : missing link        Option_Data        ->        Final        
 None             : missing link       Option_Length       ->     Option_Data     
-tests/coverage/ipv4.rflx:25:13: missing link       Option_Number       ->        Final        
-tests/coverage/ipv4.rflx:27:13: missing link       Option_Number       ->    Option_Length    
+tests/validation_tool/ipv4.rflx:25:13: missing link       Option_Number       ->        Final        
+tests/validation_tool/ipv4.rflx:27:13: missing link       Option_Number       ->    Option_Length    
 
 
                                     arp.rflx                                    
 --------------------------------------------------------------------------------
-tests/coverage/arp.rflx:30:13: missing link            Hln            ->         Pln         
-tests/coverage/arp.rflx:22:13: missing link            Hrd            ->         Pro         
+tests/validation_tool/arp.rflx:30:13: missing link            Hln            ->         Pln         
+tests/validation_tool/arp.rflx:22:13: missing link            Hrd            ->         Pro         
 None             : missing link          Initial          ->         Hrd         
 None             : missing link            Op             ->         Sha         
-tests/coverage/arp.rflx:35:13: missing link            Pln            ->          Op         
-tests/coverage/arp.rflx:25:13: missing link            Pro            ->         Hln         
+tests/validation_tool/arp.rflx:35:13: missing link            Pln            ->          Op         
+tests/validation_tool/arp.rflx:25:13: missing link            Pro            ->         Hln         
 None             : missing link            Sha            ->         Spa         
 None             : missing link            Spa            ->         Tha         
 None             : missing link            Tha            ->         Tpa         
@@ -60,18 +60,18 @@ None             : missing link            Tpa            ->        Final
                                    ipv6.rflx                                    
 --------------------------------------------------------------------------------
 None             : missing link           Data            ->        Final        
-tests/coverage/ipv6.rflx:20:13: missing link          Initial          ->         Data        
+tests/validation_tool/ipv6.rflx:20:13: missing link          Initial          ->         Data        
 None             : missing link          Action           ->      May_Change     
 None             : missing link          Initial          ->        Action       
 None             : missing link        May_Change         ->        Value        
 None             : missing link           Value           ->        Final        
 None             : missing link          Initial          ->  Option_Type_Action 
-tests/coverage/ipv6.rflx:63:13: missing link       Opt_Data_Len        ->     Option_Data     
+tests/validation_tool/ipv6.rflx:63:13: missing link       Opt_Data_Len        ->     Option_Data     
 None             : missing link        Option_Data        ->        Final        
 None             : missing link    Option_Type_Action     -> Option_Type_May_Change
 None             : missing link  Option_Type_May_Change   ->  Option_Type_Value  
-tests/coverage/ipv6.rflx:54:13: missing link     Option_Type_Value     ->        Final        
-tests/coverage/ipv6.rflx:58:13: missing link     Option_Type_Value     ->     Opt_Data_Len    
+tests/validation_tool/ipv6.rflx:54:13: missing link     Option_Type_Value     ->        Final        
+tests/validation_tool/ipv6.rflx:58:13: missing link     Option_Type_Value     ->     Opt_Data_Len    
 None             : missing link           Data            ->        Final        
 None             : missing link        Hdr_Ext_Len        ->       Options       
 None             : missing link          Initial          ->     Next_Header     
@@ -93,18 +93,18 @@ None             : missing link       Segments_Left       ->       Reserved
 None             : missing link           CmprE           ->         Pad         
 None             : missing link           CmprI           ->        CmprE        
 None             : missing link          Initial          ->    Segments_Left    
-tests/coverage/ipv6.rflx:160:13: missing link       Last_Segment        ->       Padding       
+tests/validation_tool/ipv6.rflx:160:13: missing link       Last_Segment        ->       Padding       
 None             : missing link            Pad            ->       Reserved      
 None             : missing link          Padding          ->        Final        
-tests/coverage/ipv6.rflx:150:13: missing link         Reserved          ->     Last_Segment    
-tests/coverage/ipv6.rflx:147:13: missing link         Reserved          ->       Padding       
-tests/coverage/ipv6.rflx:153:13: missing link         Reserved          ->       Segments      
-tests/coverage/ipv6.rflx:157:13: missing link         Segments          ->     Last_Segment    
+tests/validation_tool/ipv6.rflx:150:13: missing link         Reserved          ->     Last_Segment    
+tests/validation_tool/ipv6.rflx:147:13: missing link         Reserved          ->       Padding       
+tests/validation_tool/ipv6.rflx:153:13: missing link         Reserved          ->       Segments      
+tests/validation_tool/ipv6.rflx:157:13: missing link         Segments          ->     Last_Segment    
 None             : missing link       Segments_Left       ->        CmprI        
 None             : missing link           Data            ->        Final        
 None             : missing link          Initial          ->         Kind        
-tests/coverage/ipv6.rflx:193:13: missing link           Kind            ->        Final        
-tests/coverage/ipv6.rflx:195:13: missing link           Kind            ->        Length       
+tests/validation_tool/ipv6.rflx:193:13: missing link           Kind            ->        Final        
+tests/validation_tool/ipv6.rflx:195:13: missing link           Kind            ->        Length       
 None             : missing link          Length           ->         Data        
 None             : missing link Dest_Addr_Verification_Disable ->       Reserved      
 None             : missing link           HMAC            ->        Final        
@@ -136,7 +136,7 @@ None             : missing link        Hdr_Ext_Len        ->       Options
 None             : missing link          Initial          ->     Next_Header     
 None             : missing link        Next_Header        ->     Hdr_Ext_Len     
 None             : missing link          Options          ->         Data        
-tests/coverage/ipv6.rflx:280:13: missing link     Destination_Data      ->       Payload       
+tests/validation_tool/ipv6.rflx:280:13: missing link     Destination_Data      ->       Payload       
 None             : missing link        Flow_Label         ->    Payload_Length   
 None             : missing link         Hop_Limit         ->     Source_Data     
 None             : missing link          Initial          ->       Version       
