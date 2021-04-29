@@ -23,7 +23,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 # "$ORIGIN" to the RPATH of librflxlang.so. The simplest way to
 # do this is the `patchelf` tool.
 def patch_rpath() -> None:
-    sopath = "lib/librflxlang/relocatable/dev/librflxlang.so"
+    sopath = "lib/relocatable/dev/librflxlang.so"
     rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
     subprocess.run(
         ["patchelf", "--set-rpath", "$ORIGIN:" + rpath.decode("utf-8"), sopath], check=True
@@ -51,22 +51,18 @@ class BuildWithParser(orig.build_py):
         os.environ["GNATCOLL_ICONV_OPT"] = "-v"
         manage_factory().run(
             [
-                "--build-dir",
-                ".",
                 "make",
+                "--build-dir", ".",
+                "--disable-warning", "undocumented-nodes",
                 "--gargs",
-                f"-aP {base_dir}/contrib/gnatcoll-bindings/iconv "
-                f"-aP {base_dir}/contrib/gnatcoll-bindings/gmp",
-                "--disable-warning",
-                "undocumented-nodes",
+                f"-aP {base_dir}/contrib/langkit/support "
+                f"-aP {base_dir}/contrib/langkit/langkit"
             ]
         )
         patch_rpath()
         for l in [
-            "lib/librflxlang/relocatable/dev/librflxlang.so",
-            "lib/langkit_support/relocatable/dev/liblangkit_support.so",
-            f"{base_dir}/contrib/gnatcoll-bindings/iconv/lib/relocatable/libgnatcoll_iconv.so.0",
-            f"{base_dir}/contrib/gnatcoll-bindings/gmp/lib/relocatable/libgnatcoll_gmp.so.0",
+            "lib/relocatable/dev/librflxlang.so",
+            "contrib/langkit/support/lib/relocatable/dev/liblangkit_support.so",
         ]:
             source = Path(l)
             shutil.copy(source, Path("python/librflxlang/") / source.name)
