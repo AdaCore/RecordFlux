@@ -15,7 +15,7 @@ tests/validation_tool/ethernet/frame/invalid/ethernet_undefined.raw             
 
 --------------------------------------------------------------------------------
                      RecordFlux Validation Coverage Report                      
-Directory: /home/rs/Development/PYTHON/PycharmProjects/RecordFlux-specifications
+Directory: .
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
 ethernet.rflx                                    12         12         100.00%
