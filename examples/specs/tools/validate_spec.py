@@ -167,19 +167,19 @@ def validate(
                         raise ValidationError(f"aborted: message {path} was classified incorrectly")
         coverage_info.print_coverage()
 
-    err = ValidationError()
+    error_msgs = []
     if incorrectly_classified != 0:
-        err.append(f"{incorrectly_classified} messages were classified incorrectly")
+        error_msgs.append(f"{incorrectly_classified} messages were classified incorrectly")
     if (
         coverage
         and coverage_info.total_covered_links / coverage_info.total_links < target_coverage / 100
     ):
-        err.append(
+        error_msgs.append(
             f"missed target coverage of {target_coverage/100:.2%}, "
             f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
         )
-    if len(err.messages) > 0:
-        raise err
+    if len(error_msgs) > 0:
+        raise ValidationError("\n".join(e for e in error_msgs))
     return 0
 
 
@@ -415,17 +415,12 @@ class OutputWriter:
 
 
 class ValidationError(Exception):
-    def __init__(self, message: Optional[str] = None) -> None:
+    def __init__(self, message: str) -> None:
         super().__init__()
-        self.messages: List[str] = []
-        if isinstance(message, str):
-            self.messages.append(message)
+        self.message = message
 
     def __str__(self) -> str:
-        return "\n".join(e for e in self.messages)
-
-    def append(self, message: str) -> None:
-        self.messages.append(message)
+        return self.message
 
 
 if __name__ == "__main__":
