@@ -1,0 +1,150 @@
+tests/coverage/ethernet/frame/valid/802.3-LLC-CDP.raw                            PASSED
+tests/coverage/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw                  PASSED
+tests/coverage/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw              PASSED
+tests/coverage/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                       PASSED
+tests/coverage/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                       PASSED
+tests/coverage/ethernet/frame/valid/ethernet_802.3.raw                           PASSED
+tests/coverage/ethernet/frame/valid/ethernet_double_vlan_tag.raw                 PASSED
+tests/coverage/ethernet/frame/valid/ethernet_ipv4_udp.raw                        PASSED
+tests/coverage/ethernet/frame/valid/ethernet_vlan_tag.raw                        PASSED
+tests/coverage/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw          PASSED
+tests/coverage/ethernet/frame/invalid/ethernet_invalid_too_long.raw              PASSED
+tests/coverage/ethernet/frame/invalid/ethernet_invalid_too_short.raw             PASSED
+tests/coverage/ethernet/frame/invalid/ethernet_undefined.raw                     PASSED
+
+
+--------------------------------------------------------------------------------
+                     RecordFlux Validation Coverage Report                      
+Directory: .
+--------------------------------------------------------------------------------
+File                                          Links       Used        Coverage
+ipv4.rflx                                        25         18          72.00%
+ethernet.rflx                                    12         12         100.00%
+arp.rflx                                         10          0           0.00%
+ipv6.rflx                                        89          0           0.00%
+--------------------------------------------------------------------------------
+TOTAL                                           136         30          22.06%
+--------------------------------------------------------------------------------
+
+
+================================================================================
+                             Missing Link Coverage                              
+================================================================================
+
+
+                                   ipv4.rflx                                    
+--------------------------------------------------------------------------------
+None             : missing link          Copied           ->     Option_Class    
+None             : missing link          Initial          ->        Copied       
+None             : missing link       Option_Class        ->    Option_Number    
+None             : missing link        Option_Data        ->        Final        
+None             : missing link       Option_Length       ->     Option_Data     
+tests/coverage/ipv4.rflx:25:13: missing link       Option_Number       ->        Final        
+tests/coverage/ipv4.rflx:27:13: missing link       Option_Number       ->    Option_Length    
+
+
+                                    arp.rflx                                    
+--------------------------------------------------------------------------------
+tests/coverage/arp.rflx:30:13: missing link            Hln            ->         Pln         
+tests/coverage/arp.rflx:22:13: missing link            Hrd            ->         Pro         
+None             : missing link          Initial          ->         Hrd         
+None             : missing link            Op             ->         Sha         
+tests/coverage/arp.rflx:35:13: missing link            Pln            ->          Op         
+tests/coverage/arp.rflx:25:13: missing link            Pro            ->         Hln         
+None             : missing link            Sha            ->         Spa         
+None             : missing link            Spa            ->         Tha         
+None             : missing link            Tha            ->         Tpa         
+None             : missing link            Tpa            ->        Final        
+
+
+                                   ipv6.rflx                                    
+--------------------------------------------------------------------------------
+None             : missing link           Data            ->        Final        
+tests/coverage/ipv6.rflx:20:13: missing link          Initial          ->         Data        
+None             : missing link          Action           ->      May_Change     
+None             : missing link          Initial          ->        Action       
+None             : missing link        May_Change         ->        Value        
+None             : missing link           Value           ->        Final        
+None             : missing link          Initial          ->  Option_Type_Action 
+tests/coverage/ipv6.rflx:63:13: missing link       Opt_Data_Len        ->     Option_Data     
+None             : missing link        Option_Data        ->        Final        
+None             : missing link    Option_Type_Action     -> Option_Type_May_Change
+None             : missing link  Option_Type_May_Change   ->  Option_Type_Value  
+tests/coverage/ipv6.rflx:54:13: missing link     Option_Type_Value     ->        Final        
+tests/coverage/ipv6.rflx:58:13: missing link     Option_Type_Value     ->     Opt_Data_Len    
+None             : missing link           Data            ->        Final        
+None             : missing link        Hdr_Ext_Len        ->       Options       
+None             : missing link          Initial          ->     Next_Header     
+None             : missing link        Next_Header        ->     Hdr_Ext_Len     
+None             : missing link          Options          ->         Data        
+None             : missing link           Data            ->        Final        
+None             : missing link        Hdr_Ext_Len        ->       Options       
+None             : missing link          Initial          ->     Next_Header     
+None             : missing link        Next_Header        ->     Hdr_Ext_Len     
+None             : missing link          Options          ->         Data        
+None             : missing link           Data            ->        Final        
+None             : missing link        Hdr_Ext_Len        ->     Routing_Type    
+None             : missing link          Initial          ->     Hdr_Ext_Len     
+None             : missing link       Routing_Type        ->         Data        
+None             : missing link     Home_Address_Data     ->        Final        
+None             : missing link          Initial          ->    Segments_Left    
+None             : missing link         Reserved          ->  Home_Address_Data  
+None             : missing link       Segments_Left       ->       Reserved      
+None             : missing link           CmprE           ->         Pad         
+None             : missing link           CmprI           ->        CmprE        
+None             : missing link          Initial          ->    Segments_Left    
+tests/coverage/ipv6.rflx:160:13: missing link       Last_Segment        ->       Padding       
+None             : missing link            Pad            ->       Reserved      
+None             : missing link          Padding          ->        Final        
+tests/coverage/ipv6.rflx:150:13: missing link         Reserved          ->     Last_Segment    
+tests/coverage/ipv6.rflx:147:13: missing link         Reserved          ->       Padding       
+tests/coverage/ipv6.rflx:153:13: missing link         Reserved          ->       Segments      
+tests/coverage/ipv6.rflx:157:13: missing link         Segments          ->     Last_Segment    
+None             : missing link       Segments_Left       ->        CmprI        
+None             : missing link           Data            ->        Final        
+None             : missing link          Initial          ->         Kind        
+tests/coverage/ipv6.rflx:193:13: missing link           Kind            ->        Final        
+tests/coverage/ipv6.rflx:195:13: missing link           Kind            ->        Length       
+None             : missing link          Length           ->         Data        
+None             : missing link Dest_Addr_Verification_Disable ->       Reserved      
+None             : missing link           HMAC            ->        Final        
+None             : missing link        HMAC_Key_ID        ->         HMAC        
+None             : missing link          Initial          -> Dest_Addr_Verification_Disable
+None             : missing link         Reserved          ->     HMAC_Key_ID     
+None             : missing link           Flags           ->         Tag         
+None             : missing link          Initial          ->    Segments_Left    
+None             : missing link        Last_Entry         ->        Flags        
+None             : missing link         Segments          ->        Final        
+None             : missing link       Segments_Left       ->      Last_Entry     
+None             : missing link            Tag            ->       Segments      
+None             : missing link           Data            ->        Final        
+None             : missing link          Initial          ->     Next_Header     
+None             : missing link        Next_Header        ->    RH_Hdr_Ext_Len   
+None             : missing link          RH_Data          ->         Data        
+None             : missing link      RH_Hdr_Ext_Len       ->   RH_Routing_Type   
+None             : missing link      RH_Routing_Type      ->       RH_Data       
+None             : missing link           Data            ->        Final        
+None             : missing link      Fragment_Offset      ->      Reserved_2     
+None             : missing link      Identification       ->         Data        
+None             : missing link          Initial          ->     Next_Header     
+None             : missing link      More_Fragments       ->    Identification   
+None             : missing link        Next_Header        ->      Reserved_1     
+None             : missing link        Reserved_1         ->   Fragment_Offset   
+None             : missing link        Reserved_2         ->    More_Fragments   
+None             : missing link           Data            ->        Final        
+None             : missing link        Hdr_Ext_Len        ->       Options       
+None             : missing link          Initial          ->     Next_Header     
+None             : missing link        Next_Header        ->     Hdr_Ext_Len     
+None             : missing link          Options          ->         Data        
+tests/coverage/ipv6.rflx:280:13: missing link     Destination_Data      ->       Payload       
+None             : missing link        Flow_Label         ->    Payload_Length   
+None             : missing link         Hop_Limit         ->     Source_Data     
+None             : missing link          Initial          ->       Version       
+None             : missing link        Next_Header        ->      Hop_Limit      
+None             : missing link          Payload          ->        Final        
+None             : missing link      Payload_Length       ->     Next_Header     
+None             : missing link        Source_Data        ->   Destination_Data  
+None             : missing link       Traffic_Class       ->      Flow_Label     
+None             : missing link          Version          ->    Traffic_Class    
+None             : missing link          Initial          ->        Value        
+None             : missing link           Value           ->        Final        
