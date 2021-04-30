@@ -313,6 +313,155 @@ MESSAGE = Message(
 )
 REFINEMENT = Refinement("In_Message", MESSAGE, Field("F"), MESSAGE)
 
+UNIVERSAL_MESSAGE_TYPE = Enumeration(
+    "Universal::Message_Type",
+    [
+        ("MT_Null", Number(0)),
+        ("MT_Data", Number(1)),
+        ("MT_Value", Number(2)),
+        ("MT_Values", Number(3)),
+        ("MT_Option_Types", Number(4)),
+        ("MT_Options", Number(5)),
+        ("MT_Unconstrained_Data", Number(6)),
+        ("MT_Unconstrained_Options", Number(7)),
+    ],
+    size=Number(8),
+    always_valid=False,
+)
+UNIVERSAL_LENGTH = ModularInteger("Universal::Length", Pow(Number(2), Number(16)))
+UNIVERSAL_VALUE = RangeInteger("Universal::Value", Number(0), Number(100), Number(8))
+UNIVERSAL_VALUES = Array("Universal::Values", UNIVERSAL_VALUE)
+UNIVERSAL_OPTION_TYPE = Enumeration(
+    "Universal::Option_Type",
+    [
+        ("OT_Null", Number(0)),
+        ("OT_Data", Number(1)),
+    ],
+    size=Number(8),
+    always_valid=True,
+)
+UNIVERSAL_OPTION_TYPES = Array("Universal::Option_Types", UNIVERSAL_OPTION_TYPE)
+UNIVERSAL_OPTION = Message(
+    "Universal::Option",
+    [
+        Link(INITIAL, Field("Option_Type")),
+        Link(
+            Field("Option_Type"),
+            FINAL,
+            condition=Equal(Variable("Option_Type"), Variable("OT_Null")),
+        ),
+        Link(
+            Field("Option_Type"),
+            Field("Length"),
+            condition=Equal(Variable("Option_Type"), Variable("OT_Data")),
+        ),
+        Link(
+            Field("Length"),
+            Field("Data"),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(Field("Data"), FINAL),
+    ],
+    {
+        Field("Option_Type"): UNIVERSAL_OPTION_TYPE,
+        Field("Length"): UNIVERSAL_LENGTH,
+        Field("Data"): Opaque(),
+    },
+)
+UNIVERSAL_OPTIONS = Array("Universal::Options", UNIVERSAL_OPTION)
+UNIVERSAL_MESSAGE = Message(
+    "Universal::Message",
+    [
+        Link(INITIAL, Field("Message_Type")),
+        Link(
+            Field("Message_Type"),
+            FINAL,
+            condition=Equal(Variable("Message_Type"), Variable("MT_Null")),
+        ),
+        Link(
+            Field("Message_Type"),
+            Field("Data"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Data")),
+            size=Sub(Last("Message"), Last("Message_Type")),
+        ),
+        Link(
+            Field("Message_Type"),
+            Field("Options"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Options")),
+            size=Sub(Last("Message"), Last("Message_Type")),
+        ),
+        Link(
+            Field("Message_Type"),
+            Field("Length"),
+            condition=And(
+                NotEqual(Variable("Message_Type"), Variable("MT_Null")),
+                NotEqual(Variable("Message_Type"), Variable("MT_Unconstrained_Data")),
+                NotEqual(Variable("Message_Type"), Variable("MT_Unconstrained_Options")),
+            ),
+        ),
+        Link(
+            Field("Length"),
+            Field("Data"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Data")),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(Field("Data"), FINAL),
+        Link(
+            Field("Length"),
+            Field("Value"),
+            condition=And(
+                Equal(Variable("Message_Type"), Variable("MT_Value")),
+                Equal(Variable("Length"), Div(Size("Universal::Value"), Number(8))),
+            ),
+        ),
+        Link(Field("Value"), FINAL),
+        Link(
+            Field("Length"),
+            Field("Values"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Values")),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(Field("Values"), FINAL),
+        Link(
+            Field("Length"),
+            Field("Option_Types"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Option_Types")),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(Field("Option_Types"), FINAL),
+        Link(
+            Field("Length"),
+            Field("Options"),
+            condition=Equal(Variable("Message_Type"), Variable("MT_Options")),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(Field("Options"), FINAL),
+    ],
+    {
+        Field("Message_Type"): UNIVERSAL_MESSAGE_TYPE,
+        Field("Length"): UNIVERSAL_LENGTH,
+        Field("Data"): Opaque(),
+        Field("Value"): UNIVERSAL_VALUE,
+        Field("Values"): UNIVERSAL_VALUES,
+        Field("Option_Types"): UNIVERSAL_OPTION_TYPES,
+        Field("Options"): UNIVERSAL_OPTIONS,
+    },
+)
+UNIVERSAL_MESSAGES = Array("Universal::Messages", UNIVERSAL_MESSAGE)
+UNIVERSAL_MODEL = Model(
+    [
+        UNIVERSAL_MESSAGE_TYPE,
+        UNIVERSAL_VALUE,
+        UNIVERSAL_VALUES,
+        UNIVERSAL_OPTION_TYPE,
+        UNIVERSAL_OPTION_TYPES,
+        UNIVERSAL_OPTION,
+        UNIVERSAL_OPTIONS,
+        UNIVERSAL_LENGTH,
+        UNIVERSAL_MESSAGE,
+    ]
+)
+
 SESSION = Session(
     identifier="P::S",
     initial="A",
