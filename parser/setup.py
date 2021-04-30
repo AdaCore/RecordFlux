@@ -8,6 +8,7 @@ from typing import Any
 import setuptools.command.build_py as orig
 from setuptools import setup
 
+VERSION = "0.2.1"
 base_dir = os.path.dirname(os.path.abspath(__file__))
 LANGKIT = f"langkit @ file://localhost/{base_dir}/contrib/langkit#egg=langkit"
 
@@ -66,6 +67,8 @@ class MakeParser(orig.build_py):
                 "make",
                 "--build-dir",
                 build_dir,
+                "--version",
+                VERSION,
                 "--library-types",
                 "static-pic",
                 "--disable-all-mains",
@@ -130,10 +133,9 @@ class BuildWithParser(MakeParser):
 
 with open("README.md") as f:
     readme = f.read()
-
 setup(
     name="RecordFlux-language",
-    version="0.2.0",
+    version=VERSION,
     description=("RecordFlux language"),
     long_description=readme,
     long_description_content_type="text/markdown",
