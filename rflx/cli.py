@@ -7,6 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Sequence, Union
 
+import librflxlang
+
 from rflx import __version__
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
@@ -24,7 +26,9 @@ def main(argv: List[str]) -> Union[int, str]:
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
     )
-    parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument(
+        "--version", action="version", version=f"{__version__} (parser {librflxlang.version})"
+    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
     subparsers.required = True
@@ -91,7 +95,7 @@ def main(argv: List[str]) -> Union[int, str]:
     except Exception:  # pylint: disable = broad-except
         return f"""
 ------------------------------ RecordFlux Bug ------------------------------
-RecordFlux {__version__}
+RecordFlux {__version__} (parser {librflxlang.version})
 
 {' '.join(argv)}
 
