@@ -646,7 +646,16 @@ class Message(AbstractMessage):
 
         return False
 
-    def size(self, field_values: Mapping[Field, expr.Expr]) -> expr.Expr:
+    @property
+    def has_fixed_size(self) -> bool:
+        return len(self.paths(FINAL)) <= 1 and not (
+            {v.identifier for l in self.structure for v in l.size.variables()}
+            - set(self._type_literals.keys())
+        )
+
+    def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
+        field_values = field_values if field_values else {}
+
         def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
             return {
                 f.left: f.right
@@ -664,6 +673,9 @@ class Message(AbstractMessage):
                     location=expression.location,
                 )
             return expression
+
+        if not self.structure:
+            return expr.Number(0)
 
         fields = set(field_values)
         values = [
@@ -692,7 +704,9 @@ class Message(AbstractMessage):
         failures = []
 
         for path in self.paths(FINAL):
-            if fields != set(l.target for l in path if l.target != FINAL):
+            if not self.has_fixed_size and fields != set(
+                l.target for l in path if l.target != FINAL
+            ):
                 continue
             message_size = expr.Add(
                 *[

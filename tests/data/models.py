@@ -330,7 +330,7 @@ UNIVERSAL_MESSAGE_TYPE = Enumeration(
 )
 UNIVERSAL_LENGTH = ModularInteger("Universal::Length", Pow(Number(2), Number(16)))
 UNIVERSAL_VALUE = RangeInteger("Universal::Value", Number(0), Number(100), Number(8))
-UNIVERSAL_VALUES = Array("Universal::Values", UNIVERSAL_VALUE)
+UNIVERSAL_VALUES = Sequence("Universal::Values", UNIVERSAL_VALUE)
 UNIVERSAL_OPTION_TYPE = Enumeration(
     "Universal::Option_Type",
     [
@@ -340,7 +340,7 @@ UNIVERSAL_OPTION_TYPE = Enumeration(
     size=Number(8),
     always_valid=True,
 )
-UNIVERSAL_OPTION_TYPES = Array("Universal::Option_Types", UNIVERSAL_OPTION_TYPE)
+UNIVERSAL_OPTION_TYPES = Sequence("Universal::Option_Types", UNIVERSAL_OPTION_TYPE)
 UNIVERSAL_OPTION = Message(
     "Universal::Option",
     [
@@ -368,7 +368,7 @@ UNIVERSAL_OPTION = Message(
         Field("Data"): Opaque(),
     },
 )
-UNIVERSAL_OPTIONS = Array("Universal::Options", UNIVERSAL_OPTION)
+UNIVERSAL_OPTIONS = Sequence("Universal::Options", UNIVERSAL_OPTION)
 UNIVERSAL_MESSAGE = Message(
     "Universal::Message",
     [
@@ -447,7 +447,7 @@ UNIVERSAL_MESSAGE = Message(
         Field("Options"): UNIVERSAL_OPTIONS,
     },
 )
-UNIVERSAL_MESSAGES = Array("Universal::Messages", UNIVERSAL_MESSAGE)
+UNIVERSAL_MESSAGES = Sequence("Universal::Messages", UNIVERSAL_MESSAGE)
 UNIVERSAL_MODEL = Model(
     [
         UNIVERSAL_MESSAGE_TYPE,
@@ -460,6 +460,38 @@ UNIVERSAL_MODEL = Model(
         UNIVERSAL_LENGTH,
         UNIVERSAL_MESSAGE,
     ]
+)
+
+FIXED_SIZE_MESSAGE = Message(
+    "Fixed_Size::Message",
+    [
+        Link(INITIAL, Field("Message_Type")),
+        Link(
+            Field("Message_Type"),
+            Field("Data"),
+            size=Number(64),
+        ),
+        Link(
+            Field("Data"),
+            Field("Values"),
+            size=Mul(Number(8), Size("Universal::Value")),
+        ),
+        Link(
+            Field("Values"),
+            Field("Options"),
+            size=Number(64),
+        ),
+        Link(
+            Field("Options"),
+            FINAL,
+        ),
+    ],
+    {
+        Field("Message_Type"): UNIVERSAL_MESSAGE_TYPE,
+        Field("Data"): Opaque(),
+        Field("Values"): UNIVERSAL_VALUES,
+        Field("Options"): UNIVERSAL_OPTIONS,
+    },
 )
 
 SESSION = Session(
