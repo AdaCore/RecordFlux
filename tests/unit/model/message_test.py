@@ -56,11 +56,14 @@ from rflx.model import (
 from tests.data.models import (
     ENUMERATION,
     ETHERNET_FRAME,
+    FIXED_SIZE_MESSAGE,
     MODULAR_INTEGER,
+    NULL_MESSAGE,
     RANGE_INTEGER,
     SEQUENCE_INNER_MESSAGE,
     SEQUENCE_INNER_MESSAGES,
     SEQUENCE_LENGTH,
+    SEQUENCE_MESSAGE,
     SEQUENCE_MESSAGES_MESSAGE,
     SEQUENCE_MODULAR_VECTOR,
     TLV_LENGTH,
@@ -2486,7 +2489,17 @@ def test_is_possibly_empty() -> None:
     assert message.is_possibly_empty(c)
 
 
+def test_has_fixed_size() -> None:
+    assert NULL_MESSAGE.has_fixed_size
+    assert FIXED_SIZE_MESSAGE.has_fixed_size
+    assert not TLV_MESSAGE.has_fixed_size
+    assert not ETHERNET_FRAME.has_fixed_size
+    assert not SEQUENCE_MESSAGE.has_fixed_size
+
+
 def test_size() -> None:
+    assert NULL_MESSAGE.size() == Number(0)
+    assert FIXED_SIZE_MESSAGE.size() == Number(200)
     assert TLV_MESSAGE.size({Field("Tag"): Variable("Msg_Error")}) == Number(8)
     assert (
         TLV_MESSAGE.size(
