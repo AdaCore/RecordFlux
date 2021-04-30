@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -11,6 +10,10 @@ from setuptools import setup
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 LANGKIT = f"langkit @ file://localhost/{base_dir}/contrib/langkit#egg=langkit"
+
+
+class InstallError(Exception):
+    pass
 
 
 # We cannot import langkit.* or language.* globally, as langkit needs to be installed first.
@@ -29,27 +32,35 @@ def manage_factory() -> Any:
     return Manage()
 
 
+def gprbuild(projectfile: str) -> None:
+    """
+    Run gprbuild on the given project file with library type is fixed to static PIC
+    """
+    subprocess.run(
+        ["gprbuild", "-P", projectfile, "-p", "-XLIBRARY_TYPE=static-pic"],
+        check=True,
+    )
+
+
+def get_gcc_location(name: str) -> str:
+    """
+    Result location of a file inside GCC installation
+    """
+    result = subprocess.check_output(["gcc", f"--print-file-name={name}"]).rstrip().decode("utf-8")
+    if result == name:
+        raise InstallError(f'File "{name}" not found')
+    return result
+
+
 class MakeParser(orig.build_py):
     description = "Build RecordFlux langkit parser"
     GNATCOLL_ICONV_DIR = f"{base_dir}/contrib/gnatcoll-bindings/iconv"
     GNATCOLL_GMP_DIR = f"{base_dir}/contrib/gnatcoll-bindings/gmp"
 
-    def gprbuild(self, projectfile: str) -> None:
-        subprocess.run(
-            [
-                "gprbuild",
-                "-P",
-                projectfile,
-                "-p",
-                "-XLIBRARY_TYPE=static-pic"
-            ],
-            check=True,
-        )
-
     def make_parser(self, build_dir: str = ".") -> None:
         Path(build_dir).mkdir(parents=True, exist_ok=True)
-        self.gprbuild(f"{self.GNATCOLL_ICONV_DIR}/gnatcoll_iconv.gpr")
-        self.gprbuild(f"{self.GNATCOLL_GMP_DIR}/gnatcoll_gmp.gpr")
+        gprbuild(f"{self.GNATCOLL_ICONV_DIR}/gnatcoll_iconv.gpr")
+        gprbuild(f"{self.GNATCOLL_GMP_DIR}/gnatcoll_gmp.gpr")
         manage_factory().run(
             [
                 "make",
@@ -62,8 +73,8 @@ class MakeParser(orig.build_py):
                 "undocumented-nodes",
                 "--gargs",
                 "-XLIBRARY_TYPE=static-pic "
-                f"-aP {self.GNATCOLL_ICONV_DIR}/iconv "
-                f"-aP {self.GNATCOLL_GMP_DIR}/gmp "
+                f"-aP {self.GNATCOLL_ICONV_DIR} "
+                f"-aP {self.GNATCOLL_GMP_DIR} "
                 f"-aP {base_dir}/contrib/langkit/support "
                 f"-aP {base_dir}/contrib/langkit/langkit ",
             ]
@@ -71,22 +82,35 @@ class MakeParser(orig.build_py):
 
 
 class BuildParser(MakeParser):
+    # pylint: disable=too-many-ancestors
+
     def run(self) -> None:
         self.make_parser("build/langkit")
 
 
 class BuildWithParser(MakeParser):
+    # pylint: disable=too-many-ancestors
+
     def initialize_options(self) -> None:
         os.environ["GNATCOLL_ICONV_OPT"] = "-v"
         output_path = Path("python/librflxlang/")
         output_path.mkdir(parents=True, exist_ok=True)
+        whole_archives = (
+            get_gcc_location(a) for a in ["adalib/libgnat_pic.a", "adalib/libgnarl_pic.a"]
+        )
+        archives = (
+            get_gcc_location(a)
+            for a in [
+                "gpr/static-pic/gpr/libgpr.a",
+                "gnatcoll.static-pic/libgnatcoll.a",
+            ]
+        )
+
         self.make_parser()
         subprocess.run(
             [
                 "gcc",
                 "-shared",
-                "--RTS=native",
-                "-nodefaultlibs",
                 "-o",
                 f"{output_path}/librflxlang.so",
                 "-Wl,--whole-archive",
@@ -94,7 +118,9 @@ class BuildWithParser(MakeParser):
                 "contrib/langkit/support/lib/static-pic/dev/liblangkit_support.a",
                 f"{self.GNATCOLL_ICONV_DIR}/lib/static-pic/libgnatcoll_iconv.a",
                 f"{self.GNATCOLL_GMP_DIR}/lib/static-pic/libgnatcoll_gmp.a",
-                "-lgnatcoll",
+                *whole_archives,
+                "-Wl,--no-whole-archive",
+                *archives,
                 "-lgmp",
             ],
             check=True,

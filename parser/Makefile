@@ -41,4 +41,4 @@ install_parser:
 	pip3 install .[devel]
 
 clean:
-	rm -rf .mypy_cache .pytest_cache .egg
+	rm -rf .mypy_cache .pytest_cache .egg build
