@@ -31,9 +31,25 @@ def manage_factory() -> Any:
 
 class MakeParser(orig.build_py):
     description = "Build RecordFlux langkit parser"
+    GNATCOLL_ICONV_DIR = f"{base_dir}/contrib/gnatcoll-bindings/iconv"
+    GNATCOLL_GMP_DIR = f"{base_dir}/contrib/gnatcoll-bindings/gmp"
+
+    def gprbuild(self, projectfile: str) -> None:
+        subprocess.run(
+            [
+                "gprbuild",
+                "-P",
+                projectfile,
+                "-p",
+                "-XLIBRARY_TYPE=static-pic"
+            ],
+            check=True,
+        )
 
     def make_parser(self, build_dir: str = ".") -> None:
         Path(build_dir).mkdir(parents=True, exist_ok=True)
+        self.gprbuild(f"{self.GNATCOLL_ICONV_DIR}/gnatcoll_iconv.gpr")
+        self.gprbuild(f"{self.GNATCOLL_GMP_DIR}/gnatcoll_gmp.gpr")
         manage_factory().run(
             [
                 "make",
@@ -45,8 +61,11 @@ class MakeParser(orig.build_py):
                 "--disable-warning",
                 "undocumented-nodes",
                 "--gargs",
+                "-XLIBRARY_TYPE=static-pic "
+                f"-aP {self.GNATCOLL_ICONV_DIR}/iconv "
+                f"-aP {self.GNATCOLL_GMP_DIR}/gmp "
                 f"-aP {base_dir}/contrib/langkit/support "
-                f"-aP {base_dir}/contrib/langkit/langkit",
+                f"-aP {base_dir}/contrib/langkit/langkit ",
             ]
         )
 
@@ -73,9 +92,10 @@ class BuildWithParser(MakeParser):
                 "-Wl,--whole-archive",
                 "lib/static-pic/dev/librflxlang.a",
                 "contrib/langkit/support/lib/static-pic/dev/liblangkit_support.a",
+                f"{self.GNATCOLL_ICONV_DIR}/lib/static-pic/libgnatcoll_iconv.a",
+                f"{self.GNATCOLL_GMP_DIR}/lib/static-pic/libgnatcoll_gmp.a",
                 "-lgnatcoll",
-                "-lgnatcoll_gmp",
-                "-lgnatcoll_iconv",
+                "-lgmp",
             ],
             check=True,
         )
