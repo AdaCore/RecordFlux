@@ -13,21 +13,6 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 LANGKIT = f"langkit @ file://localhost/{base_dir}/contrib/langkit#egg=langkit"
 
 
-# Hack: To be able to place the shared libraries into the Python package
-# (without setting LD_LIBRARY_PATH before starting the python interpreter)
-# we need patch the RPATH of the parser library. While the parse library
-# itself is loaded via dlopen() directly, the langkit_base library which
-# is placed in the same directory cannot be found. To fix that, we add
-# "$ORIGIN" to the RPATH of librflxlang.so. The simplest way to
-# do this is the `patchelf` tool.
-def patch_rpath() -> None:
-    sopath = "lib/relocatable/dev/librflxlang.so"
-    rpath = subprocess.check_output(["patchelf", "--print-rpath", sopath])
-    subprocess.run(
-        ["patchelf", "--set-rpath", "$ORIGIN:" + rpath.decode("utf-8"), sopath], check=True
-    )
-
-
 # We cannot import langkit.* or language.* globally, as langkit needs to be installed first.
 def manage_factory() -> Any:
     # pylint: disable=import-outside-toplevel
@@ -44,45 +29,57 @@ def manage_factory() -> Any:
     return Manage()
 
 
-class BuildWithParser(orig.build_py):
-    def initialize_options(self) -> None:
-        os.environ["GNATCOLL_ICONV_OPT"] = "-v"
-        manage_factory().run(
-            [
-                "make",
-                "--build-dir", ".",
-                "--disable-warning", "undocumented-nodes",
-                "--gargs",
-                f"-aP {base_dir}/contrib/langkit/support "
-                f"-aP {base_dir}/contrib/langkit/langkit"
-            ]
-        )
-        patch_rpath()
-        for l in [
-            "lib/relocatable/dev/librflxlang.so",
-            "contrib/langkit/support/lib/relocatable/dev/liblangkit_support.so",
-        ]:
-            source = Path(l)
-            shutil.copy(source, Path("python/librflxlang/") / source.name)
-        super().initialize_options()
-
-
-class BuildParser(orig.build_py):
+class MakeParser(orig.build_py):
     description = "Build RecordFlux langkit parser"
 
-    def run(self) -> None:
-        Path("build/langkit").mkdir(parents=True, exist_ok=True)
+    def make_parser(self, build_dir: str = ".") -> None:
+        Path(build_dir).mkdir(parents=True, exist_ok=True)
         manage_factory().run(
             [
-                "--build-dir",
-                "build/langkit",
-                "--verbosity",
-                "debug",
                 "make",
+                "--build-dir",
+                build_dir,
+                "--library-types",
+                "static-pic",
+                "--disable-all-mains",
                 "--disable-warning",
                 "undocumented-nodes",
+                "--gargs",
+                f"-aP {base_dir}/contrib/langkit/support "
+                f"-aP {base_dir}/contrib/langkit/langkit",
             ]
         )
+
+
+class BuildParser(MakeParser):
+    def run(self) -> None:
+        self.make_parser("build/langkit")
+
+
+class BuildWithParser(MakeParser):
+    def initialize_options(self) -> None:
+        os.environ["GNATCOLL_ICONV_OPT"] = "-v"
+        output_path = Path("python/librflxlang/")
+        output_path.mkdir(parents=True, exist_ok=True)
+        self.make_parser()
+        subprocess.run(
+            [
+                "gcc",
+                "-shared",
+                "--RTS=native",
+                "-nodefaultlibs",
+                "-o",
+                f"{output_path}/librflxlang.so",
+                "-Wl,--whole-archive",
+                "lib/static-pic/dev/librflxlang.a",
+                "contrib/langkit/support/lib/static-pic/dev/liblangkit_support.a",
+                "-lgnatcoll",
+                "-lgnatcoll_gmp",
+                "-lgnatcoll_iconv",
+            ],
+            check=True,
+        )
+        super().initialize_options()
 
 
 with open("README.md") as f:
@@ -135,9 +132,6 @@ setup(
     package_data={
         "librflxlang": [
             "librflxlang.so",
-            "liblangkit_support.so",
-            "libgnatcoll_iconv.so.0",
-            "libgnatcoll_gmp.so.0",
         ],
     },
 )
