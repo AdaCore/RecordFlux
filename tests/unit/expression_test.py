@@ -696,6 +696,12 @@ def test_mod_variables() -> None:
 
 def test_mod_z3expr() -> None:
     assert Mod(Number(1000), Number(5)).z3expr() == z3.IntVal(1000) % z3.IntVal(5)
+    assert Mod(Pow(Number(6), Number(2)), Number(5)).z3expr() == z3.IntVal(36) % z3.IntVal(5)
+
+
+def test_mod_z3expr_error() -> None:
+    with pytest.raises(Z3TypeError):
+        Mod(Pow(Variable("X"), Number(2)), Number(5)).z3expr()
 
 
 def test_term_simplified() -> None:

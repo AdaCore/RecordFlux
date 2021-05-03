@@ -967,10 +967,12 @@ class Mod(MathBinExpr):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ArithRef:
-        left = self.left.z3expr()
+        left = self.left.simplified().z3expr()
         right = self.right.z3expr()
         if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
             raise Z3TypeError("modulo operation on non-arithmetic terms")
+        if not left.is_int():
+            raise Z3TypeError(f'modulo operation on non-integer term "{left}"')
         return left % right
 
 
