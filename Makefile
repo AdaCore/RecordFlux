@@ -1,5 +1,4 @@
 VERBOSE ?= @
-export MYPYPATH = $(PWD)/stubs
 
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
