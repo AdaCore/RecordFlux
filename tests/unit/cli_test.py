@@ -25,13 +25,16 @@ def raise_fatal_error() -> None:
 
 
 def test_main_noarg() -> None:
-    with pytest.raises(SystemExit, match="^2$"):
-        cli.main(["rflx"])
+    assert cli.main(["rflx"]) == 2
 
 
 def test_main_help() -> None:
     with pytest.raises(SystemExit):
         cli.main(["rflx", "-h"])
+
+
+def test_main_version() -> None:
+    assert cli.main(["rflx", "--version"]) == 0
 
 
 def test_main_check() -> None:
