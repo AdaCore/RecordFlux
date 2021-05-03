@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Sequence, Union
 
 import librflxlang
+from pkg_resources import get_distribution
 
 from rflx import __version__
 from rflx.error import RecordFluxError, Severity, Subsystem, fail
@@ -26,12 +27,9 @@ def main(argv: List[str]) -> Union[int, str]:
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
     )
-    parser.add_argument(
-        "--version", action="version", version=f"{__version__} (parser {librflxlang.version})"
-    )
+    parser.add_argument("--version", action="store_true")
 
     subparsers = parser.add_subparsers(dest="subcommand")
-    subparsers.required = True
 
     parser_check = subparsers.add_parser("check", help="check specification")
     parser_check.add_argument(
@@ -85,6 +83,14 @@ def main(argv: List[str]) -> Union[int, str]:
 
     args = parser.parse_args(argv[1:])
 
+    if args.version:
+        print(version())
+        return 0
+
+    if not args.subcommand:
+        parser.print_usage()
+        return 2
+
     if args.quiet:
         logging.disable(logging.CRITICAL)
 
@@ -95,9 +101,11 @@ def main(argv: List[str]) -> Union[int, str]:
     except Exception:  # pylint: disable = broad-except
         return f"""
 ------------------------------ RecordFlux Bug ------------------------------
-RecordFlux {__version__} (parser {librflxlang.version})
+{version()}
 
-{' '.join(argv)}
+Optimized: {not __debug__}
+
+Command: {' '.join(argv)}
 
 {traceback.format_exc()}
 ----------------------------------------------------------------------------
@@ -110,6 +118,21 @@ Include the complete content of the bug box shown above and all input files
 in the report."""
 
     return 0
+
+
+def version() -> str:
+    dependencies = [
+        f"{r.name} {get_distribution(r.name).version}"  # type: ignore[attr-defined]
+        for r in get_distribution("RecordFlux").requires()
+        if not r.name.startswith("RecordFlux")  # type: ignore[attr-defined]
+    ]
+    return "\n".join(
+        [
+            f"RecordFlux {__version__}",
+            f"RecordFlux-parser {librflxlang.version}",
+            *dependencies,
+        ]
+    )
 
 
 def check(args: argparse.Namespace) -> None:
