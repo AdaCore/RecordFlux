@@ -332,11 +332,11 @@ package body RFLX.IPv4_Tests is
       Message_Last := IPv4.Packet.Message_Last (Context);
       IPv4.Packet.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -368,11 +368,11 @@ package body RFLX.IPv4_Tests is
       Message_Last := IPv4.Option.Message_Last (Context);
       IPv4.Option.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Context.First) + 1),
               Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 

@@ -216,11 +216,11 @@ is
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
          Set_Data (ICMP_Context);
-         Last := RFLX.RFLX_Types.Byte_Index (RFLX.ICMP.Message.Message_Last (ICMP_Context));
+         Last := RFLX.RFLX_Types.To_Index (RFLX.ICMP.Message.Message_Last (ICMP_Context));
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
       else
-         Last := RFLX.RFLX_Types.Byte_Index (RFLX.IPv4.Packet.Message_Last (IP_Context));
+         Last := RFLX.RFLX_Types.To_Index (RFLX.IPv4.Packet.Message_Last (IP_Context));
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
       end if;
       pragma Warnings (On, """*_Context"" is set by ""*"" but not used after the call");

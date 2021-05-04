@@ -97,10 +97,10 @@ package body RFLX.Derivation_Tests is
 
       Derivation.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);

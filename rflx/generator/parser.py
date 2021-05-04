@@ -745,7 +745,7 @@ class ParserGenerator:
                                 Equal(
                                     Length("Data"),
                                     Call(
-                                        const.TYPES_BYTE_LENGTH,
+                                        const.TYPES_TO_LENGTH,
                                         [
                                             Call(
                                                 "Field_Size",
@@ -771,7 +771,7 @@ class ParserGenerator:
                             ["First"],
                             const.TYPES_INDEX,
                             Call(
-                                const.TYPES_BYTE_INDEX,
+                                const.TYPES_TO_INDEX,
                                 [
                                     Selected(
                                         Indexed(
@@ -788,7 +788,7 @@ class ParserGenerator:
                             ["Last"],
                             const.TYPES_INDEX,
                             Call(
-                                const.TYPES_BYTE_INDEX,
+                                const.TYPES_TO_INDEX,
                                 [
                                     Selected(
                                         Indexed(
@@ -853,7 +853,7 @@ class ParserGenerator:
                             ["First"],
                             const.TYPES_INDEX,
                             Call(
-                                const.TYPES_BYTE_INDEX,
+                                const.TYPES_TO_INDEX,
                                 [
                                     Selected(
                                         Indexed(
@@ -870,7 +870,7 @@ class ParserGenerator:
                             ["Last"],
                             const.TYPES_INDEX,
                             Call(
-                                const.TYPES_BYTE_INDEX,
+                                const.TYPES_TO_INDEX,
                                 [
                                     Selected(
                                         Indexed(

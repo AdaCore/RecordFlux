@@ -36,8 +36,8 @@ is
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
-       RFLX_Types.Byte_Index (First) >= Buffer_First
-       and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+       RFLX_Types.To_Index (First) >= Buffer_First
+       and RFLX_Types.To_Index (Last) <= Buffer_Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Index'Last
        and First mod RFLX_Types.Byte'Size = 1
@@ -92,8 +92,8 @@ is
        and Buffer = null
        and Ctx.Buffer_First = Buffer'First'Old
        and Ctx.Buffer_Last = Buffer'Last'Old
-       and Ctx.First = RFLX_Types.First_Bit_Index (Ctx.Buffer_First)
-       and Ctx.Last = RFLX_Types.Last_Bit_Index (Ctx.Buffer_Last)
+       and Ctx.First = RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First)
+       and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx),
      Depends =>
        (Ctx => Buffer, Buffer => null);
@@ -103,8 +103,8 @@ is
        not Ctx'Constrained
        and then Buffer /= null
        and then Buffer'Length > 0
-       and then RFLX_Types.Byte_Index (First) >= Buffer'First
-       and then RFLX_Types.Byte_Index (Last) <= Buffer'Last
+       and then RFLX_Types.To_Index (First) >= Buffer'First
+       and then RFLX_Types.To_Index (Last) <= Buffer'Last
        and then First <= Last + 1
        and then Last < RFLX_Types.Bit_Index'Last
        and then First mod RFLX_Types.Byte'Size = 1
@@ -138,8 +138,8 @@ is
      Pre =>
        not Ctx'Constrained
        and Has_Buffer (Ctx)
-       and RFLX_Types.Byte_Index (First) >= Ctx.Buffer_First
-       and RFLX_Types.Byte_Index (Last) <= Ctx.Buffer_Last
+       and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
+       and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Length'Last
        and First mod RFLX_Types.Byte'Size = 1
@@ -352,14 +352,14 @@ is
        Has_Buffer (Ctx)
        and then Present (Ctx, F_Options)
        and then Valid_Next (Ctx, F_Options)
-       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Options));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Options));
 
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
        and then Present (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Payload));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    generic
       with procedure Process_Options (Options : RFLX_Types.Bytes);
@@ -1195,7 +1195,7 @@ is
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Payload)),
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -1451,8 +1451,8 @@ private
        then
           Buffer'First = Buffer_First
           and Buffer'Last = Buffer_Last)
-      and then (RFLX_Types.Byte_Index (First) >= Buffer_First
-                and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+      and then (RFLX_Types.To_Index (First) >= Buffer_First
+                and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
                 and Last < RFLX_Types.Bit_Index'Last
                 and First mod RFLX_Types.Byte'Size = 1

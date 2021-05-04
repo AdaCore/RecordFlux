@@ -69,7 +69,7 @@ package body RFLX.TLV_Tests is
                  (Context,
                   Value (Value'First
                     .. RFLX_Builtin_Types.Index (RFLX_Builtin_Types.Length (Value'First)
-                      + RFLX_Types.Byte_Length (TLV.Message.Field_Size (Context, TLV.Message.F_Value)) - 1)));
+                      + RFLX_Types.To_Length (TLV.Message.Field_Size (Context, TLV.Message.F_Value)) - 1)));
                Assert (Value, (1, 2, 3, 4), "Unexpected Value");
             end if;
          end if;
@@ -177,10 +177,10 @@ package body RFLX.TLV_Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
@@ -207,10 +207,10 @@ package body RFLX.TLV_Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
@@ -235,10 +235,10 @@ package body RFLX.TLV_Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
@@ -262,10 +262,10 @@ package body RFLX.TLV_Tests is
 
       TLV.Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);

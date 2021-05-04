@@ -42,7 +42,7 @@ def substitution(
                             expr.Variable(expr.ID("Buffer") * "all"),
                             expr.ValueRange(
                                 expr.Call(
-                                    const.TYPES_BYTE_INDEX,
+                                    const.TYPES_TO_INDEX,
                                     [
                                         expr.Selected(
                                             expr.Indexed(
@@ -54,7 +54,7 @@ def substitution(
                                     ],
                                 ),
                                 expr.Call(
-                                    const.TYPES_BYTE_INDEX,
+                                    const.TYPES_TO_INDEX,
                                     [
                                         expr.Selected(
                                             expr.Indexed(
@@ -490,10 +490,10 @@ def context_predicate(
 def public_context_predicate() -> ada.Expr:
     return ada.And(
         ada.GreaterEqual(
-            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("First")]), ada.Variable("Buffer_First")
+            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("First")]), ada.Variable("Buffer_First")
         ),
         ada.LessEqual(
-            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
+            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
         ),
         ada.LessEqual(ada.Variable("First"), ada.Add(ada.Variable("Last"), ada.Number(1))),
         ada.Less(ada.Variable("Last"), ada.Last(const.TYPES_BIT_INDEX)),
@@ -608,11 +608,11 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
     return [
         ada.ExpressionFunctionDeclaration(
             ada.FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("First")]),
+            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("First")]),
         ),
         ada.ExpressionFunctionDeclaration(
             ada.FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-            ada.Call(const.TYPES_BYTE_INDEX, [ada.Variable("Last")]),
+            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]),
         ),
         ada.ExpressionFunctionDeclaration(
             ada.FunctionSpecification("Offset", const.TYPES_OFFSET),

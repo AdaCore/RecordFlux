@@ -17,25 +17,29 @@ package body RFLX.Builtin_Types_Tests is
    is
       pragma Unreferenced (T);
    begin
-      Assert (RFLX_Types.First_Bit_Index (Index'First)'Img, " 1", "Invalid first bit index for Index'First");
-      Assert (RFLX_Types.First_Bit_Index (Index'Last)'Img, " 17179869169", "Invalid first bit index for Index'Last");
+      Assert (RFLX_Types.To_First_Bit_Index (Index'First)'Img, " 1",
+              "Invalid first bit index for Index'First");
+      Assert (RFLX_Types.To_First_Bit_Index (Index'Last)'Img, " 17179869169",
+              "Invalid first bit index for Index'Last");
 
-      Assert (RFLX_Types.Last_Bit_Index (Index'First)'Img, " 8", "Invalid last bit index for Index'First");
-      Assert (RFLX_Types.Last_Bit_Index (Index'Last)'Img, " 17179869176", "Invalid last bit index for Index'Last");
+      Assert (RFLX_Types.To_Last_Bit_Index (Index'First)'Img, " 8",
+              "Invalid last bit index for Index'First");
+      Assert (RFLX_Types.To_Last_Bit_Index (Index'Last)'Img, " 17179869176",
+              "Invalid last bit index for Index'Last");
 
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.First_Bit_Index (Index'First))'Img, " 1",
+      Assert (RFLX_Types.To_Index (RFLX_Types.To_First_Bit_Index (Index'First))'Img, " 1",
               "Invalid conversion between byte index and first bit index");
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.First_Bit_Index (Index'Last))'Img, " 2147483647",
+      Assert (RFLX_Types.To_Index (RFLX_Types.To_First_Bit_Index (Index'Last))'Img, " 2147483647",
               "Invalid conversion between byte index and first bit index");
 
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.Last_Bit_Index (Index'First))'Img, " 1",
+      Assert (RFLX_Types.To_Index (RFLX_Types.To_Last_Bit_Index (Index'First))'Img, " 1",
               "Invalid conversion between byte index and last bit index");
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.Last_Bit_Index (Index'Last))'Img, " 2147483647",
+      Assert (RFLX_Types.To_Index (RFLX_Types.To_Last_Bit_Index (Index'Last))'Img, " 2147483647",
               "Invalid conversion between byte index and last bit index");
 
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.Bit_Index'First)'Img, " 1",
+      Assert (RFLX_Types.To_Index (RFLX_Types.Bit_Index'First)'Img, " 1",
               "Invalid byte index for Bit_Index'First");
-      Assert (RFLX_Types.Byte_Index (RFLX_Types.Bit_Index'Last)'Img, " 2147483647",
+      Assert (RFLX_Types.To_Index (RFLX_Types.Bit_Index'Last)'Img, " 2147483647",
               "Invalid byte index for Bit_Index'Last");
    end Test_Index_Calculations;
 
@@ -44,11 +48,11 @@ package body RFLX.Builtin_Types_Tests is
    is
       pragma Unreferenced (T);
    begin
-      Assert (RFLX_Types.Byte_Length (0)'Img, " 0", "Invalid conversion of 0");
-      Assert (RFLX_Types.Byte_Length (1)'Img, " 1", "Invalid conversion of 1");
-      Assert (RFLX_Types.Byte_Length (8)'Img, " 1", "Invalid conversion of 8");
-      Assert (RFLX_Types.Byte_Length (9)'Img, " 2", "Invalid conversion of 9");
-      Assert (RFLX_Types.Byte_Length (16)'Img, " 2", "Invalid conversion of 16");
+      Assert (RFLX_Types.To_Length (0)'Img, " 0", "Invalid conversion of 0");
+      Assert (RFLX_Types.To_Length (1)'Img, " 1", "Invalid conversion of 1");
+      Assert (RFLX_Types.To_Length (8)'Img, " 1", "Invalid conversion of 8");
+      Assert (RFLX_Types.To_Length (9)'Img, " 2", "Invalid conversion of 9");
+      Assert (RFLX_Types.To_Length (16)'Img, " 2", "Invalid conversion of 16");
    end Test_Length_Calculations;
 
    generic
