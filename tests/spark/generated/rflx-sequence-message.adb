@@ -308,33 +308,61 @@ is
       Verify (Ctx, F_AV_Enumeration_Vector);
    end Verify_Message;
 
-   procedure Get_Modular_Vector (Ctx : Context) is
+   procedure Get_Modular_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Modular_Vector).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Modular_Vector).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_Modular_Vector;
+
+   procedure Get_Range_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Range_Vector).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Range_Vector).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_Range_Vector;
+
+   procedure Get_Enumeration_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Enumeration_Vector).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Enumeration_Vector).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_Enumeration_Vector;
+
+   procedure Get_AV_Enumeration_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_AV_Enumeration_Vector).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_AV_Enumeration_Vector).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_AV_Enumeration_Vector;
+
+   procedure Generic_Get_Modular_Vector (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Modular_Vector).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Modular_Vector).Last);
    begin
       Process_Modular_Vector (Ctx.Buffer.all (First .. Last));
-   end Get_Modular_Vector;
+   end Generic_Get_Modular_Vector;
 
-   procedure Get_Range_Vector (Ctx : Context) is
+   procedure Generic_Get_Range_Vector (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Range_Vector).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Range_Vector).Last);
    begin
       Process_Range_Vector (Ctx.Buffer.all (First .. Last));
-   end Get_Range_Vector;
+   end Generic_Get_Range_Vector;
 
-   procedure Get_Enumeration_Vector (Ctx : Context) is
+   procedure Generic_Get_Enumeration_Vector (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Enumeration_Vector).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Enumeration_Vector).Last);
    begin
       Process_Enumeration_Vector (Ctx.Buffer.all (First .. Last));
-   end Get_Enumeration_Vector;
+   end Generic_Get_Enumeration_Vector;
 
-   procedure Get_AV_Enumeration_Vector (Ctx : Context) is
+   procedure Generic_Get_AV_Enumeration_Vector (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_AV_Enumeration_Vector).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_AV_Enumeration_Vector).Last);
    begin
       Process_AV_Enumeration_Vector (Ctx.Buffer.all (First .. Last));
-   end Get_AV_Enumeration_Vector;
+   end Generic_Get_AV_Enumeration_Vector;
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>

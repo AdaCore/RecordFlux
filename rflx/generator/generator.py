@@ -367,6 +367,7 @@ class Generator:
         unit += self.__parser.create_incomplete_message_function(message)
         unit += self.__parser.create_scalar_accessor_functions(scalar_fields)
         unit += self.__parser.create_composite_accessor_procedures(composite_fields)
+        unit += self.__parser.create_generic_composite_accessor_procedures(composite_fields)
 
         unit += self.__serializer.create_internal_functions(message, scalar_fields)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)

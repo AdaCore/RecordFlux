@@ -39,6 +39,18 @@ package body RFLX.Builtin_Types_Tests is
               "Invalid byte index for Bit_Index'Last");
    end Test_Index_Calculations;
 
+   procedure Test_Length_Calculations (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+   begin
+      Assert (RFLX_Types.Byte_Length (0)'Img, " 0", "Invalid conversion of 0");
+      Assert (RFLX_Types.Byte_Length (1)'Img, " 1", "Invalid conversion of 1");
+      Assert (RFLX_Types.Byte_Length (8)'Img, " 1", "Invalid conversion of 8");
+      Assert (RFLX_Types.Byte_Length (9)'Img, " 2", "Invalid conversion of 9");
+      Assert (RFLX_Types.Byte_Length (16)'Img, " 2", "Invalid conversion of 16");
+   end Test_Length_Calculations;
+
    generic
       type Offset_Type is (<>);
    function Identity (X : Offset_Type) return Offset_Type;
@@ -460,15 +472,16 @@ package body RFLX.Builtin_Types_Tests is
       use AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Index_Calculations'Access, "Index calculations");
-      Register_Routine (T, Test_Extract_Modular_Integer_1'Access, "RFLX_Types.Extract modular integer (1 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_8'Access, "RFLX_Types.Extract modular integer (8 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_13'Access, "RFLX_Types.Extract modular integer (13 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_62'Access, "RFLX_Types.Extract modular integer (62 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_64'Access, "RFLX_Types.Extract modular integer (64 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_1'Access, "RFLX_Types.Insert modular integer (1 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_2'Access, "RFLX_Types.Insert modular integer (2 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_13'Access, "RFLX_Types.Insert modular integer (13 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_64'Access, "RFLX_Types.Insert modular integer (64 bit)");
+      Register_Routine (T, Test_Length_Calculations'Access, "Length calculations");
+      Register_Routine (T, Test_Extract_Modular_Integer_1'Access, "Extract modular integer (1 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_8'Access, "Extract modular integer (8 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_13'Access, "Extract modular integer (13 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_62'Access, "Extract modular integer (62 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_64'Access, "Extract modular integer (64 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_1'Access, "Insert modular integer (1 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_2'Access, "Insert modular integer (2 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_13'Access, "Insert modular integer (13 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_64'Access, "Insert modular integer (64 bit)");
    end Register_Tests;
 
 end RFLX.Builtin_Types_Tests;

@@ -24,7 +24,7 @@ package body RFLX.TLV_Tests is
       Value_Length := Buffer'Length;
    end Store_Value_Length;
 
-   procedure Get_Value_Length is new TLV.Message.Get_Value (Store_Value_Length);
+   procedure Get_Value_Length is new TLV.Message.Generic_Get_Value (Store_Value_Length);
 
    Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 3) :=
      (others => 0);
@@ -44,10 +44,11 @@ package body RFLX.TLV_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 1, 2, 3, 4);
       Context : TLV.Message.Context;
       Tag     : TLV.Tag;
       Length  : TLV.Length;
+      Value    : RFLX_Builtin_Types.Bytes := (0, 0, 0, 0);
    begin
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Verify_Message (Context);
@@ -64,6 +65,12 @@ package body RFLX.TLV_Tests is
             if TLV.Message.Present (Context, TLV.Message.F_Value) then
                Get_Value_Length (Context);
                Assert (Value_Length'Image, RFLX_Builtin_Types.Length'Image (4), "Unexpected Value length");
+               TLV.Message.Get_Value
+                 (Context,
+                  Value (Value'First
+                    .. RFLX_Builtin_Types.Index (RFLX_Builtin_Types.Length (Value'First)
+                      + RFLX_Types.Byte_Length (TLV.Message.Field_Size (Context, TLV.Message.F_Value)) - 1)));
+               Assert (Value, (1, 2, 3, 4), "Unexpected Value");
             end if;
          end if;
       end if;

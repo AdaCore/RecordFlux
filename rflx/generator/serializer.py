@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from typing import Mapping, Sequence
 
 from rflx.ada import (
@@ -49,7 +47,6 @@ from rflx.ada import (
     Size,
     Slice,
     Statement,
-    Sub,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
@@ -564,7 +561,7 @@ class SerializerGenerator:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Set_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Value"], const.TYPES_BYTES)],
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Data"], const.TYPES_BYTES)],
             )
 
         return UnitPart(
@@ -577,35 +574,18 @@ class SerializerGenerator:
                                 *self.setter_preconditions(f),
                                 *self.composite_setter_preconditions(message, f),
                                 Equal(
-                                    Length("Value"),
-                                    Add(
-                                        Sub(
+                                    Length("Data"),
+                                    Call(
+                                        const.TYPES_BYTE_LENGTH,
+                                        [
                                             Call(
-                                                const.TYPES_BYTE_INDEX,
+                                                "Field_Size",
                                                 [
-                                                    Call(
-                                                        "Field_Last",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(f.affixed_name),
-                                                        ],
-                                                    )
+                                                    Variable("Ctx"),
+                                                    Variable(f.affixed_name),
                                                 ],
-                                            ),
-                                            Call(
-                                                const.TYPES_BYTE_INDEX,
-                                                [
-                                                    Call(
-                                                        "Field_First",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(f.affixed_name),
-                                                        ],
-                                                    )
-                                                ],
-                                            ),
-                                        ),
-                                        Number(1),
+                                            )
+                                        ],
                                     ),
                                 ),
                             )
@@ -636,7 +616,7 @@ class SerializerGenerator:
                                 Variable("Buffer_First"),
                                 Variable("Buffer_Last"),
                             ),
-                            Variable("Value"),
+                            Variable("Data"),
                         ),
                     ],
                 )

@@ -28,7 +28,7 @@ package body RFLX.IPv4_Tests is
       Payload_Length := Buffer'Length;
    end Store_Payload_Length;
 
-   procedure Get_Payload_Length is new IPv4.Packet.Get_Payload (Store_Payload_Length);
+   procedure Get_Payload_Length is new IPv4.Packet.Generic_Get_Payload (Store_Payload_Length);
 
    Option_Data_Length : RFLX_Builtin_Types.Length;
 
@@ -37,7 +37,7 @@ package body RFLX.IPv4_Tests is
       Option_Data_Length := Buffer'Length;
    end Store_Option_Data_Length;
 
-   procedure Get_Option_Data_Length is new IPv4.Option.Get_Option_Data (Store_Option_Data_Length);
+   procedure Get_Option_Data_Length is new IPv4.Option.Generic_Get_Option_Data (Store_Option_Data_Length);
 
    Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 23) :=
      (others => 0);

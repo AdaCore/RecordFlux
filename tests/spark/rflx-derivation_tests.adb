@@ -25,7 +25,7 @@ package body RFLX.Derivation_Tests is
       Value_Length := Buffer'Length;
    end Store_Value_Length;
 
-   procedure Get_Value_Length is new Derivation.Message.Get_Value (Store_Value_Length);
+   procedure Get_Value_Length is new Derivation.Message.Generic_Get_Value (Store_Value_Length);
 
    Data : RFLX_Builtin_Types.Bytes (RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 3) :=
      (others => 0);
