@@ -47,19 +47,19 @@ is
 
    subtype U64 is RFLX.RFLX_Arithmetic.U64;
 
-   function Byte_Index (Bit_Idx : Bit_Length) return Index is
+   function To_Index (Bit_Idx : Bit_Length) return Index is
      (Index (Length ((Bit_Idx - 1) / 8) + 1));
 
-   function Byte_Length (Bit_Len : Bit_Length) return Length is
+   function To_Length (Bit_Len : Bit_Length) return Length is
      (Length ((Bit_Len + 7) / 8));
 
-   function First_Bit_Index (Idx : Index) return Bit_Index is
+   function To_First_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 1);
 
-   function Last_Bit_Index (Idx : Index) return Bit_Index is
+   function To_Last_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
-   function Last_Bit_Index (Idx : Length) return Bit_Length is
+   function To_Last_Bit_Index (Idx : Length) return Bit_Length is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
    type Offset is mod 8;

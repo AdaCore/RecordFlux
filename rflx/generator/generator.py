@@ -694,14 +694,14 @@ class Generator:
                                 Equal(
                                     Variable("Ctx.First"),
                                     Call(
-                                        const.TYPES * "First_Bit_Index",
+                                        const.TYPES * "To_First_Bit_Index",
                                         [Variable("Ctx.Buffer_First")],
                                     ),
                                 ),
                                 Equal(
                                     Variable("Ctx.Last"),
                                     Call(
-                                        const.TYPES * "Last_Bit_Index",
+                                        const.TYPES * "To_Last_Bit_Index",
                                         [Variable("Ctx.Buffer_Last")],
                                     ),
                                 ),
@@ -723,7 +723,7 @@ class Generator:
                                 Variable("Ctx"),
                                 Variable("Buffer"),
                                 Call(const.TYPES_FIRST_BIT_INDEX, [First("Buffer")]),
-                                Call(const.TYPES_LAST_BIT_INDEX, [Last("Buffer")]),
+                                Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Buffer")]),
                             ],
                         )
                     ],
@@ -754,11 +754,11 @@ class Generator:
                                 NotEqual(Variable("Buffer"), NULL),
                                 Greater(Length("Buffer"), Number(0)),
                                 GreaterEqual(
-                                    Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+                                    Call(const.TYPES_TO_INDEX, [Variable("First")]),
                                     First("Buffer"),
                                 ),
                                 LessEqual(
-                                    Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+                                    Call(const.TYPES_TO_INDEX, [Variable("Last")]),
                                     Last("Buffer"),
                                 ),
                                 LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
@@ -927,11 +927,11 @@ class Generator:
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 GreaterEqual(
-                                    Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+                                    Call(const.TYPES_TO_INDEX, [Variable("First")]),
                                     Variable("Ctx.Buffer_First"),
                                 ),
                                 LessEqual(
-                                    Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+                                    Call(const.TYPES_TO_INDEX, [Variable("Last")]),
                                     Variable("Ctx.Buffer_Last"),
                                 ),
                                 LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
@@ -1057,11 +1057,11 @@ class Generator:
                                                 Variable("Ctx.Buffer.all"),
                                                 ValueRange(
                                                     Call(
-                                                        const.TYPES_BYTE_INDEX,
+                                                        const.TYPES_TO_INDEX,
                                                         [Variable("Ctx.First")],
                                                     ),
                                                     Call(
-                                                        const.TYPES_BYTE_INDEX,
+                                                        const.TYPES_TO_INDEX,
                                                         [Variable("Ctx.Message_Last")],
                                                     ),
                                                 ),
@@ -1127,10 +1127,8 @@ class Generator:
                                 Indexed(
                                     Variable("Ctx.Buffer.all"),
                                     ValueRange(
-                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
-                                        Call(
-                                            const.TYPES_BYTE_INDEX, [Variable("Ctx.Message_Last")]
-                                        ),
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
                                     ),
                                 )
                             ],
@@ -1197,8 +1195,8 @@ class Generator:
                                 Indexed(
                                     Variable("Ctx.Buffer.all"),
                                     ValueRange(
-                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
-                                        Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.Last")]),
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Last")]),
                                     ),
                                 ),
                                 Variable("Length"),
@@ -1210,14 +1208,14 @@ class Generator:
                                 Variable("Ctx"),
                                 Variable("Ctx.First"),
                                 Call(
-                                    const.TYPES_LAST_BIT_INDEX,
+                                    const.TYPES_TO_LAST_BIT_INDEX,
                                     [
                                         Add(
                                             Call(
                                                 const.TYPES_LENGTH,
                                                 [
                                                     Call(
-                                                        const.TYPES_BYTE_INDEX,
+                                                        const.TYPES_TO_INDEX,
                                                         [Variable("Ctx.First")],
                                                     )
                                                 ],
@@ -1955,8 +1953,8 @@ class Generator:
                         Indexed(
                             Variable(const.TYPES_LENGTH),
                             Add(
-                                Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.Message_Last")]),
-                                -Call(const.TYPES_BYTE_INDEX, [Variable("Ctx.First")]),
+                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                                -Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
                                 Number(1),
                             ),
                         ),
@@ -2101,7 +2099,7 @@ class Generator:
                                                 Variable("Ctx.Buffer.all"),
                                                 ValueRange(
                                                     Call(
-                                                        const.TYPES_BYTE_INDEX,
+                                                        const.TYPES_TO_INDEX,
                                                         [
                                                             Call(
                                                                 "Field_First",
@@ -2113,7 +2111,7 @@ class Generator:
                                                         ],
                                                     ),
                                                     Call(
-                                                        const.TYPES_BYTE_INDEX,
+                                                        const.TYPES_TO_INDEX,
                                                         [
                                                             Call(
                                                                 "Field_Last",

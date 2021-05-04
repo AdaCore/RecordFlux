@@ -192,12 +192,12 @@ package body RFLX.In_IPv4_Tests is
             pragma Warnings (On, "unused assignment to ""UDP_Datagram_Context""");
 
             Assert (RFLX_Builtin_Types.Index'Image
-                    (RFLX_Types.Byte_Index (Message_Last)
-                       - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1),
+                    (RFLX_Types.To_Index (Message_Last)
+                       - RFLX_Types.To_Index (Ethernet_Frame_Context.First) + 1),
                     Expected'Length'Img,
                     "Invalid buffer length");
-            Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
-                    .. RFLX_Types.Byte_Index (Ethernet_Frame_Context.Last)), Expected.all,
+            Assert (Buffer.all (RFLX_Types.To_Index (Ethernet_Frame_Context.First)
+                    .. RFLX_Types.To_Index (Ethernet_Frame_Context.Last)), Expected.all,
                     "Invalid binary representation");
          end if;
       end if;

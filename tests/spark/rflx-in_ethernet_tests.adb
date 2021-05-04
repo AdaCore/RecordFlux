@@ -130,11 +130,11 @@ package body RFLX.In_Ethernet_Tests is
          pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
 
-         Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-                 - RFLX_Types.Byte_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
+         Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+                 - RFLX_Types.To_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
                  "Invalid buffer length");
-         Assert (Buffer.all (RFLX_Types.Byte_Index (Ethernet_Frame_Context.First)
-                 .. RFLX_Types.Byte_Index (Message_Last)), Expected.all,
+         Assert (Buffer.all (RFLX_Types.To_Index (Ethernet_Frame_Context.First)
+                 .. RFLX_Types.To_Index (Message_Last)), Expected.all,
                  "Invalid binary representation");
       end if;
 

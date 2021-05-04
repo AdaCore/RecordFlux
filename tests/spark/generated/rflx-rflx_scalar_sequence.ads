@@ -21,8 +21,8 @@ is
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
-       RFLX_Types.Byte_Index (First) >= Buffer_First
-       and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+       RFLX_Types.To_Index (First) >= Buffer_First
+       and RFLX_Types.To_Index (Last) <= Buffer_Last
        and First mod RFLX_Types.Byte'Size = 1
        and First <= Last + 1
        and Last <= RFLX_Types.Bit_Length'Last - 1;
@@ -39,8 +39,8 @@ is
         and Buffer = null
         and Ctx.Buffer_First = Buffer'First'Old
         and Ctx.Buffer_Last = Buffer'Last'Old
-        and Ctx.First = RFLX_Types.First_Bit_Index (Ctx.Buffer_First)
-        and Ctx.Last = RFLX_Types.Last_Bit_Index (Ctx.Buffer_Last)
+        and Ctx.First = RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First)
+        and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
         and Sequence_Last (Ctx) = Ctx.First - 1),
      Depends =>
        (Ctx => Buffer, Buffer => null);
@@ -51,8 +51,8 @@ is
         and then Buffer /= null
         and then Buffer'First = Buffer_First
         and then Buffer'Last = Buffer_Last
-        and then RFLX_Types.Byte_Index (First) >= Buffer'First
-        and then RFLX_Types.Byte_Index (Last) <= Buffer'Last
+        and then RFLX_Types.To_Index (First) >= Buffer'First
+        and then RFLX_Types.To_Index (Last) <= Buffer'Last
         and then First mod RFLX_Types.Byte'Size = 1
         and then First <= Last + 1
         and then Last <= RFLX_Types.Bit_Length'Last - 1),
@@ -176,8 +176,8 @@ private
        ((if Buffer /= null then
           (Buffer'First = Buffer_First
            and Buffer'Last = Buffer_Last))
-        and RFLX_Types.Byte_Index (First) >= Buffer_First
-        and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+        and RFLX_Types.To_Index (First) >= Buffer_First
+        and RFLX_Types.To_Index (Last) <= Buffer_Last
         and First mod RFLX_Types.Byte'Size = 1
         and First <= Last + 1
         and Last <= RFLX_Types.Bit_Length'Last - 1
@@ -212,6 +212,6 @@ private
       then
          0
       else
-         RFLX_Types.Length (RFLX_Types.Byte_Index (Ctx.Sequence_Last) - RFLX_Types.Byte_Index (Ctx.First)) + 1);
+         RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Sequence_Last) - RFLX_Types.To_Index (Ctx.First)) + 1);
 
 end RFLX.RFLX_Scalar_Sequence;

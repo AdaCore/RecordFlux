@@ -576,7 +576,7 @@ class SerializerGenerator:
                                 Equal(
                                     Length("Data"),
                                     Call(
-                                        const.TYPES_BYTE_LENGTH,
+                                        const.TYPES_TO_LENGTH,
                                         [
                                             Call(
                                                 "Field_Size",
@@ -990,10 +990,10 @@ class SerializerGenerator:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-                Call(const.TYPES_BYTE_INDEX, [Variable("First")]),
+                Call(const.TYPES_TO_INDEX, [Variable("First")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-                Call(const.TYPES_BYTE_INDEX, [Variable("Last")]),
+                Call(const.TYPES_TO_INDEX, [Variable("Last")]),
             ),
         ]

@@ -630,10 +630,10 @@ package body RFLX.Sequence_Tests is
       pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Context""");
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
@@ -725,10 +725,10 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       --  WORKAROUND: Componolit/Workarounds#32
@@ -831,10 +831,10 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       --  WORKAROUND: Componolit/Workarounds#32
@@ -1098,9 +1098,9 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -1172,9 +1172,9 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -1215,9 +1215,9 @@ package body RFLX.Sequence_Tests is
               "Invalid Messages after setting field");
 
       Message.Take_Buffer (Context, Buffer);
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -1372,9 +1372,9 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -1404,9 +1404,9 @@ package body RFLX.Sequence_Tests is
 
       Message.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)),
               Expected.all,
               "Invalid binary representation");
 

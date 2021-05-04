@@ -335,10 +335,10 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Context.Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Context.Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Context.Last)), Expected.all,
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
@@ -371,10 +371,10 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -410,9 +410,9 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img, "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 
@@ -461,10 +461,10 @@ package body RFLX.Ethernet_Tests is
       Message_Last := Ethernet.Frame.Message_Last (Context);
       Ethernet.Frame.Take_Buffer (Context, Buffer);
 
-      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.Byte_Index (Message_Last)
-              - RFLX_Types.Byte_Index (Context.First) + 1), Expected'Length'Img,
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Context.First) + 1), Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Buffer.all (RFLX_Types.Byte_Index (Context.First) .. RFLX_Types.Byte_Index (Message_Last)),
+      Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Message_Last)),
               Expected.all,
               "Invalid binary representation");
 
