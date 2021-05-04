@@ -1,3 +1,5 @@
+# pylint: disable = too-many-lines
+
 from typing import List, Mapping, Sequence, Tuple
 
 import rflx.expression as expr
@@ -23,6 +25,7 @@ from rflx.ada import (
     IfStatement,
     Indexed,
     InOutParameter,
+    Length,
     Less,
     Mod,
     Mul,
@@ -31,6 +34,7 @@ from rflx.ada import (
     ObjectDeclaration,
     Old,
     Or,
+    OutParameter,
     Parameter,
     Postcondition,
     Pragma,
@@ -717,7 +721,104 @@ class ParserGenerator:
     @staticmethod
     def create_composite_accessor_procedures(composite_fields: Sequence[Field]) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
-            return ProcedureSpecification(f"Get_{field.name}", [Parameter(["Ctx"], "Context")])
+            return ProcedureSpecification(
+                f"Get_{field.name}",
+                [Parameter(["Ctx"], "Context"), OutParameter(["Data"], const.TYPES_BYTES)],
+            )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification(f),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call(
+                                    "Present",
+                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                ),
+                                Call(
+                                    "Valid_Next",
+                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                ),
+                                Equal(
+                                    Length("Data"),
+                                    Call(
+                                        const.TYPES_BYTE_LENGTH,
+                                        [
+                                            Call(
+                                                "Field_Size",
+                                                [
+                                                    Variable("Ctx"),
+                                                    Variable(f.affixed_name),
+                                                ],
+                                            )
+                                        ],
+                                    ),
+                                ),
+                            )
+                        )
+                    ],
+                )
+                for f in composite_fields
+            ],
+            [
+                SubprogramBody(
+                    specification(f),
+                    [
+                        ObjectDeclaration(
+                            ["First"],
+                            const.TYPES_INDEX,
+                            Call(
+                                const.TYPES_BYTE_INDEX,
+                                [
+                                    Selected(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name),
+                                        ),
+                                        "First",
+                                    )
+                                ],
+                            ),
+                            True,
+                        ),
+                        ObjectDeclaration(
+                            ["Last"],
+                            const.TYPES_INDEX,
+                            Call(
+                                const.TYPES_BYTE_INDEX,
+                                [
+                                    Selected(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name),
+                                        ),
+                                        "Last",
+                                    )
+                                ],
+                            ),
+                            True,
+                        ),
+                    ],
+                    [
+                        Assignment(
+                            "Data",
+                            Slice(Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")),
+                        )
+                    ],
+                )
+                for f in composite_fields
+            ],
+        )
+
+    @staticmethod
+    def create_generic_composite_accessor_procedures(composite_fields: Sequence[Field]) -> UnitPart:
+        def specification(field: Field) -> ProcedureSpecification:
+            return ProcedureSpecification(
+                f"Generic_Get_{field.name}", [Parameter(["Ctx"], "Context")]
+            )
 
         return UnitPart(
             [

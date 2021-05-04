@@ -43,7 +43,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
+      procedure Get_Payload_Length is new Ethernet.Frame.Generic_Get_Payload (Store_Payload_Length);
       Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Context        : Ethernet.Frame.Context;
       Destination    : Ethernet.Address;
@@ -98,7 +98,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
+      procedure Get_Payload_Length is new Ethernet.Frame.Generic_Get_Payload (Store_Payload_Length);
       Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_802.3.raw");
       Context        : Ethernet.Frame.Context;
       Destination    : Ethernet.Address;
@@ -153,7 +153,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      procedure Get_Payload_Length is new Ethernet.Frame.Get_Payload (Store_Payload_Length);
+      procedure Get_Payload_Length is new Ethernet.Frame.Generic_Get_Payload (Store_Payload_Length);
       Buffer         : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_vlan_tag.raw");
       Context        : Ethernet.Frame.Context;
       Destination    : Ethernet.Address;

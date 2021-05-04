@@ -24,7 +24,7 @@ package body RFLX.Expression_Tests is
       Payload_Content := Buffer;
    end Store_Payload;
 
-   procedure Get_Payload_Content is new Expression.Message.Get_Payload (Store_Payload);
+   procedure Get_Payload_Content is new Expression.Message.Generic_Get_Payload (Store_Payload);
 
    procedure Test_Expression_Valid (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True

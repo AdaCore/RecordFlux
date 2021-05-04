@@ -230,12 +230,19 @@ is
       Verify (Ctx, F_Messages);
    end Verify_Message;
 
-   procedure Get_Messages (Ctx : Context) is
+   procedure Get_Messages (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Messages).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Messages).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_Messages;
+
+   procedure Generic_Get_Messages (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Messages).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Messages).Last);
    begin
       Process_Messages (Ctx.Buffer.all (First .. Last));
-   end Get_Messages;
+   end Generic_Get_Messages;
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>

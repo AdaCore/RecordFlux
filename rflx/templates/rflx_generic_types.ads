@@ -50,6 +50,9 @@ is
    function Byte_Index (Bit_Idx : Bit_Length) return Index is
      (Index (Length ((Bit_Idx - 1) / 8) + 1));
 
+   function Byte_Length (Bit_Len : Bit_Length) return Length is
+     (Length ((Bit_Len + 7) / 8));
+
    function First_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 1);
 

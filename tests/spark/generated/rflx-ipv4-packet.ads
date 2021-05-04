@@ -347,16 +347,30 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
+   procedure Get_Options (Ctx : Context; Data : out RFLX_Types.Bytes) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Present (Ctx, F_Options)
+       and then Valid_Next (Ctx, F_Options)
+       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Options));
+
+   procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Present (Ctx, F_Payload)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Payload));
+
    generic
       with procedure Process_Options (Options : RFLX_Types.Bytes);
-   procedure Get_Options (Ctx : Context) with
+   procedure Generic_Get_Options (Ctx : Context) with
      Pre =>
        Has_Buffer (Ctx)
        and Present (Ctx, F_Options);
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
-   procedure Get_Payload (Ctx : Context) with
+   procedure Generic_Get_Payload (Ctx : Context) with
      Pre =>
        Has_Buffer (Ctx)
        and Present (Ctx, F_Payload);
@@ -1171,7 +1185,7 @@ is
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old;
 
-   procedure Set_Payload (Ctx : in out Context; Value : RFLX_Types.Bytes) with
+   procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -1181,7 +1195,7 @@ is
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Value'Length = RFLX_Types.Byte_Index (Field_Last (Ctx, F_Payload)) - RFLX_Types.Byte_Index (Field_First (Ctx, F_Payload)) + 1,
+       and then Data'Length = RFLX_Types.Byte_Length (Field_Size (Ctx, F_Payload)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)

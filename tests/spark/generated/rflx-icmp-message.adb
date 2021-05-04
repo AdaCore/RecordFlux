@@ -900,12 +900,19 @@ is
       Verify (Ctx, F_Transmit_Timestamp);
    end Verify_Message;
 
-   procedure Get_Data (Ctx : Context) is
+   procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Data).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Data).Last);
+   begin
+      Data := Ctx.Buffer.all (First .. Last);
+   end Get_Data;
+
+   procedure Generic_Get_Data (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Data).Last);
    begin
       Process_Data (Ctx.Buffer.all (First .. Last));
-   end Get_Data;
+   end Generic_Get_Data;
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>
@@ -1215,7 +1222,7 @@ is
       Initialize_Data_Private (Ctx);
    end Initialize_Data;
 
-   procedure Set_Data (Ctx : in out Context; Value : RFLX_Types.Bytes) is
+   procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Data);
       function Buffer_First return RFLX_Types.Index is
@@ -1224,7 +1231,7 @@ is
         (RFLX_Types.Byte_Index (Last));
    begin
       Initialize_Data_Private (Ctx);
-      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
+      Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
    end Set_Data;
 
    procedure Generic_Set_Data (Ctx : in out Context) is
