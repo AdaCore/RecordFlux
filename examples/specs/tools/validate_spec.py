@@ -134,7 +134,7 @@ def validate(
     abort_on_error: bool = False,
     coverage: bool = False,
     target_coverage: float = 0.00,
-) -> int:
+) -> None:
     # pylint: disable = too-many-arguments, too-many-locals
 
     if target_coverage < 0 or target_coverage > 100:
@@ -160,6 +160,7 @@ def validate(
             for path in directory:
                 validation_result = _validate_message(path, is_valid_directory, message_value)
                 coverage_info.update(validation_result.parser_result)
+                validation_result.print_console_output()
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success:
                     incorrectly_classified += 1
@@ -180,7 +181,6 @@ def validate(
         )
     if len(error_msgs) > 0:
         raise ValidationError("\n".join(e for e in error_msgs))
-    return 0
 
 
 def _validate_message(
@@ -218,21 +218,23 @@ def _validate_message(
 class CoverageInformation:
     def __init__(self, packages: List[Package], coverage: bool) -> None:
         self.__total_message_coverage: Dict[ID, Dict[Link, bool]] = {}
-        self.__spec_files: Dict[str, List[ID]] = defaultdict(lambda: [])
+        self.__spec_files: Dict[str, List[ID]] = defaultdict(list)
         self.__coverage = coverage
 
-        if self.__coverage:
-            for package in packages:
-                for message in package:
-                    assert isinstance(message, MessageValue)
-                    self.__total_message_coverage[message.identifier] = {
-                        link: False for link in message.model.structure
-                    }
+        if not self.__coverage:
+            return
 
-                    assert message.model.location is not None
-                    assert message.model.location.source is not None
-                    file_name = message.model.location.source.name
-                    self.__spec_files[file_name].append(message.identifier)
+        for package in packages:
+            for message in package:
+                assert isinstance(message, MessageValue)
+                self.__total_message_coverage[message.identifier] = {
+                    link: False for link in message.model.structure
+                }
+
+                assert message.model.location is not None
+                assert message.model.location.source is not None
+                file_name = message.model.location.source.name
+                self.__spec_files[file_name].append(message.identifier)
 
         self.total_links = sum(
             len(structure) for structure in self.__total_message_coverage.values()
@@ -393,15 +395,11 @@ class OutputWriter:
             self.file.close()
 
     def write_result(self, validation_result: ValidationResult) -> None:
-        validation_result.print_console_output()
-        self.__write_json_output(validation_result)
-
-    def __write_json_output(self, result: ValidationResult) -> None:
         if self.file is not None:
             if self.count != 0:
                 self.file.write(",\n")
             json.dump(
-                result.as_json(),
+                validation_result.as_json(),
                 self.file,
                 indent="\t",
             )

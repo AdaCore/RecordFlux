@@ -31,3 +31,6 @@ test: test_python
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv
+
+test_python_validation_tool:
+	python3 -m pytest -n$(shell nproc) -vv tests/test_validation_tool.py
