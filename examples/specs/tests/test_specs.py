@@ -36,15 +36,12 @@ def test_validate_spec(spec: str) -> None:
             directory_invalid = test_data_dir / "invalid"
             directory_valid = test_data_dir / "valid"
 
-            assert (
-                validate(
-                    message_value.identifier,
-                    pyrflx,
-                    directory_invalid,
-                    directory_valid,
-                    json_output=None,
-                    abort_on_error=False,
-                    coverage=True,
-                )
-                == 0
+            validate(
+                message_value.identifier,
+                pyrflx,
+                directory_invalid,
+                directory_valid,
+                json_output=None,
+                abort_on_error=False,
+                coverage=True,
             )
