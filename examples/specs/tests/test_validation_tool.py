@@ -393,11 +393,11 @@ def test_coverage_threshold_missed(capsys: Any) -> None:
                 "-v",
                 "tests/validation_tool/ethernet/frame/valid",
                 "-c",
-                "--target-coverage=80",
+                "--target-coverage=90",
                 "--no-verification",
             ]
         )
-        == "missed target coverage of 80.00%, reached 22.06%"
+        == "missed target coverage of 90.00%, reached 81.08%"
     )
     captured_output = capsys.readouterr()
     with open("tests/validation_tool/valid_cov_output_in_ethernet.txt", "r") as f:
