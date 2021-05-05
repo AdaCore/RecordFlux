@@ -71,15 +71,16 @@ def cli(argv: List[str]) -> Union[int, str]:
         "-c",
         "--coverage",
         action="store_true",
-        help="print the combined link-coverage of all provided messages",
+        help="enable coverage calculation and print the "
+        "combined link-coverage of all provided messages",
     )
 
     parser.add_argument(
         "--target-coverage",
         type=float,
         default=0,
-        help="abort with exitcode 1 if the coverage threshold is not reached, "
-        "target coverage expected in percentage",
+        help="abort with exitcode 1 if the coverage threshold is not reached; "
+        "target coverage is expected in percentage",
     )
 
     parser.add_argument("--no-verification", action="store_true", help="skip model verification")
@@ -262,14 +263,12 @@ class CoverageInformation:
 
     def file_uncovered_links(self, file_name: str) -> List[Link]:
         assert file_name in self.__spec_files
-        return list(
-            [
-                link
-                for message in self.__spec_files[file_name]
-                for link, covered in self.__total_message_coverage[message].items()
-                if not covered
-            ]
-        )
+        return [
+            link
+            for message in self.__spec_files[file_name]
+            for link, covered in self.__total_message_coverage[message].items()
+            if not covered
+        ]
 
     def print_coverage(self) -> None:
         if self.__coverage:
