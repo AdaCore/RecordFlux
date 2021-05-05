@@ -1,7 +1,6 @@
 #!/usr/bin/env -S python3 -O
 
 import argparse
-import itertools
 import json
 import os
 import sys
@@ -264,16 +263,12 @@ class CoverageInformation:
     def file_uncovered_links(self, file_name: str) -> List[Link]:
         assert file_name in self.__spec_files
         return list(
-            itertools.chain(
-                *[
-                    [
-                        link
-                        for link, covered in self.__total_message_coverage[message].items()
-                        if not covered
-                    ]
-                    for message in self.__spec_files[file_name]
-                ]
-            )
+            [
+                link
+                for message in self.__spec_files[file_name]
+                for link, covered in self.__total_message_coverage[message].items()
+                if not covered
+            ]
         )
 
     def print_coverage(self) -> None:
