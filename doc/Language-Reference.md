@@ -87,7 +87,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 *message_type* ::= __type__ *name* __is__ *message_definition* __;__
 
-*message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ | __null message__
+*message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ [ __with__ *message_aspects* ] | __null message__
 
 *component* ::= *component_name* __:__ *component_type*
                    [__with__ *aspects*]
@@ -115,11 +115,29 @@ A message type is a collection components. Additional then clauses allow to defi
 
 *condition* ::= *boolean_expression*
 
+*message_aspects* ::= *message_aspect* { __,__ *message_aspect* }
+
+*message_aspect* ::= *checksum_aspect*
+
+*checksum_aspect* ::= __Checksum__ __=>__ (*checksum_definition* { __,__ *checksum_definition* })
+
+*checksum_definition* ::= *name* __=>__ (*checksum_element* { __,__ *checksum_element* }
+
+*checksum_element* ::= *name* | *name* __'Size__ | *field_range*
+
+*field_range* ::= *field_range_first* __..__ *field_range_last*
+
+*field_range_first* ::= *name* __'First__ | *name* __'Last + 1__
+
+*field_range_last* ::= *name* __'Last | *name* __'First - 1__
+
 #### Static Semantics
 
 A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the size of the next field and the location of its first bit. These aspects can also be specified in the component. Each aspect can be specified either in the component or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
 
 The size of a message must be a multiple of 8 bit. Opaque fields and sequence fields must be byte aligned.
+
+A checksum aspect specifies which parts of a message is covered by a checksum. The definition of the checksum calculation is not part of the specification. Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements. A checksum element can be a field value, a field size or a range of fields. The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum. For this purpose the `Valid_Checksum` attribute is added to a condition. All message parts on which the checksum depends have to be known at this point.
 
 #### Example
 
