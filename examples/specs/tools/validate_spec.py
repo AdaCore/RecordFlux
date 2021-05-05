@@ -302,7 +302,7 @@ class CoverageInformation:
     def __print_link_coverage(self) -> None:
         print("\n")
         print("=" * 80)
-        print(f"{'Missing Link Coverage' : ^80}")
+        print(f"{'Uncovered Links' : ^80}")
         print("=" * 80)
         for file in self.__spec_files:
             uncovered_links = self.file_uncovered_links(file)
