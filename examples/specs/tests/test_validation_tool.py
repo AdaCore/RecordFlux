@@ -218,6 +218,7 @@ def test_cli_not_regular_file(tmpdir: Path) -> None:
                 "Ethernet::Frame",
                 "-v",
                 f"{tmpdir}",
+                "--no-verification",
             ]
         )
         == f"{subdir} is not a regular file"
