@@ -79,6 +79,10 @@ type Ether_Type is
 with Size => 16, Always_Valid;
 ```
 
+### Boolean
+
+`Boolean` is a built-in enumeration type with the literals `False => 0` and `True => 1` with a size of 1 bit.
+
 ## Message Type
 
 A message type is a collection components. Additional then clauses allow to define conditions and dependencies between components.
@@ -135,7 +139,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the size of the next field and the location of its first bit. These aspects can also be specified in the component. Each aspect can be specified either in the component or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
 
-The size of a message must be a multiple of 8 bit. Opaque fields and sequence fields must be byte aligned.
+The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields must be always defined by a size aspect. Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
 
 A checksum aspect specifies which parts of a message is covered by a checksum. The definition of the checksum calculation is not part of the specification. Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements. A checksum element can be a field value, a field size or a range of fields. The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum. For this purpose the `Valid_Checksum` attribute is added to a condition. All message parts on which the checksum depends have to be known at this point.
 
