@@ -2,9 +2,10 @@ import os
 import re
 from filecmp import cmp
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
+from _pytest.capture import CaptureFixture  # type: ignore
 from rflx.pyrflx import PyRFLX
 
 from tools.validate_spec import _validate_message, cli
@@ -353,7 +354,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
     assert cmp(f"{tmp_path}/output.json", "tests/validation_tool/valid_full_output_negative.json")
 
 
-def test_validation_coverage(capsys: Any) -> None:
+def test_validation_coverage(capsys: CaptureFixture) -> None:
     assert (
         cli(
             [
@@ -379,7 +380,7 @@ def test_validation_coverage(capsys: Any) -> None:
     assert captured_output.out == valid_output
 
 
-def test_coverage_threshold_missed(capsys: Any) -> None:
+def test_coverage_threshold_missed(capsys: CaptureFixture) -> None:
     assert (
         cli(
             [
