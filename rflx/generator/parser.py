@@ -87,37 +87,36 @@ class ParserGenerator:
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
             aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
-            if field in message.fields:
-                if isinstance(message.types[field], Scalar):
-                    aggregate.append(
-                        (
-                            f"{field.name}_Value",
-                            Call(
-                                "Extract",
-                                [
-                                    Slice(
-                                        Variable("Ctx.Buffer.all"),
-                                        Variable("Buffer_First"),
-                                        Variable("Buffer_Last"),
-                                    ),
-                                    Variable("Offset"),
-                                ],
-                            ),
-                        )
+            if isinstance(message.types[field], Scalar):
+                aggregate.append(
+                    (
+                        f"{field.name}_Value",
+                        Call(
+                            "Extract",
+                            [
+                                Slice(
+                                    Variable("Ctx.Buffer.all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
+                                ),
+                                Variable("Offset"),
+                            ],
+                        ),
                     )
-                elif isinstance(
-                    message.types[field], Composite
-                ) and common.is_compared_to_aggregate(field, message):
-                    aggregate.append(
-                        (
-                            f"{field.name}_Value",
-                            Slice(
-                                Variable("Ctx.Buffer.all"),
-                                Variable("Buffer_First"),
-                                Variable("Buffer_Last"),
-                            ),
-                        )
+                )
+            elif isinstance(message.types[field], Composite) and common.is_compared_to_aggregate(
+                field, message
+            ):
+                aggregate.append(
+                    (
+                        f"{field.name}_Value",
+                        Slice(
+                            Variable("Ctx.Buffer.all"),
+                            Variable("Buffer_First"),
+                            Variable("Buffer_Last"),
+                        ),
                     )
+                )
             return NamedAggregate(*aggregate)
 
         comparison_to_aggregate = any(

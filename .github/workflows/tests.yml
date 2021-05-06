@@ -291,6 +291,7 @@ jobs:
           - "sequence"
           - "derivation"
           - "expression"
+          - "fixed_size"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}

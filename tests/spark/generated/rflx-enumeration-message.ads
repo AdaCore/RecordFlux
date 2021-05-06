@@ -287,6 +287,25 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
+   type Structure is
+      record
+         Priority : RFLX.Enumeration.Priority;
+      end record;
+
+   procedure To_Structure (Ctx : Context; Struct : out Structure) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
+
+   procedure To_Context (Struct : Structure; Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Priority)
+       and then Available_Space (Ctx, F_Priority) >= 8,
+     Post =>
+       Has_Buffer (Ctx);
+
 private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);

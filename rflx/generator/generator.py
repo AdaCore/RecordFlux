@@ -92,7 +92,6 @@ from rflx.ada import (
     SubprogramBody,
     SubprogramDeclaration,
     SubprogramUnitPart,
-    TypeDeclaration,
     Unit,
     UnitPart,
     UsePackageClause,
@@ -117,6 +116,7 @@ from rflx.model import (
     Message,
     Model,
     ModularInteger,
+    Opaque,
     RangeInteger,
     Refinement,
     Scalar,
@@ -383,6 +383,7 @@ class Generator:
         unit += self.__create_update_procedures(message, sequence_fields)
         unit += self.__create_cursor_function()
         unit += self.__create_cursors_function()
+        unit += self.__create_structure(message)
 
     @staticmethod
     def __create_use_type_clause(composite_fields: ty.Sequence[Field]) -> UnitPart:
@@ -655,9 +656,10 @@ class Generator:
                         ],
                     )
                 )
-            elif isinstance(t, Composite):
-                size = message.field_size(f)
-                assert isinstance(size, expr.Number)
+            else:
+                assert isinstance(t, Composite)
+                length = expr.Div(message.field_size(f), expr.Number(8)).simplified()
+                assert isinstance(length, expr.Number)
                 variants.append(
                     Variant(
                         [Variable(f.affixed_name)],
@@ -669,9 +671,7 @@ class Generator:
                                     First(const.TYPES_INDEX),
                                     Add(
                                         First(const.TYPES_INDEX),
-                                        expr.Sub(expr.Div(size, expr.Number(8)), expr.Number(1))
-                                        .simplified()
-                                        .ada_expr(),
+                                        expr.Sub(length, expr.Number(1)).simplified().ada_expr(),
                                     ),
                                 ),
                             )
@@ -2703,6 +2703,223 @@ class Generator:
             [ExpressionFunctionDeclaration(specification, Variable("Ctx.Cursors"))],
         )
 
+    def __create_structure(self, message: Message) -> UnitPart:
+        unit = UnitPart()
+        unit += self.__create_structure_type(message)
+        unit += self.__create_to_structure_procedure(message)
+        unit += self.__create_to_context_procedure(message)
+        return unit
+
+    def __create_structure_type(self, message: Message) -> UnitPart:
+        if not message.has_fixed_size:
+            return UnitPart()
+
+        assert len(message.paths(FINAL)) == 1
+
+        components = []
+
+        for path in message.paths(FINAL):
+            for link in path:
+                if link.target == FINAL:
+                    continue
+
+                type_ = message.types[link.target]
+
+                component_type: ty.Union[ID, Expr]
+
+                if isinstance(type_, Scalar):
+                    component_type = ID(self.__prefix * type_.identifier)
+                elif isinstance(type_, Opaque):
+                    component_type = Indexed(
+                        Variable(const.TYPES_BYTES),
+                        ValueRange(
+                            First(const.TYPES_INDEX),
+                            Add(
+                                First(const.TYPES_INDEX),
+                                expr.Sub(expr.Div(link.size, expr.Number(8)), expr.Number(1))
+                                .simplified()
+                                .ada_expr(),
+                            ),
+                        ),
+                    )
+                else:
+                    return UnitPart()
+
+                components.append(Component(ID(link.target.identifier), component_type))
+
+        return UnitPart(
+            [
+                RecordType("Structure", components),
+            ]
+        )
+
+    @staticmethod
+    def __create_to_structure_procedure(message: Message) -> UnitPart:
+        if not message.has_fixed_size:
+            return UnitPart()
+
+        assert len(message.paths(FINAL)) == 1
+
+        statements: ty.List[Statement] = []
+
+        for path in message.paths(FINAL):
+            for link in path:
+                if link.target == FINAL:
+                    continue
+
+                type_ = message.types[link.target]
+
+                if isinstance(type_, Scalar):
+                    statements.append(
+                        Assignment(
+                            Variable(f"Struct.{link.target.identifier}"),
+                            Call(f"Get_{link.target.identifier}", [Variable("Ctx")]),
+                        )
+                    )
+                elif isinstance(type_, Opaque):
+                    statements.append(
+                        CallStatement(
+                            f"Get_{link.target.identifier}",
+                            [Variable("Ctx"), Variable(f"Struct.{link.target.identifier}")],
+                        )
+                    )
+                else:
+                    return UnitPart()
+
+        specification = ProcedureSpecification(
+            "To_Structure",
+            [Parameter(["Ctx"], "Context"), OutParameter(["Struct"], "Structure")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(specification, [], statements),
+            ],
+        )
+
+    @staticmethod
+    def __create_to_context_procedure(message: Message) -> UnitPart:
+        if not message.has_fixed_size:
+            return UnitPart()
+
+        assert len(message.paths(FINAL)) == 1
+
+        body: ty.List[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
+        statements = body
+
+        for path in message.paths(FINAL):
+            for link in path:
+                if link.target == FINAL:
+                    continue
+
+                type_ = message.types[link.target]
+
+                if isinstance(type_, (Scalar, Opaque)):
+                    if isinstance(type_, Enumeration) and type_.always_valid:
+                        dependent_statements: ty.List[Statement] = [
+                            CallStatement(
+                                f"Set_{link.target.identifier}",
+                                [
+                                    Variable("Ctx"),
+                                    Variable(f"Struct.{link.target.identifier}.Enum"),
+                                ],
+                            )
+                        ]
+                        statements.append(
+                            IfStatement(
+                                [
+                                    (
+                                        Variable(f"Struct.{link.target.identifier}.Known"),
+                                        dependent_statements,
+                                    )
+                                ]
+                            )
+                        )
+                        statements = dependent_statements
+                    else:
+                        set_field = CallStatement(
+                            f"Set_{link.target.identifier}",
+                            [Variable("Ctx"), Variable(f"Struct.{link.target.identifier}")],
+                        )
+                        if common.is_compared_to_aggregate(link.target, message):
+                            dependent_statements = [set_field]
+                            statements.append(
+                                IfStatement(
+                                    [
+                                        (
+                                            common.field_condition_call(
+                                                message,
+                                                link.target,
+                                                Variable(f"Struct.{link.target.identifier}"),
+                                            ),
+                                            dependent_statements,
+                                        )
+                                    ]
+                                )
+                            )
+                            statements = dependent_statements
+                        else:
+                            statements.append(set_field)
+                else:
+                    return UnitPart()
+
+        specification = ProcedureSpecification(
+            "To_Context",
+            [Parameter(["Struct"], "Structure"), InOutParameter(["Ctx"], "Context")],
+        )
+        first_field = message.fields[0]
+        message_size = message.size()
+        assert isinstance(message_size, expr.Number)
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Not(Constrained("Ctx")),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call(
+                                    "Valid_Next",
+                                    [Variable("Ctx"), Variable(first_field.affixed_name)],
+                                ),
+                                GreaterEqual(
+                                    Call(
+                                        "Available_Space",
+                                        [
+                                            Variable("Ctx"),
+                                            Variable(first_field.affixed_name),
+                                        ],
+                                    ),
+                                    message_size.ada_expr(),
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            Call("Has_Buffer", [Variable("Ctx")]),
+                        ),
+                    ],
+                )
+            ],
+            [
+                SubprogramBody(specification, [], body),
+            ],
+        )
+
     def __create_refinement(self, refinement: Refinement) -> None:
         unit_name = refinement.package * const.REFINEMENT_PACKAGE
         null_sdu = not refinement.sdu.fields
@@ -3245,7 +3462,7 @@ def create_file(filename: Path, content: str) -> None:
         f.write(content)
 
 
-def modular_types(integer: ModularInteger) -> ty.List[TypeDeclaration]:
+def modular_types(integer: ModularInteger) -> ty.List[Declaration]:
     return [
         ModularType(
             integer.name,
@@ -3255,7 +3472,7 @@ def modular_types(integer: ModularInteger) -> ty.List[TypeDeclaration]:
     ]
 
 
-def range_types(integer: RangeInteger) -> ty.List[TypeDeclaration]:
+def range_types(integer: RangeInteger) -> ty.List[Declaration]:
     return [
         ModularType(
             common.base_type_name(integer),
@@ -3271,8 +3488,8 @@ def range_types(integer: RangeInteger) -> ty.List[TypeDeclaration]:
     ]
 
 
-def enumeration_types(enum: Enumeration) -> ty.List[TypeDeclaration]:
-    types: ty.List[TypeDeclaration] = []
+def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
+    types: ty.List[Declaration] = []
 
     types.append(
         ModularType(common.base_type_name(enum), Pow(Number(2), enum.size_expr.ada_expr()))

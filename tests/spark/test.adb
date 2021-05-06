@@ -15,6 +15,7 @@ with RFLX.Enumeration_Tests;
 with RFLX.Sequence_Tests;
 with RFLX.Derivation_Tests;
 with RFLX.Expression_Tests;
+with RFLX.Fixed_Size_Tests;
 
 procedure Test is
    pragma Warnings (Off, "use of an anonymous access type allocator");
@@ -34,6 +35,7 @@ procedure Test is
       Result.all.Add_Test (new RFLX.Sequence_Tests.Test);
       Result.all.Add_Test (new RFLX.Derivation_Tests.Test);
       Result.all.Add_Test (new RFLX.Expression_Tests.Test);
+      Result.all.Add_Test (new RFLX.Fixed_Size_Tests.Test);
       return Result;
    end Suite;
 

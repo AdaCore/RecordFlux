@@ -255,4 +255,17 @@ is
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Generic_Set_Payload;
 
+   procedure To_Structure (Ctx : Context; Struct : out Structure) is
+   begin
+      Get_Payload (Ctx, Struct.Payload);
+   end To_Structure;
+
+   procedure To_Context (Struct : Structure; Ctx : in out Context) is
+   begin
+      Reset (Ctx);
+      if Field_Condition (Ctx, (Fld => F_Payload, Payload_Value => Struct.Payload)) then
+         Set_Payload (Ctx, Struct.Payload);
+      end if;
+   end To_Context;
+
 end RFLX.Expression.Message;

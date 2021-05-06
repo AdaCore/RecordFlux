@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from typing import Mapping, Sequence
 
 from rflx.ada import (
@@ -878,30 +876,7 @@ class SerializerGenerator:
         message: Message, field: Field
     ) -> Sequence[Expr]:
         return [
-            Call(
-                "Field_Condition",
-                [
-                    Variable("Ctx"),
-                    NamedAggregate(
-                        ("Fld", Variable(field.affixed_name)),
-                        *(
-                            [(f"{field.identifier}_Value", Variable("Data"))]
-                            if common.is_compared_to_aggregate(field, message)
-                            else []
-                        ),
-                    ),
-                    *(
-                        [
-                            Call(
-                                "Field_Size",
-                                [Variable("Ctx"), Variable(field.affixed_name)],
-                            )
-                        ]
-                        if common.size_dependent_condition(message)
-                        else []
-                    ),
-                ],
-            ),
+            common.field_condition_call(message, field, Variable("Data")),
         ]
 
     @staticmethod

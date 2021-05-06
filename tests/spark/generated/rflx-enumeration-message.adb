@@ -238,4 +238,17 @@ is
       Ctx.Cursors (Successor (Ctx, F_Priority)) := (State => S_Invalid, Predecessor => F_Priority);
    end Set_Priority;
 
+   procedure To_Structure (Ctx : Context; Struct : out Structure) is
+   begin
+      Struct.Priority := Get_Priority (Ctx);
+   end To_Structure;
+
+   procedure To_Context (Struct : Structure; Ctx : in out Context) is
+   begin
+      Reset (Ctx);
+      if Struct.Priority.Known then
+         Set_Priority (Ctx, Struct.Priority.Enum);
+      end if;
+   end To_Context;
+
 end RFLX.Enumeration.Message;
