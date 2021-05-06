@@ -279,8 +279,8 @@ class AbstractMessage(mty.Type):
             }
         return self._state.field_condition[field]
 
-    def field_size(self, field: Field) -> expr.Expr:
-        """Return field size if field size is fixed and `UNDEFINED` otherwise."""
+    def field_size(self, field: Field) -> expr.Number:
+        """Return field size if field size is fixed and fail otherwise."""
         if field == FINAL:
             return expr.Number(0)
 
@@ -291,13 +291,20 @@ class AbstractMessage(mty.Type):
         if isinstance(field_type, mty.Scalar):
             return field_type.size
 
-        if isinstance(field_type, mty.Composite):
-            sizes = [l.size.simplified() for l in self.incoming(field)]
-            size = sizes[0]
-            if isinstance(size, expr.Number) and all(size == s for s in sizes):
-                return size
+        sizes = [
+            l.size.substituted(mapping=to_mapping(self.type_constraints(expr.TRUE))).simplified()
+            for l in self.incoming(field)
+        ]
+        size = sizes[0]
+        if isinstance(size, expr.Number) and all(size == s for s in sizes):
+            return size
 
-        return expr.UNDEFINED
+        fail(
+            f'unable to calculate size of field "{field.name}" of message "{self.identifier}"',
+            Subsystem.MODEL,
+            Severity.ERROR,
+            field.identifier.location,
+        )
 
     def paths(self, field: Field) -> Set[Tuple[Link, ...]]:
         if field == INITIAL:
@@ -663,13 +670,6 @@ class Message(AbstractMessage):
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
         field_values = field_values if field_values else {}
-
-        def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
-            return {
-                f.left: f.right
-                for f in facts
-                if isinstance(f, (expr.Equal, expr.GreaterEqual)) and isinstance(f.left, expr.Name)
-            }
 
         def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
@@ -1789,3 +1789,11 @@ def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
     if isinstance(expression, expr.And):
         return expression.terms
     return [expression]
+
+
+def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
+    return {
+        f.left: f.right
+        for f in facts
+        if isinstance(f, (expr.Equal, expr.GreaterEqual)) and isinstance(f.left, expr.Name)
+    }

@@ -8,6 +8,7 @@ from typing import Sequence
 
 import tests.data.models
 from rflx.generator import Generator
+from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import EX_SPEC_DIR
 
@@ -23,6 +24,7 @@ MODELS = [
     tests.data.models.NULL_MODEL,
     tests.data.models.TLV_MODEL,
     tests.data.models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+    Model(tests.data.models.FIXED_SIZE_SIMPLE_MESSAGE.all_types),
 ]
 
 SPECIFICATION_FILES = [

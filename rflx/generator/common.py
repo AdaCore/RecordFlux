@@ -21,6 +21,9 @@ def substitution(
         if isinstance(expression, expr.Name) and expression in facts:
             return facts[expression]
 
+        if isinstance(expression, expr.String):
+            return expr.Aggregate(*expression.elements)
+
         if isinstance(expression, (expr.Equal, expr.NotEqual)):
             field = None
             aggregate = None
@@ -654,6 +657,37 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
             ),
         ),
     ]
+
+
+def field_condition_call(message: model.Message, field: model.Field, value: ada.Expr) -> ada.Expr:
+    return ada.Call(
+        "Field_Condition",
+        [
+            ada.Variable("Ctx"),
+            ada.NamedAggregate(
+                ("Fld", ada.Variable(field.affixed_name)),
+                *(
+                    [(f"{field.identifier}_Value", value)]
+                    if isinstance(message.types[field], model.Scalar)
+                    or is_compared_to_aggregate(field, message)
+                    else []
+                ),
+            ),
+            *(
+                [
+                    ada.Call(
+                        "Field_Size",
+                        [
+                            ada.Variable("Ctx"),
+                            ada.Variable(field.affixed_name),
+                        ],
+                    )
+                ]
+                if size_dependent_condition(message)
+                else []
+            ),
+        ],
+    )
 
 
 def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:

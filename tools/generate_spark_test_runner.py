@@ -24,6 +24,7 @@ TESTS = [
     "Sequence",
     "Derivation",
     "Expression",
+    "Fixed_Size",
 ]
 
 

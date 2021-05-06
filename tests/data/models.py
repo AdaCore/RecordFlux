@@ -493,6 +493,25 @@ FIXED_SIZE_MESSAGE = Message(
         Field("Options"): UNIVERSAL_OPTIONS,
     },
 )
+FIXED_SIZE_SIMPLE_MESSAGE = Message(
+    "Fixed_Size::Simple_Message",
+    [
+        Link(INITIAL, Field("Message_Type")),
+        Link(
+            Field("Message_Type"),
+            Field("Data"),
+            size=Number(24),
+        ),
+        Link(
+            Field("Data"),
+            FINAL,
+        ),
+    ],
+    {
+        Field("Message_Type"): UNIVERSAL_OPTION_TYPE,
+        Field("Data"): Opaque(),
+    },
+)
 
 SESSION = Session(
     identifier="P::S",

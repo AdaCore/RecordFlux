@@ -161,6 +161,29 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
     utils.assert_compilable_code(p.create_model(), tmp_path)
 
 
+def test_message_fixed_size_sequence(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+           package Test is
+
+              type E is mod 2**8;
+
+              type S is sequence of E;
+
+              type M is
+                 message
+                    null
+                       then A
+                          with Size => 64;
+                    A : S;
+                 end message;
+
+           end Test;
+        """,
+        tmp_path,
+    )
+
+
 def test_unbounded_message(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         """

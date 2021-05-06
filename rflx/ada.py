@@ -1736,16 +1736,24 @@ class InstantiationUnit(Unit):
 
 @dataclass
 class UnitPart:
-    specification: Sequence[Declaration] = dataclass_field(default_factory=list)
-    body: Sequence[Declaration] = dataclass_field(default_factory=list)
-    private: Sequence[Declaration] = dataclass_field(default_factory=list)
+    specification: List[Declaration] = dataclass_field(default_factory=list)
+    body: List[Declaration] = dataclass_field(default_factory=list)
+    private: List[Declaration] = dataclass_field(default_factory=list)
+
+    def __iadd__(self, other: object) -> "UnitPart":
+        if isinstance(other, UnitPart):
+            self.specification += other.specification
+            self.body += other.body
+            self.private += other.private
+            return self
+        return NotImplemented
 
 
 @dataclass
 class SubprogramUnitPart:
-    specification: Sequence[Subprogram] = dataclass_field(default_factory=list)
-    body: Sequence[Subprogram] = dataclass_field(default_factory=list)
-    private: Sequence[Subprogram] = dataclass_field(default_factory=list)
+    specification: List[Subprogram] = dataclass_field(default_factory=list)
+    body: List[Subprogram] = dataclass_field(default_factory=list)
+    private: List[Subprogram] = dataclass_field(default_factory=list)
 
 
 def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:

@@ -8,7 +8,6 @@ from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
-    UNDEFINED,
     Add,
     Aggregate,
     And,
@@ -2408,25 +2407,35 @@ def test_checksum_error(
     assert_message_model_error(structure, types, error, aspects=aspects)
 
 
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_field_size() -> None:
     message = Message(
         "P::M",
         [
             Link(INITIAL, Field("A")),
-            Link(Field("A"), Field("B"), size=Number(8)),
-            Link(Field("B"), FINAL),
+            Link(Field("A"), Field("B"), size=Mul(Size("A"), Number(8))),
+            Link(Field("B"), Field("C"), size=Sub(Last("Message"), Last("B"))),
+            Link(Field("C"), FINAL),
         ],
-        {Field("A"): MODULAR_INTEGER, Field("B"): OPAQUE},
+        {Field("A"): MODULAR_INTEGER, Field("B"): OPAQUE, Field("C"): OPAQUE},
         location=Location((30, 10)),
     )
 
     assert message.field_size(FINAL) == Number(0)
     assert message.field_size(Field("A")) == Number(8)
-    assert message.field_size(Field("B")) == UNDEFINED
+    assert message.field_size(Field("B")) == Number(64)
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r'^<stdin>:10:20: model: error: unable to calculate size of field "C"'
+            r' of message "P::M"$'
+        ),
+    ):
+        message.field_size(Field(ID("C", location=Location((10, 20)))))
 
     with pytest.raises(AssertionError, match='^field "X" not found$'):
         message.field_size(Field("X"))
-        message.error.propagate()
 
 
 def test_copy() -> None:
