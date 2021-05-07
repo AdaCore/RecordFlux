@@ -14,7 +14,7 @@ grammar.add_rules(
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
     variable=ast.Variable(grammar.qualified_identifier),
     unqualified_variable=ast.UnqualifiedVariable(grammar.unqualified_identifier),
-    array_aggregate=ast.ArrayAggregate(
+    sequence_aggregate=ast.SequenceAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),
     string_literal=ast.StringLiteral(lexer.StringLiteral),
@@ -23,9 +23,9 @@ grammar.add_rules(
             grammar.concatenation,
             "&",
             NoBacktrack(),
-            Or(grammar.array_aggregate, grammar.string_literal),
+            Or(grammar.sequence_aggregate, grammar.string_literal),
         ),
-        Or(grammar.array_aggregate, grammar.string_literal),
+        Or(grammar.sequence_aggregate, grammar.string_literal),
     ),
     primary=Or(
         grammar.concatenation,
@@ -137,7 +137,10 @@ grammar.add_rules(
         "]",
     ),
     call=ast.Call(
-        grammar.unqualified_identifier, "(", List(grammar.extended_expression, sep=","), ")"
+        grammar.unqualified_identifier,
+        "(",
+        List(grammar.extended_expression, sep=","),
+        ")",
     ),
     conversion=ast.Conversion(grammar.qualified_identifier, "(", grammar.extended_expression, ")"),
     null_message_aggregate=ast.NullMessageAggregate("null", "message"),
@@ -344,8 +347,8 @@ grammar.add_rules(
         "new",
         grammar.qualified_identifier,
     ),
-    array_type_definition=ast.ArrayTypeDef(
-        "array",
+    sequence_type_definition=ast.SequenceTypeDef(
+        "sequence",
         "of",
         grammar.qualified_identifier,
     ),
@@ -358,7 +361,7 @@ grammar.add_rules(
             grammar.integer_type_definition,
             grammar.message_type_definition,
             grammar.type_derivation_definition,
-            grammar.array_type_definition,
+            grammar.sequence_type_definition,
         ),
     ),
     type_refinement=ast.RefinementDecl(

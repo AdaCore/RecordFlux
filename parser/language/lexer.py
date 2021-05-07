@@ -28,7 +28,7 @@ class Token(LexerToken):
     Mod = WithText()
     Message = WithText()
     Then = WithText()
-    Array = WithText()
+    Sequence = WithText()
     Of = WithText()
     In = WithText()
     Not = WithText()
@@ -176,7 +176,8 @@ rflx_lexer.add_rules(
     (Literal("mod"), Token.Mod),
     (Literal("message"), Token.Message),
     (Literal("then"), Token.Then),
-    (Literal("array"), Token.Array),
+    (Literal("array"), Token.Sequence),
+    (Literal("sequence"), Token.Sequence),
     (Literal("of"), Token.Of),
     (Literal("in"), Token.In),
     (Literal("not"), Token.Not),

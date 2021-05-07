@@ -48,7 +48,7 @@ class Declaration(RFLXNode):
 @abstract
 class TypeDef(RFLXNode):
     """
-    Base class for type definitions (integers, messages, type derivations, arrays, enumerations)
+    Base class for type definitions (integers, messages, type derivations, sequences, enumerations)
     """
 
 
@@ -239,13 +239,13 @@ class Reset(Statement):
 
 
 @abstract
-class ArrayLiteral(Expr):
+class SequenceLiteral(Expr):
     """
-    Base class for array literals (strings, array aggregates)
+    Base class for sequence literals (strings, sequence aggregates)
     """
 
 
-class StringLiteral(ArrayLiteral):
+class StringLiteral(SequenceLiteral):
     """
     Double-quoted string literal
     """
@@ -258,21 +258,21 @@ class NumericLiteral(Expr):
     token_node = True
 
 
-class ArrayAggregate(ArrayLiteral):
+class SequenceAggregate(SequenceLiteral):
     """
-    List of literal array values
+    List of literal sequence values
     """
 
     values = Field(type=NumericLiteral.list)
 
 
-class Concatenation(ArrayLiteral):
+class Concatenation(SequenceLiteral):
     """
     Concatenation of aggregates or string literals
     """
 
-    left = Field(type=ArrayLiteral)
-    right = Field(type=ArrayLiteral)
+    left = Field(type=SequenceLiteral)
+    right = Field(type=SequenceLiteral)
 
 
 class Description(RFLXNode):
@@ -381,7 +381,7 @@ class TypeDerivationDef(TypeDef):
     base = Field(type=ID)
 
 
-class ArrayTypeDef(TypeDef):
+class SequenceTypeDef(TypeDef):
 
     element_type = Field(type=ID)
 
@@ -615,7 +615,7 @@ class QuantifiedExpression(Expr):
 class Comprehension(Expr):
 
     iterator = Field(type=UnqualifiedID)
-    array = Field(type=Expr)
+    sequence = Field(type=Expr)
     selector = Field(type=Expr)
     condition = Field(type=Expr)
 

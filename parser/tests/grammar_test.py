@@ -109,15 +109,33 @@ def test_qualified_identifier(string: str, expected: Dict[str, str]) -> None:
         ("1_000", {"_kind": "NumericLiteral", "_value": "1_000"}),
         ("16#6664#", {"_kind": "NumericLiteral", "_value": "16#6664#"}),
         ("16#66_64#", {"_kind": "NumericLiteral", "_value": "16#66_64#"}),
-        ("-1000", {"_kind": "Negation", "data": {"_kind": "NumericLiteral", "_value": "1000"}}),
-        ("-1_000", {"_kind": "Negation", "data": {"_kind": "NumericLiteral", "_value": "1_000"}}),
+        (
+            "-1000",
+            {
+                "_kind": "Negation",
+                "data": {"_kind": "NumericLiteral", "_value": "1000"},
+            },
+        ),
+        (
+            "-1_000",
+            {
+                "_kind": "Negation",
+                "data": {"_kind": "NumericLiteral", "_value": "1_000"},
+            },
+        ),
         (
             "-16#6664#",
-            {"_kind": "Negation", "data": {"_kind": "NumericLiteral", "_value": "16#6664#"}},
+            {
+                "_kind": "Negation",
+                "data": {"_kind": "NumericLiteral", "_value": "16#6664#"},
+            },
         ),
         (
             "-16#66_64#",
-            {"_kind": "Negation", "data": {"_kind": "NumericLiteral", "_value": "16#66_64#"}},
+            {
+                "_kind": "Negation",
+                "data": {"_kind": "NumericLiteral", "_value": "16#66_64#"},
+            },
         ),
     ],
 )
@@ -476,7 +494,10 @@ def test_expression_suffix(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "B"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "B",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -965,12 +986,15 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
         ('"Foo Bar"', {"_kind": "StringLiteral", "_value": '"Foo Bar"'}),
         (
             "[1]",
-            {"_kind": "ArrayAggregate", "values": [{"_kind": "NumericLiteral", "_value": "1"}]},
+            {
+                "_kind": "SequenceAggregate",
+                "values": [{"_kind": "NumericLiteral", "_value": "1"}],
+            },
         ),
         (
             "[1, 2]",
             {
-                "_kind": "ArrayAggregate",
+                "_kind": "SequenceAggregate",
                 "values": [
                     {"_kind": "NumericLiteral", "_value": "1"},
                     {"_kind": "NumericLiteral", "_value": "2"},
@@ -984,13 +1008,13 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
                 "left": {
                     "_kind": "Concatenation",
                     "left": {
-                        "_kind": "ArrayAggregate",
+                        "_kind": "SequenceAggregate",
                         "values": [{"_kind": "NumericLiteral", "_value": "137"}],
                     },
                     "right": {"_kind": "StringLiteral", "_value": '"PNG"'},
                 },
                 "right": {
-                    "_kind": "ArrayAggregate",
+                    "_kind": "SequenceAggregate",
                     "values": [
                         {"_kind": "NumericLiteral", "_value": "13"},
                         {"_kind": "NumericLiteral", "_value": "10"},
@@ -1076,7 +1100,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
             "[for X in Y => X.A]",
             {
                 "_kind": "Comprehension",
-                "array": {
+                "sequence": {
                     "_kind": "Variable",
                     "identifier": {
                         "_kind": "ID",
@@ -1104,7 +1128,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
             "[for X in Y => X.A when X.B = Z]",
             {
                 "_kind": "Comprehension",
-                "array": {
+                "sequence": {
                     "_kind": "Variable",
                     "identifier": {
                         "_kind": "ID",
@@ -1532,7 +1556,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "Y"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Y",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1543,7 +1570,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "_kind": "Variable",
                                 "identifier": {
                                     "_kind": "ID",
-                                    "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                    "name": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "False",
+                                    },
                                     "package": None,
                                 },
                             },
@@ -1557,7 +1587,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "Z"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Z",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1568,7 +1601,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "_kind": "Variable",
                                 "identifier": {
                                     "_kind": "ID",
-                                    "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                    "name": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "False",
+                                    },
                                     "package": None,
                                 },
                             },
@@ -1593,7 +1629,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1604,7 +1643,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                 "_kind": "Variable",
                                 "identifier": {
                                     "_kind": "ID",
-                                    "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                    "name": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "False",
+                                    },
                                     "package": None,
                                 },
                             },
@@ -1618,7 +1660,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1674,7 +1719,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1692,7 +1740,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1705,7 +1756,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1746,7 +1800,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "A",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1759,7 +1816,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "P"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "P",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -1775,8 +1835,14 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "E"},
-                                        "package": {"_kind": "UnqualifiedID", "_value": "G"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "E",
+                                        },
+                                        "package": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "G",
+                                        },
                                     },
                                 },
                                 "op": {"_kind": "OpNotin", "_value": "not in"},
@@ -1797,15 +1863,27 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                                     "package": None,
                                                 },
                                             },
-                                            "selector": {"_kind": "UnqualifiedID", "_value": "D"},
+                                            "selector": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "D",
+                                            },
                                         },
                                         "target_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "S"},
-                                            "package": {"_kind": "UnqualifiedID", "_value": "P"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "S",
+                                            },
+                                            "package": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "P",
+                                            },
                                         },
                                     },
-                                    "selector": {"_kind": "UnqualifiedID", "_value": "V"},
+                                    "selector": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "V",
+                                    },
                                 },
                             },
                         },
@@ -1928,7 +2006,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                 "_kind": "Attribute",
                 "expression": {
                     "_kind": "Comprehension",
-                    "array": {
+                    "sequence": {
                         "_kind": "Variable",
                         "identifier": {
                             "_kind": "ID",
@@ -2004,7 +2082,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                     "_kind": "Attribute",
                     "expression": {
                         "_kind": "Comprehension",
-                        "array": {
+                        "sequence": {
                             "_kind": "Variable",
                             "identifier": {
                                 "_kind": "ID",
@@ -2020,7 +2098,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "E"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "E",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2073,7 +2154,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                         "_kind": "Attribute",
                                         "expression": {
                                             "_kind": "Comprehension",
-                                            "array": {
+                                            "sequence": {
                                                 "_kind": "SelectNode",
                                                 "expression": {
                                                     "_kind": "Variable",
@@ -2131,7 +2212,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                                     },
                                                 },
                                             },
-                                            "iterator": {"_kind": "UnqualifiedID", "_value": "E"},
+                                            "iterator": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "E",
+                                            },
                                             "selector": {
                                                 "_kind": "Variable",
                                                 "identifier": {
@@ -2146,18 +2230,27 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                         },
                                         "kind": {"_kind": "AttrHead", "_value": "Head"},
                                     },
-                                    "selector": {"_kind": "UnqualifiedID", "_value": "D"},
+                                    "selector": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "D",
+                                    },
                                 },
                                 "target_identifier": {
                                     "_kind": "ID",
                                     "name": {"_kind": "UnqualifiedID", "_value": "X"},
-                                    "package": {"_kind": "UnqualifiedID", "_value": "P"},
+                                    "package": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "P",
+                                    },
                                 },
                             },
                             "selector": {"_kind": "UnqualifiedID", "_value": "H"},
                         },
                         "operation": {"_kind": "QuantifierSome", "_value": "some"},
-                        "parameter_identifier": {"_kind": "UnqualifiedID", "_value": "S"},
+                        "parameter_identifier": {
+                            "_kind": "UnqualifiedID",
+                            "_value": "S",
+                        },
                         "predicate": {
                             "_kind": "BinOp",
                             "left": {
@@ -2166,7 +2259,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "S"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "S",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2218,11 +2314,17 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                             "_kind": "Variable",
                                             "identifier": {
                                                 "_kind": "ID",
-                                                "name": {"_kind": "UnqualifiedID", "_value": "B2"},
+                                                "name": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "B2",
+                                                },
                                                 "package": None,
                                             },
                                         },
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "D",
+                                        },
                                     }
                                 ],
                             },
@@ -2246,7 +2348,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "B1"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "B1",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2280,11 +2385,17 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                             "_kind": "Variable",
                                             "identifier": {
                                                 "_kind": "ID",
-                                                "name": {"_kind": "UnqualifiedID", "_value": "B2"},
+                                                "name": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "B2",
+                                                },
                                                 "package": None,
                                             },
                                         },
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "D",
+                                        },
                                     }
                                 ],
                             },
@@ -2309,11 +2420,17 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                             "_kind": "Variable",
                                             "identifier": {
                                                 "_kind": "ID",
-                                                "name": {"_kind": "UnqualifiedID", "_value": "B3"},
+                                                "name": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "B3",
+                                                },
                                                 "package": None,
                                             },
                                         },
-                                        "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "D",
+                                        },
                                     }
                                 ],
                             },
@@ -2337,11 +2454,17 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "B1"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "B1",
+                                        },
                                         "package": None,
                                     },
                                 },
-                                "identifier": {"_kind": "UnqualifiedID", "_value": "D1"},
+                                "identifier": {
+                                    "_kind": "UnqualifiedID",
+                                    "_value": "D1",
+                                },
                             },
                             {
                                 "_kind": "MessageAggregateAssociation",
@@ -2349,11 +2472,17 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "B2"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "B2",
+                                        },
                                         "package": None,
                                     },
                                 },
-                                "identifier": {"_kind": "UnqualifiedID", "_value": "D2"},
+                                "identifier": {
+                                    "_kind": "UnqualifiedID",
+                                    "_value": "D2",
+                                },
                             },
                         ],
                     },
@@ -2376,7 +2505,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                         "_kind": "MessageAggregate",
                                         "identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "M3"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "M3",
+                                            },
                                             "package": None,
                                         },
                                         "values": {
@@ -2403,7 +2535,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                             ],
                                         },
                                     },
-                                    "identifier": {"_kind": "UnqualifiedID", "_value": "B2"},
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "B2",
+                                    },
                                 }
                             ],
                             "expression": {
@@ -2429,7 +2564,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                                     "package": None,
                                                 },
                                             },
-                                            "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
+                                            "identifier": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "D",
+                                            },
                                         }
                                     ],
                                 },
@@ -2454,7 +2592,10 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "B1"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "B1",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2759,7 +2900,10 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
                 "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
             },
         ),
-        ("C'Reset", {"_kind": "Reset", "identifier": {"_kind": "UnqualifiedID", "_value": "C"}}),
+        (
+            "C'Reset",
+            {"_kind": "Reset", "identifier": {"_kind": "UnqualifiedID", "_value": "C"}},
+        ),
     ],
 )
 def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
@@ -2821,7 +2965,10 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2830,7 +2977,10 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "Y"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Y",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2878,7 +3028,10 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "X",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -2887,7 +3040,10 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                                     "_kind": "Variable",
                                     "identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "Y"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Y",
+                                        },
                                         "package": None,
                                     },
                                 },
@@ -3140,11 +3296,17 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                                         "_kind": "Variable",
                                         "identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "False",
+                                            },
                                             "package": None,
                                         },
                                     },
-                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Z"},
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "Z",
+                                    },
                                 }
                             ],
                             "conditional_transitions": [
@@ -3156,7 +3318,10 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                                             "_kind": "Variable",
                                             "identifier": {
                                                 "_kind": "ID",
-                                                "name": {"_kind": "UnqualifiedID", "_value": "Z"},
+                                                "name": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Z",
+                                                },
                                                 "package": None,
                                             },
                                         },
@@ -3180,18 +3345,27 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                             "declarations": [
                                 {
                                     "_kind": "VariableDecl",
-                                    "identifier": {"_kind": "UnqualifiedID", "_value": "Z"},
+                                    "identifier": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "Z",
+                                    },
                                     "initializer": {
                                         "_kind": "Variable",
                                         "identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "Y"},
+                                            "name": {
+                                                "_kind": "UnqualifiedID",
+                                                "_value": "Y",
+                                            },
                                             "package": None,
                                         },
                                     },
                                     "type_identifier": {
                                         "_kind": "ID",
-                                        "name": {"_kind": "UnqualifiedID", "_value": "Boolean"},
+                                        "name": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "Boolean",
+                                        },
                                         "package": None,
                                     },
                                 }
@@ -3221,4 +3395,55 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
 )
 def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
     actual = parse(string, GrammarRule.session_declaration_rule)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
+            "type T is mod 8",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "ModularTypeDef",
+                    "mod": {"_kind": "NumericLiteral", "_value": "8"},
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+            },
+        ),
+        (
+            "type T is sequence of E",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "SequenceTypeDef",
+                    "element_type": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "E"},
+                        "package": None,
+                    },
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+            },
+        ),
+        (
+            "type T is sequence of E",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "SequenceTypeDef",
+                    "element_type": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "E"},
+                        "package": None,
+                    },
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+            },
+        ),
+    ],
+)
+def test_type_declaration(string: str, expected: Dict[str, str]) -> None:
+    actual = parse(string, GrammarRule.type_declaration_rule)
     assert actual == expected
