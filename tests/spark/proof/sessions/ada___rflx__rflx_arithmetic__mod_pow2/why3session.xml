@@ -25,7 +25,7 @@
   <proof prover="0"><result status="valid" steps="610"/></proof>
   </goal>
   <goal name="def&#39;vc.4" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="70022"/></proof>
   </goal>
   <goal name="def&#39;vc.5" expl="postcondition" proved="true">
@@ -33,7 +33,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.6" expl="postcondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="144587"/></proof>
   </goal>
  </transf>

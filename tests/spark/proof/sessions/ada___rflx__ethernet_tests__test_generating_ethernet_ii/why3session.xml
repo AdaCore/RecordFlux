@@ -198,8 +198,8 @@
   </goal>
   <goal name="def&#39;vc.58" expl="precondition" proved="true">
   <proof prover="0"><result status="valid" steps="84384"/></proof>
-  <proof prover="1"><result status="timeout"/></proof>
-  <proof prover="2"><result status="unknown" steps="4526342"/></proof>
+  <proof prover="1" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="2" obsolete="true"><result status="unknown" steps="4526342"/></proof>
   </goal>
   <goal name="def&#39;vc.59" expl="precondition" proved="true">
   <proof prover="1"><result status="valid" steps="1468160"/></proof>

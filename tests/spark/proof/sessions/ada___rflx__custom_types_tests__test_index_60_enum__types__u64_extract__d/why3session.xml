@@ -49,7 +49,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.11" expl="precondition" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="12361"/></proof>
   </goal>
   <goal name="def&#39;vc.12" expl="postcondition" proved="true">
@@ -57,7 +57,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.13" expl="assertion" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="25745"/></proof>
   </goal>
   <goal name="def&#39;vc.14" expl="precondition" proved="true">
@@ -71,7 +71,7 @@
   <proof prover="0"><result status="valid" steps="5806"/></proof>
   </goal>
   <goal name="def&#39;vc.17" expl="precondition" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="841"/></proof>
   </goal>
   <goal name="def&#39;vc.18" expl="precondition" proved="true">
@@ -85,25 +85,25 @@
   <proof prover="0"><result status="valid" steps="62431"/></proof>
   </goal>
   <goal name="def&#39;vc.21" expl="precondition" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="72"/></proof>
   </goal>
   <goal name="def&#39;vc.22" expl="assertion" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="72"/></proof>
   </goal>
   <goal name="def&#39;vc.23" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="18059"/></proof>
   </goal>
   <goal name="def&#39;vc.24" expl="precondition" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="886"/></proof>
   </goal>
   <goal name="def&#39;vc.25" expl="precondition" proved="true">
   <proof prover="0"><result status="valid" steps="39377"/></proof>
   </goal>
   <goal name="def&#39;vc.26" expl="precondition" proved="true">
-  <proof prover="0"><result status="outofmemory"/></proof>
+  <proof prover="0" obsolete="true"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="965"/></proof>
   </goal>
   <goal name="def&#39;vc.27" expl="postcondition" proved="true">

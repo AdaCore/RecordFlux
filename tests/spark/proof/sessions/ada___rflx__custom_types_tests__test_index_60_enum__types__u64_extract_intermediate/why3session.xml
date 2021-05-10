@@ -56,7 +56,7 @@
   <proof prover="0"><result status="valid" steps="14092"/></proof>
   </goal>
   <goal name="def&#39;vc.14" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="159775"/></proof>
   </goal>
   <goal name="def&#39;vc.15" expl="precondition" proved="true">
@@ -72,7 +72,7 @@
   <proof prover="0"><result status="valid" steps="4068"/></proof>
   </goal>
   <goal name="def&#39;vc.19" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="185953"/></proof>
   </goal>
   <goal name="def&#39;vc.20" expl="precondition" proved="true">
@@ -83,7 +83,7 @@
   <proof prover="0"><result status="valid" steps="13936"/></proof>
   </goal>
   <goal name="def&#39;vc.22" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="778"/></proof>
   </goal>
   <goal name="def&#39;vc.23" expl="assertion" proved="true">
@@ -106,7 +106,7 @@
   <proof prover="0"><result status="valid" steps="1501"/></proof>
   </goal>
   <goal name="def&#39;vc.29" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="19502"/></proof>
   </goal>
   <goal name="def&#39;vc.30" expl="precondition" proved="true">
@@ -155,7 +155,7 @@
   <proof prover="0"><result status="valid" steps="15780"/></proof>
   </goal>
   <goal name="def&#39;vc.44" expl="assertion" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="5308"/></proof>
   </goal>
   <goal name="def&#39;vc.45" expl="postcondition" proved="true">

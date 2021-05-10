@@ -121,11 +121,11 @@
   <proof prover="0"><result status="valid" steps="46472"/></proof>
   </goal>
   <goal name="def&#39;vc.35" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="467184"/></proof>
   </goal>
   <goal name="def&#39;vc.36" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1608841"/></proof>
   </goal>
   <goal name="def&#39;vc.37" expl="precondition" proved="true">
@@ -196,11 +196,11 @@
   <proof prover="0"><result status="valid" steps="5206"/></proof>
   </goal>
   <goal name="def&#39;vc.59" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="2434538"/></proof>
   </goal>
   <goal name="def&#39;vc.60" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1656887"/></proof>
   </goal>
   <goal name="def&#39;vc.61" expl="precondition" proved="true">
@@ -306,11 +306,11 @@
   <proof prover="0"><result status="valid" steps="243123"/></proof>
   </goal>
   <goal name="def&#39;vc.94" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1094774"/></proof>
   </goal>
   <goal name="def&#39;vc.95" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="2220294"/></proof>
   </goal>
   <goal name="def&#39;vc.96" expl="precondition" proved="true">
@@ -332,7 +332,7 @@
   <proof prover="0"><result status="valid" steps="12401"/></proof>
   </goal>
   <goal name="def&#39;vc.102" expl="assertion" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1174586"/></proof>
   </goal>
   <goal name="def&#39;vc.103" expl="postcondition" proved="true">
@@ -382,11 +382,11 @@
   <proof prover="0"><result status="valid" steps="5991"/></proof>
   </goal>
   <goal name="def&#39;vc.118" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="3501391"/></proof>
   </goal>
   <goal name="def&#39;vc.119" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="2652400"/></proof>
   </goal>
   <goal name="def&#39;vc.120" expl="precondition" proved="true">
@@ -443,7 +443,7 @@
   <proof prover="0"><result status="valid" steps="65484"/></proof>
   </goal>
   <goal name="def&#39;vc.137" expl="loop invariant preservation" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1439133"/></proof>
   </goal>
   <goal name="def&#39;vc.138" expl="loop invariant preservation" proved="true">
@@ -493,7 +493,7 @@
   <proof prover="0"><result status="valid" steps="345973"/></proof>
   </goal>
   <goal name="def&#39;vc.153" expl="assertion" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1258580"/></proof>
   </goal>
   <goal name="def&#39;vc.154" expl="postcondition" proved="true">
@@ -504,7 +504,7 @@
   <proof prover="0"><result status="valid" steps="4619"/></proof>
   </goal>
   <goal name="def&#39;vc.156" expl="precondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1131731"/></proof>
   </goal>
   <goal name="def&#39;vc.157" expl="postcondition" proved="true">
@@ -512,7 +512,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.158" expl="postcondition" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="1422385"/></proof>
   </goal>
   <goal name="def&#39;vc.159" expl="postcondition" proved="true">
