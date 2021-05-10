@@ -22,7 +22,7 @@ package IPv6 is
          Data : Opaque;
       end message;
 
-   type Addresses is array of Address;
+   type Addresses is sequence of Address;
 
    --  Options (RFC 8200, 4.2)
 
@@ -65,7 +65,7 @@ package IPv6 is
          Option_Data : Opaque;
       end message;
 
-   type Options is array of Option;
+   type Options is sequence of Option;
 
    type Options_Base_Header is
       message

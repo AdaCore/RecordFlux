@@ -112,7 +112,7 @@ package SLPv2 is
             with Size => 8 * Authentication_Block_Length - (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1)
             if (8 * Authentication_Block_Length >= (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1));
       end message;
-   type Authentication_Blocks is array of Authentication_Block;
+   type Authentication_Blocks is sequence of Authentication_Block;
 
    -- 4.3. URL Entries
    type URL_Entry_Reserved is range 0 .. 0 with Size => 8;
@@ -127,7 +127,7 @@ package SLPv2 is
          Authentication_Blocks : Authentication_Blocks
             with Size => Number_Of_URL_Authentications * 8;
       end message;
-   type URL_Entries is array of URL_Entry;
+   type URL_Entries is sequence of URL_Entry;
 
    -- 8.2. Service Reply
    type Service_Reply is
