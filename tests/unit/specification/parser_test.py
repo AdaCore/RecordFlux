@@ -491,9 +491,9 @@ def test_parse_enumeration_type_spec() -> None:
     assert_ast_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
 
-def test_parse_array_type_spec() -> None:
+def test_parse_sequence_type_spec() -> None:
     spec = {
-        "Array_Type": {
+        "Sequence_Type": {
             "_kind": "Specification",
             "context_clause": [],
             "package_declaration": {
@@ -510,7 +510,7 @@ def test_parse_array_type_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ArrayTypeDef",
+                            "_kind": "SequenceTypeDef",
                             "element_type": {
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "Byte"},
@@ -609,7 +609,7 @@ def test_parse_array_type_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ArrayTypeDef",
+                            "_kind": "SequenceTypeDef",
                             "element_type": {
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "Foo"},
@@ -619,12 +619,12 @@ def test_parse_array_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                     },
                 ],
-                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Array_Type"},
-                "identifier": {"_kind": "UnqualifiedID", "_value": "Array_Type"},
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Sequence_Type"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Sequence_Type"},
             },
         }
     }
-    assert_ast_files([f"{SPEC_DIR}/array_type.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/sequence_type.rflx"], spec)
 
 
 def test_parse_message_type_spec() -> None:
@@ -1778,14 +1778,14 @@ def test_parse_error_invalid_location_expression() -> None:
     )
 
 
-def test_parse_error_array_undefined_type() -> None:
+def test_parse_error_sequence_undefined_type() -> None:
     assert_error_string(
         """
             package Test is
-               type T is array of Foo;
+               type T is sequence of Foo;
             end Test;
         """,
-        r'^<stdin>:3:35: parser: error: undefined element type "Test::Foo"$',
+        r'^<stdin>:3:38: parser: error: undefined element type "Test::Foo"$',
     )
 
 
@@ -2111,7 +2111,7 @@ def test_create_model_parsed_field_locations() -> None:
     )
 
 
-def test_create_model_array_with_imported_element_type() -> None:
+def test_create_model_sequence_with_imported_element_type() -> None:
     p = parser.Parser()
     p.parse_string(
         """
@@ -2123,16 +2123,16 @@ def test_create_model_array_with_imported_element_type() -> None:
     p.parse_string(
         """
            with Test;
-           package Array_Test is
-              type T is array of Test::T;
-           end Array_Test;
+           package Sequence_Test is
+              type T is sequence of Test::T;
+           end Sequence_Test;
         """
     )
     m = p.create_model()
-    arrays = [t for t in m.types if isinstance(t, model.Array)]
-    assert len(arrays) == 1
-    assert arrays[0].identifier == ID("Array_Test::T")
-    assert arrays[0].element_type == model.ModularInteger("Test::T", expr.Number(256))
+    sequences = [t for t in m.types if isinstance(t, model.Sequence)]
+    assert len(sequences) == 1
+    assert sequences[0].identifier == ID("Sequence_Test::T")
+    assert sequences[0].element_type == model.ModularInteger("Test::T", expr.Number(256))
 
 
 def test_create_model_checksum() -> None:

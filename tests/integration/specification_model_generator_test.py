@@ -115,7 +115,7 @@ def test_potential_name_conflicts_fields_literals(tmp_path: Path) -> None:
     )
 
 
-def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
+def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p = Parser()
     p.parse_string(
         """
@@ -127,15 +127,15 @@ def test_array_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p.parse_string(
         """
            with Test;
-           package Array_Test is
-              type T is array of Test::T;
-           end Array_Test;
+           package Sequence_Test is
+              type T is sequence of Test::T;
+           end Sequence_Test;
         """
     )
     utils.assert_compilable_code(p.create_model(), tmp_path)
 
 
-def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
+def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
     p = Parser()
     p.parse_string(
         """
@@ -153,9 +153,9 @@ def test_array_with_imported_element_type_message(tmp_path: Path) -> None:
     p.parse_string(
         """
            with Test;
-           package Array_Test is
-              type T is array of Test::M;
-           end Array_Test;
+           package Sequence_Test is
+              type T is sequence of Test::M;
+           end Sequence_Test;
         """
     )
     utils.assert_compilable_code(p.create_model(), tmp_path)
@@ -241,7 +241,7 @@ def test_transitive_type_use(tmp_path: Path) -> None:
                      F1 : U8;
                      F2 : Opaque with Size => F1 * 8;
                   end message;
-               type M1S is array of M1;
+               type M1S is sequence of M1;
 
                type M2 is
                   message

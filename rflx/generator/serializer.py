@@ -454,14 +454,14 @@ class SerializerGenerator:
                             True,
                         ),
                     ],
-                    self.__set_array_field(message, f),
+                    self.__set_sequence_field(message, f),
                 )
                 for f, t in message.types.items()
                 if message.is_possibly_empty(f)
             ],
         )
 
-    def create_array_setter_procedures(
+    def create_sequence_setter_procedures(
         self, message: Message, sequence_fields: Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
@@ -537,7 +537,7 @@ class SerializerGenerator:
                         *self.__field_byte_location_declarations(),
                     ],
                     [
-                        *self.__set_array_field(message, f),
+                        *self.__set_sequence_field(message, f),
                         CallStatement(
                             f"{common.sequence_name(message, f)}.Copy",
                             [
@@ -954,7 +954,7 @@ class SerializerGenerator:
             )
         )
 
-    def __set_array_field(self, message: Message, field: Field) -> Sequence[Statement]:
+    def __set_sequence_field(self, message: Message, field: Field) -> Sequence[Statement]:
         return [
             CallStatement(
                 "Reset_Dependent_Fields",

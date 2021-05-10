@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
+import typing as ty
 from pathlib import Path
-from typing import Sequence
 
 import pytest
 
@@ -10,17 +10,16 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
-    Array,
     Enumeration,
     Link,
     Message,
     ModularInteger,
     Opaque,
     RangeInteger,
+    Sequence,
     Type,
 )
 from rflx.pyrflx import (
-    ArrayValue,
     Bitstring,
     EnumValue,
     IntegerValue,
@@ -28,6 +27,7 @@ from rflx.pyrflx import (
     OpaqueValue,
     Package,
     PyRFLX,
+    SequenceValue,
     TypeValue,
     utils,
 )
@@ -68,8 +68,8 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "TLS_Record",
         "TLV",
         "UDP",
-        "Array_Message",
-        "Array_Type",
+        "Sequence_Message",
+        "Sequence_Type",
         "Null_Message",
         "TLV_With_Checksum",
         "No_Conditionals",
@@ -438,11 +438,11 @@ def test_message_value_parse_from_bitstring(
     assert intval.value == 2
     enum_value.parse(b"\x01")
     assert enum_value.value == "One"
-    msg_array = ArrayValue(Array("Test::MsgArray", tlv_message_value._type))
+    msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
     tlv_message_value.set("Value", b"\x00\x00\x00\x00")
-    msg_array.parse(tlv_message_value.bytestring)
+    msg_sequence.parse(tlv_message_value.bytestring)
 
 
 def test_message_value_parse_from_bitstring_invalid(tlv_message_value: MessageValue) -> None:
@@ -688,109 +688,118 @@ def test_invalid_value() -> None:
         TypeValue.construct(t)
 
 
-def test_array_messages(message_array_value: MessageValue, array_message_package: Package) -> None:
-    array_element_one = array_message_package["Array_Element"]
-    array_element_one.set("Byte", 5)
-    array_element_two = array_message_package["Array_Element"]
-    array_element_two.set("Byte", 6)
-    array = [array_element_one, array_element_two]
-    message_array_value.set("Length", 2)
-    message_array_value.set("Array_Field", array)
-    assert message_array_value.valid_message
-    assert message_array_value.bytestring == b"\x02\x05\x06"
+def test_sequence_messages(
+    message_sequence_value: MessageValue, sequence_message_package: Package
+) -> None:
+    sequence_element_one = sequence_message_package["Sequence_Element"]
+    sequence_element_one.set("Byte", 5)
+    sequence_element_two = sequence_message_package["Sequence_Element"]
+    sequence_element_two.set("Byte", 6)
+    sequence = [sequence_element_one, sequence_element_two]
+    message_sequence_value.set("Length", 2)
+    message_sequence_value.set("Sequence_Field", sequence)
+    assert message_sequence_value.valid_message
+    assert message_sequence_value.bytestring == b"\x02\x05\x06"
 
 
-@pytest.fixture(name="array_type_package", scope="session")
-def fixture_array_type_package(pyrflx_: PyRFLX) -> Package:
-    return pyrflx_["Array_Type"]
+@pytest.fixture(name="sequence_type_package", scope="session")
+def fixture_sequence_type_package(pyrflx_: PyRFLX) -> Package:
+    return pyrflx_["Sequence_Type"]
 
 
-@pytest.fixture(name="array_type_foo_value")
-def fixture_array_type_foo_value(array_type_package: Package) -> MessageValue:
-    return array_type_package["Foo"]
+@pytest.fixture(name="sequence_type_foo_value")
+def fixture_sequence_type_foo_value(sequence_type_package: Package) -> MessageValue:
+    return sequence_type_package["Foo"]
 
 
-def test_array_scalars(array_type_foo_value: MessageValue) -> None:
-    a = IntegerValue(ModularInteger("Array_Type::Byte_One", expr.Number(256)))
-    b = IntegerValue(ModularInteger("Array_Type::Byte_Two", expr.Number(256)))
-    c = IntegerValue(ModularInteger("Array_Type::Byte_Three", expr.Number(256)))
+def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
+    a = IntegerValue(ModularInteger("Sequence_Type::Byte_One", expr.Number(256)))
+    b = IntegerValue(ModularInteger("Sequence_Type::Byte_Two", expr.Number(256)))
+    c = IntegerValue(ModularInteger("Sequence_Type::Byte_Three", expr.Number(256)))
     a.assign(5)
     b.assign(6)
     c.assign(7)
-    byte_array = [a, b, c]
-    array_type_foo_value.set("Length", 3)
-    array_type_foo_value.set("Bytes", byte_array)
-    assert array_type_foo_value.valid_message
-    assert array_type_foo_value.bytestring == b"\x03\x05\x06\x07"
+    byte_sequence = [a, b, c]
+    sequence_type_foo_value.set("Length", 3)
+    sequence_type_foo_value.set("Bytes", byte_sequence)
+    assert sequence_type_foo_value.valid_message
+    assert sequence_type_foo_value.bytestring == b"\x03\x05\x06\x07"
 
 
-def test_array_preserve_value(enum_value: EnumValue) -> None:
+def test_sequence_preserve_value(enum_value: EnumValue) -> None:
     intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
     intval.assign(1)
     enum_value.assign("One")
-    type_array = ArrayValue(Array("Test::Array", ModularInteger("Test::Mod_Int", expr.Number(256))))
-    type_array.assign([intval])
-    assert type_array.value == [intval]
+    type_sequence = SequenceValue(
+        Sequence("Test::Sequence", ModularInteger("Test::Mod_Int", expr.Number(256)))
+    )
+    type_sequence.assign([intval])
+    assert type_sequence.value == [intval]
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of ModularInteger$"
+        PyRFLXError,
+        match="^pyrflx: error: cannot assign EnumValue to an sequence of ModularInteger$",
     ):
-        type_array.assign([enum_value])
-    assert type_array.value == [intval]
+        type_sequence.assign([enum_value])
+    assert type_sequence.value == [intval]
 
 
-def test_array_parse_from_bytes(
-    message_array_value: MessageValue, array_type_foo_value: MessageValue
+def test_sequence_parse_from_bytes(
+    message_sequence_value: MessageValue, sequence_type_foo_value: MessageValue
 ) -> None:
-    message_array_value.parse(b"\x02\x05\x06")
-    assert message_array_value.bytestring == b"\x02\x05\x06"
-    array_type_foo_value.parse(b"\x03\x05\x06\x07")
-    assert array_type_foo_value.bytestring == b"\x03\x05\x06\x07"
-    array_message_value = message_array_value.clone()
-    array_message_value.parse(b"\x02\x05\x06", False)
-    assert array_message_value.bytestring == b"\x02\x05\x06"
+    message_sequence_value.parse(b"\x02\x05\x06")
+    assert message_sequence_value.bytestring == b"\x02\x05\x06"
+    sequence_type_foo_value.parse(b"\x03\x05\x06\x07")
+    assert sequence_type_foo_value.bytestring == b"\x03\x05\x06\x07"
+    sequence_message_value = message_sequence_value.clone()
+    sequence_message_value.parse(b"\x02\x05\x06", False)
+    assert sequence_message_value.bytestring == b"\x02\x05\x06"
 
 
-def test_array_parse_unsupported_member_type() -> None:
-    opaque_array = ArrayValue(Array("Test::Array", Opaque()))
+def test_sequence_parse_unsupported_member_type() -> None:
+    opaque_sequence = SequenceValue(Sequence("Test::Sequence", Opaque()))
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: Arrays of __INTERNAL__::Opaque currently not supported$"
+        PyRFLXError,
+        match="^pyrflx: error: sequences of __INTERNAL__::Opaque currently not supported$",
     ):
-        opaque_array.parse(b"\x00")
+        opaque_sequence.parse(b"\x00")
 
 
-def test_array_assign_invalid(
+def test_sequence_assign_invalid(
     tlv_message_value: MessageValue,
     ethernet_frame_value: MessageValue,
-    array_type_foo_value: MessageValue,
+    sequence_type_foo_value: MessageValue,
     enum_value: EnumValue,
 ) -> None:
     # pylint: disable=protected-access
-    type_array = ArrayValue(Array("Test::Array", ModularInteger("Test::Mod_Int", expr.Number(256))))
-    msg_array = ArrayValue(Array("Test::MsgArray", tlv_message_value._type))
+    type_sequence = SequenceValue(
+        Sequence("Test::Sequence", ModularInteger("Test::Mod_Int", expr.Number(256)))
+    )
+    msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
 
     intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
     enum_value.assign("One")
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of ModularInteger$"
+        PyRFLXError,
+        match="^pyrflx: error: cannot assign EnumValue to an sequence of ModularInteger$",
     ):
-        type_array.assign([enum_value])
+        type_sequence.assign([enum_value])
 
     tlv_message_value.set("Tag", "Msg_Data")
     with pytest.raises(
         PyRFLXError,
         match=(
             "^"
-            'pyrflx: error: cannot assign message "Message" to array of messages: '
+            'pyrflx: error: cannot assign message "Message" to sequence of messages: '
             "all messages must be valid"
             "$"
         ),
     ):
-        msg_array.assign([tlv_message_value])
+        msg_sequence.assign([tlv_message_value])
 
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an array of Message$"
+        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an sequence of Message$"
     ):
-        msg_array.assign([enum_value])
+        msg_sequence.assign([enum_value])
 
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
@@ -803,21 +812,21 @@ def test_array_assign_invalid(
     ethernet_frame_value.set("Payload", bytes(46))
 
     with pytest.raises(
-        PyRFLXError, match='^pyrflx: error: cannot assign "Frame" to an array of "Message"$'
+        PyRFLXError, match='^pyrflx: error: cannot assign "Frame" to an sequence of "Message"$'
     ):
-        msg_array.assign([tlv_message_value, ethernet_frame_value])
+        msg_sequence.assign([tlv_message_value, ethernet_frame_value])
 
     with pytest.raises(
         PyRFLXError,
         match=(
             "^"
-            "pyrflx: error: cannot parse nested messages in array of type TLV::Message\n"
+            "pyrflx: error: cannot parse nested messages in sequence of type TLV::Message\n"
             "pyrflx: error: cannot set value for field Tag\n"
             "pyrflx: error: Number 0 is not a valid enum value"
             "$"
         ),
     ):
-        msg_array.parse(Bitstring("00000000000000"))
+        msg_sequence.parse(Bitstring("00000000000000"))
 
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value._fields["Length"].typeval.assign(111111111111111, False)
@@ -825,16 +834,16 @@ def test_array_assign_invalid(
         PyRFLXError,
         match=(
             "^"
-            'pyrflx: error: cannot assign message "Message" to array of messages:'
+            'pyrflx: error: cannot assign message "Message" to sequence of messages:'
             " all messages must be valid"
             "$"
         ),
     ):
-        msg_array.assign([tlv_message_value])
-    assert msg_array.value == []
+        msg_sequence.assign([tlv_message_value])
+    assert msg_sequence.value == []
 
     intval.assign(5)
-    array_type_foo_value.set("Length", 42)
+    sequence_type_foo_value.set("Length", 42)
     with pytest.raises(
         PyRFLXError,
         match=(
@@ -844,7 +853,7 @@ def test_array_assign_invalid(
             "$"
         ),
     ):
-        array_type_foo_value.set("Bytes", [intval])
+        sequence_type_foo_value.set("Bytes", [intval])
 
 
 def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
@@ -1206,23 +1215,23 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
     assert message_always_valid_aspect_value.get("F3") == 171
 
 
-def test_get_inner_messages(
-    array_message_package: Package, message_array_refinement_value: MessageValue
+def test_get_inner_messages(  # pylint: disable=invalid-name
+    sequence_message_package: Package, message_sequence_refinement_value: MessageValue
 ) -> None:
-    array_element_one = array_message_package["Array_Element"]
-    array_element_one.set("Byte", 5)
-    array_element_two = array_message_package["Array_Element"]
-    array_element_two.set("Byte", 6)
-    array_element_three = array_message_package["Array_Element"]
-    array_element_three.set("Byte", 7)
+    sequence_element_one = sequence_message_package["Sequence_Element"]
+    sequence_element_one.set("Byte", 5)
+    sequence_element_two = sequence_message_package["Sequence_Element"]
+    sequence_element_two.set("Byte", 6)
+    sequence_element_three = sequence_message_package["Sequence_Element"]
+    sequence_element_three.set("Byte", 7)
 
-    array_contents: Sequence[TypeValue] = [array_element_one, array_element_two]
-    message_array_refinement_value.set("Length", 2)
-    message_array_refinement_value.set("Array_Field", array_contents)
-    message_array_refinement_value.set("Payload", array_element_three.bytestring)
-    assert message_array_refinement_value.valid_message
+    sequence_contents: ty.Sequence[TypeValue] = [sequence_element_one, sequence_element_two]
+    message_sequence_refinement_value.set("Length", 2)
+    message_sequence_refinement_value.set("Sequence_Field", sequence_contents)
+    message_sequence_refinement_value.set("Payload", sequence_element_three.bytestring)
+    assert message_sequence_refinement_value.valid_message
 
-    inner_messages = message_array_refinement_value.inner_messages()
+    inner_messages = message_sequence_refinement_value.inner_messages()
     assert len(inner_messages) == 3
     assert all(isinstance(m, MessageValue) for m in inner_messages)
     assert {m.get("Byte") for m in inner_messages} == {5, 6, 7}

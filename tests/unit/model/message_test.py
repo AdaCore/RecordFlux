@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
+import typing as ty
 from copy import deepcopy
-from typing import Any, Callable, Mapping, Sequence, Tuple
 
 import pytest
 
@@ -39,7 +39,6 @@ from rflx.model import (
     FINAL,
     INITIAL,
     OPAQUE,
-    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -49,16 +48,17 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Sequence,
     Type,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
 from tests.data.models import (
-    ARRAYS_MODULAR_VECTOR,
     ENUMERATION,
     ETHERNET_FRAME,
     MODULAR_INTEGER,
     RANGE_INTEGER,
+    SEQUENCE_MODULAR_VECTOR,
 )
 from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
 
@@ -608,7 +608,7 @@ def test_invalid_message_field_type() -> None:
     ],
 )
 def test_undefined_variable(
-    operation: Callable[[Expr, Expr], Expr], condition: Tuple[Expr, Expr]
+    operation: ty.Callable[[Expr, Expr], Expr], condition: ty.Tuple[Expr, Expr]
 ) -> None:
     mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
     enum_type = Enumeration("P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
@@ -759,7 +759,7 @@ def test_invalid_relation_to_opaque() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected array type "Opaque"'
+        r'^<stdin>:10:20: model: error: expected sequence type "Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found type universal integer \(42\)\n"
         r"model: info: on path Length -> Data -> Final$",
@@ -783,7 +783,7 @@ def test_invalid_relation_to_aggregate() -> None:
         structure,
         types,
         r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found array type "Opaque"'
+        r'<stdin>:10:20: model: info: found sequence type "Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:30: model: error: expected integer type\n"
         r"<stdin>:10:30: model: info: found aggregate"
@@ -834,7 +834,7 @@ def test_opaque_aggregate_out_of_range() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected array type "Opaque"'
+        r'^<stdin>:10:20: model: error: expected sequence type "Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"
@@ -842,7 +842,7 @@ def test_opaque_aggregate_out_of_range() -> None:
     )
 
 
-def test_array_aggregate_out_of_range() -> None:
+def test_sequence_aggregate_out_of_range() -> None:
     f = Field("F")
 
     structure = [
@@ -857,12 +857,12 @@ def test_array_aggregate_out_of_range() -> None:
         ),
     ]
 
-    types = {Field("F"): Array("P::Array", ModularInteger("P::Element", Number(64)))}
+    types = {Field("F"): Sequence("P::Sequence", ModularInteger("P::Element", Number(64)))}
 
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected array type "P::Array"'
+        r'^<stdin>:10:20: model: error: expected sequence type "P::Sequence"'
         r' with element integer type "P::Element" \(0 .. 63\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 64\)\n"
@@ -870,13 +870,13 @@ def test_array_aggregate_out_of_range() -> None:
     )
 
 
-def test_array_aggregate_invalid_element_type() -> None:
+def test_sequence_aggregate_invalid_element_type() -> None:
     inner = Message(
         "P::I",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
         {Field("F"): MODULAR_INTEGER},
     )
-    array_type = Array("P::Array", inner)
+    sequence_type = Sequence("P::Sequence", inner)
     f = Field("F")
 
     structure = [
@@ -891,12 +891,12 @@ def test_array_aggregate_invalid_element_type() -> None:
         ),
     ]
 
-    types = {f: array_type}
+    types = {f: sequence_type}
 
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected array type "P::Array"'
+        r'^<stdin>:10:20: model: error: expected sequence type "P::Sequence"'
         r' with element message type "P::I"\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 64\)\n"
@@ -1241,7 +1241,7 @@ def test_no_valid_path() -> None:
     )
 
 
-def test_invalid_path_1(monkeypatch: Any) -> None:
+def test_invalid_path_1(monkeypatch: ty.Any) -> None:
     f1 = Field(ID("F1", Location((20, 10))))
     structure = [
         Link(INITIAL, f1),
@@ -1261,7 +1261,7 @@ def test_invalid_path_1(monkeypatch: Any) -> None:
     )
 
 
-def test_invalid_path_2(monkeypatch: Any) -> None:
+def test_invalid_path_2(monkeypatch: ty.Any) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Equal(Number(1), Number(2))),
@@ -1618,7 +1618,7 @@ def test_payload_no_size() -> None:
     )
 
 
-def test_array_no_size() -> None:
+def test_sequence_no_size() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -1626,7 +1626,7 @@ def test_array_no_size() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): ARRAYS_MODULAR_VECTOR,
+        Field("F2"): SEQUENCE_MODULAR_VECTOR,
     }
     assert_message_model_error(
         structure, types, '^model: error: unconstrained field "F2" without size aspect$'
@@ -1661,7 +1661,7 @@ def test_incongruent_overlay() -> None:
     )
 
 
-def test_field_coverage_1(monkeypatch: Any) -> None:
+def test_field_coverage_1(monkeypatch: ty.Any) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
@@ -1681,7 +1681,7 @@ def test_field_coverage_1(monkeypatch: Any) -> None:
     )
 
 
-def test_field_coverage_2(monkeypatch: Any) -> None:
+def test_field_coverage_2(monkeypatch: ty.Any) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -1716,7 +1716,7 @@ def test_field_coverage_2(monkeypatch: Any) -> None:
     )
 
 
-def test_field_after_message_start(monkeypatch: Any) -> None:
+def test_field_after_message_start(monkeypatch: ty.Any) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
@@ -2151,7 +2151,7 @@ def test_aggregate_inequal_invalid_size() -> None:
     )
 
 
-def test_aggregate_equal_array_valid_size() -> None:
+def test_aggregate_equal_sequence_valid_size() -> None:
     structure = [
         Link(INITIAL, Field("Magic"), size=Number(14)),
         Link(
@@ -2161,12 +2161,12 @@ def test_aggregate_equal_array_valid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Array("P::Arr", ModularInteger("P::Modular", Number(128))),
+        Field("Magic"): Sequence("P::Arr", ModularInteger("P::Modular", Number(128))),
     }
     Message("P::M", structure, types)
 
 
-def test_aggregate_equal_array_invalid_size() -> None:
+def test_aggregate_equal_sequence_invalid_size() -> None:
     magic = Field(ID("Magic", Location((3, 5))))
     structure = [
         Link(INITIAL, magic, size=Number(40, location=Location((19, 17)))),
@@ -2179,7 +2179,7 @@ def test_aggregate_equal_array_invalid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Array(
+        Field("Magic"): Sequence(
             "P::Arr", ModularInteger("P::Modular", Number(128), location=Location((66, 3)))
         ),
     }
@@ -2322,7 +2322,7 @@ def test_discontiguous_optional_fields() -> None:
         ),
     ],
 )
-def test_checksum(checksums: Mapping[ID, Sequence[Expr]], condition: Expr) -> None:
+def test_checksum(checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr) -> None:
     f1 = Field("F1")
     f2 = Field("F2")
     f3 = Field("F3")
@@ -2380,7 +2380,7 @@ def test_checksum(checksums: Mapping[ID, Sequence[Expr]], condition: Expr) -> No
     ],
 )
 def test_checksum_error(
-    checksums: Mapping[ID, Sequence[Expr]], condition: Expr, error: str
+    checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr, error: str
 ) -> None:
     f1 = Field("F1")
     f2 = Field("F2")
@@ -2460,7 +2460,7 @@ def test_is_possibly_empty() -> None:
     b = Field("B")
     c = Field("C")
 
-    array = Array("P::Array", MODULAR_INTEGER)
+    sequence = Sequence("P::Sequence", MODULAR_INTEGER)
 
     message = Message(
         "P::M",
@@ -2471,7 +2471,7 @@ def test_is_possibly_empty() -> None:
             Link(b, c, size=Variable("A")),
             Link(c, FINAL),
         ],
-        {a: MODULAR_INTEGER, b: array, c: array},
+        {a: MODULAR_INTEGER, b: sequence, c: sequence},
     )
 
     assert not message.is_possibly_empty(a)

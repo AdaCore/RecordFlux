@@ -6,7 +6,7 @@ with Multiple_Errors;
 package RFLX_Invalid is
 
    type R is range 5 .. 23 with Size => 16;
-   type R_Array is array of R;
+   type R_Sequence is sequence of R;
 
    --  error: first contains variable
    --  error: last contains variable
@@ -22,7 +22,7 @@ package RFLX_Invalid is
    type Range5 is range 0 .. 255 with Size => 7;
 
    --  error: undefined element type
-   type A2 is array of Undef;
+   type A2 is sequence of Undef;
 
    --  error: Modular type exceeds limit
    type S is mod 2**128;
@@ -66,7 +66,7 @@ package RFLX_Invalid is
                with Size => 5 * 8
                if X = [1, 256, 20, 500];
          -- error: Aggregate element out of range (3 times)
-         Y : R_Array
+         Y : R_Sequence
             then null if Y = [1, 10, 20, 50, 60];
 
          -- error: duplicate link
@@ -83,7 +83,7 @@ package RFLX_Invalid is
 
    -- error: unsupported element type size
    type E6 is mod 2**4;
-   type A3 is array of E6;
+   type A3 is sequence of E6;
 
    type SDU1 is
       message
@@ -173,7 +173,7 @@ package RFLX_Invalid is
          Length : R
             then Data1
                with Size => Length;
-         Data1  : R_Array
+         Data1  : R_Sequence
             then Data2
                with Size => Length
                -- error: aggregate element out of range, 2 times
@@ -184,15 +184,15 @@ package RFLX_Invalid is
                if Data2 = [1, 1000];
       end message;
 
-   type M5_Array is array of M5;
+   type M5_Sequence is sequence of M5;
    type M7 is
       message
          Length : R
             then Data
                with Size => Length;
-         Data : M5_Array
+         Data : M5_Sequence
             then null
-               -- error: invalid array element type
+               -- error: invalid sequence element type
                if Data = [1, 7, 1000];
       end message;
 

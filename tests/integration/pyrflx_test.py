@@ -261,34 +261,34 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
     assert frame_unv.bytestring == ethernet_frame_value.bytestring
 
 
-def test_no_verification_array_nested_messages(
-    array_message_package: Package, message_array_value: MessageValue
+def test_no_verification_sequence_nested_messages(
+    sequence_message_package: Package, message_sequence_value: MessageValue
 ) -> None:
-    array_message_one = array_message_package["Array_Element"]
-    array_message_one.set("Byte", 5)
-    array_message_two = array_message_package["Array_Element"]
-    array_message_two.set("Byte", 6)
-    array: List[TypeValue] = [array_message_one, array_message_two]
-    message_array_value.set("Length", 2)
-    message_array_value.set("Array_Field", array)
-    assert message_array_value.valid_message
+    sequence_message_one = sequence_message_package["Sequence_Element"]
+    sequence_message_one.set("Byte", 5)
+    sequence_message_two = sequence_message_package["Sequence_Element"]
+    sequence_message_two.set("Byte", 6)
+    sequence: List[TypeValue] = [sequence_message_one, sequence_message_two]
+    message_sequence_value.set("Length", 2)
+    message_sequence_value.set("Sequence_Field", sequence)
+    assert message_sequence_value.valid_message
 
     pyrflx_ = PyRFLX.from_specs(
-        [f"{SPEC_DIR}/array_message.rflx"],
+        [f"{SPEC_DIR}/sequence_message.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
     )
-    array_message_package_unv = pyrflx_["Array_Message"]
-    array_message_unv = array_message_package_unv["Message_Array"]
-    array_element_one_unv = array_message_package_unv["Array_Element"]
-    array_element_one_unv.set("Byte", 5)
-    array_element_two_unv = array_message_package_unv["Array_Element"]
-    array_element_two_unv.set("Byte", 6)
-    array_unv: List[TypeValue] = [array_element_one_unv, array_element_two_unv]
-    array_message_unv.set("Length", 2)
-    array_message_unv.set("Array_Field", array_unv)
-    assert array_message_unv.valid_message
-    assert array_message_unv.bytestring == message_array_value.bytestring
+    sequence_message_package_unv = pyrflx_["Sequence_Message"]
+    sequence_message_unv = sequence_message_package_unv["Message_Sequence"]
+    sequence_element_one_unv = sequence_message_package_unv["Sequence_Element"]
+    sequence_element_one_unv.set("Byte", 5)
+    sequence_element_two_unv = sequence_message_package_unv["Sequence_Element"]
+    sequence_element_two_unv.set("Byte", 6)
+    sequence_unv: List[TypeValue] = [sequence_element_one_unv, sequence_element_two_unv]
+    sequence_message_unv.set("Length", 2)
+    sequence_message_unv.set("Sequence_Field", sequence_unv)
+    assert sequence_message_unv.valid_message
+    assert sequence_message_unv.bytestring == message_sequence_value.bytestring
 
 
 def icmp_checksum_function(message: bytes, **kwargs: object) -> int:

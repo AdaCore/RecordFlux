@@ -56,7 +56,7 @@ def test_multiple_errors() -> None:
             f'{path}:16:9: model: error: range of "Range3" negative',
             f'{path}:19:9: model: error: size of "Range4" contains variable',
             f'{path}:22:9: model: error: size of "Range5" too small',
-            f'{path}:25:24: parser: error: undefined element type "RFLX_Invalid::Undef"',
+            f'{path}:25:27: parser: error: undefined element type "RFLX_Invalid::Undef"',
             f'{path}:28:18: model: error: modulus of "S" exceeds limit (2**64)',
             f'{path}:31:9: model: error: modulus of "T" not power of two',
             f'{path}:34:9: model: error: modulus of "Mod3" contains variable',
@@ -71,7 +71,7 @@ def test_multiple_errors() -> None:
             f"{path}:73:26: model: info: duplicate link",
             f'{path}:81:18: parser: error: undefined field "X"',
             f'{path}:79:10: model: error: missing type for field "Z" in "RFLX_Invalid::M2"',
-            f'{path}:86:9: model: error: unsupported element type size of array "A3"',
+            f'{path}:86:9: model: error: unsupported element type size of sequence "A3"',
             f'{path}:85:9: model: info: type "E6" has size 4, must be multiple of 8',
             f'{path}:93:30: model: error: invalid First for field "Final"',
             f"{path}:96:9: model: error: message size must be multiple of 8 bit",
@@ -109,17 +109,17 @@ def test_multiple_errors() -> None:
             f'{path}:168:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
             f'{path}:159:9: model: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:166:10: model: info: into field "F2"',
-            f'{path}:180:27: model: error: expected array type "RFLX_Invalid::R_Array"'
+            f'{path}:180:27: model: error: expected sequence type "RFLX_Invalid::R_Sequence"'
             ' with element integer type "RFLX_Invalid::R" (5 .. 23)',
             f"{path}:180:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",
             f"{path}:180:19: model: info: on path Length -> Data1 -> Data2",
-            f'{path}:184:27: model: error: expected array type "Opaque" with element integer type'
-            ' "Byte" (0 .. 255)',
+            f'{path}:184:27: model: error: expected sequence type "Opaque"'
+            ' with element integer type "Byte" (0 .. 255)',
             f"{path}:184:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",
             f"{path}:184:19: model: info: on path Length -> Data1 -> Data2 -> Final",
-            f'{path}:187:30: parser: error: undefined element type "RFLX_Invalid::M5"',
+            f'{path}:187:36: parser: error: undefined element type "RFLX_Invalid::M5"',
             f'{path}:193:10: model: error: missing type for field "Data" in "RFLX_Invalid::M7"',
             f'{path}:204:10: model: error: conflicting conditions for field "F1"',
             f"{path}:208:19: model: info: condition 0 (F1 -> F2): F1 < 80",

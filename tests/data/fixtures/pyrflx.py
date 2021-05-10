@@ -17,8 +17,8 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{EX_SPEC_DIR}/tls_alert.rflx",
             f"{EX_SPEC_DIR}/tls_record.rflx",
             f"{EX_SPEC_DIR}/udp.rflx",
-            f"{SPEC_DIR}/array_message.rflx",
-            f"{SPEC_DIR}/array_type.rflx",
+            f"{SPEC_DIR}/sequence_message.rflx",
+            f"{SPEC_DIR}/sequence_type.rflx",
             f"{SPEC_DIR}/no_conditionals.rflx",
             f"{SPEC_DIR}/null_message.rflx",
             f"{SPEC_DIR}/tlv.rflx",
@@ -174,21 +174,21 @@ def fixture_tlv_message_value(tlv_package: pyrflx.Package) -> pyrflx.MessageValu
     return tlv_package["Message"]
 
 
-@pytest.fixture(name="array_message_package", scope="session")
-def fixture_array_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Array_Message"]
+@pytest.fixture(name="sequence_message_package", scope="session")
+def fixture_sequence_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_["Sequence_Message"]
 
 
-@pytest.fixture(name="message_array_value")
-def fixture_array_message_value(array_message_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return array_message_package["Message_Array"]
+@pytest.fixture(name="message_sequence_value")
+def fixture_sequence_message_value(sequence_message_package: pyrflx.Package) -> pyrflx.MessageValue:
+    return sequence_message_package["Message_Sequence"]
 
 
-@pytest.fixture(name="message_array_refinement_value")
-def fixture_array_message_refinement_value(
-    array_message_package: pyrflx.Package,
+@pytest.fixture(name="message_sequence_refinement_value")
+def fixture_sequence_message_refinement_value(
+    sequence_message_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
-    return array_message_package["Message_Array_And_Refinement"]
+    return sequence_message_package["Message_Sequence_And_Refinement"]
 
 
 @pytest.fixture(name="message_size_package", scope="session")

@@ -795,7 +795,7 @@ def test_attribute() -> None:
             Selected(Variable("X", type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")})), "F"),
             rty.BOOLEAN,
         ),
-        (Head, Variable("X", type_=rty.Array("A", rty.Integer("B"))), rty.Integer("B")),
+        (Head, Variable("X", type_=rty.Sequence("A", rty.Integer("B"))), rty.Integer("B")),
         (Opaque, Variable("X", type_=rty.Message("A")), rty.OPAQUE),
     ],
 )
@@ -817,7 +817,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
             Head(
                 Comprehension(
                     "X",
-                    Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+                    Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
                     Variable("X"),
                     TRUE,
                     location=Location((10, 30)),
@@ -1002,7 +1002,7 @@ def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None
     assert_type(
         relation(
             Variable("X", type_=rty.AnyInteger()),
-            Variable("Y", type_=rty.Array("A", rty.AnyInteger())),
+            Variable("Y", type_=rty.Sequence("A", rty.AnyInteger())),
         ),
         rty.BOOLEAN,
     )
@@ -1022,11 +1022,11 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
     assert_type_error(
         relation(
             Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
-            Variable("Y", type_=rty.Array("A", rty.BOOLEAN), location=Location((10, 30))),
+            Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN), location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: model: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: model: info: found array type "A"'
+        r'<stdin>:10:30: model: info: found sequence type "A"'
         r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
 
@@ -1225,13 +1225,13 @@ def test_value_range_type_error() -> None:
     assert_type_error(
         ValueRange(
             Variable("X", type_=rty.BOOLEAN, location=Location((10, 30))),
-            Variable("Y", type_=rty.Array("A", rty.AnyInteger()), location=Location((10, 40))),
+            Variable("Y", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
             location=Location((10, 20)),
         ),
         r"^<stdin>:10:30: model: error: expected integer type\n"
         r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:40: model: error: expected integer type\n"
-        r'<stdin>:10:40: model: info: found array type "A" with element integer type$',
+        r'<stdin>:10:40: model: info: found sequence type "A" with element integer type$',
     )
 
 
@@ -1267,7 +1267,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     assert_type(
         expr(
             "X",
-            Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+            Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
             Variable("Z", type_=rty.BOOLEAN),
         ),
         rty.BOOLEAN,
@@ -1280,11 +1280,11 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     [
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
-            Variable("Z", type_=rty.Array("A", rty.AnyInteger()), location=Location((10, 40))),
+            Variable("Z", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
             r"^<stdin>:10:30: model: error: expected composite type\n"
             r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
             r'<stdin>:10:40: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: model: info: found array type "A" with element integer type$',
+            r'<stdin>:10:40: model: info: found sequence type "A" with element integer type$',
         ),
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
@@ -1293,7 +1293,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
             r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
-            Variable("Y", type_=rty.Array("A", rty.BOOLEAN)),
+            Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN)),
             Equal(Variable("X"), Number(1, location=Location((10, 30)))),
             r'^<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
             r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
@@ -1754,7 +1754,7 @@ def test_comprehension_type() -> None:
     assert_type(
         Comprehension(
             "X",
-            Variable("Y", type_=rty.Array("A", rty.Integer("B"))),
+            Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
             Add(Variable("X"), Variable("Z", type_=rty.Integer("B"))),
             TRUE,
         ),
@@ -1766,7 +1766,7 @@ def test_comprehension_type() -> None:
             Selected(
                 Variable(
                     "Y",
-                    type_=rty.Message("M", {("F",)}, {"F": rty.Array("A", rty.Integer("B"))}),
+                    type_=rty.Message("M", {("F",)}, {"F": rty.Sequence("A", rty.Integer("B"))}),
                 ),
                 "F",
             ),

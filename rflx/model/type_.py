@@ -1,6 +1,6 @@
+import typing as ty
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
@@ -64,7 +64,7 @@ class Scalar(Type):
     @abstractmethod
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[expr.Expr]:
+    ) -> ty.Sequence[expr.Expr]:
         raise NotImplementedError
 
 
@@ -141,7 +141,7 @@ class ModularInteger(Integer):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[expr.Expr]:
+    ) -> ty.Sequence[expr.Expr]:
         if proof:
             return [
                 expr.Less(expr.Variable(name), self.__modulus, location=self.location),
@@ -267,7 +267,7 @@ class RangeInteger(Integer):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[expr.Expr]:
+    ) -> ty.Sequence[expr.Expr]:
         if proof:
             return [
                 expr.GreaterEqual(expr.Variable(name), self.first, location=self.location),
@@ -298,7 +298,7 @@ class Enumeration(Scalar):
     def __init__(
         self,
         identifier: StrID,
-        literals: Sequence[Tuple[StrID, expr.Number]],
+        literals: ty.Sequence[ty.Tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
         location: Location = None,
@@ -407,7 +407,7 @@ class Enumeration(Scalar):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> Sequence[expr.Expr]:
+    ) -> ty.Sequence[expr.Expr]:
         if proof:
             prefixed_literals = {self.package * l: v for l, v in self.literals.items()}
             if self.package == const.BUILTINS_PACKAGE:
@@ -416,7 +416,7 @@ class Enumeration(Scalar):
                 literals = {**self.literals, **prefixed_literals}
             else:
                 literals = prefixed_literals
-            result: List[expr.Expr] = [
+            result: ty.List[expr.Expr] = [
                 expr.Or(
                     *[
                         expr.Equal(expr.Variable(name), expr.Variable(l), self.location)
@@ -440,7 +440,7 @@ class Composite(Type):
         raise NotImplementedError
 
 
-class Array(Composite):
+class Sequence(Composite):
     def __init__(self, identifier: StrID, element_type: Type, location: Location = None) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
@@ -449,7 +449,7 @@ class Array(Composite):
             isinstance(element_type, message.Message) and element_type.structure
         ):
             self.error.append(
-                f'invalid element type of array "{self.name}"',
+                f'invalid element type of sequence "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
                 location,
@@ -465,7 +465,7 @@ class Array(Composite):
             element_type_size = element_type.size.simplified()
             if not isinstance(element_type_size, expr.Number) or int(element_type_size) % 8 != 0:
                 self.error.append(
-                    f'unsupported element type size of array "{self.name}"',
+                    f'unsupported element type size of sequence "{self.name}"',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     location,
@@ -482,11 +482,11 @@ class Array(Composite):
         return verbose_repr(self, ["identifier", "element_type"])
 
     def __str__(self) -> str:
-        return f"type {self.name} is array of {self.element_type.name}"
+        return f"type {self.name} is sequence of {self.element_type.name}"
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Array(self.full_name, self.element_type.type_)
+        return rty.Sequence(self.full_name, self.element_type.type_)
 
     @property
     def element_size(self) -> expr.Expr:
@@ -576,7 +576,7 @@ def qualified_type_identifier(identifier: ID, package: ID = None) -> ID:
     return identifier
 
 
-def qualified_enum_literals(types: Iterable[Type], package: ID) -> Dict[ID, Enumeration]:
+def qualified_enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumeration]:
     literals = {}
 
     for t in types:
@@ -590,7 +590,7 @@ def qualified_enum_literals(types: Iterable[Type], package: ID) -> Dict[ID, Enum
     return literals
 
 
-def qualified_type_literals(types: Iterable[Type]) -> Dict[ID, Type]:
+def qualified_type_literals(types: ty.Iterable[Type]) -> ty.Dict[ID, Type]:
     return {
         t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
     }

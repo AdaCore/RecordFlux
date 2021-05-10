@@ -1,7 +1,7 @@
-package Array_Type is
+package Sequence_Type is
 
    type Byte is mod 256;
-   type Bytes is array of Byte;
+   type Bytes is sequence of Byte;
 
    type Foo is
       message
@@ -11,6 +11,6 @@ package Array_Type is
          Bytes : Bytes;
       end message;
 
-   type Bar is array of Foo;
+   type Bar is sequence of Foo;
 
-end Array_Type;
+end Sequence_Type;

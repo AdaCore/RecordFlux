@@ -1,7 +1,7 @@
 # pylint: disable=too-many-lines
+import typing as ty
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
@@ -27,7 +27,6 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
-    Array,
     Composite,
     Enumeration,
     Field,
@@ -37,6 +36,7 @@ from rflx.model import (
     Opaque,
     Refinement,
     Scalar,
+    Sequence,
     Type,
 )
 from rflx.pyrflx.bitstring import Bitstring
@@ -45,7 +45,7 @@ from rflx.pyrflx.error import PyRFLXError, Severity, Subsystem
 
 class TypeValue(Base):
 
-    _value: Any = None
+    _value: ty.Any = None
 
     def __init__(self, vtype: Type) -> None:
         self._type = vtype
@@ -82,11 +82,11 @@ class TypeValue(Base):
         self._value = None
 
     @abstractmethod
-    def assign(self, value: Any, check: bool = True) -> None:
+    def assign(self, value: ty.Any, check: bool = True) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         raise NotImplementedError
 
     @property
@@ -101,7 +101,7 @@ class TypeValue(Base):
 
     @property
     @abstractmethod
-    def value(self) -> Any:
+    def value(self) -> ty.Any:
         raise NotImplementedError
 
     @property
@@ -114,7 +114,7 @@ class TypeValue(Base):
 
     @classmethod
     def construct(
-        cls, vtype: Type, imported: bool = False, refinements: Sequence["RefinementValue"] = None
+        cls, vtype: Type, imported: bool = False, refinements: ty.Sequence["RefinementValue"] = None
     ) -> "TypeValue":
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
@@ -122,8 +122,8 @@ class TypeValue(Base):
             return EnumValue(vtype, imported)
         if isinstance(vtype, Opaque):
             return OpaqueValue(vtype)
-        if isinstance(vtype, Array):
-            return ArrayValue(vtype)
+        if isinstance(vtype, Sequence):
+            return SequenceValue(vtype)
         if isinstance(vtype, Message):
             return MessageValue(vtype, refinements)
         raise PyRFLXError("cannot construct unknown type: " + type(vtype).__name__)
@@ -174,7 +174,7 @@ class IntegerValue(ScalarValue):
             raise PyRFLXError(f"value {value} not in type range {self._first} .. {self._last}")
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         self.assign(int(value), check)
@@ -201,14 +201,14 @@ class IntegerValue(ScalarValue):
 
 class EnumValue(ScalarValue):
 
-    _value: Tuple[str, Number]
+    _value: ty.Tuple[str, Number]
     _type: Enumeration
 
     def __init__(self, vtype: Enumeration, imported: bool = False) -> None:
         super().__init__(vtype)
         self.__imported = imported
         self.__builtin = self._type.package == BUILTINS_PACKAGE
-        self.__literals: Dict[Name, Expr] = {}
+        self.__literals: ty.Dict[Name, Expr] = {}
 
         for k, v in self._type.literals.items():
             if self.__builtin or not self.__imported:
@@ -247,7 +247,7 @@ class EnumValue(ScalarValue):
             self._type.literals[prefixed_value.name],
         )
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         value_as_number = Number(int(value))
@@ -294,20 +294,20 @@ class EnumValue(ScalarValue):
         return str
 
     @property
-    def literals(self) -> Mapping[Name, Expr]:
+    def literals(self) -> ty.Mapping[Name, Expr]:
         return self.__literals
 
 
 class CompositeValue(TypeValue):
     def __init__(self, vtype: Composite) -> None:
-        self._expected_size: Optional[Expr] = None
+        self._expected_size: ty.Optional[Expr] = None
         super().__init__(vtype)
 
     def set_expected_size(self, expected_size: Expr) -> None:
         self._expected_size = expected_size
 
     def _check_size_of_assigned_value(
-        self, value: Union[bytes, Bitstring, List[TypeValue]]
+        self, value: ty.Union[bytes, Bitstring, ty.List[TypeValue]]
     ) -> None:
         if isinstance(value, bytes):
             size_of_value = len(value) * 8
@@ -329,23 +329,23 @@ class CompositeValue(TypeValue):
 
     @property
     @abstractmethod
-    def value(self) -> Any:
+    def value(self) -> ty.Any:
         raise NotImplementedError
 
 
 class OpaqueValue(CompositeValue):
 
-    _value: Optional[bytes]
-    _nested_message: Optional["MessageValue"] = None
+    _value: ty.Optional[bytes]
+    _nested_message: ty.Optional["MessageValue"] = None
 
     def __init__(self, vtype: Opaque) -> None:
         super().__init__(vtype)
-        self._refinement_message: Optional["MessageValue"] = None
+        self._refinement_message: ty.Optional["MessageValue"] = None
 
     def assign(self, value: bytes, check: bool = True) -> None:
         self.parse(value, check)
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         if check:
             self._check_size_of_assigned_value(value)
         if self._refinement_message is not None:
@@ -375,7 +375,7 @@ class OpaqueValue(CompositeValue):
         return Number(len(self._value) * 8)
 
     @property
-    def nested_message(self) -> Optional["MessageValue"]:
+    def nested_message(self) -> ty.Optional["MessageValue"]:
         return self._nested_message
 
     @property
@@ -399,51 +399,52 @@ class OpaqueValue(CompositeValue):
         return bytes
 
 
-class ArrayValue(CompositeValue):
+class SequenceValue(CompositeValue):
 
-    _value: List[TypeValue]
+    _value: ty.List[TypeValue]
 
-    def __init__(self, vtype: Array) -> None:
+    def __init__(self, vtype: Sequence) -> None:
         super().__init__(vtype)
         self._element_type = vtype.element_type
-        self._is_message_array = isinstance(self._element_type, Message)
+        self._is_message_sequence = isinstance(self._element_type, Message)
         self._value = []
 
-    def assign(self, value: List[TypeValue], check: bool = True) -> None:
+    def assign(self, value: ty.List[TypeValue], check: bool = True) -> None:
         if check:
             self._check_size_of_assigned_value(value)
         for v in value:
-            if self._is_message_array:
+            if self._is_message_sequence:
                 if isinstance(v, MessageValue):
                     assert isinstance(self._element_type, Message)
                     if not v.equal_type(self._element_type):
                         raise PyRFLXError(
-                            f'cannot assign "{v.name}" to an array of "{self._element_type.name}"'
+                            f'cannot assign "{v.name}" to an sequence of '
+                            f'"{self._element_type.name}"'
                         )
                     if not v.valid_message:
                         raise PyRFLXError(
-                            f'cannot assign message "{v.name}" to array of messages: '
+                            f'cannot assign message "{v.name}" to sequence of messages: '
                             f"all messages must be valid"
                         )
                 else:
                     raise PyRFLXError(
-                        f"cannot assign {type(v).__name__} to an array of "
+                        f"cannot assign {type(v).__name__} to an sequence of "
                         f"{type(self._element_type).__name__}"
                     )
             else:
                 if isinstance(v, MessageValue) or not v.equal_type(self._element_type):
                     raise PyRFLXError(
-                        f"cannot assign {type(v).__name__} to an array of "
+                        f"cannot assign {type(v).__name__} to an sequence of "
                         f"{type(self._element_type).__name__}"
                     )
 
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         self._check_size_of_assigned_value(value)
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
-        if self._is_message_array:
+        if self._is_message_sequence:
 
             while len(value) != 0:
                 nested_message = TypeValue.construct(self._element_type)
@@ -452,7 +453,7 @@ class ArrayValue(CompositeValue):
                     nested_message.parse(value, check)
                 except PyRFLXError as e:
                     e.appendleft(
-                        f"cannot parse nested messages in array of type "
+                        f"cannot parse nested messages in sequence of type "
                         f"{self._element_type.full_name}",
                         Subsystem.PYRFLX,
                         Severity.ERROR,
@@ -478,7 +479,9 @@ class ArrayValue(CompositeValue):
 
             self._value = new_value
         else:
-            raise PyRFLXError(f"Arrays of {self._element_type.identifier} currently not supported")
+            raise PyRFLXError(
+                f"sequences of {self._element_type.identifier} currently not supported"
+            )
 
     @property
     def size(self) -> Expr:
@@ -487,7 +490,7 @@ class ArrayValue(CompositeValue):
         return Number(len(self.bitstring))
 
     @property
-    def value(self) -> Sequence[TypeValue]:
+    def value(self) -> ty.Sequence[TypeValue]:
         self._raise_initialized()
         return self._value
 
@@ -515,16 +518,16 @@ class MessageValue(TypeValue):
     def __init__(
         self,
         model: Message,
-        refinements: Sequence["RefinementValue"] = None,
+        refinements: ty.Sequence["RefinementValue"] = None,
         skip_verification: bool = False,
         state: "MessageValue.State" = None,
     ) -> None:
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
-        self._path: List[Link] = []
+        self._path: ty.List[Link] = []
 
-        self._fields: Mapping[str, MessageValue.Field] = (
+        self._fields: ty.Mapping[str, MessageValue.Field] = (
             state.fields
             if state and state.fields
             else {
@@ -540,7 +543,7 @@ class MessageValue(TypeValue):
             }
         )
 
-        self._checksums: Mapping[str, MessageValue.Checksum] = (
+        self._checksums: ty.Mapping[str, MessageValue.Checksum] = (
             state.checksums
             if state and state.checksums
             else {
@@ -549,7 +552,7 @@ class MessageValue(TypeValue):
             }
         )
 
-        self.__type_literals: Mapping[Name, Expr] = (
+        self.__type_literals: ty.Mapping[Name, Expr] = (
             state.type_literals
             if state and state.type_literals
             else {
@@ -562,16 +565,16 @@ class MessageValue(TypeValue):
                 for k, v in t.items()
             }
         )
-        self.__additional_enum_literals: Dict[Name, Expr] = {}
+        self.__additional_enum_literals: ty.Dict[Name, Expr] = {}
         self.__message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(bytes())
-        self._simplified_mapping: Dict[Name, Expr] = dict.fromkeys(
+        self._simplified_mapping: ty.Dict[Name, Expr] = dict.fromkeys(
             [initial.name_size, initial.name_last, initial.name_first, self.__message_first_name],
             Number(0),
         )
-        self.accessible_fields: List[str] = []
+        self.accessible_fields: ty.List[str] = []
         if self._skip_verification:
             self._last_field = INITIAL.name
         else:
@@ -617,7 +620,7 @@ class MessageValue(TypeValue):
         return self._type
 
     @property
-    def path(self) -> Sequence[Link]:
+    def path(self) -> ty.Sequence[Link]:
         """
         The returned path is only correct, if the parse() method is used to set the field values.
         If fields are set manually using the set() method, path is empty. If the set() method is
@@ -625,11 +628,11 @@ class MessageValue(TypeValue):
         """
         return self._path
 
-    def inner_messages(self) -> List["MessageValue"]:
-        messages: List["MessageValue"] = []
+    def inner_messages(self) -> ty.List["MessageValue"]:
+        messages: ty.List["MessageValue"] = []
         for field in self._fields.values():
             typeval = field.typeval
-            if isinstance(typeval, ArrayValue) and isinstance(typeval.element_type, Message):
+            if isinstance(typeval, SequenceValue) and isinstance(typeval.element_type, Message):
                 assert isinstance(typeval.value, list)
                 messages.extend(typeval.value)
             if isinstance(typeval, OpaqueValue) and typeval.nested_message is not None:
@@ -639,7 +642,7 @@ class MessageValue(TypeValue):
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
 
-    def _next_link(self, source_field_name: str) -> Optional[Link]:
+    def _next_link(self, source_field_name: str) -> ty.Optional[Link]:
         field = Field(source_field_name)
         if field == FINAL or not self._type.structure:
             # structure is empty in case of NULL message
@@ -669,7 +672,7 @@ class MessageValue(TypeValue):
             return ""
         if self._skip_verification:
             return self._fields[fld].prev
-        prev: List[str] = [
+        prev: ty.List[str] = [
             l.source.name
             for l in self._type.incoming(Field(fld))
             if self.__simplified(l.condition) == TRUE
@@ -682,7 +685,7 @@ class MessageValue(TypeValue):
                 return field
         return ""
 
-    def _get_size(self, fld: str) -> Optional[Number]:
+    def _get_size(self, fld: str) -> ty.Optional[Number]:
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return typeval.size
@@ -697,7 +700,7 @@ class MessageValue(TypeValue):
                 return size if isinstance(size, Number) else None
         return None
 
-    def _get_first(self, fld: str) -> Optional[Number]:
+    def _get_first(self, fld: str) -> ty.Optional[Number]:
         for l in self._type.incoming(Field(fld)):
             if l.first != UNDEFINED and (
                 self._skip_verification or self.__simplified(l.condition) == TRUE
@@ -727,7 +730,7 @@ class MessageValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         raise NotImplementedError
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         assert not self._skip_verification
         self._path.clear()
         if isinstance(value, bytes):
@@ -750,7 +753,9 @@ class MessageValue(TypeValue):
                 else current_field_first_in_bitstr
             )
 
-        def set_field_without_size(field_name: str, field: MessageValue.Field) -> Tuple[int, int]:
+        def set_field_without_size(
+            field_name: str, field: MessageValue.Field
+        ) -> ty.Tuple[int, int]:
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
             assert isinstance(field.typeval, CompositeValue)
             first = self._get_first(field_name)
@@ -759,7 +764,7 @@ class MessageValue(TypeValue):
             self.set(field_name, value[current_pos_in_bitstring:])
             return last_pos_in_bitstr, current_pos_in_bitstring
 
-        def set_field_with_size(field_name: str, field_size: int) -> Tuple[int, int]:
+        def set_field_with_size(field_name: str, field_size: int) -> ty.Tuple[int, int]:
             assert isinstance(value, Bitstring)
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
             self.set(
@@ -794,7 +799,7 @@ class MessageValue(TypeValue):
             current_field_name = self._next_field(current_field_name, append_to_path=True)
 
     def _set_unchecked(
-        self, field_name: str, value: Union[bytes, int, str, Sequence[TypeValue]]
+        self, field_name: str, value: ty.Union[bytes, int, str, ty.Sequence[TypeValue]]
     ) -> None:
         field = self._fields[field_name]
         field.prev = self._last_field
@@ -813,7 +818,7 @@ class MessageValue(TypeValue):
     def set(
         self,
         field_name: str,
-        value: Union[bytes, int, str, Sequence[TypeValue], Bitstring],
+        value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring],
         checksum_calculation: bool = True,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
@@ -903,7 +908,7 @@ class MessageValue(TypeValue):
     def _preset_fields(self, fld: str) -> None:
         assert not self._skip_verification
         nxt = self._next_field(fld)
-        fields: List[str] = []
+        fields: ty.List[str] = []
         while nxt and nxt != FINAL.name:
             field = self._fields[nxt]
             first = self._get_first(nxt)
@@ -938,7 +943,7 @@ class MessageValue(TypeValue):
         except ValueError:
             self.accessible_fields = fields
 
-    def set_checksum_function(self, checksums: Dict[str, Callable]) -> None:
+    def set_checksum_function(self, checksums: ty.Dict[str, ty.Callable]) -> None:
         for checksum_field_name, checksum_function in checksums.items():
             if checksum_field_name not in self.fields:
                 raise PyRFLXError(
@@ -960,7 +965,7 @@ class MessageValue(TypeValue):
                 if e == self.__message_first_name
                 else e
             )
-            expr: Dict[Expr, str] = dict.fromkeys([lower, value_range.upper])
+            expr: ty.Dict[Expr, str] = dict.fromkeys([lower, value_range.upper])
 
             for e in expr:
                 if isinstance(e, Sub):
@@ -1029,14 +1034,14 @@ class MessageValue(TypeValue):
 
     def _calculate_checksum(
         self, checksum: "MessageValue.Checksum"
-    ) -> Union[bytes, int, str, Sequence[TypeValue], Bitstring]:
+    ) -> ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring]:
         if not checksum.function:
             raise PyRFLXError(
                 f"cannot calculate checksum for {checksum.field_name}: "
                 f"no callable checksum function provided"
             )
 
-        arguments: Dict[str, Union[int, Tuple[int, int]]] = {}
+        arguments: ty.Dict[str, ty.Union[int, ty.Tuple[int, int]]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
                 assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
@@ -1059,7 +1064,9 @@ class MessageValue(TypeValue):
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
         return checksum.function(self._unchecked_bytestring(), **arguments)
 
-    def get(self, field_name: str) -> Union["MessageValue", Sequence[TypeValue], int, str, bytes]:
+    def get(
+        self, field_name: str
+    ) -> ty.Union["MessageValue", ty.Sequence[TypeValue], int, str, bytes]:
         if field_name not in self.valid_fields:
             if field_name not in self.fields:
                 raise PyRFLXError(f'"{field_name}" is not a field of this message')
@@ -1087,7 +1094,7 @@ class MessageValue(TypeValue):
         return Bitstring(bits)
 
     @property
-    def value(self) -> Any:
+    def value(self) -> ty.Any:
         raise NotImplementedError
 
     def _unchecked_bytestring(self) -> bytes:
@@ -1104,7 +1111,7 @@ class MessageValue(TypeValue):
         return self._unchecked_bytestring()
 
     @property
-    def fields(self) -> List[str]:
+    def fields(self) -> ty.List[str]:
         return [f.name for f in self._type.fields]
 
     def _is_valid_composite_field(self, field: str) -> bool:
@@ -1128,7 +1135,7 @@ class MessageValue(TypeValue):
         )
 
     @property
-    def valid_fields(self) -> List[str]:
+    def valid_fields(self) -> ty.List[str]:
         return [
             f
             for f in self.accessible_fields
@@ -1142,7 +1149,7 @@ class MessageValue(TypeValue):
         ]
 
     @property
-    def required_fields(self) -> List[str]:
+    def required_fields(self) -> ty.List[str]:
         accessible = self.accessible_fields
         valid = self.valid_fields
         return [f for f in accessible if f not in valid]
@@ -1159,7 +1166,7 @@ class MessageValue(TypeValue):
             )
         )
 
-    def __update_simplified_mapping(self, field: Optional[Field] = None) -> None:
+    def __update_simplified_mapping(self, field: ty.Optional[Field] = None) -> None:
         if field:
             if isinstance(field.typeval, ScalarValue):
                 self._simplified_mapping[field.name_variable] = field.typeval.expr
@@ -1223,9 +1230,9 @@ class MessageValue(TypeValue):
         return expr.substituted(func=subst).substituted(func=subst).simplified()
 
     class Checksum:
-        def __init__(self, field_name: str, parameters: Sequence[Expr]):
+        def __init__(self, field_name: str, parameters: ty.Sequence[Expr]):
             self.field_name = field_name
-            self.function: Optional[Callable] = None
+            self.function: ty.Optional[ty.Callable] = None
             self.calculated = False
 
             @dataclass
@@ -1233,7 +1240,7 @@ class MessageValue(TypeValue):
                 expression: Expr
                 evaluated_expression: Expr = UNDEFINED
 
-            self.parameters: List[ExpressionTuple] = []
+            self.parameters: ty.List[ExpressionTuple] = []
             for expr in parameters:
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
                 self.parameters.append(ExpressionTuple(expr))
@@ -1310,9 +1317,9 @@ class MessageValue(TypeValue):
 
     @dataclass
     class State:
-        fields: Optional[Mapping[str, "MessageValue.Field"]] = None
-        checksums: Optional[Mapping[str, "MessageValue.Checksum"]] = None
-        type_literals: Optional[Mapping[Name, Expr]] = None
+        fields: ty.Optional[ty.Mapping[str, "MessageValue.Field"]] = None
+        checksums: ty.Optional[ty.Mapping[str, "MessageValue.Checksum"]] = None
+        type_literals: ty.Optional[ty.Mapping[Name, Expr]] = None
 
 
 class RefinementValue:

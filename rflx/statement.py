@@ -82,9 +82,9 @@ class Append(ListAttributeStatement):
         assert isinstance(self.parameters, list)
         self.parameters[0] = self.parameters[0].substituted(typify_variable)
         error = rty.check_type_instance(
-            statement_type, rty.Array, self.location, f'variable "{self.identifier}"'
+            statement_type, rty.Sequence, self.location, f'variable "{self.identifier}"'
         )
-        if isinstance(statement_type, rty.Array):
+        if isinstance(statement_type, rty.Sequence):
             error += self.parameters[0].check_type(statement_type.element)
             if isinstance(statement_type.element, rty.Message) and isinstance(
                 self.parameters[0], Variable
@@ -111,7 +111,7 @@ class Extend(ListAttributeStatement):
         assert isinstance(self.parameters, list)
         self.parameters[0] = self.parameters[0].substituted(typify_variable)
         return rty.check_type_instance(
-            statement_type, rty.Array, self.location, f'variable "{self.identifier}"'
+            statement_type, rty.Sequence, self.location, f'variable "{self.identifier}"'
         ) + self.parameters[0].check_type(statement_type)
 
 
@@ -124,7 +124,7 @@ class Reset(AttributeStatement):
     ) -> RecordFluxError:
         return rty.check_type_instance(
             statement_type,
-            (rty.Array, rty.Message),
+            (rty.Sequence, rty.Message),
             self.location,
             f'variable "{self.identifier}"',
         )

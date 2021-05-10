@@ -13,7 +13,7 @@ from tests.data import models
         models.TLV_MESSAGE,
         models.ETHERNET_FRAME,
         models.ENUMERATION_MESSAGE,
-        models.ARRAYS_MESSAGE,
+        models.SEQUENCE_MESSAGE,
         models.EXPRESSION_MESSAGE,
         models.DERIVATION_MESSAGE,
     ],
