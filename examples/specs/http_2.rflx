@@ -74,7 +74,7 @@ package HTTP_2 is
          Settings_Value_Generic : Settings_Value_Generic;
       end message;
 
-   type Settings_Parameters is array of Settings_Parameter;
+   type Settings_Parameters is sequence of Settings_Parameter;
 
    type Frame is
       message

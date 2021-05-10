@@ -35,7 +35,7 @@ package IPv4 is
                or (Option_Class = DEBUGGING_AND_MEASUREMENT and Option_Number = 4);
       end message;
 
-   type Options is array of Option;
+   type Options is sequence of Option;
 
    type Packet is
       message
