@@ -348,7 +348,7 @@ class AbstractMessage(mty.Type):
                 expr.Size(field),
                 location=expression.location,
             )
-            if isinstance(comp, mty.Array) and isinstance(comp.element_type, mty.Scalar):
+            if isinstance(comp, mty.Sequence) and isinstance(comp.element_type, mty.Scalar):
                 return [
                     result,
                     *comp.element_type.constraints(name=comp.element_type.name, proof=True),
@@ -734,7 +734,7 @@ class Message(AbstractMessage):
             )
         if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
-            unconstrained = isinstance(t, (mty.Opaque, mty.Array))
+            unconstrained = isinstance(t, (mty.Opaque, mty.Sequence))
             if not unconstrained and link.size != expr.UNDEFINED:
                 self.error.append(
                     f'fixed size field "{link.target.name}" with size aspect',
@@ -1175,7 +1175,7 @@ class Message(AbstractMessage):
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
             for f, t in self.types.items()
-            if isinstance(t, (mty.Opaque, mty.Array))
+            if isinstance(t, (mty.Opaque, mty.Sequence))
         ]
 
         for path in [p[:-1] for p in self.paths(FINAL) if p]:

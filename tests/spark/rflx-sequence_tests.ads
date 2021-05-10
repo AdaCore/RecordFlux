@@ -1,7 +1,7 @@
 with AUnit;
 with AUnit.Test_Cases;
 
-package RFLX.Arrays_Tests is
+package RFLX.Sequence_Tests is
    pragma Elaborate_Body;
 
    type Test is new AUnit.Test_Cases.Test_Case with null record;
@@ -12,4 +12,4 @@ package RFLX.Arrays_Tests is
    overriding
    procedure Register_Tests (T : in out Test);
 
-end RFLX.Arrays_Tests;
+end RFLX.Sequence_Tests;

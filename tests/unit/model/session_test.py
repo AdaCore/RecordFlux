@@ -1,5 +1,5 @@
 # pylint: disable=too-many-lines
-from typing import Sequence
+import typing as ty
 
 import pytest
 
@@ -8,12 +8,12 @@ import rflx.expression as expr
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import BOOLEAN, OPAQUE, Array, Private, Session, State, Transition
+from rflx.model import BOOLEAN, OPAQUE, Private, Sequence, Session, State, Transition
 from tests.data.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
 
-TLV_MESSAGES = Array("TLV::Messages", TLV_MESSAGE)
-TLV_TAGS = Array("TLV::Tags", TLV_TAG)
+TLV_MESSAGES = Sequence("TLV::Messages", TLV_MESSAGE)
+TLV_TAGS = Sequence("TLV::Tags", TLV_TAG)
 
 
 def test_str() -> None:
@@ -651,7 +651,7 @@ def test_reset_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected array type or message type\n"
+            r"^<stdin>:10:20: model: error: expected sequence type or message type\n"
             r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
@@ -1465,7 +1465,7 @@ def test_append_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected array type\n"
+            r"^<stdin>:10:20: model: error: expected sequence type\n"
             r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
@@ -1540,7 +1540,7 @@ def test_extend_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected array type\n"
+            r"^<stdin>:10:20: model: error: expected sequence type\n"
             r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
@@ -1957,7 +1957,7 @@ def test_private_type_shadows_type() -> None:
         ],
     ],
 )
-def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaration]) -> None:
+def test_undefined_type_in_parameters(parameters: ty.Sequence[decl.FormalDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1996,7 +1996,7 @@ def test_undefined_type_in_parameters(parameters: Sequence[decl.FormalDeclaratio
         ],
     ],
 )
-def test_undefined_type_in_declarations(declarations: Sequence[decl.BasicDeclaration]) -> None:
+def test_undefined_type_in_declarations(declarations: ty.Sequence[decl.BasicDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
@@ -2034,7 +2034,7 @@ def test_undefined_type_in_declarations(declarations: Sequence[decl.BasicDeclara
         ],
     ],
 )
-def test_undefined_type_in_local_declarations(declarations: Sequence[decl.Declaration]) -> None:
+def test_undefined_type_in_local_declarations(declarations: ty.Sequence[decl.Declaration]) -> None:
     assert_session_model_error(
         states=[
             State(

@@ -21,7 +21,7 @@ TESTS = [
     "TLV",
     "In_TLV",
     "Enumeration",
-    "Arrays",
+    "Sequence",
     "Derivation",
     "Expression",
 ]

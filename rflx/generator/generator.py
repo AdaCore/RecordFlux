@@ -1,14 +1,13 @@
 # pylint: disable=too-many-lines
 import itertools
 import logging
+import typing as ty
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import pkg_resources
 
-import rflx.expression as expr
-from rflx import __version__
+from rflx import __version__, expression as expr
 from rflx.ada import (
     FALSE,
     ID,
@@ -111,7 +110,6 @@ from rflx.error import Subsystem, fail, warn
 from rflx.model import (
     FINAL,
     INITIAL,
-    Array,
     Composite,
     DerivedMessage,
     Enumeration,
@@ -123,6 +121,7 @@ from rflx.model import (
     RangeInteger,
     Refinement,
     Scalar,
+    Sequence,
     Type,
 )
 
@@ -155,7 +154,7 @@ class Generator:
         self.__parser = ParserGenerator(self.__prefix)
         self.__serializer = SerializerGenerator(self.__prefix)
 
-        self._units: Dict[ID, Unit] = {}
+        self._units: ty.Dict[ID, Unit] = {}
 
         self.__template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
         assert self.__template_dir.is_dir(), "template directory not found"
@@ -251,8 +250,8 @@ class Generator:
     def __create_unit(
         self,
         identifier: ID,
-        declaration_context: List[ContextItem],
-        formal_parameters: List[FormalDeclaration] = None,
+        declaration_context: ty.List[ContextItem],
+        formal_parameters: ty.List[FormalDeclaration] = None,
         terminating: bool = True,
     ) -> PackageUnit:
         for p in reversed(CONFIGURATION_PRAGMAS):
@@ -278,7 +277,7 @@ class Generator:
     def __create_instantiation_unit(
         self,
         identifier: ID,
-        context: List[ContextItem],
+        context: ty.List[ContextItem],
         instantiation: GenericPackageInstantiation,
     ) -> InstantiationUnit:
         for p in reversed(CONFIGURATION_PRAGMAS):
@@ -291,7 +290,7 @@ class Generator:
 
     # pylint: disable=too-many-statements
     def __create_generic_message_unit(self, message: Message) -> None:
-        context: List[ContextItem] = []
+        context: ty.List[ContextItem] = []
 
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
@@ -305,7 +304,7 @@ class Generator:
         context.append(WithClause(self.__prefix * const.GENERIC_TYPES_PACKAGE))
 
         unit_name = generic_name(ID(message.identifier))
-        parameters: List[FormalDeclaration] = [
+        parameters: ty.List[FormalDeclaration] = [
             FormalPackageDeclaration("Types", self.__prefix * const.GENERIC_TYPES_PACKAGE),
         ]
         unit = self.__create_unit(unit_name, context, parameters)
@@ -322,7 +321,7 @@ class Generator:
                     ]
                 )
 
-            elif isinstance(field_type, Array):
+            elif isinstance(field_type, Sequence):
                 if isinstance(field_type.element_type, Message):
                     name = const.MESSAGE_SEQUENCE_PACKAGE
                 else:
@@ -345,7 +344,7 @@ class Generator:
                 scalar_fields[f] = t
             if isinstance(t, Composite):
                 composite_fields.append(f)
-            if isinstance(t, Array):
+            if isinstance(t, Sequence):
                 sequence_fields[f] = t
 
         unit += self.__create_use_type_clause(composite_fields)
@@ -400,7 +399,7 @@ class Generator:
         unit += self.__serializer.create_internal_functions(message, scalar_fields)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
-        unit += self.__serializer.create_array_setter_procedures(message, sequence_fields)
+        unit += self.__serializer.create_sequence_setter_procedures(message, sequence_fields)
         unit += self.__serializer.create_composite_initialize_procedures(message)
         unit += self.__serializer.create_opaque_setter_procedures(message)
         unit += self.__serializer.create_generic_opaque_setter_procedures(message)
@@ -412,7 +411,7 @@ class Generator:
         unit += self.__create_cursors_function()
 
     @staticmethod
-    def __create_use_type_clause(composite_fields: Sequence[Field]) -> UnitPart:
+    def __create_use_type_clause(composite_fields: ty.Sequence[Field]) -> UnitPart:
         return UnitPart(
             [
                 Pragma(
@@ -649,7 +648,9 @@ class Generator:
         )
 
     def __create_field_dependent_type(
-        self, scalar_fields: Mapping[Field, Scalar], composite_fields: Sequence[Field]
+        self,
+        scalar_fields: ty.Mapping[Field, Scalar],
+        composite_fields: ty.Sequence[Field],
     ) -> UnitPart:
         result_variants = [
             Variant(
@@ -1149,7 +1150,7 @@ class Generator:
     @staticmethod
     def __create_path_condition_function(message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
-            cases: List[Tuple[Expr, Expr]] = [
+            cases: ty.List[ty.Tuple[Expr, Expr]] = [
                 (
                     target,
                     expr.Or(*[c for _, c in conditions])
@@ -1219,7 +1220,7 @@ class Generator:
                 for target, links in itertools.groupby(message.outgoing(field), lambda x: x.target)
                 if target != FINAL
             ]
-            cases: List[Tuple[Expr, Expr]] = []
+            cases: ty.List[ty.Tuple[Expr, Expr]] = []
             for target, links in target_links:
                 field_type = message.types[target]
                 size: Expr
@@ -1281,7 +1282,7 @@ class Generator:
     def __create_field_first_function(message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
             def substituted(
-                expression: expr.Expr, target_type: Optional[ID] = const.TYPES_U64
+                expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_U64
             ) -> Expr:
                 return (
                     expression.substituted(common.substitution(message, target_type=target_type))
@@ -1646,7 +1647,7 @@ class Generator:
                             [
                                 (
                                     Variable(f.affixed_name),
-                                    cast(List[Statement], [])
+                                    ty.cast(ty.List[Statement], [])
                                     + [
                                         Assignment(
                                             Indexed(
@@ -1784,7 +1785,7 @@ class Generator:
 
     @staticmethod
     def __create_valid_predecessor_function(
-        message: Message, composite_fields: Sequence[Field]
+        message: Message, composite_fields: ty.Sequence[Field]
     ) -> UnitPart:
 
         specification = FunctionSpecification(
@@ -1973,8 +1974,8 @@ class Generator:
 
     @staticmethod
     def __create_equal_function(
-        scalar_fields: Mapping[Field, Type],
-        composite_fields: Sequence[Field],
+        scalar_fields: ty.Mapping[Field, Type],
+        composite_fields: ty.Sequence[Field],
     ) -> UnitPart:
         specification = FunctionSpecification(
             "Equal",
@@ -2055,7 +2056,7 @@ class Generator:
         )
 
     def __create_switch_procedures(
-        self, message: Message, sequence_fields: Mapping[Field, Type]
+        self, message: Message, sequence_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -2261,7 +2262,7 @@ class Generator:
 
     @staticmethod
     def __create_complete_functions(
-        message: Message, sequence_fields: Mapping[Field, Type]
+        message: Message, sequence_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> FunctionSpecification:
             return FunctionSpecification(
@@ -2311,7 +2312,7 @@ class Generator:
 
     @staticmethod
     def __create_update_procedures(
-        message: Message, sequence_fields: Mapping[Field, Type]
+        message: Message, sequence_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -2322,14 +2323,14 @@ class Generator:
                 ],
             )
 
-        def take_buffer_arguments(field: Field) -> Sequence[Expr]:
+        def take_buffer_arguments(field: Field) -> ty.Sequence[Expr]:
             arguments = [
                 Variable("Seq_Ctx"),
                 Variable("Buffer"),
             ]
 
             field_type = message.types[field]
-            assert isinstance(field_type, Array)
+            assert isinstance(field_type, Sequence)
 
             return arguments
 
@@ -2493,7 +2494,7 @@ class Generator:
         )
 
     def __create_valid_context_function(
-        self, message: Message, composite_fields: Sequence[Field]
+        self, message: Message, composite_fields: ty.Sequence[Field]
     ) -> UnitPart:
         specification = FunctionSpecification(
             "Valid_Context",
@@ -2709,14 +2710,14 @@ class Generator:
             unit += UnitPart(enumeration_types(field_type))
             unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
-        elif isinstance(field_type, Array):
-            self.__create_array_unit(field_type)
+        elif isinstance(field_type, Sequence):
+            self.__create_sequence_unit(field_type)
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
-    def __create_array_unit(self, array_type: Array) -> None:
-        context, package = common.create_array_instantiation(
-            array_type, self.__prefix * const.TYPES_PACKAGE, self.__prefix
+    def __create_sequence_unit(self, sequence_type: Sequence) -> None:
+        context, package = common.create_sequence_instantiation(
+            sequence_type, self.__prefix * const.TYPES_PACKAGE, self.__prefix
         )
         self.__create_instantiation_unit(
             package.identifier,
@@ -2729,7 +2730,7 @@ class Generator:
         )
 
     def __integer_functions(self, integer: Integer) -> UnitPart:
-        specification: List[Declaration] = []
+        specification: ty.List[Declaration] = []
 
         constraints = expr.And(*integer.constraints("Val")).simplified()
 
@@ -2764,7 +2765,7 @@ class Generator:
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
         incomplete = len(enum.literals) < 2 ** int(enum.size)
 
-        specification: List[Declaration] = []
+        specification: ty.List[Declaration] = []
 
         enum_value = Variable("Val")
 
@@ -2772,7 +2773,7 @@ class Generator:
         if enum.always_valid:
             validation_expression = expr.And(*enum.constraints("Val")).simplified().ada_expr()
         else:
-            validation_cases: List[Tuple[Expr, Expr]] = []
+            validation_cases: ty.List[ty.Tuple[Expr, Expr]] = []
             validation_cases.extend(
                 (value.ada_expr(), Variable("True")) for value in enum.literals.values()
             )
@@ -2833,7 +2834,7 @@ class Generator:
             [Parameter(["Val"], self.__prefix * common.full_base_type_name(enum))],
         )
         precondition = Precondition(Call("Valid", [Variable("Val")]))
-        conversion_cases: List[Tuple[Expr, Expr]] = []
+        conversion_cases: ty.List[ty.Tuple[Expr, Expr]] = []
 
         if enum.always_valid:
             specification.append(
@@ -2898,7 +2899,9 @@ class Generator:
 
     @staticmethod
     def __create_contains_function(
-        refinement: Refinement, condition_fields: Mapping[Field, Type], null_sdu: bool
+        refinement: Refinement,
+        condition_fields: ty.Mapping[Field, Type],
+        null_sdu: bool,
     ) -> SubprogramUnitPart:
         pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
         condition = refinement.condition
@@ -2943,7 +2946,7 @@ class Generator:
 
     @staticmethod
     def __create_switch_procedure(
-        refinement: Refinement, condition_fields: Mapping[Field, Type]
+        refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         pdu_name = refinement.pdu.identifier.flat
         sdu_name = refinement.sdu.identifier.flat
@@ -3135,7 +3138,7 @@ class Generator:
             validation_expression,
         )
 
-    def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> List[Declaration]:
+    def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> ty.List[Declaration]:
         base_name = None
         if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
             base_name = self.__prefix * common.full_base_type_name(scalar_type)
@@ -3154,7 +3157,7 @@ class Generator:
             Pragma("Warnings", [Variable("On"), String("precondition is * false")]),
         ]
 
-    def __integer_conversion_functions(self, integer: Integer) -> Sequence[Subprogram]:
+    def __integer_conversion_functions(self, integer: Integer) -> ty.Sequence[Subprogram]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -3187,7 +3190,7 @@ def create_file(filename: Path, content: str) -> None:
         f.write(content)
 
 
-def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
+def modular_types(integer: ModularInteger) -> ty.List[TypeDeclaration]:
     return [
         ModularType(
             integer.name,
@@ -3197,7 +3200,7 @@ def modular_types(integer: ModularInteger) -> List[TypeDeclaration]:
     ]
 
 
-def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
+def range_types(integer: RangeInteger) -> ty.List[TypeDeclaration]:
     return [
         ModularType(
             common.base_type_name(integer),
@@ -3213,8 +3216,8 @@ def range_types(integer: RangeInteger) -> List[TypeDeclaration]:
     ]
 
 
-def enumeration_types(enum: Enumeration) -> List[TypeDeclaration]:
-    types: List[TypeDeclaration] = []
+def enumeration_types(enum: Enumeration) -> ty.List[TypeDeclaration]:
+    types: ty.List[TypeDeclaration] = []
 
     types.append(
         ModularType(common.base_type_name(enum), Pow(Number(2), enum.size_expr.ada_expr()))
@@ -3292,7 +3295,7 @@ def context_cursors_initialization(message: Message) -> Expr:
     )
 
 
-def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
+def switch_update_conditions(message: Message, field: Field) -> ty.Sequence[Expr]:
     return [
         Not(Call("Has_Buffer", [Variable("Ctx")])),
         Call(f"{common.sequence_name(message, field)}.Has_Buffer", [Variable("Seq_Ctx")]),
@@ -3310,11 +3313,14 @@ def switch_update_conditions(message: Message, field: Field) -> Sequence[Expr]:
 
 
 def refinement_conditions(
-    refinement: Refinement, pdu_context: str, condition_fields: Mapping[Field, Type], null_sdu: bool
-) -> Sequence[expr.Expr]:
+    refinement: Refinement,
+    pdu_context: str,
+    condition_fields: ty.Mapping[Field, Type],
+    null_sdu: bool,
+) -> ty.Sequence[expr.Expr]:
     pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
 
-    conditions: List[expr.Expr] = [
+    conditions: ty.List[expr.Expr] = [
         expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
     ]
 

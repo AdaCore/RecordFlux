@@ -1,0 +1,34 @@
+package Sequence_Message is
+
+   type Byte is mod 256;
+   type Bytes is sequence of Byte;
+
+   type Sequence_Element is
+      message
+         Byte : Byte;
+      end message;
+
+   type Test_Sequence is sequence of Sequence_Element;
+
+   type Message_Sequence is
+      message
+         Length : Byte
+            then Sequence_Field
+               with Size => Length * 8;
+         Sequence_Field : Test_Sequence;
+      end message;
+
+   type Message_Sequence_And_Refinement is
+      message
+         Length : Byte
+            then Sequence_Field
+               with Size => Length * 8;
+         Sequence_Field : Test_Sequence
+            then Payload
+               with Size => 8;
+         Payload : Opaque;
+      end message;
+
+   for Message_Sequence_And_Refinement use (Payload => Sequence_Element);
+
+end Sequence_Message;

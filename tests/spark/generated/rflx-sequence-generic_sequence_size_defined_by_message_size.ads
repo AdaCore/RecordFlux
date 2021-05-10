@@ -6,7 +6,7 @@ with RFLX.RFLX_Scalar_Sequence;
 generic
    with package Types is new RFLX.RFLX_Generic_Types (<>);
    with package Modular_Vector_Sequence is new RFLX.RFLX_Scalar_Sequence (Types, others => <>);
-package RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size with
+package RFLX.Sequence.Generic_Sequence_Size_Defined_By_Message_Size with
   SPARK_Mode,
   Annotate =>
     (GNATprove, Terminating)
@@ -45,7 +45,7 @@ is
             when F_Initial | F_Vector | F_Final =>
                null;
             when F_Header =>
-               Header_Value : RFLX.Arrays.Enumeration_Base;
+               Header_Value : RFLX.Sequence.Enumeration_Base;
          end case;
       end record;
 
@@ -235,7 +235,7 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Get_Header (Ctx : Context) return RFLX.Arrays.Enumeration with
+   function Get_Header (Ctx : Context) return RFLX.Sequence.Enumeration with
      Pre =>
        Valid (Ctx, F_Header);
 
@@ -248,7 +248,7 @@ is
        Has_Buffer (Ctx)
        and Present (Ctx, F_Vector);
 
-   procedure Set_Header (Ctx : in out Context; Val : RFLX.Arrays.Enumeration) with
+   procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -483,7 +483,7 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Header))
                 then
-                   Cursors (F_Header).Last - Cursors (F_Header).First + 1 = RFLX.Arrays.Enumeration_Base'Size
+                   Cursors (F_Header).Last - Cursors (F_Header).First + 1 = RFLX.Sequence.Enumeration_Base'Size
                    and then Cursors (F_Header).Predecessor = F_Initial
                    and then Cursors (F_Header).First = First
                    and then (if
@@ -545,7 +545,7 @@ private
           when F_Initial =>
              (case Fld is
                  when F_Header =>
-                    RFLX.Arrays.Enumeration_Base'Size,
+                    RFLX.Sequence.Enumeration_Base'Size,
                  when others =>
                     Types.Unreachable_Bit_Length),
           when F_Header =>
@@ -630,7 +630,7 @@ private
      (Incomplete (Ctx, F_Header)
       or Incomplete (Ctx, F_Vector));
 
-   function Get_Header (Ctx : Context) return RFLX.Arrays.Enumeration is
+   function Get_Header (Ctx : Context) return RFLX.Sequence.Enumeration is
      (To_Actual (Ctx.Cursors (F_Header).Value.Header_Value));
 
    function Complete_Vector (Ctx : Context; Seq_Ctx : Modular_Vector_Sequence.Context) return Boolean is
@@ -643,4 +643,4 @@ private
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
-end RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size;
+end RFLX.Sequence.Generic_Sequence_Size_Defined_By_Message_Size;

@@ -27,7 +27,7 @@ Message specifications are automatically verified using the [Z3 theorem prover](
 
 Message parsers and generators are generated based on message specifications. The generated parser allows to validate and dissect messages and thereby respects all specified restrictions between message fields and related messages. The generated message generator enables the creation of messages according to the message specification. By using [SPARK](https://www.adacore.com/about-spark) we are able to prove the absence of runtime errors and prevent the incorrect usage of the generated code (e.g., enforce that a field of a message is validated before accessed).
 
-Multiple packages are generated for a specification. All basic types like integers, enumerations and arrays are collectively declared in one package. For each message a child package is generated which contains validation, accessor and setter functions for every field of the message.
+Multiple packages are generated for a specification. All basic types like integers, enumerations and sequences are collectively declared in one package. For each message a child package is generated which contains validation, accessor and setter functions for every field of the message.
 
 A user of the generated code has to validate a message field or the whole message before accessing the data of a particular message field. The SPARK verification tools in combination with the generated contracts make it possible to ensure this property, and so prevent incorrect usage.
 

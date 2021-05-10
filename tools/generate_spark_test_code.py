@@ -18,7 +18,7 @@ logging.disable(logging.NOTSET)
 MODELS = [
     tests.data.models.EXPRESSION_MODEL,
     tests.data.models.ENUMERATION_MODEL,
-    tests.data.models.ARRAYS_MODEL,
+    tests.data.models.SEQUENCE_MODEL,
     tests.data.models.DERIVATION_MODEL,
     tests.data.models.NULL_MODEL,
     tests.data.models.TLV_MODEL,

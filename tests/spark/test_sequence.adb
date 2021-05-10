@@ -3,15 +3,15 @@ with AUnit.Run;
 with AUnit.Test_Suites;
 with Ada.Command_Line;
 
-with RFLX.Arrays_Tests;
+with RFLX.Sequence_Tests;
 
-procedure Test_Arrays is
+procedure Test_Sequence is
    pragma Warnings (Off, "use of an anonymous access type allocator");
 
    function Suite return AUnit.Test_Suites.Access_Test_Suite is
       Result : constant AUnit.Test_Suites.Access_Test_Suite := new AUnit.Test_Suites.Test_Suite;
    begin
-      Result.all.Add_Test (new RFLX.Arrays_Tests.Test);
+      Result.all.Add_Test (new RFLX.Sequence_Tests.Test);
       return Result;
    end Suite;
 
@@ -28,4 +28,4 @@ begin
    Status := Run (Reporter);
    Ada.Command_Line.Set_Exit_Status
      (if Status = AUnit.Success then Ada.Command_Line.Success else Ada.Command_Line.Failure);
-end Test_Arrays;
+end Test_Sequence;

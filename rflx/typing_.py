@@ -206,11 +206,11 @@ class Aggregate(Composite):
         return (
             other == Any()
             or isinstance(other, Aggregate)
-            or (isinstance(other, Array) and self.element.is_compatible_strong(other.element))
+            or (isinstance(other, Sequence) and self.element.is_compatible_strong(other.element))
         )
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, Array) and self.element.is_compatible_strong(other.element):
+        if isinstance(other, Sequence) and self.element.is_compatible_strong(other.element):
             return other
         if isinstance(other, Aggregate) and self.element != other.element:
             return Aggregate(self.element.common_type(other.element))
@@ -220,8 +220,8 @@ class Aggregate(Composite):
 
 
 @dataclass(frozen=True)
-class Array(Composite):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "array type"
+class Sequence(Composite):
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "sequence type"
     name: str
     element: Type
 
@@ -233,7 +233,7 @@ class Array(Composite):
             other == Any()
             or (isinstance(other, Aggregate) and other.element.is_compatible_strong(self.element))
             or (
-                isinstance(other, Array)
+                isinstance(other, Sequence)
                 and self.name == other.name
                 and self.element == other.element
             )
@@ -247,7 +247,7 @@ class Array(Composite):
         return Undefined()
 
 
-OPAQUE = Array("Opaque", Integer("Byte", Bounds(0, 255)))
+OPAQUE = Sequence("Opaque", Integer("Byte", Bounds(0, 255)))
 
 
 @dataclass(frozen=True)

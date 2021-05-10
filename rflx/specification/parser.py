@@ -8,7 +8,6 @@ from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 from librflxlang import (
     AnalysisContext,
-    ArrayTypeDef,
     Aspect,
     ChecksumAspect,
     Components,
@@ -28,6 +27,7 @@ from librflxlang import (
     RefinementDecl,
     RenamingDecl,
     RFLXNode,
+    SequenceTypeDef,
     SessionDecl,
     Specification,
     State,
@@ -261,16 +261,16 @@ def create_id(identifier: NullID, filename: Path) -> ID:
     raise NotImplementedError(f"Invalid ID: {identifier.text}")
 
 
-def create_array(
+def create_sequence(
     identifier: ID,
-    array: ArrayTypeDef,
+    sequence: SequenceTypeDef,
     types: Sequence[model.Type],
     _skip_verification: bool,
     _cache: Cache,
     filename: Path,
-) -> model.Array:
+) -> model.Sequence:
     element_identifier = model.qualified_type_identifier(
-        create_id(array.f_element_type, filename), identifier.parent
+        create_id(sequence.f_element_type, filename), identifier.parent
     )
 
     try:
@@ -283,7 +283,7 @@ def create_array(
             element_identifier.location,
         )
 
-    return model.Array(identifier, element_type, type_location(identifier, array))
+    return model.Sequence(identifier, element_type, type_location(identifier, sequence))
 
 
 def create_numeric_literal(expression: Expr, filename: Path) -> expr.Expr:
@@ -444,7 +444,7 @@ def create_attribute(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_array_aggregate(expression: Expr, filename: Path) -> expr.Expr:
+def create_sequence_aggregate(expression: Expr, filename: Path) -> expr.Expr:
     return expr.Aggregate(
         *[create_math_expression(v, filename) for v in expression.f_values],
         location=node_location(expression, filename),
@@ -593,7 +593,7 @@ def create_comprehension(expression: Expr, filename: Path) -> expr.Expr:
     )
     return expr.Comprehension(
         create_id(expression.f_iterator, filename),
-        create_expression(expression.f_array, filename),
+        create_expression(expression.f_sequence, filename),
         create_expression(expression.f_selector, filename),
         condition,
         node_location(expression, filename),
@@ -640,7 +640,7 @@ EXPRESSION_MAP = {
     "ParenExpression": create_paren_expression,
     "Variable": create_variable,
     "Attribute": create_attribute,
-    "ArrayAggregate": create_array_aggregate,
+    "SequenceAggregate": create_sequence_aggregate,
     "StringLiteral": create_string_literal,
     "Call": create_call,
     "QuantifiedExpression": create_quantified_expression,
@@ -689,7 +689,7 @@ def create_math_expression(expression: Expr, filename: Path) -> expr.Expr:
         "Negation": create_negation,
         "Attribute": create_math_attribute,
         "SelectNode": create_selected,
-        "ArrayAggregate": create_array_aggregate,
+        "SequenceAggregate": create_sequence_aggregate,
     }
     return handlers[expression.kind_name](expression, filename)
 
@@ -1342,7 +1342,7 @@ class Parser:
         self, error: RecordFluxError, spec: Specification, filename: Path
     ) -> None:
         handlers = {
-            "ArrayTypeDef": create_array,
+            "SequenceTypeDef": create_sequence,
             "ModularTypeDef": create_modular,
             "RangeTypeDef": create_range,
             "MessageTypeDef": create_message,

@@ -153,7 +153,7 @@ GPS.parse_xml(XML)
 # Highlighting
 recordflux_keywords = [
     "and",
-    "array of",
+    "sequence of",
     "end",
     "for",
     "if",

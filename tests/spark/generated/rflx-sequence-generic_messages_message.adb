@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size with
+package body RFLX.Sequence.Generic_Messages_Message with
   SPARK_Mode
 is
 
@@ -14,13 +14,13 @@ is
       Buffer_First : constant Types.Index := Buffer'First;
       Buffer_Last : constant Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Header => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
    procedure Reset (Ctx : in out Context) is
    begin
-      Ctx.Cursors := (F_Header => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
+      Ctx.Cursors := (F_Length => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
       Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
@@ -62,9 +62,9 @@ is
 
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
-          when F_Header =>
-             F_Vector,
-          when F_Vector =>
+          when F_Length =>
+             F_Messages,
+          when F_Messages =>
              F_Final))
     with
      Pre =>
@@ -76,9 +76,9 @@ is
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
-          when F_Header =>
-             Invalid (Ctx.Cursors (F_Vector)),
-          when F_Vector =>
+          when F_Length =>
+             Invalid (Ctx.Cursors (F_Messages)),
+          when F_Messages =>
              True));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
@@ -95,7 +95,7 @@ is
    function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
       and then (case Fld is
-                   when F_Vector =>
+                   when F_Messages =>
                       Ctx.Buffer.all (Types.Byte_Index (Field_First (Ctx, Fld)) .. Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
                    when others =>
                       False));
@@ -116,12 +116,12 @@ is
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (case Fld is
-               when F_Header =>
-                  Invalid (Ctx, F_Header)
-                  and Invalid (Ctx, F_Vector),
-               when F_Vector =>
-                  Ctx.Cursors (F_Header) = Ctx.Cursors (F_Header)'Old
-                  and Invalid (Ctx, F_Vector))
+               when F_Length =>
+                  Invalid (Ctx, F_Length)
+                  and Invalid (Ctx, F_Messages),
+               when F_Messages =>
+                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
+                  and Invalid (Ctx, F_Messages))
    is
       First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
@@ -131,13 +131,13 @@ is
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
       case Fld is
-         when F_Header =>
-            Ctx.Cursors (F_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Header) := (S_Invalid, Ctx.Cursors (F_Header).Predecessor);
+         when F_Length =>
+            Ctx.Cursors (F_Messages) := (S_Invalid, F_Final);
+            Ctx.Cursors (F_Length) := (S_Invalid, Ctx.Cursors (F_Length).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
                            and Field_Size (Ctx, Fld) = Size);
-         when F_Vector =>
-            Ctx.Cursors (F_Vector) := (S_Invalid, Ctx.Cursors (F_Vector).Predecessor);
+         when F_Messages =>
+            Ctx.Cursors (F_Messages) := (S_Invalid, Ctx.Cursors (F_Messages).Predecessor);
             pragma Assert (Field_First (Ctx, Fld) = First
                            and Field_Size (Ctx, Fld) = Size);
       end case;
@@ -145,9 +145,9 @@ is
 
    function Composite_Field (Fld : Field) return Boolean is
      ((case Fld is
-          when F_Header =>
+          when F_Length =>
              False,
-          when F_Vector =>
+          when F_Messages =>
              True));
 
    function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
@@ -166,13 +166,13 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (RFLX.Arrays.Enumeration_Base);
+      function Extract is new Types.Extract (RFLX.Sequence.Length);
    begin
       return ((case Fld is
-                  when F_Header =>
-                     (Fld => F_Header, Header_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
-                  when F_Vector =>
-                     (Fld => F_Vector)));
+                  when F_Length =>
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_Messages =>
+                     (Fld => F_Messages)));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -191,7 +191,7 @@ is
               and Field_Condition (Ctx, Value)
             then
                pragma Assert ((if
-                                  Fld = F_Vector
+                                  Fld = F_Messages
                                then
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
@@ -201,20 +201,20 @@ is
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
                pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Header))
+                                  Structural_Valid (Ctx.Cursors (F_Length))
                                then
-                                  Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1 = RFLX.Arrays.Enumeration_Base'Size
-                                  and then Ctx.Cursors (F_Header).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Header).First = Ctx.First
+                                  Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
+                                  and then Ctx.Cursors (F_Length).Predecessor = F_Initial
+                                  and then Ctx.Cursors (F_Length).First = Ctx.First
                                   and then (if
-                                               Structural_Valid (Ctx.Cursors (F_Vector))
+                                               Structural_Valid (Ctx.Cursors (F_Messages))
                                             then
-                                               Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
-                                               and then Ctx.Cursors (F_Vector).Predecessor = F_Header
-                                               and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
-               if Fld = F_Header then
+                                               Ctx.Cursors (F_Messages).Last - Ctx.Cursors (F_Messages).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
+                                               and then Ctx.Cursors (F_Messages).Predecessor = F_Length
+                                               and then Ctx.Cursors (F_Messages).First = Ctx.Cursors (F_Length).Last + 1)));
+               if Fld = F_Length then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Vector then
+               elsif Fld = F_Messages then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
                end if;
             else
@@ -228,16 +228,16 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Header);
-      Verify (Ctx, F_Vector);
+      Verify (Ctx, F_Length);
+      Verify (Ctx, F_Messages);
    end Verify_Message;
 
-   procedure Get_Vector (Ctx : Context) is
-      First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Vector).First);
-      Last : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Vector).Last);
+   procedure Get_Messages (Ctx : Context) is
+      First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Messages).First);
+      Last : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Messages).Last);
    begin
-      Process_Vector (Ctx.Buffer.all (First .. Last));
-   end Get_Vector;
+      Process_Messages (Ctx.Buffer.all (First .. Last));
+   end Get_Messages;
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
      Pre =>
@@ -277,94 +277,94 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (RFLX.Arrays.Enumeration_Base);
+      procedure Insert is new Types.Insert (RFLX.Sequence.Length);
    begin
       Fst := First;
       Lst := Last;
       case Val.Fld is
          when F_Initial =>
             null;
-         when F_Header =>
-            Insert (Val.Header_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
-         when F_Vector | F_Final =>
+         when F_Length =>
+            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+         when F_Messages | F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_Header (Ctx : in out Context; Val : RFLX.Arrays.Enumeration) is
-      Field_Value : constant Field_Dependent_Value := (F_Header, To_Base (Val));
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is
+      Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
-      Reset_Dependent_Fields (Ctx, F_Header);
+      Reset_Dependent_Fields (Ctx, F_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
       Ctx.Message_Last := ((Last + 7) / 8) * 8;
-      Ctx.Cursors (F_Header) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Header).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Header)) := (State => S_Invalid, Predecessor => F_Header);
-   end Set_Header;
+      Ctx.Cursors (F_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Length).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Length)) := (State => S_Invalid, Predecessor => F_Length);
+   end Set_Length;
 
-   procedure Set_Vector_Empty (Ctx : in out Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
+   procedure Set_Messages_Empty (Ctx : in out Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Messages);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Messages);
    begin
-      Reset_Dependent_Fields (Ctx, F_Vector);
+      Reset_Dependent_Fields (Ctx, F_Messages);
       Ctx.Message_Last := Last;
-      Ctx.Cursors (F_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
-   end Set_Vector_Empty;
+      Ctx.Cursors (F_Messages) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Messages), Predecessor => Ctx.Cursors (F_Messages).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, Predecessor => F_Messages);
+   end Set_Messages_Empty;
 
-   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : Modular_Vector_Sequence.Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
+   procedure Set_Messages (Ctx : in out Context; Seq_Ctx : Inner_Messages_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Messages);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Messages);
       function Buffer_First return Types.Index is
         (Types.Byte_Index (First));
       function Buffer_Last return Types.Index is
         (Types.Byte_Index (Last));
    begin
-      Reset_Dependent_Fields (Ctx, F_Vector);
+      Reset_Dependent_Fields (Ctx, F_Messages);
       Ctx.Message_Last := Last;
-      Ctx.Cursors (F_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
-      Modular_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Vector;
+      Ctx.Cursors (F_Messages) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Messages), Predecessor => Ctx.Cursors (F_Messages).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, Predecessor => F_Messages);
+      Inner_Messages_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Messages;
 
-   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
+   procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Inner_Messages_Sequence.Context) is
+      First : constant Types.Bit_Index := Field_First (Ctx, F_Messages);
+      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Messages);
       Buffer : Types.Bytes_Ptr;
    begin
-      if Invalid (Ctx, F_Vector) then
-         Reset_Dependent_Fields (Ctx, F_Vector);
+      if Invalid (Ctx, F_Messages) then
+         Reset_Dependent_Fields (Ctx, F_Messages);
          Ctx.Message_Last := Last;
          pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Header))
+                            Structural_Valid (Ctx.Cursors (F_Length))
                          then
-                            Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1 = RFLX.Arrays.Enumeration_Base'Size
-                            and then Ctx.Cursors (F_Header).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Header).First = Ctx.First
+                            Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
+                            and then Ctx.Cursors (F_Length).Predecessor = F_Initial
+                            and then Ctx.Cursors (F_Length).First = Ctx.First
                             and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Vector))
+                                         Structural_Valid (Ctx.Cursors (F_Messages))
                                       then
-                                         Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
-                                         and then Ctx.Cursors (F_Vector).Predecessor = F_Header
-                                         and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
-         Ctx.Cursors (F_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
+                                         Ctx.Cursors (F_Messages).Last - Ctx.Cursors (F_Messages).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
+                                         and then Ctx.Cursors (F_Messages).Predecessor = F_Length
+                                         and then Ctx.Cursors (F_Messages).First = Ctx.Cursors (F_Length).Last + 1)));
+         Ctx.Cursors (F_Messages) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Messages), Predecessor => Ctx.Cursors (F_Messages).Predecessor);
+         Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, Predecessor => F_Messages);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Modular_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      Inner_Messages_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
-   end Switch_To_Vector;
+   end Switch_To_Messages;
 
-   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Seq_Ctx);
+   procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out Inner_Messages_Sequence.Context) is
+      Valid_Sequence : constant Boolean := Inner_Messages_Sequence.Valid (Seq_Ctx);
       Buffer : Types.Bytes_Ptr;
    begin
-      Modular_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
+      Inner_Messages_Sequence.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
-         Ctx.Cursors (F_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Vector).First, Last => Ctx.Cursors (F_Vector).Last, Value => Ctx.Cursors (F_Vector).Value, Predecessor => Ctx.Cursors (F_Vector).Predecessor);
+         Ctx.Cursors (F_Messages) := (State => S_Valid, First => Ctx.Cursors (F_Messages).First, Last => Ctx.Cursors (F_Messages).Last, Value => Ctx.Cursors (F_Messages).Value, Predecessor => Ctx.Cursors (F_Messages).Predecessor);
       end if;
-   end Update_Vector;
+   end Update_Messages;
 
-end RFLX.Arrays.Generic_Array_Size_Defined_By_Message_Size;
+end RFLX.Sequence.Generic_Messages_Message;

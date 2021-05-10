@@ -1157,7 +1157,7 @@ class ValidChecksum(Attribute):
 class Valid(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         self.type_ = rty.BOOLEAN
-        return self.prefix.check_type_instance((rty.Array, rty.Message))
+        return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
 
 class Present(Attribute):
@@ -1181,7 +1181,7 @@ class Head(Attribute):
         error = self.prefix.check_type_instance(rty.Composite)
         self.type_ = (
             self.prefix.type_.element
-            if isinstance(self.prefix.type_, (rty.Aggregate, rty.Array))
+            if isinstance(self.prefix.type_, (rty.Aggregate, rty.Sequence))
             else rty.Any()
         )
         if not isinstance(self.prefix, (Variable, Selected)):
@@ -1777,7 +1777,7 @@ class QuantifiedExpression(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.parameter_identifier:
-                if isinstance(self.iterable.type_, (rty.Aggregate, rty.Array)):
+                if isinstance(self.iterable.type_, (rty.Aggregate, rty.Sequence)):
                     expr.type_ = self.iterable.type_.element
                 else:
                     expr.type_ = rty.Any()
@@ -2018,32 +2018,32 @@ class Comprehension(Expr):
     def __init__(
         self,
         iterator: StrID,
-        array: Expr,
+        sequence: Expr,
         selector: Expr,
         condition: Expr,
         location: Location = None,
     ) -> None:
         super().__init__(rty.Aggregate(selector.type_), location)
         self.iterator = ID(iterator)
-        self.array = array
+        self.sequence = sequence
         self.selector = selector
         self.condition = condition
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"[for {self.iterator} in {self.array} => {self.selector} when {self.condition}]"
+            f"[for {self.iterator} in {self.sequence} => {self.selector} when {self.condition}]"
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.iterator:
-                if isinstance(self.array.type_, (rty.Aggregate, rty.Array)):
-                    expr.type_ = self.array.type_.element
+                if isinstance(self.sequence.type_, (rty.Aggregate, rty.Sequence)):
+                    expr.type_ = self.sequence.type_.element
                 else:
                     expr.type_ = rty.Any()
             return expr
 
-        error = self.array.check_type_instance(rty.Composite)
+        error = self.sequence.check_type_instance(rty.Composite)
 
         self.selector = self.selector.substituted(typify_variable)
         self.condition = self.condition.substituted(typify_variable)
@@ -2061,7 +2061,7 @@ class Comprehension(Expr):
     def simplified(self) -> Expr:
         return Comprehension(
             self.iterator,
-            self.array.simplified(),
+            self.sequence.simplified(),
             self.selector.simplified(),
             self.condition.simplified(),
             self.location,
@@ -2075,7 +2075,7 @@ class Comprehension(Expr):
         if isinstance(expr, Comprehension):
             return expr.__class__(
                 expr.iterator,
-                expr.array.substituted(func),
+                expr.sequence.substituted(func),
                 expr.selector.substituted(func),
                 expr.condition.substituted(func),
                 expr.location,
@@ -2096,7 +2096,9 @@ class Comprehension(Expr):
     def variables(self) -> List["Variable"]:
         return [
             v
-            for v in self.array.variables() + self.selector.variables() + self.condition.variables()
+            for v in self.sequence.variables()
+            + self.selector.variables()
+            + self.condition.variables()
             if v.identifier != self.iterator
         ]
 

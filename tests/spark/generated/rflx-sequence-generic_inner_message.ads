@@ -4,7 +4,7 @@ with RFLX.RFLX_Generic_Types;
 
 generic
    with package Types is new RFLX.RFLX_Generic_Types (<>);
-package RFLX.Arrays.Generic_Inner_Message with
+package RFLX.Sequence.Generic_Inner_Message with
   SPARK_Mode,
   Annotate =>
     (GNATprove, Terminating)
@@ -43,7 +43,7 @@ is
             when F_Initial | F_Payload | F_Final =>
                null;
             when F_Length =>
-               Length_Value : RFLX.Arrays.Length;
+               Length_Value : RFLX.Sequence.Length;
          end case;
       end record;
 
@@ -233,7 +233,7 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Get_Length (Ctx : Context) return RFLX.Arrays.Length with
+   function Get_Length (Ctx : Context) return RFLX.Sequence.Length with
      Pre =>
        Valid (Ctx, F_Length);
 
@@ -246,7 +246,7 @@ is
        Has_Buffer (Ctx)
        and Present (Ctx, F_Payload);
 
-   procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) with
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -466,7 +466,7 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Length))
                 then
-                   Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.Arrays.Length'Size
+                   Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
                    and then Cursors (F_Length).Predecessor = F_Initial
                    and then Cursors (F_Length).First = First
                    and then (if
@@ -528,7 +528,7 @@ private
           when F_Initial =>
              (case Fld is
                  when F_Length =>
-                    RFLX.Arrays.Length'Size,
+                    RFLX.Sequence.Length'Size,
                  when others =>
                     Types.Unreachable_Bit_Length),
           when F_Length =>
@@ -613,7 +613,7 @@ private
      (Incomplete (Ctx, F_Length)
       or Incomplete (Ctx, F_Payload));
 
-   function Get_Length (Ctx : Context) return RFLX.Arrays.Length is
+   function Get_Length (Ctx : Context) return RFLX.Sequence.Length is
      (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
@@ -622,4 +622,4 @@ private
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
-end RFLX.Arrays.Generic_Inner_Message;
+end RFLX.Sequence.Generic_Inner_Message;

@@ -7,11 +7,11 @@ from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
     OPAQUE,
-    Array,
     Enumeration,
     Message,
     ModularInteger,
     RangeInteger,
+    Sequence,
     Type,
 )
 from tests.data import models
@@ -262,36 +262,38 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
     )
 
 
-def test_array_invalid_element_type() -> None:
+def test_sequence_invalid_element_type() -> None:
     assert_type_error(
-        Array("P::A", Array("P::B", models.MODULAR_INTEGER, Location((3, 4))), Location((5, 4))),
-        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        Sequence(
+            "P::A", Sequence("P::B", models.MODULAR_INTEGER, Location((3, 4))), Location((5, 4))
+        ),
+        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
         r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
     )
     assert_type_error(
-        Array("P::A", Message("P::B", [], {}, location=Location((3, 4))), Location((5, 4))),
-        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        Sequence("P::A", Message("P::B", [], {}, location=Location((3, 4))), Location((5, 4))),
+        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
         r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
     )
     assert_type_error(
-        Array("P::A", OPAQUE, Location((5, 4))),
-        r'^<stdin>:5:4: model: error: invalid element type of array "A"\n'
+        Sequence("P::A", OPAQUE, Location((5, 4))),
+        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
         r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or non-null message$',
     )
 
 
-def test_array_unsupported_element_type() -> None:
+def test_sequence_unsupported_element_type() -> None:
     assert_type_error(
-        Array(
+        Sequence(
             "P::A",
             ModularInteger("P::B", Pow(Number(2), Number(4)), Location((3, 4))),
             Location((5, 4)),
         ),
-        r'^<stdin>:5:4: model: error: unsupported element type size of array "A"\n'
+        r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
         r'<stdin>:3:4: model: info: type "B" has size 4, must be multiple of 8$',
     )
     assert_type_error(
-        Array("P::A", BOOLEAN, Location((5, 4))),
-        r'^<stdin>:5:4: model: error: unsupported element type size of array "A"\n'
+        Sequence("P::A", BOOLEAN, Location((5, 4))),
+        r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
         r'__BUILTINS__:0:0: model: info: type "Boolean" has size 1, must be multiple of 8$',
     )

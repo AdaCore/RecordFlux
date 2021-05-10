@@ -20,7 +20,6 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
-    Array,
     DerivedMessage,
     Enumeration,
     Field,
@@ -31,6 +30,7 @@ from rflx.model import (
     Opaque,
     RangeInteger,
     Refinement,
+    Sequence,
     Session,
     State,
     Transition,
@@ -169,27 +169,29 @@ ENUMERATION_MESSAGE = Message(
 )
 ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
-ARRAYS_LENGTH = ModularInteger("Arrays::Length", Pow(Number(2), Number(8)))
-ARRAYS_MODULAR_INTEGER = ModularInteger("Arrays::Modular_Integer", Pow(Number(2), Number(16)))
-ARRAYS_MODULAR_VECTOR = Array("Arrays::Modular_Vector", ARRAYS_MODULAR_INTEGER)
-ARRAYS_RANGE_INTEGER = RangeInteger("Arrays::Range_Integer", Number(1), Number(100), Number(8))
-ARRAYS_RANGE_VECTOR = Array("Arrays::Range_Vector", ARRAYS_RANGE_INTEGER)
-ARRAYS_ENUMERATION = Enumeration(
-    "Arrays::Enumeration",
+SEQUENCE_LENGTH = ModularInteger("Sequence::Length", Pow(Number(2), Number(8)))
+SEQUENCE_MODULAR_INTEGER = ModularInteger("Sequence::Modular_Integer", Pow(Number(2), Number(16)))
+SEQUENCE_MODULAR_VECTOR = Sequence("Sequence::Modular_Vector", SEQUENCE_MODULAR_INTEGER)
+SEQUENCE_RANGE_INTEGER = RangeInteger("Sequence::Range_Integer", Number(1), Number(100), Number(8))
+SEQUENCE_RANGE_VECTOR = Sequence("Sequence::Range_Vector", SEQUENCE_RANGE_INTEGER)
+SEQUENCE_ENUMERATION = Enumeration(
+    "Sequence::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
     False,
 )
-ARRAYS_ENUMERATION_VECTOR = Array("Arrays::Enumeration_Vector", ARRAYS_ENUMERATION)
-ARRAYS_AV_ENUMERATION = Enumeration(
-    "Arrays::AV_Enumeration",
+SEQUENCE_ENUMERATION_VECTOR = Sequence("Sequence::Enumeration_Vector", SEQUENCE_ENUMERATION)
+SEQUENCE_AV_ENUMERATION = Enumeration(
+    "Sequence::AV_Enumeration",
     [("AV_Zero", Number(0)), ("AV_One", Number(1)), ("AV_Two", Number(2))],
     Number(8),
     True,
 )
-ARRAYS_AV_ENUMERATION_VECTOR = Array("Arrays::AV_Enumeration_Vector", ARRAYS_AV_ENUMERATION)
-ARRAYS_MESSAGE = Message(
-    "Arrays::Message",
+SEQUENCE_AV_ENUMERATION_VECTOR = Sequence(
+    "Sequence::AV_Enumeration_Vector", SEQUENCE_AV_ENUMERATION
+)
+SEQUENCE_MESSAGE = Message(
+    "Sequence::Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Modular_Vector"), size=Mul(Variable("Length"), Number(8))),
@@ -199,64 +201,64 @@ ARRAYS_MESSAGE = Message(
         Link(Field("AV_Enumeration_Vector"), FINAL),
     ],
     {
-        Field("Length"): ARRAYS_LENGTH,
-        Field("Modular_Vector"): ARRAYS_MODULAR_VECTOR,
-        Field("Range_Vector"): ARRAYS_RANGE_VECTOR,
-        Field("Enumeration_Vector"): ARRAYS_ENUMERATION_VECTOR,
-        Field("AV_Enumeration_Vector"): ARRAYS_AV_ENUMERATION_VECTOR,
+        Field("Length"): SEQUENCE_LENGTH,
+        Field("Modular_Vector"): SEQUENCE_MODULAR_VECTOR,
+        Field("Range_Vector"): SEQUENCE_RANGE_VECTOR,
+        Field("Enumeration_Vector"): SEQUENCE_ENUMERATION_VECTOR,
+        Field("AV_Enumeration_Vector"): SEQUENCE_AV_ENUMERATION_VECTOR,
     },
     skip_proof=True,
 )
-ARRAYS_INNER_MESSAGE = Message(
-    "Arrays::Inner_Message",
+SEQUENCE_INNER_MESSAGE = Message(
+    "Sequence::Inner_Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Payload"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Payload"), FINAL),
     ],
-    {Field("Length"): ARRAYS_LENGTH, Field("Payload"): Opaque()},
+    {Field("Length"): SEQUENCE_LENGTH, Field("Payload"): Opaque()},
     skip_proof=True,
 )
-ARRAYS_INNER_MESSAGES = Array("Arrays::Inner_Messages", ARRAYS_INNER_MESSAGE)
-ARRAYS_MESSAGES_MESSAGE = Message(
-    "Arrays::Messages_Message",
+SEQUENCE_INNER_MESSAGES = Sequence("Sequence::Inner_Messages", SEQUENCE_INNER_MESSAGE)
+SEQUENCE_MESSAGES_MESSAGE = Message(
+    "Sequence::Messages_Message",
     [
         Link(INITIAL, Field("Length")),
         Link(Field("Length"), Field("Messages"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Messages"), FINAL),
     ],
-    {Field("Length"): ARRAYS_LENGTH, Field("Messages"): ARRAYS_INNER_MESSAGES},
+    {Field("Length"): SEQUENCE_LENGTH, Field("Messages"): SEQUENCE_INNER_MESSAGES},
     skip_proof=True,
 )
-ARRAYS_ARRAY_SIZE_DEFINED_BY_MESSAGE_SIZE = Message(
-    "Arrays::Array_Size_Defined_By_Message_Size",
+SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE = Message(
+    "Sequence::Sequence_Size_Defined_By_Message_Size",
     [
         Link(INITIAL, Field("Header")),
         Link(Field("Header"), Field("Vector"), size=Sub(Size("Message"), Size("Header"))),
         Link(Field("Vector"), FINAL),
     ],
     {
-        Field("Header"): ARRAYS_ENUMERATION,
-        Field("Vector"): ARRAYS_MODULAR_VECTOR,
+        Field("Header"): SEQUENCE_ENUMERATION,
+        Field("Vector"): SEQUENCE_MODULAR_VECTOR,
     },
     skip_proof=True,
 )
-ARRAYS_MODEL = Model(
+SEQUENCE_MODEL = Model(
     [
-        ARRAYS_LENGTH,
-        ARRAYS_MODULAR_INTEGER,
-        ARRAYS_MODULAR_VECTOR,
-        ARRAYS_RANGE_INTEGER,
-        ARRAYS_RANGE_VECTOR,
-        ARRAYS_ENUMERATION,
-        ARRAYS_ENUMERATION_VECTOR,
-        ARRAYS_AV_ENUMERATION,
-        ARRAYS_AV_ENUMERATION_VECTOR,
-        ARRAYS_MESSAGE,
-        ARRAYS_INNER_MESSAGE,
-        ARRAYS_INNER_MESSAGES,
-        ARRAYS_MESSAGES_MESSAGE,
-        ARRAYS_ARRAY_SIZE_DEFINED_BY_MESSAGE_SIZE,
+        SEQUENCE_LENGTH,
+        SEQUENCE_MODULAR_INTEGER,
+        SEQUENCE_MODULAR_VECTOR,
+        SEQUENCE_RANGE_INTEGER,
+        SEQUENCE_RANGE_VECTOR,
+        SEQUENCE_ENUMERATION,
+        SEQUENCE_ENUMERATION_VECTOR,
+        SEQUENCE_AV_ENUMERATION,
+        SEQUENCE_AV_ENUMERATION_VECTOR,
+        SEQUENCE_MESSAGE,
+        SEQUENCE_INNER_MESSAGE,
+        SEQUENCE_INNER_MESSAGES,
+        SEQUENCE_MESSAGES_MESSAGE,
+        SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE,
     ]
 )
 

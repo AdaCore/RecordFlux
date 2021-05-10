@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Arrays.Generic_Inner_Message with
+package body RFLX.Sequence.Generic_Inner_Message with
   SPARK_Mode
 is
 
@@ -166,7 +166,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (RFLX.Arrays.Length);
+      function Extract is new Types.Extract (RFLX.Sequence.Length);
    begin
       return ((case Fld is
                   when F_Length =>
@@ -203,7 +203,7 @@ is
                pragma Assert ((if
                                   Structural_Valid (Ctx.Cursors (F_Length))
                                then
-                                  Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Arrays.Length'Size
+                                  Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
                                   and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                                   and then Ctx.Cursors (F_Length).First = Ctx.First
                                   and then (if
@@ -277,7 +277,7 @@ is
         (Types.Byte_Index (Last));
       function Offset return Types.Offset is
         (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (RFLX.Arrays.Length);
+      procedure Insert is new Types.Insert (RFLX.Sequence.Length);
    begin
       Fst := First;
       Lst := Last;
@@ -291,7 +291,7 @@ is
       end case;
    end Set_Field_Value;
 
-   procedure Set_Length (Ctx : in out Context; Val : RFLX.Arrays.Length) is
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is
       Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : Types.Bit_Index;
    begin
@@ -342,7 +342,7 @@ is
       pragma Assert ((if
                          Structural_Valid (Ctx.Cursors (F_Length))
                       then
-                         Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Arrays.Length'Size
+                         Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
                          and then Ctx.Cursors (F_Length).Predecessor = F_Initial
                          and then Ctx.Cursors (F_Length).First = Ctx.First
                          and then (if
@@ -384,4 +384,4 @@ is
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Generic_Set_Payload;
 
-end RFLX.Arrays.Generic_Inner_Message;
+end RFLX.Sequence.Generic_Inner_Message;

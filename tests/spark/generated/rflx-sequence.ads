@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package RFLX.Arrays with
+package RFLX.Sequence with
   SPARK_Mode
 is
 
@@ -11,8 +11,8 @@ is
 
    pragma Warnings (Off, "precondition is * false");
 
-   function Unreachable_Arrays_Length return RFLX.Arrays.Length is
-     (RFLX.Arrays.Length'First)
+   function Unreachable_Sequence_Length return RFLX.Sequence.Length is
+     (RFLX.Sequence.Length'First)
     with
      Pre =>
        False;
@@ -23,17 +23,17 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Arrays.Length) return Boolean is
+   function Valid (Val : RFLX.Sequence.Length) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
+   function To_Base (Val : RFLX.Sequence.Length) return RFLX.Sequence.Length is
      (Val);
 
-   function To_Actual (Val : RFLX.Arrays.Length) return RFLX.Arrays.Length is
+   function To_Actual (Val : RFLX.Sequence.Length) return RFLX.Sequence.Length is
      (Val)
     with
      Pre =>
@@ -45,8 +45,8 @@ is
 
    pragma Warnings (Off, "precondition is * false");
 
-   function Unreachable_Arrays_Modular_Integer return RFLX.Arrays.Modular_Integer is
-     (RFLX.Arrays.Modular_Integer'First)
+   function Unreachable_Sequence_Modular_Integer return RFLX.Sequence.Modular_Integer is
+     (RFLX.Sequence.Modular_Integer'First)
     with
      Pre =>
        False;
@@ -57,17 +57,17 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Arrays.Modular_Integer) return Boolean is
+   function Valid (Val : RFLX.Sequence.Modular_Integer) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
+   function To_Base (Val : RFLX.Sequence.Modular_Integer) return RFLX.Sequence.Modular_Integer is
      (Val);
 
-   function To_Actual (Val : RFLX.Arrays.Modular_Integer) return RFLX.Arrays.Modular_Integer is
+   function To_Actual (Val : RFLX.Sequence.Modular_Integer) return RFLX.Sequence.Modular_Integer is
      (Val)
     with
      Pre =>
@@ -83,23 +83,23 @@ is
 
    pragma Warnings (Off, "precondition is * false");
 
-   function Unreachable_Arrays_Range_Integer return RFLX.Arrays.Range_Integer is
-     (RFLX.Arrays.Range_Integer'First)
+   function Unreachable_Sequence_Range_Integer return RFLX.Sequence.Range_Integer is
+     (RFLX.Sequence.Range_Integer'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is * false");
 
-   function Valid (Val : RFLX.Arrays.Range_Integer_Base) return Boolean is
+   function Valid (Val : RFLX.Sequence.Range_Integer_Base) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function To_Base (Val : RFLX.Arrays.Range_Integer) return RFLX.Arrays.Range_Integer_Base is
-     (RFLX.Arrays.Range_Integer_Base (Val));
+   function To_Base (Val : RFLX.Sequence.Range_Integer) return RFLX.Sequence.Range_Integer_Base is
+     (RFLX.Sequence.Range_Integer_Base (Val));
 
-   function To_Actual (Val : RFLX.Arrays.Range_Integer_Base) return RFLX.Arrays.Range_Integer is
-     (RFLX.Arrays.Range_Integer (Val))
+   function To_Actual (Val : RFLX.Sequence.Range_Integer_Base) return RFLX.Sequence.Range_Integer is
+     (RFLX.Sequence.Range_Integer (Val))
     with
      Pre =>
        Valid (Val);
@@ -113,22 +113,22 @@ is
 
    pragma Warnings (Off, "precondition is * false");
 
-   function Unreachable_Arrays_Enumeration return RFLX.Arrays.Enumeration is
-     (RFLX.Arrays.Enumeration'First)
+   function Unreachable_Sequence_Enumeration return RFLX.Sequence.Enumeration is
+     (RFLX.Sequence.Enumeration'First)
     with
      Pre =>
        False;
 
    pragma Warnings (On, "precondition is * false");
 
-   function Valid (Val : RFLX.Arrays.Enumeration_Base) return Boolean is
+   function Valid (Val : RFLX.Sequence.Enumeration_Base) return Boolean is
      ((case Val is
           when 0 | 1 | 2 =>
              True,
           when others =>
              False));
 
-   function To_Base (Enum : RFLX.Arrays.Enumeration) return RFLX.Arrays.Enumeration_Base is
+   function To_Base (Enum : RFLX.Sequence.Enumeration) return RFLX.Sequence.Enumeration_Base is
      ((case Enum is
           when Zero =>
              0,
@@ -139,7 +139,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.Arrays.Enumeration_Base) return RFLX.Arrays.Enumeration is
+   function To_Actual (Val : RFLX.Sequence.Enumeration_Base) return RFLX.Sequence.Enumeration is
      ((case Val is
           when 0 =>
              Zero,
@@ -148,7 +148,7 @@ is
           when 2 =>
              Two,
           when others =>
-             Unreachable_Arrays_Enumeration))
+             Unreachable_Sequence_Enumeration))
     with
      Pre =>
        Valid (Val);
@@ -174,8 +174,8 @@ is
 
    pragma Warnings (Off, "precondition is * false");
 
-   function Unreachable_Arrays_AV_Enumeration return RFLX.Arrays.AV_Enumeration is
-     ((False, RFLX.Arrays.AV_Enumeration_Base'First))
+   function Unreachable_Sequence_AV_Enumeration return RFLX.Sequence.AV_Enumeration is
+     ((False, RFLX.Sequence.AV_Enumeration_Base'First))
     with
      Pre =>
        False;
@@ -186,14 +186,14 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Arrays.AV_Enumeration_Base) return Boolean is
+   function Valid (Val : RFLX.Sequence.AV_Enumeration_Base) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Enum : RFLX.Arrays.AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration_Base is
+   function To_Base (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration_Base is
      ((case Enum is
           when AV_Zero =>
              0,
@@ -202,10 +202,10 @@ is
           when AV_Two =>
              2));
 
-   function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Arrays.AV_Enumeration is
+   function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.Arrays.AV_Enumeration_Base) return RFLX.Arrays.AV_Enumeration is
+   function To_Actual (Val : RFLX.Sequence.AV_Enumeration_Base) return RFLX.Sequence.AV_Enumeration is
      ((case Val is
           when 0 =>
              (True, AV_Zero),
@@ -219,7 +219,7 @@ is
      Pre =>
        Valid (Val);
 
-   function To_Base (Val : RFLX.Arrays.AV_Enumeration) return RFLX.Arrays.AV_Enumeration_Base is
+   function To_Base (Val : RFLX.Sequence.AV_Enumeration) return RFLX.Sequence.AV_Enumeration_Base is
      ((if
           Val.Known
        then
@@ -227,4 +227,4 @@ is
        else
           Val.Raw));
 
-end RFLX.Arrays;
+end RFLX.Sequence;

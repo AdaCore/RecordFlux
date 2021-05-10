@@ -288,7 +288,7 @@ jobs:
           - "tlv"
           - "in_tlv"
           - "enumeration"
-          - "arrays"
+          - "sequence"
           - "derivation"
           - "expression"
     steps:

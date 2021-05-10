@@ -1,30 +1,14 @@
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
-import rflx.ada as ada
-import rflx.expression as expr
+from rflx import ada, expression as expr, model
 from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
-from rflx.model import (
-    FINAL,
-    INITIAL,
-    Array,
-    Composite,
-    DerivedMessage,
-    Enumeration,
-    Field,
-    Link,
-    Message,
-    ModularInteger,
-    Scalar,
-    Type,
-    is_builtin_type,
-)
 
 from . import const
 
 
 def substitution(
-    message: Message,
+    message: model.Message,
     embedded: bool = False,
     public: bool = False,
     target_type: Optional[ada.ID] = const.TYPES_U64,
@@ -44,12 +28,12 @@ def substitution(
             if isinstance(expression.left, expr.Variable) and isinstance(
                 expression.right, expr.Aggregate
             ):
-                field = Field(expression.left.name)
+                field = model.Field(expression.left.name)
                 aggregate = byte_aggregate(expression.right)
             elif isinstance(expression.left, expr.Aggregate) and isinstance(
                 expression.right, expr.Variable
             ):
-                field = Field(expression.right.name)
+                field = model.Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
             if field and aggregate:
                 assert field in message.fields
@@ -92,7 +76,7 @@ def substitution(
                 )
                 return equal_call if isinstance(expression, expr.Equal) else expr.Not(equal_call)
 
-        def field_value(field: Field) -> expr.Expr:
+        def field_value(field: model.Field) -> expr.Expr:
             if public:
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
@@ -106,19 +90,19 @@ def substitution(
         if isinstance(expression, expr.Relation):
             if (
                 isinstance(expression.left, expr.Variable)
-                and Field(expression.left.name) in message.fields
+                and model.Field(expression.left.name) in message.fields
                 and isinstance(expression.right, expr.Number)
             ):
                 return expression.__class__(
-                    field_value(Field(expression.left.name)), expression.right
+                    field_value(model.Field(expression.left.name)), expression.right
                 )
             if (
                 isinstance(expression.right, expr.Variable)
-                and Field(expression.right.name) in message.fields
+                and model.Field(expression.right.name) in message.fields
                 and isinstance(expression.left, expr.Number)
             ):
                 return expression.__class__(
-                    expression.left, field_value(Field(expression.right.name))
+                    expression.left, field_value(model.Field(expression.right.name))
                 )
 
         return expression
@@ -127,7 +111,7 @@ def substitution(
 
 
 def substitution_facts(
-    message: Message,
+    message: model.Message,
     embedded: bool = False,
     public: bool = False,
     target_type: Optional[ada.ID] = const.TYPES_U64,
@@ -139,21 +123,21 @@ def substitution_facts(
     last = prefixed("Last")
     cursors = prefixed("Cursors")
 
-    def field_first(field: Field) -> expr.Expr:
+    def field_first(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
                 "Field_First", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First")
 
-    def field_last(field: Field) -> expr.Expr:
+    def field_last(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
                 "Field_Last", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last")
 
-    def field_size(field: Field) -> expr.Expr:
+    def field_size(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
                 "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
@@ -166,8 +150,8 @@ def substitution_facts(
             expr.Number(1),
         )
 
-    def field_value(field: Field, field_type: Type) -> expr.Expr:
-        if isinstance(field_type, Enumeration):
+    def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
+        if isinstance(field_type, model.Enumeration):
             if public:
                 return expr.Call(
                     "To_Base", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
@@ -176,14 +160,14 @@ def substitution_facts(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 expr.ID("Value") * f"{field.name}_Value",
             )
-        if isinstance(field_type, Scalar):
+        if isinstance(field_type, model.Scalar):
             if public:
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 expr.ID("Value") * f"{field.name}_Value",
             )
-        if isinstance(field_type, Composite):
+        if isinstance(field_type, model.Composite):
             return expr.Variable(field.name)
 
         assert False, f'unexpected type "{type(field_type).__name__}"'
@@ -205,7 +189,7 @@ def substitution_facts(
         **{
             expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
             for t in message.types.values()
-            if isinstance(t, Enumeration)
+            if isinstance(t, model.Enumeration)
             for l in t.literals.keys()
         },
         **{
@@ -213,7 +197,7 @@ def substitution_facts(
                 expr.Call("To_Base", [expr.Variable(t.package * l)])
             )
             for t in message.types.values()
-            if isinstance(t, Enumeration)
+            if isinstance(t, model.Enumeration)
             for l in t.literals.keys()
         },
         # ISSUE: Componolit/RecordFlux#276
@@ -222,32 +206,34 @@ def substitution_facts(
 
 
 def message_structure_invariant(
-    message: Message, prefix: str, link: Link = None, embedded: bool = False
+    message: model.Message, prefix: str, link: model.Link = None, embedded: bool = False
 ) -> ada.Expr:
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
     if not link:
-        return message_structure_invariant(message, prefix, message.outgoing(INITIAL)[0], embedded)
+        return message_structure_invariant(
+            message, prefix, message.outgoing(model.INITIAL)[0], embedded
+        )
 
     source = link.source
     target = link.target
 
-    if target is FINAL:
+    if target is model.FINAL:
         return ada.TRUE
 
     field_type = message.types[target]
     condition = link.condition.substituted(substitution(message, embedded)).simplified()
     size = (
         expr.Size(prefix * full_base_type_name(field_type))
-        if isinstance(field_type, Scalar)
+        if isinstance(field_type, model.Scalar)
         else link.size.substituted(
             substitution(message, embedded, target_type=const.TYPES_BIT_LENGTH)
         ).simplified()
     )
     first = (
         prefixed("First")
-        if source == INITIAL
+        if source == model.INITIAL
         else link.first.substituted(
             substitution(message, embedded, target_type=const.TYPES_BIT_INDEX)
         )
@@ -332,7 +318,9 @@ def message_structure_invariant(
     )
 
 
-def context_predicate(message: Message, composite_fields: Sequence[Field], prefix: str) -> ada.Expr:
+def context_predicate(
+    message: model.Message, composite_fields: Sequence[model.Field], prefix: str
+) -> ada.Expr:
     def valid_predecessors_invariant() -> ada.Expr:
         return ada.AndThen(
             *[
@@ -385,7 +373,7 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                     ]
                 )
                 for f in message.fields
-                if f not in message.direct_successors(INITIAL)
+                if f not in message.direct_successors(model.INITIAL)
             ]
         )
 
@@ -422,7 +410,7 @@ def context_predicate(message: Message, composite_fields: Sequence[Field], prefi
                     ]
                 )
                 for f in message.fields
-                if f not in message.direct_successors(INITIAL)
+                if f not in message.direct_successors(model.INITIAL)
             ]
         )
 
@@ -515,7 +503,9 @@ def public_context_predicate() -> ada.Expr:
     )
 
 
-def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequence[ada.Expr]:
+def valid_path_to_next_field_condition(
+    message: model.Message, field: model.Field
+) -> Sequence[ada.Expr]:
     return [
         ada.If(
             [
@@ -535,14 +525,14 @@ def valid_path_to_next_field_condition(message: Message, field: Field) -> Sequen
                             "Valid_Next",
                             [ada.Variable("Ctx"), ada.Variable(l.target.affixed_name)],
                         )
-                        if l.target != FINAL
+                        if l.target != model.FINAL
                         else ada.TRUE,
                     ),
                 )
             ]
         )
         for l in message.outgoing(field)
-        if l.target != FINAL
+        if l.target != model.FINAL
     ]
 
 
@@ -554,7 +544,7 @@ def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
 
 
 def initialize_field_statements(
-    message: Message, field: Field, prefix: str
+    message: model.Message, field: model.Field, prefix: str
 ) -> Sequence[ada.Statement]:
     return [
         ada.CallStatement(
@@ -651,7 +641,7 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
 
 
 def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
-    if is_builtin_type(type_identifier):
+    if model.is_builtin_type(type_identifier):
         return type_identifier
 
     return prefix * type_identifier
@@ -661,36 +651,36 @@ def generic_name(identifier: ada.ID) -> ada.ID:
     return ada.ID([*identifier.parts[:-1], f"Generic_{identifier.parts[-1]}"])
 
 
-def base_type_name(scalar_type: Scalar) -> ada.ID:
-    if isinstance(scalar_type, ModularInteger):
+def base_type_name(scalar_type: model.Scalar) -> ada.ID:
+    if isinstance(scalar_type, model.ModularInteger):
         return ada.ID(scalar_type.name)
 
     return ada.ID(scalar_type.name + "_Base")
 
 
-def full_base_type_name(scalar_type: Scalar) -> ada.ID:
+def full_base_type_name(scalar_type: model.Scalar) -> ada.ID:
     if scalar_type.package == BUILTINS_PACKAGE:
         return const.BUILTIN_TYPES_PACKAGE * scalar_type.name + "_Base"
 
-    if isinstance(scalar_type, ModularInteger):
+    if isinstance(scalar_type, model.ModularInteger):
         return ada.ID(scalar_type.identifier)
 
     return ada.ID(scalar_type.identifier + "_Base")
 
 
-def enum_name(enum_type: Enumeration) -> ada.ID:
+def enum_name(enum_type: model.Enumeration) -> ada.ID:
     return ada.ID(enum_type.name + "_Enum")
 
 
-def full_enum_name(enum_type: Enumeration) -> ada.ID:
+def full_enum_name(enum_type: model.Enumeration) -> ada.ID:
     return ada.ID(enum_type.identifier + "_Enum")
 
 
-def sequence_name(message: Message, field: Field) -> ada.ID:
+def sequence_name(message: model.Message, field: model.Field) -> ada.ID:
     return ada.ID(message.types[field].name + "_Sequence")
 
 
-def size_dependent_condition(message: Message) -> bool:
+def size_dependent_condition(message: model.Message) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
     return any(
         size in field_sizes
@@ -700,9 +690,9 @@ def size_dependent_condition(message: Message) -> bool:
 
 
 def create_message_instantiation(
-    message: Message, types_package: ada.ID, prefix: str = ""
+    message: model.Message, types_package: ada.ID, prefix: str = ""
 ) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
-    if isinstance(message, DerivedMessage):
+    if isinstance(message, model.DerivedMessage):
         name = generic_name(prefix * ada.ID(message.base.identifier))
     else:
         name = generic_name(prefix * ada.ID(message.identifier))
@@ -711,40 +701,42 @@ def create_message_instantiation(
         ada.WithClause(name),
     ]
 
-    arrays = list(
+    sequences = list(
         unique(
-            prefix * ada.ID(t.identifier) for t in message.types.values() if isinstance(t, Array)
+            prefix * ada.ID(t.identifier)
+            for t in message.types.values()
+            if isinstance(t, model.Sequence)
         )
     )
-    context.extend(ada.WithClause(array) for array in arrays)
+    context.extend(ada.WithClause(sequence) for sequence in sequences)
     package = ada.GenericPackageInstantiation(
-        prefix * ada.ID(message.identifier), name, [types_package] + arrays
+        prefix * ada.ID(message.identifier), name, [types_package] + sequences
     )
 
     return (context, package)
 
 
-def create_array_instantiation(
-    array_type: Array,
+def create_sequence_instantiation(
+    sequence_type: model.Sequence,
     types_package: ada.ID,
     prefix: str = "",
     flat: bool = False,
 ) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
-    element_type = array_type.element_type
+    element_type = sequence_type.element_type
     element_type_package = ada.ID(element_type.package.name)
 
-    array_context: List[ada.ContextItem] = []
-    array_package: ada.GenericPackageInstantiation
-    if isinstance(element_type, Message):
+    sequence_context: List[ada.ContextItem] = []
+    sequence_package: ada.GenericPackageInstantiation
+    if isinstance(element_type, model.Message):
         element_type_identifier = ada.ID(
             element_type.identifier.flat if flat else prefix * element_type.identifier
         )
-        array_context = [
+        sequence_context = [
             ada.WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
             *([] if flat else [ada.WithClause(element_type_identifier)]),
         ]
-        array_package = ada.GenericPackageInstantiation(
-            ada.ID(array_type.identifier.flat if flat else prefix * array_type.identifier),
+        sequence_package = ada.GenericPackageInstantiation(
+            ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.MESSAGE_SEQUENCE_PACKAGE,
             [
                 types_package,
@@ -757,14 +749,14 @@ def create_array_instantiation(
                 element_type_identifier * "Structural_Valid_Message",
             ],
         )
-    elif isinstance(element_type, Scalar):
+    elif isinstance(element_type, model.Scalar):
         element_type_identifier = ada.ID(prefix * element_type.identifier)
-        array_context = [
+        sequence_context = [
             ada.WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
             ada.WithClause(prefix * element_type_package),
         ]
-        array_package = ada.GenericPackageInstantiation(
-            ada.ID(array_type.identifier.flat if flat else prefix * array_type.identifier),
+        sequence_package = ada.GenericPackageInstantiation(
+            ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.SCALAR_SEQUENCE_PACKAGE,
             [
                 types_package,
@@ -773,7 +765,7 @@ def create_array_instantiation(
                 * element_type_package
                 * (
                     base_type_name(element_type)
-                    if not isinstance(element_type, ModularInteger)
+                    if not isinstance(element_type, model.ModularInteger)
                     else element_type.name
                 ),
                 prefix * element_type_package * "Valid",
@@ -784,4 +776,4 @@ def create_array_instantiation(
     else:
         assert False, 'unexpected element type "{type(element_type)}"'
 
-    return (array_context, array_package)
+    return (sequence_context, sequence_package)

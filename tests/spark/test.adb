@@ -12,7 +12,7 @@ with RFLX.In_IPv4_Tests;
 with RFLX.TLV_Tests;
 with RFLX.In_TLV_Tests;
 with RFLX.Enumeration_Tests;
-with RFLX.Arrays_Tests;
+with RFLX.Sequence_Tests;
 with RFLX.Derivation_Tests;
 with RFLX.Expression_Tests;
 
@@ -31,7 +31,7 @@ procedure Test is
       Result.all.Add_Test (new RFLX.TLV_Tests.Test);
       Result.all.Add_Test (new RFLX.In_TLV_Tests.Test);
       Result.all.Add_Test (new RFLX.Enumeration_Tests.Test);
-      Result.all.Add_Test (new RFLX.Arrays_Tests.Test);
+      Result.all.Add_Test (new RFLX.Sequence_Tests.Test);
       Result.all.Add_Test (new RFLX.Derivation_Tests.Test);
       Result.all.Add_Test (new RFLX.Expression_Tests.Test);
       return Result;
