@@ -280,7 +280,7 @@
   <proof prover="0"><result status="valid" steps="822814"/></proof>
   </goal>
   <goal name="def&#39;vc.76" expl="assertion" proved="true">
-  <proof prover="0"><result status="timeout"/></proof>
+  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="67112"/></proof>
   </goal>
   <goal name="def&#39;vc.77" expl="postcondition" proved="true">

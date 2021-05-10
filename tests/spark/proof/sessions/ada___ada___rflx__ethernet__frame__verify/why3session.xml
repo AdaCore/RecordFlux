@@ -114,8 +114,8 @@
   </goal>
   <goal name="def&#39;vc.29" expl="assertion" proved="true">
   <proof prover="0"><result status="valid" steps="66936"/></proof>
-  <proof prover="1"><result status="timeout"/></proof>
-  <proof prover="2"><result status="unknown" steps="65127"/></proof>
+  <proof prover="1" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="2" obsolete="true"><result status="unknown" steps="65127"/></proof>
   </goal>
   <goal name="def&#39;vc.30" expl="assertion" proved="true">
   <transf name="trivial_true" proved="true" >
