@@ -176,7 +176,6 @@ rflx_lexer.add_rules(
     (Literal("mod"), Token.Mod),
     (Literal("message"), Token.Message),
     (Literal("then"), Token.Then),
-    (Literal("array"), Token.Sequence),
     (Literal("sequence"), Token.Sequence),
     (Literal("of"), Token.Of),
     (Literal("in"), Token.In),

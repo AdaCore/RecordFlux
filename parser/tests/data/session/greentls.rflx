@@ -184,7 +184,7 @@ package GreenTLS is
          Key : Opaque;
       end message;
 
-   type PSKs is array of PSK;
+   type PSKs is sequence of PSK;
 
    type PSK_Message is
       message

@@ -64,28 +64,28 @@ package TLS_Handshake is
          Data : Opaque;
       end message;
 
-   type Extensions is array of Extension;
+   type Extensions is sequence of Extension;
 
    type CH_Extension is new Extension;
-   type CH_Extensions is array of CH_Extension;
+   type CH_Extensions is sequence of CH_Extension;
 
    type SH_Extension is new Extension;
-   type SH_Extensions is array of SH_Extension;
+   type SH_Extensions is sequence of SH_Extension;
 
    type HRR_Extension is new Extension;
-   type HRR_Extensions is array of HRR_Extension;
+   type HRR_Extensions is sequence of HRR_Extension;
 
    type EE_Extension is new Extension;
-   type EE_Extensions is array of EE_Extension;
+   type EE_Extensions is sequence of EE_Extension;
 
    type CT_Extension is new Extension;
-   type CT_Extensions is array of CT_Extension;
+   type CT_Extensions is sequence of CT_Extension;
 
    type CR_Extension is new Extension;
-   type CR_Extensions is array of CR_Extension;
+   type CR_Extensions is sequence of CR_Extension;
 
    type NST_Extension is new Extension;
-   type NST_Extensions is array of NST_Extension;
+   type NST_Extensions is sequence of NST_Extension;
 
    -- Key Exchange Messages
 
@@ -108,7 +108,7 @@ package TLS_Handshake is
       TLS_AES_128_CCM_8_SHA256 => 16#1305#
    ) with Size => 16, Always_Valid;
 
-   type Cipher_Suites is array of Cipher_Suite;
+   type Cipher_Suites is sequence of Cipher_Suite;
 
    type Legacy_Compression_Methods_Length is range 1 .. 1 with Size => 8;
 
@@ -231,7 +231,7 @@ package TLS_Handshake is
       end message;
 
    type Certificate_List_Length is range 0 .. 2**24 - 1 with Size => 24;
-   type Certificate_Entries is array of Certificate_Entry;
+   type Certificate_Entries is sequence of Certificate_Entry;
 
    type Certificate is
       message
@@ -359,7 +359,7 @@ package TLS_Handshake is
       end message;
 
    type Server_Name_List_Length is range 1 .. 2**16 - 1 with Size => 16;
-   type Server_Names is array of Server_Name;
+   type Server_Names is sequence of Server_Name;
 
    type Server_Name_List is
       message
@@ -396,7 +396,7 @@ package TLS_Handshake is
    -- Supported Versions Extension
 
    type Supported_Versions_Length is range 2 .. 254 with Size => 8;
-   type Protocol_Versions is array of Protocol_Version;
+   type Protocol_Versions is sequence of Protocol_Version;
 
    type Supported_Versions is
       message
@@ -438,7 +438,7 @@ package TLS_Handshake is
    -- Signature Algorithms Extension
 
    type Signature_Algorithms_Length is range 2 .. 2**16 - 2 with Size => 16;
-   type Signature_Schemes is array of Signature_Scheme;
+   type Signature_Schemes is sequence of Signature_Scheme;
 
    type Signature_Algorithms is
       message
@@ -491,7 +491,7 @@ package TLS_Handshake is
          Name : Opaque;
       end message;
 
-   type Distinguished_Names is array of Distinguished_Name;
+   type Distinguished_Names is sequence of Distinguished_Name;
 
    type Certificate_Authorities is
       message
@@ -524,7 +524,7 @@ package TLS_Handshake is
          Values : Opaque;
       end message;
 
-   type Filters is array of Filter;
+   type Filters is sequence of Filter;
 
    type OID_Filters is
       message
@@ -563,7 +563,7 @@ package TLS_Handshake is
       FFDHE8192 => 16#0104#
    ) with Size => 16, Always_Valid;
 
-   type Named_Groups is array of Named_Group;
+   type Named_Groups is sequence of Named_Group;
 
    type Supported_Groups is
       message
@@ -591,7 +591,7 @@ package TLS_Handshake is
          Key_Exchange : Opaque;
       end message;
 
-   type Key_Share_Entries is array of Key_Share_Entry;
+   type Key_Share_Entries is sequence of Key_Share_Entry;
 
    type Key_Shares_Length is range 0 .. 2**16 - 1 with Size => 16;
 
@@ -626,7 +626,7 @@ package TLS_Handshake is
       PSK_DHE_KE => 1
    ) with Size => 8, Always_Valid;
 
-   type Key_Exchange_Modes is array of Key_Exchange_Mode;
+   type Key_Exchange_Modes is sequence of Key_Exchange_Mode;
 
    type PSK_Key_Exchange_Modes is
       message
@@ -671,7 +671,7 @@ package TLS_Handshake is
          Obfuscated_Ticket_Age : Obfuscated_Ticket_Age;
       end message;
 
-   type PSK_Identities is array of PSK_Identity;
+   type PSK_Identities is sequence of PSK_Identity;
 
    type PSK_Binder_Entry_Length is range 32 .. 255 with Size => 8;
 
@@ -683,7 +683,7 @@ package TLS_Handshake is
          PSK_Binder_Entry : Opaque;
       end message;
 
-   type PSK_Binder_Entries is array of PSK_Binder_Entry;
+   type PSK_Binder_Entries is sequence of PSK_Binder_Entry;
 
    type Identities_Length is range 7 .. 2**16 - 1 with Size => 16;
    type Binders_Length is range 33 .. 2**16 - 1 with Size => 16;
@@ -724,7 +724,7 @@ package TLS_Handshake is
          Name : Opaque;
       end message;
 
-   type Protocol_Names is array of Protocol_Name;
+   type Protocol_Names is sequence of Protocol_Name;
    type Protocol_Name_List_Length is range 2 .. 2**16 - 1 with Size => 16;
 
    type Protocol_Name_List is

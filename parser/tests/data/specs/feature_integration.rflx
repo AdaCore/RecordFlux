@@ -1,6 +1,6 @@
 with Integer_Type;
 with Enumeration_Type;
-with Array_Type;
+with Sequence_Type;
 with Message_Type;
 with Message_In_Message;
 with TLV_With_Checksum;
@@ -11,14 +11,14 @@ package Feature_Integration is
       message
          Enumeration : Enumeration_Type::Priority
             then Integer
-               if Enumeration = Enumeration_Type::HIGH;
+               if Enumeration = Enumeration_Type::High;
          Integer : Integer_Type::Byte
-            then Scalar_Array
+            then Scalar_Sequence
                with Size => 8 * Integer;
-         Scalar_Array : Array_Type::Bytes
-            then Message_Array
+         Scalar_Sequence : Sequence_Type::Bytes
+            then Message_Sequence
                with Size => 8 * Integer;
-         Message_Array : Array_Type::Bar;
+         Message_Sequence : Sequence_Type::Bar;
          Message_Type : Message_Type::PDU;
          Message_In_Message : Message_In_Message::Message;
          Derived_Message_In_Message : Message_In_Message::Derived_Message

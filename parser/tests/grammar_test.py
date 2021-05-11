@@ -3427,21 +3427,6 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
             },
         ),
-        (
-            "type T is sequence of E",
-            {
-                "_kind": "TypeDecl",
-                "definition": {
-                    "_kind": "SequenceTypeDef",
-                    "element_type": {
-                        "_kind": "ID",
-                        "name": {"_kind": "UnqualifiedID", "_value": "E"},
-                        "package": None,
-                    },
-                },
-                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
-            },
-        ),
     ],
 )
 def test_type_declaration(string: str, expected: Dict[str, str]) -> None:
