@@ -1,18 +1,18 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Ethernet.Generic_Frame with
+package body RFLX.Ethernet.Frame with
   SPARK_Mode
 is
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) is
    begin
-      Initialize (Ctx, Buffer, Types.First_Bit_Index (Buffer'First), Types.Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, RFLX_Types.First_Bit_Index (Buffer'First), RFLX_Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index) is
-      Buffer_First : constant Types.Index := Buffer'First;
-      Buffer_Last : constant Types.Index := Buffer'Last;
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First, Last : RFLX_Types.Bit_Index) is
+      Buffer_First : constant RFLX_Types.Index := Buffer'First;
+      Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
       Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Destination => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
@@ -24,39 +24,39 @@ is
       Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
-         Buffer := Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last));
+         Buffer := Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Message_Last));
       else
-         Buffer := Ctx.Buffer.all (Types.Index'Last .. Types.Index'First);
+         Buffer := Ctx.Buffer.all (RFLX_Types.Index'Last .. RFLX_Types.Index'First);
       end if;
    end Copy;
 
    procedure Read (Ctx : Context) is
    begin
-      Read (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last)));
+      Read (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Message_Last)));
    end Read;
 
    procedure Write (Ctx : in out Context) is
    begin
       Reset (Ctx);
-      Write (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Last)));
+      Write (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Last)));
    end Write;
 
-   function Byte_Size (Ctx : Context) return Types.Length is
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if
           Ctx.Message_Last = Ctx.First - 1
        then
           0
        else
-          Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
+          RFLX_Types.Length (RFLX_Types.Byte_Index (Ctx.Message_Last) - RFLX_Types.Byte_Index (Ctx.First) + 1)));
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -94,8 +94,8 @@ is
                  F_Initial),
           when F_Payload =>
              (if
-                 Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                 and Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
+                 RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
               then
                  F_Final
               else
@@ -128,8 +128,7 @@ is
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
-      and Field_Size (Ctx, Fld) >= 0
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < Types.Bit_Length'Last
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
       and Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld))
     with
@@ -137,11 +136,11 @@ is
        Has_Buffer (Ctx)
        and Valid_Next (Ctx, Fld);
 
-   function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean is
+   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
       and then (case Fld is
                    when F_Payload =>
-                      Ctx.Buffer.all (Types.Byte_Index (Field_First (Ctx, Fld)) .. Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
+                      Ctx.Buffer.all (RFLX_Types.Byte_Index (Field_First (Ctx, Fld)) .. RFLX_Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
                    when others =>
                       False));
 
@@ -218,9 +217,9 @@ is
                   and Ctx.Cursors (F_Type_Length) = Ctx.Cursors (F_Type_Length)'Old
                   and Invalid (Ctx, F_Payload))
    is
-      First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
+      First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
@@ -293,18 +292,18 @@ is
      Post =>
        Get_Field_Value'Result.Fld = Fld
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (RFLX.Ethernet.Address);
-      function Extract is new Types.Extract (RFLX.Ethernet.Type_Length_Base);
-      function Extract is new Types.Extract (RFLX.Ethernet.TPID_Base);
-      function Extract is new Types.Extract (RFLX.Ethernet.TCI);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new RFLX_Types.Extract (RFLX.Ethernet.Address);
+      function Extract is new RFLX_Types.Extract (RFLX.Ethernet.Type_Length_Base);
+      function Extract is new RFLX_Types.Extract (RFLX.Ethernet.TPID_Base);
+      function Extract is new RFLX_Types.Extract (RFLX.Ethernet.TCI);
    begin
       return ((case Fld is
                   when F_Destination =>
@@ -341,7 +340,7 @@ is
                pragma Assert ((if
                                   Fld = F_Payload
                                then
-                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
@@ -384,13 +383,13 @@ is
    end Verify_Message;
 
    procedure Get_Payload (Ctx : Context) is
-      First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Payload).First);
-      Last : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Payload).Last);
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Payload).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Payload).Last);
    begin
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Get_Payload;
 
-   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -420,18 +419,18 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Val.Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (RFLX.Ethernet.Address);
-      procedure Insert is new Types.Insert (RFLX.Ethernet.Type_Length_Base);
-      procedure Insert is new Types.Insert (RFLX.Ethernet.TPID_Base);
-      procedure Insert is new Types.Insert (RFLX.Ethernet.TCI);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Val.Fld);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TPID_Base);
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TCI);
    begin
       Fst := First;
       Lst := Last;
@@ -457,7 +456,7 @@ is
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
       Field_Value : constant Field_Dependent_Value := (F_Destination, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -468,7 +467,7 @@ is
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
       Field_Value : constant Field_Dependent_Value := (F_Source, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -479,7 +478,7 @@ is
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
       Field_Value : constant Field_Dependent_Value := (F_Type_Length_TPID, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length_TPID);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -490,7 +489,7 @@ is
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) is
       Field_Value : constant Field_Dependent_Value := (F_TPID, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_TPID);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -501,7 +500,7 @@ is
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) is
       Field_Value : constant Field_Dependent_Value := (F_TCI, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_TCI);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -512,7 +511,7 @@ is
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
       Field_Value : constant Field_Dependent_Value := (F_Type_Length, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -528,9 +527,9 @@ is
        and then Valid_Next (Ctx, F_Payload)
        and then Field_Condition (Ctx, (Fld => F_Payload), Field_Size (Ctx, F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_First (Ctx, F_Payload) mod Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Payload) mod Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Payload) mod Types.Byte'Size = 0,
+       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -546,8 +545,8 @@ is
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
        and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
       Ctx.Message_Last := Last;
@@ -560,28 +559,28 @@ is
       Initialize_Payload_Private (Ctx);
    end Initialize_Payload;
 
-   procedure Set_Payload (Ctx : in out Context; Value : Types.Bytes) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
+   procedure Set_Payload (Ctx : in out Context; Value : RFLX_Types.Bytes) is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
    begin
       Initialize_Payload_Private (Ctx);
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Value;
    end Set_Payload;
 
    procedure Generic_Set_Payload (Ctx : in out Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Payload);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
    begin
       Initialize_Payload_Private (Ctx);
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Generic_Set_Payload;
 
-end RFLX.Ethernet.Generic_Frame;
+end RFLX.Ethernet.Frame;

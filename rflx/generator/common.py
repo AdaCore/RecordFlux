@@ -1,7 +1,6 @@
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
 from rflx import ada, expression as expr, model
-from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
 
 from . import const
@@ -637,10 +636,6 @@ def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
     return prefix * type_identifier
 
 
-def generic_name(identifier: ada.ID) -> ada.ID:
-    return ada.ID([*identifier.parts[:-1], f"Generic_{identifier.parts[-1]}"])
-
-
 def base_type_name(scalar_type: model.Scalar) -> ada.ID:
     if isinstance(scalar_type, model.ModularInteger):
         return ada.ID(scalar_type.name)
@@ -667,7 +662,7 @@ def full_enum_name(enum_type: model.Enumeration) -> ada.ID:
 
 
 def sequence_name(message: model.Message, field: model.Field) -> ada.ID:
-    return ada.ID(message.types[field].name + "_Sequence")
+    return ada.ID(message.types[field].identifier)
 
 
 def size_dependent_condition(message: model.Message) -> bool:
@@ -679,36 +674,8 @@ def size_dependent_condition(message: model.Message) -> bool:
     )
 
 
-def create_message_instantiation(
-    message: model.Message, types_package: ada.ID, prefix: str = ""
-) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
-    if isinstance(message, model.DerivedMessage):
-        name = generic_name(prefix * ada.ID(message.base.identifier))
-    else:
-        name = generic_name(prefix * ada.ID(message.identifier))
-
-    context: List[ada.ContextItem] = [
-        ada.WithClause(name),
-    ]
-
-    sequences = list(
-        unique(
-            prefix * ada.ID(t.identifier)
-            for t in message.types.values()
-            if isinstance(t, model.Sequence)
-        )
-    )
-    context.extend(ada.WithClause(sequence) for sequence in sequences)
-    package = ada.GenericPackageInstantiation(
-        prefix * ada.ID(message.identifier), name, [types_package] + sequences
-    )
-
-    return (context, package)
-
-
 def create_sequence_instantiation(
     sequence_type: model.Sequence,
-    types_package: ada.ID,
     prefix: str = "",
     flat: bool = False,
 ) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
@@ -729,7 +696,6 @@ def create_sequence_instantiation(
             ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.MESSAGE_SEQUENCE_PACKAGE,
             [
-                types_package,
                 element_type_identifier * "Context",
                 element_type_identifier * "Initialize",
                 element_type_identifier * "Take_Buffer",
@@ -749,7 +715,6 @@ def create_sequence_instantiation(
             ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.SCALAR_SEQUENCE_PACKAGE,
             [
-                types_package,
                 element_type_identifier,
                 prefix
                 * element_type_package

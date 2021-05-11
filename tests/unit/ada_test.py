@@ -292,6 +292,16 @@ def test_import() -> None:
     assert str(ada.Import()) == "Import"
 
 
+def test_formal_package_declaration() -> None:
+    assert (
+        str(ada.FormalPackageDeclaration("A", "B", ["C", "D"])) == "with package A is new B (C, D);"
+    )
+
+
+def test_package_renaming_declaration() -> None:
+    assert str(ada.PackageRenamingDeclaration("A", "B")) == "package A renames B;"
+
+
 def test_subtype() -> None:
     assert str(ada.Subtype("A", "B")) == "subtype A is B;"
 
@@ -325,6 +335,12 @@ def test_unconstrained_array_type() -> None:
 
 def test_access_type() -> None:
     assert str(ada.AccessType("A", "B")) == "type A is access B;"
+
+
+def test_access_parameter() -> None:
+    assert str(ada.AccessParameter("A", "B")) == "A : access B"
+    assert str(ada.AccessParameter("A", "B", ada.Variable("C"))) == "A : access B := C"
+    assert str(ada.AccessParameter("A", "B", constant=True)) == "A : access constant B"
 
 
 def test_subprogram_renaming_declaration() -> None:

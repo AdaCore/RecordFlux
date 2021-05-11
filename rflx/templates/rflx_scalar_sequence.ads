@@ -1,8 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
-with {prefix}RFLX_Generic_Types;
+with {prefix}RFLX_Types;
 
 generic
-   with package Types is new {prefix}RFLX_Generic_Types (<>);
    type Element_Type is private;
    type Element_Base_Type is mod <>;
    with function Valid (Element : Element_Base_Type) return Boolean;
@@ -14,45 +13,49 @@ is
 
    pragma Annotate (GNATprove, Terminating, RFLX_Scalar_Sequence);
 
-   use type Types.Bytes_Ptr, Types.Index, Types.Length, Types.Bit_Index;
+   pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is private with
+   use type RFLX_Types.Bytes_Ptr, RFLX_Types.Index, RFLX_Types.Length, RFLX_Types.Bit_Index;
+
+   pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
+
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First, Last : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First) is private with
      Default_Initial_Condition =>
-       Types.Byte_Index (First) >= Buffer_First
-       and Types.Byte_Index (Last) <= Buffer_Last
-       and First mod Types.Byte'Size = 1
+       RFLX_Types.Byte_Index (First) >= Buffer_First
+       and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+       and First mod RFLX_Types.Byte'Size = 1
        and First <= Last
-       and Last <= Types.Bit_Index'Last - 1;
+       and Last <= RFLX_Types.Bit_Index'Last - 1;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) with
      Pre =>
        (not Ctx'Constrained
         and then Buffer /= null
         and then Buffer'Length > 0
-        and then Buffer'Last < Types.Index'Last),
+        and then Buffer'Last < RFLX_Types.Index'Last),
      Post =>
        (Has_Buffer (Ctx)
         and Valid (Ctx)
         and Buffer = null
         and Ctx.Buffer_First = Buffer'First'Old
         and Ctx.Buffer_Last = Buffer'Last'Old
-        and Ctx.First = Types.First_Bit_Index (Ctx.Buffer_First)
-        and Ctx.Last = Types.Last_Bit_Index (Ctx.Buffer_Last)
+        and Ctx.First = RFLX_Types.First_Bit_Index (Ctx.Buffer_First)
+        and Ctx.Last = RFLX_Types.Last_Bit_Index (Ctx.Buffer_Last)
         and Sequence_Last (Ctx) = Ctx.First - 1),
      Depends =>
        (Ctx => Buffer, Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Buffer_First, Buffer_Last : RFLX_Types.Index; First, Last : RFLX_Types.Bit_Index) with
      Pre =>
        (not Ctx'Constrained
         and then Buffer /= null
         and then Buffer'First = Buffer_First
         and then Buffer'Last = Buffer_Last
-        and then Types.Byte_Index (First) >= Buffer'First
-        and then Types.Byte_Index (Last) <= Buffer'Last
-        and then First mod Types.Byte'Size = 1
+        and then RFLX_Types.Byte_Index (First) >= Buffer'First
+        and then RFLX_Types.Byte_Index (Last) <= Buffer'Last
+        and then First mod RFLX_Types.Byte'Size = 1
         and then First <= Last
-        and then Last <= Types.Bit_Index'Last - 1),
+        and then Last <= RFLX_Types.Bit_Index'Last - 1),
      Post =>
        (Buffer = null
         and Has_Buffer (Ctx)
@@ -77,7 +80,7 @@ is
         and Ctx.Last = Ctx.Last'Old
         and Sequence_Last (Ctx) = Ctx.First - 1);
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
        Has_Buffer (Ctx),
      Post =>
@@ -94,7 +97,7 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
-   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) with
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
        (Has_Buffer (Ctx)
         and Valid (Ctx)
@@ -149,22 +152,22 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
-   function Available_Space (Ctx : Context) return Types.Bit_Length;
+   function Available_Space (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Sequence_Last (Ctx : Context) return Types.Bit_Length;
+   function Sequence_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Size (Ctx : Context) return Types.Bit_Length;
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Byte_Size (Ctx : Context) return Types.Length;
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
 private
 
    type Context_State is (S_Valid, S_Invalid);
 
-   type Context (Buffer_First, Buffer_Last : Types.Index := Types.Index'First; First, Last : Types.Bit_Index := Types.Bit_Index'First) is
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First, Last : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First) is
       record
-         Sequence_Last : Types.Bit_Length := First - 1;
-         Buffer        : Types.Bytes_Ptr := null;
+         Sequence_Last : RFLX_Types.Bit_Length := First - 1;
+         Buffer        : RFLX_Types.Bytes_Ptr := null;
          State         : Context_State := S_Valid;
          First_Element : Element_Base_Type := Element_Base_Type'First;
          Next_Element  : Element_Base_Type := Element_Base_Type'First;
@@ -173,11 +176,11 @@ private
        ((if Buffer /= null then
           (Buffer'First = Buffer_First
            and Buffer'Last = Buffer_Last))
-        and Types.Byte_Index (First) >= Buffer_First
-        and Types.Byte_Index (Last) <= Buffer_Last
-        and First mod Types.Byte'Size = 1
+        and RFLX_Types.Byte_Index (First) >= Buffer_First
+        and RFLX_Types.Byte_Index (Last) <= Buffer_Last
+        and First mod RFLX_Types.Byte'Size = 1
         and First <= Last
-        and Last <= Types.Bit_Index'Last - 1
+        and Last <= RFLX_Types.Bit_Index'Last - 1
         and Sequence_Last >= First - 1
         and Sequence_Last <= Last
         and (if Sequence_Last > First - 1 and State = S_Valid then Valid (First_Element)));
@@ -194,21 +197,21 @@ private
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
 
-   function Available_Space (Ctx : Context) return Types.Bit_Length is
+   function Available_Space (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Last - Ctx.Sequence_Last);
 
-   function Sequence_Last (Ctx : Context) return Types.Bit_Length is
+   function Sequence_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Sequence_Last);
 
-   function Size (Ctx : Context) return Types.Bit_Length is
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Sequence_Last - Ctx.First + 1);
 
-   function Byte_Size (Ctx : Context) return Types.Length is
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      (if
         Ctx.Sequence_Last = Ctx.First - 1
       then
          0
       else
-         Types.Length (Types.Byte_Index (Ctx.Sequence_Last) - Types.Byte_Index (Ctx.First)) + 1);
+         RFLX_Types.Length (RFLX_Types.Byte_Index (Ctx.Sequence_Last) - RFLX_Types.Byte_Index (Ctx.First)) + 1);
 
 end {prefix}RFLX_Scalar_Sequence;

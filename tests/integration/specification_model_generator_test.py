@@ -267,7 +267,7 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
     p.parse_string(
         """
            package Numbers is
-              type Protocol is (PROTO_X) with Size => 8;
+              type Protocol is (PROTO_X, PROTO_Y) with Size => 8;
            end Numbers;
         """
     )

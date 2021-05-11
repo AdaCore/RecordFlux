@@ -289,11 +289,17 @@ class SerializerGenerator:
                                     "Valid",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
-                                Equal(
-                                    Call(f"Get_{f.name}", [Variable("Ctx")]),
-                                    Aggregate(TRUE, Variable("Val"))
-                                    if isinstance(t, Enumeration) and t.always_valid
-                                    else Variable("Val"),
+                                *(
+                                    [
+                                        Equal(
+                                            Call(f"Get_{f.name}", [Variable("Ctx")]),
+                                            Aggregate(TRUE, Variable("Val"))
+                                            if isinstance(t, Enumeration) and t.always_valid
+                                            else Variable("Val"),
+                                        )
+                                    ]
+                                    if int(t.value_count) > 1
+                                    else []
                                 ),
                                 *self.public_setter_postconditions(message, f),
                                 *[
@@ -869,7 +875,8 @@ class SerializerGenerator:
                 + [
                     Call(f"Get_{p.name}", [Variable("Ctx")])
                     for p in message.definite_predecessors(field)
-                    if isinstance(message.types[p], Scalar)
+                    for t in [message.types[p]]
+                    if isinstance(t, Scalar) and int(t.value_count) > 1
                 ]
             ],
         ]
