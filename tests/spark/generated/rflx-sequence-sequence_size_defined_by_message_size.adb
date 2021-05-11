@@ -1,18 +1,18 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Sequence.Generic_Sequence_Size_Defined_By_Message_Size with
+package body RFLX.Sequence.Sequence_Size_Defined_By_Message_Size with
   SPARK_Mode
 is
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) is
    begin
-      Initialize (Ctx, Buffer, Types.First_Bit_Index (Buffer'First), Types.Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, RFLX_Types.First_Bit_Index (Buffer'First), RFLX_Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index) is
-      Buffer_First : constant Types.Index := Buffer'First;
-      Buffer_Last : constant Types.Index := Buffer'Last;
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First, Last : RFLX_Types.Bit_Index) is
+      Buffer_First : constant RFLX_Types.Index := Buffer'First;
+      Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
       Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Header => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
@@ -24,39 +24,39 @@ is
       Ctx.Message_Last := Ctx.First - 1;
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
-         Buffer := Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last));
+         Buffer := Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Message_Last));
       else
-         Buffer := Ctx.Buffer.all (Types.Index'Last .. Types.Index'First);
+         Buffer := Ctx.Buffer.all (RFLX_Types.Index'Last .. RFLX_Types.Index'First);
       end if;
    end Copy;
 
    procedure Read (Ctx : Context) is
    begin
-      Read (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Message_Last)));
+      Read (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Message_Last)));
    end Read;
 
    procedure Write (Ctx : in out Context) is
    begin
       Reset (Ctx);
-      Write (Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Last)));
+      Write (Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Last)));
    end Write;
 
-   function Byte_Size (Ctx : Context) return Types.Length is
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if
           Ctx.Message_Last = Ctx.First - 1
        then
           0
        else
-          Types.Length (Types.Byte_Index (Ctx.Message_Last) - Types.Byte_Index (Ctx.First) + 1)));
+          RFLX_Types.Length (RFLX_Types.Byte_Index (Ctx.Message_Last) - RFLX_Types.Byte_Index (Ctx.First) + 1)));
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -83,8 +83,7 @@ is
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
-      and Field_Size (Ctx, Fld) >= 0
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < Types.Bit_Length'Last
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
       and Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld))
     with
@@ -92,11 +91,11 @@ is
        Has_Buffer (Ctx)
        and Valid_Next (Ctx, Fld);
 
-   function Equal (Ctx : Context; Fld : Field; Data : Types.Bytes) return Boolean is
+   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
       and then (case Fld is
                    when F_Vector =>
-                      Ctx.Buffer.all (Types.Byte_Index (Field_First (Ctx, Fld)) .. Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
+                      Ctx.Buffer.all (RFLX_Types.Byte_Index (Field_First (Ctx, Fld)) .. RFLX_Types.Byte_Index (Field_Last (Ctx, Fld))) = Data,
                    when others =>
                       False));
 
@@ -123,9 +122,9 @@ is
                   Ctx.Cursors (F_Header) = Ctx.Cursors (F_Header)'Old
                   and Invalid (Ctx, F_Vector))
    is
-      First : constant Types.Bit_Length := Field_First (Ctx, Fld) with
+      First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
-      Size : constant Types.Bit_Length := Field_Size (Ctx, Fld) with
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld) with
         Ghost;
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
@@ -158,15 +157,15 @@ is
      Post =>
        Get_Field_Value'Result.Fld = Fld
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new Types.Extract (RFLX.Sequence.Enumeration_Base);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      function Extract is new RFLX_Types.Extract (RFLX.Sequence.Enumeration_Base);
    begin
       return ((case Fld is
                   when F_Header =>
@@ -193,7 +192,7 @@ is
                pragma Assert ((if
                                   Fld = F_Vector
                                then
-                                  Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
+                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
@@ -221,13 +220,13 @@ is
    end Verify_Message;
 
    procedure Get_Vector (Ctx : Context) is
-      First : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Vector).First);
-      Last : constant Types.Index := Types.Byte_Index (Ctx.Cursors (F_Vector).Last);
+      First : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Vector).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.Byte_Index (Ctx.Cursors (F_Vector).Last);
    begin
       Process_Vector (Ctx.Buffer.all (First .. Last));
    end Get_Vector;
 
-   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out Types.Bit_Index) with
+   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -257,15 +256,15 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
-      First : constant Types.Bit_Index := Field_First (Ctx, Val.Fld);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, Val.Fld);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
-      function Offset return Types.Offset is
-        (Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new Types.Insert (RFLX.Sequence.Enumeration_Base);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Val.Fld);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Val.Fld);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Sequence.Enumeration_Base);
    begin
       Fst := First;
       Lst := Last;
@@ -281,7 +280,7 @@ is
 
    procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) is
       Field_Value : constant Field_Dependent_Value := (F_Header, To_Base (Val));
-      First, Last : Types.Bit_Index;
+      First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Header);
       Set_Field_Value (Ctx, Field_Value, First, Last);
@@ -291,8 +290,8 @@ is
    end Set_Header;
 
    procedure Set_Vector_Empty (Ctx : in out Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Vector);
    begin
       Reset_Dependent_Fields (Ctx, F_Vector);
       Ctx.Message_Last := Last;
@@ -300,25 +299,25 @@ is
       Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
    end Set_Vector_Empty;
 
-   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : Modular_Vector_Sequence.Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
-      function Buffer_First return Types.Index is
-        (Types.Byte_Index (First));
-      function Buffer_Last return Types.Index is
-        (Types.Byte_Index (Last));
+   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : Sequence.Modular_Vector.Context) is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Vector);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.Byte_Index (Last));
    begin
       Reset_Dependent_Fields (Ctx, F_Vector);
       Ctx.Message_Last := Last;
       Ctx.Cursors (F_Vector) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
-      Modular_Vector_Sequence.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      Sequence.Modular_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Vector;
 
-   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out Modular_Vector_Sequence.Context) is
-      First : constant Types.Bit_Index := Field_First (Ctx, F_Vector);
-      Last : constant Types.Bit_Index := Field_Last (Ctx, F_Vector);
-      Buffer : Types.Bytes_Ptr;
+   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out Sequence.Modular_Vector.Context) is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Vector);
+      Buffer : RFLX_Types.Bytes_Ptr;
    begin
       if Invalid (Ctx, F_Vector) then
          Reset_Dependent_Fields (Ctx, F_Vector);
@@ -328,19 +327,19 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Modular_Vector_Sequence.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
+      Sequence.Modular_Vector.Initialize (Seq_Ctx, Buffer, Ctx.Buffer_First, Ctx.Buffer_Last, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Vector;
 
-   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out Modular_Vector_Sequence.Context) is
-      Valid_Sequence : constant Boolean := Modular_Vector_Sequence.Valid (Seq_Ctx);
-      Buffer : Types.Bytes_Ptr;
+   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out Sequence.Modular_Vector.Context) is
+      Valid_Sequence : constant Boolean := Sequence.Modular_Vector.Valid (Seq_Ctx);
+      Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Modular_Vector_Sequence.Take_Buffer (Seq_Ctx, Buffer);
+      Sequence.Modular_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Vector).First, Last => Ctx.Cursors (F_Vector).Last, Value => Ctx.Cursors (F_Vector).Value, Predecessor => Ctx.Cursors (F_Vector).Predecessor);
       end if;
    end Update_Vector;
 
-end RFLX.Sequence.Generic_Sequence_Size_Defined_By_Message_Size;
+end RFLX.Sequence.Sequence_Size_Defined_By_Message_Size;

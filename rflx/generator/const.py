@@ -34,7 +34,7 @@ LIBRARY_FILES = [
 
 TEMPLATE_DIR = ("rflx", "templates/")
 
-TYPES = ada.ID("Types")
+TYPES = TYPES_PACKAGE
 TYPES_BYTE = TYPES * "Byte"
 TYPES_BYTES = TYPES * "Bytes"
 TYPES_BYTES_PTR = TYPES * "Bytes_Ptr"

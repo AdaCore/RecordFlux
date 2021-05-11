@@ -1,7 +1,7 @@
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types; use RFLX.RFLX_Builtin_Types;
-with RFLX.RFLX_Types; use RFLX.RFLX_Types;
+with RFLX.RFLX_Types;
 
 package body RFLX.Builtin_Types_Tests is
 
@@ -17,24 +17,26 @@ package body RFLX.Builtin_Types_Tests is
    is
       pragma Unreferenced (T);
    begin
-      Assert (First_Bit_Index (Index'First)'Img, " 1", "Invalid first bit index for Index'First");
-      Assert (First_Bit_Index (Index'Last)'Img, " 17179869169", "Invalid first bit index for Index'Last");
+      Assert (RFLX_Types.First_Bit_Index (Index'First)'Img, " 1", "Invalid first bit index for Index'First");
+      Assert (RFLX_Types.First_Bit_Index (Index'Last)'Img, " 17179869169", "Invalid first bit index for Index'Last");
 
-      Assert (Last_Bit_Index (Index'First)'Img, " 8", "Invalid last bit index for Index'First");
-      Assert (Last_Bit_Index (Index'Last)'Img, " 17179869176", "Invalid last bit index for Index'Last");
+      Assert (RFLX_Types.Last_Bit_Index (Index'First)'Img, " 8", "Invalid last bit index for Index'First");
+      Assert (RFLX_Types.Last_Bit_Index (Index'Last)'Img, " 17179869176", "Invalid last bit index for Index'Last");
 
-      Assert (Byte_Index (First_Bit_Index (Index'First))'Img, " 1",
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.First_Bit_Index (Index'First))'Img, " 1",
               "Invalid conversion between byte index and first bit index");
-      Assert (Byte_Index (First_Bit_Index (Index'Last))'Img, " 2147483647",
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.First_Bit_Index (Index'Last))'Img, " 2147483647",
               "Invalid conversion between byte index and first bit index");
 
-      Assert (Byte_Index (Last_Bit_Index (Index'First))'Img, " 1",
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.Last_Bit_Index (Index'First))'Img, " 1",
               "Invalid conversion between byte index and last bit index");
-      Assert (Byte_Index (Last_Bit_Index (Index'Last))'Img, " 2147483647",
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.Last_Bit_Index (Index'Last))'Img, " 2147483647",
               "Invalid conversion between byte index and last bit index");
 
-      Assert (Byte_Index (Bit_Index'First)'Img, " 1", "Invalid byte index for Bit_Index'First");
-      Assert (Byte_Index (Bit_Index'Last)'Img, " 2147483647", "Invalid byte index for Bit_Index'Last");
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.Bit_Index'First)'Img, " 1",
+              "Invalid byte index for Bit_Index'First");
+      Assert (RFLX_Types.Byte_Index (RFLX_Types.Bit_Index'Last)'Img, " 2147483647",
+              "Invalid byte index for Bit_Index'Last");
    end Test_Index_Calculations;
 
    generic
@@ -46,8 +48,8 @@ package body RFLX.Builtin_Types_Tests is
 
    --  Simulate an offset value that is determined at runtime.
    --  This prevents the false assumption that the offset is statically determined at compile time,
-   --  which could affect the ability to prove the precondition of the Extract function.
-   function Dynamic_Offset is new Identity (Offset);
+   --  which could affect the ability to prove the precondition of the RFLX_Types.Extract function.
+   function Dynamic_Offset is new Identity (RFLX_Types.Offset);
 
    procedure Test_Extract_Modular_Integer_1 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
@@ -56,7 +58,7 @@ package body RFLX.Builtin_Types_Tests is
       Buffer : constant Bytes := (Index'First => 170);
 
       type U1 is mod 2;
-      function Extract_U1 is new Extract (U1);
+      function Extract_U1 is new RFLX_Types.Extract (U1);
       R1 : U1;
    begin
       R1 := Extract_U1 (Buffer, Dynamic_Offset (0));
@@ -85,7 +87,7 @@ package body RFLX.Builtin_Types_Tests is
       Buffer : constant Bytes := (255, 255, 0);
 
       type U8 is mod 2**8;
-      function Extract_U8 is new Extract (U8);
+      function Extract_U8 is new RFLX_Types.Extract (U8);
       R8 : U8;
    begin
       R8 := Extract_U8 (Buffer (Buffer'Last .. Buffer'Last), 0);
@@ -115,7 +117,7 @@ package body RFLX.Builtin_Types_Tests is
       Buffer : constant Bytes := (255, 255, 0);
 
       type U13 is mod 2**13;
-      function Extract_U13 is new Extract (U13);
+      function Extract_U13 is new RFLX_Types.Extract (U13);
       R13 : U13;
    begin
       R13 := Extract_U13 (Buffer (Buffer'First + 1 .. Buffer'Last), 0);
@@ -144,7 +146,7 @@ package body RFLX.Builtin_Types_Tests is
       Buffer : constant Bytes := (255, 255, 255, 255, 255, 255, 255, 255, 0);
 
       type U62 is mod 2**62;
-      function Extract_U62 is new Extract (U62);
+      function Extract_U62 is new RFLX_Types.Extract (U62);
       R62 : U62;
    begin
       R62 := Extract_U62 (Buffer (Buffer'First + 1 .. Buffer'Last), 0);
@@ -175,7 +177,7 @@ package body RFLX.Builtin_Types_Tests is
 
       type U64 is mod 2**64 with
         Annotate => (GNATprove, No_Wrap_Around);
-      function Extract_U64 is new Extract (U64);
+      function Extract_U64 is new RFLX_Types.Extract (U64);
       R64 : U64;
    begin
       R64 := Extract_U64 (Buffer (Buffer'First + 1 .. Buffer'Last), 0);
@@ -204,7 +206,7 @@ package body RFLX.Builtin_Types_Tests is
       pragma Unreferenced (T);
 
       type U1 is mod 2;
-      procedure Insert_U1 is new Insert (U1);
+      procedure Insert_U1 is new RFLX_Types.Insert (U1);
 
       Buffer : Bytes (Index'First .. Index'First + 2);
    begin
@@ -265,7 +267,7 @@ package body RFLX.Builtin_Types_Tests is
       pragma Unreferenced (T);
 
       type U2 is mod 2**2;
-      procedure Insert_U2 is new Insert (U2);
+      procedure Insert_U2 is new RFLX_Types.Insert (U2);
 
       Buffer : Bytes (Index'First .. Index'First + 2);
    begin
@@ -320,7 +322,7 @@ package body RFLX.Builtin_Types_Tests is
       pragma Unreferenced (T);
 
       type U13 is mod 2**13;
-      procedure Insert_U13 is new Insert (U13);
+      procedure Insert_U13 is new RFLX_Types.Insert (U13);
 
       Buffer : Bytes (Index'First .. Index'First + 2);
    begin
@@ -382,7 +384,7 @@ package body RFLX.Builtin_Types_Tests is
 
       type U64 is mod 2**64 with
         Annotate => (GNATprove, No_Wrap_Around);
-      procedure Insert_U64 is new Insert (U64);
+      procedure Insert_U64 is new RFLX_Types.Insert (U64);
 
       Buffer : Bytes (Index'First .. Index'First + 8);
    begin
@@ -458,15 +460,15 @@ package body RFLX.Builtin_Types_Tests is
       use AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Index_Calculations'Access, "Index calculations");
-      Register_Routine (T, Test_Extract_Modular_Integer_1'Access, "Extract modular integer (1 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_8'Access, "Extract modular integer (8 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_13'Access, "Extract modular integer (13 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_62'Access, "Extract modular integer (62 bit)");
-      Register_Routine (T, Test_Extract_Modular_Integer_64'Access, "Extract modular integer (64 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_1'Access, "Insert modular integer (1 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_2'Access, "Insert modular integer (2 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_13'Access, "Insert modular integer (13 bit)");
-      Register_Routine (T, Test_Insert_Modular_Integer_64'Access, "Insert modular integer (64 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_1'Access, "RFLX_Types.Extract modular integer (1 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_8'Access, "RFLX_Types.Extract modular integer (8 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_13'Access, "RFLX_Types.Extract modular integer (13 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_62'Access, "RFLX_Types.Extract modular integer (62 bit)");
+      Register_Routine (T, Test_Extract_Modular_Integer_64'Access, "RFLX_Types.Extract modular integer (64 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_1'Access, "RFLX_Types.Insert modular integer (1 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_2'Access, "RFLX_Types.Insert modular integer (2 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_13'Access, "RFLX_Types.Insert modular integer (13 bit)");
+      Register_Routine (T, Test_Insert_Modular_Integer_64'Access, "RFLX_Types.Insert modular integer (64 bit)");
    end Register_Tests;
 
 end RFLX.Builtin_Types_Tests;

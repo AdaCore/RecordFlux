@@ -4,12 +4,12 @@ package body RFLX.RFLX_Message_Sequence with
   SPARK_Mode
 is
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) is
    begin
-      Initialize (Ctx, Buffer, Buffer'First, Buffer'Last, Types.First_Bit_Index (Buffer'First), Types.Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, Buffer'First, Buffer'Last, RFLX_Types.First_Bit_Index (Buffer'First), RFLX_Types.Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; Buffer_First, Buffer_Last : Types.Index; First, Last : Types.Bit_Index) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Buffer_First, Buffer_Last : RFLX_Types.Index; First, Last : RFLX_Types.Bit_Index) is
    begin
       Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid);
       Buffer := null;
@@ -21,23 +21,23 @@ is
       Ctx.State := S_Valid;
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr) is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out Types.Bytes) is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
-         Buffer := Ctx.Buffer.all (Types.Byte_Index (Ctx.First) .. Types.Byte_Index (Ctx.Sequence_Last));
+         Buffer := Ctx.Buffer.all (RFLX_Types.Byte_Index (Ctx.First) .. RFLX_Types.Byte_Index (Ctx.Sequence_Last));
       else
-         Buffer := Ctx.Buffer.all (Types.Index'Last .. Types.Index'First);
+         Buffer := Ctx.Buffer.all (RFLX_Types.Index'Last .. RFLX_Types.Index'First);
       end if;
    end Copy;
 
    procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context) is
-      Buffer : Types.Bytes_Ptr := Ctx.Buffer;
+      Buffer : RFLX_Types.Bytes_Ptr := Ctx.Buffer;
    begin
       Ctx.Buffer := null;
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -46,9 +46,9 @@ is
    end Switch;
 
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) is
-      Buffer        : Types.Bytes_Ptr;
+      Buffer        : RFLX_Types.Bytes_Ptr;
       Valid_Message : constant Boolean := Element_Valid_Message (Element_Ctx);
-      Last          : Types.Bit_Length := Types.Bit_Length'First;
+      Last          : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
    begin
       if Valid_Message then
          Last := Element_Last (Element_Ctx);

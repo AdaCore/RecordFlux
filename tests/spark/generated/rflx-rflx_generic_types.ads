@@ -2,18 +2,28 @@ pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 with RFLX.RFLX_Arithmetic;
 
-pragma Warnings (Off, "type ""Bytes_Ptr"" is not referenced");
-
 generic
-   type Index is range <>;
-   type Byte is (<>);
-   type Bytes is array (Index range <>) of Byte;
-   type Bytes_Ptr is access Bytes;
-   type Length is range <>;
-   type Bit_Length is range <>;
+   type Custom_Index is range <>;
+   type Custom_Byte is (<>);
+   type Custom_Bytes is array (Custom_Index range <>) of Custom_Byte;
+   type Custom_Bytes_Ptr is access Custom_Bytes;
+   type Custom_Length is range <>;
+   type Custom_Bit_Length is range <>;
 package RFLX.RFLX_Generic_Types with
   SPARK_Mode
 is
+
+   subtype Index is Custom_Index;
+
+   subtype Byte is Custom_Byte;
+
+   subtype Bytes is Custom_Bytes;
+
+   subtype Bytes_Ptr is Custom_Bytes_Ptr;
+
+   subtype Length is Custom_Length;
+
+   subtype Bit_Length is Custom_Bit_Length;
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 

@@ -204,29 +204,37 @@ class ParserGenerator:
         )
 
         set_cursors_statements = [
-            PragmaStatement(
-                "Assert",
+            *(
                 [
-                    If(
+                    PragmaStatement(
+                        "Assert",
                         [
-                            (
-                                Or(
-                                    *[
-                                        Equal(Variable("Fld"), Variable(f.affixed_name))
-                                        for f in message.direct_predecessors(FINAL)
-                                    ]
-                                ),
-                                Equal(
-                                    Mod(
-                                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                                        Size(const.TYPES_BYTE),
-                                    ),
-                                    Number(0),
-                                ),
+                            If(
+                                [
+                                    (
+                                        Or(
+                                            *[
+                                                Equal(Variable("Fld"), Variable(f.affixed_name))
+                                                for f in message.direct_predecessors(FINAL)
+                                            ]
+                                        ),
+                                        Equal(
+                                            Mod(
+                                                Call(
+                                                    "Field_Last", [Variable("Ctx"), Variable("Fld")]
+                                                ),
+                                                Size(const.TYPES_BYTE),
+                                            ),
+                                            Number(0),
+                                        ),
+                                    )
+                                ]
                             )
-                        ]
+                        ],
                     )
-                ],
+                ]
+                if len(message.fields) > 1
+                else []
             ),
             Assignment(
                 Variable("Ctx.Message_Last"),

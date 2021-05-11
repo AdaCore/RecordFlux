@@ -12,7 +12,6 @@ from rflx.ada import (
     FALSE,
     ID,
     TRUE,
-    AccessParameter,
     Add,
     Aggregate,
     And,
@@ -39,7 +38,6 @@ from rflx.ada import (
     ExpressionFunctionDeclaration,
     First,
     FormalDeclaration,
-    FormalPackageDeclaration,
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericPackageInstantiation,
@@ -222,30 +220,13 @@ class Generator:
                             "unsupported checksum ignored", Subsystem.GENERATOR, location=c.location
                         )
 
-                if isinstance(t, DerivedMessage):
-                    self.__create_derived_message(t)
-                else:
-                    self.__create_message(t)
+                self.__create_message(t)
 
             elif isinstance(t, Refinement):
                 self.__create_refinement(t)
 
             else:
                 assert False, f'unexpected type "{type(t).__name__}"'
-
-    def __create_refinement(self, refinement: Refinement) -> None:
-        self.__create_generic_refinement_unit(refinement)
-        self.__create_refinement_unit(refinement)
-
-    def __create_message(self, message: Message) -> None:
-        if not message.fields:
-            return
-
-        self.__create_generic_message_unit(message)
-        self.__create_message_unit(message)
-
-    def __create_derived_message(self, message: DerivedMessage) -> None:
-        self.__create_message_unit(message)
 
     def __create_unit(
         self,
@@ -289,25 +270,26 @@ class Generator:
         return unit
 
     # pylint: disable=too-many-statements
-    def __create_generic_message_unit(self, message: Message) -> None:
+    def __create_message(self, message: Message) -> None:
+        if not message.fields:
+            return
+
         context: ty.List[ContextItem] = []
 
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
+                    WithClause(self.__prefix * const.TYPES_PACKAGE),
                     WithClause(self.__prefix * const.BUILTIN_TYPES_PACKAGE),
                     WithClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                     UsePackageClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ]
             )
 
-        context.append(WithClause(self.__prefix * const.GENERIC_TYPES_PACKAGE))
+        context.append(WithClause(self.__prefix * const.TYPES_PACKAGE))
 
-        unit_name = generic_name(ID(message.identifier))
-        parameters: ty.List[FormalDeclaration] = [
-            FormalPackageDeclaration("Types", self.__prefix * const.GENERIC_TYPES_PACKAGE),
-        ]
-        unit = self.__create_unit(unit_name, context, parameters)
+        unit_name = ID(message.identifier)
+        unit = self.__create_unit(unit_name, context)
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -322,18 +304,7 @@ class Generator:
                 )
 
             elif isinstance(field_type, Sequence):
-                if isinstance(field_type.element_type, Message):
-                    name = const.MESSAGE_SEQUENCE_PACKAGE
-                else:
-                    name = const.SCALAR_SEQUENCE_PACKAGE
-                context.append(WithClause(self.__prefix * name))
-                parameters.append(
-                    FormalPackageDeclaration(
-                        f"{field_type.name}_Sequence",
-                        self.__prefix * name,
-                        ["Types", "others => <>"],
-                    )
-                )
+                context.append(WithClause(self.__prefix * ID(field_type.identifier)))
 
         scalar_fields = {}
         composite_fields = []
@@ -418,6 +389,15 @@ class Generator:
                     "Warnings",
                     [Variable("Off"), String('use clause for type ""U64"" * has no effect')],
                 ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("Off"),
+                        String(
+                            '""LENGTH"" is already use-visible through previous use_type_clause'
+                        ),
+                    ],
+                ),  # required when user-defined type Index is subtype of Length
                 UseTypeClause(
                     *[
                         *([const.TYPES_BYTES] if composite_fields else []),
@@ -427,6 +407,15 @@ class Generator:
                         const.TYPES_BIT_INDEX,
                         const.TYPES_U64,
                     ]
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("On"),
+                        String(
+                            '""LENGTH"" is already use-visible through previous use_type_clause'
+                        ),
+                    ],
                 ),
                 Pragma(
                     "Warnings",
@@ -1941,9 +1930,6 @@ class Generator:
                     ),
                     And(
                         NotEqual(Variable("Ctx.Buffer"), Variable("null")),
-                        GreaterEqual(
-                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]), Number(0)
-                        ),
                         Less(
                             Add(
                                 Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
@@ -2504,7 +2490,7 @@ class Generator:
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
                 Parameter(["First", "Last"], const.TYPES_BIT_INDEX),
                 Parameter(["Message_Last"], const.TYPES_BIT_LENGTH),
-                AccessParameter(["Buffer"], const.TYPES_BYTES, constant=True),
+                Parameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Cursors"], "Field_Cursors"),
             ],
         )
@@ -2513,9 +2499,28 @@ class Generator:
             [],
             [],
             [
+                # WORKAROUND:
+                # Limitation of GNAT Community 2020
+                # An access constant type cannot be used here, because the "implicit conversion
+                # between access types with different designated types is not yet supported".
+                # The warning is no longer shown in later versions of SPARK.
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("Off"),
+                        String('""Buffer"" is not modified, could be of access constant type'),
+                    ],
+                ),
                 ExpressionFunctionDeclaration(
                     specification,
                     common.context_predicate(message, composite_fields, self.__prefix),
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("On"),
+                        String('""Buffer"" is not modified, could be of access constant type'),
+                    ],
                 ),
             ],
         )
@@ -2558,32 +2563,20 @@ class Generator:
             [ExpressionFunctionDeclaration(specification, Variable("Ctx.Cursors"))],
         )
 
-    def __create_message_unit(self, message: Message) -> None:
-        context, package = common.create_message_instantiation(
-            message, self.__prefix * const.TYPES_PACKAGE, self.__prefix
-        )
-        self.__create_instantiation_unit(
-            ID(message.identifier),
-            [
-                Pragma("SPARK_Mode"),
-                WithClause(self.__prefix * const.TYPES_PACKAGE),
-                *context,
-            ],
-            package,
-        )
-
-    def __create_generic_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = generic_name(refinement.package * const.REFINEMENT_PACKAGE)
+    def __create_refinement(self, refinement: Refinement) -> None:
+        unit_name = refinement.package * const.REFINEMENT_PACKAGE
+        null_sdu = not refinement.sdu.fields
 
         if unit_name in self._units:
             unit = self._units[unit_name]
         else:
             unit = self.__create_unit(
                 unit_name,
-                [WithClause(self.__prefix * const.GENERIC_TYPES_PACKAGE)],
-                formal_parameters=[
-                    FormalPackageDeclaration("Types", self.__prefix * const.GENERIC_TYPES_PACKAGE)
-                ],
+                [
+                    WithClause(self.__prefix * const.TYPES_PACKAGE),
+                ]
+                if not null_sdu
+                else [],
             )
 
         assert isinstance(unit, PackageUnit), "unexpected unit type"
@@ -2597,12 +2590,8 @@ class Generator:
                     ]
                 )
 
-        null_sdu = not refinement.sdu.fields
-
         if not null_sdu:
             unit += UnitPart([UseTypeClause(const.TYPES_INDEX, const.TYPES_BIT_INDEX)])
-
-        assert isinstance(unit.declaration.formal_parameters, list), "missing formal parameters"
 
         if refinement.pdu.package != refinement.package:
             pdu_package = (
@@ -2618,36 +2607,13 @@ class Generator:
                 ]
             )
 
-        generic_pdu_identifier = self.__prefix * (
-            generic_name(ID(refinement.pdu.base.identifier))
-            if isinstance(refinement.pdu, DerivedMessage)
-            else generic_name(ID(refinement.pdu.identifier))
-        )
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
 
-        unit.declaration_context.append(WithClause(generic_pdu_identifier))
-        unit.declaration.formal_parameters.append(
-            FormalPackageDeclaration(
-                refinement.pdu.identifier.flat,
-                generic_pdu_identifier,
-                ["Types", "others => <>"],
-            )
-        )
-
-        generic_sdu_identifier = self.__prefix * (
-            generic_name(ID(refinement.sdu.base.identifier))
-            if isinstance(refinement.sdu, DerivedMessage)
-            else generic_name(ID(refinement.sdu.identifier))
-        )
+        unit.declaration_context.append(WithClause(pdu_identifier))
 
         if not null_sdu:
-            unit.declaration_context.append(WithClause(generic_sdu_identifier))
-            unit.declaration.formal_parameters.append(
-                FormalPackageDeclaration(
-                    refinement.sdu.identifier.flat,
-                    generic_sdu_identifier,
-                    ["Types", "others => <>"],
-                ),
-            )
+            unit.declaration_context.append(WithClause(sdu_identifier))
 
         condition_fields = {
             f: t
@@ -2658,41 +2624,6 @@ class Generator:
         unit += self.__create_contains_function(refinement, condition_fields, null_sdu)
         if not null_sdu:
             unit += self.__create_switch_procedure(refinement, condition_fields)
-
-    def __create_refinement_unit(self, refinement: Refinement) -> None:
-        unit_name = refinement.package * const.REFINEMENT_PACKAGE
-        generic_unit_name = generic_name(
-            self.__prefix * ID(refinement.package) * const.REFINEMENT_PACKAGE
-        )
-
-        if unit_name in self._units:
-            unit = self._units[unit_name]
-        else:
-            context = [
-                Pragma("SPARK_Mode"),
-                WithClause(self.__prefix * const.TYPES_PACKAGE),
-                WithClause(generic_unit_name),
-            ]
-            instantiation = GenericPackageInstantiation(
-                self.__prefix * unit_name, generic_unit_name, [self.__prefix * const.TYPES_PACKAGE]
-            )
-            unit = self.__create_instantiation_unit(unit_name, context, instantiation)
-
-        null_sdu = not refinement.sdu.fields
-
-        assert isinstance(unit, InstantiationUnit), "unexpected unit type"
-
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
-
-        if pdu_identifier not in unit.declaration.associations:
-            unit.context.append(WithClause(pdu_identifier))
-            unit.declaration.associations.append(pdu_identifier)
-
-        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
-
-        if not null_sdu and sdu_identifier not in unit.declaration.associations:
-            unit.context.append(WithClause(sdu_identifier))
-            unit.declaration.associations.append(sdu_identifier)
 
     def __create_type(self, field_type: Type, message_package: ID) -> None:
         unit = self._units[message_package]
@@ -2717,15 +2648,24 @@ class Generator:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
     def __create_sequence_unit(self, sequence_type: Sequence) -> None:
-        context, package = common.create_sequence_instantiation(
-            sequence_type, self.__prefix * const.TYPES_PACKAGE, self.__prefix
-        )
+        context, package = common.create_sequence_instantiation(sequence_type, self.__prefix)
         self.__create_instantiation_unit(
             package.identifier,
             [
                 Pragma("SPARK_Mode"),
-                WithClause(self.__prefix * const.TYPES_PACKAGE),
                 *context,
+                # WORKAROUND: Componolit/Workarounds#33
+                # A compiler error about a non-visible declaration of RFLX_Types inside the
+                # generic sequence package is prevented by adding a with-clause for this package.
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String('unit ""*RFLX_Types"" is not referenced')],
+                ),
+                WithClause(self.__prefix * const.TYPES_PACKAGE),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String('unit ""*RFLX_Types"" is not referenced')],
+                ),
             ],
             package,
         )
@@ -2904,7 +2844,7 @@ class Generator:
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
-        pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
+        pdu_identifier = ID(refinement.pdu.identifier)
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -2949,23 +2889,23 @@ class Generator:
     def __create_switch_procedure(
         refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_name = refinement.pdu.identifier.flat
-        sdu_name = refinement.sdu.identifier.flat
-        pdu_context = f"{pdu_name}_PDU_Context"
-        sdu_context = f"{sdu_name}_SDU_Context"
-        refined_field_affixed_name = f"{pdu_name}.{refinement.field.affixed_name}"
+        pdu_identifier = ID(refinement.pdu.identifier)
+        sdu_identifier = ID(refinement.sdu.identifier)
+        pdu_context = f"{pdu_identifier.flat}_PDU_Context"
+        sdu_context = f"{sdu_identifier.flat}_SDU_Context"
+        refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
 
         specification = ProcedureSpecification(
             f"Switch_To_{refinement.field.name}",
             [
-                InOutParameter([pdu_context], f"{pdu_name}.Context"),
-                OutParameter([sdu_context], f"{sdu_name}.Context"),
+                InOutParameter([pdu_context], ID(pdu_identifier) * "Context"),
+                OutParameter([sdu_context], ID(sdu_identifier) * "Context"),
             ],
         )
 
         return UnitPart(
             [
-                UseTypeClause(f"{pdu_name}.Field_Cursors"),
+                UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -2984,8 +2924,8 @@ class Generator:
                         ),
                         Postcondition(
                             And(
-                                Not(Call(f"{pdu_name}.Has_Buffer", [Variable(pdu_context)])),
-                                Call(f"{sdu_name}.Has_Buffer", [Variable(sdu_context)]),
+                                Not(Call(pdu_identifier * "Has_Buffer", [Variable(pdu_context)])),
+                                Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
                                 Equal(
                                     Selected(Variable(pdu_context), "Buffer_First"),
                                     Selected(Variable(sdu_context), "Buffer_First"),
@@ -2997,7 +2937,7 @@ class Generator:
                                 Equal(
                                     Selected(Variable(sdu_context), "First"),
                                     Call(
-                                        f"{pdu_name}.Field_First",
+                                        pdu_identifier * "Field_First",
                                         [
                                             Variable(pdu_context),
                                             Variable(refined_field_affixed_name),
@@ -3007,14 +2947,14 @@ class Generator:
                                 Equal(
                                     Selected(Variable(sdu_context), "Last"),
                                     Call(
-                                        f"{pdu_name}.Field_Last",
+                                        pdu_identifier * "Field_Last",
                                         [
                                             Variable(pdu_context),
                                             Variable(refined_field_affixed_name),
                                         ],
                                     ),
                                 ),
-                                Call(f"{sdu_name}.Initialized", [Variable(sdu_context)]),
+                                Call(sdu_identifier * "Initialized", [Variable(sdu_context)]),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -3022,7 +2962,8 @@ class Generator:
                                         Selected(Variable(pdu_context), "Buffer_Last"),
                                         Selected(Variable(pdu_context), "First"),
                                         Call(
-                                            f"{pdu_name}.Context_Cursors", [Variable(pdu_context)]
+                                            pdu_identifier * "Context_Cursors",
+                                            [Variable(pdu_context)],
                                         ),
                                     ]
                                 ],
@@ -3039,7 +2980,7 @@ class Generator:
                             ["First"],
                             const.TYPES_BIT_INDEX,
                             Call(
-                                f"{pdu_name}.Field_First",
+                                pdu_identifier * "Field_First",
                                 [
                                     Variable(pdu_context),
                                     Variable(refined_field_affixed_name),
@@ -3051,7 +2992,7 @@ class Generator:
                             ["Last"],
                             const.TYPES_BIT_INDEX,
                             Call(
-                                f"{pdu_name}.Field_Last",
+                                pdu_identifier * "Field_Last",
                                 [
                                     Variable(pdu_context),
                                     Variable(refined_field_affixed_name),
@@ -3063,14 +3004,15 @@ class Generator:
                     ],
                     [
                         CallStatement(
-                            f"{pdu_name}.Take_Buffer", [Variable(pdu_context), Variable("Buffer")]
+                            pdu_identifier * "Take_Buffer",
+                            [Variable(pdu_context), Variable("Buffer")],
                         ),
                         PragmaStatement(
                             "Warnings",
                             [Variable("Off"), String('unused assignment to ""Buffer""')],
                         ),
                         CallStatement(
-                            f"{sdu_name}.Initialize",
+                            sdu_identifier * "Initialize",
                             [
                                 Variable(sdu_context),
                                 Variable("Buffer"),
@@ -3249,10 +3191,6 @@ def enumeration_types(enum: Enumeration) -> ty.List[TypeDeclaration]:
     return types
 
 
-def generic_name(identifier: ID) -> ID:
-    return ID([*identifier.parts[:-1], f"Generic_{identifier.parts[-1]}"])
-
-
 def contains_function_name(refinement: Refinement) -> str:
     sdu_name = (
         ID(refinement.sdu.name)
@@ -3319,7 +3257,7 @@ def refinement_conditions(
     condition_fields: ty.Mapping[Field, Type],
     null_sdu: bool,
 ) -> ty.Sequence[expr.Expr]:
-    pdu_identifier = expr.ID(refinement.pdu.identifier.flat)
+    pdu_identifier = ID(refinement.pdu.identifier)
 
     conditions: ty.List[expr.Expr] = [
         expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])

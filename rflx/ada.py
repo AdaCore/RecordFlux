@@ -943,9 +943,6 @@ class FormalPackageDeclaration(FormalDeclaration):
         self.generic_identifier = ID(generic_identifier)
         self.associations = list(map(str, associations or []))
 
-    def __hash__(self) -> int:
-        return hash(self.identifier)
-
     def __str__(self) -> str:
         associations = ", ".join(map(str, self.associations)) if self.associations else "<>"
         return f"with package {self.identifier} is new {self.generic_identifier} ({associations});"
@@ -1010,6 +1007,15 @@ class GenericPackageInstantiation(Declaration):
         if associations:
             associations = f" ({associations})"
         return f"package {self.identifier} is new {self.generic_package}{associations};\n"
+
+
+class PackageRenamingDeclaration(Declaration):
+    def __init__(self, identifier: StrID, package_identifier: StrID) -> None:
+        self.identifier = ID(identifier)
+        self.package_identifier = ID(package_identifier)
+
+    def __str__(self) -> str:
+        return f"package {self.identifier} renames {self.package_identifier};"
 
 
 class ObjectDeclaration(Declaration):

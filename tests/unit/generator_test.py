@@ -131,8 +131,8 @@ def test_substitution_relation_aggregate(
             expr.Variable("Ctx"),
             expr.Variable("F_Value"),
             expr.Aggregate(
-                expr.Val(expr.Variable(expr.ID("Types") * "Byte"), expr.Number(1)),
-                expr.Val(expr.Variable(expr.ID("Types") * "Byte"), expr.Number(2)),
+                expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(1)),
+                expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(2)),
             ),
         ],
     )

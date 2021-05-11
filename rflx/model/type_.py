@@ -61,6 +61,11 @@ class Scalar(Type):
     def size_expr(self) -> expr.Expr:
         return self._size
 
+    @property
+    @abstractmethod
+    def value_count(self) -> expr.Number:
+        raise NotImplementedError
+
     @abstractmethod
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
@@ -72,6 +77,10 @@ class Integer(Scalar):
     @property
     def type_(self) -> rty.Type:
         return rty.Integer(self.full_name, rty.Bounds(self.first.value, self.last.value))
+
+    @property
+    def value_count(self) -> expr.Number:
+        return self.last - self.first + expr.Number(1)
 
     @property
     @abstractmethod
@@ -404,6 +413,14 @@ class Enumeration(Scalar):
     @property
     def type_(self) -> rty.Type:
         return rty.Enumeration(self.full_name)
+
+    @property
+    def value_count(self) -> expr.Number:
+        if self.always_valid:
+            size_num = self.size.simplified()
+            assert isinstance(size_num, expr.Number)
+            return expr.Number(2 ** int(size_num))
+        return expr.Number(len(self.literals))
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True

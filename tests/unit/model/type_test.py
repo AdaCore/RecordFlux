@@ -44,6 +44,10 @@ def test_modular_size() -> None:
     assert ModularInteger("P::T", Pow(Number(2), Number(32))).size_expr == Number(32)
 
 
+def test_modular_value_count() -> None:
+    assert ModularInteger("P::T", Pow(Number(2), Number(32))).value_count == Number(2 ** 32)
+
+
 def test_modular_first() -> None:
     mod = ModularInteger("P::T", Pow(Number(2), Number(32)))
     assert mod.first == Number(0)
@@ -83,6 +87,13 @@ def test_range_size() -> None:
     assert_equal(
         RangeInteger("P::T", Number(16), Number(128), Pow(Number(2), Number(5))).size_expr,
         Pow(Number(2), Number(5)),
+    )
+
+
+def test_range_value_count() -> None:
+    assert_equal(
+        RangeInteger("P::T", Number(16), Number(128), Pow(Number(2), Number(5))).value_count,
+        Number(113),
     )
 
 
@@ -177,6 +188,21 @@ def test_enumeration_size() -> None:
             "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
         ).size_expr,
         Pow(Number(2), Number(5)),
+    )
+
+
+def test_enumeration_value_count() -> None:
+    assert_equal(
+        Enumeration(
+            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+        ).value_count,
+        Number(1),
+    )
+    assert_equal(
+        Enumeration(
+            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), True, Location((34, 3))
+        ).value_count,
+        Number(2 ** 32),
     )
 
 
