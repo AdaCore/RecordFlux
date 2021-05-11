@@ -8,7 +8,8 @@ abstract project Defaults is
       "--memlimit=1000",
       "--checks-as-errors",
       "--warnings=error",
-      "--proof-warnings",
+      --  ISSUE: Componolit/RecordFlux#670
+      --  "--proof-warnings",
       "--no-axiom-guard",
       "--counterexamples=off",
       "-j0"
