@@ -341,7 +341,22 @@ is
                                   Fld = F_Payload
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               case Fld is
+                  when F_Destination =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Source =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Type_Length_TPID =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_TPID =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_TCI =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Type_Length =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Payload =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               end case;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else

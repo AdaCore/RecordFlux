@@ -1382,15 +1382,21 @@ class CaseStatement(Statement):
         self,
         control_expression: Expr,
         case_statements: Sequence[Tuple[Expr, Sequence[Statement]]],
+        case_grouping: bool = True,
     ) -> None:
         self.control_expression = control_expression
         self.case_statements = case_statements
+        self.case_grouping = case_grouping
 
     def __str__(self) -> str:
-        grouped_cases = [
-            (" | ".join(str(c) for c, _ in choices), statements)
-            for statements, choices in itertools.groupby(self.case_statements, lambda x: x[1])
-        ]
+        grouped_cases = (
+            [
+                (" | ".join(str(c) for c, _ in choices), statements)
+                for statements, choices in itertools.groupby(self.case_statements, lambda x: x[1])
+            ]
+            if self.case_grouping
+            else [(str(case), statements) for case, statements in self.case_statements]
+        )
         cases = "".join(
             [
                 "\nwhen {} =>\n{}".format(choice, indent("\n".join(str(s) for s in statements), 3))

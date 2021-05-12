@@ -793,7 +793,40 @@ is
                                   or Fld = F_Transmit_Timestamp
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               case Fld is
+                  when F_Tag =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Code_Destination_Unreachable =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Code_Redirect =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Code_Time_Exceeded =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Code_Zero =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Checksum =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Gateway_Internet_Address =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Identifier =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Pointer =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Unused_32 =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Sequence_Number =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Unused_24 =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Originate_Timestamp =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Data =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Receive_Timestamp =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Transmit_Timestamp =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               end case;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else

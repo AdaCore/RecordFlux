@@ -222,7 +222,14 @@ is
                                   or Fld = F_Value
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               case Fld is
+                  when F_Tag =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Length =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Value =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               end case;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
