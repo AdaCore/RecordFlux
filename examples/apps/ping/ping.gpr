@@ -30,18 +30,7 @@ project Ping is
 
    package Prove is
       for Proof_Dir use "proof";
-
-      for Proof_Switches ("Ada") use (
-         "-j0",
-         "--prover=cvc4,z3,altergo",
-         "--steps=0",
-         "--timeout=90",
-         "--memlimit=1000",
-         "--checks-as-errors",
-         "--warnings=error",
-         "--proof-warnings",
-         "--no-axiom-guard"
-      );
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches;
    end Prove;
 
 end Ping;
