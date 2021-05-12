@@ -719,6 +719,21 @@ class Conversion(Expr):
         return Precedence.LITERAL
 
 
+class Raise(Expr):
+    def __init__(self, identifier: StrID, string: Expr = None) -> None:
+        super().__init__()
+        self.identifier = ID(identifier)
+        self.string = string
+
+    def _update_str(self) -> None:
+        string = f" with {self.string}" if self.string else ""
+        self._str = intern(f"raise {self.identifier}{string}")
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+
 class Declaration(Base):
     @abstractmethod
     def __str__(self) -> str:

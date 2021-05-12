@@ -961,31 +961,31 @@ private
                  when F_Length =>
                     RFLX.Sequence.Length'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Length =>
              (case Fld is
                  when F_Modular_Vector =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Modular_Vector =>
              (case Fld is
                  when F_Range_Vector =>
                     16,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Range_Vector =>
              (case Fld is
                  when F_Enumeration_Vector =>
                     16,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Enumeration_Vector =>
              (case Fld is
                  when F_AV_Enumeration_Vector =>
                     16,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_AV_Enumeration_Vector | F_Final =>
              0));
 
@@ -999,28 +999,28 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Range_Vector =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Modular_Vector
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Enumeration_Vector =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Range_Vector
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_AV_Enumeration_Vector =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Enumeration_Vector
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

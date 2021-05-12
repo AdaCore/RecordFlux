@@ -2013,7 +2013,7 @@ private
                  when F_Tag =>
                     RFLX.ICMP.Tag_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Tag =>
              (case Fld is
                  when F_Code_Destination_Unreachable =>
@@ -2025,13 +2025,13 @@ private
                  when F_Code_Zero =>
                     RFLX.ICMP.Code_Zero_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              (case Fld is
                  when F_Checksum =>
                     RFLX.ICMP.Checksum'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Checksum =>
              (case Fld is
                  when F_Gateway_Internet_Address =>
@@ -2043,31 +2043,31 @@ private
                  when F_Unused_32 =>
                     RFLX.ICMP.Unused_32_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Gateway_Internet_Address =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Identifier =>
              (case Fld is
                  when F_Sequence_Number =>
                     RFLX.ICMP.Sequence_Number'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Pointer =>
              (case Fld is
                  when F_Unused_24 =>
                     RFLX.ICMP.Unused_24_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Unused_32 =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
@@ -2075,19 +2075,19 @@ private
                  when F_Originate_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Unused_24 =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Originate_Timestamp =>
              (case Fld is
                  when F_Receive_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Data =>
              0,
           when F_Receive_Timestamp =>
@@ -2095,7 +2095,7 @@ private
                  when F_Transmit_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Transmit_Timestamp | F_Final =>
              0));
 
@@ -2110,7 +2110,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Code_Redirect =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
@@ -2118,7 +2118,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Code_Time_Exceeded =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
@@ -2126,7 +2126,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Code_Zero =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
@@ -2141,7 +2141,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Checksum =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Code_Destination_Unreachable
@@ -2160,7 +2160,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Gateway_Internet_Address =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Checksum
@@ -2168,7 +2168,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Identifier =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Checksum
@@ -2181,7 +2181,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Pointer =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Checksum
@@ -2189,7 +2189,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Unused_32 =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Checksum
@@ -2199,21 +2199,21 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Sequence_Number =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Identifier
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Unused_24 =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Pointer
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Originate_Timestamp =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
@@ -2222,7 +2222,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Data =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address
@@ -2243,21 +2243,21 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Receive_Timestamp =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Originate_Timestamp
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Transmit_Timestamp =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Receive_Timestamp
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

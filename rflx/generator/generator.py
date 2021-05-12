@@ -1221,7 +1221,7 @@ class Generator:
                     else:
                         size = If(
                             [(substituted(l.condition), substituted(l.size)) for l in links],
-                            Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
+                            const.UNREACHABLE,
                         )
                 cases.append(
                     (
@@ -1234,7 +1234,7 @@ class Generator:
                 return Number(0)
 
             if set(message.fields) - {l.target for l in message.outgoing(field)}:
-                cases.append((Variable("others"), Variable(const.TYPES_UNREACHABLE_BIT_LENGTH)))
+                cases.append((Variable("others"), const.UNREACHABLE))
             return Case(Variable("Fld"), cases)
 
         specification = FunctionSpecification(
@@ -1320,7 +1320,7 @@ class Generator:
                     )
                     for l in message.incoming(field)
                 ],
-                Variable(const.TYPES_UNREACHABLE_BIT_LENGTH),
+                const.UNREACHABLE,
             )
 
         specification = FunctionSpecification(
@@ -2632,15 +2632,12 @@ class Generator:
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
-            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__integer_functions(field_type)
         elif isinstance(field_type, RangeInteger):
             unit += UnitPart(range_types(field_type))
-            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__integer_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += UnitPart(self.__type_dependent_unreachable_function(field_type))
             unit += self.__enumeration_functions(field_type)
         elif isinstance(field_type, Sequence):
             self.__create_sequence_unit(field_type)
@@ -2822,9 +2819,7 @@ class Generator:
                 (value.ada_expr(), Variable(ID(key))) for key, value in enum.literals.items()
             )
             if incomplete:
-                conversion_cases.append(
-                    (Variable("others"), Call(unreachable_function_name(enum.identifier)))
-                )
+                conversion_cases.append((Variable("others"), const.UNREACHABLE))
 
             specification.extend(
                 [
@@ -3081,25 +3076,6 @@ class Generator:
             validation_expression,
         )
 
-    def __type_dependent_unreachable_function(self, scalar_type: Scalar) -> ty.List[Declaration]:
-        base_name = None
-        if isinstance(scalar_type, Enumeration) and scalar_type.always_valid:
-            base_name = self.__prefix * common.full_base_type_name(scalar_type)
-
-        type_name = self.__prefix * ID(scalar_type.identifier)
-
-        return [
-            Pragma("Warnings", [Variable("Off"), String("precondition is * false")]),
-            ExpressionFunctionDeclaration(
-                FunctionSpecification(unreachable_function_name(scalar_type.identifier), type_name),
-                First(type_name)
-                if not base_name
-                else Aggregate(Variable("False"), First(base_name)),
-                [Precondition(FALSE)],
-            ),
-            Pragma("Warnings", [Variable("On"), String("precondition is * false")]),
-        ]
-
     def __integer_conversion_functions(self, integer: Integer) -> ty.Sequence[Subprogram]:
         return [
             ExpressionFunctionDeclaration(
@@ -3203,10 +3179,6 @@ def contains_function_name(refinement: Refinement) -> str:
         else refinement.pdu.identifier
     )
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{refinement.field.name}"
-
-
-def unreachable_function_name(type_identifier: expr.ID) -> str:
-    return f"Unreachable_{type_identifier.flat}"
 
 
 def context_cursors_initialization(message: Message) -> Expr:

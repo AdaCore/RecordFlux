@@ -722,31 +722,31 @@ private
                  when F_Source_Port =>
                     RFLX.UDP.Port'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Source_Port =>
              (case Fld is
                  when F_Destination_Port =>
                     RFLX.UDP.Port'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Destination_Port =>
              (case Fld is
                  when F_Length =>
                     RFLX.UDP.Length_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Length =>
              (case Fld is
                  when F_Checksum =>
                     RFLX.UDP.Checksum'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Checksum =>
              (case Fld is
                  when F_Payload =>
                     (RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) - 8) * 8,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Payload | F_Final =>
              0));
 
@@ -760,28 +760,28 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Destination_Port
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Checksum =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Length
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Checksum
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

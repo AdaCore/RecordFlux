@@ -12,16 +12,6 @@ is
        8;
    for Tag use (Echo_Reply => 0, Destination_Unreachable => 3, Source_Quench => 4, Redirect => 5, Echo_Request => 8, Time_Exceeded => 11, Parameter_Problem => 12, Timestamp_Msg => 13, Timestamp_Reply => 14, Information_Request => 15, Information_Reply => 16);
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Tag return RFLX.ICMP.Tag is
-     (RFLX.ICMP.Tag'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.ICMP.Tag_Base) return Boolean is
      ((case Val is
           when 0 | 8 | 3 | 11 | 12 | 4 | 5 | 13 | 14 | 15 | 16 =>
@@ -81,7 +71,7 @@ is
           when 16 =>
              Information_Reply,
           when others =>
-             Unreachable_ICMP_Tag))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -94,16 +84,6 @@ is
      Size =>
        8;
    for Code_Destination_Unreachable use (Net_Unreachable => 0, Host_Unreachable => 1, Protocol_Unreachable => 2, Port_Unreachable => 3, Fragmentation_Needed_DF_Set => 4, Source_Route_Failed => 5);
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Code_Destination_Unreachable return RFLX.ICMP.Code_Destination_Unreachable is
-     (RFLX.ICMP.Code_Destination_Unreachable'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.ICMP.Code_Destination_Unreachable_Base) return Boolean is
      ((case Val is
@@ -144,7 +124,7 @@ is
           when 5 =>
              Source_Route_Failed,
           when others =>
-             Unreachable_ICMP_Code_Destination_Unreachable))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -157,16 +137,6 @@ is
      Size =>
        8;
    for Code_Time_Exceeded use (TTL_Exceeded => 0, Fragment_Reassembly_Time_Exceeded => 1);
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Code_Time_Exceeded return RFLX.ICMP.Code_Time_Exceeded is
-     (RFLX.ICMP.Code_Time_Exceeded'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.ICMP.Code_Time_Exceeded_Base) return Boolean is
      ((case Val is
@@ -191,7 +161,7 @@ is
           when 1 =>
              Fragment_Reassembly_Time_Exceeded,
           when others =>
-             Unreachable_ICMP_Code_Time_Exceeded))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -204,16 +174,6 @@ is
      Size =>
        8;
    for Code_Redirect use (Redirect_for_Network => 0, Redirect_for_Host => 1, Redirect_for_Service_Network => 2, Redirect_for_Service_Host => 3);
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Code_Redirect return RFLX.ICMP.Code_Redirect is
-     (RFLX.ICMP.Code_Redirect'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.ICMP.Code_Redirect_Base) return Boolean is
      ((case Val is
@@ -246,7 +206,7 @@ is
           when 3 =>
              Redirect_for_Service_Host,
           when others =>
-             Unreachable_ICMP_Code_Redirect))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -260,16 +220,6 @@ is
    type Code_Zero is range 0 .. 0 with
      Size =>
        8;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Code_Zero return RFLX.ICMP.Code_Zero is
-     (RFLX.ICMP.Code_Zero'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.ICMP.Code_Zero_Base) return Boolean is
      (Val = 0);
@@ -286,16 +236,6 @@ is
    type Checksum is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Checksum return RFLX.ICMP.Checksum is
-     (RFLX.ICMP.Checksum'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -321,16 +261,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Identifier return RFLX.ICMP.Identifier is
-     (RFLX.ICMP.Identifier'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -354,16 +284,6 @@ is
    type Sequence_Number is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Sequence_Number return RFLX.ICMP.Sequence_Number is
-     (RFLX.ICMP.Sequence_Number'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -389,16 +309,6 @@ is
      Size =>
        8;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Pointer return RFLX.ICMP.Pointer is
-     (RFLX.ICMP.Pointer'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -423,16 +333,6 @@ is
      Size =>
        32;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Timestamp return RFLX.ICMP.Timestamp is
-     (RFLX.ICMP.Timestamp'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -456,16 +356,6 @@ is
    type Gateway_Internet_Address is mod 2**32 with
      Size =>
        32;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Gateway_Internet_Address return RFLX.ICMP.Gateway_Internet_Address is
-     (RFLX.ICMP.Gateway_Internet_Address'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -495,16 +385,6 @@ is
      Size =>
        32;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Unused_32 return RFLX.ICMP.Unused_32 is
-     (RFLX.ICMP.Unused_32'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.ICMP.Unused_32_Base) return Boolean is
      (Val = 0);
 
@@ -524,16 +404,6 @@ is
    type Unused_24 is range 0 .. 0 with
      Size =>
        24;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_ICMP_Unused_24 return RFLX.ICMP.Unused_24 is
-     (RFLX.ICMP.Unused_24'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.ICMP.Unused_24_Base) return Boolean is
      (Val = 0);

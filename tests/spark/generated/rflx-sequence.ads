@@ -9,16 +9,6 @@ is
      Size =>
        8;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Sequence_Length return RFLX.Sequence.Length is
-     (RFLX.Sequence.Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -42,16 +32,6 @@ is
    type Modular_Integer is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Sequence_Modular_Integer return RFLX.Sequence.Modular_Integer is
-     (RFLX.Sequence.Modular_Integer'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -81,16 +61,6 @@ is
      Size =>
        8;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Sequence_Range_Integer return RFLX.Sequence.Range_Integer is
-     (RFLX.Sequence.Range_Integer'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.Sequence.Range_Integer_Base) return Boolean is
      (Val >= 1
       and Val <= 100);
@@ -110,16 +80,6 @@ is
      Size =>
        8;
    for Enumeration use (Zero => 0, One => 1, Two => 2);
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Sequence_Enumeration return RFLX.Sequence.Enumeration is
-     (RFLX.Sequence.Enumeration'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.Sequence.Enumeration_Base) return Boolean is
      ((case Val is
@@ -148,7 +108,7 @@ is
           when 2 =>
              Two,
           when others =>
-             Unreachable_Sequence_Enumeration))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -171,16 +131,6 @@ is
                Raw : AV_Enumeration_Base;
          end case;
       end record;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Sequence_AV_Enumeration return RFLX.Sequence.AV_Enumeration is
-     ((False, RFLX.Sequence.AV_Enumeration_Base'First))
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

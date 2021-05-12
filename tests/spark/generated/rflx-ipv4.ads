@@ -13,16 +13,6 @@ is
      Size =>
        4;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Version return RFLX.IPv4.Version is
-     (RFLX.IPv4.Version'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.IPv4.Version_Base) return Boolean is
      (Val = 4);
 
@@ -43,16 +33,6 @@ is
      Size =>
        4;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_IHL return RFLX.IPv4.IHL is
-     (RFLX.IPv4.IHL'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.IPv4.IHL_Base) return Boolean is
      (Val >= 5);
 
@@ -68,16 +48,6 @@ is
    type DCSP is mod 2**6 with
      Size =>
        6;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_DCSP return RFLX.IPv4.DCSP is
-     (RFLX.IPv4.DCSP'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -103,16 +73,6 @@ is
      Size =>
        2;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_ECN return RFLX.IPv4.ECN is
-     (RFLX.IPv4.ECN'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -136,16 +96,6 @@ is
    type Total_Length is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Total_Length return RFLX.IPv4.Total_Length is
-     (RFLX.IPv4.Total_Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -171,16 +121,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Identification return RFLX.IPv4.Identification is
-     (RFLX.IPv4.Identification'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -205,16 +145,6 @@ is
      Size =>
        13;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Fragment_Offset return RFLX.IPv4.Fragment_Offset is
-     (RFLX.IPv4.Fragment_Offset'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -238,16 +168,6 @@ is
    type TTL is mod 2**8 with
      Size =>
        8;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_TTL return RFLX.IPv4.TTL is
-     (RFLX.IPv4.TTL'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -285,16 +205,6 @@ is
                Raw : Protocol_Base;
          end case;
       end record;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Protocol return RFLX.IPv4.Protocol is
-     ((False, RFLX.IPv4.Protocol_Base'First))
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -341,16 +251,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Header_Checksum return RFLX.IPv4.Header_Checksum is
-     (RFLX.IPv4.Header_Checksum'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -374,16 +274,6 @@ is
    type Address is mod 2**32 with
      Size =>
        32;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Address return RFLX.IPv4.Address is
-     (RFLX.IPv4.Address'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -412,16 +302,6 @@ is
        2;
    for Option_Class use (Control => 0, Debugging_And_Measurement => 2);
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Option_Class return RFLX.IPv4.Option_Class is
-     (RFLX.IPv4.Option_Class'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.IPv4.Option_Class_Base) return Boolean is
      ((case Val is
           when 0 | 2 =>
@@ -445,7 +325,7 @@ is
           when 2 =>
              Debugging_And_Measurement,
           when others =>
-             Unreachable_IPv4_Option_Class))
+             raise Program_Error))
     with
      Pre =>
        Valid (Val);
@@ -455,16 +335,6 @@ is
    type Option_Number is mod 2**5 with
      Size =>
        5;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Option_Number return RFLX.IPv4.Option_Number is
-     (RFLX.IPv4.Option_Number'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 
@@ -493,16 +363,6 @@ is
    type Option_Length is range 2 .. 2**8 - 1 with
      Size =>
        8;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_IPv4_Option_Length return RFLX.IPv4.Option_Length is
-     (RFLX.IPv4.Option_Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    function Valid (Val : RFLX.IPv4.Option_Length_Base) return Boolean is
      (Val >= 2);

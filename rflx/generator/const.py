@@ -46,7 +46,6 @@ TYPES_BYTE_INDEX = TYPES * "Byte_Index"
 TYPES_FIRST_BIT_INDEX = TYPES * "First_Bit_Index"
 TYPES_LAST_BIT_INDEX = TYPES * "Last_Bit_Index"
 TYPES_OFFSET = TYPES * "Offset"
-TYPES_UNREACHABLE_BIT_LENGTH = TYPES * "Unreachable_Bit_Length"
 TYPES_U64 = TYPES * "U64"
 
 CONTEXT_INVARIANT = [
@@ -58,3 +57,5 @@ CONTEXT_INVARIANT = [
         ada.Variable("Ctx.Last"),
     )
 ]
+
+UNREACHABLE = ada.Raise("Program_Error")

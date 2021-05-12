@@ -552,13 +552,13 @@ private
                  when F_Header =>
                     RFLX.Sequence.Enumeration_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Header =>
              (case Fld is
                  when F_Vector =>
                     RFLX_Types.Bit_Length (Ctx.Last - Ctx.First + 1) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1),
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Vector | F_Final =>
              0));
 
@@ -572,7 +572,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
