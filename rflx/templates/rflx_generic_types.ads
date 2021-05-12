@@ -74,14 +74,4 @@ is
      Pre =>
        (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Bit_Length return Bit_Length is
-     (Bit_Length'First)
-     with
-       Pre =>
-         False;
-
-   pragma Warnings (On, "precondition is * false");
-
 end {prefix}RFLX_Generic_Types;

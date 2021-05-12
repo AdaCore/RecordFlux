@@ -22,16 +22,6 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Enumeration_Priority return RFLX.Enumeration.Priority is
-     ((False, RFLX.Enumeration.Priority_Base'First))
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");

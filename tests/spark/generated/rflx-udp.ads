@@ -9,16 +9,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_UDP_Port return RFLX.UDP.Port is
-     (RFLX.UDP.Port'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -47,16 +37,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_UDP_Length return RFLX.UDP.Length is
-     (RFLX.UDP.Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.UDP.Length_Base) return Boolean is
      (Val >= 8);
 
@@ -72,16 +52,6 @@ is
    type Checksum is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_UDP_Checksum return RFLX.UDP.Checksum is
-     (RFLX.UDP.Checksum'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

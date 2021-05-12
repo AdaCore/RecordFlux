@@ -9,16 +9,6 @@ is
      Size =>
        48;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Ethernet_Address return RFLX.Ethernet.Address is
-     (RFLX.Ethernet.Address'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    pragma Warnings (Off, "unused variable ""Val""");
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
@@ -47,16 +37,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Ethernet_Type_Length return RFLX.Ethernet.Type_Length is
-     (RFLX.Ethernet.Type_Length'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.Ethernet.Type_Length_Base) return Boolean is
      (Val >= 46);
 
@@ -77,16 +57,6 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Ethernet_TPID return RFLX.Ethernet.TPID is
-     (RFLX.Ethernet.TPID'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
-
    function Valid (Val : RFLX.Ethernet.TPID_Base) return Boolean is
      (Val = 16#8100#);
 
@@ -102,16 +72,6 @@ is
    type TCI is mod 2**16 with
      Size =>
        16;
-
-   pragma Warnings (Off, "precondition is * false");
-
-   function Unreachable_Ethernet_TCI return RFLX.Ethernet.TCI is
-     (RFLX.Ethernet.TCI'First)
-    with
-     Pre =>
-       False;
-
-   pragma Warnings (On, "precondition is * false");
 
    pragma Warnings (Off, "unused variable ""Val""");
 

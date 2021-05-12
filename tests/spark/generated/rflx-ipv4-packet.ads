@@ -1858,103 +1858,103 @@ private
                  when F_Version =>
                     RFLX.IPv4.Version_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Version =>
              (case Fld is
                  when F_IHL =>
                     RFLX.IPv4.IHL_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_IHL =>
              (case Fld is
                  when F_DSCP =>
                     RFLX.IPv4.DCSP'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_DSCP =>
              (case Fld is
                  when F_ECN =>
                     RFLX.IPv4.ECN'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_ECN =>
              (case Fld is
                  when F_Total_Length =>
                     RFLX.IPv4.Total_Length'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Total_Length =>
              (case Fld is
                  when F_Identification =>
                     RFLX.IPv4.Identification'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Identification =>
              (case Fld is
                  when F_Flag_R =>
                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Flag_R =>
              (case Fld is
                  when F_Flag_DF =>
                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Flag_DF =>
              (case Fld is
                  when F_Flag_MF =>
                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Flag_MF =>
              (case Fld is
                  when F_Fragment_Offset =>
                     RFLX.IPv4.Fragment_Offset'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Fragment_Offset =>
              (case Fld is
                  when F_TTL =>
                     RFLX.IPv4.TTL'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_TTL =>
              (case Fld is
                  when F_Protocol =>
                     RFLX.IPv4.Protocol_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Protocol =>
              (case Fld is
                  when F_Header_Checksum =>
                     RFLX.IPv4.Header_Checksum'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Header_Checksum =>
              (case Fld is
                  when F_Source =>
                     RFLX.IPv4.Address'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Source =>
              (case Fld is
                  when F_Destination =>
                     RFLX.IPv4.Address'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Destination =>
              (case Fld is
                  when F_Options =>
                     (RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Options =>
              (case Fld is
                  when F_Payload =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32),
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Payload | F_Final =>
              0));
 
@@ -1968,28 +1968,28 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_DSCP =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_IHL
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_ECN =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_DSCP
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Total_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_ECN
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Identification =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Total_Length
@@ -1997,14 +1997,14 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Flag_R =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Identification
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Flag_DF =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_R
@@ -2012,70 +2012,70 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Flag_MF =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_DF
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Fragment_Offset =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Flag_MF
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_TTL =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Protocol =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_TTL
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Header_Checksum =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Protocol
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Source =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Header_Checksum
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Destination =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Source
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Options =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Destination
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Options
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

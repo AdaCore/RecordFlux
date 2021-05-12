@@ -219,6 +219,11 @@ def test_string_str() -> None:
     assert str(ada.String("X Y")) == '"X Y"'
 
 
+def test_raise_str() -> None:
+    assert str(ada.Raise("X")) == "raise X"
+    assert str(ada.Raise("X", ada.String("Y"))) == 'raise X with "Y"'
+
+
 def test_expr_str() -> None:
     assert_equal(
         str(

@@ -889,19 +889,19 @@ private
                  when F_Destination =>
                     RFLX.Ethernet.Address'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Destination =>
              (case Fld is
                  when F_Source =>
                     RFLX.Ethernet.Address'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Source =>
              (case Fld is
                  when F_Type_Length_TPID =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Type_Length_TPID =>
              (case Fld is
                  when F_TPID =>
@@ -909,19 +909,19 @@ private
                  when F_Type_Length =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_TPID =>
              (case Fld is
                  when F_TCI =>
                     RFLX.Ethernet.TCI'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_TCI =>
              (case Fld is
                  when F_Type_Length =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Type_Length =>
              (case Fld is
                  when F_Payload =>
@@ -934,9 +934,9 @@ private
                      then
                         RFLX_Types.Bit_Length (Ctx.Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Last)
                      else
-                        RFLX_Types.Unreachable_Bit_Length),
+                        raise Program_Error),
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Payload | F_Final =>
              0));
 
@@ -950,14 +950,14 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Type_Length_TPID =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Source
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_TPID =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
@@ -965,14 +965,14 @@ private
               then
                  Ctx.Cursors (F_Type_Length_TPID).First
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_TCI =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_TPID
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Type_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_TCI
@@ -984,7 +984,7 @@ private
               then
                  Ctx.Cursors (F_Type_Length_TPID).First
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Payload =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Type_Length
@@ -997,7 +997,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

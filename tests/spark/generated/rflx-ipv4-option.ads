@@ -802,31 +802,31 @@ private
                  when F_Copied =>
                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Copied =>
              (case Fld is
                  when F_Option_Class =>
                     RFLX.IPv4.Option_Class_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Option_Class =>
              (case Fld is
                  when F_Option_Number =>
                     RFLX.IPv4.Option_Number'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Option_Number =>
              (case Fld is
                  when F_Option_Length =>
                     RFLX.IPv4.Option_Length_Base'Size,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Option_Length =>
              (case Fld is
                  when F_Option_Data =>
                     (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8,
                  when others =>
-                    RFLX_Types.Unreachable_Bit_Length),
+                    raise Program_Error),
           when F_Option_Data | F_Final =>
              0));
 
@@ -840,14 +840,14 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Option_Number =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Option_Class
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Option_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Option_Number
@@ -855,7 +855,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length),
+                 raise Program_Error),
           when F_Option_Data =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Option_Length
@@ -874,7 +874,7 @@ private
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
-                 RFLX_Types.Unreachable_Bit_Length)));
+                 raise Program_Error)));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
