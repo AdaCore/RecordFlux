@@ -203,6 +203,20 @@ class ParserGenerator:
             ),
         )
 
+        set_message_last = Assignment(
+            Variable("Ctx.Message_Last"),
+            Mul(
+                Div(
+                    Add(
+                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                        Number(7),
+                    ),
+                    Number(8),
+                ),
+                Number(8),
+            ),
+        )
+
         set_cursors_statements = [
             *(
                 [
@@ -236,19 +250,22 @@ class ParserGenerator:
                 if len(message.fields) > 1
                 else []
             ),
-            Assignment(
-                Variable("Ctx.Message_Last"),
-                Mul(
-                    Div(
-                        Add(
-                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                            Number(7),
-                        ),
-                        Number(8),
-                    ),
-                    Number(8),
-                ),
-            ),
+            # Componolit/RecordFlux#664:
+            # The provability of the context predicate is increased by duplicating the statement
+            # inside a case statement.
+            CaseStatement(
+                Variable("Fld"),
+                [
+                    (
+                        Variable(f.affixed_name),
+                        [set_message_last],
+                    )
+                    for f in message.fields
+                ],
+                case_grouping=False,
+            )
+            if len(message.fields) > 1
+            else set_message_last,
             IfStatement(
                 [
                     (

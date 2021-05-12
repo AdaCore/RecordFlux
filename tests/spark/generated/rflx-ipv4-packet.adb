@@ -799,7 +799,42 @@ is
                                   Fld = F_Payload
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               case Fld is
+                  when F_Version =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_IHL =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_DSCP =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_ECN =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Total_Length =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Identification =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Flag_R =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Flag_DF =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Flag_MF =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Fragment_Offset =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_TTL =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Protocol =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Header_Checksum =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Source =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Destination =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Options =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_Payload =>
+                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               end case;
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
