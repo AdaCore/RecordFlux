@@ -280,6 +280,14 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
+   function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Present (Ctx, F_Option_Data)
+       and then Valid_Next (Ctx, F_Option_Data),
+     Post =>
+       Get_Option_Data'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
+
    procedure Get_Option_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)

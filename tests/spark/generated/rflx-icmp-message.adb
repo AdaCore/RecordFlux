@@ -900,6 +900,13 @@ is
       Verify (Ctx, F_Transmit_Timestamp);
    end Verify_Message;
 
+   function Get_Data (Ctx : Context) return RFLX_Types.Bytes is
+      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).Last);
+   begin
+      return Ctx.Buffer.all (First .. Last);
+   end Get_Data;
+
    procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).Last);

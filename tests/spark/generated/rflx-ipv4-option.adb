@@ -338,6 +338,13 @@ is
       Verify (Ctx, F_Option_Data);
    end Verify_Message;
 
+   function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes is
+      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).Last);
+   begin
+      return Ctx.Buffer.all (First .. Last);
+   end Get_Option_Data;
+
    procedure Get_Option_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).Last);

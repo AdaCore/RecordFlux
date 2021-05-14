@@ -263,62 +263,6 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
-   procedure Get_Modular_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_Modular_Vector)
-       and then Valid_Next (Ctx, F_Modular_Vector)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Modular_Vector));
-
-   procedure Get_Range_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_Range_Vector)
-       and then Valid_Next (Ctx, F_Range_Vector)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Range_Vector));
-
-   procedure Get_Enumeration_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_Enumeration_Vector)
-       and then Valid_Next (Ctx, F_Enumeration_Vector)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Enumeration_Vector));
-
-   procedure Get_AV_Enumeration_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_AV_Enumeration_Vector)
-       and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_AV_Enumeration_Vector));
-
-   generic
-      with procedure Process_Modular_Vector (Modular_Vector : RFLX_Types.Bytes);
-   procedure Generic_Get_Modular_Vector (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Modular_Vector);
-
-   generic
-      with procedure Process_Range_Vector (Range_Vector : RFLX_Types.Bytes);
-   procedure Generic_Get_Range_Vector (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Range_Vector);
-
-   generic
-      with procedure Process_Enumeration_Vector (Enumeration_Vector : RFLX_Types.Bytes);
-   procedure Generic_Get_Enumeration_Vector (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Enumeration_Vector);
-
-   generic
-      with procedure Process_AV_Enumeration_Vector (AV_Enumeration_Vector : RFLX_Types.Bytes);
-   procedure Generic_Get_AV_Enumeration_Vector (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_AV_Enumeration_Vector);
-
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) with
      Pre =>
        not Ctx'Constrained

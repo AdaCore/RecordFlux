@@ -310,14 +310,17 @@ class Generator:
         scalar_fields = {}
         composite_fields = []
         sequence_fields = {}
+        opaque_fields = []
 
         for f, t in message.types.items():
             if isinstance(t, Scalar):
                 scalar_fields[f] = t
             if isinstance(t, Composite):
                 composite_fields.append(f)
-            if isinstance(t, Sequence):
-                sequence_fields[f] = t
+                if isinstance(t, Sequence):
+                    sequence_fields[f] = t
+                if isinstance(t, Opaque):
+                    opaque_fields.append(f)
 
         unit += self.__create_use_type_clause(composite_fields)
         unit += self.__create_field_type(message)
@@ -366,9 +369,10 @@ class Generator:
         unit += self.__parser.create_structural_valid_message_function(message)
         unit += self.__parser.create_valid_message_function(message)
         unit += self.__parser.create_incomplete_message_function(message)
-        unit += self.__parser.create_scalar_accessor_functions(scalar_fields)
-        unit += self.__parser.create_composite_accessor_procedures(composite_fields)
-        unit += self.__parser.create_generic_composite_accessor_procedures(composite_fields)
+        unit += self.__parser.create_scalar_getter_functions(scalar_fields)
+        unit += self.__parser.create_opaque_getter_functions(opaque_fields)
+        unit += self.__parser.create_opaque_getter_procedures(opaque_fields)
+        unit += self.__parser.create_generic_opaque_getter_procedures(opaque_fields)
 
         unit += self.__serializer.create_internal_functions(message, scalar_fields)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)

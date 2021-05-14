@@ -260,20 +260,6 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
-   procedure Get_Messages (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_Messages)
-       and then Valid_Next (Ctx, F_Messages)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Messages));
-
-   generic
-      with procedure Process_Messages (Messages : RFLX_Types.Bytes);
-   procedure Generic_Get_Messages (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Messages);
-
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) with
      Pre =>
        not Ctx'Constrained
