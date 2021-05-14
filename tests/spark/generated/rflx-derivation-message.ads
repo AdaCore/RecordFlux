@@ -267,6 +267,14 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
+   function Get_Value (Ctx : Context) return RFLX_Types.Bytes with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Present (Ctx, F_Value)
+       and then Valid_Next (Ctx, F_Value),
+     Post =>
+       Get_Value'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Value));
+
    procedure Get_Value (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)

@@ -264,6 +264,13 @@ is
       Verify (Ctx, F_Value);
    end Verify_Message;
 
+   function Get_Value (Ctx : Context) return RFLX_Types.Bytes is
+      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).First);
+      Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).Last);
+   begin
+      return Ctx.Buffer.all (First .. Last);
+   end Get_Value;
+
    procedure Get_Value (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).Last);

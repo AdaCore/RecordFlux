@@ -260,20 +260,6 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
-   procedure Get_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Present (Ctx, F_Vector)
-       and then Valid_Next (Ctx, F_Vector)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Vector));
-
-   generic
-      with procedure Process_Vector (Vector : RFLX_Types.Bytes);
-   procedure Generic_Get_Vector (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Vector);
-
    procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) with
      Pre =>
        not Ctx'Constrained

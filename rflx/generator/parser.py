@@ -696,7 +696,7 @@ class ParserGenerator:
             ],
         )
 
-    def create_scalar_accessor_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
+    def create_scalar_getter_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
@@ -742,7 +742,107 @@ class ParserGenerator:
         )
 
     @staticmethod
-    def create_composite_accessor_procedures(composite_fields: Sequence[Field]) -> UnitPart:
+    def create_opaque_getter_functions(opaque_fields: Sequence[Field]) -> UnitPart:
+        def name(field: Field) -> str:
+            return f"Get_{field.name}"
+
+        def specification(field: Field) -> FunctionSpecification:
+            return FunctionSpecification(
+                name(field),
+                const.TYPES_BYTES,
+                [Parameter(["Ctx"], "Context")],
+            )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification(f),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call(
+                                    "Present",
+                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                ),
+                                Call(
+                                    "Valid_Next",
+                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            Equal(
+                                Length(Result(name(f))),
+                                Call(
+                                    const.TYPES_TO_LENGTH,
+                                    [
+                                        Call(
+                                            "Field_Size",
+                                            [
+                                                Variable("Ctx"),
+                                                Variable(f.affixed_name),
+                                            ],
+                                        )
+                                    ],
+                                ),
+                            )
+                        ),
+                    ],
+                )
+                for f in opaque_fields
+            ],
+            [
+                SubprogramBody(
+                    specification(f),
+                    [
+                        ObjectDeclaration(
+                            ["First"],
+                            const.TYPES_INDEX,
+                            Call(
+                                const.TYPES_TO_INDEX,
+                                [
+                                    Selected(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name),
+                                        ),
+                                        "First",
+                                    )
+                                ],
+                            ),
+                            True,
+                        ),
+                        ObjectDeclaration(
+                            ["Last"],
+                            const.TYPES_INDEX,
+                            Call(
+                                const.TYPES_TO_INDEX,
+                                [
+                                    Selected(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Variable(f.affixed_name),
+                                        ),
+                                        "Last",
+                                    )
+                                ],
+                            ),
+                            True,
+                        ),
+                    ],
+                    [
+                        ReturnStatement(
+                            Slice(Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")),
+                        )
+                    ],
+                )
+                for f in opaque_fields
+            ],
+        )
+
+    @staticmethod
+    def create_opaque_getter_procedures(opaque_fields: Sequence[Field]) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Get_{field.name}",
@@ -784,7 +884,7 @@ class ParserGenerator:
                         )
                     ],
                 )
-                for f in composite_fields
+                for f in opaque_fields
             ],
             [
                 SubprogramBody(
@@ -832,12 +932,12 @@ class ParserGenerator:
                         )
                     ],
                 )
-                for f in composite_fields
+                for f in opaque_fields
             ],
         )
 
     @staticmethod
-    def create_generic_composite_accessor_procedures(composite_fields: Sequence[Field]) -> UnitPart:
+    def create_generic_opaque_getter_procedures(opaque_fields: Sequence[Field]) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Generic_Get_{field.name}", [Parameter(["Ctx"], "Context")]
@@ -866,7 +966,7 @@ class ParserGenerator:
                         )
                     ],
                 )
-                for f in composite_fields
+                for f in opaque_fields
             ],
             [
                 SubprogramBody(
@@ -918,7 +1018,7 @@ class ParserGenerator:
                         )
                     ],
                 )
-                for f in composite_fields
+                for f in opaque_fields
             ],
         )
 

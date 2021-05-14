@@ -230,20 +230,6 @@ is
       Verify (Ctx, F_Vector);
    end Verify_Message;
 
-   procedure Get_Vector (Ctx : Context; Data : out RFLX_Types.Bytes) is
-      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Vector).First);
-      Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Vector).Last);
-   begin
-      Data := Ctx.Buffer.all (First .. Last);
-   end Get_Vector;
-
-   procedure Generic_Get_Vector (Ctx : Context) is
-      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Vector).First);
-      Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Vector).Last);
-   begin
-      Process_Vector (Ctx.Buffer.all (First .. Last));
-   end Generic_Get_Vector;
-
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained

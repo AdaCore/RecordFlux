@@ -347,12 +347,13 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
-   procedure Get_Options (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Options)
-       and then Valid_Next (Ctx, F_Options)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Options));
+       and then Present (Ctx, F_Payload)
+       and then Valid_Next (Ctx, F_Payload),
+     Post =>
+       Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
@@ -360,13 +361,6 @@ is
        and then Present (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
        and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
-
-   generic
-      with procedure Process_Options (Options : RFLX_Types.Bytes);
-   procedure Generic_Get_Options (Ctx : Context) with
-     Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Options);
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
