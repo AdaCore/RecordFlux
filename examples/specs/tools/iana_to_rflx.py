@@ -6,8 +6,9 @@ from urllib.request import urlopen
 
 from defusedxml import ElementTree
 
-
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
+
+CACHE = {}
 
 
 def iana_to_rflx(url: str):
@@ -52,14 +53,33 @@ def write_registry(
 def write_record(record: ElementTree, file: TextIO) -> None:
     description = record.find("iana:description", NAMESPACE)
     value = record.find("iana:value", NAMESPACE)
+    references = record.findall("iana:xref", NAMESPACE)
+    comment = f"-- {' '.join([r.get('data') for r in references if r is not None and r.get('type') == 'rfc'])}"
+
     if description is None or value is None:
+        print(
+            f"{description.text if description is not None else 'empty description'} "
+            f"=> {value.text if value is not None else 'empty value'} not written"
+        )
         return
 
-    for rflx_hex in _normalize(value.text):
-        file.write(f"{'':<9}{description.text.upper().replace(' ', '_')} => {rflx_hex},\n")
+    d = _normalize_description(description.text)
+    for rflx_hex in _normalize_value(value.text):
+        file.write(
+            f"{'':<9}{f'{d} => {rflx_hex},':<60} {comment if comment != '-- ' else '':<70}\n"
+        )
 
 
-def _normalize(value: str) -> Iterator[str]:
+def _normalize_description(description_text: str) -> str:
+    desc = description_text.upper().replace(" ", "_").replace("-", "_")
+    if re.match(r"^([A-Z0-9]+_{0,1})+$", desc) is None:  # everything in format AA_BB_CC
+        print(description_text)
+        print("-" * 30)
+        return ""
+    return desc
+
+
+def _normalize_value(value: str) -> Iterator[str]:
     if value.find("0x") != -1:
         yield from _normalize_hex_value(value)
     else:
@@ -69,7 +89,7 @@ def _normalize(value: str) -> Iterator[str]:
 def _normalize_dec_value(dec_value: str) -> Iterator[str]:
     if dec_value.find("-") != -1:
         range_lower = int(dec_value[: dec_value.index("-")])
-        range_upper = int(dec_value[dec_value.index("-"):])
+        range_upper = int(dec_value[dec_value.index("-") :])
         for i in range(range_lower, range_upper + 1):
             yield str(i)
     else:
