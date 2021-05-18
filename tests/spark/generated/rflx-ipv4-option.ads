@@ -283,7 +283,7 @@ is
    function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Option_Data)
+       and then Structural_Valid (Ctx, F_Option_Data)
        and then Valid_Next (Ctx, F_Option_Data),
      Post =>
        Get_Option_Data'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
@@ -291,9 +291,9 @@ is
    procedure Get_Option_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Option_Data)
+       and then Structural_Valid (Ctx, F_Option_Data)
        and then Valid_Next (Ctx, F_Option_Data)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
+       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
 
    generic
       with procedure Process_Option_Data (Option_Data : RFLX_Types.Bytes);

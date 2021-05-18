@@ -194,7 +194,8 @@ is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).Last);
    begin
-      Data := Ctx.Buffer.all (First .. Last);
+      Data := (others => RFLX_Types.Byte'First);
+      Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Payload;
 
    procedure Generic_Get_Payload (Ctx : Context) is

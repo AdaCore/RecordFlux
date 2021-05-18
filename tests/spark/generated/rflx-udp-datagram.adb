@@ -321,7 +321,8 @@ is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).Last);
    begin
-      Data := Ctx.Buffer.all (First .. Last);
+      Data := (others => RFLX_Types.Byte'First);
+      Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Payload;
 
    procedure Generic_Get_Payload (Ctx : Context) is
@@ -506,5 +507,30 @@ is
       Initialize_Payload_Private (Ctx);
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Generic_Set_Payload;
+
+   procedure To_Structure (Ctx : Context; Struct : out Structure) is
+   begin
+      Struct.Source_Port := Get_Source_Port (Ctx);
+      Struct.Destination_Port := Get_Destination_Port (Ctx);
+      Struct.Length := Get_Length (Ctx);
+      Struct.Checksum := Get_Checksum (Ctx);
+      Get_Payload (Ctx, Struct.Payload);
+   end To_Structure;
+
+   procedure To_Context (Struct : Structure; Ctx : in out Context) is
+   begin
+      Reset (Ctx);
+      Set_Source_Port (Ctx, Struct.Source_Port);
+      Set_Destination_Port (Ctx, Struct.Destination_Port);
+      Set_Length (Ctx, Struct.Length);
+      Set_Checksum (Ctx, Struct.Checksum);
+      declare
+         Payload_Size : constant RFLX_Types.Bit_Length := RFLX_Types.Bit_Length ((Struct.Length - 8) * 8);
+      begin
+         if Payload_Size = Field_Size (Ctx, F_Payload) then
+            Set_Payload (Ctx, Struct.Payload (Struct.Payload'First .. Struct.Payload'First + RFLX_Types.Index (RFLX_Types.To_Length (Payload_Size) + 1) - 2));
+         end if;
+      end;
+   end To_Context;
 
 end RFLX.UDP.Datagram;

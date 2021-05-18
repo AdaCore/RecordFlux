@@ -28,6 +28,7 @@ from rflx.ada import (
     ContextItem,
     ContractCases,
     Declaration,
+    Declare,
     DefaultInitialCondition,
     Depends,
     Discriminant,
@@ -2736,7 +2737,7 @@ class Generator:
         return unit
 
     def __create_structure_type(self, message: Message) -> UnitPart:
-        if not message.has_fixed_size:
+        if not message.is_definite:
             return UnitPart()
 
         assert len(message.paths(FINAL)) == 1
@@ -2744,6 +2745,9 @@ class Generator:
         components = []
 
         for path in message.paths(FINAL):
+            if any(isinstance(t, Opaque) for t in message.types.values()):
+                field_size = message.max_field_sizes()
+
             for link in path:
                 if link.target == FINAL:
                     continue
@@ -2761,7 +2765,10 @@ class Generator:
                             First(const.TYPES_INDEX),
                             Add(
                                 First(const.TYPES_INDEX),
-                                expr.Sub(expr.Div(link.size, expr.Number(8)), expr.Number(1))
+                                expr.Sub(
+                                    expr.Div(field_size[link.target], expr.Number(8)),
+                                    expr.Number(1),
+                                )
                                 .simplified()
                                 .ada_expr(),
                             ),
@@ -2780,7 +2787,7 @@ class Generator:
 
     @staticmethod
     def __create_to_structure_procedure(message: Message) -> UnitPart:
-        if not message.has_fixed_size:
+        if not message.is_definite:
             return UnitPart()
 
         assert len(message.paths(FINAL)) == 1
@@ -2837,7 +2844,7 @@ class Generator:
 
     @staticmethod
     def __create_to_context_procedure(message: Message) -> UnitPart:
-        if not message.has_fixed_size:
+        if not message.is_definite:
             return UnitPart()
 
         assert len(message.paths(FINAL)) == 1
@@ -2874,6 +2881,78 @@ class Generator:
                             )
                         )
                         statements = dependent_statements
+                    elif isinstance(type_, Opaque) and link.size.variables():
+                        field_size = f"{link.target.identifier}_Size"
+                        dependent_statements = [
+                            CallStatement(
+                                f"Set_{link.target.identifier}",
+                                [
+                                    Variable("Ctx"),
+                                    Slice(
+                                        Variable(f"Struct.{link.target.identifier}"),
+                                        First(f"Struct.{link.target.identifier}"),
+                                        Add(
+                                            First(f"Struct.{link.target.identifier}"),
+                                            Call(
+                                                const.TYPES_INDEX,
+                                                [
+                                                    Add(
+                                                        Call(
+                                                            const.TYPES_TO_LENGTH,
+                                                            [Variable(field_size)],
+                                                        ),
+                                                        Number(1),
+                                                    )
+                                                ],
+                                            ),
+                                            Number(-2),
+                                        ),
+                                    ),
+                                ],
+                            )
+                        ]
+                        statements.append(
+                            Declare(
+                                [
+                                    ObjectDeclaration(
+                                        [field_size],
+                                        const.TYPES_BIT_LENGTH,
+                                        Call(
+                                            const.TYPES_BIT_LENGTH,
+                                            [
+                                                link.size.substituted(
+                                                    lambda x: expr.Variable("Struct" * x.identifier)
+                                                    if isinstance(x, expr.Variable)
+                                                    and Field(x.identifier) in message.fields
+                                                    else x
+                                                ).ada_expr()
+                                            ],
+                                        ),
+                                        constant=True,
+                                    )
+                                ],
+                                [
+                                    IfStatement(
+                                        [
+                                            (
+                                                Equal(
+                                                    Variable(field_size),
+                                                    Call(
+                                                        "Field_Size",
+                                                        [
+                                                            Variable("Ctx"),
+                                                            Variable(link.target.affixed_name),
+                                                        ],
+                                                    ),
+                                                ),
+                                                dependent_statements,
+                                            )
+                                        ]
+                                    )
+                                ],
+                            )
+                        )
+                        statements = dependent_statements
                     else:
                         set_field = CallStatement(
                             f"Set_{link.target.identifier}",
@@ -2906,7 +2985,7 @@ class Generator:
             [Parameter(["Struct"], "Structure"), InOutParameter(["Ctx"], "Context")],
         )
         first_field = message.fields[0]
-        message_size = message.size()
+        message_size = message.max_size()
         assert isinstance(message_size, expr.Number)
 
         return UnitPart(
