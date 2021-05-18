@@ -292,7 +292,7 @@ is
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Payload)
+       and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
@@ -300,9 +300,9 @@ is
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Payload)
+       and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
+       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);

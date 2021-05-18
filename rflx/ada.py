@@ -1426,6 +1426,19 @@ class CaseStatement(Statement):
         return f"case {self.control_expression} is{indent(cases, 3)}\nend case;"
 
 
+class Declare(Statement):
+    def __init__(
+        self, declarations: Sequence[Declaration], statements: Sequence[Statement]
+    ) -> None:
+        self.declarations = declarations
+        self.statements = statements
+
+    def __str__(self) -> str:
+        declarations = indent("\n".join(str(s) for s in self.declarations), 3)
+        statements = indent("\n".join(str(s) for s in self.statements), 3)
+        return f"declare\n{declarations}\nbegin\n{statements}\nend;"
+
+
 class Parameter(Base):
     def __init__(
         self, identifiers: Sequence[StrID], type_identifier: StrID, default: Expr = None

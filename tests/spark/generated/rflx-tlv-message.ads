@@ -268,7 +268,7 @@ is
    function Get_Value (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Value)
+       and then Structural_Valid (Ctx, F_Value)
        and then Valid_Next (Ctx, F_Value),
      Post =>
        Get_Value'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Value));
@@ -276,9 +276,9 @@ is
    procedure Get_Value (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Value)
+       and then Structural_Valid (Ctx, F_Value)
        and then Valid_Next (Ctx, F_Value)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Value));
+       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Value));
 
    generic
       with procedure Process_Value (Value : RFLX_Types.Bytes);

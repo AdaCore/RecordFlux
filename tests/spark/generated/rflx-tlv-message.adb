@@ -275,7 +275,8 @@ is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Value).Last);
    begin
-      Data := Ctx.Buffer.all (First .. Last);
+      Data := (others => RFLX_Types.Byte'First);
+      Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Value;
 
    procedure Generic_Get_Value (Ctx : Context) is

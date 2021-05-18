@@ -349,7 +349,8 @@ is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Option_Data).Last);
    begin
-      Data := Ctx.Buffer.all (First .. Last);
+      Data := (others => RFLX_Types.Byte'First);
+      Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Option_Data;
 
    procedure Generic_Get_Option_Data (Ctx : Context) is

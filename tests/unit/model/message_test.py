@@ -2506,6 +2506,22 @@ def test_has_fixed_size() -> None:
     assert not SEQUENCE_MESSAGE.has_fixed_size
 
 
+def test_has_bounded_size() -> None:
+    assert NULL_MESSAGE.has_bounded_size
+    assert FIXED_SIZE_MESSAGE.has_bounded_size
+    assert TLV_MESSAGE.has_bounded_size
+    assert not ETHERNET_FRAME.has_bounded_size
+    assert SEQUENCE_MESSAGE.has_bounded_size
+
+
+def test_is_definite() -> None:
+    assert NULL_MESSAGE.is_definite
+    assert FIXED_SIZE_MESSAGE.is_definite
+    assert not TLV_MESSAGE.is_definite
+    assert not ETHERNET_FRAME.is_definite
+    assert SEQUENCE_MESSAGE.is_definite
+
+
 def test_size() -> None:
     assert NULL_MESSAGE.size() == Number(0)
     assert FIXED_SIZE_MESSAGE.size() == Number(200)
@@ -2626,6 +2642,44 @@ def test_size_error() -> None:
                 Field("Payload"): Aggregate(),
             }
         )
+
+
+def test_max_size() -> None:
+    assert NULL_MESSAGE.max_size() == Number(0)
+    assert FIXED_SIZE_MESSAGE.max_size() == Number(8 + 3 * 64)
+    assert TLV_MESSAGE.max_size() == Number(8 + 16 + (2 ** 16 - 1) * 8)
+    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2 ** 8 - 1) * 8 + 3 * 16)
+
+
+def test_max_size_error() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^model: error: unable to calculate maximum size of unbounded message$",
+    ):
+        ETHERNET_FRAME.max_size()
+
+
+def test_max_field_sizes() -> None:
+    assert NULL_MESSAGE.max_field_sizes() == {}
+    assert FIXED_SIZE_MESSAGE.max_field_sizes() == {
+        Field("Message_Type"): Number(8),
+        Field("Data"): Number(64),
+        Field("Values"): Number(64),
+        Field("Options"): Number(64),
+    }
+    assert TLV_MESSAGE.max_field_sizes() == {
+        Field("Tag"): Number(8),
+        Field("Length"): Number(16),
+        Field("Value"): Number((2 ** 16 - 1) * 8),
+    }
+
+
+def test_max_field_sizes_error() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^model: error: unable to calculate maximum field sizes of unbounded message$",
+    ):
+        ETHERNET_FRAME.max_field_sizes()
 
 
 def test_derived_message_incorrect_base_name() -> None:

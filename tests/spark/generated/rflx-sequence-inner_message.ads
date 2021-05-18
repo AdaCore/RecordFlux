@@ -262,7 +262,7 @@ is
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Payload)
+       and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
@@ -270,9 +270,9 @@ is
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Present (Ctx, F_Payload)
+       and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
+       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
@@ -416,6 +416,26 @@ is
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
+
+   type Structure is
+      record
+         Length : RFLX.Sequence.Length;
+         Payload : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 254);
+      end record;
+
+   procedure To_Structure (Ctx : Context; Struct : out Structure) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx);
+
+   procedure To_Context (Struct : Structure; Ctx : in out Context) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Length)
+       and then Available_Space (Ctx, F_Length) >= 2048,
+     Post =>
+       Has_Buffer (Ctx);
 
 private
 

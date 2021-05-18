@@ -668,6 +668,23 @@ class Message(AbstractMessage):
             - set(self._type_literals.keys())
         )
 
+    @property
+    def has_bounded_size(self) -> bool:
+        """
+        Return true if the message has a bounded size.
+
+        All messages containing a reference to `Message` in a size aspect are considered unbounded,
+        even if the affected field size is restricted by a condition.
+        """
+        return all(
+            v.identifier != ID("Message") for l in self.structure for v in l.size.variables()
+        )
+
+    @property
+    def is_definite(self) -> bool:
+        """Return true if the message has a bounded size and no optional fields."""
+        return len(self.paths(FINAL)) <= 1 and self.has_bounded_size
+
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
         field_values = field_values if field_values else {}
 
@@ -771,6 +788,65 @@ class Message(AbstractMessage):
         error.propagate()
 
         assert False
+
+    def max_size(self) -> expr.Number:
+        if not self.structure:
+            return expr.Number(0)
+
+        if not self.has_bounded_size:
+            fail(
+                "unable to calculate maximum size of unbounded message",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+
+        max_size = expr.Number(0)
+
+        for path in self.paths(FINAL):
+            max_size = max(max_size, self.__max_value(expr.Size("Message"), path))
+
+        return max_size
+
+    def max_field_sizes(self) -> Dict[Field, expr.Number]:
+        if not self.structure:
+            return {}
+
+        if not self.has_bounded_size:
+            fail(
+                "unable to calculate maximum field sizes of unbounded message",
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
+            )
+
+        result = {f: expr.Number(0) for f in self.fields}
+
+        for path in self.paths(FINAL):
+            for l in path[:-1]:
+                result[l.target] = max(
+                    result[l.target], self.__max_value(expr.Size(l.target.name), path)
+                )
+
+        return result
+
+    def __max_value(self, target: expr.Expr, path: Tuple[Link, ...]) -> expr.Number:
+        message_size = expr.Add(
+            *[
+                expr.Size(link.target.name)
+                for link in path
+                if link.target != FINAL and link.first == expr.UNDEFINED
+            ]
+        )
+        link_expressions = [fact for link in path for fact in self.__link_expression(link)]
+        return expr.max_value(
+            target,
+            [
+                expr.Equal(expr.Size("Message"), message_size),
+                *link_expressions,
+                *self.type_constraints(expr.TRUE),
+            ],
+        )
 
     def __verify_expression_types(self) -> None:
         types: Dict[ID, mty.Type] = {}

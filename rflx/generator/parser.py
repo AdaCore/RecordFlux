@@ -19,9 +19,11 @@ from rflx.ada import (
     Equal,
     Expr,
     ExpressionFunctionDeclaration,
+    First,
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericFunctionInstantiation,
+    GreaterEqual,
     If,
     IfStatement,
     Indexed,
@@ -48,6 +50,7 @@ from rflx.ada import (
     Size,
     Slice,
     String,
+    Sub,
     Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
@@ -762,7 +765,7 @@ class ParserGenerator:
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
-                                    "Present",
+                                    "Structural_Valid",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
                                 Call(
@@ -858,14 +861,14 @@ class ParserGenerator:
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
-                                    "Present",
+                                    "Structural_Valid",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
                                 Call(
                                     "Valid_Next",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
-                                Equal(
+                                GreaterEqual(
                                     Length("Data"),
                                     Call(
                                         const.TYPES_TO_LENGTH,
@@ -928,8 +931,20 @@ class ParserGenerator:
                     [
                         Assignment(
                             "Data",
-                            Slice(Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")),
-                        )
+                            NamedAggregate(("others", First(const.TYPES_BYTE))),
+                        ),
+                        Assignment(
+                            Slice(
+                                Variable("Data"),
+                                First("Data"),
+                                Add(First("Data"), Sub(Variable("Last"), Variable("First"))),
+                            ),
+                            Slice(
+                                Variable("Ctx.Buffer.all"),
+                                Variable("First"),
+                                Variable("Last"),
+                            ),
+                        ),
                     ],
                 )
                 for f in opaque_fields

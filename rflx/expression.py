@@ -2313,6 +2313,17 @@ def substitution(
     )
 
 
+def max_value(target: Expr, facts: Sequence[Expr]) -> Number:
+    opt = z3.Optimize()
+    opt.add(*[e.z3expr() for e in facts])
+    value = opt.maximize(target.z3expr())
+    result = opt.check()
+    assert result == z3.sat
+    upper = value.upper()
+    assert isinstance(upper, z3.IntNumRef)
+    return Number(upper.as_long())
+
+
 def _entity_name(expr: Expr) -> str:
     expr_type = (
         "variable"

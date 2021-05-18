@@ -368,6 +368,7 @@ class Session(AbstractSession):
                         )
                         if type_identifier in self.types:
                             argument_types.append(self.types[type_identifier].type_)
+                            model_type = self.types[type_identifier]
                         else:
                             argument_types.append(rty.Any())
                             undefined_type(a.type_identifier, d.location)
