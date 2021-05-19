@@ -34,7 +34,7 @@ def substitution(
             ):
                 field = model.Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
-            if field and aggregate:
+            if field and len(field.identifier.parts) == 1 and aggregate:
                 assert field in message.fields
                 if embedded:
                     return expr.Equal(
@@ -542,7 +542,16 @@ def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
     )
 
 
-def initialize_field_statements(field: model.Field) -> Sequence[ada.Statement]:
+def initialize_field_statements(
+    message: model.Message, field: model.Field
+) -> Sequence[ada.Statement]:
+    comparison_to_aggregate = is_compared_to_aggregate(field, message)
+
+    if comparison_to_aggregate:
+        size = message.field_size(field)
+        assert isinstance(size, expr.Number)
+        aggregate_size = int(size) // 8
+
     return [
         ada.CallStatement(
             "Reset_Dependent_Fields",
@@ -557,7 +566,19 @@ def initialize_field_statements(field: model.Field) -> Sequence[ada.Statement]:
                 ("Last", ada.Variable("Last")),
                 (
                     "Value",
-                    ada.NamedAggregate(("Fld", ada.Variable(field.affixed_name))),
+                    ada.NamedAggregate(
+                        ("Fld", ada.Variable(field.affixed_name)),
+                        *(
+                            [
+                                (
+                                    f"{field.identifier}_Value",
+                                    ada.Aggregate(*([ada.Number(0)] * aggregate_size)),
+                                )
+                            ]
+                            if comparison_to_aggregate
+                            else []
+                        ),
+                    ),
                 ),
                 (
                     "Predecessor",
@@ -604,7 +625,7 @@ def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declar
     ]
 
 
-def field_byte_location_declarations() -> Sequence[ada.Declaration]:
+def field_byte_bounds_declarations() -> Sequence[ada.Declaration]:
     return [
         ada.ExpressionFunctionDeclaration(
             ada.FunctionSpecification("Buffer_First", const.TYPES_INDEX),
@@ -614,6 +635,12 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
             ada.FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
             ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]),
         ),
+    ]
+
+
+def field_byte_location_declarations() -> Sequence[ada.Declaration]:
+    return [
+        *field_byte_bounds_declarations(),
         ada.ExpressionFunctionDeclaration(
             ada.FunctionSpecification("Offset", const.TYPES_OFFSET),
             ada.Call(
@@ -671,6 +698,19 @@ def size_dependent_condition(message: model.Message) -> bool:
         size in field_sizes
         for link in message.structure
         for size in link.condition.findall(lambda x: isinstance(x, expr.Size))
+    )
+
+
+def is_compared_to_aggregate(field: model.Field, message: model.Message) -> bool:
+    return any(
+        r
+        for l in message.structure
+        for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
+        if isinstance(r, (expr.Equal, expr.NotEqual))
+        and any(r.findall(lambda x: isinstance(x, expr.Aggregate)))
+        and (
+            r.left == expr.Variable(field.identifier) or r.right == expr.Variable(field.identifier)
+        )
     )
 
 

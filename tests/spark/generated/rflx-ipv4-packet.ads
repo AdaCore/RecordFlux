@@ -1152,7 +1152,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
@@ -1190,12 +1189,12 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload))
+       and then Field_Condition (Ctx, (Fld => F_Payload)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -1232,7 +1231,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0

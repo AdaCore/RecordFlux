@@ -140,10 +140,16 @@ is
      Post =>
        Get_Field_Value'Result.Fld = Fld
    is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
    begin
       return ((case Fld is
                   when F_Payload =>
-                     (Fld => F_Payload)));
+                     (Fld => F_Payload, Payload_Value => Ctx.Buffer.all (Buffer_First .. Buffer_Last))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -196,7 +202,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
@@ -217,7 +222,7 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
       Ctx.Message_Last := Last;
-      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
+      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload, Payload_Value => (0, 0)), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload_Private;
 

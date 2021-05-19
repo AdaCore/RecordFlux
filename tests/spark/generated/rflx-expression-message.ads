@@ -42,8 +42,10 @@ is
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
          case Fld is
-            when F_Initial | F_Payload | F_Final =>
+            when F_Initial | F_Final =>
                null;
+            when F_Payload =>
+               Payload_Value : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 1);
          end case;
       end record;
 
@@ -272,7 +274,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
@@ -296,12 +297,12 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload))
+       and then Field_Condition (Ctx, (Fld => F_Payload, Payload_Value => Data)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -324,7 +325,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Field_Condition (Ctx, (Fld => F_Payload))
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
        and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
@@ -471,7 +471,7 @@ private
           when F_Initial =>
              True,
           when F_Payload =>
-             Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))),
+             Val.Payload_Value = (1, 2),
           when F_Final =>
              False));
 
