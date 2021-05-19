@@ -1243,9 +1243,13 @@ class AccessType(TypeDeclaration):
 
 
 class Component(Base):
-    def __init__(self, identifier: StrID, type_identifier: StrID, default: Expr = None) -> None:
+    def __init__(
+        self, identifier: StrID, type_identifier: Union[StrID, Expr], default: Expr = None
+    ) -> None:
         self.identifier = ID(identifier)
-        self.type_identifier = ID(type_identifier)
+        self.type_identifier = (
+            type_identifier if isinstance(type_identifier, Expr) else Variable(type_identifier)
+        )
         self.default = default
 
     def __str__(self) -> str:

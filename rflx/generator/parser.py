@@ -14,6 +14,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    CaseStatement,
     Div,
     Equal,
     Expr,
@@ -86,24 +87,43 @@ class ParserGenerator:
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
             aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
-            if field in message.fields and isinstance(message.types[field], Scalar):
-                aggregate.append(
-                    (
-                        f"{field.name}_Value",
-                        Call(
-                            "Extract",
-                            [
-                                Slice(
-                                    Variable("Ctx.Buffer.all"),
-                                    Variable("Buffer_First"),
-                                    Variable("Buffer_Last"),
-                                ),
-                                Variable("Offset"),
-                            ],
-                        ),
+            if field in message.fields:
+                if isinstance(message.types[field], Scalar):
+                    aggregate.append(
+                        (
+                            f"{field.name}_Value",
+                            Call(
+                                "Extract",
+                                [
+                                    Slice(
+                                        Variable("Ctx.Buffer.all"),
+                                        Variable("Buffer_First"),
+                                        Variable("Buffer_Last"),
+                                    ),
+                                    Variable("Offset"),
+                                ],
+                            ),
+                        )
                     )
-                )
+                elif isinstance(
+                    message.types[field], Composite
+                ) and common.is_compared_to_aggregate(field, message):
+                    aggregate.append(
+                        (
+                            f"{field.name}_Value",
+                            Slice(
+                                Variable("Ctx.Buffer.all"),
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
+                            ),
+                        )
+                    )
             return NamedAggregate(*aggregate)
+
+        comparison_to_aggregate = any(
+            (isinstance(t, Composite) and common.is_compared_to_aggregate(f, message))
+            for f, t in message.types.items()
+        )
 
         return UnitPart(
             [],
@@ -137,14 +157,18 @@ class ParserGenerator:
                     ),
                     [
                         *common.field_bit_location_declarations(Variable("Fld")),
-                        *common.field_byte_location_declarations(),
+                        *(
+                            common.field_byte_location_declarations()
+                            if scalar_fields
+                            else common.field_byte_bounds_declarations()
+                        ),
                         *unique(
                             self.extract_function(common.full_base_type_name(t))
-                            for t in message.types.values()
+                            for f, t in message.types.items()
                             if isinstance(t, Scalar)
                         ),
                     ]
-                    if scalar_fields
+                    if scalar_fields or comparison_to_aggregate
                     else [],
                     [
                         ReturnStatement(

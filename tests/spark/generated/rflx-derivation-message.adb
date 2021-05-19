@@ -370,7 +370,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Value)
-       and then Field_Condition (Ctx, (Fld => F_Value))
        and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value)
        and then Field_First (Ctx, F_Value) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Value) mod RFLX_Types.Byte'Size = 0

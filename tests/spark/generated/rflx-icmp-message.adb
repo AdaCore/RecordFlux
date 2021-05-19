@@ -1188,7 +1188,6 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Field_Condition (Ctx, (Fld => F_Data))
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
        and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0

@@ -1,3 +1,5 @@
+# pylint: disable = too-many-lines
+
 from typing import Mapping, Sequence
 
 from rflx.ada import (
@@ -409,7 +411,8 @@ class SerializerGenerator:
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f),
-                                    *self.composite_setter_preconditions(message, f),
+                                    *self.composite_setter_field_condition_precondition(message, f),
+                                    *self.composite_setter_preconditions(f),
                                     Equal(
                                         Call(
                                             "Field_Size",
@@ -484,7 +487,8 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.composite_setter_preconditions(message, f),
+                                *self.composite_setter_field_condition_precondition(message, f),
+                                *self.composite_setter_preconditions(f),
                                 Equal(
                                     Call(
                                         "Field_Size",
@@ -572,7 +576,7 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.composite_setter_preconditions(message, f),
+                                *self.composite_setter_preconditions(f),
                                 Equal(
                                     Length("Data"),
                                     Call(
@@ -588,6 +592,7 @@ class SerializerGenerator:
                                         ],
                                     ),
                                 ),
+                                *self.composite_setter_field_condition_precondition(message, f),
                             )
                         ),
                         Postcondition(
@@ -656,7 +661,7 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.composite_setter_preconditions(message, f),
+                                *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
                                     [
@@ -736,7 +741,7 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.composite_setter_preconditions(message, f),
+                                *self.composite_setter_preconditions(f),
                             )
                         ),
                         Postcondition(
@@ -758,12 +763,12 @@ class SerializerGenerator:
                     SubprogramBody(
                         specification_private(f),
                         common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        common.initialize_field_statements(f),
+                        common.initialize_field_statements(message, f),
                         [
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f),
-                                    *self.composite_setter_preconditions(message, f),
+                                    *self.composite_setter_preconditions(f),
                                 )
                             ),
                             Postcondition(
@@ -869,25 +874,39 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def composite_setter_preconditions(message: Message, field: Field) -> Sequence[Expr]:
+    def composite_setter_field_condition_precondition(
+        message: Message, field: Field
+    ) -> Sequence[Expr]:
         return [
             Call(
                 "Field_Condition",
                 [
                     Variable("Ctx"),
-                    NamedAggregate(("Fld", Variable(field.affixed_name))),
-                ]
-                + (
-                    [
-                        Call(
-                            "Field_Size",
-                            [Variable("Ctx"), Variable(field.affixed_name)],
-                        )
-                    ]
-                    if common.size_dependent_condition(message)
-                    else []
-                ),
+                    NamedAggregate(
+                        ("Fld", Variable(field.affixed_name)),
+                        *(
+                            [(f"{field.identifier}_Value", Variable("Data"))]
+                            if common.is_compared_to_aggregate(field, message)
+                            else []
+                        ),
+                    ),
+                    *(
+                        [
+                            Call(
+                                "Field_Size",
+                                [Variable("Ctx"), Variable(field.affixed_name)],
+                            )
+                        ]
+                        if common.size_dependent_condition(message)
+                        else []
+                    ),
+                ],
             ),
+        ]
+
+    @staticmethod
+    def composite_setter_preconditions(field: Field) -> Sequence[Expr]:
+        return [
             common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
             Equal(
                 Mod(

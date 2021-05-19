@@ -280,14 +280,22 @@ class AbstractMessage(mty.Type):
         return self._state.field_condition[field]
 
     def field_size(self, field: Field) -> expr.Expr:
+        """Return field size if field size is fixed and `UNDEFINED` otherwise."""
         if field == FINAL:
             return expr.Number(0)
 
         assert field in self.fields, f'field "{field.name}" not found'
 
         field_type = self.types[field]
+
         if isinstance(field_type, mty.Scalar):
             return field_type.size
+
+        if isinstance(field_type, mty.Composite):
+            sizes = [l.size.simplified() for l in self.incoming(field)]
+            size = sizes[0]
+            if isinstance(size, expr.Number) and all(size == s for s in sizes):
+                return size
 
         return expr.UNDEFINED
 

@@ -83,6 +83,7 @@ from rflx.ada import (
     Selected,
     Size,
     SizeAspect,
+    Slice,
     SparkMode,
     Statement,
     String,
@@ -325,7 +326,7 @@ class Generator:
         unit += self.__create_cursor_validation_functions()
         unit += self.__create_valid_context_function(message, composite_fields)
         unit += self.__create_context_type()
-        unit += self.__create_field_dependent_type(scalar_fields, composite_fields)
+        unit += self.__create_field_dependent_type(message)
         unit += self.__create_initialize_procedure()
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
@@ -636,23 +637,47 @@ class Generator:
             ],
         )
 
-    def __create_field_dependent_type(
-        self,
-        scalar_fields: ty.Mapping[Field, Scalar],
-        composite_fields: ty.Sequence[Field],
-    ) -> UnitPart:
-        result_variants = [
-            Variant(
-                [Variable(f.affixed_name) for f in [INITIAL, *composite_fields, FINAL]],
-                [NullComponent()],
-            )
-        ] + [
-            Variant(
-                [Variable(f.affixed_name)],
-                [Component(f"{f.name}_Value", self.__prefix * common.full_base_type_name(t))],
-            )
-            for f, t in scalar_fields.items()
-        ]
+    def __create_field_dependent_type(self, message: Message) -> UnitPart:
+        null_fields = []
+        variants = []
+
+        for f, t in message.types.items():
+            if isinstance(t, Composite) and not common.is_compared_to_aggregate(f, message):
+                null_fields.append(f)
+            elif isinstance(t, Scalar):
+                variants.append(
+                    Variant(
+                        [Variable(f.affixed_name)],
+                        [
+                            Component(
+                                f"{f.name}_Value", self.__prefix * common.full_base_type_name(t)
+                            )
+                        ],
+                    )
+                )
+            elif isinstance(t, Composite):
+                size = message.field_size(f)
+                assert isinstance(size, expr.Number)
+                variants.append(
+                    Variant(
+                        [Variable(f.affixed_name)],
+                        [
+                            Component(
+                                f"{f.name}_Value",
+                                Slice(
+                                    Variable(const.TYPES_BYTES),
+                                    First(const.TYPES_INDEX),
+                                    Add(
+                                        First(const.TYPES_INDEX),
+                                        expr.Sub(expr.Div(size, expr.Number(8)), expr.Number(1))
+                                        .simplified()
+                                        .ada_expr(),
+                                    ),
+                                ),
+                            )
+                        ],
+                    )
+                )
 
         return UnitPart(
             [
@@ -660,7 +685,16 @@ class Generator:
                     "Field_Dependent_Value",
                     [],
                     [Discriminant(["Fld"], "Virtual_Field", Variable(INITIAL.affixed_name))],
-                    VariantPart("Fld", result_variants),
+                    VariantPart(
+                        "Fld",
+                        [
+                            Variant(
+                                [Variable(f.affixed_name) for f in (INITIAL, *null_fields, FINAL)],
+                                [NullComponent()],
+                            ),
+                            *variants,
+                        ],
+                    ),
                 )
             ]
         )
@@ -1509,14 +1543,23 @@ class Generator:
                     **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
                 }
             )
-            if field not in (INITIAL, FINAL) and isinstance(message.types[field], Scalar):
-                c = c.substituted(
-                    lambda x: expr.Call(
-                        const.TYPES_U64, [expr.Variable(expr.ID("Val") * f"{field.name}_Value")]
+            if field not in (INITIAL, FINAL):
+                if isinstance(message.types[field], Scalar):
+                    c = c.substituted(
+                        lambda x: expr.Call(
+                            const.TYPES_U64, [expr.Variable(expr.ID("Val") * f"{field.name}_Value")]
+                        )
+                        if x == expr.Variable(field.name)
+                        else x
                     )
-                    if x == expr.Variable(field.name)
-                    else x
-                )
+                elif isinstance(
+                    message.types[field], Composite
+                ) and common.is_compared_to_aggregate(field, message):
+                    c = c.substituted(
+                        lambda x: expr.Variable(expr.ID("Val") * f"{field.name}_Value")
+                        if x == expr.Variable(field.name)
+                        else x
+                    )
             return c.substituted(common.substitution(message)).simplified().ada_expr()
 
         parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
@@ -2313,7 +2356,7 @@ class Generator:
                                         "Invalid",
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
-                                    common.initialize_field_statements(f),
+                                    common.initialize_field_statements(message, f),
                                 )
                             ]
                         ),
