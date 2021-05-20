@@ -1,7 +1,8 @@
 import re
 import string
+from collections import defaultdict
 from datetime import datetime
-from typing import Iterator, TextIO
+from typing import Iterator, TextIO, List
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -9,7 +10,7 @@ from defusedxml import ElementTree
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
 
-DUPLICATE_CACHE = {}
+DUPLICATE_CACHE = []
 
 
 def iana_to_rflx(url: str):
@@ -89,11 +90,25 @@ def write_record(record: ElementTree, file: TextIO) -> None:
 
     literal = _normalize_description(name)
     for rflx_value in _normalize_value(value):
+        if literal in DUPLICATE_CACHE:
+            literal = f"{literal}{rflx_value}"
+        else:
+            DUPLICATE_CACHE.append(literal)
         if (c := ", ".join(comment)) != "":
             file.write("\n")
-            file.write(f"{'':<9}-- {c}\n")
+            for comment_line in _normalize_comment(c):
+                file.write(f"{'':<9}-- {comment_line}\n")
             file.write(f"{'':<9}--\n")
         file.write(f"{'':<9}{f'{literal} => {rflx_value},'}\n")
+
+
+def _normalize_comment(comment: str) -> List[str]:
+    c = comment.replace("\n", " ")
+    c = " ".join(c.split())
+    if len(c) > 80:
+        lines = len(c) // 80 +1
+        return [c[i*80:i*80+80] for i in range(lines)]
+    return [c]
 
 
 def _normalize_description(description_text: str) -> str:
