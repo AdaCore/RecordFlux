@@ -2090,7 +2090,7 @@ def test_create_model_type_derivation_refinements() -> None:
     )
 
 
-def test_create_model_parsed_field_locations() -> None:
+def test_create_model_message_locations() -> None:
     p = parser.Parser()
     p.parse_string(
         """
@@ -2105,10 +2105,44 @@ def test_create_model_parsed_field_locations() -> None:
         """
     )
     m = p.create_model()
-    assert m.messages[0].fields == (
-        model.Field(ID("F1", Location((6, 21), end=(6, 22)))),
-        model.Field(ID("F2", Location((7, 21), end=(7, 22)))),
+    assert [f.identifier.location for f in m.messages[0].fields] == [
+        Location((6, 21), Path("<stdin>"), (6, 23)),
+        Location((7, 21), Path("<stdin>"), (7, 23)),
+    ]
+
+
+def test_create_model_session_locations() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """
+           package Test is
+               generic
+                  with function F return Boolean;
+               session Session with
+                  Initial => A,
+                  Final => B
+               is
+                  Y : Boolean := F;
+               begin
+                  state A is
+                     Z : Boolean := Y;
+                  begin
+                     Z := False;
+                  transition
+                     then B
+                        if Z = False
+                     then A
+                  end A;
+
+                  state B is null state;
+               end Session;
+           end Test;
+        """
     )
+    m = p.create_model()
+    assert [p.location for p in m.sessions[0].parameters] == [
+        Location((4, 33), Path("<stdin>"), (4, 34)),
+    ]
 
 
 def test_create_model_sequence_with_imported_element_type() -> None:

@@ -4,7 +4,7 @@ import logging
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 from librflxlang import (
     AnalysisContext,
@@ -149,7 +149,7 @@ def create_list_attribute(expression: Statement, filename: Path) -> stmt.Stateme
 
 
 def create_statement(statement: Statement, filename: Path) -> stmt.Statement:
-    handlers: Dict[str, Callable[[Statement, Path], stmt.Statement]] = {
+    handlers = {
         "Reset": create_reset,
         "Assignment": create_assignment,
         "ListAttribute": create_list_attribute,
@@ -660,22 +660,20 @@ def create_expression(expression: Expr, filename: Path) -> expr.Expr:
 
 
 def create_declaration(declaration: Expr, filename: Path) -> decl.BasicDeclaration:
-    location = node_location(declaration, filename)
-    handlers: Dict[str, Callable[..., decl.BasicDeclaration]] = {
+    handlers = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    return handlers[declaration.kind_name](declaration, location)
+    return handlers[declaration.kind_name](declaration, filename)
 
 
 def create_formal_declaration(declaration: Expr, filename: Path) -> decl.FormalDeclaration:
-    location = node_location(declaration, filename)
-    handlers: Dict[str, Callable[..., decl.FormalDeclaration]] = {
+    handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, location)
+    return handlers[declaration.kind_name](declaration, filename)
 
 
 def create_math_expression(expression: Expr, filename: Path) -> expr.Expr:
