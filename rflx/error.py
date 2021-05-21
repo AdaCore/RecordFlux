@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections import deque
 from enum import Enum, auto
 from pathlib import Path
-from typing import Deque, List, Optional, Tuple, TypeVar, Union
+from typing import Deque, List, NoReturn, Optional, Tuple, TypeVar, Union
 
 from rflx.common import Base, verbose_repr
 
@@ -170,7 +170,8 @@ class RecordFluxError(BaseError):
 
 
 class FatalError(BaseError):
-    """Error indicating a bug.
+    """
+    Error indicating a bug.
 
     This exception should never be caught outside of RecordFlux.
     """
@@ -184,7 +185,7 @@ def fail(
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
     location: Location = None,
-) -> None:
+) -> NoReturn:
     _fail(RecordFluxError(), message, subsystem, severity, location)
 
 
@@ -193,7 +194,7 @@ def fatal_fail(
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
     location: Location = None,
-) -> None:
+) -> NoReturn:
     _fail(FatalError(), message, subsystem, severity, location)
 
 
@@ -203,9 +204,10 @@ def _fail(
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
     location: Location = None,
-) -> None:
+) -> NoReturn:
     error.append(message, subsystem, severity, location)
     error.propagate()
+    assert False
 
 
 def warn(
