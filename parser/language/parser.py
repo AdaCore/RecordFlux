@@ -431,15 +431,15 @@ grammar.add_rules(
     assignment_statement=ast.Assignment(
         grammar.unqualified_identifier, ":=", grammar.extended_expression
     ),
-    list_attribute=ast.ListAttribute(
+    list_attribute=ast.AttributeStatement(
         grammar.unqualified_identifier,
         "'",
         Or(
             # pylint: disable=no-member
-            ast.ListAttr.alt_append("Append"),
-            ast.ListAttr.alt_extend("Extend"),
-            ast.ListAttr.alt_read("Read"),
-            ast.ListAttr.alt_write("Write"),
+            ast.AttrStmt.alt_append("Append"),
+            ast.AttrStmt.alt_extend("Extend"),
+            ast.AttrStmt.alt_read("Read"),
+            ast.AttrStmt.alt_write("Write"),
         ),
         "(",
         grammar.extended_expression,

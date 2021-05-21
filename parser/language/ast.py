@@ -206,9 +206,9 @@ class Assignment(Statement):
     expression = Field(type=Expr)
 
 
-class ListAttr(RFLXNode):
+class AttrStmt(RFLXNode):
     """
-    List attribute kind
+    Attribute statement kind
     """
 
     enum_node = True
@@ -220,19 +220,19 @@ class ListAttr(RFLXNode):
     ]
 
 
-class ListAttribute(Statement):
+class AttributeStatement(Statement):
     """
-    List attribute statement
+    Attribute statement
     """
 
     identifier = Field(type=UnqualifiedID)
-    attr = Field(type=ListAttr)
+    attr = Field(type=AttrStmt)
     expression = Field(type=Expr)
 
 
 class Reset(Statement):
     """
-    List reset statement
+    Reset statement
     """
 
     identifier = Field(type=UnqualifiedID)

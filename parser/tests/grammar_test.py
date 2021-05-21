@@ -2839,8 +2839,8 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         (
             "A'Append (B)",
             {
-                "_kind": "ListAttribute",
-                "attr": {"_kind": "ListAttrAppend", "_value": "Append"},
+                "_kind": "AttributeStatement",
+                "attr": {"_kind": "AttrStmtAppend", "_value": "Append"},
                 "expression": {
                     "_kind": "Variable",
                     "identifier": {
@@ -2855,8 +2855,8 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         (
             "A'Extend (B)",
             {
-                "_kind": "ListAttribute",
-                "attr": {"_kind": "ListAttrExtend", "_value": "Extend"},
+                "_kind": "AttributeStatement",
+                "attr": {"_kind": "AttrStmtExtend", "_value": "Extend"},
                 "expression": {
                     "_kind": "Variable",
                     "identifier": {
@@ -2871,8 +2871,8 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         (
             "A'Read (B)",
             {
-                "_kind": "ListAttribute",
-                "attr": {"_kind": "ListAttrRead", "_value": "Read"},
+                "_kind": "AttributeStatement",
+                "attr": {"_kind": "AttrStmtRead", "_value": "Read"},
                 "expression": {
                     "_kind": "Variable",
                     "identifier": {
@@ -2887,8 +2887,8 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         (
             "A'Write (B)",
             {
-                "_kind": "ListAttribute",
-                "attr": {"_kind": "ListAttrWrite", "_value": "Write"},
+                "_kind": "AttributeStatement",
+                "attr": {"_kind": "AttrStmtWrite", "_value": "Write"},
                 "expression": {
                     "_kind": "Variable",
                     "identifier": {
