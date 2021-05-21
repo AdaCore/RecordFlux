@@ -664,12 +664,15 @@ def field_condition_call(message: model.Message, field: model.Field, value: ada.
         "Field_Condition",
         [
             ada.Variable("Ctx"),
-            ada.NamedAggregate(
+            ada.Call(
+                f"Construct_{field.identifier}_Value", [value]
+            )  # ISSUE: Componolit/Workarounds#35
+            if is_compared_to_aggregate(field, message)
+            else ada.NamedAggregate(
                 ("Fld", ada.Variable(field.affixed_name)),
                 *(
                     [(f"{field.identifier}_Value", value)]
                     if isinstance(message.types[field], model.Scalar)
-                    or is_compared_to_aggregate(field, message)
                     else []
                 ),
             ),

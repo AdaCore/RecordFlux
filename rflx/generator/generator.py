@@ -641,6 +641,7 @@ class Generator:
     def __create_field_dependent_type(self, message: Message) -> UnitPart:
         null_fields = []
         variants = []
+        construction_functions = []
 
         for f, t in message.types.items():
             if isinstance(t, Composite) and not common.is_compared_to_aggregate(f, message):
@@ -678,6 +679,25 @@ class Generator:
                         ],
                     )
                 )
+                # ISSUE: Componolit/Workarounds#35
+                # Prevent a GNAT bug by moving the construction of the record type from the
+                # precondition into a function, if the construction involves an array type.
+                construction_functions.append(
+                    ExpressionFunctionDeclaration(
+                        FunctionSpecification(
+                            f"Construct_{f.name}_Value",
+                            "Field_Dependent_Value",
+                            [Parameter(["Data"], const.TYPES_BYTES)],
+                        ),
+                        NamedAggregate(
+                            ("Fld", Variable(f.affixed_name)),
+                            (f"{f.name}_Value", Variable("Data")),
+                        ),
+                        [
+                            Precondition(Equal(Length("Data"), length.ada_expr())),
+                        ],
+                    )
+                )
 
         return UnitPart(
             [
@@ -695,7 +715,8 @@ class Generator:
                             *variants,
                         ],
                     ),
-                )
+                ),
+                *construction_functions,
             ]
         )
 
