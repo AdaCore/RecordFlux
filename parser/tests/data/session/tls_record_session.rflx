@@ -52,7 +52,7 @@ package TLS_Record_Session is
       state IDLE_MESSAGE is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Application_Control_Channel);
+         Available := Application_Control_Channel'Has_Data;
       transition
          then CONTROL
             if Available = True
@@ -62,7 +62,7 @@ package TLS_Record_Session is
       state IDLE_HANDSHAKE_CONTROL is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Handshake_Control_Channel);
+         Available := Handshake_Control_Channel'Has_Data;
       transition
          then HANDSHAKE_CONTROL
             if Available = True
@@ -72,7 +72,7 @@ package TLS_Record_Session is
       state IDLE_HANDSHAKE is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Handshake_Data_Channel);
+         Available := Handshake_Data_Channel'Has_Data;
       transition
          then HANDSHAKE
             if Available = True
@@ -82,7 +82,7 @@ package TLS_Record_Session is
       state IDLE_NETWORK is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Network_Channel);
+         Available := Network_Channel'Has_Data;
       transition
          then NETWORK_IN
             if Available = True
@@ -93,7 +93,7 @@ package TLS_Record_Session is
       state IDLE_APPLICATION is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Data_Channel);
+         Available := Data_Channel'Has_Data;
       transition
          then NETWORK_OUT_APPLICATION
             if Available = True
@@ -103,7 +103,7 @@ package TLS_Record_Session is
       state IDLE_HEARTBEAT is
          Available : Boolean := False;
       begin
-         Available := Data_Available (Heartbeat_Data_Channel);
+         Available := Heartbeat_Data_Channel'Has_Data;
       transition
          then HEARTBEAT
             if Available = True

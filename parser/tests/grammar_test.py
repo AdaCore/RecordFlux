@@ -225,6 +225,21 @@ def test_variable(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
+            "X'Has_Data",
+            {
+                "_kind": "Attribute",
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "X"},
+                        "package": None,
+                    },
+                },
+                "kind": {"_kind": "AttrHasData", "_value": "Has_Data"},
+            },
+        ),
+        (
             "X'Head",
             {
                 "_kind": "Attribute",

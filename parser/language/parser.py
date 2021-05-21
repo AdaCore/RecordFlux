@@ -186,6 +186,7 @@ grammar.add_rules(
                 ast.Attr.alt_size(lexer.Size),
                 ast.Attr.alt_last(lexer.Last),
                 ast.Attr.alt_valid_checksum(lexer.ValidChecksum),
+                ast.Attr.alt_has_data(lexer.HasData),
                 ast.Attr.alt_head(lexer.Head),
                 ast.Attr.alt_opaque(lexer.Opaque),
                 ast.Attr.alt_present(lexer.Present),

@@ -519,6 +519,7 @@ class Attr(RFLXNode):
         "Size",
         "Last",
         "Valid_Checksum",
+        "Has_Data",
         "Head",
         "Opaque",
         "Present",

@@ -65,6 +65,7 @@ class Token(LexerToken):
     Last = WithText()
     Checksum = WithText()
     ValidChecksum = WithText()
+    HasData = WithText()
     Head = WithText()
     Opaque = WithText()
     Present = WithText()
@@ -139,6 +140,7 @@ rflx_lexer.add_rules(
             ("Last", Token.Last),
             ("Size", Token.Size),
             ("Valid_Checksum", Token.ValidChecksum),
+            ("Has_Data", Token.HasData),
             ("Head", Token.Head),
             ("Opaque", Token.Opaque),
             ("Present", Token.Present),
@@ -208,6 +210,7 @@ rflx_lexer.add_rules(
     (Literal("Reset"), Token.Reset),
     (Literal("Checksum"), Token.Checksum),
     (Literal("Valid_Checksum"), Token.ValidChecksum),
+    (Literal("Has_Data"), Token.HasData),
     (Literal("Head"), Token.Head),
     (Literal("Opaque"), Token.Opaque),
     (Literal("Present"), Token.Present),
