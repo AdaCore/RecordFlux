@@ -263,7 +263,7 @@ is
    procedure To_Context (Struct : Structure; Ctx : in out Context) is
    begin
       Reset (Ctx);
-      if Field_Condition (Ctx, (Fld => F_Payload, Payload_Value => Struct.Payload)) then
+      if Field_Condition (Ctx, Construct_Payload_Value (Struct.Payload)) then
          Set_Payload (Ctx, Struct.Payload);
       end if;
    end To_Context;

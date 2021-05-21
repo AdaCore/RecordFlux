@@ -49,6 +49,12 @@ is
          end case;
       end record;
 
+   function Construct_Payload_Value (Data : RFLX_Types.Bytes) return Field_Dependent_Value is
+     ((Fld => F_Payload, Payload_Value => Data))
+    with
+     Pre =>
+       Data'Length = 2;
+
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) with
      Pre =>
        not Ctx'Constrained
@@ -302,7 +308,7 @@ is
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload))
-       and then Field_Condition (Ctx, (Fld => F_Payload, Payload_Value => Data)),
+       and then Field_Condition (Ctx, Construct_Payload_Value (Data)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
