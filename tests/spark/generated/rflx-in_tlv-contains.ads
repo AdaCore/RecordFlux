@@ -10,9 +10,9 @@ package RFLX.In_TLV.Contains with
     (GNATprove, Terminating)
 is
 
-   function Null_Message_In_TLV_Message_Value (Ctx : TLV.Message.Context) return Boolean is
-     (TLV.Message.Has_Buffer (Ctx)
-      and then TLV.Message.Structural_Valid (Ctx, TLV.Message.F_Value)
-      and then not TLV.Message.Present (Ctx, TLV.Message.F_Value));
+   function Null_Message_In_TLV_Message_Value (Ctx : RFLX.TLV.Message.Context) return Boolean is
+     (RFLX.TLV.Message.Has_Buffer (Ctx)
+      and then RFLX.TLV.Message.Structural_Valid (Ctx, RFLX.TLV.Message.F_Value)
+      and then not RFLX.TLV.Message.Present (Ctx, RFLX.TLV.Message.F_Value));
 
 end RFLX.In_TLV.Contains;

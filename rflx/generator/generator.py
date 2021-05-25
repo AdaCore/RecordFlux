@@ -3290,13 +3290,13 @@ class Generator:
 
         return UnitPart(specification)
 
-    @staticmethod
     def __create_contains_function(
+        self,
         refinement: Refinement,
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
-        pdu_identifier = ID(refinement.pdu.identifier)
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -3328,7 +3328,9 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     specification,
                     expr.AndThen(
-                        *refinement_conditions(refinement, "Ctx", condition_fields, null_sdu),
+                        *self.__refinement_conditions(
+                            refinement, "Ctx", condition_fields, null_sdu
+                        ),
                         condition,
                     )
                     .simplified()
@@ -3337,14 +3339,13 @@ class Generator:
             ]
         )
 
-    @staticmethod
     def __create_switch_procedure(
-        refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
+        self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_identifier = ID(refinement.pdu.identifier)
-        sdu_identifier = ID(refinement.sdu.identifier)
-        pdu_context = f"{pdu_identifier.flat}_PDU_Context"
-        sdu_context = f"{sdu_identifier.flat}_SDU_Context"
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
+        pdu_context = f"{refinement.pdu.identifier.flat}_PDU_Context"
+        sdu_context = f"{refinement.sdu.identifier.flat}_SDU_Context"
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
 
         specification = ProcedureSpecification(
@@ -3367,7 +3368,7 @@ class Generator:
                                 Not(Constrained(sdu_context)),
                                 *[
                                     c.ada_expr()
-                                    for c in refinement_conditions(
+                                    for c in self.__refinement_conditions(
                                         refinement, pdu_context, condition_fields, False
                                     )
                                 ],
@@ -3558,6 +3559,63 @@ class Generator:
             ),
         ]
 
+    def __refinement_conditions(
+        self,
+        refinement: Refinement,
+        pdu_context: str,
+        condition_fields: ty.Mapping[Field, Type],
+        null_sdu: bool,
+    ) -> ty.Sequence[expr.Expr]:
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+
+        conditions: ty.List[expr.Expr] = [
+            expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
+        ]
+
+        if null_sdu:
+            conditions.extend(
+                [
+                    expr.Call(
+                        pdu_identifier * "Structural_Valid",
+                        [
+                            expr.Variable(pdu_context),
+                            expr.Variable(pdu_identifier * refinement.field.affixed_name),
+                        ],
+                    ),
+                    expr.Not(
+                        expr.Call(
+                            pdu_identifier * "Present",
+                            [
+                                expr.Variable(pdu_context),
+                                expr.Variable(pdu_identifier * refinement.field.affixed_name),
+                            ],
+                        )
+                    ),
+                ]
+            )
+        else:
+            conditions.append(
+                expr.Call(
+                    pdu_identifier * "Present",
+                    [
+                        expr.Variable(pdu_context),
+                        expr.Variable(pdu_identifier * refinement.field.affixed_name),
+                    ],
+                )
+            )
+
+        conditions.extend(
+            [
+                expr.Call(
+                    pdu_identifier * "Valid",
+                    [expr.Variable(pdu_context), expr.Variable(pdu_identifier * f.affixed_name)],
+                )
+                for f in condition_fields
+            ]
+        )
+
+        return conditions
+
 
 def create_file(filename: Path, content: str) -> None:
     log.info("Creating %s", filename)
@@ -3678,63 +3736,6 @@ def switch_update_conditions(message: Message, field: Field) -> ty.Sequence[Expr
             Call("Field_Last", [Variable("Ctx"), Variable(field.affixed_name)]),
         ),
     ]
-
-
-def refinement_conditions(
-    refinement: Refinement,
-    pdu_context: str,
-    condition_fields: ty.Mapping[Field, Type],
-    null_sdu: bool,
-) -> ty.Sequence[expr.Expr]:
-    pdu_identifier = ID(refinement.pdu.identifier)
-
-    conditions: ty.List[expr.Expr] = [
-        expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
-    ]
-
-    if null_sdu:
-        conditions.extend(
-            [
-                expr.Call(
-                    pdu_identifier * "Structural_Valid",
-                    [
-                        expr.Variable(pdu_context),
-                        expr.Variable(pdu_identifier * refinement.field.affixed_name),
-                    ],
-                ),
-                expr.Not(
-                    expr.Call(
-                        pdu_identifier * "Present",
-                        [
-                            expr.Variable(pdu_context),
-                            expr.Variable(pdu_identifier * refinement.field.affixed_name),
-                        ],
-                    )
-                ),
-            ]
-        )
-    else:
-        conditions.append(
-            expr.Call(
-                pdu_identifier * "Present",
-                [
-                    expr.Variable(pdu_context),
-                    expr.Variable(pdu_identifier * refinement.field.affixed_name),
-                ],
-            )
-        )
-
-    conditions.extend(
-        [
-            expr.Call(
-                pdu_identifier * "Valid",
-                [expr.Variable(pdu_context), expr.Variable(pdu_identifier * f.affixed_name)],
-            )
-            for f in condition_fields
-        ]
-    )
-
-    return conditions
 
 
 def byte_aligned_field(field: Field) -> Expr:
