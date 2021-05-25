@@ -32,7 +32,7 @@ from rflx.pyrflx import (
     utils,
 )
 from rflx.pyrflx.error import PyRFLXError
-from tests.const import EX_SPEC_DIR, SPEC_DIR
+from tests.const import SPEC_DIR
 
 
 def assert_bytestring_error(msg: MessageValue, msg_name: ID) -> None:
@@ -79,7 +79,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
 
 
 def test_attributes(pyrflx_: PyRFLX) -> None:
-    pyrflx_ = PyRFLX.from_specs([f"{SPEC_DIR}/tlv.rflx"])
+    pyrflx_ = PyRFLX.from_specs([SPEC_DIR / "tlv.rflx"])
     assert isinstance(pyrflx_["TLV"], Package)
     tlv_package = pyrflx_["TLV"]
     assert isinstance(tlv_package["Message"], MessageValue)
@@ -87,7 +87,7 @@ def test_attributes(pyrflx_: PyRFLX) -> None:
 
 def test_no_verification(icmp_message_value: MessageValue) -> None:
     pyrflx_ = PyRFLX.from_specs(
-        [f"{EX_SPEC_DIR}/icmp.rflx"], skip_model_verification=True, skip_message_verification=True
+        [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
     icmp_message_value_unv = pyrflx_["ICMP"]["Message"]
     icmp_message_value.set("Tag", "Echo_Request")
@@ -1029,7 +1029,7 @@ def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> No
 def test_checksum_no_verification() -> None:
     # pylint: disable = protected-access
     pyrflx_ = PyRFLX.from_specs(
-        [f"{EX_SPEC_DIR}/icmp.rflx"], skip_model_verification=True, skip_message_verification=True
+        [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
     icmp_message = pyrflx_["ICMP"]["Message"]._type
     icmp_msg = MessageValue(
@@ -1142,7 +1142,7 @@ def test_refinement_with_checksum() -> None:
         return 0xFF
 
     pyrflx_ = PyRFLX.from_specs(
-        [f"{SPEC_DIR}/refinement_with_checksum.rflx", f"{SPEC_DIR}/tlv_with_checksum.rflx"]
+        [SPEC_DIR / "refinement_with_checksum.rflx", SPEC_DIR / "tlv_with_checksum.rflx"]
     )
     refinement_package = pyrflx_["Refinement_With_Checksum"]
     tlv_package = pyrflx_["TLV_With_Checksum"]
@@ -1168,7 +1168,7 @@ def test_refinement_with_checksum() -> None:
     ],
 )
 def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -> None:
-    msg = PyRFLX.from_specs([f"{SPEC_DIR}/unaligned_field.rflx"])["Unaligned_Field"]["M1"]
+    msg = PyRFLX.from_specs([SPEC_DIR / "unaligned_field.rflx"])["Unaligned_Field"]["M1"]
     msg.parse(data)
     assert msg.get("F1") == f1
     assert msg.get("F2") == f2
@@ -1188,7 +1188,7 @@ def test_message_size(message_size_value: MessageValue) -> None:
 
 def test_message_size_unverified() -> None:
     pyrflx_ = PyRFLX.from_specs(
-        [f"{SPEC_DIR}/message_size.rflx"],
+        [SPEC_DIR / "message_size.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
     )

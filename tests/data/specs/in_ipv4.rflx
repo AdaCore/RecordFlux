@@ -1,0 +1,13 @@
+with IPv4;
+with UDP;
+with ICMP;
+
+package In_IPv4 is
+
+   for IPv4::Packet use (Payload => UDP::Datagram)
+      if Protocol = IPv4::P_UDP;
+
+   for IPv4::Packet use (Payload => ICMP::Message)
+      if Protocol = IPv4::P_ICMP;
+
+end In_IPv4;

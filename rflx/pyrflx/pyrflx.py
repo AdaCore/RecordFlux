@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Iterator, Sequence
+from typing import Dict, Iterable, Iterator, Union
 
 from rflx.identifier import ID
 from rflx.model import Model
@@ -37,7 +37,7 @@ class PyRFLX:
     @classmethod
     def from_specs(
         cls,
-        files: Sequence[str],
+        files: Iterable[Union[str, Path]],
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
     ) -> "PyRFLX":

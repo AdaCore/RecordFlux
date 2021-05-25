@@ -106,7 +106,7 @@ package body RFLX.In_Ethernet_Tests is
          IPv4.Packet.Set_Flag_MF (IPv4_Packet_Context, False);
          IPv4.Packet.Set_Fragment_Offset (IPv4_Packet_Context, 0);
          IPv4.Packet.Set_TTL (IPv4_Packet_Context, 64);
-         IPv4.Packet.Set_Protocol (IPv4_Packet_Context, IPv4.PROTOCOL_UDP);
+         IPv4.Packet.Set_Protocol (IPv4_Packet_Context, IPv4.P_UDP);
          IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
          IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
          IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);

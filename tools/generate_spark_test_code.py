@@ -10,7 +10,7 @@ import tests.data.models
 from rflx.generator import Generator
 from rflx.model import Model
 from rflx.specification import Parser
-from tests.const import EX_SPEC_DIR
+from tests.const import SPEC_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
@@ -28,11 +28,11 @@ MODELS = [
 ]
 
 SPECIFICATION_FILES = [
-    EX_SPEC_DIR / "ethernet.rflx",
-    EX_SPEC_DIR / "in_ethernet.rflx",
-    EX_SPEC_DIR / "in_ipv4.rflx",
-    EX_SPEC_DIR / "ipv4.rflx",
-    EX_SPEC_DIR / "udp.rflx",
+    SPEC_DIR / "ethernet.rflx",
+    SPEC_DIR / "in_ethernet.rflx",
+    SPEC_DIR / "in_ipv4.rflx",
+    SPEC_DIR / "ipv4.rflx",
+    SPEC_DIR / "udp.rflx",
 ]
 
 

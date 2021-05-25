@@ -141,7 +141,7 @@ package body RFLX.IPv4_Tests is
                                           Protocol := IPv4.Packet.Get_Protocol (Context);
                                           Assert (Protocol.Known, "Unknown Protocol");
                                           if Protocol.Known then
-                                             Assert (Protocol.Enum'Image, IPv4.Protocol_Enum'Image (IPv4.PROTOCOL_UDP),
+                                             Assert (Protocol.Enum'Image, IPv4.Protocol_Enum'Image (IPv4.P_UDP),
                                                      "Invalid Protocol");
                                           end if;
                                           Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Header_Checksum);
@@ -318,7 +318,7 @@ package body RFLX.IPv4_Tests is
       IPv4.Packet.Set_Flag_MF (Context, False);
       IPv4.Packet.Set_Fragment_Offset (Context, 0);
       IPv4.Packet.Set_TTL (Context, 64);
-      IPv4.Packet.Set_Protocol (Context, IPv4.PROTOCOL_UDP);
+      IPv4.Packet.Set_Protocol (Context, IPv4.P_UDP);
       IPv4.Packet.Set_Header_Checksum (Context, 16#7CBE#);
       IPv4.Packet.Set_Source (Context, 16#7f000001#);
       IPv4.Packet.Set_Destination (Context, 16#7f000001#);

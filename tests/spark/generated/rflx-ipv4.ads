@@ -191,10 +191,10 @@ is
 
    type Protocol_Base is mod 2**8;
 
-   type Protocol_Enum is (PROTOCOL_ICMP, PROTOCOL_UDP) with
+   type Protocol_Enum is (P_ICMP, P_UDP) with
      Size =>
        8;
-   for Protocol_Enum use (PROTOCOL_ICMP => 1, PROTOCOL_UDP => 17);
+   for Protocol_Enum use (P_ICMP => 1, P_UDP => 17);
 
    type Protocol (Known : Boolean := False) is
       record
@@ -219,9 +219,9 @@ is
 
    function To_Base (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.IPv4.Protocol_Base is
      ((case Enum is
-          when PROTOCOL_ICMP =>
+          when P_ICMP =>
              1,
-          when PROTOCOL_UDP =>
+          when P_UDP =>
              17));
 
    function To_Actual (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
@@ -230,9 +230,9 @@ is
    function To_Actual (Val : RFLX.IPv4.Protocol_Base) return RFLX.IPv4.Protocol is
      ((case Val is
           when 1 =>
-             (True, PROTOCOL_ICMP),
+             (True, P_ICMP),
           when 17 =>
-             (True, PROTOCOL_UDP),
+             (True, P_UDP),
           when others =>
              (False, Val)))
     with

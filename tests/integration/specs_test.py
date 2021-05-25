@@ -1,6 +1,6 @@
 import itertools
 from pathlib import Path
-from typing import List
+from typing import Sequence
 
 import pytest
 
@@ -10,10 +10,10 @@ from rflx.identifier import ID
 from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
 from tests import utils
-from tests.const import CAPTURED_DIR, EX_SPEC_DIR, GENERATED_DIR, SPEC_DIR
+from tests.const import CAPTURED_DIR, GENERATED_DIR, SPEC_DIR
 
 
-def assert_equal_code(spec_files: List[str]) -> None:
+def assert_equal_code(spec_files: Sequence[Path]) -> None:
     parser = Parser()
 
     for spec_file in spec_files:
@@ -34,7 +34,7 @@ def assert_equal_code(spec_files: List[str]) -> None:
 
 
 def test_ethernet() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/ethernet.rflx"])
+    assert_equal_code([SPEC_DIR / "ethernet.rflx"])
 
 
 # rflx-ethernet-tests.adb
@@ -212,7 +212,7 @@ def test_ethernet_generating_ethernet_2_vlan_dynamic() -> None:
 
 
 def test_ipv4() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/ipv4.rflx"])
+    assert_equal_code([SPEC_DIR / "ipv4.rflx"])
 
 
 # rflx-ipv4-tests.adb
@@ -233,7 +233,7 @@ def test_ipv4_parsing_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> None:
     assert ipv4_packet_value.get("Flag_MF") == "False"
     assert ipv4_packet_value.get("Fragment_Offset") == 0
     assert ipv4_packet_value.get("TTL") == 64
-    assert ipv4_packet_value.get("Protocol") == "PROTOCOL_UDP"
+    assert ipv4_packet_value.get("Protocol") == "P_UDP"
     assert ipv4_packet_value.get("Header_Checksum") == int("7CBE", 16)
     assert ipv4_packet_value.get("Source") == int("7f000001", 16)
     assert ipv4_packet_value.get("Destination") == int("7f000001", 16)
@@ -276,7 +276,7 @@ def test_ipv4_generating_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> None:
     ipv4_packet_value.set("Flag_MF", "False")
     ipv4_packet_value.set("Fragment_Offset", 0)
     ipv4_packet_value.set("TTL", 64)
-    ipv4_packet_value.set("Protocol", "PROTOCOL_UDP")
+    ipv4_packet_value.set("Protocol", "P_UDP")
     ipv4_packet_value.set("Header_Checksum", int("7CBE", 16))
     ipv4_packet_value.set("Source", int("7f000001", 16))
     ipv4_packet_value.set("Destination", int("7f000001", 16))
@@ -297,23 +297,23 @@ def test_ipv4_generating_ipv4_option_value(ipv4_option_value: pyrflx.MessageValu
 def test_in_ethernet() -> None:
     assert_equal_code(
         [
-            f"{EX_SPEC_DIR}/ethernet.rflx",
-            f"{EX_SPEC_DIR}/ipv4.rflx",
-            f"{EX_SPEC_DIR}/in_ethernet.rflx",
+            SPEC_DIR / "ethernet.rflx",
+            SPEC_DIR / "ipv4.rflx",
+            SPEC_DIR / "in_ethernet.rflx",
         ]
     )
 
 
 def test_udp() -> None:
-    assert_equal_code([f"{EX_SPEC_DIR}/udp.rflx"])
+    assert_equal_code([SPEC_DIR / "udp.rflx"])
 
 
 def test_in_ipv4() -> None:
     assert_equal_code(
         [
-            f"{EX_SPEC_DIR}/ipv4.rflx",
-            f"{EX_SPEC_DIR}/udp.rflx",
-            f"{EX_SPEC_DIR}/in_ipv4.rflx",
+            SPEC_DIR / "ipv4.rflx",
+            SPEC_DIR / "udp.rflx",
+            SPEC_DIR / "in_ipv4.rflx",
         ]
     )
 
@@ -376,7 +376,7 @@ def test_in_ipv4_generating_udp_in_ipv4_in_ethernet(
     ipv4_packet_value.set("Flag_MF", "False")
     ipv4_packet_value.set("Fragment_Offset", 0)
     ipv4_packet_value.set("TTL", 64)
-    ipv4_packet_value.set("Protocol", "PROTOCOL_UDP")
+    ipv4_packet_value.set("Protocol", "P_UDP")
     ipv4_packet_value.set("Header_Checksum", int("7CBC", 16))
     ipv4_packet_value.set("Source", int("7f000001", 16))
     ipv4_packet_value.set("Destination", int("7f000001", 16))
@@ -395,7 +395,7 @@ def test_in_ipv4_generating_udp_in_ipv4_in_ethernet(
 
 
 def test_tlv() -> None:
-    assert_equal_code([f"{SPEC_DIR}/tlv.rflx"])
+    assert_equal_code([SPEC_DIR / "tlv.rflx"])
 
 
 # rflx-tlv-tests.adb
@@ -459,21 +459,5 @@ def test_tlv_generating_tlv_error(tlv_message_value: pyrflx.MessageValue) -> Non
     assert tlv_message_value.bytestring == b"\x03"
 
 
-def test_tls(tmp_path: Path) -> None:
-    utils.assert_compilable_code_specs(
-        [
-            f"{EX_SPEC_DIR}/tls_alert.rflx",
-            f"{EX_SPEC_DIR}/tls_handshake.rflx",
-            f"{EX_SPEC_DIR}/tls_heartbeat.rflx",
-            f"{EX_SPEC_DIR}/tls_record.rflx",
-        ],
-        tmp_path,
-    )
-
-
-def test_icmp(tmp_path: Path) -> None:
-    utils.assert_compilable_code_specs([f"{EX_SPEC_DIR}/icmp.rflx"], tmp_path)
-
-
 def test_feature_integeration(tmp_path: Path) -> None:
-    utils.assert_compilable_code_specs([f"{SPEC_DIR}/feature_integration.rflx"], tmp_path)
+    utils.assert_compilable_code_specs([SPEC_DIR / "feature_integration.rflx"], tmp_path)
