@@ -2,21 +2,21 @@ import pytest
 
 from rflx import expression as expr, model, pyrflx
 from rflx.identifier import ID
-from tests.const import EX_SPEC_DIR, SPEC_DIR
+from tests.const import SPEC_DIR
 
 
 @pytest.fixture(name="pyrflx_", scope="session")
 def fixture_pyrflx() -> pyrflx.PyRFLX:
     return pyrflx.PyRFLX.from_specs(
         [
-            f"{EX_SPEC_DIR}/ethernet.rflx",
-            f"{EX_SPEC_DIR}/icmp.rflx",
-            f"{EX_SPEC_DIR}/in_ethernet.rflx",
-            f"{EX_SPEC_DIR}/in_ipv4.rflx",
-            f"{EX_SPEC_DIR}/ipv4.rflx",
-            f"{EX_SPEC_DIR}/tls_alert.rflx",
-            f"{EX_SPEC_DIR}/tls_record.rflx",
-            f"{EX_SPEC_DIR}/udp.rflx",
+            f"{SPEC_DIR}/ethernet.rflx",
+            f"{SPEC_DIR}/icmp.rflx",
+            f"{SPEC_DIR}/in_ethernet.rflx",
+            f"{SPEC_DIR}/in_ipv4.rflx",
+            f"{SPEC_DIR}/ipv4.rflx",
+            f"{SPEC_DIR}/tls_alert.rflx",
+            f"{SPEC_DIR}/tls_record.rflx",
+            f"{SPEC_DIR}/udp.rflx",
             f"{SPEC_DIR}/sequence_message.rflx",
             f"{SPEC_DIR}/sequence_type.rflx",
             f"{SPEC_DIR}/no_conditionals.rflx",

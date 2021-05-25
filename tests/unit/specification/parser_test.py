@@ -11,7 +11,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
 from rflx.specification import cache, parser
-from tests.const import EX_SPEC_DIR, SPEC_DIR
+from tests.const import SPEC_DIR
 from tests.data import models
 
 T = ModularInteger("Test::T", expr.Number(256))
@@ -1678,7 +1678,7 @@ def test_parse_ethernet_spec() -> None:
         }
     }
 
-    assert_ast_files([f"{EX_SPEC_DIR}/ethernet.rflx"], spec)
+    assert_ast_files([f"{SPEC_DIR}/ethernet.rflx"], spec)
 
 
 def test_parse_error_illegal_package_identifiers() -> None:
@@ -2026,7 +2026,7 @@ def test_create_model_message_in_message() -> None:
 
 
 def test_create_model_ethernet_frame() -> None:
-    assert_messages_files([f"{EX_SPEC_DIR}/ethernet.rflx"], [models.ETHERNET_FRAME])
+    assert_messages_files([f"{SPEC_DIR}/ethernet.rflx"], [models.ETHERNET_FRAME])
 
 
 def test_create_model_type_derivation_message() -> None:

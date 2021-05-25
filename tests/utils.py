@@ -1,7 +1,7 @@
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 import pytest
 
@@ -65,7 +65,7 @@ def assert_type_error(instance: Type, regex: str) -> None:
 
 
 def assert_compilable_code_specs(
-    spec_files: Sequence[str], tmp_path: pathlib.Path, prefix: str = None
+    spec_files: Iterable[Union[str, pathlib.Path]], tmp_path: pathlib.Path, prefix: str = None
 ) -> None:
     parser = Parser()
 

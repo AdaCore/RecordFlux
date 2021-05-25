@@ -7,7 +7,7 @@ from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidCheck
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
-from tests.const import CAPTURED_DIR, EX_SPEC_DIR, SPEC_DIR
+from tests.const import CAPTURED_DIR, SPEC_DIR
 
 
 def test_ethernet_set_tltpid(ethernet_frame_value: MessageValue) -> None:
@@ -247,7 +247,7 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
     ethernet_frame_value.set("Payload", payload)
     assert ethernet_frame_value.valid_message
     pyrflx_ = PyRFLX.from_specs(
-        [f"{EX_SPEC_DIR}/ethernet.rflx"],
+        [SPEC_DIR / "ethernet.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
     )
@@ -274,7 +274,7 @@ def test_no_verification_sequence_nested_messages(
     assert message_sequence_value.valid_message
 
     pyrflx_ = PyRFLX.from_specs(
-        [f"{SPEC_DIR}/sequence_message.rflx"],
+        [SPEC_DIR / "sequence_message.rflx"],
         skip_model_verification=True,
         skip_message_verification=True,
     )
