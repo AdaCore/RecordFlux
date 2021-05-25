@@ -89,7 +89,9 @@ test_spark_optimized: $(test-files)
 	$(test-bin)
 
 test_apps:
-	python3 -m pytest -n$(shell nproc) -vv -m "root or not root" tests/integration/example_apps_test.py
+	python3 examples/apps/icmp_socket.py
+	$(MAKE) -C examples/apps/ping test_python
+	$(MAKE) -C examples/apps/ping test_spark
 
 test_specs:
 	cd examples/specs && python3 -m pytest -n$(shell nproc) -vv tests/test_specs.py
