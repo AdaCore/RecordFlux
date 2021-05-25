@@ -16,7 +16,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths_ignore: '["*.gpr", "examples/apps/**", "tests/spark/**"]'
+          paths_ignore: '["*.gpr", "examples/**", "tests/spark/**"]'
 
   checks:
     name: Checks
@@ -485,3 +485,62 @@ jobs:
     - name: Verify
       run: |
         make prove_apps
+
+  skip_check_specs:
+    name: Skip Check Specs
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths: '["defaults.gpr", "examples/specs/**", "rflx/**"]'
+
+  tests_specs:
+    name: Tests (specs)
+    needs: skip_check_specs
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      with:
+        submodules: true
+    - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Determine exact Python version
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+    - name: Install toolchain
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      uses: ada-actions/toolchain@ce2021
+      with:
+        distrib: community
+    - name: Install dependencies
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
+        sudo apt install graphviz libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        pip install .[devel]
+    - name: Test
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
+      run: |
+        make test_specs
