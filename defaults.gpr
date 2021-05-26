@@ -10,7 +10,7 @@ abstract project Defaults is
       "--warnings=error",
       "--proof-warnings",
       "--no-axiom-guard",
-      "--no-counterexample",
+      "--counterexamples=off",
       "-j0"
    );
 
