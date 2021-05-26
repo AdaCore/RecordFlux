@@ -132,6 +132,7 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
         ("X'Present", expr.Present(expr.Variable("X"))),
         ("X'Valid", expr.Valid(expr.Variable("X"))),
         ("X'Valid_Checksum", expr.ValidChecksum(expr.Variable("X"))),
+        ("X'Has_Data", expr.HasData(expr.Variable("X"))),
         ("X where X = 42", expr.Binding(expr.Variable("X"), {ID("X"): expr.Number(42)})),
         ("X'Head.Y", expr.Selected(expr.Head(expr.Variable("X")), "Y")),
     ],

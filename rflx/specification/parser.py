@@ -132,7 +132,7 @@ def create_assignment(assignment: Statement, filename: Path) -> stmt.Statement:
     )
 
 
-def create_list_attribute(expression: Statement, filename: Path) -> stmt.Statement:
+def create_attribute_statement(expression: Statement, filename: Path) -> stmt.Statement:
     attrs = {
         "Append": stmt.Append,
         "Extend": stmt.Extend,
@@ -152,7 +152,7 @@ def create_statement(statement: Statement, filename: Path) -> stmt.Statement:
     handlers = {
         "Reset": create_reset,
         "Assignment": create_assignment,
-        "ListAttribute": create_list_attribute,
+        "AttributeStatement": create_attribute_statement,
     }
     return handlers[statement.kind_name](statement, filename)
 
@@ -431,6 +431,8 @@ def create_attribute(expression: Expr, filename: Path) -> expr.Expr:
         return expr.Size(inner)
     if expression.f_kind.kind_name == "AttrValidChecksum":
         return expr.ValidChecksum(inner)
+    if expression.f_kind.kind_name == "AttrHasData":
+        return expr.HasData(inner)
     if expression.f_kind.kind_name == "AttrHead":
         return expr.Head(inner)
     if expression.f_kind.kind_name == "AttrOpaque":
