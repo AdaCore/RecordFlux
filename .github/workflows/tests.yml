@@ -51,7 +51,7 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -144,7 +144,7 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -195,7 +195,7 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -241,7 +241,7 @@ jobs:
         submodules: true
     - name: Install toolchain
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Test
@@ -259,7 +259,7 @@ jobs:
       with:
         submodules: true
     - name: Install toolchain
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Build runtime
@@ -316,7 +316,7 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -362,7 +362,7 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -424,7 +424,7 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies
@@ -471,7 +471,7 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Install toolchain
-      uses: ada-actions/toolchain@ce2020
+      uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
     - name: Install dependencies

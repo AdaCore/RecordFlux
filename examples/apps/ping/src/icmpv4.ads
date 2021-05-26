@@ -1,4 +1,3 @@
-with SPARK.Heap;
 with RFLX.IPv4;
 with RFLX.RFLX_Builtin_Types;
 with Ada.Text_IO;
@@ -22,8 +21,7 @@ is
 
    procedure Ping (Addr : String) with
       Global => (In_Out => (Ping_State,
-                            Ada.Text_IO.File_System,
-                            SPARK.Heap.Dynamic_Memory),
+                            Ada.Text_IO.File_System),
                  Input  => Ada.Real_Time.Clock_Time);
 
    procedure Generate (Buf  : in out RFLX.RFLX_Builtin_Types.Bytes_Ptr;
