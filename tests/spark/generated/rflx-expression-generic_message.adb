@@ -162,15 +162,6 @@ is
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
-               pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Payload))
-                               then
-                                  Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = 16
-                                  and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Payload).First = Ctx.First));
-               if Fld = F_Payload then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
@@ -218,12 +209,6 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
       Ctx.Message_Last := Last;
-      pragma Assert ((if
-                         Structural_Valid (Ctx.Cursors (F_Payload))
-                      then
-                         Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1 = 16
-                         and then Ctx.Cursors (F_Payload).Predecessor = F_Initial
-                         and then Ctx.Cursors (F_Payload).First = Ctx.First));
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload_Private;

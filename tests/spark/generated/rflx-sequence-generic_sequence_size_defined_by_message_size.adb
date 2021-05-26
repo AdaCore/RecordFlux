@@ -200,18 +200,6 @@ is
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Header))
-                               then
-                                  Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1 = RFLX.Sequence.Enumeration_Base'Size
-                                  and then Ctx.Cursors (F_Header).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Header).First = Ctx.First
-                                  and then (if
-                                               Structural_Valid (Ctx.Cursors (F_Vector))
-                                            then
-                                               Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
-                                               and then Ctx.Cursors (F_Vector).Predecessor = F_Header
-                                               and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
                if Fld = F_Header then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
                elsif Fld = F_Vector then
@@ -335,18 +323,6 @@ is
       if Invalid (Ctx, F_Vector) then
          Reset_Dependent_Fields (Ctx, F_Vector);
          Ctx.Message_Last := Last;
-         pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Header))
-                         then
-                            Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1 = RFLX.Sequence.Enumeration_Base'Size
-                            and then Ctx.Cursors (F_Header).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Header).First = Ctx.First
-                            and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Vector))
-                                      then
-                                         Ctx.Cursors (F_Vector).Last - Ctx.Cursors (F_Vector).First + 1 = Types.Bit_Length (Ctx.Last - Ctx.First + 1) - Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1)
-                                         and then Ctx.Cursors (F_Vector).Predecessor = F_Header
-                                         and then Ctx.Cursors (F_Vector).First = Ctx.Cursors (F_Header).Last + 1)));
          Ctx.Cursors (F_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Vector), Predecessor => Ctx.Cursors (F_Vector).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Vector)) := (State => S_Invalid, Predecessor => F_Vector);
       end if;

@@ -160,15 +160,6 @@ is
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
-               pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Priority))
-                               then
-                                  Ctx.Cursors (F_Priority).Last - Ctx.Cursors (F_Priority).First + 1 = RFLX.Enumeration.Priority_Base'Size
-                                  and then Ctx.Cursors (F_Priority).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Priority).First = Ctx.First));
-               if Fld = F_Priority then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;

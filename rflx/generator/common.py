@@ -543,23 +543,13 @@ def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
     )
 
 
-def initialize_field_statements(
-    message: model.Message, field: model.Field, prefix: str
-) -> Sequence[ada.Statement]:
+def initialize_field_statements(field: model.Field) -> Sequence[ada.Statement]:
     return [
         ada.CallStatement(
             "Reset_Dependent_Fields",
             [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
         ),
         ada.Assignment("Ctx.Message_Last", ada.Variable("Last")),
-        # WORKAROUND:
-        # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-        # Provability of predicate is increased by adding part of
-        # predicate as assert
-        ada.PragmaStatement(
-            "Assert",
-            [message_structure_invariant(message, prefix)],
-        ),
         ada.Assignment(
             ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable(field.affixed_name)),
             ada.NamedAggregate(
