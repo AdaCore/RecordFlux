@@ -1176,6 +1176,12 @@ class Present(Attribute):
         return error
 
 
+class HasData(Attribute):
+    def _check_type_subexpr(self) -> RecordFluxError:
+        self.type_ = rty.BOOLEAN
+        return self.prefix.check_type(rty.Channel(readable=True, writable=False))
+
+
 class Head(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.prefix.check_type_instance(rty.Composite)

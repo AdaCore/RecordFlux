@@ -11,10 +11,6 @@ from rflx.model import Message, Refinement
 
 from . import type_ as mty
 
-CHANNEL_FUNCTIONS = {
-    ID("Data_Available"): rty.Channel(readable=True, writable=False),
-}
-
 
 class Transition(Base):
     def __init__(
@@ -289,8 +285,6 @@ class Session(AbstractSession):
         declarations: Mapping[ID, decl.Declaration],
         visible_declarations: Mapping[ID, decl.Declaration],
     ) -> None:
-        # pylint: disable=too-many-branches
-
         visible_declarations = dict(visible_declarations)
 
         def undefined_type(type_identifier: StrID, location: Optional[Location]) -> None:
@@ -302,14 +296,6 @@ class Session(AbstractSession):
             )
 
         for k, d in declarations.items():
-            if any(str(d.identifier).upper() == str(f).upper() for f in CHANNEL_FUNCTIONS):
-                self.error.append(
-                    f'{d.DESCRIPTIVE_NAME} declaration shadows built-in function "{k}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    d.location,
-                )
-
             if k in visible_declarations:
                 self.error.append(
                     f'local variable "{k}" shadows previous declaration',
@@ -452,9 +438,6 @@ class Session(AbstractSession):
                     declaration = declarations[identifier]
                     assert isinstance(declaration, decl.FunctionDeclaration)
                     expression.argument_types = declaration.argument_types
-                if identifier in CHANNEL_FUNCTIONS:
-                    expression.type_ = rty.BOOLEAN
-                    expression.argument_types = [CHANNEL_FUNCTIONS[identifier]]
             if isinstance(expression, expr.Conversion):
                 if identifier in self.types:
                     expression.type_ = self.types[identifier].type_

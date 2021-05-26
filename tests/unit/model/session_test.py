@@ -972,7 +972,7 @@ def test_channel_write_invalid_mode() -> None:
     )
 
 
-def test_channel_function_data_available() -> None:
+def test_channel_attribute_has_data() -> None:
     Session(
         identifier="P::S",
         initial=ID("Start"),
@@ -982,11 +982,7 @@ def test_channel_function_data_available() -> None:
                 "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result", expr.Call("Data_Available", [expr.Variable("Channel")])
-                    )
-                ],
+                actions=[stmt.Assignment("Result", expr.HasData(expr.Variable("Channel")))],
             ),
             State("End"),
         ],
@@ -1000,7 +996,7 @@ def test_channel_function_data_available() -> None:
     )
 
 
-def test_channel_function_data_available_invalid_mode() -> None:
+def test_channel_attribute_has_data_invalid_mode() -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1010,11 +1006,8 @@ def test_channel_function_data_available_invalid_mode() -> None:
                 actions=[
                     stmt.Assignment(
                         "Result",
-                        expr.Call(
-                            "Data_Available",
-                            [expr.Variable("Out_Channel", location=Location((10, 20)))],
-                        ),
-                    )
+                        expr.HasData(expr.Variable("Out_Channel", location=Location((10, 20)))),
+                    ),
                 ],
             ),
             State("End"),
@@ -1068,67 +1061,6 @@ def test_undeclared_variable_in_function_call() -> None:
         ],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
-    )
-
-
-def test_function_shadows_builtin_data_available() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-            ),
-            State("End"),
-        ],
-        declarations=[],
-        parameters=[
-            decl.FunctionDeclaration(
-                "Data_Available",
-                [],
-                "Boolean",
-                location=Location((10, 20)),
-            ),
-        ],
-        types=[BOOLEAN],
-        regex=(
-            r"^"
-            r"<stdin>:10:20: model: error: function declaration shadows built-in function "
-            r'"Data_Available"\n'
-            r'<stdin>:10:20: model: error: unused function "Data_Available"'
-            r"$"
-        ),
-    )
-
-
-def test_renaming_shadows_builtin_data_available() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-            ),
-            State("End"),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Message", "TLV::Message"),
-            decl.RenamingDeclaration(
-                "Data_Available",
-                "Null::Message",
-                expr.Selected(expr.Variable("Message"), "Value"),
-                location=Location((10, 20)),
-            ),
-        ],
-        parameters=[],
-        types=[BOOLEAN, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
-        regex=(
-            r"^"
-            r"<stdin>:10:20: model: error: renaming declaration shadows built-in function "
-            r'"Data_Available"\n'
-            r'<stdin>:10:20: model: error: unused renaming "Data_Available"'
-            r"$"
-        ),
     )
 
 
@@ -1889,27 +1821,6 @@ def test_private_type() -> None:
         declarations=[],
         parameters=[decl.TypeDeclaration(Private("P::T"))],
         types=[],
-    )
-
-
-def test_private_type_shadows_builtin_data_available() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-            ),
-            State("End"),
-        ],
-        declarations=[],
-        parameters=[decl.TypeDeclaration(Private("Data_Available", location=Location((10, 20))))],
-        types=[],
-        regex=(
-            r"^<stdin>:10:20: model: error: type declaration shadows built-in function"
-            r' "Data_Available"\n'
-            r'<stdin>:10:20: model: error: unused type "Data_Available"$'
-        ),
     )
 
 
