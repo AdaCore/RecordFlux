@@ -259,51 +259,10 @@ is
                                   Field_Last (Ctx, Fld) mod Types.Byte'Size = 0));
                Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                if Composite_Field (Fld) then
-                  case Fld is
-                     when F_Modular_Vector =>
-                        Ctx.Cursors (F_Modular_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Modular_Vector), Last => Field_Last (Ctx, F_Modular_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
-                     when F_Range_Vector =>
-                        Ctx.Cursors (F_Range_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Range_Vector), Last => Field_Last (Ctx, F_Range_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
-                     when F_Enumeration_Vector =>
-                        Ctx.Cursors (F_Enumeration_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Enumeration_Vector), Last => Field_Last (Ctx, F_Enumeration_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
-                     when F_AV_Enumeration_Vector =>
-                        Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_AV_Enumeration_Vector), Last => Field_Last (Ctx, F_AV_Enumeration_Vector), Value => Value, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
-                     when others =>
-                        null;
-                  end case;
+                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               pragma Assert ((if
-                                  Structural_Valid (Ctx.Cursors (F_Length))
-                               then
-                                  Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
-                                  and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                                  and then Ctx.Cursors (F_Length).First = Ctx.First
-                                  and then (if
-                                               Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-                                            then
-                                               Ctx.Cursors (F_Modular_Vector).Last - Ctx.Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                               and then Ctx.Cursors (F_Modular_Vector).Predecessor = F_Length
-                                               and then Ctx.Cursors (F_Modular_Vector).First = Ctx.Cursors (F_Length).Last + 1
-                                               and then (if
-                                                            Structural_Valid (Ctx.Cursors (F_Range_Vector))
-                                                         then
-                                                            Ctx.Cursors (F_Range_Vector).Last - Ctx.Cursors (F_Range_Vector).First + 1 = 16
-                                                            and then Ctx.Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                                            and then Ctx.Cursors (F_Range_Vector).First = Ctx.Cursors (F_Modular_Vector).Last + 1
-                                                            and then (if
-                                                                         Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-                                                                      then
-                                                                         Ctx.Cursors (F_Enumeration_Vector).Last - Ctx.Cursors (F_Enumeration_Vector).First + 1 = 16
-                                                                         and then Ctx.Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                                         and then Ctx.Cursors (F_Enumeration_Vector).First = Ctx.Cursors (F_Range_Vector).Last + 1
-                                                                         and then (if
-                                                                                      Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-                                                                                   then
-                                                                                      Ctx.Cursors (F_AV_Enumeration_Vector).Last - Ctx.Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                                                      and then Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                                      and then Ctx.Cursors (F_AV_Enumeration_Vector).First = Ctx.Cursors (F_Enumeration_Vector).Last + 1))))));
                if Fld = F_Length then
                   Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
                elsif Fld = F_Modular_Vector then
@@ -502,36 +461,6 @@ is
       if Invalid (Ctx, F_Modular_Vector) then
          Reset_Dependent_Fields (Ctx, F_Modular_Vector);
          Ctx.Message_Last := Last;
-         pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Length))
-                         then
-                            Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
-                            and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Length).First = Ctx.First
-                            and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-                                      then
-                                         Ctx.Cursors (F_Modular_Vector).Last - Ctx.Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                         and then Ctx.Cursors (F_Modular_Vector).Predecessor = F_Length
-                                         and then Ctx.Cursors (F_Modular_Vector).First = Ctx.Cursors (F_Length).Last + 1
-                                         and then (if
-                                                      Structural_Valid (Ctx.Cursors (F_Range_Vector))
-                                                   then
-                                                      Ctx.Cursors (F_Range_Vector).Last - Ctx.Cursors (F_Range_Vector).First + 1 = 16
-                                                      and then Ctx.Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                                      and then Ctx.Cursors (F_Range_Vector).First = Ctx.Cursors (F_Modular_Vector).Last + 1
-                                                      and then (if
-                                                                   Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-                                                                then
-                                                                   Ctx.Cursors (F_Enumeration_Vector).Last - Ctx.Cursors (F_Enumeration_Vector).First + 1 = 16
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).First = Ctx.Cursors (F_Range_Vector).Last + 1
-                                                                   and then (if
-                                                                                Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-                                                                             then
-                                                                                Ctx.Cursors (F_AV_Enumeration_Vector).Last - Ctx.Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).First = Ctx.Cursors (F_Enumeration_Vector).Last + 1))))));
          Ctx.Cursors (F_Modular_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Modular_Vector), Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
       end if;
@@ -549,36 +478,6 @@ is
       if Invalid (Ctx, F_Range_Vector) then
          Reset_Dependent_Fields (Ctx, F_Range_Vector);
          Ctx.Message_Last := Last;
-         pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Length))
-                         then
-                            Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
-                            and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Length).First = Ctx.First
-                            and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-                                      then
-                                         Ctx.Cursors (F_Modular_Vector).Last - Ctx.Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                         and then Ctx.Cursors (F_Modular_Vector).Predecessor = F_Length
-                                         and then Ctx.Cursors (F_Modular_Vector).First = Ctx.Cursors (F_Length).Last + 1
-                                         and then (if
-                                                      Structural_Valid (Ctx.Cursors (F_Range_Vector))
-                                                   then
-                                                      Ctx.Cursors (F_Range_Vector).Last - Ctx.Cursors (F_Range_Vector).First + 1 = 16
-                                                      and then Ctx.Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                                      and then Ctx.Cursors (F_Range_Vector).First = Ctx.Cursors (F_Modular_Vector).Last + 1
-                                                      and then (if
-                                                                   Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-                                                                then
-                                                                   Ctx.Cursors (F_Enumeration_Vector).Last - Ctx.Cursors (F_Enumeration_Vector).First + 1 = 16
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).First = Ctx.Cursors (F_Range_Vector).Last + 1
-                                                                   and then (if
-                                                                                Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-                                                                             then
-                                                                                Ctx.Cursors (F_AV_Enumeration_Vector).Last - Ctx.Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).First = Ctx.Cursors (F_Enumeration_Vector).Last + 1))))));
          Ctx.Cursors (F_Range_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Range_Vector), Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
       end if;
@@ -596,36 +495,6 @@ is
       if Invalid (Ctx, F_Enumeration_Vector) then
          Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
          Ctx.Message_Last := Last;
-         pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Length))
-                         then
-                            Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
-                            and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Length).First = Ctx.First
-                            and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-                                      then
-                                         Ctx.Cursors (F_Modular_Vector).Last - Ctx.Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                         and then Ctx.Cursors (F_Modular_Vector).Predecessor = F_Length
-                                         and then Ctx.Cursors (F_Modular_Vector).First = Ctx.Cursors (F_Length).Last + 1
-                                         and then (if
-                                                      Structural_Valid (Ctx.Cursors (F_Range_Vector))
-                                                   then
-                                                      Ctx.Cursors (F_Range_Vector).Last - Ctx.Cursors (F_Range_Vector).First + 1 = 16
-                                                      and then Ctx.Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                                      and then Ctx.Cursors (F_Range_Vector).First = Ctx.Cursors (F_Modular_Vector).Last + 1
-                                                      and then (if
-                                                                   Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-                                                                then
-                                                                   Ctx.Cursors (F_Enumeration_Vector).Last - Ctx.Cursors (F_Enumeration_Vector).First + 1 = 16
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).First = Ctx.Cursors (F_Range_Vector).Last + 1
-                                                                   and then (if
-                                                                                Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-                                                                             then
-                                                                                Ctx.Cursors (F_AV_Enumeration_Vector).Last - Ctx.Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).First = Ctx.Cursors (F_Enumeration_Vector).Last + 1))))));
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Enumeration_Vector), Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_Enumeration_Vector);
       end if;
@@ -643,36 +512,6 @@ is
       if Invalid (Ctx, F_AV_Enumeration_Vector) then
          Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
          Ctx.Message_Last := Last;
-         pragma Assert ((if
-                            Structural_Valid (Ctx.Cursors (F_Length))
-                         then
-                            Ctx.Cursors (F_Length).Last - Ctx.Cursors (F_Length).First + 1 = RFLX.Sequence.Length'Size
-                            and then Ctx.Cursors (F_Length).Predecessor = F_Initial
-                            and then Ctx.Cursors (F_Length).First = Ctx.First
-                            and then (if
-                                         Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-                                      then
-                                         Ctx.Cursors (F_Modular_Vector).Last - Ctx.Cursors (F_Modular_Vector).First + 1 = Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
-                                         and then Ctx.Cursors (F_Modular_Vector).Predecessor = F_Length
-                                         and then Ctx.Cursors (F_Modular_Vector).First = Ctx.Cursors (F_Length).Last + 1
-                                         and then (if
-                                                      Structural_Valid (Ctx.Cursors (F_Range_Vector))
-                                                   then
-                                                      Ctx.Cursors (F_Range_Vector).Last - Ctx.Cursors (F_Range_Vector).First + 1 = 16
-                                                      and then Ctx.Cursors (F_Range_Vector).Predecessor = F_Modular_Vector
-                                                      and then Ctx.Cursors (F_Range_Vector).First = Ctx.Cursors (F_Modular_Vector).Last + 1
-                                                      and then (if
-                                                                   Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-                                                                then
-                                                                   Ctx.Cursors (F_Enumeration_Vector).Last - Ctx.Cursors (F_Enumeration_Vector).First + 1 = 16
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).Predecessor = F_Range_Vector
-                                                                   and then Ctx.Cursors (F_Enumeration_Vector).First = Ctx.Cursors (F_Range_Vector).Last + 1
-                                                                   and then (if
-                                                                                Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-                                                                             then
-                                                                                Ctx.Cursors (F_AV_Enumeration_Vector).Last - Ctx.Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                                                and then Ctx.Cursors (F_AV_Enumeration_Vector).First = Ctx.Cursors (F_Enumeration_Vector).Last + 1))))));
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_AV_Enumeration_Vector), Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_AV_Enumeration_Vector)) := (State => S_Invalid, Predecessor => F_AV_Enumeration_Vector);
       end if;

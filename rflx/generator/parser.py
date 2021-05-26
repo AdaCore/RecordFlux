@@ -12,7 +12,6 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
-    CaseStatement,
     Div,
     Equal,
     Expr,
@@ -28,7 +27,6 @@ from rflx.ada import (
     Mod,
     Mul,
     NamedAggregate,
-    NullStatement,
     Number,
     ObjectDeclaration,
     Old,
@@ -44,7 +42,6 @@ from rflx.ada import (
     Selected,
     Size,
     Slice,
-    Statement,
     String,
     Subprogram,
     SubprogramBody,
@@ -177,8 +174,8 @@ class ParserGenerator:
             ],
         )
 
+    @staticmethod
     def create_verify_procedure(
-        self,
         message: Message,
         scalar_fields: Mapping[Field, Scalar],
         composite_fields: Sequence[Field],
@@ -248,7 +245,7 @@ class ParserGenerator:
                 [
                     (
                         Call("Composite_Field", [Variable("Fld")]),
-                        [set_context_cursor_composite(scalar_fields, composite_fields)],
+                        [set_context_cursor_composite_field("Fld")],
                     )
                 ],
                 [set_context_cursor_scalar()],
@@ -256,35 +253,35 @@ class ParserGenerator:
             if scalar_fields and composite_fields
             else set_context_cursor_scalar()
             if scalar_fields and not composite_fields
-            else set_context_cursor_composite(scalar_fields, composite_fields),
-            # WORKAROUND:
-            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-            # Provability of predicate is increased by adding part of
-            # predicate as assert
-            PragmaStatement("Assert", [common.message_structure_invariant(message, self.prefix)]),
-            # WORKAROUND:
-            # Limitation of GNAT Community 2019 / SPARK Pro 20.0
-            # Provability of predicate is increased by splitting
-            # assignment in multiple statements
-            IfStatement(
+            else set_context_cursor_composite_field("Fld"),
+            *(
                 [
-                    (
-                        Equal(Variable("Fld"), Variable(f.affixed_name)),
+                    # ISSUE: Componolit/RecordFlux#664
+                    # The provability of the context predicate is increased by splitting the
+                    # assignment into multiple statements.
+                    IfStatement(
                         [
-                            Assignment(
-                                Indexed(
-                                    Variable("Ctx.Cursors"),
-                                    Call("Successor", [Variable("Ctx"), Variable("Fld")]),
-                                ),
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    ("Predecessor", Variable("Fld")),
-                                ),
+                            (
+                                Equal(Variable("Fld"), Variable(f.affixed_name)),
+                                [
+                                    Assignment(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
+                                        ),
+                                        NamedAggregate(
+                                            ("State", Variable("S_Invalid")),
+                                            ("Predecessor", Variable("Fld")),
+                                        ),
+                                    )
+                                ],
                             )
-                        ],
+                            for f in message.fields
+                        ]
                     )
-                    for f in message.fields
                 ]
+                if len(message.fields) > 1
+                else []
             ),
         ]
 
@@ -823,32 +820,6 @@ def set_context_cursor_scalar() -> Assignment:
                 Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
             ),
         ),
-    )
-
-
-def set_context_cursor_composite(
-    scalar_fields: Mapping[Field, Scalar], composite_fields: Sequence[Field]
-) -> Statement:
-    # WORKAROUND:
-    # Limitation of GNAT Community 2020
-    # The provability of the predicate of `Ctx` is increased by
-    # duplicating the assignment inside of a case statement.
-    return (
-        CaseStatement(
-            Variable("Fld"),
-            [
-                *[
-                    (
-                        Variable(f.affixed_name),
-                        [set_context_cursor_composite_field(f.affixed_name)],
-                    )
-                    for f in composite_fields
-                ],
-                *([(Variable("others"), [NullStatement()])] if scalar_fields else []),
-            ],
-        )
-        if len(composite_fields) > 1
-        else set_context_cursor_composite_field("Fld")
     )
 
 

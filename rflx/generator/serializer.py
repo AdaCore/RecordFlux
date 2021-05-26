@@ -772,7 +772,7 @@ class SerializerGenerator:
                     SubprogramBody(
                         specification_private(f),
                         common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        common.initialize_field_statements(message, f, self.prefix),
+                        common.initialize_field_statements(f),
                         [
                             Precondition(
                                 AndThen(

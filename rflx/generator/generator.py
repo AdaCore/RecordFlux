@@ -2055,8 +2055,9 @@ class Generator:
             ],
         )
 
+    @staticmethod
     def __create_switch_procedures(
-        self, message: Message, sequence_fields: ty.Mapping[Field, Type]
+        message: Message, sequence_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -2230,7 +2231,7 @@ class Generator:
                                         "Invalid",
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
-                                    common.initialize_field_statements(message, f, self.__prefix),
+                                    common.initialize_field_statements(f),
                                 )
                             ]
                         ),
