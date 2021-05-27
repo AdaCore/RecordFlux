@@ -99,7 +99,7 @@ test_specs:
 
 test_runtime:
 	rm -rf $(build-dir)/ada-runtime
-	git clone --depth=1 https://github.com/Componolit/ada-runtime $(build-dir)/ada-runtime
+	git clone --depth=1 --branch recordflux https://github.com/Componolit/ada-runtime $(build-dir)/ada-runtime
 	$(MAKE) -C build/ada-runtime
 	gprbuild -Ptest --RTS=build/ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
 
