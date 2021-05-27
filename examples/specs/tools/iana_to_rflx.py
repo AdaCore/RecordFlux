@@ -4,12 +4,14 @@ from datetime import datetime
 from typing import Dict, List, Optional, TextIO, Tuple
 from urllib.error import HTTPError
 from urllib.request import urlopen
+from xml.etree.ElementTree import Element
 
 import rflx.specification.const
 from defusedxml import ElementTree  # type: ignore
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
 RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
+DUPLICATES = []
 
 
 def iana_to_rflx(url: str, always_valid: bool) -> None:
@@ -45,20 +47,23 @@ def write_registry(
 ) -> None:
     if registry.find("iana:record", NAMESPACE) is None:
         return
-    duplicates = []
-    file.write(f"{'':<3}type {_normalize_name(registry.find('iana:title', NAMESPACE).text)} is\n")
-    file.write(f"{'':<6}(\n")
-
-    # preprocess records and join for duplicate values
     records = registry.findall("iana:record", NAMESPACE)
-    normalized_records = _normalize_records(records)
-    size = max((record.bit_length for record in normalized_records))
+    registry_title = _normalize_name(registry.find('iana:title', NAMESPACE).text)
+    normalized_records = _normalize_records(records, registry_title)
+    if not normalized_records:
+        return
 
+    file.write(
+        f"{'':<3}type {registry_title} is\n")
+    file.write(f"{'':<6}(\n")
+    size = max((record.bit_length for record in normalized_records))
     for record in normalized_records:
         name = record.name
-        if name in duplicates or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
-            name += f"_{record.value}"
-        duplicates.append(name)
+        if name in DUPLICATES or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
+            name += f"_{record.value.replace('#','_')}"
+        if name.startswith(tuple(d for d in string.digits)):
+            name = f"{registry_title}_{name}"
+        DUPLICATES.append(name)
 
         if record.comment:
             file.write("\n")
@@ -78,17 +83,19 @@ def write_registry(
     file.write("\n\n")
 
 
-def _normalize_records(records: list) -> List["Record"]:
+def _normalize_records(records: List[Element], registry_name: str) -> List["Record"]:
     normalized_records: Dict[str, Record] = {}
     for record in records:
-        name_tag = f"iana:{_get_name_tag(record)}"
-        value_tag = "iana:value"
+        name_tag = _get_name_tag(record)
+        value_tag = "value"
         name = ""
         value = ""
 
-        if (n := record.find(name_tag, NAMESPACE)) is not None:
+        if (n := record.find(f"iana:{name_tag}", NAMESPACE)) is not None:
+            assert isinstance(n.text, str)
             name = n.text
-        if (v := record.find(value_tag, NAMESPACE)) is not None:
+        if (v := record.find(f"iana:{value_tag}", NAMESPACE)) is not None:
+            assert isinstance(v.text, str)
             value = v.text
         if name == "" or value == "" or re.search(r"RESERVED|UNASSIGNED", name, flags=re.I):
             continue
@@ -99,45 +106,45 @@ def _normalize_records(records: list) -> List["Record"]:
         ]
         r = Record(name, value, comment)
         if value in normalized_records:
-            normalized_records[value].join(r)
+            normalized_records[value].join(r, registry_name)
         else:
             normalized_records[value] = r
     return list(normalized_records.values())
 
 
-def _get_name_tag(record) -> str:
+def _get_name_tag(record: Element) -> str:
     sub_elements = record.findall("*", NAMESPACE)
     child_names = set(c.tag[c.tag.index("}") + 1 :] for c in sub_elements)
-    possible_name_tags = ["name", "description"]
+    possible_name_tags = ["name", "description", "code", "type"]
     if all((p in child_names for p in possible_name_tags)):
         return "name"
     return child_names.intersection(possible_name_tags).pop()
 
 
 class Record:
-    def __init__(self, name: str = "", value: str = "", comments: Optional[List[str]] = None):
+    def __init__(self, name: str = "", value: str = "", comments: Optional[List[Element]] = None):
         self.name = _normalize_name(name)
         self.value, self.bit_length = _normalize_value(value)
-        self._comments = comments
+        self.comment_list = comments or []
 
-    def join(self, duplicate: "Record"):
-        self.name = f"{self.name}_{duplicate.name}"
-        self._comments.extend(duplicate._comments)
+    def join(self, duplicate: "Record", registry_name: str) -> None:
+        self.name = f"{registry_name}_{self.value.replace('#', '_')}"
+        self.comment_list.extend(duplicate.comment_list)
 
     @property
     def comment(self) -> List[str]:
-        return _normalize_comment(self._comments)
+        return _normalize_comment(self.comment_list)
 
 
-def _normalize_comment(references: list) -> List[str]:
-    comment_list = [
-        f"{r.tag[r.tag.index('}') + 1:]} = {r.text}"
-        if r.tag is not None and r.text is not None
-        else f"Ref: {r.attrib['data']}"
-        for r in references
+def _normalize_comment(comment_list: List[Element]) -> List[str]:
+    comments = [
+        f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
+        if c.tag is not None and c.text is not None
+        else f"Ref: {c.attrib['data']}"
+        for c in comment_list
     ]
 
-    if (c := ", ".join(comment_list)) != "":
+    if (c := ", ".join(comments)) != "":
         c = c.replace("\n", " ")
         c = " ".join(c.split())
         lines = len(c) // 80 + 1
@@ -149,7 +156,6 @@ def _normalize_name(description_text: str) -> str:
     t = {c: " " for c in string.punctuation + "\n"}
     name = description_text.translate(str.maketrans(t))
     name = "_".join(name.split())
-
     return name.upper()
 
 
@@ -163,8 +169,9 @@ def _normalize_value(value: str) -> Tuple[str, int]:
 def _normalize_hex_value(hex_value: str) -> str:
     if re.match(r"^0x[0-9A-F]{2},0x[0-9A-F]{2}$", hex_value) is not None:  # 0x0A,0xFF
         return f"16#{hex_value.replace('0x', '').replace(',', '')}#"
-    elif re.match(r"^0x[0-9A-F]+$", hex_value) is not None:  # 0xA1A1
+    if re.match(r"^0x[0-9A-F]+$", hex_value) is not None:  # 0xA1A1
         return f"16#{hex_value[2:]}#"
+    raise IANAError(f"Cannot normalize hex value {hex_value}")
 
 
 class IANAError(Exception):
@@ -173,5 +180,5 @@ class IANAError(Exception):
 
 if __name__ == "__main__":
     iana_to_rflx(
-        "https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml", True
+        "https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml", True
     )
