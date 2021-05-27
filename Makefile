@@ -20,7 +20,8 @@ test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_spark test_apps test_specs prove prove_tests prove_apps clean
+	test test_python test_spark test_apps test_specs test_runtime \
+	prove prove_tests prove_apps clean
 
 all: check test prove
 
@@ -57,7 +58,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: test_python_coverage test_python_property test_spark
+test: test_python_coverage test_python_property test_spark test_runtime test_installation
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
@@ -95,6 +96,17 @@ test_apps:
 
 test_specs:
 	cd examples/specs && python3 -m pytest -n$(shell nproc) -vv tests/test_specs.py
+
+test_runtime:
+	rm -rf $(build-dir)/ada-runtime
+	git clone --depth=1 https://github.com/Componolit/ada-runtime $(build-dir)/ada-runtime
+	$(MAKE) -C build/ada-runtime
+	gprbuild -Ptest --RTS=build/ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
+
+test_installation:
+	rm -rf $(build-dir)/pip
+	python setup.py sdist
+	pip install RecordFlux --no-deps --no-index --find-links dist/ --target $(build-dir)/pip
 
 prove: prove_tests prove_apps
 

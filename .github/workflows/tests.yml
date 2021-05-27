@@ -85,8 +85,7 @@ jobs:
         python -m pip install --upgrade pip wheel
     - name: Install
       run: |
-        python setup.py sdist
-        pip install RecordFlux --no-deps --no-index --find-links dist/
+        make test_installation
 
   skip_check_python:
     name: Skip Check Python
@@ -262,16 +261,9 @@ jobs:
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
-    - name: Build runtime
-      run: |
-        git clone https://github.com/Componolit/ada-runtime
-        cd ada-runtime
-        git checkout 280a4867f1d872412aec00f35aa28b35ff295e60
-        cd ..
-        make -C ada-runtime
     - name: Build
       run: |
-        gprbuild -Ptest --RTS=ada-runtime/build/posix/obj -Xaunit=no -Xoptimization=yes
+        make test_runtime
 
   verification_spark:
     name: Verification
