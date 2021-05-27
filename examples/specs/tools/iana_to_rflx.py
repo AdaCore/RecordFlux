@@ -9,6 +9,7 @@ import rflx.specification.const
 from defusedxml import ElementTree  # type: ignore
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
+RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
 
 
 def iana_to_rflx(url: str, always_valid: bool) -> None:
@@ -55,11 +56,7 @@ def write_registry(
 
     for record in normalized_records:
         name = record.name
-        if (
-            name in duplicates
-            or re.match("|".join(rflx.specification.const.RESERVED_WORDS), name, re.I | re.X)
-            is not None
-        ):
+        if name in duplicates or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
             name += f"_{record.value}"
         duplicates.append(name)
 
@@ -74,7 +71,7 @@ def write_registry(
     file.write("\n")
     file.write(f"{'':<6})\n")
     file.write(f"{'':<3}with Size => {size}")
-    if always_valid and not _always_valid_unnecessary():
+    if always_valid and len(normalized_records).bit_length() == size:
         file.write(", Always_Valid;")
     else:
         file.write(";")
@@ -168,10 +165,6 @@ def _normalize_hex_value(hex_value: str) -> str:
         return f"16#{hex_value.replace('0x', '').replace(',', '')}#"
     elif re.match(r"^0x[0-9A-F]+$", hex_value) is not None:  # 0xA1A1
         return f"16#{hex_value[2:]}#"
-
-
-def _always_valid_unnecessary() -> bool:
-    pass
 
 
 class IANAError(Exception):
