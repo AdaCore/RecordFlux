@@ -341,3 +341,22 @@ def test_refinement_with_self(tmp_path: Path) -> None:
         """,
         tmp_path,
     )
+
+
+def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
+    spec = """
+           package Test is
+
+              type Length is range 0 .. 2**7 - 1 with Size => 7;
+
+              type Message is
+                 message
+                    Flag : Boolean;
+                    Length : Length;
+                    Data : Opaque
+                       with Size => Length * 8;
+                 end message;
+
+           end Test;
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)

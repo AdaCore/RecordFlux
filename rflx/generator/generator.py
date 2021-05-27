@@ -2757,7 +2757,9 @@ class Generator:
                 component_type: ty.Union[ID, Expr]
 
                 if isinstance(type_, Scalar):
-                    component_type = ID(self.__prefix * type_.identifier)
+                    component_type = common.prefixed_type_identifier(
+                        ID(type_.identifier), self.__prefix
+                    )
                 elif isinstance(type_, Opaque):
                     component_type = Indexed(
                         Variable(const.TYPES_BYTES),

@@ -695,7 +695,7 @@ def field_condition_call(message: model.Message, field: model.Field, value: ada.
 
 def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
     if model.is_builtin_type(type_identifier):
-        return type_identifier
+        return type_identifier.name
 
     return prefix * type_identifier
 
