@@ -66,15 +66,14 @@ def write_registry(
         DUPLICATES.append(name)
 
         if record.comment:
-            file.write("\n")
-            for comment_line in record.comment:
-                file.write(f"{'':<9}-- {comment_line}\n")
-            file.write(f"{'':<9}--\n")
-        file.write(f"{'':<9}{f'{name} => {record.value}'},\n")
 
-    file.seek(file.tell() - 2)
-    file.write("\n")
-    file.write(f"{'':<6})\n")
+            for comment_line in record.comment:
+                file.write(f"{'':<6}-- {comment_line}\n")
+            file.write(f"{'':<6}--\n")
+        file.write(f"{'':<6}{f'{name} => {record.value}'},\n\n")
+
+    file.seek(file.tell() - 3)
+    file.write(")\n")
     file.write(f"{'':<3}with Size => {size}")
     if always_valid and len(normalized_records).bit_length() == size:
         file.write(", Always_Valid;")
@@ -102,7 +101,7 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
         comment = [
             element
             for element in record.iterfind("*", NAMESPACE)
-            if element.tag not in [name_tag, value_tag]
+            if element.tag not in [f"{{{NAMESPACE['iana']}}}{name_tag}", f"{{{NAMESPACE['iana']}}}{value_tag}"]
         ]
         r = Record(name, value, comment)
         if value in normalized_records:
@@ -180,5 +179,5 @@ class IANAError(Exception):
 
 if __name__ == "__main__":
     iana_to_rflx(
-        "https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xml", True
+        "https://www.iana.org/assignments/arp-parameters/arp-parameters.xml", True
     )
