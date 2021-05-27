@@ -1,5 +1,9 @@
+#!/usr/bin/env -S python3 -O
+
+import argparse
 import re
 import string
+import sys
 from datetime import datetime
 from typing import Dict, List, Optional, TextIO, Tuple
 from urllib.error import HTTPError
@@ -48,13 +52,12 @@ def write_registry(
     if registry.find("iana:record", NAMESPACE) is None:
         return
     records = registry.findall("iana:record", NAMESPACE)
-    registry_title = _normalize_name(registry.find('iana:title', NAMESPACE).text)
+    registry_title = _normalize_name(registry.find("iana:title", NAMESPACE).text)
     normalized_records = _normalize_records(records, registry_title)
     if not normalized_records:
         return
 
-    file.write(
-        f"{'':<3}type {registry_title} is\n")
+    file.write(f"{'':<3}type {registry_title} is\n")
     file.write(f"{'':<6}(\n")
     size = max((record.bit_length for record in normalized_records))
     for record in normalized_records:
@@ -101,7 +104,8 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
         comment = [
             element
             for element in record.iterfind("*", NAMESPACE)
-            if element.tag not in [f"{{{NAMESPACE['iana']}}}{name_tag}", f"{{{NAMESPACE['iana']}}}{value_tag}"]
+            if element.tag
+            not in [f"{{{NAMESPACE['iana']}}}{name_tag}", f"{{{NAMESPACE['iana']}}}{value_tag}"]
         ]
         r = Record(name, value, comment)
         if value in normalized_records:
@@ -178,6 +182,13 @@ class IANAError(Exception):
 
 
 if __name__ == "__main__":
-    iana_to_rflx(
-        "https://www.iana.org/assignments/arp-parameters/arp-parameters.xml", True
+    parser = argparse.ArgumentParser(
+        description="generate a RecordFlux specification file from the provided IANA XML document."
     )
+    parser.add_argument(
+        "-a", "--always-valid", help="add Always_Valid aspect to ech type", action="store_true"
+    )
+    parser.add_argument("url", help="url to IANA XML file", type=str)
+
+    args = parser.parse_args(sys.argv[1:])
+    iana_to_rflx(args.url, args.always_valid)
