@@ -608,6 +608,16 @@ def qualified_type_identifier(identifier: ID, package: ID = None) -> ID:
     return identifier
 
 
+def qualified_enum_literal(identifier: ID, package: ID = None) -> ID:
+    if identifier in BUILTIN_LITERALS:
+        return identifier
+
+    if len(identifier.parts) == 1 and package:
+        return ID(package * identifier, location=identifier.location)
+
+    assert False
+
+
 def qualified_enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumeration]:
     literals = {}
 

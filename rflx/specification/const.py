@@ -1,4 +1,5 @@
 RESERVED_WORDS = [
+    # Ada
     "abort",
     "abs",
     "abstract",
@@ -72,6 +73,10 @@ RESERVED_WORDS = [
     "while",
     "with",
     "xor",
+    # Code generation
     "initial",
     "final",
+    "ctx",
+    "val",
+    "enum",
 ]

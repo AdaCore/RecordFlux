@@ -92,27 +92,65 @@ def test_comparison_opaque(condition: str, tmp_path: Path) -> None:
     )
 
 
-def test_potential_name_conflicts_fields_literals(tmp_path: Path) -> None:
-    utils.assert_compilable_code_string(
-        """
+def test_potential_name_conflicts_with_enum_literals(tmp_path: Path) -> None:
+    literals = [
+        "Buffer",
+        "Bytes",
+        "Bytes_Ptr",
+        "Context",
+        "Data",
+        "F_A",
+        "F_B",
+        "F_C",
+        "F_Final",
+        "F_Inital",
+        "Field",
+        "First",
+        "Fld",
+        "Fst",
+        "Invalid",
+        "Last",
+        "Length",
+        "Lst",
+        "Opaque",
+        "S_Invalid",
+        "S_Valid",
+        "Seq_Ctx",
+        "Sequence",
+        "Size",
+        "Valid",
+        "Value",
+    ]
+    enum_literals = ", ".join(literals)
+    condition = " or ".join(f"A = {l}" for l in literals)
+    spec = f"""
            package Test is
 
-              type E is (F_A => 0, F_B => 1) with Size => 8;
+              type A is ({enum_literals}) with Size => 8;
 
-              type M is
+              type B is sequence of A;
+
+              type Message is
                  message
-                    A : E
-                       then null
-                          if A = F_A
+                    A : A
                        then B
-                          if A = F_B;
-                    B : E;
+                          if {condition};
+                    B : B
+                       with Size => 8
+                       then C
+                          if {condition};
+                    C : Opaque
+                       with Size => 8
+                       then null
+                          if {condition};
                  end message;
 
+              for Message use (C => Message)
+                 if {condition};
+
            end Test;
-        """,
-        tmp_path,
-    )
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)
 
 
 def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
@@ -326,17 +364,22 @@ def test_refinement_with_self(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         """
            package Test is
+
               type Tag is (T1 => 1) with Size => 8;
-              type Len is mod 2**8;
-              type Packet is
+
+              type Length is mod 2**8;
+
+              type Message is
                  message
                     Tag : Tag;
-                    Len : Len;
-                    Val : Opaque
-                       with Size => 8 * Len;
+                    Length : Length;
+                    Value : Opaque
+                       with Size => 8 * Length;
                  end message;
-              for Packet use (Val => Packet)
+
+              for Message use (Value => Message)
                  if Tag = T1;
+
            end Test;
         """,
         tmp_path,
