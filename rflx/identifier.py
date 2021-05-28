@@ -1,3 +1,4 @@
+import re
 from typing import Optional, Sequence, TypeVar, Union
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
@@ -13,7 +14,7 @@ class ID:
         self.location = location
 
         if isinstance(identifier, str):
-            self._parts = identifier.split(self._separator)
+            self._parts = re.split(r"\.|::", identifier)
         elif isinstance(identifier, list):
             self._parts = identifier
         elif isinstance(identifier, ID):
