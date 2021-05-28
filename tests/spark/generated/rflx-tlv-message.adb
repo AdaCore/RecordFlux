@@ -70,11 +70,11 @@ is
      ((case Fld is
           when F_Tag =>
              (if
-                 RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (Msg_Error))
+                 RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Error))
               then
                  F_Final
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (Msg_Data))
+                 RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
               then
                  F_Length
               else

@@ -30,5 +30,6 @@ from .type_ import (  # noqa: F401
     Type,
     is_builtin_type,
     is_internal_type,
+    qualified_enum_literal,
     qualified_type_identifier,
 )
