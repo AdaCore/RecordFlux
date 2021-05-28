@@ -633,8 +633,7 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_structural_valid_message_function(message: Message) -> UnitPart:
+    def create_structural_valid_message_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Structural_Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
@@ -649,13 +648,12 @@ class ParserGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message, structural=True),
+                    self.valid_message_condition(message, structural=True),
                 )
             ],
         )
 
-    @staticmethod
-    def create_valid_message_function(message: Message) -> UnitPart:
+    def create_valid_message_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
@@ -670,7 +668,7 @@ class ParserGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    valid_message_condition(message),
+                    self.valid_message_condition(message),
                 )
             ],
         )
@@ -1037,38 +1035,37 @@ class ParserGenerator:
             ],
         )
 
+    def valid_message_condition(
+        self, message: Message, field: Field = INITIAL, structural: bool = False
+    ) -> Expr:
+        def condition(message: Message, field: Field, structural: bool) -> expr.Expr:
+            return expr.Or(
+                *[
+                    l.condition
+                    if l.target == FINAL
+                    else expr.AndThen(
+                        expr.Call(
+                            "Structural_Valid"
+                            if structural and isinstance(message.types[l.target], Composite)
+                            else "Valid",
+                            [
+                                expr.Variable("Ctx"),
+                                expr.Variable(l.target.affixed_name, immutable=True),
+                            ],
+                        ),
+                        l.condition,
+                        condition(message, l.target, structural),
+                    )
+                    for l in message.outgoing(field)
+                ]
+            )
 
-def valid_message_condition(
-    message: Message, field: Field = INITIAL, structural: bool = False
-) -> Expr:
-    def condition(message: Message, field: Field, structural: bool) -> expr.Expr:
-        return expr.Or(
-            *[
-                l.condition
-                if l.target == FINAL
-                else expr.AndThen(
-                    expr.Call(
-                        "Structural_Valid"
-                        if structural and isinstance(message.types[l.target], Composite)
-                        else "Valid",
-                        [
-                            expr.Variable("Ctx"),
-                            expr.Variable(l.target.affixed_name, immutable=True),
-                        ],
-                    ),
-                    l.condition,
-                    condition(message, l.target, structural),
-                )
-                for l in message.outgoing(field)
-            ]
+        return (
+            condition(message, field, structural)
+            .substituted(common.substitution(message, self.prefix))
+            .simplified()
+            .ada_expr()
         )
-
-    return (
-        condition(message, field, structural)
-        .substituted(common.substitution(message))
-        .simplified()
-        .ada_expr()
-    )
 
 
 def set_context_cursor_scalar() -> Assignment:

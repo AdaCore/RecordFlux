@@ -8,11 +8,12 @@ from . import const
 
 def substitution(
     message: model.Message,
+    prefix: str,
     embedded: bool = False,
     public: bool = False,
     target_type: Optional[ada.ID] = const.TYPES_U64,
 ) -> Callable[[expr.Expr], expr.Expr]:
-    facts = substitution_facts(message, embedded, public, target_type)
+    facts = substitution_facts(message, prefix, embedded, public, target_type)
 
     def func(expression: expr.Expr) -> expr.Expr:
         def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
@@ -114,6 +115,7 @@ def substitution(
 
 def substitution_facts(
     message: model.Message,
+    prefix: str,
     embedded: bool = False,
     public: bool = False,
     target_type: Optional[ada.ID] = const.TYPES_U64,
@@ -191,7 +193,8 @@ def substitution_facts(
         **{
             expr.Variable(l): type_conversion(
                 expr.Call(
-                    "To_Base", [expr.Variable(model.qualified_enum_literal(l, message.package))]
+                    "To_Base",
+                    [expr.Variable(model.qualified_enum_literal(l, prefix * message.package))],
                 )
             )
             for t in message.types.values()
@@ -229,19 +232,19 @@ def message_structure_invariant(
         return ada.TRUE
 
     field_type = message.types[target]
-    condition = link.condition.substituted(substitution(message, embedded)).simplified()
+    condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
     size = (
         expr.Size(prefix * full_base_type_name(field_type))
         if isinstance(field_type, model.Scalar)
         else link.size.substituted(
-            substitution(message, embedded, target_type=const.TYPES_BIT_LENGTH)
+            substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH)
         ).simplified()
     )
     first = (
         prefixed("First")
         if source == model.INITIAL
         else link.first.substituted(
-            substitution(message, embedded, target_type=const.TYPES_BIT_INDEX)
+            substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX)
         )
         .substituted(
             mapping={
@@ -367,7 +370,7 @@ def context_predicate(
                                             expr.Variable(l.source.affixed_name),
                                         ),
                                         l.condition.substituted(
-                                            substitution(message, embedded=True)
+                                            substitution(message, embedded=True, prefix=prefix)
                                         ),
                                     )
                                     .simplified()
@@ -510,13 +513,13 @@ def public_context_predicate() -> ada.Expr:
 
 
 def valid_path_to_next_field_condition(
-    message: model.Message, field: model.Field
+    message: model.Message, field: model.Field, prefix: str
 ) -> Sequence[ada.Expr]:
     return [
         ada.If(
             [
                 (
-                    l.condition.substituted(substitution(message, public=True))
+                    l.condition.substituted(substitution(message, public=True, prefix=prefix))
                     .simplified()
                     .ada_expr(),
                     ada.And(
