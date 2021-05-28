@@ -80,6 +80,8 @@ def test_id_add_str() -> None:
     assert ID("B::C") + "D" == ID("B::CD")
     assert ID("B::C") + "" == ID("B::C")
     assert "" + ID("B::C") == ID("B::C")
+    assert "A.B" + ID("C") == ID("A::BC")
+    assert ID("A") + "B.C" == ID("AB::C")
 
 
 def test_id_mul_id() -> None:
@@ -92,6 +94,8 @@ def test_id_mul_str() -> None:
     assert ID("B::C") * "D" == ID("B::C::D")
     assert "" * ID("B::C") == ID("B::C")
     assert ID("B::C") * "" == ID("B::C")
+    assert "A.B" * ID("C") == ID("A::B::C")
+    assert ID("A") * "B.C" == ID("A::B::C")
 
 
 def test_id_name() -> None:
