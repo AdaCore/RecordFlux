@@ -682,8 +682,21 @@ class Message(AbstractMessage):
 
     @property
     def is_definite(self) -> bool:
-        """Return true if the message has a bounded size and no optional fields."""
-        return len(self.paths(FINAL)) <= 1 and self.has_bounded_size
+        """
+        Return true if the message has a bounded size and no optional fields.
+
+        Messages with a First or Last attribute in a size aspect are not yet supported and
+        therefore considered as not definite.
+        """
+        return (
+            len(self.paths(FINAL)) <= 1
+            and self.has_bounded_size
+            and all(
+                not l.size.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
+                for l in self.structure
+                for v in l.size.variables()
+            )
+        )
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
         field_values = field_values if field_values else {}
