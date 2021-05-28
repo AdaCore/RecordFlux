@@ -1292,14 +1292,13 @@ class Generator:
             ],
         )
 
-    @staticmethod
-    def __create_path_condition_function(message: Message) -> UnitPart:
+    def __create_path_condition_function(self, message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             cases: ty.List[ty.Tuple[Expr, Expr]] = [
                 (
                     target,
                     expr.Or(*[c for _, c in conditions])
-                    .substituted(common.substitution(message))
+                    .substituted(common.substitution(message, self.__prefix))
                     .simplified()
                     .ada_expr(),
                 )
@@ -1354,7 +1353,9 @@ class Generator:
             def substituted(expression: expr.Expr) -> Expr:
                 return (
                     expression.substituted(
-                        common.substitution(message, target_type=const.TYPES_BIT_LENGTH)
+                        common.substitution(
+                            message, self.__prefix, target_type=const.TYPES_BIT_LENGTH
+                        )
                     )
                     .simplified()
                     .ada_expr()
@@ -1423,14 +1424,15 @@ class Generator:
             ],
         )
 
-    @staticmethod
-    def __create_field_first_function(message: Message) -> UnitPart:
+    def __create_field_first_function(self, message: Message) -> UnitPart:
         def first(field: Field, message: Message) -> Expr:
             def substituted(
                 expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_U64
             ) -> Expr:
                 return (
-                    expression.substituted(common.substitution(message, target_type=target_type))
+                    expression.substituted(
+                        common.substitution(message, self.__prefix, target_type=target_type)
+                    )
                     .simplified()
                     .ada_expr()
                 )
@@ -1546,8 +1548,7 @@ class Generator:
             ],
         )
 
-    @staticmethod
-    def __create_field_condition_function(message: Message) -> UnitPart:
+    def __create_field_condition_function(self, message: Message) -> UnitPart:
         def condition(field: Field, message: Message) -> Expr:
             c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
             c = c.substituted(
@@ -1586,7 +1587,9 @@ class Generator:
                         if x == expr.Variable(field.name)
                         else x
                     )
-            return c.substituted(common.substitution(message)).simplified().ada_expr()
+            return (
+                c.substituted(common.substitution(message, self.__prefix)).simplified().ada_expr()
+            )
 
         parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
 
@@ -1656,8 +1659,7 @@ class Generator:
             ],
         )
 
-    @staticmethod
-    def __create_successor_function(message: Message) -> UnitPart:
+    def __create_successor_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Successor",
             "Virtual_Field",
@@ -1679,7 +1681,9 @@ class Generator:
                                 If(
                                     [
                                         (
-                                            l.condition.substituted(common.substitution(message))
+                                            l.condition.substituted(
+                                                common.substitution(message, self.__prefix)
+                                            )
                                             .simplified()
                                             .ada_expr(),
                                             Variable(l.target.affixed_name),
@@ -2206,9 +2210,8 @@ class Generator:
             ],
         )
 
-    @staticmethod
     def __create_switch_procedures(
-        message: Message, sequence_fields: ty.Mapping[Field, Type]
+        self, message: Message, sequence_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -2349,7 +2352,9 @@ class Generator:
                             (
                                 Variable("others"),
                                 And(
-                                    *common.valid_path_to_next_field_condition(message, f),
+                                    *common.valid_path_to_next_field_condition(
+                                        message, f, self.__prefix
+                                    ),
                                     *[
                                         Call(
                                             "Invalid",

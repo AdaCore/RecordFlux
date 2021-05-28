@@ -833,15 +833,14 @@ class SerializerGenerator:
             *self.setter_postconditions(message, field),
         ]
 
-    @staticmethod
-    def setter_postconditions(message: Message, field: Field) -> Sequence[Expr]:
+    def setter_postconditions(self, message: Message, field: Field) -> Sequence[Expr]:
         return [
             *[
                 Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
                 for p in message.successors(field)
                 if p != FINAL
             ],
-            *common.valid_path_to_next_field_condition(message, field),
+            *common.valid_path_to_next_field_condition(message, field, self.prefix),
             *const.CONTEXT_INVARIANT,
             *[
                 Equal(e, Old(e))

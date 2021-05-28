@@ -138,7 +138,7 @@ def test_substitution_relation_aggregate(
     )
 
     assert_equal(
-        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE)),
+        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE, "")),
         equal_call if relation == expr.Equal else expr.Not(equal_call),
     )
 
@@ -167,7 +167,9 @@ def test_substitution_relation_scalar(
     expected: Tuple[expr.Expr, expr.Expr],
 ) -> None:
     assert_equal(
-        relation(*expressions).substituted(common.substitution(models.TLV_MESSAGE, public=True)),
+        relation(*expressions).substituted(
+            common.substitution(models.TLV_MESSAGE, "", public=True)
+        ),
         relation(*expected),
     )
 
