@@ -24,6 +24,7 @@ from rflx.expression import (
     Mul,
     NotEqual,
     Number,
+    Opaque,
     Or,
     Pow,
     Size,
@@ -44,7 +45,6 @@ from rflx.model import (
     Link,
     Message,
     ModularInteger,
-    Opaque,
     RangeInteger,
     Refinement,
     Sequence,
@@ -87,7 +87,7 @@ M_NO_REF = UnprovenMessage(
         Link(Field("F4"), FINAL),
     ],
     {
-        Field("F1"): Opaque(),
+        Field("F1"): OPAQUE,
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): ENUMERATION,
         Field("F4"): RANGE_INTEGER,
@@ -149,7 +149,7 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
         Link(Field("F4"), FINAL),
     ],
     {
-        Field("F1"): Opaque(),
+        Field("F1"): OPAQUE,
         Field("F2"): MODULAR_INTEGER,
         Field("F3"): ENUMERATION,
         Field("F4"): RANGE_INTEGER,
@@ -766,7 +766,7 @@ def test_invalid_relation_to_opaque() -> None:
             condition=Equal(Variable("Data"), Number(42, location=Location((10, 20)))),
         ),
     ]
-    types = {Field("Length"): RANGE_INTEGER, Field("Data"): Opaque()}
+    types = {Field("Length"): RANGE_INTEGER, Field("Data"): OPAQUE}
     assert_message_model_error(
         structure,
         types,
@@ -789,7 +789,7 @@ def test_invalid_relation_to_aggregate() -> None:
             ),
         ),
     ]
-    types = {Field("F1"): Opaque()}
+    types = {Field("F1"): OPAQUE}
     assert_message_model_error(
         structure,
         types,
@@ -840,7 +840,7 @@ def test_opaque_aggregate_out_of_range() -> None:
         ),
     ]
 
-    types = {Field("F"): Opaque()}
+    types = {Field("F"): OPAQUE}
 
     assert_message_model_error(
         structure,
@@ -925,7 +925,7 @@ def test_opaque_not_byte_aligned() -> None:
         Message(
             "P::M",
             [Link(INITIAL, Field("P")), Link(Field("P"), o, size=Number(128)), Link(o, FINAL)],
-            {Field("P"): ModularInteger("P::T", Number(4)), o: Opaque()},
+            {Field("P"): ModularInteger("P::T", Number(4)), o: OPAQUE},
         )
 
 
@@ -953,8 +953,8 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
             {
                 Field("L1"): MODULAR_INTEGER,
                 Field("L2"): ModularInteger("P::T", Number(4)),
-                Field("O1"): Opaque(),
-                o2: Opaque(),
+                Field("O1"): OPAQUE,
+                o2: OPAQUE,
             },
         )
 
@@ -967,7 +967,7 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
             Link(Field("L"), Field("O1"), size=Mul(Number(8), Variable("L"))),
             Link(Field("O1"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque()},
+        {Field("L"): MODULAR_INTEGER, Field("O1"): OPAQUE},
     )
 
 
@@ -985,7 +985,7 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
             Link(Field("O1"), Field("O2"), size=Number(128)),
             Link(Field("O2"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O1"): Opaque(), Field("O2"): Opaque()},
+        {Field("L"): MODULAR_INTEGER, Field("O1"): OPAQUE, Field("O2"): OPAQUE},
     )
 
 
@@ -999,7 +999,7 @@ def test_opaque_size_not_multiple_of_8() -> None:
         Message(
             "P::M",
             [Link(INITIAL, o, size=Number(68)), Link(o, FINAL)],
-            {o: Opaque()},
+            {o: OPAQUE},
         )
 
 
@@ -1013,7 +1013,7 @@ def test_opaque_size_not_multiple_of_8_dynamic() -> None:
         Message(
             "P::M",
             [Link(INITIAL, Field("L")), Link(Field("L"), o, size=Variable("L")), Link(o, FINAL)],
-            {Field("L"): MODULAR_INTEGER, o: Opaque()},
+            {Field("L"): MODULAR_INTEGER, o: OPAQUE},
         )
 
 
@@ -1030,7 +1030,7 @@ def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
             ),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O"): Opaque()},
+        {Field("L"): MODULAR_INTEGER, Field("O"): OPAQUE},
     )
 
 
@@ -1059,7 +1059,7 @@ def test_prefixed_message_attribute() -> None:
             Field("F1"): deepcopy(MODULAR_INTEGER),
             Field("F2"): deepcopy(MODULAR_INTEGER),
             Field("F3"): deepcopy(RANGE_INTEGER),
-            Field("F4"): Opaque(),
+            Field("F4"): OPAQUE,
         },
     ).prefixed("X_")
 
@@ -1087,7 +1087,7 @@ def test_prefixed_message_attribute() -> None:
             Field("X_F1"): deepcopy(MODULAR_INTEGER),
             Field("X_F2"): deepcopy(MODULAR_INTEGER),
             Field("X_F3"): deepcopy(RANGE_INTEGER),
-            Field("X_F4"): Opaque(),
+            Field("X_F4"): OPAQUE,
         },
     )
 
@@ -1182,7 +1182,7 @@ def test_exclusive_with_size_valid() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): Opaque(),
+        Field("F2"): OPAQUE,
         Field("F3"): MODULAR_INTEGER,
     }
     Message("P::M", structure, types)
@@ -1197,7 +1197,7 @@ def test_exclusive_with_size_invalid() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): Opaque(),
+        Field("F1"): OPAQUE,
         Field("F2"): RANGE_INTEGER,
     }
     assert_message_model_error(
@@ -1456,7 +1456,7 @@ def test_tlv_valid_enum() -> None:
     types = {
         Field("L"): RANGE_INTEGER,
         Field("T"): ENUMERATION,
-        Field("V"): Opaque(),
+        Field("V"): OPAQUE,
     }
     Message("P::M", structure, types)
 
@@ -1555,7 +1555,7 @@ def test_valid_size_reference() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): Opaque(),
+        Field("F2"): OPAQUE,
     }
     Message("P::M", structure, types)
 
@@ -1568,7 +1568,7 @@ def test_invalid_size_forward_reference() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): Opaque(),
+        Field("F2"): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -1586,7 +1586,7 @@ def test_invalid_negative_field_size_modular() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): Opaque(),
+        Field("F2"): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -1606,7 +1606,7 @@ def test_invalid_negative_field_size_range_integer() -> None:
         ),
         Link(o, FINAL),
     ]
-    types = {Field("L"): RANGE_INTEGER, o: Opaque()}
+    types = {Field("L"): RANGE_INTEGER, o: OPAQUE}
     assert_message_model_error(
         structure,
         types,
@@ -1622,7 +1622,7 @@ def test_payload_no_size() -> None:
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
-        Field("F2"): Opaque(),
+        Field("F2"): OPAQUE,
     }
     assert_message_model_error(
         structure, types, r'^model: error: unconstrained field "F2" without size aspect$'
@@ -1751,7 +1751,7 @@ def test_valid_use_message_size() -> None:
         Link(INITIAL, Field("Verify_Data"), size=Size("Message")),
         Link(Field("Verify_Data"), FINAL),
     ]
-    types = {Field("Verify_Data"): Opaque()}
+    types = {Field("Verify_Data"): OPAQUE}
     Message("P::M", structure, types)
 
 
@@ -1764,7 +1764,7 @@ def test_valid_use_message_first_last() -> None:
         ),
         Link(Field("Verify_Data"), FINAL),
     ]
-    types = {Field("Verify_Data"): Opaque()}
+    types = {Field("Verify_Data"): OPAQUE}
     Message("P::M", structure, types)
 
 
@@ -2070,7 +2070,7 @@ def test_aggregate_equal_valid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Opaque(),
+        Field("Magic"): OPAQUE,
     }
     Message("P::M", structure, types)
 
@@ -2085,7 +2085,7 @@ def test_aggregate_equal_invalid_size1() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Opaque(),
+        Field("Magic"): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -2108,7 +2108,7 @@ def test_aggregate_equal_invalid_size2() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Opaque(),
+        Field("Magic"): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -2134,7 +2134,7 @@ def test_aggregate_inequal_valid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Opaque(),
+        Field("Magic"): OPAQUE,
     }
     Message("P::M", structure, types)
 
@@ -2149,7 +2149,7 @@ def test_aggregate_inequal_invalid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Opaque(),
+        Field("Magic"): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -2226,7 +2226,7 @@ def test_aggregate_equal_invalid_size_field() -> None:
         Field("Length"): RangeInteger(
             "P::Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
         ),
-        Field(ID("Magic", Location((17, 3)))): Opaque(),
+        Field(ID("Magic", Location((17, 3)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -2299,7 +2299,7 @@ def test_discontiguous_optional_fields() -> None:
         Field("Flag"): MODULAR_INTEGER,
         Field("Opt1"): MODULAR_INTEGER,
         Field("Data"): MODULAR_INTEGER,
-        Field("Opt2"): Opaque(),
+        Field("Opt2"): OPAQUE,
     }
     Message("P::M", structure, types)
 
@@ -2558,6 +2558,16 @@ def test_size() -> None:
         )
         == Add(Size("Z"), Number(24))
     )
+    assert (
+        TLV_MESSAGE.size(
+            {
+                Field("Tag"): Variable("TLV::Msg_Data"),
+                Field("Length"): Div(Size("Msg_Data"), Number(8)),
+                Field("Value"): Opaque("Msg_Data"),
+            }
+        )
+        == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
+    )
 
     assert (
         ETHERNET_FRAME.size(
@@ -2730,7 +2740,7 @@ def test_prefixed_message() -> None:
                 Field("F1"): deepcopy(MODULAR_INTEGER),
                 Field("F2"): deepcopy(BOOLEAN),
                 Field("F3"): deepcopy(RANGE_INTEGER),
-                Field("F4"): Opaque(),
+                Field("F4"): OPAQUE,
             },
         ).prefixed("X_"),
         UnprovenMessage(
@@ -2757,7 +2767,7 @@ def test_prefixed_message() -> None:
                 Field("X_F1"): deepcopy(MODULAR_INTEGER),
                 Field("X_F2"): deepcopy(BOOLEAN),
                 Field("X_F3"): deepcopy(RANGE_INTEGER),
-                Field("X_F4"): Opaque(),
+                Field("X_F4"): OPAQUE,
             },
         ),
     )
@@ -2787,7 +2797,7 @@ def test_merge_message_simple() -> None:
                 ),
             ],
             {
-                Field("NR_F1"): Opaque(),
+                Field("NR_F1"): OPAQUE,
                 Field("NR_F2"): deepcopy(MODULAR_INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
@@ -2855,7 +2865,7 @@ def test_merge_message_complex() -> None:
                 Field("F1"): deepcopy(MODULAR_INTEGER),
                 Field("F2"): deepcopy(MODULAR_INTEGER),
                 Field("F3"): deepcopy(RANGE_INTEGER),
-                Field("NR_F1"): Opaque(),
+                Field("NR_F1"): OPAQUE,
                 Field("NR_F2"): deepcopy(MODULAR_INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
@@ -2910,11 +2920,11 @@ def test_merge_message_recursive() -> None:
                 ),
             ],
             {
-                Field("SR_NR_F1"): Opaque(),
+                Field("SR_NR_F1"): OPAQUE,
                 Field("SR_NR_F2"): deepcopy(MODULAR_INTEGER),
                 Field("SR_NR_F3"): deepcopy(ENUMERATION),
                 Field("SR_NR_F4"): deepcopy(RANGE_INTEGER),
-                Field("NR_F1"): Opaque(),
+                Field("NR_F1"): OPAQUE,
                 Field("NR_F2"): deepcopy(MODULAR_INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
@@ -2948,7 +2958,7 @@ def test_merge_message_simple_derived() -> None:
                 ),
             ],
             {
-                Field("NR_F1"): Opaque(),
+                Field("NR_F1"): OPAQUE,
                 Field("NR_F2"): deepcopy(MODULAR_INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
@@ -3090,6 +3100,18 @@ def test_paths() -> None:
             Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
         ),
     }
+
+
+def test_normalization() -> None:
+    assert TLV_MESSAGE.structure == sorted(
+        [
+            Link(INITIAL, Field("Tag")),
+            Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("TLV::Msg_Data"))),
+            Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("TLV::Msg_Error"))),
+            Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
+            Link(Field("Value"), FINAL),
+        ]
+    )
 
 
 def test_message_dependencies() -> None:

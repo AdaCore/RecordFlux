@@ -20,6 +20,7 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
+    OPAQUE,
     DerivedMessage,
     Enumeration,
     Field,
@@ -27,7 +28,6 @@ from rflx.model import (
     Message,
     Model,
     ModularInteger,
-    Opaque,
     RangeInteger,
     Refinement,
     Sequence,
@@ -53,7 +53,7 @@ TLV_MESSAGE = Message(
         Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Value"), FINAL),
     ],
-    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): Opaque()},
+    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
     skip_proof=True,
 )
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
@@ -81,7 +81,7 @@ TLV_WITH_CHECKSUM_MESSAGE = Message(
     {
         Field("Tag"): TLV_WITH_CHECKSUM_TAG,
         Field("Length"): TLV_WITH_CHECKSUM_LENGTH,
-        Field("Value"): Opaque(),
+        Field("Value"): OPAQUE,
         Field("Checksum"): TLV_WITH_CHECKSUM_CHECKSUM,
     },
     aspects={ID("Checksum"): {ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]}},
@@ -150,7 +150,7 @@ ETHERNET_FRAME = Message(
         Field("TPID"): ETHERNET_TPID,
         Field("TCI"): ETHERNET_TCI,
         Field("Type_Length"): ETHERNET_TYPE_LENGTH,
-        Field("Payload"): Opaque(),
+        Field("Payload"): OPAQUE,
     },
     skip_proof=True,
 )
@@ -219,7 +219,7 @@ SEQUENCE_INNER_MESSAGE = Message(
         Link(Field("Length"), Field("Payload"), size=Mul(Variable("Length"), Number(8))),
         Link(Field("Payload"), FINAL),
     ],
-    {Field("Length"): SEQUENCE_LENGTH, Field("Payload"): Opaque()},
+    {Field("Length"): SEQUENCE_LENGTH, Field("Payload"): OPAQUE},
     skip_proof=True,
 )
 SEQUENCE_INNER_MESSAGES = Sequence("Sequence::Inner_Messages", SEQUENCE_INNER_MESSAGE)
@@ -271,7 +271,7 @@ EXPRESSION_MESSAGE = Message(
         Link(INITIAL, Field("Payload"), size=Number(16)),
         Link(Field("Payload"), FINAL, Equal(Variable("Payload"), Aggregate(Number(1), Number(2)))),
     ],
-    {Field("Payload"): Opaque()},
+    {Field("Payload"): OPAQUE},
     skip_proof=True,
 )
 EXPRESSION_MODEL = Model([EXPRESSION_MESSAGE])
@@ -285,7 +285,7 @@ VALID_MESSAGE = UnprovenMessage(
         Link(INITIAL, Field("F"), size=Number(16)),
         Link(Field("F"), FINAL),
     ],
-    {Field("F"): Opaque()},
+    {Field("F"): OPAQUE},
 )
 
 INVALID_MESSAGE = UnprovenMessage(
@@ -294,7 +294,7 @@ INVALID_MESSAGE = UnprovenMessage(
         Link(INITIAL, Field("F")),
         Link(Field("F"), FINAL),
     ],
-    {Field("F"): Opaque()},
+    {Field("F"): OPAQUE},
 )
 
 MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
@@ -312,7 +312,7 @@ MESSAGE = Message(
         Link(INITIAL, Field("F"), size=Number(16)),
         Link(Field("F"), FINAL),
     ],
-    {Field("F"): Opaque()},
+    {Field("F"): OPAQUE},
 )
 REFINEMENT = Refinement("In_Message", MESSAGE, Field("F"), MESSAGE)
 
@@ -368,7 +368,7 @@ UNIVERSAL_OPTION = Message(
     {
         Field("Option_Type"): UNIVERSAL_OPTION_TYPE,
         Field("Length"): UNIVERSAL_LENGTH,
-        Field("Data"): Opaque(),
+        Field("Data"): OPAQUE,
     },
 )
 UNIVERSAL_OPTIONS = Sequence("Universal::Options", UNIVERSAL_OPTION)
@@ -443,7 +443,7 @@ UNIVERSAL_MESSAGE = Message(
     {
         Field("Message_Type"): UNIVERSAL_MESSAGE_TYPE,
         Field("Length"): UNIVERSAL_LENGTH,
-        Field("Data"): Opaque(),
+        Field("Data"): OPAQUE,
         Field("Value"): UNIVERSAL_VALUE,
         Field("Values"): UNIVERSAL_VALUES,
         Field("Option_Types"): UNIVERSAL_OPTION_TYPES,
@@ -491,7 +491,7 @@ FIXED_SIZE_MESSAGE = Message(
     ],
     {
         Field("Message_Type"): UNIVERSAL_MESSAGE_TYPE,
-        Field("Data"): Opaque(),
+        Field("Data"): OPAQUE,
         Field("Values"): UNIVERSAL_VALUES,
         Field("Options"): UNIVERSAL_OPTIONS,
     },
@@ -512,7 +512,7 @@ FIXED_SIZE_SIMPLE_MESSAGE = Message(
     ],
     {
         Field("Message_Type"): UNIVERSAL_OPTION_TYPE,
-        Field("Data"): Opaque(),
+        Field("Data"): OPAQUE,
     },
 )
 

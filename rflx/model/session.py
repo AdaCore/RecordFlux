@@ -152,7 +152,7 @@ class AbstractSession(Base):
 
         self._literals = {
             **mty.qualified_type_literals(self.types.values()),
-            **mty.qualified_enum_literals(self.types.values(), self.package),
+            **mty.enum_literals(self.types.values(), self.package),
         }
 
         self.error.propagate()
