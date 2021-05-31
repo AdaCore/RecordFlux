@@ -121,12 +121,19 @@ class AbstractMessage(mty.Type):
 
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
 
-        self._enum_literals = mty.qualified_enum_literals(self.dependencies, self.package)
+        self._unqualified_enum_literals = {
+            l
+            for t in self.dependencies
+            if isinstance(t, mty.Enumeration) and t.package == self.package
+            for l in t.literals
+        }
+        self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
         self._type_literals = mty.qualified_type_literals(self.dependencies)
 
         if not state and (structure or types):
             try:
                 self.__validate()
+                self.__normalize()
                 self._state.fields = self.__compute_topological_sorting()
                 if self._state.fields:
                     self.__types = {f: self.__types[f] for f in self._state.fields}
@@ -381,7 +388,7 @@ class AbstractMessage(mty.Type):
             (f.name, t)
             for f, t in self.types.items()
             if isinstance(t, mty.Scalar)
-            and ID(f.name) not in self._enum_literals
+            and ID(f.name) not in self._qualified_enum_literals
             and f.name not in ["Message", "Final"]
         ]
 
@@ -396,7 +403,7 @@ class AbstractMessage(mty.Type):
         scalar_constraints = [
             c
             for n, t in scalar_types
-            for c in t.constraints(name=n, proof=True, same_package=self.package == t.package)
+            for c in t.constraints(name=n, proof=True, same_package=False)
         ]
 
         type_size_constraints = [
@@ -466,7 +473,10 @@ class AbstractMessage(mty.Type):
             )
 
         name_conflicts = [
-            (f, l) for f in type_fields for l in self._enum_literals if f.identifier == l
+            (f, l)
+            for f in type_fields
+            for l in self._unqualified_enum_literals
+            if f.identifier == l
         ]
 
         if name_conflicts:
@@ -545,6 +555,25 @@ class AbstractMessage(mty.Type):
                             Severity.INFO,
                             v.location,
                         )
+
+    def __normalize(self) -> None:
+        """Qualify enumeration literals in conditions to prevent ambiguities."""
+
+        def qualify_enum_literals(expression: expr.Expr) -> expr.Expr:
+            if (
+                isinstance(expression, expr.Variable)
+                and expression.identifier in self._unqualified_enum_literals
+            ):
+                return expr.Variable(
+                    self.package * expression.identifier,
+                    negative=expression.negative,
+                    type_=expression.type_,
+                    location=expression.location,
+                )
+            return expression
+
+        for link in self.structure:
+            link.condition = link.condition.substituted(qualify_enum_literals)
 
     def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
@@ -871,8 +900,8 @@ class Message(AbstractMessage):
                     expression.type_ = rty.OPAQUE
                 elif expression.identifier in types:
                     expression.type_ = types[expression.identifier].type_
-                elif expression.identifier in self._enum_literals:
-                    expression.type_ = self._enum_literals[expression.identifier].type_
+                elif expression.identifier in self._qualified_enum_literals:
+                    expression.type_ = self._qualified_enum_literals[expression.identifier].type_
                 elif expression.identifier in self._type_literals:
                     expression.type_ = self._type_literals[expression.identifier].type_
             return expression
@@ -1508,9 +1537,6 @@ class DerivedMessage(Message):
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
-        if not structure and not types:
-            structure = derived_message_structure(base)
-
         super().__init__(
             identifier,
             structure if structure else copy(base.structure),
@@ -1708,9 +1734,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
-        if not structure and not types:
-            structure = derived_message_structure(base)
-
         super().__init__(
             identifier,
             structure if structure else copy(base.structure),
@@ -1828,7 +1851,7 @@ class Refinement(mty.Type):
             )
 
         for variable in condition.variables():
-            literals = mty.qualified_enum_literals(pdu.types.values(), self.package)
+            literals = mty.enum_literals(pdu.types.values(), self.package)
             if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
                 self.error.append(
                     f'unknown field or literal "{variable.identifier}" in refinement'
@@ -1851,27 +1874,6 @@ class Refinement(mty.Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
-
-
-def derived_message_structure(base: Union[UnprovenMessage, Message]) -> Sequence[Link]:
-    """Qualify enumeration literals to prevent ambiguities."""
-
-    base_enum_literals = [
-        l
-        for t in base.types.values()
-        if isinstance(t, mty.Enumeration) and t.package == base.package
-        for l in t.literals
-    ]
-    mapping: Mapping[expr.Name, expr.Expr] = {
-        expr.Variable(e): expr.Variable(base.package * e) for e in base_enum_literals
-    }
-    structure = []
-    for l in base.structure:
-        link = copy(l)
-        link.condition = link.condition.substituted(mapping=mapping)
-        structure.append(link)
-
-    return structure
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:

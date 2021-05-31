@@ -191,19 +191,14 @@ def substitution_facts(
             for f, t in message.types.items()
         },
         **{
-            expr.Variable(l): type_conversion(
-                expr.Call(
-                    "To_Base",
-                    [expr.Variable(model.qualified_enum_literal(l, prefix * message.package))],
-                )
-            )
+            expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration)
             for l in t.literals.keys()
         },
         **{
             expr.Variable(t.package * l): type_conversion(
-                expr.Call("To_Base", [expr.Variable(t.package * l)])
+                expr.Call("To_Base", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration)

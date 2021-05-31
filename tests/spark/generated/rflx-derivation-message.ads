@@ -315,7 +315,7 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Value)
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
+               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))
             then
                Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
@@ -547,7 +547,7 @@ private
                  then
                     (Valid (Cursors (F_Tag))
                      and then Cursors (F_Length).Predecessor = F_Tag
-                     and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))))
+                     and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))))
                 and then (if
                              Structural_Valid (Cursors (F_Value))
                           then
@@ -569,7 +569,7 @@ private
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
-                                and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
+                                and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))
                              then
                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = RFLX.TLV.Length'Size
                                 and then Cursors (F_Length).Predecessor = F_Tag
@@ -621,7 +621,7 @@ private
           when F_Tag =>
              (case Fld is
                  when F_Length =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data)),
                  when others =>
                     False),
           when F_Length =>
@@ -638,8 +638,8 @@ private
           when F_Initial =>
              True,
           when F_Tag =>
-             RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Error))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data)),
+             RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error))
+             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data)),
           when F_Length | F_Value =>
              True,
           when F_Final =>
@@ -675,7 +675,7 @@ private
           when F_Length =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Tag
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
+                 and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))
               then
                  Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
               else
@@ -744,16 +744,16 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
-      and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Error))
+      and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error))
                 or (Valid (Ctx, F_Length)
-                    and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
+                    and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))
                     and then Structural_Valid (Ctx, F_Value))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Tag)
-      and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Error))
+      and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error))
                 or (Valid (Ctx, F_Length)
-                    and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (TLV.Msg_Data))
+                    and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))
                     and then Valid (Ctx, F_Value))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
