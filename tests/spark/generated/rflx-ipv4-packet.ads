@@ -196,6 +196,8 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length;
+
    function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with

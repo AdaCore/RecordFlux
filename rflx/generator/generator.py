@@ -342,6 +342,7 @@ class Generator:
         unit += self.__create_read_procedure()
         unit += self.__create_write_procedure()
         unit += self.__create_has_buffer_function()
+        unit += self.__create_size_function()
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
         unit += self.__create_message_data_function()
@@ -2001,6 +2002,37 @@ class Generator:
                             )
                             for f in message.all_fields
                         ],
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_size_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Size", const.TYPES_BIT_LENGTH, [Parameter(["Ctx"], "Context")]
+        )
+
+        return UnitPart(
+            [SubprogramDeclaration(specification)],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    If(
+                        [
+                            (
+                                Equal(
+                                    Variable("Ctx.Message_Last"),
+                                    Sub(Variable("Ctx.First"), Number(1)),
+                                ),
+                                Number(0),
+                            )
+                        ],
+                        Add(
+                            Variable("Ctx.Message_Last"),
+                            -Variable("Ctx.First"),
+                            Number(1),
+                        ),
                     ),
                 )
             ],
