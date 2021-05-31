@@ -56,6 +56,14 @@ is
       Reset (Ctx, Ctx.First, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (RFLX_Types.To_Index (Ctx.First)) + Length - 1));
    end Write;
 
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length is
+     ((if
+          Ctx.Message_Last = Ctx.First - 1
+       then
+          0
+       else
+          Ctx.Message_Last - Ctx.First + 1));
+
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if
           Ctx.Message_Last = Ctx.First - 1
