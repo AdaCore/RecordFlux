@@ -81,6 +81,7 @@ from rflx.ada import (
     RangeSubtype,
     RangeType,
     RecordType,
+    Result,
     Selected,
     Size,
     SizeAspect,
@@ -343,6 +344,7 @@ class Generator:
         unit += self.__create_has_buffer_function()
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
+        unit += self.__create_message_data_function()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
         unit += self.__create_field_size_function(message)
@@ -2059,6 +2061,44 @@ class Generator:
                 ),
             ],
             private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Message_Last"))],
+        )
+
+    @staticmethod
+    def __create_message_data_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Message_Data", const.TYPES_BYTES, [Parameter(["Ctx"], "Context")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            )
+                        ),
+                        Postcondition(
+                            Equal(
+                                Length(Result(specification.identifier)),
+                                Call("Byte_Size", [Variable("Ctx")]),
+                            )
+                        ),
+                    ],
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Slice(
+                        Variable("Ctx.Buffer.all"),
+                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                    ),
+                )
+            ],
         )
 
     @staticmethod
