@@ -68,6 +68,45 @@ package body RFLX.In_Ethernet_Tests is
               "Invalid IPv4_Packet_Context.Last");
    end Test_Parsing_IPv4_In_Ethernet;
 
+   procedure Test_Parsing_IPv4_In_Ethernet_Copy (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer                 : RFLX_Builtin_Types.Bytes_Ptr :=
+         Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
+      IPv4_Packet_Buffer     : RFLX_Builtin_Types.Bytes_Ptr :=
+         new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 2000 - 1 => 0);
+      Ethernet_Frame_Context : Ethernet.Frame.Context;
+      IPv4_Packet_Context    : IPv4.Packet.Context;
+      Valid                  : Boolean;
+   begin
+      IPv4.Packet.Initialize (IPv4_Packet_Context, IPv4_Packet_Buffer);
+      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
+      Ethernet.Frame.Verify_Message (Ethernet_Frame_Context);
+      Valid := Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context);
+      Assert (Valid, "Structural invalid Ethernet frame");
+      if Valid then
+         Valid := In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context);
+         Assert (Valid, "Ethernet frame contains no IPv4 packet");
+         if Valid then
+            In_Ethernet.Contains.Copy_Payload (Ethernet_Frame_Context, IPv4_Packet_Context);
+            IPv4.Packet.Verify_Message (IPv4_Packet_Context);
+            Valid := IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context);
+            Assert (Valid, "Structural invalid IPv4 packet");
+         end if;
+      end if;
+
+      Ethernet.Frame.Take_Buffer (Ethernet_Frame_Context, Buffer);
+      IPv4.Packet.Take_Buffer (IPv4_Packet_Context, IPv4_Packet_Buffer);
+      RFLX_Types.Free (Buffer);
+      RFLX_Types.Free (IPv4_Packet_Buffer);
+
+      Assert (Ethernet_Frame_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (480)'Image,
+              "Invalid Ethernet_Frame_Context.Last");
+      Assert (IPv4_Packet_Context.Last'Image, RFLX_Builtin_Types.Bit_Length (368)'Image,
+              "Invalid IPv4_Packet_Context.Last");
+   end Test_Parsing_IPv4_In_Ethernet_Copy;
+
    procedure Test_Generating_IPv4_In_Ethernet (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
@@ -150,6 +189,7 @@ package body RFLX.In_Ethernet_Tests is
       use AUnit.Test_Cases.Registration;
    begin
       Register_Routine (T, Test_Parsing_IPv4_In_Ethernet'Access, "Parsing IPv4 in Ethernet");
+      Register_Routine (T, Test_Parsing_IPv4_In_Ethernet_Copy'Access, "Parsing IPv4 in Ethernet (copy)");
       Register_Routine (T, Test_Generating_IPv4_In_Ethernet'Access, "Generating IPv4 in Ethernet");
    end Register_Tests;
 
