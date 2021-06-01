@@ -88,6 +88,7 @@ from rflx.ada import (
     Slice,
     SparkMode,
     Statement,
+    StrID,
     String,
     Sub,
     Subprogram,
@@ -785,7 +786,7 @@ class Generator:
                             [
                                 Variable("Ctx"),
                                 Variable("Buffer"),
-                                Call(const.TYPES_FIRST_BIT_INDEX, [First("Buffer")]),
+                                Call(const.TYPES_TO_FIRST_BIT_INDEX, [First("Buffer")]),
                                 Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Buffer")]),
                             ],
                         )
@@ -3149,7 +3150,12 @@ class Generator:
         unit.declaration_context.append(WithClause(pdu_identifier))
 
         if not null_sdu:
-            unit.declaration_context.append(WithClause(sdu_identifier))
+            unit.declaration_context.extend(
+                [
+                    WithClause(sdu_identifier),
+                    UsePackageClause(sdu_identifier),
+                ]
+            )
 
         condition_fields = {
             f: t
@@ -3160,6 +3166,7 @@ class Generator:
         unit += self.__create_contains_function(refinement, condition_fields, null_sdu)
         if not null_sdu:
             unit += self.__create_switch_procedure(refinement, condition_fields)
+            unit += self.__create_copy_refined_field_procedure(refinement, condition_fields)
 
     def __create_type(self, field_type: Type, message_package: ID) -> None:
         unit = self._units[message_package]
@@ -3561,6 +3568,170 @@ class Generator:
             ],
         )
 
+    def __create_copy_refined_field_procedure(
+        self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
+    ) -> UnitPart:
+        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
+        pdu_context = ID(refinement.pdu.identifier.flat) + "_PDU_Context"
+        sdu_context = ID(refinement.sdu.identifier.flat) + "_SDU_Context"
+        refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
+
+        specification = ProcedureSpecification(
+            f"Copy_{refinement.field.name}",
+            [
+                Parameter([pdu_context], ID(pdu_identifier) * "Context"),
+                InOutParameter([sdu_context], ID(sdu_identifier) * "Context"),
+            ],
+        )
+
+        return UnitPart(
+            [
+                UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Not(Constrained(sdu_context)),
+                                Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
+                                *[
+                                    c.ada_expr()
+                                    for c in self.__refinement_conditions(
+                                        refinement, pdu_context, condition_fields, null_sdu=False
+                                    )
+                                ],
+                                Call(contains_function_name(refinement), [Variable(pdu_context)]),
+                                GreaterEqual(
+                                    Add(
+                                        Call(
+                                            const.TYPES_TO_LAST_BIT_INDEX,
+                                            [Variable(sdu_context * "Buffer_Last")],
+                                        ),
+                                        -Call(
+                                            const.TYPES_TO_FIRST_BIT_INDEX,
+                                            [Variable(sdu_context * "Buffer_First")],
+                                        ),
+                                        Number(1),
+                                    ),
+                                    Call(
+                                        pdu_identifier * "Field_Size",
+                                        [
+                                            Variable(pdu_context),
+                                            Variable(refined_field_affixed_name),
+                                        ],
+                                    ),
+                                ),
+                                Less(
+                                    Add(
+                                        Call(
+                                            const.TYPES_TO_FIRST_BIT_INDEX,
+                                            [Variable(sdu_context * "Buffer_First")],
+                                        ),
+                                        Call(
+                                            pdu_identifier * "Field_Size",
+                                            [
+                                                Variable(pdu_context),
+                                                Variable(refined_field_affixed_name),
+                                            ],
+                                        ),
+                                        -Number(1),
+                                    ),
+                                    Last(const.TYPES_BIT_INDEX),
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                Call(pdu_identifier * "Has_Buffer", [Variable(pdu_context)]),
+                                Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
+                                Call(sdu_identifier * "Initialized", [Variable(sdu_context)]),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Selected(Variable(sdu_context), "Buffer_First"),
+                                        Selected(Variable(sdu_context), "Buffer_Last"),
+                                    ]
+                                ],
+                            )
+                        ),
+                    ],
+                ),
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [
+                        ObjectDeclaration(
+                            ["First"],
+                            const.TYPES_BIT_INDEX,
+                            Call(
+                                const.TYPES_TO_FIRST_BIT_INDEX,
+                                [Variable(sdu_context * "Buffer_First")],
+                            ),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(
+                            ["Size"],
+                            const.TYPES_BIT_INDEX,
+                            Call(
+                                pdu_identifier * "Field_Size",
+                                [
+                                    Variable(pdu_context),
+                                    Variable(refined_field_affixed_name),
+                                ],
+                            ),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
+                    ],
+                    [
+                        PragmaStatement(
+                            "Warnings",
+                            [
+                                Variable("Off"),
+                                String(
+                                    f'""{sdu_context}"" is set by ""Take_Buffer""'
+                                    " but not used after the call"
+                                ),
+                            ],
+                        ),
+                        CallStatement(
+                            sdu_identifier * "Take_Buffer",
+                            [Variable(sdu_context), Variable("Buffer")],
+                        ),
+                        PragmaStatement(
+                            "Warnings",
+                            [
+                                Variable("On"),
+                                String(
+                                    f'""{sdu_context}"" is set by ""Take_Buffer""'
+                                    " but not used after the call"
+                                ),
+                            ],
+                        ),
+                        CallStatement(
+                            pdu_identifier * f"Get_{refinement.field.name}",
+                            [Variable(pdu_context), Variable("Buffer.all")],
+                        ),
+                        CallStatement(
+                            sdu_identifier * "Initialize",
+                            [
+                                Variable(sdu_context),
+                                Variable("Buffer"),
+                                Variable("First"),
+                                Add(
+                                    Variable("First"),
+                                    Variable("Size"),
+                                    -Number(1),
+                                ),
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+
     @staticmethod
     def __create_valid_next_function() -> UnitPart:
         specification = FunctionSpecification(
@@ -3641,7 +3812,7 @@ class Generator:
     def __refinement_conditions(
         self,
         refinement: Refinement,
-        pdu_context: str,
+        pdu_context: StrID,
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> ty.Sequence[expr.Expr]:
