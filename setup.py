@@ -44,6 +44,7 @@ setup(
     package_data={"rflx": ["py.typed", "templates/*"]},
     python_requires=">=3.7",
     install_requires=[
+        "attrs >=20, <22",
         "icontract >=2.3.4, <3",
         "pydotplus >=2, <3",
         "z3-solver >=4, <5",

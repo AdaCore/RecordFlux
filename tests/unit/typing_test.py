@@ -39,6 +39,12 @@ def test_bounds_contains() -> None:
     assert "invalid" not in Bounds(1, 100)
 
 
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_bounds_error() -> None:
+    with pytest.raises(AssertionError):
+        Bounds(10, 1)
+
+
 def test_bounds_str() -> None:
     assert str(Bounds(None, None)) == "undefined"
     assert str(Bounds(1, 1)) == "1"
