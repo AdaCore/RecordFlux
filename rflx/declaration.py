@@ -151,7 +151,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
                 self.location,
             )
             error.append(
-                f'refinement for message "{self.expression.prefix.type_.name}"'
+                f'refinement for message "{self.expression.prefix.type_.identifier}"'
                 " would make operation legal",
                 Subsystem.MODEL,
                 Severity.INFO,

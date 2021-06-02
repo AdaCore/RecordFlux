@@ -190,17 +190,17 @@ class AbstractMessage(mty.Type):
             {tuple(l.target.name for l in p if l.target != FINAL) for p in self.paths(FINAL)}
             if self.structure
             else set(),
-            {f.name: t.type_ for f, t in self.types.items()},
+            {f.identifier: t.type_ for f, t in self.types.items()},
         )
 
     def refined_type(self, refinements: Sequence["Refinement"]) -> rty.Message:
         assert all(r.pdu.identifier == self.identifier for r in refinements)
         t = self.type_
         return rty.Message(
-            t.name,
+            t.identifier,
             t.field_combinations,
             t.field_types,
-            [(r.field.name, r.sdu.type_) for r in refinements],
+            [(r.field.identifier, r.sdu.type_) for r in refinements],
         )
 
     @property

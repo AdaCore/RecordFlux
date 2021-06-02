@@ -794,7 +794,9 @@ def test_attribute() -> None:
         (Valid, Variable("X", type_=rty.Message("A")), rty.BOOLEAN),
         (
             Present,
-            Selected(Variable("X", type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")})), "F"),
+            Selected(
+                Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})), "F"
+            ),
             rty.BOOLEAN,
         ),
         (Head, Variable("X", type_=rty.Sequence("A", rty.Integer("B"))), rty.Integer("B")),
@@ -1569,7 +1571,7 @@ def test_string_ada_expr() -> None:
 
 def test_selected_type() -> None:
     assert_type(
-        Selected(Variable("X", type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")})), "F"),
+        Selected(Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})), "F"),
         rty.Integer("A"),
     )
 
@@ -1586,7 +1588,7 @@ def test_selected_type() -> None:
             Selected(
                 Variable(
                     "X",
-                    type_=rty.Message("M", {("F",)}, {"F": rty.Integer("A")}),
+                    type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")}),
                 ),
                 "Y",
                 location=Location((10, 20)),
@@ -1598,7 +1600,9 @@ def test_selected_type() -> None:
                 Variable(
                     "X",
                     type_=rty.Message(
-                        "M", {("F1",), ("F2",)}, {"F1": rty.Integer("A"), "F2": rty.Integer("A")}
+                        "M",
+                        {("F1",), ("F2",)},
+                        {ID("F1"): rty.Integer("A"), ID("F2"): rty.Integer("A")},
                     ),
                 ),
                 "F",
@@ -1701,7 +1705,7 @@ def test_conversion_type() -> None:
     assert_type(
         Conversion(
             "X",
-            Selected(Variable("Y", type_=rty.Message("Y", {("Z",)}, {"Z": rty.OPAQUE})), "Z"),
+            Selected(Variable("Y", type_=rty.Message("Y", {("Z",)}, {ID("Z"): rty.OPAQUE})), "Z"),
             type_=rty.Message("X"),
             argument_types=[rty.Message("Y")],
         ),
@@ -1768,7 +1772,9 @@ def test_comprehension_type() -> None:
             Selected(
                 Variable(
                     "Y",
-                    type_=rty.Message("M", {("F",)}, {"F": rty.Sequence("A", rty.Integer("B"))}),
+                    type_=rty.Message(
+                        "M", {("F",)}, {ID("F"): rty.Sequence("A", rty.Integer("B"))}
+                    ),
                 ),
                 "F",
             ),
@@ -1847,8 +1853,8 @@ def test_comprehension_str() -> None:
                     ("X", "Y", "Z"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
                 },
             ),
         ),
@@ -1860,9 +1866,12 @@ def test_comprehension_str() -> None:
                     ("X",),
                 },
                 {
-                    "X": rty.OPAQUE,
+                    ID("X"): rty.OPAQUE,
                 },
-                [("X", rty.Message("I"))],
+                [
+                    (ID("X"), rty.Message("I")),
+                    (ID("X"), rty.Message("J")),
+                ],
             ),
         ),
     ],
@@ -1892,8 +1901,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
                 },
             ),
             r'^<stdin>:10:30: model: error: undefined variable "A"\n'
@@ -1911,8 +1920,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
                 },
             ),
             r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
@@ -1928,8 +1937,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
                 },
             ),
             r'^<stdin>:10:30: model: error: invalid position for field "Y" of message type "M"$',
@@ -1945,9 +1954,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y", "Z"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
-                    "Z": rty.Integer("A"),
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                    ID("Z"): rty.Integer("A"),
                 },
             ),
             r'^<stdin>:10:20: model: error: missing fields for message type "M"\n'
@@ -1964,9 +1973,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y", "Z"),
                 },
                 {
-                    "X": rty.Integer("A"),
-                    "Y": rty.BOOLEAN,
-                    "Z": rty.Integer("A"),
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                    ID("Z"): rty.Integer("A"),
                 },
             ),
             r'^<stdin>:10:40: model: error: undefined variable "A"\n'

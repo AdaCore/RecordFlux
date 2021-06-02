@@ -1297,8 +1297,8 @@ class Selected(Name):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         if isinstance(self.prefix.type_, rty.Message):
-            if str(self.selector) in self.prefix.type_.fields:
-                self.type_ = self.prefix.type_.field_types[str(self.selector)]
+            if self.selector in self.prefix.type_.fields:
+                self.type_ = self.prefix.type_.field_types[self.selector]
             else:
                 error.append(
                     f'invalid field "{self.selector}" for {self.prefix.type_}',
@@ -1307,9 +1307,7 @@ class Selected(Name):
                     self.location,
                 )
                 error.extend(
-                    _similar_field_names(
-                        str(self.selector), self.prefix.type_.fields, self.location
-                    )
+                    _similar_field_names(self.selector, self.prefix.type_.fields, self.location)
                 )
                 self.type_ = rty.Any()
         else:
@@ -1962,7 +1960,7 @@ class Conversion(Expr):
                 )
                 if isinstance(self.argument.prefix.type_, rty.Message):
                     error.append(
-                        f'refinement for message "{self.argument.prefix.type_.name}"'
+                        f'refinement for message "{self.argument.prefix.type_.identifier}"'
                         " would make operation legal",
                         Subsystem.MODEL,
                         Severity.INFO,
@@ -2142,22 +2140,21 @@ class MessageAggregate(Expr):
         field_combinations = set(self.type_.field_combinations)
 
         for i, (field, expr) in enumerate(self.field_values.items()):
-            if str(field) not in self.type_.fields:
+            if field not in self.type_.fields:
                 error.append(
                     f'invalid field "{field}" for {self.type_}',
                     Subsystem.MODEL,
                     Severity.ERROR,
                     field.location,
                 )
-                error.extend(_similar_field_names(str(field), self.type_.fields, field.location))
+                error.extend(_similar_field_names(field, self.type_.fields, field.location))
                 continue
 
-            field_type = self.type_.field_types[str(field)]
+            field_type = self.type_.field_types[field]
 
             if field_type == rty.OPAQUE:
                 if not any(
-                    f == str(field) and expr.type_.is_compatible(t)
-                    for f, t in self.type_.refinements
+                    f == field and expr.type_.is_compatible(t) for f, t in self.type_.refinements
                 ):
                     error += expr.check_type(field_type)
             else:
@@ -2351,10 +2348,10 @@ def _entity_name(expr: Expr) -> str:
 
 
 def _similar_field_names(
-    field: str, fields: Iterable[str], location: Optional[Location]
+    field: ID, fields: Iterable[ID], location: Optional[Location]
 ) -> RecordFluxError:
     field_similarity = sorted(
-        ((f, difflib.SequenceMatcher(None, f, field).ratio()) for f in sorted(fields)),
+        ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
         key=lambda x: x[1],
         reverse=True,
     )
@@ -2363,7 +2360,7 @@ def _similar_field_names(
     error = RecordFluxError()
     if similar_fields:
         error.append(
-            "similar field names: " + ", ".join(similar_fields),
+            "similar field names: " + ", ".join(str(f) for f in similar_fields),
             Subsystem.MODEL,
             Severity.INFO,
             location,

@@ -1,17 +1,19 @@
 import typing as ty
 from abc import abstractmethod
-from dataclasses import dataclass, field as dataclass_field
+
+import attr
 
 from rflx import const
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.identifier import ID
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Bounds:
-    lower: ty.Optional[int]
-    upper: ty.Optional[int]
+    lower: ty.Optional[int] = attr.ib()
+    upper: ty.Optional[int] = attr.ib()
 
-    def __post_init__(self) -> None:
+    def __attrs_post_init__(self) -> None:
         assert self.lower is None or self.upper is None or self.lower <= self.upper
 
     def __bool__(self) -> bool:
@@ -66,7 +68,7 @@ class Type:
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Undefined(Type):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "undefined"
 
@@ -77,7 +79,7 @@ class Undefined(Type):
         return self
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Any(Type):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "any type"
 
@@ -88,12 +90,14 @@ class Any(Type):
         return other
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class IndependentType(Any):
-    name: str
+    identifier: ID = attr.ib(converter=ID)
 
     def is_compatible(self, other: Type) -> bool:
-        return other == Any() or (isinstance(other, self.__class__) and self.name == other.name)
+        return other == Any() or (
+            isinstance(other, self.__class__) and self.identifier == other.identifier
+        )
 
     def common_type(self, other: Type) -> Type:
         if other == Any() or self == other:
@@ -101,18 +105,18 @@ class IndependentType(Any):
         return Undefined()
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Enumeration(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "enumeration type"
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
 
-BOOLEAN = Enumeration(str(const.BUILTINS_PACKAGE * "Boolean"))
+BOOLEAN = Enumeration(const.BUILTINS_PACKAGE * "Boolean")
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class AnyInteger(Any):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
 
@@ -127,7 +131,7 @@ class AnyInteger(Any):
         return Undefined()
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class UndefinedInteger(AnyInteger):
     def common_type(self, other: Type) -> Type:
         if other == Any() or isinstance(other, AnyInteger):
@@ -135,10 +139,10 @@ class UndefinedInteger(AnyInteger):
         return Undefined()
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class UniversalInteger(AnyInteger):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "type universal integer"
-    bounds: Bounds = Bounds(None, None)
+    bounds: Bounds = attr.ib(Bounds(None, None))
 
     def __str__(self) -> str:
         return f"{self.DESCRIPTIVE_NAME} ({self.bounds})"
@@ -162,14 +166,14 @@ class UniversalInteger(AnyInteger):
         return Undefined()
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Integer(AnyInteger):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
-    name: str
-    bounds: Bounds = Bounds(None, None)
+    identifier: ID = attr.ib(converter=ID)
+    bounds: Bounds = attr.ib(Bounds(None, None))
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.name}" ({self.bounds})'
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
         return self == other or (
@@ -183,7 +187,9 @@ class Integer(AnyInteger):
             if other.bounds not in self.bounds:
                 return UndefinedInteger()
             return self
-        if isinstance(other, Integer) and (self.name != other.name or self.bounds != other.bounds):
+        if isinstance(other, Integer) and (
+            self.identifier != other.identifier or self.bounds != other.bounds
+        ):
             return UndefinedInteger()
         if other == Any() or other == AnyInteger() or self == other:
             return self
@@ -194,10 +200,10 @@ class Composite(Any):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "composite type"
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Aggregate(Composite):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "aggregate"
-    element: Type
+    element: Type = attr.ib()
 
     def __str__(self) -> str:
         return f"{self.DESCRIPTIVE_NAME} with element {self.element}"
@@ -219,14 +225,14 @@ class Aggregate(Composite):
         return Undefined()
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Sequence(Composite):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "sequence type"
-    name: str
-    element: Type
+    identifier: ID = attr.ib(converter=ID)
+    element: Type = attr.ib()
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.name}" with element {self.element}'
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" with element {self.element}'
 
     def is_compatible(self, other: Type) -> bool:
         return (
@@ -234,7 +240,7 @@ class Sequence(Composite):
             or (isinstance(other, Aggregate) and other.element.is_compatible_strong(self.element))
             or (
                 isinstance(other, Sequence)
-                and self.name == other.name
+                and self.identifier == other.identifier
                 and self.element == other.element
             )
         )
@@ -250,35 +256,35 @@ class Sequence(Composite):
 OPAQUE = Sequence("Opaque", Integer("Byte", Bounds(0, 255)))
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Message(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "message type"
-    name: str
-    field_combinations: ty.Set[ty.Tuple[str, ...]] = dataclass_field(default_factory=set)
-    field_types: ty.Mapping[str, Type] = dataclass_field(default_factory=dict)
-    refinements: ty.Sequence[ty.Tuple[str, "Message"]] = dataclass_field(default_factory=list)
+    identifier: ID = attr.ib(converter=ID)
+    field_combinations: ty.Set[ty.Tuple[str, ...]] = attr.ib(factory=set)
+    field_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
+    refinements: ty.Sequence[ty.Tuple[ID, "Message"]] = attr.ib(factory=list)
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
     @property
-    def fields(self) -> ty.Set[str]:
+    def fields(self) -> ty.Set[ID]:
         return set(self.field_types.keys())
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Private(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "private type"
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.name}"'
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
 
-@dataclass(frozen=True)
+@attr.s(frozen=True)
 class Channel(Any):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "channel"
-    readable: bool
-    writable: bool
+    readable: bool = attr.ib()
+    writable: bool = attr.ib()
 
     def __str__(self) -> str:
         mode = {
