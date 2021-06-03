@@ -140,8 +140,8 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         assert isinstance(self.expression.prefix.type_, rty.Message)
 
         error = RecordFluxError()
-        for f, t in self.expression.prefix.type_.refinements:
-            if ID(f) == self.expression.selector and t.is_compatible(declaration_type):
+        for r in self.expression.prefix.type_.refinements:
+            if ID(r.field) == self.expression.selector and r.sdu.is_compatible(declaration_type):
                 break
         else:
             error.append(
@@ -173,6 +173,7 @@ class Argument(Base):
         super().__init__()
         self.__identifier = ID(identifier)
         self.__type_identifier = ID(type_identifier)
+        self.type_: rty.Type = rty.Undefined()
 
     def __str__(self) -> str:
         return f"{self.__identifier} : {self.__type_identifier}"
@@ -195,7 +196,6 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         super().__init__(identifier, return_type, location)
         self.__arguments = arguments
         self.__return_type = ID(return_type)
-        self.argument_types: Sequence[rty.Type] = []
 
     def __str__(self) -> str:
         arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""

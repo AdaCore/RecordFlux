@@ -423,7 +423,7 @@ class Enumeration(Scalar):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Enumeration(self.full_name)
+        return rty.Enumeration(self.full_name, self.always_valid)
 
     @property
     def value_count(self) -> expr.Number:

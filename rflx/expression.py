@@ -2154,7 +2154,8 @@ class MessageAggregate(Expr):
 
             if field_type == rty.OPAQUE:
                 if not any(
-                    f == field and expr.type_.is_compatible(t) for f, t in self.type_.refinements
+                    r.field == field and expr.type_.is_compatible(r.sdu)
+                    for r in self.type_.refinements
                 ):
                     error += expr.check_type(field_type)
             else:

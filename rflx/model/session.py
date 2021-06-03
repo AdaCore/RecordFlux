@@ -347,18 +347,16 @@ class Session(AbstractSession):
                     d.type_ = rty.Any()
 
                 if isinstance(d, decl.FunctionDeclaration):
-                    argument_types = []
                     for a in d.arguments:
                         type_identifier = mty.qualified_type_identifier(
                             a.type_identifier, self.package
                         )
                         if type_identifier in self.types:
-                            argument_types.append(self.types[type_identifier].type_)
+                            a.type_ = self.types[type_identifier].type_
                             model_type = self.types[type_identifier]
                         else:
-                            argument_types.append(rty.Any())
+                            a.type_ = rty.Any()
                             undefined_type(a.type_identifier, d.location)
-                    d.argument_types = argument_types
 
                 if d.type_identifier in self._global_declarations:
                     self._global_declarations[d.type_identifier].reference()
@@ -437,7 +435,7 @@ class Session(AbstractSession):
                     expression.type_ = declarations[identifier].type_
                     declaration = declarations[identifier]
                     assert isinstance(declaration, decl.FunctionDeclaration)
-                    expression.argument_types = declaration.argument_types
+                    expression.argument_types = [a.type_ for a in declaration.arguments]
             if isinstance(expression, expr.Conversion):
                 if identifier in self.types:
                     expression.type_ = self.types[identifier].type_

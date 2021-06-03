@@ -108,6 +108,7 @@ class IndependentType(Any):
 @attr.s(frozen=True)
 class Enumeration(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "enumeration type"
+    always_valid: bool = attr.ib(False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
@@ -257,12 +258,20 @@ OPAQUE = Sequence("Opaque", Integer("Byte", Bounds(0, 255)))
 
 
 @attr.s(frozen=True)
+class Refinement:
+    field: ID = attr.ib(converter=ID)
+    sdu: "Message" = attr.ib()
+    package: ID = attr.ib(converter=ID)
+
+
+@attr.s(frozen=True)
 class Message(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "message type"
     identifier: ID = attr.ib(converter=ID)
     field_combinations: ty.Set[ty.Tuple[str, ...]] = attr.ib(factory=set)
     field_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
-    refinements: ty.Sequence[ty.Tuple[ID, "Message"]] = attr.ib(factory=list)
+    refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
+    is_definite: bool = attr.ib(False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
