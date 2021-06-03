@@ -1869,8 +1869,8 @@ def test_comprehension_str() -> None:
                     ID("X"): rty.OPAQUE,
                 },
                 [
-                    (ID("X"), rty.Message("I")),
-                    (ID("X"), rty.Message("J")),
+                    rty.Refinement(ID("X"), rty.Message("I"), "P"),
+                    rty.Refinement(ID("X"), rty.Message("J"), "P"),
                 ],
             ),
         ),

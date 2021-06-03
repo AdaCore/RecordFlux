@@ -184,26 +184,6 @@ class AbstractMessage(mty.Type):
         return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
 
     @property
-    def type_(self) -> rty.Message:
-        return rty.Message(
-            self.full_name,
-            {tuple(l.target.name for l in p if l.target != FINAL) for p in self.paths(FINAL)}
-            if self.structure
-            else set(),
-            {f.identifier: t.type_ for f, t in self.types.items()},
-        )
-
-    def refined_type(self, refinements: Sequence["Refinement"]) -> rty.Message:
-        assert all(r.pdu.identifier == self.identifier for r in refinements)
-        t = self.type_
-        return rty.Message(
-            t.identifier,
-            t.field_combinations,
-            t.field_types,
-            [(r.field.identifier, r.sdu.type_) for r in refinements],
-        )
-
-    @property
     def dependencies(self) -> List[mty.Type]:
         return [self, *unique(a for t in self.types.values() for a in t.dependencies)]
 
@@ -689,6 +669,29 @@ class Message(AbstractMessage):
                 return True
 
         return False
+
+    @property
+    def type_(self) -> rty.Message:
+        return rty.Message(
+            self.full_name,
+            {tuple(l.target.name for l in p if l.target != FINAL) for p in self.paths(FINAL)}
+            if self.structure
+            else set(),
+            {f.identifier: t.type_ for f, t in self.types.items()},
+            [],
+            self.is_definite,
+        )
+
+    def refined_type(self, refinements: Sequence["Refinement"]) -> rty.Message:
+        assert all(r.pdu.identifier == self.identifier for r in refinements)
+        t = self.type_
+        return rty.Message(
+            t.identifier,
+            t.field_combinations,
+            t.field_types,
+            [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in refinements],
+            t.is_definite,
+        )
 
     @property
     def has_fixed_size(self) -> bool:
