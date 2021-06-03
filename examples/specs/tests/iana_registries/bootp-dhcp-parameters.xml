@@ -1,0 +1,1945 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="bootp-dhcp-parameters.xsl"?>
+<?xml-model href="bootp-dhcp-parameters.rng" schematypens="http://relaxng.org/ns/structure/1.0" ?>
+<registry xmlns="http://www.iana.org/assignments" id="bootp-dhcp-parameters">
+  <title>Dynamic Host Configuration Protocol (DHCP) and Bootstrap Protocol (BOOTP) Parameters</title>
+  <updated>2021-01-15</updated>
+  <note>For the Civic Address Types Registry <xref type="rfc" data="rfc4776"/>, please see:
+http://www.iana.org/assignments/civic-address-types-registry</note>
+
+  <registry id="options">
+    <title>BOOTP Vendor Extensions and DHCP Options</title>
+    <xref type="rfc" data="rfc2939"/>
+    <registration_rule>IETF Review</registration_rule>
+    <note>The Bootstrap Protocol (BOOTP) <xref type="rfc" data="rfc951"/> describes an IP/UDP bootstrap
+protocol (BOOTP) which allows a diskless client machine to discover
+its own IP address, the address of a server host, and the name of a
+file to be loaded into memory and executed.  The Dynamic Host
+Configuration Protocol (DHCP) <xref type="rfc" data="rfc2131"/> provides a framework for
+automatic configuration of IP hosts.  The document "DHCP Options and
+BOOTP Vendor Information Extensions" <xref type="rfc" data="rfc2132"/> describes options for
+DHCP, some of which can also be used with BOOTP. Additional DHCP
+options are described in other RFCs, as documented in this registry.</note>
+    <record>
+      <value>0</value>
+      <name>Pad</name>
+      <length>0</length>
+      <description>None</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>1</value>
+      <name>Subnet Mask</name>
+      <length>4</length>
+      <description>Subnet Mask Value</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>2</value>
+      <name>Time Offset</name>
+      <length>4</length>
+      <description>Time Offset in Seconds from UTC                   
+(note: deprecated by 100 and 101)</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>3</value>
+      <name>Router</name>
+      <length>N</length>
+      <description>N/4 Router addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>4</value>
+      <name>Time Server</name>
+      <length>N</length>
+      <description>N/4 Timeserver addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>5</value>
+      <name>Name Server</name>
+      <length>N</length>
+      <description>N/4 IEN-116 Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>6</value>
+      <name>Domain Server</name>
+      <length>N</length>
+      <description>N/4 DNS Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>7</value>
+      <name>Log Server</name>
+      <length>N</length>
+      <description>N/4 Logging Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>8</value>
+      <name>Quotes Server</name>
+      <length>N</length>
+      <description>N/4 Quotes Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>9</value>
+      <name>LPR Server</name>
+      <length>N</length>
+      <description>N/4 Printer Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>10</value>
+      <name>Impress Server</name>
+      <length>N</length>
+      <description>N/4 Impress Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>11</value>
+      <name>RLP Server</name>
+      <length>N</length>
+      <description>N/4 RLP Server addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>12</value>
+      <name>Hostname</name>
+      <length>N</length>
+      <description>Hostname string</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>13</value>
+      <name>Boot File Size</name>
+      <length>2</length>
+      <description>Size of boot file in 512 byte chunks</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>14</value>
+      <name>Merit Dump File</name>
+      <length>N</length>
+      <description>Client to dump and name the file to dump it to</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>15</value>
+      <name>Domain Name</name>
+      <length>N</length>
+      <description>The DNS domain name of the client</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>16</value>
+      <name>Swap Server</name>
+      <length>N</length>
+      <description>Swap Server address</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>17</value>
+      <name>Root Path</name>
+      <length>N</length>
+      <description>Path name for root disk</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>18</value>
+      <name>Extension File</name>
+      <length>N</length>
+      <description>Path name for more BOOTP info</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>19</value>
+      <name>Forward On/Off</name>
+      <length>1</length>
+      <description>Enable/Disable IP Forwarding</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>20</value>
+      <name>SrcRte On/Off</name>
+      <length>1</length>
+      <description>Enable/Disable Source Routing</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>21</value>
+      <name>Policy Filter</name>
+      <length>N</length>
+      <description>Routing Policy Filters</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>22</value>
+      <name>Max DG Assembly</name>
+      <length>2</length>
+      <description>Max Datagram Reassembly Size</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>23</value>
+      <name>Default IP TTL</name>
+      <length>1</length>
+      <description>Default IP Time to Live</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>24</value>
+      <name>MTU Timeout</name>
+      <length>4</length>
+      <description>Path MTU Aging Timeout</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>25</value>
+      <name>MTU Plateau</name>
+      <length>N</length>
+      <description>Path MTU  Plateau Table</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>26</value>
+      <name>MTU Interface</name>
+      <length>2</length>
+      <description>Interface MTU Size</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>27</value>
+      <name>MTU Subnet</name>
+      <length>1</length>
+      <description>All Subnets are Local</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>28</value>
+      <name>Broadcast Address</name>
+      <length>4</length>
+      <description>Broadcast Address</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>29</value>
+      <name>Mask Discovery</name>
+      <length>1</length>
+      <description>Perform Mask Discovery</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>30</value>
+      <name>Mask Supplier</name>
+      <length>1</length>
+      <description>Provide Mask to Others</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>31</value>
+      <name>Router Discovery</name>
+      <length>1</length>
+      <description>Perform Router Discovery</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>32</value>
+      <name>Router Request</name>
+      <length>4</length>
+      <description>Router Solicitation Address</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>33</value>
+      <name>Static Route</name>
+      <length>N</length>
+      <description>Static Routing Table</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>34</value>
+      <name>Trailers</name>
+      <length>1</length>
+      <description>Trailer Encapsulation</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>35</value>
+      <name>ARP Timeout</name>
+      <length>4</length>
+      <description>ARP Cache Timeout</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>36</value>
+      <name>Ethernet</name>
+      <length>1</length>
+      <description>Ethernet Encapsulation</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>37</value>
+      <name>Default TCP TTL</name>
+      <length>1</length>
+      <description>Default TCP Time to Live</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>38</value>
+      <name>Keepalive Time</name>
+      <length>4</length>
+      <description>TCP Keepalive Interval</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>39</value>
+      <name>Keepalive Data</name>
+      <length>1</length>
+      <description>TCP Keepalive Garbage</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>40</value>
+      <name>NIS Domain</name>
+      <length>N</length>
+      <description>NIS Domain Name</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>41</value>
+      <name>NIS Servers</name>
+      <length>N</length>
+      <description>NIS Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>42</value>
+      <name>NTP Servers</name>
+      <length>N</length>
+      <description>NTP Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>43</value>
+      <name>Vendor Specific</name>
+      <length>N</length>
+      <description>Vendor Specific Information</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>44</value>
+      <name>NETBIOS Name Srv</name>
+      <length>N</length>
+      <description>NETBIOS Name Servers</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>45</value>
+      <name>NETBIOS Dist Srv</name>
+      <length>N</length>
+      <description>NETBIOS Datagram Distribution</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>46</value>
+      <name>NETBIOS Node Type</name>
+      <length>1</length>
+      <description>NETBIOS Node Type</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>47</value>
+      <name>NETBIOS Scope</name>
+      <length>N</length>
+      <description>NETBIOS Scope</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>48</value>
+      <name>X Window Font</name>
+      <length>N</length>
+      <description>X Window Font Server</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>49</value>
+      <name>X Window Manager</name>
+      <length>N</length>
+      <description>X Window Display Manager</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>50</value>
+      <name>Address Request</name>
+      <length>4</length>
+      <description>Requested IP Address</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>51</value>
+      <name>Address Time</name>
+      <length>4</length>
+      <description>IP Address Lease Time</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>52</value>
+      <name>Overload</name>
+      <length>1</length>
+      <description>Overload "sname" or "file"</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>53</value>
+      <name>DHCP Msg Type</name>
+      <length>1</length>
+      <description>DHCP Message Type</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>54</value>
+      <name>DHCP Server Id</name>
+      <length>4</length>
+      <description>DHCP Server Identification</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>55</value>
+      <name>Parameter List</name>
+      <length>N</length>
+      <description>Parameter Request List</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>56</value>
+      <name>DHCP Message</name>
+      <length>N</length>
+      <description>DHCP Error Message</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>57</value>
+      <name>DHCP Max Msg Size</name>
+      <length>2</length>
+      <description>DHCP Maximum Message Size</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>58</value>
+      <name>Renewal Time</name>
+      <length>4</length>
+      <description>DHCP Renewal (T1) Time</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>59</value>
+      <name>Rebinding Time</name>
+      <length>4</length>
+      <description>DHCP Rebinding (T2) Time</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>60</value>
+      <name>Class Id</name>
+      <length>N</length>
+      <description>Class Identifier</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>61</value>
+      <name>Client Id</name>
+      <length>N</length>
+      <description>Client Identifier</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>62</value>
+      <name>NetWare/IP Domain</name>
+      <length>N</length>
+      <description>NetWare/IP Domain Name</description>
+      <xref type="rfc" data="rfc2242"/>
+    </record>
+    <record>
+      <value>63</value>
+      <name>NetWare/IP Option</name>
+      <length>N</length>
+      <description>NetWare/IP sub Options</description>
+      <xref type="rfc" data="rfc2242"/>
+    </record>
+    <record>
+      <value>64</value>
+      <name>NIS-Domain-Name</name>
+      <length>N</length>
+      <description>NIS+ v3 Client Domain Name</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>65</value>
+      <name>NIS-Server-Addr</name>
+      <length>N</length>
+      <description>NIS+ v3 Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>66</value>
+      <name>Server-Name</name>
+      <length>N</length>
+      <description>TFTP Server Name</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>67</value>
+      <name>Bootfile-Name</name>
+      <length>N</length>
+      <description>Boot File Name</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>68</value>
+      <name>Home-Agent-Addrs</name>
+      <length>N</length>
+      <description>Home Agent Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>69</value>
+      <name>SMTP-Server</name>
+      <length>N</length>
+      <description>Simple Mail Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>70</value>
+      <name>POP3-Server</name>
+      <length>N</length>
+      <description>Post Office Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>71</value>
+      <name>NNTP-Server</name>
+      <length>N</length>
+      <description>Network News Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>72</value>
+      <name>WWW-Server</name>
+      <length>N</length>
+      <description>WWW Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>73</value>
+      <name>Finger-Server</name>
+      <length>N</length>
+      <description>Finger Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>74</value>
+      <name>IRC-Server</name>
+      <length>N</length>
+      <description>Chat Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>75</value>
+      <name>StreetTalk-Server</name>
+      <length>N</length>
+      <description>StreetTalk Server Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>76</value>
+      <name>STDA-Server</name>
+      <length>N</length>
+      <description>ST Directory Assist. Addresses</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    <record>
+      <value>77</value>
+      <name>User-Class</name>
+      <length>N</length>
+      <description>User Class Information</description>
+      <xref type="rfc" data="rfc3004"/>
+    </record>
+    <record>
+      <value>78</value>
+      <name>Directory Agent</name>
+      <length>N</length>
+      <description>directory agent information</description>
+      <xref type="rfc" data="rfc2610"/>
+    </record>
+    <record>
+      <value>79</value>
+      <name>Service Scope</name>
+      <length>N</length>
+      <description>service location agent scope</description>
+      <xref type="rfc" data="rfc2610"/>
+    </record>
+    <record>
+      <value>80</value>
+      <name>Rapid Commit</name>
+      <length>0</length>
+      <description>Rapid Commit</description>
+      <xref type="rfc" data="rfc4039"/>
+    </record>
+    <record>
+      <value>81</value>
+      <name>Client FQDN</name>
+      <length>N</length>
+      <description>Fully Qualified Domain Name</description>
+      <xref type="rfc" data="rfc4702"/>
+    </record>
+    <record>
+      <value>82</value>
+      <name>Relay Agent Information</name>
+      <length>N</length>
+      <description>Relay Agent Information</description>
+      <xref type="rfc" data="rfc3046"/>
+    </record>
+    <record>
+      <value>83</value>
+      <name>iSNS</name>
+      <length>N</length>
+      <description>Internet Storage Name Service</description>
+      <xref type="rfc" data="rfc4174"/>
+    </record>
+    <record>
+      <value>84</value>
+      <name>REMOVED/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>85</value>
+      <name>NDS Servers</name>
+      <length>N</length>
+      <description>Novell Directory Services</description>
+      <xref type="rfc" data="rfc2241"/>
+    </record>
+    <record>
+      <value>86</value>
+      <name>NDS Tree Name</name>
+      <length>N</length>
+      <description>Novell Directory Services</description>
+      <xref type="rfc" data="rfc2241"/>
+    </record>
+    <record>
+      <value>87</value>
+      <name>NDS Context</name>
+      <length>N</length>
+      <description>Novell Directory Services</description>
+      <xref type="rfc" data="rfc2241"/>
+    </record>
+    <record>
+      <value>88</value>
+      <name>BCMCS Controller Domain Name list</name>
+      <xref type="rfc" data="rfc4280"/>
+    </record>
+    <record>
+      <value>89</value>
+      <name>BCMCS Controller IPv4 address option</name>
+      <xref type="rfc" data="rfc4280"/>
+    </record>
+    <record>
+      <value>90</value>
+      <name>Authentication</name>
+      <length>N</length>
+      <description>Authentication</description>
+      <xref type="rfc" data="rfc3118"/>
+    </record>
+    <record>
+      <value>91</value>
+      <name>client-last-transaction-time option</name>
+      <xref type="rfc" data="rfc4388"/>
+    </record>
+    <record>
+      <value>92</value>
+      <name>associated-ip option</name>
+      <xref type="rfc" data="rfc4388"/>
+    </record>
+    <record>
+      <value>93</value>
+      <name>Client System</name>
+      <length>N</length>
+      <description>Client System Architecture</description>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>94</value>
+      <name>Client NDI</name>
+      <length>N</length>
+      <description>Client Network Device Interface</description>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>95</value>
+      <name>LDAP</name>
+      <length>N</length>
+      <description>Lightweight Directory Access Protocol</description>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>96</value>
+      <name>REMOVED/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>97</value>
+      <name>UUID/GUID</name>
+      <length>N</length>
+      <description>UUID/GUID-based Client Identifier</description>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>98</value>
+      <name>User-Auth</name>
+      <length>N</length>
+      <description>Open Group's User Authentication</description>
+      <xref type="rfc" data="rfc2485"/>
+    </record>
+    <record>
+      <value>99</value>
+      <name>GEOCONF_CIVIC</name>
+      <xref type="rfc" data="rfc4776"/>
+    </record>
+    <record>
+      <value>100</value>
+      <name>PCode</name>
+      <length>N</length>
+      <description>IEEE 1003.1 TZ String</description>
+      <xref type="rfc" data="rfc4833"/>
+    </record>
+    <record>
+      <value>101</value>
+      <name>TCode</name>
+      <length>N</length>
+      <description>Reference to the TZ Database</description>
+      <xref type="rfc" data="rfc4833"/>
+    </record>
+    <record>
+      <value>102-107</value>
+      <name>REMOVED/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record update="2020-10-09">
+      <value>108</value>
+      <name>IPv6-Only Preferred</name>
+      <length>4</length>
+      <description>Number of seconds that DHCPv4 should be disabled</description>
+      <xref type="rfc" data="rfc8925"/>
+    </record>
+    <record date="2018-01-04">
+      <value>109</value>
+      <name>OPTION_DHCP4O6_S46_SADDR</name>
+      <length>16</length>
+      <description>DHCPv4 over DHCPv6 Softwire Source Address Option</description>
+      <xref type="rfc" data="rfc8539"/>
+    </record>
+    <record>
+      <value>110</value>
+      <name>REMOVED/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>111</value>
+      <name>Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>112</value>
+      <name>Netinfo Address</name>
+      <length>N</length>
+      <description>NetInfo Parent Server Address</description>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>113</value>
+      <name>Netinfo Tag</name>
+      <length>N</length>
+      <description>NetInfo Parent Server Tag</description>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>114</value>
+      <name>DHCP Captive-Portal</name>
+      <length>N</length>
+      <description>DHCP Captive-Portal</description>
+      <xref type="rfc" data="rfc8910"/>
+    </record>
+    <record>
+      <value>115</value>
+      <name>REMOVED/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>116</value>
+      <name>Auto-Config</name>
+      <length>N</length>
+      <description>DHCP Auto-Configuration</description>
+      <xref type="rfc" data="rfc2563"/>
+    </record>
+    <record>
+      <value>117</value>
+      <name>Name Service Search</name>
+      <length>N</length>
+      <description>Name Service Search</description>
+      <xref type="rfc" data="rfc2937"/>
+    </record>
+    <record>
+      <value>118</value>
+      <name>Subnet Selection Option</name>
+      <length>4</length>
+      <description>Subnet Selection Option</description>
+      <xref type="rfc" data="rfc3011"/>
+    </record>
+    <record>
+      <value>119</value>
+      <name>Domain Search</name>
+      <length>N</length>
+      <description>DNS domain search list</description>
+      <xref type="rfc" data="rfc3397"/>
+    </record>
+    <record>
+      <value>120</value>
+      <name>SIP Servers DHCP Option</name>
+      <length>N</length>
+      <description>SIP Servers DHCP Option</description>
+      <xref type="rfc" data="rfc3361"/>
+    </record>
+    <record>
+      <value>121</value>
+      <name>Classless Static Route Option</name>
+      <length>N</length>
+      <description>Classless Static Route Option</description>
+      <xref type="rfc" data="rfc3442"/>
+    </record>
+    <record>
+      <value>122</value>
+      <name>CCC</name>
+      <length>N</length>
+      <description>CableLabs Client Configuration</description>
+      <xref type="rfc" data="rfc3495"/>
+    </record>
+    <record>
+      <value>123</value>
+      <name>GeoConf Option</name>
+      <length>16</length>
+      <description>GeoConf Option</description>
+      <xref type="rfc" data="rfc6225"/>
+    </record>
+    <record>
+      <value>124</value>
+      <name>V-I Vendor Class</name>
+      <description>Vendor-Identifying Vendor Class</description>
+      <xref type="rfc" data="rfc3925"/>
+    </record>
+    <record>
+      <value>125</value>
+      <name>V-I Vendor-Specific Information</name>
+      <description>Vendor-Identifying Vendor-Specific Information</description>
+      <xref type="rfc" data="rfc3925"/>
+    </record>
+    <record>
+      <value>126</value>
+      <name>Removed/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>127</value>
+      <name>Removed/Unassigned</name>
+      <xref type="rfc" data="rfc3679"/>
+    </record>
+    <record>
+      <value>128</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>128</value>
+      <name>Etherboot signature. 6 bytes:
+E4:45:74:68:00:00</name>
+    </record>
+    <record>
+      <value>128</value>
+      <name>DOCSIS "full security" server IP
+address</name>
+    </record>
+    <record>
+      <value>128</value>
+      <name>TFTP Server IP address (for IP
+Phone software load)</name>
+    </record>
+    <record>
+      <value>129</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>129</value>
+      <name>Kernel options. Variable length
+string</name>
+    </record>
+    <record>
+      <value>129</value>
+      <name>Call Server IP address</name>
+    </record>
+    <record>
+      <value>130</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>130</value>
+      <name>Ethernet interface. Variable
+length string.</name>
+    </record>
+    <record>
+      <value>130</value>
+      <name>Discrimination string (to
+identify vendor)</name>
+    </record>
+    <record>
+      <value>131</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>131</value>
+      <name>Remote statistics server IP address</name>
+    </record>
+    <record>
+      <value>132</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>132</value>
+      <name>IEEE 802.1Q VLAN ID</name>
+    </record>
+    <record>
+      <value>133</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>133</value>
+      <name>IEEE 802.1D/p Layer 2 Priority</name>
+    </record>
+    <record>
+      <value>134</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>134</value>
+      <name>Diffserv Code Point (DSCP) for
+VoIP signalling and media streams</name>
+    </record>
+    <record>
+      <value>135</value>
+      <name>PXE - undefined (vendor specific)</name>
+      <xref type="rfc" data="rfc4578"/>
+    </record>
+    <record>
+      <value>135</value>
+      <name>HTTP Proxy for phone-specific
+applications</name>
+    </record>
+    <record>
+      <value>136</value>
+      <name>OPTION_PANA_AGENT</name>
+      <xref type="rfc" data="rfc5192"/>
+    </record>
+    <record>
+      <value>137</value>
+      <name>OPTION_V4_LOST</name>
+      <xref type="rfc" data="rfc5223"/>
+    </record>
+    <record>
+      <value>138</value>
+      <name>OPTION_CAPWAP_AC_V4</name>
+      <length>N</length>
+      <description>CAPWAP Access Controller addresses</description>
+      <xref type="rfc" data="rfc5417"/>
+    </record>
+    <record>
+      <value>139</value>
+      <name>OPTION-IPv4_Address-MoS</name>
+      <length>N</length>
+      <description>a series of suboptions</description>
+      <xref type="rfc" data="rfc5678"/>
+    </record>
+    <record>
+      <value>140</value>
+      <name>OPTION-IPv4_FQDN-MoS</name>
+      <length>N</length>
+      <description>a series of suboptions</description>
+      <xref type="rfc" data="rfc5678"/>
+    </record>
+    <record>
+      <value>141</value>
+      <name>SIP UA Configuration Service Domains</name>
+      <length>N</length>
+      <description>List of domain names to search for SIP User Agent Configuration </description>
+      <xref type="rfc" data="rfc6011"/>
+    </record>
+    <record>
+      <value>142</value>
+      <name>OPTION-IPv4_Address-ANDSF</name>
+      <length>N</length>
+      <description>ANDSF IPv4 Address Option for DHCPv4</description>
+      <xref type="rfc" data="rfc6153"/>
+    </record>
+    <record date="2018-02-08">
+      <value>143</value>
+      <name>OPTION_V4_SZTP_REDIRECT</name>
+      <length>N</length>
+      <description>This option provides a list of URIs for SZTP bootstrap servers</description>
+      <xref type="rfc" data="rfc8572"/>
+    </record>
+    <record>
+      <value>144</value>
+      <name>GeoLoc</name>
+      <length>16</length>
+      <description>Geospatial Location with Uncertainty</description>
+      <xref type="rfc" data="rfc6225"/>
+    </record>
+    <record>
+      <value>145</value>
+      <name>FORCERENEW_NONCE_CAPABLE</name>
+      <length>1</length>
+      <description>Forcerenew Nonce Capable</description>
+      <xref type="rfc" data="rfc6704"/>
+    </record>
+    <record>
+      <value>146</value>
+      <name>RDNSS Selection</name>
+      <length>N</length>
+      <description>Information for selecting RDNSS</description>
+      <xref type="rfc" data="rfc6731"/>
+    </record>
+    <record date="2020-11-19">
+      <value>147</value>
+      <name>OPTION_V4_DOTS_RI</name>
+      <length>N</length>
+      <description>The name of the peer DOTS agent.</description>
+      <xref type="rfc" data="rfc8973"/>
+    </record>
+    <record date="2020-11-19">
+      <value>148</value>
+      <name>OPTION_V4_DOTS_ADDRESS</name>
+      <length>N (the minimal length is 4)</length>
+      <description>N/4 IPv4 addresses of peer DOTS agent(s).</description>
+      <xref type="rfc" data="rfc8973"/>
+    </record>
+    <record>
+      <value>149</value>
+      <name>Unassigned</name>
+      <xref type="rfc" data="rfc3942"/>
+    </record>
+    <record>
+      <value>150</value>
+      <name>TFTP server address</name>
+      <xref type="rfc" data="rfc5859"/>
+    </record>
+    <record>
+      <value>150</value>
+      <name>Etherboot</name>
+    </record>
+    <record>
+      <value>150</value>
+      <name>GRUB configuration path name</name>
+    </record>
+    <record>
+      <value>151</value>
+      <name>status-code</name>
+      <length>N+1</length>
+      <description>Status code and optional N byte text message describing status.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>152</value>
+      <name>base-time</name>
+      <length>4</length>
+      <description>Absolute time (seconds since Jan 1, 1970) message was sent.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>153</value>
+      <name>start-time-of-state</name>
+      <length>4</length>
+      <description>Number of seconds in the past when client entered current state.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>154</value>
+      <name>query-start-time</name>
+      <length>4</length>
+      <description>Absolute time (seconds since Jan 1, 1970) for beginning of query.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>155</value>
+      <name>query-end-time</name>
+      <length>4</length>
+      <description>Absolute time (seconds since Jan 1, 1970) for end of query.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>156</value>
+      <name>dhcp-state</name>
+      <length>1</length>
+      <description>State of IP address.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>157</value>
+      <name>data-source</name>
+      <length>1</length>
+      <description> Indicates information came from local or remote server.</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record date="2014-04-17">
+      <value>158</value>
+      <name>OPTION_V4_PCP_SERVER</name>
+      <length>Variable; the minimum length is 5.</length>
+      <description> Includes one or multiple lists of PCP server IP addresses; 
+      each list is treated as a separate PCP server.</description>
+      <xref type="rfc" data="rfc7291"/>
+    </record>
+    <record date="2015-06-01">
+      <value>159</value>
+      <name>OPTION_V4_PORTPARAMS</name>
+      <length>4</length>
+      <description>This option is used to configure a set of ports bound to a 
+      shared IPv4 address.</description>
+      <xref type="rfc" data="rfc7618"/>
+    </record>
+    <record date="2015-10-01">
+      <value>160</value>
+      <name>Unassigned</name>
+      <length/>
+      <description>Previously assigned by <xref type="rfc" data="rfc7710"/>; 
+        known to also be used by Polycom.</description>
+      <xref type="rfc" data="rfc7710"/>
+      <xref type="rfc" data="rfc8910"/>
+    </record>
+    <record date="2016-11-17">
+      <value>161</value>
+      <name>OPTION_MUD_URL_V4</name>
+      <length>N (variable)</length>
+      <description>Manufacturer Usage Descriptions</description>
+      <xref type="rfc" data="rfc8520"/>
+    </record>
+    <record>
+      <value>162-174</value>
+      <name>Unassigned</name>
+      <xref type="rfc" data="rfc3942"/>
+    </record>
+    <record>
+      <value>175</value>
+      <name>Etherboot (Tentatively Assigned -
+2005-06-23)</name>
+    </record>
+    <record>
+      <value>176</value>
+      <name>IP Telephone (Tentatively Assigned -
+2005-06-23)</name>
+    </record>
+    <record>
+      <value>177</value>
+      <name>Etherboot (Tentatively Assigned -
+2005-06-23)</name>
+    </record>
+    <record>
+      <value>177</value>
+      <name>PacketCable and CableHome (replaced by
+122)</name>
+    </record>
+    <record>
+      <value>178-207</value>
+      <name>Unassigned</name>
+      <xref type="rfc" data="rfc3942"/>
+    </record>
+    <record>
+      <value>208</value>
+      <name>PXELINUX Magic</name>
+      <length>4</length>
+      <description>magic string = F1:00:74:7E</description>
+      <xref type="rfc" data="rfc5071"/>
+      <xref type="text">Deprecated</xref>
+    </record>
+    <record>
+      <value>209</value>
+      <name>Configuration File</name>
+      <length>N</length>
+      <description>Configuration file</description>
+      <xref type="rfc" data="rfc5071"/>
+    </record>
+    <record>
+      <value>210</value>
+      <name>Path Prefix</name>
+      <length>N</length>
+      <description>Path Prefix Option</description>
+      <xref type="rfc" data="rfc5071"/>
+    </record>
+    <record>
+      <value>211</value>
+      <name>Reboot Time</name>
+      <length>4</length>
+      <description>Reboot Time</description>
+      <xref type="rfc" data="rfc5071"/>
+    </record>
+    <record>
+      <value>212</value>
+      <name>OPTION_6RD</name>
+      <length>18 + N</length>
+      <description>OPTION_6RD with N/4 6rd BR addresses</description>
+      <xref type="rfc" data="rfc5969"/>
+    </record>
+    <record>
+      <value>213</value>
+      <name>OPTION_V4_ACCESS_DOMAIN</name>
+      <length>N</length>
+      <description>Access Network Domain Name</description>
+      <xref type="rfc" data="rfc5986"/>
+    </record>
+    <record>
+      <value>214-219</value>
+      <name>Unassigned</name>
+    </record>
+    <record>
+      <value>220</value>
+      <name>Subnet Allocation Option</name>
+      <length>N</length>
+      <description>Subnet Allocation Option</description>
+      <xref type="rfc" data="rfc6656"/>
+    </record>
+    <record>
+      <value>221</value>
+      <name>Virtual Subnet Selection (VSS) Option</name>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+    <record>
+      <value>222-223</value>
+      <name>Unassigned</name>
+      <xref type="rfc" data="rfc3942"/>
+    </record>
+    <record>
+      <value>224-254</value>
+      <name>Reserved (Private Use)</name>
+    </record>
+    <record>
+      <value>255</value>
+      <name>End</name>
+      <length>0</length>
+      <description>None</description>
+      <xref type="rfc" data="rfc2132"/>
+    </record>
+    </registry>
+
+  <registry id="message-type-53">
+      <title>DHCP Message Type 53 Values</title>
+      <xref type="rfc" data="rfc2939"/>
+      <registration_rule>IETF Review</registration_rule>
+      <record>
+        <value>1</value>
+        <description>DHCPDISCOVER</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>DHCPOFFER</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>3</value>
+        <description>DHCPREQUEST</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>4</value>
+        <description>DHCPDECLINE</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>5</value>
+        <description>DHCPACK</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>6</value>
+        <description>DHCPNAK</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>7</value>
+        <description>DHCPRELEASE</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>8</value>
+        <description>DHCPINFORM</description>
+        <xref type="rfc" data="rfc2132"/>
+      </record>
+      <record>
+        <value>9</value>
+        <description>DHCPFORCERENEW</description>
+        <xref type="rfc" data="rfc3203"/>
+      </record>
+      <record>
+        <value>10</value>
+        <description>DHCPLEASEQUERY</description>
+        <xref type="rfc" data="rfc4388"/>
+      </record>
+      <record>
+        <value>11</value>
+        <description>DHCPLEASEUNASSIGNED</description>
+        <xref type="rfc" data="rfc4388"/>
+      </record>
+      <record>
+        <value>12</value>
+        <description>DHCPLEASEUNKNOWN</description>
+        <xref type="rfc" data="rfc4388"/>
+      </record>
+      <record>
+        <value>13</value>
+        <description>DHCPLEASEACTIVE</description>
+        <xref type="rfc" data="rfc4388"/>
+      </record>
+    <record>
+      <value>14</value>
+      <description>DHCPBULKLEASEQUERY</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>15</value>
+      <description>DHCPLEASEQUERYDONE</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record date="2015-10-15">
+      <value>16</value>
+      <description>DHCPACTIVELEASEQUERY</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record date="2015-10-15">
+      <value>17</value>
+      <description>DHCPLEASEQUERYSTATUS</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record date="2015-10-15">
+      <value>18</value>
+      <description>DHCPTLS</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    </registry>
+
+  <registry id="type-63-sub-options">
+      <title>NetWare/IP Option Type 63 Sub-Option Codes</title>
+      <xref type="rfc" data="rfc2242"/>
+      <registration_rule>Not defined</registration_rule>
+      <record>
+        <value>1</value>
+        <description>NWIP_DOES_NOT_EXIST</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>NWIP_EXIST_IN_OPTIONS_AREA</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>3</value>
+        <description>NWIP_EXIST_IN_SNAME_FILE</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>4</value>
+        <description>NWIP_EXIST_BUT_TOO_BIG</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>5</value>
+        <description>NSQ_BROADCAST</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>6</value>
+        <description>PREFERRED_DSS</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>7</value>
+        <description>NEAREST_NWIP_SERVER</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>8</value>
+        <description>AUTORETRIES</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>9</value>
+        <description>AUTORETRY_SECS</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>10</value>
+        <description>NWIP_1_1</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>11</value>
+        <description>PRIMARY_DSS</description>
+        <xref type="rfc" data="rfc2242"/>
+      </record>
+      <record>
+        <value>12-255</value>
+        <description>Unassigned</description>
+      </record>
+    </registry>
+
+  <registry id="type-122-sub-options">
+      <title>DHCP Cablelabs Client Configuration Option Type 122 Sub-Option Codes</title>
+      <xref type="rfc" data="rfc3495"/>
+      <registration_rule>IETF Review</registration_rule>
+      <record>
+        <value>1</value>
+        <description>TSP's Primary DHCP Server Address</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>TSP's Secondary DHCP Server Address</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>3</value>
+        <description>TSP's Provisioning Server Address</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>4</value>
+        <description>TSP's AS-REQ/AS-REP Backoff and Retry</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>5</value>
+        <description>TSP's AP-REQ/AP-REP Backoff and Retry</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>6</value>
+        <description>TSP's Kerberos Realm Name</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>7</value>
+        <description>TSP's Ticket Granting Server Utilization</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>8</value>
+        <description>TSP's Provisioning Timer Value</description>
+        <xref type="rfc" data="rfc3495"/>
+      </record>
+      <record>
+        <value>9</value>
+        <description>TSP's Security Ticket Control</description>
+        <xref type="rfc" data="rfc3594"/>
+      </record>
+      <record>
+        <value>10</value>
+        <description>KDC Server Address</description>
+        <xref type="rfc" data="rfc3634"/>
+      </record>
+      <record>
+        <value>11-255</value>
+        <description>Unassigned</description>
+      </record>
+    </registry>
+  
+  <registry id="type-151">
+    <title>DHCP Status Code Type 151 Values</title>
+    <xref type="rfc" data="rfc6926"/>
+    <registration_rule>IETF Review</registration_rule>
+    <record>
+      <value>0</value>
+      <description>Success</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>1</value>
+      <description>UnspecFail</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>2</value>
+      <description>QueryTerminated</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>3</value>
+      <description>MalformedQuery</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>4</value>
+      <description>NotAllowed</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record date="2015-10-15">
+      <value>5</value>
+      <description>DataMissing</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record date="2015-10-15">
+      <value>6</value>
+      <description>ConnectionActive</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record date="2015-10-15">
+      <value>7</value>
+      <description>CatchUpComplete</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record date="2015-10-15">
+      <value>8</value>
+      <description>TLSConnectionRefused</description>
+      <xref type="rfc" data="rfc7724"/>
+    </record>
+    <record>
+      <value>9-255</value>
+      <description>Unassigned</description>
+    </record>
+  </registry>
+  
+  <registry id="type-156">
+    <title>DHCP State Type 156 Values</title>
+    <xref type="rfc" data="rfc6926"/>
+    <registration_rule>IETF Review</registration_rule>
+    <record>
+      <value>0</value>
+      <description>Reserved</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>1</value>
+      <description>AVAILABLE</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>2</value>
+      <description>ACTIVE</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>3</value>
+      <description>EXPIRED</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>4</value>
+      <description>RELEASED</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>5</value>
+      <description>ABANDONED</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>6</value>
+      <description>RESET</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>7</value>
+      <description>REMOTE</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>8</value>
+      <description>TRANSITIONING</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>9-255</value>
+      <description>Unassigned</description>
+    </record>
+  </registry>
+  
+  <registry id="altitude">
+      <title>Altitude Type Registry</title>
+      <xref type="rfc" data="rfc6225"/>
+      <registration_rule>Standards Action</registration_rule>
+      <record>
+        <value>0</value>
+        <description>No known altitude</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>Altitude in meters</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>Altitude in floors</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>3-15</value>
+        <description>Unassigned</description>
+      </record>
+    </registry>
+
+  <registry id="datum">
+      <title>Datum Registry</title>
+      <xref type="rfc" data="rfc6225"/>
+      <registration_rule>Standards Action</registration_rule>
+      <record>
+        <value>0</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>Vertical datum WGS 84 defined by EPSG CRS Code 4327</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>Vertical datum NAD83 defined by EPSG CRS Code 4269 
+          with North American Vertical Datum of 1988 (NAVD88)</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>3</value>
+        <description>Vertical datum NAD83 defined by EPSG 
+          CRS Code 4269 with Mean Lower Low Water 
+          (MLLW) as associated vertical datum
+        </description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>4-7</value>
+        <description>Unassigned</description>
+      </record>
+    </registry>
+
+  <registry id="geoloc-option-version">
+      <title>GeoLoc Option Version Registry</title>
+      <xref type="rfc" data="rfc6225"/>
+      <registration_rule>Standards Action</registration_rule>
+      <record>
+        <value>0</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>Implementations utilizing uncertainty parameters for both DHCPv4 and DHCPv6 
+        GeoLoc options</description>
+        <xref type="rfc" data="rfc6225"/>
+      </record>
+      <record>
+        <value>2-3</value>
+        <description>Unassigned</description>
+      </record>
+  </registry>
+
+  <registry id="control-mask-bit">
+    <title>CableLabs Client Configuration Option Ticket Control Mask Bit Definitions</title>
+    <xref type="rfc" data="rfc3594"/>
+    <registration_rule>IETF Review</registration_rule>
+    <record>
+      <value>0</value>
+      <description>the PacketCable Provisioning Server     
+used by the CCD.</description>
+      <xref type="rfc" data="rfc3594"/>
+    </record>
+    <record>
+      <value>1</value>
+      <description>the group of all PacketCable Call       
+Management Servers used by the CCD.</description>
+      <xref type="rfc" data="rfc3594"/>
+    </record>
+    <record>
+      <value>2-15</value>
+      <description>Reserved and MUST be set to 0.</description>
+    </record>
+  </registry>
+
+  <registry id="relay-agent-sub-options">
+    <title>DHCP Relay Agent Sub-Option Codes</title>
+    <xref type="rfc" data="rfc3046"/>
+    <registration_rule>IETF Review</registration_rule>
+    <record>
+      <value>1</value>
+      <description>Agent Circuit ID Sub-option</description>
+      <xref type="rfc" data="rfc3046"/>
+    </record>
+    <record>
+      <value>2</value>
+      <description>Agent Remote ID Sub-option</description>
+      <xref type="rfc" data="rfc3046"/>
+    </record>
+    <record date="2001-01">
+      <value>3</value>
+      <description>Sub-option 3 is reserved and should      
+not be assigned at this time;
+proprietary and incompatible usages
+of this sub-option value have been
+seen limited deployment.</description>
+      <xref type="person" data="Ralph_Droms"/>
+    </record>
+    <record>
+      <value>4</value>
+      <description>DOCSIS Device Class Suboption</description>
+      <xref type="rfc" data="rfc3256"/>
+    </record>
+    <record>
+      <value>5</value>
+      <description>Link selection Sub-option</description>
+      <xref type="rfc" data="rfc3527"/>
+    </record>
+    <record>
+      <value>6</value>
+      <description>Subscriber-ID Suboption</description>
+      <xref type="rfc" data="rfc3993"/>
+    </record>
+    <record>
+      <value>7</value>
+      <description>RADIUS Attributes Sub-option</description>
+      <xref type="rfc" data="rfc4014"/>
+    </record>
+    <record>
+      <value>8</value>
+      <description>Authentication Suboption</description>
+      <xref type="rfc" data="rfc4030"/>
+    </record>
+    <record>
+      <value>9</value>
+      <description>Vendor-Specific Information Suboption</description>
+      <xref type="rfc" data="rfc4243"/>
+    </record>
+    <record>
+      <value>10</value>
+      <description>Relay Agent Flags</description>
+      <xref type="rfc" data="rfc5010"/>
+    </record>
+    <record>
+      <value>11</value>
+      <description>Server Identifier Override Suboption</description>
+      <xref type="rfc" data="rfc5107"/>
+    </record>    
+    <record>
+      <value>12</value>
+      <description>Relay Agent Identifier Sub-option</description>
+      <xref type="rfc" data="rfc6925"/>
+    </record>
+    <record date="2016-02-10">
+      <value>13</value>
+      <description>Access-Technology-Type Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2016-02-10">
+      <value>14</value>
+      <description>Access-Network-Name Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2016-02-10">
+      <value>15</value>
+      <description>Access-Point-Name Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2016-02-10">
+      <value>16</value>
+      <description>Access-Point-BSSID Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2016-02-10">
+      <value>17</value>
+      <description>Operator-Identifier Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2016-02-10">
+      <value>18</value>
+      <description>Operator-Realm Sub-option</description>
+      <xref type="rfc" data="rfc7839"/>
+    </record>
+    <record date="2017-12-27">
+      <value>19</value>
+      <description>DHCPv4 Relay Source Port Sub-Option</description>
+      <xref type="rfc" data="rfc8357"/>
+    </record>
+    <record>
+      <value>20-150</value>
+      <description>Unassigned</description>
+    </record>
+    <record>
+      <value>151</value>
+      <description>DHCPv4 Virtual Subnet Selection Sub-Option</description>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+    <record>
+      <value>152</value>
+      <description>DHCPv4 Virtual Subnet Selection Control Sub-Option</description>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+    </registry>
+  
+  <registry id="authentication-protocol-id">
+      <title>Authentication Suboption (value 8) - Protocol identifier values</title>
+      <xref type="rfc" data="rfc3118"/>
+      <registration_rule>IETF Review</registration_rule>
+      <record date="2015-07-07">
+        <value>0</value>
+        <description>DHCPv4 Configuration Token</description>
+        <xref type="rfc" data="rfc3118">RFC3118, Section 4</xref>
+      </record>
+      <record date="2015-07-07">
+        <value>1</value>
+        <description>DHCPv4 Delayed Authentication</description>
+        <xref type="rfc" data="rfc3118">RFC3118, Section 5</xref>
+      </record>
+      <record date="2015-07-07">
+        <value>2</value>
+        <description>DHCPv6 Delayed Authentication (Obsolete)</description>
+        <xref type="rfc" data="rfc8415"/>
+      </record>
+      <record date="2015-07-07">
+        <value>3</value>
+        <description>DHCPv6 Reconfigure Key Authentication</description>
+        <xref type="rfc" data="rfc8415"/>
+      </record>
+      <record>
+        <value>4-254</value>
+        <description>Unassigned</description>
+      </record>
+      <record date="2015-07-07">
+        <value>255</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc3118"/>
+      </record>
+    </registry>
+  
+  <registry id="authentication-algorithm-id">
+      <title>Authentication Suboption (value 8) - Algorithm identifier values</title>
+      <xref type="rfc" data="rfc4030"/>
+      <registration_rule>IETF Review</registration_rule>
+      <record>
+        <value>0</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc4030"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>HMAC-SHA1 keyed hash</description>
+        <xref type="rfc" data="rfc4030"/>
+      </record>
+    </registry>
+  
+  <registry id="authentication-rdm-id">
+      <title>Authentication Suboption (value 8) - Replay Detection Method (RDM) identifier values</title>
+      <xref type="rfc" data="rfc4030"/>
+      <registration_rule>IETF Review</registration_rule>
+      <record>
+        <value>0</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc4030"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>use of a monotonically increasing counter value</description>
+        <xref type="rfc" data="rfc4030"/>
+      </record>
+    </registry> 
+  
+  <registry id="ieee-80221-service-type">
+      <title>IEEE 802.21 Service Type (MoS DHCPv4 Address and FQDN Sub-Options)</title>
+      <xref type="rfc" data="rfc5678"/>
+      <registration_rule>Standards Action</registration_rule>
+      <record>
+        <value>0</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc5678"/>
+      </record>
+      <record>
+        <value>1</value>
+        <description>IS</description>
+        <xref type="rfc" data="rfc5678"/>
+      </record>
+      <record>
+        <value>2</value>
+        <description>CS</description>
+        <xref type="rfc" data="rfc5678"/>
+      </record>
+      <record>
+        <value>3</value>
+        <description>ES</description>
+        <xref type="rfc" data="rfc5678"/>
+      </record>
+      <record>
+        <value>4-254</value>
+        <description>Unassigned</description>
+      </record>
+      <record>
+        <value>255</value>
+        <description>Reserved</description>
+        <xref type="rfc" data="rfc5678"/>
+      </record>
+  </registry>
+  
+  <registry id="ntp-time-source">
+      <title>NTP Time Source Suboptions</title>
+      <xref type="rfc" data="rfc5908"/>
+      <registration_rule>IETF Review</registration_rule>
+<note>See the NTP Time Source Suboptions registry at <xref type="uri" data="http://www.iana.org/assignments/dhcpv6-parameters"/></note>
+  </registry> 
+  
+  <registry id="vss-type">
+    <title>VSS Type Options</title>
+    <xref type="rfc" data="rfc6607"/>
+    <registration_rule>IETF Review</registration_rule>
+    <record>
+      <value>0</value>
+      <description>Network Virtual Terminal (NVT) ASCII VPN identifier</description>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+    <record>
+      <value>1</value>
+      <description>RFC2685 VPN-ID</description>
+      <xref type="rfc" data="rfc2685"/>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+    <record>
+      <value>2-253</value>
+      <description>Unassigned</description>
+    </record>
+    <record>
+      <value>254</value>
+      <description>All VPNs (wildcard)</description>
+      <xref type="rfc" data="rfc6926"/>
+    </record>
+    <record>
+      <value>255</value>
+      <description>Global, default VPN</description>
+      <xref type="rfc" data="rfc6607"/>
+    </record>
+  </registry> 
+
+  <people>
+    <person id="Ralph_Droms">
+      <name>Ralph Droms</name>
+      <uri>mailto:rdroms&amp;cisco.com</uri>
+      <updated>2001-01</updated>
+    </person>
+  </people>
+</registry>

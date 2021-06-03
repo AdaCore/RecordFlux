@@ -1,0 +1,192 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_parameters">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_registry_decimal_Values">
+        <title>decimal values with description tag</title>
+        <record>
+            <value>4</value>
+            <description>dss_fixed_dh</description>
+            <dtls>Y</dtls>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+        <record>
+            <value>6</value>
+            <description>dss_ephemeral_dh_RESERVED</description>
+            <dtls>Y</dtls>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+    </registry>
+
+    <registry id="test_registry_comma_sep_hex_values">
+        <title>comma separated hex-values</title>
+        <record>
+            <value>0x00,0x00</value>
+            <description>TLS_NULL_WITH_NULL_NULL</description>
+            <dtls>Y</dtls>
+            <rec>N</rec>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+        <record>
+            <value>0x00,0x01</value>
+            <description>TLS_RSA_WITH_NULL_MD5</description>
+            <dtls>Y</dtls>
+            <rec>N</rec>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+    </registry>
+
+    <registry id="test_registry_hex_values">
+        <title>hexadecimal values</title>
+        <record date="2020-03-09">
+            <value>0x0420</value>
+            <description>rsa_pkcs1_sha256_legacy</description>
+            <recommended>N</recommended>
+            <xref type="draft" data="draft-davidben-tls13-pkcs1-00"/>
+        </record>
+        <record date="2018-05-29">
+            <value>0x0501</value>
+            <description>rsa_pkcs1_sha384</description>
+        </record>
+    </registry>
+
+    <registry id="test_registry_decimal_values_name_and_description_tag">
+        <title>decimal values with name and description tag</title>
+        <record>
+            <value>8</value>
+            <name>Quotes Server</name>
+            <length>N</length>
+            <description>N/4 Quotes Server addresses</description>
+            <xref type="rfc" data="rfc2132"/>
+        </record>
+        <record>
+            <value>9</value>
+            <name>LPR Server</name>
+            <length>N</length>
+            <description>N/4 Printer Server addresses</description>
+            <xref type="rfc" data="rfc2132"/>
+        </record>
+    </registry>
+
+    <registry id="test_registry_decimal_values_code_tag">
+        <title>decimal values with code tag</title>
+        <record>
+            <value>0</value>
+            <code>REPLY</code>
+            <xref type="rfc" data="rfc5494"/>
+        </record>
+        <record>
+            <value>1</value>
+            <code>REQUEST</code>
+            <xref type="rfc" data="rfc826"/>
+            <xref type="rfc" data="rfc5227"/>
+        </record>
+    </registry>
+
+    <registry id="test_registry_decimal_values_type_tag">
+        <title>decimal values with type tag</title>
+        <record>
+            <value>0</value>
+            <type>Reserved</type>
+            <xref type="rfc" data="rfc5494"/>
+        </record>
+        <record>
+            <value>1</value>
+            <type>Ethernet (10Mb)</type>
+            <xref type="person" data="Jon_Postel"/>
+        </record>
+    </registry>
+
+    <registry id="test_duplicate_values">
+        <title>duplicate values</title>
+        <record>
+            <value>5</value>
+            <type>Duplicate Value 1</type>
+            <comment>comment from duplicate value 1</comment>
+        </record>
+        <record>
+            <value>5</value>
+            <type>Duplicate Value 2</type>
+            <comment>comment from duplicate value 2</comment>
+        </record>
+        <record>
+            <value>5</value>
+            <type>Duplicate Value 3</type>
+            <comment>comment from duplicate value 3</comment>
+        </record>
+    </registry>
+
+    <registry id="test_duplicate_identifiers">
+        <title>duplicate identifiers</title>
+        <record>
+            <value>1</value>
+            <type>Duplicate Identifier</type>
+        </record>
+        <record>
+            <value>2</value>
+            <type>Duplicate Identifier</type>
+        </record>
+        <record>
+            <value>3</value>
+            <type>Duplicate Identifier</type>
+        </record>
+    </registry>
+
+    <registry id="test_numeric_identifiers">
+        <title>numerically starting identifiers</title>
+        <record>
+            <value>5</value>
+            <type>123 numerically starting identifier</type>
+        </record>
+    </registry>
+
+    <registry id="test_reserved_unassigned">
+        <title>unassigned and reserved</title>
+        <record>
+            <value>0</value>
+            <description>Unassigned</description>
+        </record>
+        <record>
+            <value>4-247</value>
+            <description>Unassigned</description>
+        </record>
+        <record>
+            <value>224-255</value>
+            <description>Reserved for Private Use</description>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+        <record date="2018-05-29">
+            <value>0x0421-0x0500</value>
+            <description>Reserved for backward compatibility</description>
+            <recommended/>
+            <xref type="rfc" data="rfc8446"/>
+        </record>
+    </registry>
+
+    <registry id="test_all_name_tags">
+        <title>all possible name tags</title>
+        <record>
+            <value>0</value>
+            <description>Description</description>
+            <name>Name</name>
+            <code>Code</code>
+            <type>Type</type>
+        </record>
+    </registry>
+
+    <registry id="test_no_value_no_name_tags">
+        <title>missing name or value tag</title>
+        <record>
+            <description>Description</description>
+        </record>
+        <record>
+            <value>0</value>
+        </record>
+    </registry>
+
+    <registry id="test_empty_registry"></registry>
+
+
+</registry>

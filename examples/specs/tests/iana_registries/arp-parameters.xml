@@ -1,0 +1,531 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="arp-parameters.xsl"?>
+<?xml-model href="arp-parameters.rng" schematypens="http://relaxng.org/ns/structure/1.0" ?>
+<registry xmlns="http://www.iana.org/assignments" id="arp-parameters">
+  <title>Address Resolution Protocol (ARP) Parameters</title>
+  <updated>2016-07-20</updated>
+  <note>Reverse Address Resolution Protocol Operation Codes
+The Reverse Address Resolution Protocol (RARP) specified in <xref type="rfc" data="rfc903"/>
+uses the "Reverse" codes below.
+
+DYNAMIC REVERSE ARP
+The Dynamic Reverse Address Resolution Protocol (DRARP) uses the
+"DRARP" codes below.  For further information, see <xref type="rfc" data="rfc1931"/>.
+
+INVERSE ADDRESS RESOLUTION PROTOCOL
+The Inverse Address Resolution Protocol (IARP) specified in <xref type="rfc" data="rfc2390"/>
+uses the "InARP" codes below.
+  </note>
+  
+  <registry id="arp-parameters-1">
+    <title>Operation Codes</title>
+    <xref type="rfc" data="rfc826"/>
+    <xref type="rfc" data="rfc5494"/>
+    <registration_rule>IETF Review or IESG Approval</registration_rule>
+    <record>
+      <value>0</value>
+      <code>Reserved</code>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>1</value>
+      <code>REQUEST</code>
+      <xref type="rfc" data="rfc826"/>
+      <xref type="rfc" data="rfc5227"/>
+    </record>
+    <record>
+      <value>2</value>
+      <code>REPLY</code>
+      <xref type="rfc" data="rfc826"/>
+      <xref type="rfc" data="rfc5227"/>
+    </record>
+    <record>
+      <value>3</value>
+      <code>request Reverse</code>
+      <xref type="rfc" data="rfc903"/>
+    </record>
+    <record>
+      <value>4</value>
+      <code>reply Reverse</code>
+      <xref type="rfc" data="rfc903"/>
+    </record>
+    <record>
+      <value>5</value>
+      <code>DRARP-Request</code>
+      <xref type="rfc" data="rfc1931"/>
+    </record>
+    <record>
+      <value>6</value>
+      <code>DRARP-Reply</code>
+      <xref type="rfc" data="rfc1931"/>
+    </record>
+    <record>
+      <value>7</value>
+      <code>DRARP-Error</code>
+      <xref type="rfc" data="rfc1931"/>
+    </record>
+    <record>
+      <value>8</value>
+      <code>InARP-Request</code>
+      <xref type="rfc" data="rfc2390"/>
+    </record>
+    <record>
+      <value>9</value>
+      <code>InARP-Reply</code>
+      <xref type="rfc" data="rfc2390"/>
+    </record>
+    <record>
+      <value>10</value>
+      <code>ARP-NAK</code>
+      <xref type="rfc" data="rfc1577"/>
+    </record>
+    <record date="1995-04">
+      <value>11</value>
+      <code>MARS-Request</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>12</value>
+      <code>MARS-Multi</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>13</value>
+      <code>MARS-MServ</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>14</value>
+      <code>MARS-Join</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>15</value>
+      <code>MARS-Leave</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>16</value>
+      <code>MARS-NAK</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>17</value>
+      <code>MARS-Unserv</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>18</value>
+      <code>MARS-SJoin</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>19</value>
+      <code>MARS-SLeave</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>20</value>
+      <code>MARS-Grouplist-Request</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>21</value>
+      <code>MARS-Grouplist-Reply</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1995-04">
+      <value>22</value>
+      <code>MARS-Redirect-Map</code>
+      <xref type="person" data="Grenville_Armitage"/>
+    </record>
+    <record date="1997-03">
+      <value>23</value>
+      <code>MAPOS-UNARP</code>
+      <xref type="person" data="Mitsuru_Maruyama"/>
+      <xref type="rfc" data="rfc2176"/>
+    </record>
+    <record>
+      <value>24</value>
+      <code>OP_EXP1</code>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>25</value>
+      <code>OP_EXP2</code>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>26-65534</value>
+      <code>Unassigned</code>
+    </record>
+    <record>
+      <value>65535</value>
+      <code>Reserved</code>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+  </registry>
+
+  <registry id="arp-parameters-2">
+    <title>Hardware Types</title>
+    <xref type="rfc" data="rfc826"/>
+    <xref type="rfc" data="rfc5494"/>
+    <expert>Carlos Pignataro</expert>
+    <range>
+      <value>requests for values below 256</value>
+      <registration_rule>Expert Review</registration_rule>
+    </range>
+    <range>
+      <value>requests for more than one value</value>
+      <registration_rule>Expert Review</registration_rule>
+    </range>
+    <range>
+      <value>requests for one value greater than 255</value>
+      <registration_rule>First Come First Served</registration_rule>
+    </range>
+    <range>
+      <value>requests for one value, no value specified</value>
+      <registration_rule>First Come First Served</registration_rule>
+      <note>can only be assigned a two-octet value (i.e., a value greater than 255)</note>
+    </range>
+    <record>
+      <value>0</value>
+      <type>Reserved</type>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>1</value>
+      <type>Ethernet (10Mb)</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>2</value>
+      <type>Experimental Ethernet (3Mb)</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>3</value>
+      <type>Amateur Radio AX.25</type>
+      <xref type="person" data="Philip_Koch"/>
+    </record>
+    <record date="1994-12">
+      <value>4</value>
+      <type>Proteon ProNET Token Ring</type>
+      <xref type="person" data="Avri_Doria"/>
+    </record>
+    <record>
+      <value>5</value>
+      <type>Chaos</type>
+      <xref type="person" data="Gill_Pratt"/>
+    </record>
+    <record>
+      <value>6</value>
+      <type>IEEE 802 Networks</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>7</value>
+      <type>ARCNET</type>
+      <xref type="rfc" data="rfc1201"/>
+    </record>
+    <record>
+      <value>8</value>
+      <type>Hyperchannel</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>9</value>
+      <type>Lanstar</type>
+      <xref type="person" data="Tom_Unger"/>
+    </record>
+    <record>
+      <value>10</value>
+      <type>Autonet Short Address</type>
+      <xref type="person" data="Mike_Burrows"/>
+    </record>
+    <record>
+      <value>11</value>
+      <type>LocalTalk</type>
+      <xref type="person" data="Joyce_K_Reynolds"/>
+    </record>
+    <record>
+      <value>12</value>
+      <type>LocalNet (IBM PCNet or SYTEK LocalNET)</type>
+      <xref type="text">Joseph Murdock</xref>
+    </record>
+    <record>
+      <value>13</value>
+      <type>Ultra link</type>
+      <xref type="person" data="Rajiv_Dhingra"/>
+    </record>
+    <record>
+      <value>14</value>
+      <type>SMDS</type>
+      <xref type="person" data="George_Clapp"/>
+    </record>
+    <record>
+      <value>15</value>
+      <type>Frame Relay</type>
+      <xref type="person" data="Andy_Malis"/>
+    </record>
+    <record>
+      <value>16</value>
+      <type>Asynchronous Transmission Mode (ATM)</type>
+      <xref type="text">[JXB2]</xref>
+    </record>
+    <record>
+      <value>17</value>
+      <type>HDLC</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>18</value>
+      <type>Fibre Channel</type>
+      <xref type="rfc" data="rfc4338"/>
+    </record>
+    <record>
+      <value>19</value>
+      <type>Asynchronous Transmission Mode (ATM)</type>
+      <xref type="rfc" data="rfc2225"/>
+    </record>
+    <record>
+      <value>20</value>
+      <type>Serial Line</type>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>21</value>
+      <type>Asynchronous Transmission Mode (ATM)</type>
+      <xref type="person" data="Mike_Burrows"/>
+    </record>
+    <record date="1995-02">
+      <value>22</value>
+      <type>MIL-STD-188-220</type>
+      <xref type="person" data="Herb_Jensen"/>
+    </record>
+    <record date="1996-05">
+      <value>23</value>
+      <type>Metricom</type>
+      <xref type="person" data="Jonathan_Stone"/>
+    </record>
+    <record date="1997-02">
+      <value>24</value>
+      <type>IEEE 1394.1995</type>
+      <xref type="person" data="Myron_Hattig"/>
+    </record>
+    <record date="1997-03">
+      <value>25</value>
+      <type>MAPOS</type>
+      <xref type="person" data="Mitsuru_Maruyama"/>
+      <xref type="rfc" data="rfc2176"/>
+    </record>
+    <record date="1997-05">
+      <value>26</value>
+      <type>Twinaxial</type>
+      <xref type="person" data="Marion_Pitts"/>
+    </record>
+    <record date="1998-10">
+      <value>27</value>
+      <type>EUI-64</type>
+      <xref type="person" data="Kenji_Fujisawa"/>
+    </record>
+    <record date="1998-11">
+      <value>28</value>
+      <type>HIPARP</type>
+      <xref type="person" data="Jean_Michel_Pittet"/>
+    </record>
+    <record date="2000-03">
+      <value>29</value>
+      <type>IP and ARP over ISO 7816-3</type>
+      <xref type="person" data="Scott_Guthery"/>
+    </record>
+    <record date="2000-06">
+      <value>30</value>
+      <type>ARPSec</type>
+      <xref type="person" data="Jerome_Etienne"/>
+    </record>
+    <record>
+      <value>31</value>
+      <type>IPsec tunnel</type>
+      <xref type="rfc" data="rfc3456"/>
+    </record>
+    <record>
+      <value>32</value>
+      <type>InfiniBand (TM)</type>
+      <xref type="rfc" data="rfc4391"/>
+    </record>
+    <record>
+      <value>33</value>
+      <type>TIA-102 Project 25 Common Air Interface (CAI)</type>
+      <xref type="text">Jeff Anderson, Telecommunications Industry of America (TIA)
+TR-8.5 Formulating Group, &lt;cja015&amp;motorola.com&gt;, June 2004</xref>
+    </record>
+    <record date="2008-09-25">
+      <value>34</value>
+      <type>Wiegand Interface</type>
+      <xref type="person" data="Scott_Guthery_2"/>
+    </record>
+    <record date="2008-10-01">
+      <value>35</value>
+      <type>Pure IP</type>
+      <xref type="person" data="Inaky_Perez-Gonzalez"/>
+    </record>
+    <record>
+      <value>36</value>
+      <type>HW_EXP1</type>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>37</value>
+      <type>HFI</type>
+      <xref type="person" data="Tseng-Hui_Lin"/>
+    </record>
+    <record>
+      <value>38-255</value>
+      <type>Unassigned</type>
+    </record>
+    <record>
+      <value>256</value>
+      <type>HW_EXP2</type>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+    <record>
+      <value>257</value>
+      <type>AEthernet</type>
+      <xref type="person" data="Geoffroy_Gramaize"/>
+    </record>
+    <record>
+      <value>258-65534</value>
+      <type>Unassigned</type>
+    </record>
+    <record>
+      <value>65535</value>
+      <type>Reserved</type>
+      <xref type="rfc" data="rfc5494"/>
+    </record>
+  </registry>
+  
+  <registry id="arp-parameters-3">
+    <title>Protocol Type</title>
+    <xref type="rfc" data="rfc826"/>
+    <xref type="rfc" data="rfc5494"/>
+    <xref type="rfc" data="rfc5342"/>
+    <registration_rule>The Ethertype space is administered as described in [RFC5342].</registration_rule>
+    <note>These numbers share the Ethertype space. See <xref type="uri" data="http://www.iana.org/assignments/ethernet-numbers"/>.
+    </note>
+  </registry>
+  
+  <people>
+    <person id="Andy_Malis">
+      <name>Andy Malis</name>
+      <uri>mailto:agmalis&amp;gmail.com</uri>
+      <updated>2013-05-28</updated>
+    </person>
+    <person id="Avri_Doria">
+      <name>Avri Doria</name>
+      <uri>mailto:avri&amp;peoteon.com</uri>
+      <updated>1994-12</updated>
+    </person>
+    <person id="Geoffroy_Gramaize">
+      <name>Geoffroy Gramaize</name>
+      <uri>mailto:geoffroy.iana&amp;gramaize.eu</uri>
+      <updated>2016-07-20</updated>
+    </person>
+    <person id="George_Clapp">
+      <name>George Clapp</name>
+      <uri>mailto:meritec!clapp&amp;bellcore.bellcore.com</uri>
+    </person>
+    <person id="Gill_Pratt">
+      <name>Gill Pratt</name>
+      <uri>mailto:gill%25mit-ccc@mc.lcs.mit.edu</uri>
+    </person>
+    <person id="Grenville_Armitage">
+      <name>Grenville Armitage</name>
+      <uri>mailto:gja&amp;thumper.belcore.com</uri>
+      <updated>1995-04</updated>
+    </person>
+    <person id="Herb_Jensen">
+      <name>Herb Jensen</name>
+      <uri>mailto:hwjensen&amp;itt.com</uri>
+      <updated>1995-02</updated>
+    </person>
+    <person id="Inaky_Perez-Gonzalez">
+      <name>Inaky Perez-Gonzalez</name>
+      <uri>mailto:inaky.perez-gonzalez&amp;intel.com</uri>
+      <updated>2008-10-01</updated>
+    </person>
+    <person id="Jean_Michel_Pittet">
+      <name>Jean-Michel Pittet</name>
+      <uri>mailto:jmp&amp;gandalf.engr.sgi.com</uri>
+      <updated>1998-11</updated>
+    </person>
+    <person id="Jerome_Etienne">
+      <name>Jerome Etienne</name>
+      <uri>mailto:jetienne&amp;arobas.net</uri>
+      <updated>2000-06</updated>
+    </person>
+    <person id="Jon_Postel">
+      <name>Jon Postel</name>
+      <uri>mailto:postel&amp;isi.edu</uri>
+    </person>
+    <person id="Jonathan_Stone">
+      <name>Jonathan Stone</name>
+      <uri>mailto:jonathan&amp;dsg.stanford.edu</uri>
+      <updated>1996-05</updated>
+    </person>
+    <person id="Joyce_K_Reynolds">
+      <name>Joyce K. Reynolds</name>
+      <uri>mailto:jkrey&amp;isi.edu</uri>
+    </person>
+    <person id="Kenji_Fujisawa">
+      <name>Kenji Fujisawa</name>
+      <uri>mailto:fujisawa&amp;sm.sony.co.jp</uri>
+      <updated>1998-10</updated>
+    </person>
+    <person id="Marion_Pitts">
+      <name>Marion Pitts</name>
+      <uri>mailto:marionp&amp;vnet.ibm.com</uri>
+      <updated>1997-05</updated>
+    </person>
+    <person id="Mike_Burrows">
+      <name>Mike Burrows</name>
+      <uri>mailto:burrows&amp;src.dec.com</uri>
+    </person>
+    <person id="Mitsuru_Maruyama">
+      <name>Mitsuru Maruyama</name>
+      <uri>mailto:mitsuru&amp;ntt-20.ecl.net</uri>
+      <updated>1997-03</updated>
+    </person>
+    <person id="Myron_Hattig">
+      <name>Myron Hattig</name>
+      <uri>mailto:Myron_Hattig&amp;ccm.jf.intel.com</uri>
+      <updated>1997-02</updated>
+    </person>
+    <person id="Philip_Koch">
+      <name>Philip Koch</name>
+      <uri>mailto:Philip.Koch&amp;dartmouth.edu</uri>
+    </person>
+    <person id="Rajiv_Dhingra">
+      <name>Rajiv Dhingra</name>
+      <uri>mailto:rajiv&amp;ultra.com</uri>
+    </person>
+    <person id="Scott_Guthery">
+      <name>Scott Guthery</name>
+      <uri>mailto:sguthery&amp;mobile-mind.com</uri>
+      <updated>2000-03</updated>
+    </person>
+    <person id="Scott_Guthery_2">
+      <name>Scott Guthery</name>
+      <uri>mailto:sguthery&amp;hidcorp.com</uri>
+      <updated>2008-09-25</updated>
+    </person>
+    <person id="Tom_Unger">
+      <name>Tom Unger</name>
+      <uri>mailto:tom&amp;citi.umich</uri>
+    </person>
+    <person id="Tseng-Hui_Lin">
+      <name>Tseng-Hui Lin</name>
+      <uri>mailto:tsenglin&amp;us.ibm.com</uri>
+    </person>
+  </people>
+</registry>

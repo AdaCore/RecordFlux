@@ -1,0 +1,1293 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-stylesheet type="text/xsl" href="protocol-numbers.xsl"?>
+<?xml-model href="protocol-numbers.rng" schematypens="http://relaxng.org/ns/structure/1.0" ?>
+<registry xmlns="http://www.iana.org/assignments" id="protocol-numbers">
+  <title>Protocol Numbers</title>
+  <updated>2021-02-26</updated>
+  <registry id="protocol-numbers-1">
+    <title>Assigned Internet Protocol Numbers</title>
+    <xref type="rfc" data="rfc5237"/><xref type="rfc" data="rfc7045"/>
+    <registration_rule>IESG Approval or Standards Action</registration_rule>
+    <note>In the Internet Protocol version 4 (IPv4) <xref type="rfc" data="rfc791"/> there is a field
+called "Protocol" to identify the next level protocol.  This is an 8
+bit field.  In Internet Protocol version 6 (IPv6) <xref type="rfc" data="rfc8200"/>, this field 
+is called the "Next Header" field.
+    </note>
+    <note>Values that are also IPv6 Extension Header Types should be listed in the 
+IPv6 Extension Header Types registry at <xref type="registry" data="ipv6-parameters"/>.
+    </note>
+    <record>
+      <value>0</value>
+      <name>HOPOPT</name>
+      <description>IPv6 Hop-by-Hop Option</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc8200"/>
+    </record>
+    <record>
+      <value>1</value>
+      <name>ICMP</name>
+      <description>Internet Control Message</description>
+      <xref type="rfc" data="rfc792"/>
+    </record>
+    <record>
+      <value>2</value>
+      <name>IGMP</name>
+      <description>Internet Group Management</description>
+      <xref type="rfc" data="rfc1112"/>
+    </record>
+    <record>
+      <value>3</value>
+      <name>GGP</name>
+      <description>Gateway-to-Gateway</description>
+      <xref type="rfc" data="rfc823"/>
+    </record>
+    <record>
+      <value>4</value>
+      <name>IPv4</name>
+      <description>IPv4 encapsulation</description>
+      <xref type="rfc" data="rfc2003"/>
+    </record>
+    <record>
+      <value>5</value>
+      <name>ST</name>
+      <description>Stream</description>
+      <xref type="rfc" data="rfc1190"/>
+      <xref type="rfc" data="rfc1819"/>
+    </record>
+    <record>
+      <value>6</value>
+      <name>TCP</name>
+      <description>Transmission Control</description>
+      <xref type="rfc" data="rfc793"/>
+    </record>
+    <record>
+      <value>7</value>
+      <name>CBT</name>
+      <description>CBT</description>
+      <xref type="person" data="Tony_Ballardie"/>
+    </record>
+    <record>
+      <value>8</value>
+      <name>EGP</name>
+      <description>Exterior Gateway Protocol</description>
+      <xref type="rfc" data="rfc888"/>
+      <xref type="person" data="David_Mills"/>
+    </record>
+    <record date="1995-06">
+      <value>9</value>
+      <name>IGP</name>
+      <description>any private interior gateway             
+(used by Cisco for their IGRP)</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>10</value>
+      <name>BBN-RCC-MON</name>
+      <description>BBN RCC Monitoring</description>
+      <xref type="person" data="Steve_Chipman"/>
+    </record>
+    <record>
+      <value>11</value>
+      <name>NVP-II</name>
+      <description>Network Voice Protocol</description>
+      <xref type="rfc" data="rfc741"/>
+      <xref type="person" data="Steve_Casner"/>
+    </record>
+    <record>
+      <value>12</value>
+      <name>PUP</name>
+      <description>PUP</description>
+      <xref type="text">Boggs, D., J. Shoch, E. Taft, and R. Metcalfe, "PUP: An
+Internetwork Architecture", XEROX Palo Alto Research Center,
+CSL-79-10, July 1979; also in IEEE Transactions on
+Communication, Volume COM-28, Number 4, April 1980.</xref>
+      <xref type="text">[XEROX]</xref>
+    </record>
+    <record updated="2015-10-06">
+      <value>13</value>
+      <name>ARGUS (deprecated)</name>
+      <description>ARGUS</description>
+      <xref type="person" data="Robert_W_Scheifler"/>
+    </record>
+    <record>
+      <value>14</value>
+      <name>EMCON</name>
+      <description>EMCON</description>
+      <xref type="text">&lt;mystery contact&gt;</xref>
+    </record>
+    <record>
+      <value>15</value>
+      <name>XNET</name>
+      <description>Cross Net Debugger</description>
+      <xref type="text">Haverty, J., "XNET Formats for Internet Protocol Version 4",
+IEN 158, October 1980.</xref>
+      <xref type="person" data="Jack_Haverty"/>
+    </record>
+    <record>
+      <value>16</value>
+      <name>CHAOS</name>
+      <description>Chaos</description>
+      <xref type="person" data="J_Noel_Chiappa"/>
+    </record>
+    <record>
+      <value>17</value>
+      <name>UDP</name>
+      <description>User Datagram</description>
+      <xref type="rfc" data="rfc768"/>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>18</value>
+      <name>MUX</name>
+      <description>Multiplexing</description>
+      <xref type="text">Cohen, D. and J. Postel, "Multiplexing Protocol", IEN 90,
+USC/Information Sciences Institute, May 1979.</xref>
+      <xref type="person" data="Jon_Postel"/>
+    </record>
+    <record>
+      <value>19</value>
+      <name>DCN-MEAS</name>
+      <description>DCN Measurement Subsystems</description>
+      <xref type="person" data="David_Mills"/>
+    </record>
+    <record>
+      <value>20</value>
+      <name>HMP</name>
+      <description>Host Monitoring</description>
+      <xref type="rfc" data="rfc869"/>
+      <xref type="person" data="Bob_Hinden"/>
+    </record>
+    <record>
+      <value>21</value>
+      <name>PRM</name>
+      <description>Packet Radio Measurement</description>
+      <xref type="person" data="Zaw_Sing_Su"/>
+    </record>
+    <record>
+      <value>22</value>
+      <name>XNS-IDP</name>
+      <description>XEROX NS IDP</description>
+      <xref type="text">"The Ethernet, A Local Area Network: Data Link Layer and
+Physical Layer Specification", AA-K759B-TK, Digital
+Equipment Corporation, Maynard, MA.  Also as: "The
+Ethernet - A Local Area Network", Version 1.0, Digital
+Equipment Corporation, Intel Corporation, Xerox
+Corporation, September 1980.  And: "The Ethernet, A Local
+Area Network: Data Link Layer and Physical Layer
+Specifications", Digital, Intel and Xerox, November 1982.
+And: XEROX, "The Ethernet, A Local Area Network: Data Link
+Layer and Physical Layer Specification", X3T51/80-50,
+Xerox Corporation, Stamford, CT., October 1980.</xref>
+      <xref type="text">[XEROX]</xref>
+    </record>
+    <record>
+      <value>23</value>
+      <name>TRUNK-1</name>
+      <description>Trunk-1</description>
+      <xref type="person" data="Barry_Boehm"/>
+    </record>
+    <record>
+      <value>24</value>
+      <name>TRUNK-2</name>
+      <description>Trunk-2</description>
+      <xref type="person" data="Barry_Boehm"/>
+    </record>
+    <record>
+      <value>25</value>
+      <name>LEAF-1</name>
+      <description>Leaf-1</description>
+      <xref type="person" data="Barry_Boehm"/>
+    </record>
+    <record>
+      <value>26</value>
+      <name>LEAF-2</name>
+      <description>Leaf-2</description>
+      <xref type="person" data="Barry_Boehm"/>
+    </record>
+    <record>
+      <value>27</value>
+      <name>RDP</name>
+      <description>Reliable Data Protocol</description>
+      <xref type="rfc" data="rfc908"/>
+      <xref type="person" data="Bob_Hinden"/>
+    </record>
+    <record>
+      <value>28</value>
+      <name>IRTP</name>
+      <description>Internet Reliable Transaction</description>
+      <xref type="rfc" data="rfc938"/>
+      <xref type="person" data="Trudy_Miller"/>
+    </record>
+    <record>
+      <value>29</value>
+      <name>ISO-TP4</name>
+      <description>ISO Transport Protocol Class 4</description>
+      <xref type="rfc" data="rfc905"/>
+      <xref type="text">&lt;mystery contact&gt;</xref>
+    </record>
+    <record>
+      <value>30</value>
+      <name>NETBLT</name>
+      <description>Bulk Data Transfer Protocol</description>
+      <xref type="rfc" data="rfc969"/>
+      <xref type="person" data="David_Clark"/>
+    </record>
+    <record>
+      <value>31</value>
+      <name>MFE-NSP</name>
+      <description>MFE Network Services Protocol</description>
+      <xref type="text">Shuttleworth, B., "A Documentary of MFENet, a National
+Computer Network", UCRL-52317, Lawrence Livermore Labs,
+Livermore, California, June 1977.</xref>
+      <xref type="person" data="Barry_Howard"/>
+    </record>
+    <record>
+      <value>32</value>
+      <name>MERIT-INP</name>
+      <description>MERIT Internodal Protocol</description>
+      <xref type="person" data="Hans_Werner_Braun"/>
+    </record>
+    <record>
+      <value>33</value>
+      <name>DCCP</name>
+      <description>Datagram Congestion Control Protocol</description>
+      <xref type="rfc" data="rfc4340"/>
+    </record>
+    <record>
+      <value>34</value>
+      <name>3PC</name>
+      <description>Third Party Connect Protocol</description>
+      <xref type="person" data="Stuart_A_Friedberg"/>
+    </record>
+    <record>
+      <value>35</value>
+      <name>IDPR</name>
+      <description>Inter-Domain Policy Routing Protocol</description>
+      <xref type="person" data="Martha_Steenstrup"/>
+    </record>
+    <record>
+      <value>36</value>
+      <name>XTP</name>
+      <description>XTP</description>
+      <xref type="person" data="Greg_Chesson"/>
+    </record>
+    <record>
+      <value>37</value>
+      <name>DDP</name>
+      <description>Datagram Delivery Protocol</description>
+      <xref type="person" data="Wesley_Craig"/>
+    </record>
+    <record>
+      <value>38</value>
+      <name>IDPR-CMTP</name>
+      <description>IDPR Control Message Transport Proto</description>
+      <xref type="person" data="Martha_Steenstrup"/>
+    </record>
+    <record>
+      <value>39</value>
+      <name>TP++</name>
+      <description>TP++ Transport Protocol</description>
+      <xref type="person" data="Dirk_Fromhein"/>
+    </record>
+    <record date="1995-07">
+      <value>40</value>
+      <name>IL</name>
+      <description>IL Transport Protocol</description>
+      <xref type="person" data="Dave_Presotto"/>
+    </record>
+    <record date="1995-03">
+      <value>41</value>
+      <name>IPv6</name>
+      <description>IPv6 encapsulation</description>
+      <xref type="rfc" data="rfc2473"/>
+    </record>
+    <record>
+      <value>42</value>
+      <name>SDRP</name>
+      <description>Source Demand Routing Protocol</description>
+      <xref type="person" data="Deborah_Estrin"/>
+    </record>
+    <record date="1995-03">
+      <value>43</value>
+      <name>IPv6-Route</name>
+      <description>Routing Header for IPv6</description>
+      <ipv6>Y</ipv6>
+      <xref type="person" data="Steve_Deering"/>
+    </record>
+    <record date="1995-03">
+      <value>44</value>
+      <name>IPv6-Frag</name>
+      <description>Fragment Header for IPv6</description>
+      <ipv6>Y</ipv6>
+      <xref type="person" data="Steve_Deering"/>
+    </record>
+    <record>
+      <value>45</value>
+      <name>IDRP</name>
+      <description>Inter-Domain Routing Protocol</description>
+      <xref type="person" data="Sue_Hares"/>
+    </record>
+    <record date="1997-07">
+      <value>46</value>
+      <name>RSVP</name>
+      <description>Reservation Protocol</description>
+      <xref type="rfc" data="rfc2205"/>
+      <xref type="rfc" data="rfc3209"/>
+      <xref type="person" data="Bob_Braden"/>
+    </record>
+    <record>
+      <value>47</value>
+      <name>GRE</name>
+      <description>Generic Routing Encapsulation</description>
+      <xref type="rfc" data="rfc2784"/>
+      <xref type="person" data="Tony_Li"/>
+    </record>
+    <record>
+      <value>48</value>
+      <name>DSR</name>
+      <description>Dynamic Source Routing Protocol</description>
+      <xref type="rfc" data="rfc4728"/>
+    </record>
+    <record>
+      <value>49</value>
+      <name>BNA</name>
+      <description>BNA</description>
+      <xref type="text">Gary Salamon</xref>
+    </record>
+    <record>
+      <value>50</value>
+      <name>ESP</name>
+      <description>Encap Security Payload</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc4303"/>
+    </record>
+    <record>
+      <value>51</value>
+      <name>AH</name>
+      <description>Authentication Header</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc4302"/>
+    </record>
+    <record>
+      <value>52</value>
+      <name>I-NLSP</name>
+      <description>Integrated Net Layer Security  TUBA</description>
+      <xref type="person" data="K_Robert_Glenn"/>
+    </record>
+    <record updated="2015-01-06">
+      <value>53</value>
+      <name>SWIPE (deprecated)</name>
+      <description>IP with Encryption</description>
+      <xref type="person" data="John_Ioannidis"/>
+    </record>
+    <record>
+      <value>54</value>
+      <name>NARP</name>
+      <description>NBMA Address Resolution Protocol</description>
+      <xref type="rfc" data="rfc1735"/>
+    </record>
+    <record date="1994-10">
+      <value>55</value>
+      <name>MOBILE</name>
+      <description>IP Mobility</description>
+      <xref type="person" data="Charlie_Perkins"/>
+    </record>
+    <record date="1994-10">
+      <value>56</value>
+      <name>TLSP</name>
+      <description>Transport Layer Security Protocol        
+using Kryptonet key management</description>
+      <xref type="person" data="Christer_Oberg"/>
+    </record>
+    <record date="1995-09">
+      <value>57</value>
+      <name>SKIP</name>
+      <description>SKIP</description>
+      <xref type="person" data="Tom_Markson"/>
+    </record>
+    <record>
+      <value>58</value>
+      <name>IPv6-ICMP</name>
+      <description>ICMP for IPv6</description>
+      <xref type="rfc" data="rfc8200"/>
+    </record>
+    <record>
+      <value>59</value>
+      <name>IPv6-NoNxt</name>
+      <description>No Next Header for IPv6</description>
+      <xref type="rfc" data="rfc8200"/>
+    </record>
+    <record>
+      <value>60</value>
+      <name>IPv6-Opts</name>
+      <description>Destination Options for IPv6</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc8200"/>
+    </record>
+    <record date="1995-06">
+      <value>61</value>
+      <description>any host internal protocol</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>62</value>
+      <name>CFTP</name>
+      <description>CFTP</description>
+      <xref type="text">Forsdick, H., "CFTP", Network Message, Bolt Beranek and
+Newman, January 1982.</xref>
+      <xref type="person" data="Harry_Forsdick"/>
+    </record>
+    <record date="1995-06">
+      <value>63</value>
+      <description>any local network</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>64</value>
+      <name>SAT-EXPAK</name>
+      <description>SATNET and Backroom EXPAK</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>65</value>
+      <name>KRYPTOLAN</name>
+      <description>Kryptolan</description>
+      <xref type="text">Paul Liu</xref>
+    </record>
+    <record>
+      <value>66</value>
+      <name>RVD</name>
+      <description>MIT Remote Virtual Disk Protocol</description>
+      <xref type="person" data="Michael_Greenwald"/>
+    </record>
+    <record>
+      <value>67</value>
+      <name>IPPC</name>
+      <description>Internet Pluribus Packet Core</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record date="1995-06">
+      <value>68</value>
+      <description>any distributed file system</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>69</value>
+      <name>SAT-MON</name>
+      <description>SATNET Monitoring</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>70</value>
+      <name>VISA</name>
+      <description>VISA Protocol</description>
+      <xref type="person" data="Gene_Tsudik"/>
+    </record>
+    <record>
+      <value>71</value>
+      <name>IPCV</name>
+      <description>Internet Packet Core Utility</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>72</value>
+      <name>CPNX</name>
+      <description>Computer Protocol Network Executive</description>
+      <xref type="text">David Mittnacht</xref>
+    </record>
+    <record>
+      <value>73</value>
+      <name>CPHB</name>
+      <description>Computer Protocol Heart Beat</description>
+      <xref type="text">David Mittnacht</xref>
+    </record>
+    <record>
+      <value>74</value>
+      <name>WSN</name>
+      <description>Wang Span Network</description>
+      <xref type="text">Victor Dafoulas</xref>
+    </record>
+    <record>
+      <value>75</value>
+      <name>PVP</name>
+      <description>Packet Video Protocol</description>
+      <xref type="person" data="Steve_Casner"/>
+    </record>
+    <record>
+      <value>76</value>
+      <name>BR-SAT-MON</name>
+      <description>Backroom SATNET Monitoring</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>77</value>
+      <name>SUN-ND</name>
+      <description>SUN ND PROTOCOL-Temporary</description>
+      <xref type="person" data="William_Melohn"/>
+    </record>
+    <record>
+      <value>78</value>
+      <name>WB-MON</name>
+      <description>WIDEBAND Monitoring</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>79</value>
+      <name>WB-EXPAK</name>
+      <description>WIDEBAND EXPAK</description>
+      <xref type="person" data="Steven_Blumenthal"/>
+    </record>
+    <record>
+      <value>80</value>
+      <name>ISO-IP</name>
+      <description>ISO Internet Protocol</description>
+      <xref type="person" data="Marshall_T_Rose"/>
+    </record>
+    <record>
+      <value>81</value>
+      <name>VMTP</name>
+      <description>VMTP</description>
+      <xref type="person" data="Dave_Cheriton"/>
+    </record>
+    <record>
+      <value>82</value>
+      <name>SECURE-VMTP</name>
+      <description>SECURE-VMTP</description>
+      <xref type="person" data="Dave_Cheriton"/>
+    </record>
+    <record>
+      <value>83</value>
+      <name>VINES</name>
+      <description>VINES</description>
+      <xref type="text">Brian Horn</xref>
+    </record>
+    <record>
+      <value>84</value>
+      <name>TTP</name>
+      <description>Transaction Transport Protocol</description>
+      <xref type="person" data="Jim_Stevens"/>
+    </record>
+    <record>
+      <value>84</value>
+      <name>IPTM</name>
+      <description>Internet Protocol Traffic Manager</description>
+      <xref type="person" data="Jim_Stevens"/>
+    </record>
+    <record>
+      <value>85</value>
+      <name>NSFNET-IGP</name>
+      <description>NSFNET-IGP</description>
+      <xref type="person" data="Hans_Werner_Braun"/>
+    </record>
+    <record>
+      <value>86</value>
+      <name>DGP</name>
+      <description>Dissimilar Gateway Protocol</description>
+      <xref type="text">M/A-COM Government Systems, "Dissimilar Gateway Protocol
+Specification, Draft Version", Contract no. CS901145,
+November 16, 1987.</xref>
+      <xref type="person" data="Mike_Little"/>
+    </record>
+    <record>
+      <value>87</value>
+      <name>TCF</name>
+      <description>TCF</description>
+      <xref type="person" data="Guillermo_A_Loyola"/>
+    </record>
+    <record updated="2016-05-27">
+      <value>88</value>
+      <name>EIGRP</name>
+      <description>EIGRP</description>
+      <xref type="rfc" data="rfc7868"/>
+    </record>
+    <record>
+      <value>89</value>
+      <name>OSPFIGP</name>
+      <description>OSPFIGP</description>
+      <xref type="rfc" data="rfc1583"/>
+      <xref type="rfc" data="rfc2328"/>
+      <xref type="rfc" data="rfc5340"/>
+      <xref type="person" data="John_Moy"/>
+    </record>
+    <record>
+      <value>90</value>
+      <name>Sprite-RPC</name>
+      <description>Sprite RPC Protocol</description>
+      <xref type="text">Welch, B., "The Sprite Remote Procedure Call System",
+Technical Report, UCB/Computer Science Dept., 86/302,
+University of California at Berkeley, June 1986.</xref>
+      <xref type="text">Bruce Willins</xref>
+    </record>
+    <record>
+      <value>91</value>
+      <name>LARP</name>
+      <description>Locus Address Resolution Protocol</description>
+      <xref type="text">Brian Horn</xref>
+    </record>
+    <record>
+      <value>92</value>
+      <name>MTP</name>
+      <description>Multicast Transport Protocol</description>
+      <xref type="person" data="Susie_Armstrong"/>
+    </record>
+    <record>
+      <value>93</value>
+      <name>AX.25</name>
+      <description>AX.25 Frames</description>
+      <xref type="person" data="Brian_Kantor"/>
+    </record>
+    <record>
+      <value>94</value>
+      <name>IPIP</name>
+      <description>IP-within-IP Encapsulation Protocol</description>
+      <xref type="person" data="John_Ioannidis"/>
+    </record>
+    <record updated="2015-01-06">
+      <value>95</value>
+      <name>MICP (deprecated)</name>
+      <description>Mobile Internetworking Control Pro.</description>
+      <xref type="person" data="John_Ioannidis"/>
+    </record>
+    <record>
+      <value>96</value>
+      <name>SCC-SP</name>
+      <description>Semaphore Communications Sec. Pro.</description>
+      <xref type="person" data="Howard_Hart"/>
+    </record>
+    <record>
+      <value>97</value>
+      <name>ETHERIP</name>
+      <description>Ethernet-within-IP Encapsulation</description>
+      <xref type="rfc" data="rfc3378"/>
+    </record>
+    <record>
+      <value>98</value>
+      <name>ENCAP</name>
+      <description>Encapsulation Header</description>
+      <xref type="rfc" data="rfc1241"/>
+      <xref type="person" data="Robert_Woodburn"/>
+    </record>
+    <record date="1995-06">
+      <value>99</value>
+      <description>any private encryption scheme</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>100</value>
+      <name>GMTP</name>
+      <description>GMTP</description>
+      <xref type="text">[RXB5]</xref>
+    </record>
+    <record>
+      <value>101</value>
+      <name>IFMP</name>
+      <description>Ipsilon Flow Management Protocol</description>
+      <xref type="person" data="Bob_Hinden"/>
+      <xref type="text">November 1995, 1997.</xref>
+    </record>
+    <record date="1995-12">
+      <value>102</value>
+      <name>PNNI</name>
+      <description>PNNI over IP</description>
+      <xref type="person" data="Ross_Callon"/>
+    </record>
+    <record date="1996-03" updated="2016-06-22">
+      <value>103</value>
+      <name>PIM</name>
+      <description>Protocol Independent Multicast</description>
+      <xref type="rfc" data="rfc7761"/>
+      <xref type="person" data="Dino_Farinacci"/>
+    </record>
+    <record date="1997-01">
+      <value>104</value>
+      <name>ARIS</name>
+      <description>ARIS</description>
+      <xref type="person" data="Nancy_Feldman"/>
+    </record>
+    <record date="1997-03">
+      <value>105</value>
+      <name>SCPS</name>
+      <description>SCPS</description>
+      <xref type="person" data="Robert_Durst"/>
+    </record>
+    <record date="1997-07">
+      <value>106</value>
+      <name>QNX</name>
+      <description>QNX</description>
+      <xref type="person" data="Michael_Hunter"/>
+    </record>
+    <record date="1997-07">
+      <value>107</value>
+      <name>A/N</name>
+      <description>Active Networks</description>
+      <xref type="person" data="Bob_Braden"/>
+    </record>
+    <record>
+      <value>108</value>
+      <name>IPComp</name>
+      <description>IP Payload Compression Protocol</description>
+      <xref type="rfc" data="rfc2393"/>
+    </record>
+    <record date="1997-09">
+      <value>109</value>
+      <name>SNP</name>
+      <description>Sitara Networks Protocol</description>
+      <xref type="person" data="Manickam_R_Sridhar"/>
+    </record>
+    <record date="1997-10">
+      <value>110</value>
+      <name>Compaq-Peer</name>
+      <description>Compaq Peer Protocol</description>
+      <xref type="person" data="Victor_Volpe"/>
+    </record>
+    <record date="1997-10">
+      <value>111</value>
+      <name>IPX-in-IP</name>
+      <description>IPX in IP</description>
+      <xref type="person" data="CJ_Lee"/>
+    </record>
+    <record>
+      <value>112</value>
+      <name>VRRP</name>
+      <description>Virtual Router Redundancy Protocol</description>
+      <xref type="rfc" data="rfc5798"/>
+    </record>
+    <record date="1998-01">
+      <value>113</value>
+      <name>PGM</name>
+      <description>PGM Reliable Transport Protocol</description>
+      <xref type="person" data="Tony_Speakman"/>
+    </record>
+    <record date="1995-06">
+      <value>114</value>
+      <description>any 0-hop protocol</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record date="1998-04">
+      <value>115</value>
+      <name>L2TP</name>
+      <description>Layer Two Tunneling Protocol</description>
+      <xref type="rfc" data="rfc3931"/>
+      <xref type="person" data="Bernard_Aboba"/>
+    </record>
+    <record date="1998-06">
+      <value>116</value>
+      <name>DDX</name>
+      <description>D-II Data Exchange (DDX)</description>
+      <xref type="person" data="John_Worley"/>
+    </record>
+    <record date="1998-10">
+      <value>117</value>
+      <name>IATP</name>
+      <description>Interactive Agent Transfer Protocol</description>
+      <xref type="person" data="John_Murphy"/>
+    </record>
+    <record date="1998-11">
+      <value>118</value>
+      <name>STP</name>
+      <description>Schedule Transfer Protocol</description>
+      <xref type="person" data="Jean_Michel_Pittet"/>
+    </record>
+    <record date="1998-11">
+      <value>119</value>
+      <name>SRP</name>
+      <description>SpectraLink Radio Protocol</description>
+      <xref type="person" data="Mark_Hamilton"/>
+    </record>
+    <record date="1999-03">
+      <value>120</value>
+      <name>UTI</name>
+      <description>UTI</description>
+      <xref type="person" data="Peter_Lothberg"/>
+    </record>
+    <record date="1999-03">
+      <value>121</value>
+      <name>SMP</name>
+      <description>Simple Message Protocol</description>
+      <xref type="person" data="Leif_Ekblad"/>
+    </record>
+    <record date="1999-06" updated="2015-06-23">
+      <value>122</value>
+      <name>SM (deprecated)</name>
+      <description>Simple Multicast Protocol</description>
+      <xref type="person" data="Jon_Crowcroft"/>
+      <xref type="draft" data="draft-perlman-simple-multicast"/>
+    </record>
+    <record date="1999-08">
+      <value>123</value>
+      <name>PTP</name>
+      <description>Performance Transparency Protocol</description>
+      <xref type="person" data="Michael_Welzl"/>
+    </record>
+    <record date="1999-08">
+      <value>124</value>
+      <name>ISIS over IPv4</name>
+      <xref type="person" data="Tony_Przygienda"/>
+    </record>
+    <record date="1999-08">
+      <value>125</value>
+      <name>FIRE</name>
+      <xref type="person" data="Criag_Partridge"/>
+    </record>
+    <record date="1999-08">
+      <value>126</value>
+      <name>CRTP</name>
+      <description>Combat Radio Transport Protocol</description>
+      <xref type="person" data="Robert_Sautter"/>
+    </record>
+    <record date="1999-08">
+      <value>127</value>
+      <name>CRUDP</name>
+      <description>Combat Radio User Datagram</description>
+      <xref type="person" data="Robert_Sautter"/>
+    </record>
+    <record date="1999-08">
+      <value>128</value>
+      <name>SSCOPMCE</name>
+      <xref type="person" data="Kurt_Waber"/>
+    </record>
+    <record>
+      <value>129</value>
+      <name>IPLT</name>
+      <xref type="text">[Hollbach]</xref>
+    </record>
+    <record>
+      <value>130</value>
+      <name>SPS</name>
+      <description>Secure Packet Shield</description>
+      <xref type="person" data="Bill_McIntosh"/>
+    </record>
+    <record date="2000-03">
+      <value>131</value>
+      <name>PIPE</name>
+      <description>Private IP Encapsulation within IP</description>
+      <xref type="person" data="Bernhard_Petri"/>
+    </record>
+    <record date="2000-04">
+      <value>132</value>
+      <name>SCTP</name>
+      <description>Stream Control Transmission Protocol</description>
+      <xref type="person" data="Randall_R_Stewart"/>
+    </record>
+    <record date="2000-05">
+      <value>133</value>
+      <name>FC</name>
+      <description>Fibre Channel</description>
+      <xref type="person" data="Murali_Rajagopal"/>
+      <xref type="rfc" data="rfc6172"/>
+    </record>
+    <record>
+      <value>134</value>
+      <name>RSVP-E2E-IGNORE</name>
+      <xref type="rfc" data="rfc3175"/>
+    </record>
+    <record>
+      <value>135</value>
+      <name>Mobility Header</name>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc6275"/>
+    </record>
+    <record>
+      <value>136</value>
+      <name>UDPLite</name>
+      <xref type="rfc" data="rfc3828"/>
+    </record>
+    <record>
+      <value>137</value>
+      <name>MPLS-in-IP</name>
+      <xref type="rfc" data="rfc4023"/>
+    </record>
+    <record>
+      <value>138</value>
+      <name>manet</name>
+      <description>MANET Protocols</description>
+      <xref type="rfc" data="rfc5498"/>
+    </record>
+    <record updated="2014-11-25">
+      <value>139</value>
+      <name>HIP</name>
+      <description>Host Identity Protocol</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc7401"/>
+    </record>
+    <record>
+      <value>140</value>
+      <name>Shim6</name>
+      <description>Shim6 Protocol</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc5533"/>
+    </record>    
+    <record>
+      <value>141</value>
+      <name>WESP</name>
+      <description>Wrapped Encapsulating Security Payload</description>
+      <xref type="rfc" data="rfc5840"/>
+    </record>
+    <record>
+      <value>142</value>
+      <name>ROHC</name>
+      <description>Robust Header Compression</description>
+      <xref type="rfc" data="rfc5858"/>
+    </record>
+    <record date="2020-01-31" updated="2021-01-08">
+      <value>143</value>
+      <name>Ethernet</name>
+      <description>Ethernet</description>
+      <xref type="rfc" data="rfc8986"/>
+    </record>
+    <record date="1995-06">
+      <value>144-252</value>
+      <description>Unassigned</description>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+    <record>
+      <value>253</value>
+      <description>Use for experimentation and testing</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc3692"/>
+    </record>
+    <record>
+      <value>254</value>
+      <description>Use for experimentation and testing</description>
+      <ipv6>Y</ipv6>
+      <xref type="rfc" data="rfc3692"/>
+    </record>
+    <record date="1995-06">
+      <value>255</value>
+      <name>Reserved</name>
+      <xref type="person" data="Internet_Assigned_Numbers_Authority"/>
+    </record>
+  </registry>
+  <people>
+    <person id="Barry_Boehm">
+      <name>Barry Boehm</name>
+      <uri>mailto:boehm&amp;arpa.mil</uri>
+    </person>
+    <person id="Barry_Howard">
+      <name>Barry Howard</name>
+      <uri>mailto:Howard&amp;nmfecc.llnl.gov</uri>
+    </person>
+    <person id="Bernard_Aboba">
+      <name>Bernard Aboba</name>
+      <uri>mailto:bernarda&amp;microsoft.com</uri>
+      <updated>1998-04</updated>
+    </person>
+    <person id="Bernhard_Petri">
+      <name>Bernhard Petri</name>
+      <uri>mailto:bernhard.petri&amp;siemens.com</uri>
+      <updated>2012-07-09</updated>
+    </person>
+    <person id="Bill_McIntosh">
+      <name>Bill McIntosh</name>
+      <uri>mailto:BMcIntosh&amp;fortresstech.com</uri>
+    </person>
+    <person id="Bob_Braden">
+      <name>Bob Braden</name>
+      <uri>mailto:braden&amp;isi.edu</uri>
+      <updated>1997-07</updated>
+    </person>
+    <person id="Bob_Hinden">
+      <name>Bob Hinden</name>
+      <uri>mailto:bob.hinden&amp;gmail.com</uri>
+      <updated>2013-02-17</updated>
+    </person>
+    <person id="Brian_Kantor">
+      <name>Brian Kantor</name>
+      <uri>mailto:brian&amp;ucsd.edu</uri>
+    </person>
+    <person id="CJ_Lee">
+      <name>CJ Lee</name>
+      <uri>mailto:cj_lee&amp;novell.com</uri>
+      <updated>1997-10</updated>
+    </person>
+    <person id="Charlie_Perkins">
+      <name>Charlie Perkins</name>
+      <uri>mailto:perk&amp;watson.ibm.com</uri>
+      <updated>1994-10</updated>
+    </person>
+    <person id="Christer_Oberg">
+      <name>Christer Oberg</name>
+      <uri>mailto:chg&amp;bull.se</uri>
+      <updated>1994-10</updated>
+    </person>
+    <person id="Criag_Partridge">
+      <name>Criag Partridge</name>
+      <uri>mailto:craig&amp;bbn.com</uri>
+      <updated>1999-08</updated>
+    </person>
+    <person id="Dave_Cheriton">
+      <name>Dave Cheriton</name>
+      <uri>mailto:cheriton&amp;pescadero.stanford.edu</uri>
+    </person>
+    <person id="Dave_Presotto">
+      <name>Dave Presotto</name>
+      <uri>mailto:presotto&amp;plan9.att.com</uri>
+      <updated>1995-07</updated>
+    </person>
+    <person id="David_Clark">
+      <name>David Clark</name>
+      <uri>mailto:ddc&amp;lcs.mit.edu</uri>
+    </person>
+    <person id="David_Mills">
+      <name>David Mills</name>
+      <uri>mailto:Mills&amp;huey.udel.edu</uri>
+    </person>
+    <person id="Deborah_Estrin">
+      <name>Deborah Estrin</name>
+      <uri>mailto:estrin&amp;usc.edu</uri>
+    </person>
+    <person id="Dino_Farinacci">
+      <name>Dino Farinacci</name>
+      <uri>mailto:dino&amp;cisco.com</uri>
+      <updated>1996-03</updated>
+    </person>
+    <person id="Dirk_Fromhein">
+      <name>Dirk Fromhein</name>
+      <uri>mailto:df&amp;watershed.com</uri>
+    </person>
+    <person id="Gene_Tsudik">
+      <name>Gene Tsudik</name>
+      <uri>mailto:tsudik&amp;usc.edu</uri>
+    </person>
+    <person id="Greg_Chesson">
+      <name>Greg Chesson</name>
+      <uri>mailto:Greg&amp;sgi.com</uri>
+    </person>
+    <person id="Guillermo_A_Loyola">
+      <name>Guillermo A. Loyola</name>
+      <uri>mailto:LOYOLA&amp;ibm.com</uri>
+    </person>
+    <person id="Hans_Werner_Braun">
+      <name>Hans-Werner Braun</name>
+      <uri>mailto:HWB&amp;mcr.umich.edu</uri>
+    </person>
+    <person id="Harry_Forsdick">
+      <name>Harry Forsdick</name>
+      <uri>mailto:Forsdick&amp;bbn.com</uri>
+    </person>
+    <person id="Howard_Hart">
+      <name>Howard Hart</name>
+      <uri>mailto:hch&amp;hybrid.com</uri>
+    </person>
+    <person id="Internet_Assigned_Numbers_Authority">
+      <name>Internet Assigned Numbers Authority</name>
+      <uri>mailto:iana&amp;iana.org</uri>
+      <updated>1995-06</updated>
+    </person>
+    <person id="J_Noel_Chiappa">
+      <name>J. Noel Chiappa</name>
+      <uri>mailto:JNC&amp;xx.lcs.mit.edu</uri>
+    </person>
+    <person id="Jack_Haverty">
+      <name>Jack Haverty</name>
+      <uri>mailto:jhaverty&amp;oracle.com</uri>
+    </person>
+    <person id="Jean_Michel_Pittet">
+      <name>Jean-Michel Pittet</name>
+      <uri>mailto:jmp&amp;gandalf.engr.sgi.com</uri>
+      <updated>1998-11</updated>
+    </person>
+    <person id="Jim_Stevens">
+      <name>Jim Stevens</name>
+      <uri>mailto:jasteven&amp;rockwellcollins.com</uri>
+      <updated>2011-01-26</updated>
+    </person>
+    <person id="John_Ioannidis">
+      <name>John Ioannidis</name>
+      <uri>mailto:ji&amp;tla.org</uri>
+      <updated>2015-01-06</updated>
+    </person>
+    <person id="John_Moy">
+      <name>John Moy</name>
+      <uri>mailto:jmoy&amp;proteon.com</uri>
+    </person>
+    <person id="John_Murphy">
+      <name>John Murphy</name>
+      <uri>mailto:john.m.murphy&amp;mci.com</uri>
+      <updated>1998-10</updated>
+    </person>
+    <person id="John_Worley">
+      <name>John Worley</name>
+      <uri>mailto:worley&amp;milehigh.net</uri>
+      <updated>1998-06</updated>
+    </person>
+    <person id="Jon_Crowcroft">
+      <name>Jon Crowcroft</name>
+      <uri>mailto:jon&amp;cs.ucl.ac.uk</uri>
+      <updated>1999-06</updated>
+    </person>
+    <person id="Jon_Postel">
+      <name>Jon Postel</name>
+      <uri>mailto:postel&amp;isi.edu</uri>
+    </person>
+    <person id="K_Robert_Glenn">
+      <name>K. Robert Glenn</name>
+      <uri>mailto:glenn&amp;osi.ncsl.nist.gov</uri>
+    </person>
+    <person id="Kurt_Waber">
+      <name>Kurt Waber</name>
+      <uri>mailto:kurt.waber&amp;swisscom.com</uri>
+      <updated>1999-08</updated>
+    </person>
+    <person id="Leif_Ekblad">
+      <name>Leif Ekblad</name>
+      <uri>mailto:leif&amp;rdos.net</uri>
+      <updated>2012-08-21</updated>
+    </person>
+    <person id="Manickam_R_Sridhar">
+      <name>Manickam R. Sridhar</name>
+      <uri>mailto:msridhar&amp;sitaranetworks.com</uri>
+      <updated>1997-09</updated>
+    </person>
+    <person id="Mark_Hamilton">
+      <name>Mark Hamilton</name>
+      <uri>mailto:mah&amp;spectralink.com</uri>
+      <updated>1998-11</updated>
+    </person>
+    <person id="Marshall_T_Rose">
+      <name>Marshall T. Rose</name>
+      <uri>mailto:mrose&amp;dbc.mtview.ca.us</uri>
+    </person>
+    <person id="Martha_Steenstrup">
+      <name>Martha Steenstrup</name>
+      <uri>mailto:MSteenst&amp;bbn.com</uri>
+    </person>
+    <person id="Michael_Greenwald">
+      <name>Michael Greenwald</name>
+      <uri>mailto:Greenwald&amp;scrc-stony-brook.symbolics.com</uri>
+    </person>
+    <person id="Michael_Hunter">
+      <name>Michael Hunter</name>
+      <uri>mailto:mphunter&amp;qnx.com</uri>
+      <updated>1997-07</updated>
+    </person>
+    <person id="Michael_Welzl">
+      <name>Michael Welzl</name>
+      <uri>mailto:michael&amp;tk.uni-linz.ac.at</uri>
+      <updated>1999-08</updated>
+    </person>
+    <person id="Mike_Little">
+      <name>Mike Little</name>
+      <uri>mailto:little&amp;macom4.arpa</uri>
+    </person>
+    <person id="Murali_Rajagopal">
+      <name>Murali Rajagopal</name>
+      <uri>mailto:murali&amp;gadzoox.com</uri>
+      <updated>2000-05</updated>
+    </person>
+    <person id="Nancy_Feldman">
+      <name>Nancy Feldman</name>
+      <uri>mailto:nkf&amp;vnet.ibm.com</uri>
+      <updated>1997-01</updated>
+    </person>
+    <person id="Peter_Lothberg">
+      <name>Peter Lothberg</name>
+      <uri>mailto:roll&amp;stupi.se</uri>
+      <updated>1999-03</updated>
+    </person>
+    <person id="Randall_R_Stewart">
+      <name>Randall R. Stewart</name>
+      <uri>mailto:rrs&amp;lakerest.net</uri>
+      <updated>2000-04</updated>
+    </person>
+    <person id="Robert_Durst">
+      <name>Robert Durst</name>
+      <uri>mailto:durst&amp;mitre.org</uri>
+      <updated>1997-03</updated>
+    </person>
+    <person id="Robert_Sautter">
+      <name>Robert Sautter</name>
+      <uri>mailto:rsautter&amp;acdnj.itt.com</uri>
+      <updated>1999-08</updated>
+    </person>
+    <person id="Robert_W_Scheifler">
+      <name>Robert W. Scheifler</name>
+      <uri>mailto:rscheifler&amp;comcast.net</uri>
+      <updated>2015-10-06</updated>
+      
+    </person>
+    <person id="Robert_Woodburn">
+      <name>Robert Woodburn</name>
+      <uri>mailto:woody&amp;cseic.saic.com</uri>
+    </person>
+    <person id="Ross_Callon">
+      <name>Ross Callon</name>
+      <uri>mailto:rcallon&amp;baynetworks.com</uri>
+      <updated>1995-12</updated>
+    </person>
+    <person id="Steve_Casner">
+      <name>Steve Casner</name>
+      <uri>mailto:casner&amp;isi.edu</uri>
+    </person>
+    <person id="Steve_Chipman">
+      <name>Steve Chipman</name>
+      <uri>mailto:Chipman&amp;f.bbn.com</uri>
+    </person>
+    <person id="Steve_Deering">
+      <name>Steve Deering</name>
+      <uri>mailto:deering&amp;parc.xerox.com</uri>
+      <updated>1995-03</updated>
+    </person>
+    <person id="Steven_Blumenthal">
+      <name>Steven Blumenthal</name>
+      <uri>mailto:BLUMENTHAL&amp;vax.bbn.com</uri>
+    </person>
+    <person id="Stuart_A_Friedberg">
+      <name>Stuart A. Friedberg</name>
+      <uri>mailto:stuart&amp;cs.wisc.edu</uri>
+    </person>
+    <person id="Sue_Hares">
+      <name>Sue Hares</name>
+      <uri>mailto:skh&amp;merit.edu</uri>
+    </person>
+    <person id="Susie_Armstrong">
+      <name>Susie Armstrong</name>
+      <uri>mailto:Armstrong.wbst128&amp;xerox.com</uri>
+    </person>
+    <person id="Tom_Markson">
+      <name>Tom Markson</name>
+      <uri>mailto:markson&amp;osmosys.ingog.com</uri>
+      <updated>1995-09</updated>
+    </person>
+    <person id="Tony_Ballardie">
+      <name>Tony Ballardie</name>
+      <uri>mailto:A.Ballardie&amp;cs.ucl.ac.uk</uri>
+    </person>
+    <person id="Tony_Li">
+      <name>Tony Li</name>
+      <uri>mailto:tony.li&amp;tony.li</uri>
+      <updated>2012-10-17</updated>
+    </person>
+    <person id="Tony_Przygienda">
+      <name>Tony Przygienda</name>
+      <uri>mailto:prz&amp;siara.com</uri>
+      <updated>1999-08</updated>
+    </person>
+    <person id="Tony_Speakman">
+      <name>Tony Speakman</name>
+      <uri>mailto:speakman&amp;cisco.com</uri>
+      <updated>1998-01</updated>
+    </person>
+    <person id="Trudy_Miller">
+      <name>Trudy Miller</name>
+      <uri>mailto:Trudy&amp;acc.com</uri>
+    </person>
+    <person id="Victor_Volpe">
+      <name>Victor Volpe</name>
+      <uri>mailto:vvolpe&amp;smtp.microcom.com</uri>
+      <updated>1997-10</updated>
+    </person>
+    <person id="Wesley_Craig">
+      <name>Wesley Craig</name>
+      <uri>mailto:Wesley.Craig&amp;terminator.cc.umich.edu</uri>
+    </person>
+    <person id="William_Melohn">
+      <name>William Melohn</name>
+      <uri>mailto:Melohn&amp;sun.com</uri>
+    </person>
+    <person id="Zaw_Sing_Su">
+      <name>Zaw-Sing Su</name>
+      <uri>mailto:ZSu&amp;tsca.istc.sri.</uri>
+    </person>
+  </people>
+</registry>

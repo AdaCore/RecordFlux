@@ -1,0 +1,5 @@
+   type Numerically_Starting_Identifiers is
+      (
+       Numerically_Starting_Identifiers_123_Numerically_Starting_Identifier => 5)
+   with Size => 3;
+
