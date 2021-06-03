@@ -1,0 +1,7 @@
+   type All_Possible_Name_Tags is
+      (
+       -- description = Description, code = Code, type = Type
+       --
+       Name => 0)
+   with Size => 0;
+

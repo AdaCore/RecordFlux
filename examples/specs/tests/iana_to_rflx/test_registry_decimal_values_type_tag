@@ -1,0 +1,7 @@
+   type Decimal_Values_With_Type_Tag is
+      (
+       -- Ref: Jon_Postel
+       --
+       Ethernet_10mb => 1)
+   with Size => 1, Always_Valid;
+

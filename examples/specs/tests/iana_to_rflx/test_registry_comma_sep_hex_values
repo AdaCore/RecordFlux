@@ -1,0 +1,11 @@
+   type Comma_Separated_Hex_Values is
+      (
+       -- dtls = Y, rec = N, Ref: rfc5246
+       --
+       Tls_Null_With_Null_Null => 16#0000#,
+
+       -- dtls = Y, rec = N, Ref: rfc5246
+       --
+       Tls_Rsa_With_Null_Md5 => 16#0001#)
+   with Size => 4;
+

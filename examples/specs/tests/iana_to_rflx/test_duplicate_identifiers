@@ -1,0 +1,9 @@
+   type Duplicate_Identifiers is
+      (
+       Duplicate_Identifier => 1,
+
+       Duplicate_Identifier_2 => 2,
+
+       Duplicate_Identifier_3 => 3)
+   with Size => 2, Always_Valid;
+

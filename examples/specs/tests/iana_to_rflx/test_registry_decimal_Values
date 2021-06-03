@@ -1,0 +1,7 @@
+   type Decimal_Values_With_Description_Tag is
+      (
+       -- dtls = Y, Ref: rfc5246
+       --
+       Dss_Fixed_Dh => 4)
+   with Size => 3;
+

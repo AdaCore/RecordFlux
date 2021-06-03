@@ -1,0 +1,14 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_parameters">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_registry_decimal_Values">
+        <title>decimal values with description tag</title>
+        <record>
+            <value>0xXX,0xZZ</value>
+            <description>dss_fixed_dh</description>
+        </record>
+    </registry>
+</registry>

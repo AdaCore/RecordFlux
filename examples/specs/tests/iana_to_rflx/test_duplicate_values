@@ -1,0 +1,9 @@
+   type Duplicate_Values is
+      (
+       -- comment = comment from duplicate value 1, comment = comment from duplicate value
+       --  2, comment = comment from duplicate value 3, alternative_name = Duplicate_Value
+       -- _2, alternative_name = Duplicate_Value_3
+       --
+       Duplicate_Values_5 => 5)
+   with Size => 3;
+
