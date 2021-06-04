@@ -11,7 +11,7 @@ import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
 
 from . import type_ as mty
@@ -612,6 +612,8 @@ class Message(AbstractMessage):
     ) -> None:
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
+        self._refinements: List["Refinement"] = []
+
         if not self.error.check() and not skip_proof:
             self.verify()
 
@@ -670,6 +672,11 @@ class Message(AbstractMessage):
 
         return False
 
+    def set_refinements(self, refinements: List["Refinement"]) -> None:
+        if any(r.pdu != self for r in refinements):
+            fatal_fail("setting refinements for different message", Subsystem.MODEL)
+        self._refinements = refinements
+
     @property
     def type_(self) -> rty.Message:
         return rty.Message(
@@ -678,19 +685,8 @@ class Message(AbstractMessage):
             if self.structure
             else set(),
             {f.identifier: t.type_ for f, t in self.types.items()},
-            [],
+            [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
             self.is_definite,
-        )
-
-    def refined_type(self, refinements: Sequence["Refinement"]) -> rty.Message:
-        assert all(r.pdu.identifier == self.identifier for r in refinements)
-        t = self.type_
-        return rty.Message(
-            t.identifier,
-            t.field_combinations,
-            t.field_types,
-            [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in refinements],
-            t.is_definite,
         )
 
     @property

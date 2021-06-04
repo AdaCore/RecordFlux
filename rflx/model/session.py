@@ -135,6 +135,12 @@ class AbstractSession(Base):
         self.location = location
         self.error = RecordFluxError()
 
+        refinements = [t for t in types if isinstance(t, Refinement)]
+
+        for t in types:
+            if isinstance(t, Message):
+                t.set_refinements([r for r in refinements if r.pdu == t])
+
         assert all(not isinstance(d, decl.FormalDeclaration) for d in self.declarations.values())
 
         self._global_declarations: Mapping[ID, decl.Declaration] = {
@@ -326,19 +332,9 @@ class Session(AbstractSession):
             elif isinstance(d, decl.TypeCheckableDeclaration):
                 type_identifier = mty.qualified_type_identifier(d.type_identifier, self.package)
                 if type_identifier in self.types:
-                    model_type = self.types[type_identifier]
                     self.error.extend(
                         d.check_type(
-                            model_type.refined_type(
-                                [
-                                    t
-                                    for t in self.types.values()
-                                    if isinstance(t, Refinement)
-                                    and t.pdu.identifier == d.type_identifier
-                                ]
-                            )
-                            if isinstance(model_type, Message)
-                            else model_type.type_,
+                            self.types[type_identifier].type_,
                             lambda x: self.__typify_variable(x, visible_declarations),
                         )
                     )
@@ -353,7 +349,6 @@ class Session(AbstractSession):
                         )
                         if type_identifier in self.types:
                             a.type_ = self.types[type_identifier].type_
-                            model_type = self.types[type_identifier]
                         else:
                             a.type_ = rty.Any()
                             undefined_type(a.type_identifier, d.location)
@@ -447,15 +442,7 @@ class Session(AbstractSession):
             if isinstance(expression, expr.MessageAggregate):
                 type_identifier = mty.qualified_type_identifier(identifier, self.package)
                 if type_identifier in self.types:
-                    message = self.types[type_identifier]
-                    assert isinstance(message, Message)
-                    expression.type_ = message.refined_type(
-                        [
-                            t
-                            for t in self.types.values()
-                            if isinstance(t, Refinement) and t.pdu.identifier == identifier
-                        ]
-                    )
+                    expression.type_ = self.types[type_identifier].type_
 
         return expression
 

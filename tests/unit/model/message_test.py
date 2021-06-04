@@ -4,7 +4,8 @@ from copy import deepcopy
 
 import pytest
 
-from rflx.error import Location, RecordFluxError
+from rflx import typing_ as rty
+from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -56,9 +57,11 @@ from tests.data.models import (
     ENUMERATION,
     ETHERNET_FRAME,
     FIXED_SIZE_MESSAGE,
+    MESSAGE,
     MODULAR_INTEGER,
     NULL_MESSAGE,
     RANGE_INTEGER,
+    REFINEMENT,
     SEQUENCE_INNER_MESSAGE,
     SEQUENCE_INNER_MESSAGES,
     SEQUENCE_LENGTH,
@@ -3112,6 +3115,32 @@ def test_normalization() -> None:
             Link(Field("Value"), FINAL),
         ]
     )
+
+
+def test_set_refinements() -> None:
+    message = MESSAGE.copy()
+
+    assert message.type_.refinements == []
+
+    message.set_refinements([REFINEMENT])
+
+    assert message.type_.refinements == [
+        rty.Refinement(
+            "F",
+            rty.Message("P::M", {("F",)}, {ID("F"): rty.OPAQUE}, refinements=[], is_definite=True),
+            "In_Message",
+        )
+    ]
+
+
+def test_set_refinements_error() -> None:
+    message = MESSAGE.copy()
+    with pytest.raises(
+        FatalError, match=r"^model: error: setting refinements for different message$"
+    ):
+        message.set_refinements(
+            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("F"), MESSAGE)]
+        )
 
 
 def test_message_dependencies() -> None:
