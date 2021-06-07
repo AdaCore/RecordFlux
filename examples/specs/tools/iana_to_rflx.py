@@ -156,7 +156,8 @@ def _normalize_comment(comment_list: List[Element], alternative_names: List[str]
     ]
     comments.extend(alternative_names)
 
-    if (c := ", ".join(comments)) != "":
+    c = ", ".join(comments)
+    if c != "":
         c = c.replace("\n", " ")
         c = " ".join(c.split())
         lines = len(c) // 80 + 1
