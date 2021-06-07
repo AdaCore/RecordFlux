@@ -2,10 +2,10 @@ import filecmp
 import re
 from pathlib import Path
 from typing import List
+from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
 import pytest
-from defusedxml import ElementTree  # type: ignore
 
 from tools.iana_to_rflx import (
     IANAError,
@@ -23,7 +23,7 @@ NAMESPACE = {"iana": "http://www.iana.org/assignments"}
 
 
 @pytest.fixture(name="root_element", scope="session")
-def fixture_root_element() -> ElementTree:
+def fixture_root_element() -> Element:
     with open("tests/iana_to_rflx/test_registries/test.xml", "r") as xml_f:
         xml_str = xml_f.read()
     root = ElementTree.fromstring(xml_str)
@@ -31,7 +31,7 @@ def fixture_root_element() -> ElementTree:
 
 
 @pytest.fixture(name="registries", scope="session")
-def fixture_registries(root_element: ElementTree) -> List[Element]:
+def fixture_registries(root_element: Element) -> List[Element]:
     return root_element.findall(root_element.tag, NAMESPACE)
 
 
