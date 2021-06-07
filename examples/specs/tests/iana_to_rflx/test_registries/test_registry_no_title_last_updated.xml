@@ -6,7 +6,7 @@
         <title>decimal values with description tag</title>
         <record>
             <value>1</value>
-            <description>dss_fixed_dh</description>
+            <description>test_no_title_last_updated</description>
         </record>
     </registry>
 </registry>
