@@ -1,4 +1,5 @@
 import filecmp
+import re
 from pathlib import Path
 from typing import List
 from xml.etree.ElementTree import Element
@@ -65,7 +66,10 @@ def fixture_duplicate_value_records(registries: Element) -> List[Element]:
 def fixture_all_name_tags_record(registries: Element) -> Element:
     for registry in registries:
         if registry.get("id") == "test_all_name_tags":
-            return registry.find("iana:record", NAMESPACE)
+            elem = registry.find("iana:record", NAMESPACE)
+            assert elem is not None
+            return elem
+    assert False
 
 
 @pytest.fixture(name="no_value_no_name_tags_record", scope="session")
@@ -158,16 +162,56 @@ def test_get_name_tag(all_name_tags_record: Element) -> None:
 
 def test_write_registries(tmp_path: Path, registries: List[Element]) -> None:
     for registry in registries:
-        tmp_registry_path = tmp_path / registry.get("id")
+        identifier = registry.get("id")
+        assert identifier is not None
+        tmp_registry_path = tmp_path / identifier
         with open(tmp_registry_path, "w+") as f:
             write_registry(registry, True, f)
-        assert filecmp.cmp(tmp_registry_path, Path("tests/iana_to_rflx") / registry.get("id"))
+        assert filecmp.cmp(tmp_registry_path, Path("tests/iana_to_rflx") / identifier)
 
 
-def test_iana_to_rflx() -> None:
+def test_iana_to_rflx(tmp_path: Path) -> None:
+    out_path = tmp_path / "iana_to_rflx_test.rflx"
     with open("tests/test_registries/test.xml", "r") as f:
-        iana_to_rflx(f, True)
-    assert filecmp.cmp("test_parameters.rflx", "tests/test_registries/test_parameters.rflx")
+        iana_to_rflx(f, True, out_path)
+
+    with open(out_path, "r") as generated_file:
+        generated = generated_file.read()
+        generated = re.sub(
+            r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}", "Generation date: .", generated
+        )
+    with open("tests/test_registries/test_parameters.rflx", "r") as known_valid_file:
+        known_valid = known_valid_file.read()
+    assert generated == known_valid
+
+
+def test_no_package_name() -> None:
+    with pytest.raises(IANAError, match=r"^No registry ID found$"):
+        with open("tests/test_registries/test_registry_no_package_name.xml", "r") as f:
+            iana_to_rflx(f, True)
+
+
+def test_no_type_name() -> None:
+    with pytest.raises(IANAError, match=r"^could not find registry title$"):
+        with open("tests/test_registries/test_registry_no_type_name.xml", "r") as f:
+            iana_to_rflx(f, True)
+
+
+def test_no_title_last_updated(tmp_path: Path) -> None:
+    out_path = tmp_path / "test_registry_no_title_last_updated.rflx"
+    with open("tests/test_registries/test_registry_no_title_last_updated.xml", "r") as f:
+        iana_to_rflx(f, True, out_path)
+
+    with open(out_path, "r") as generated_file:
+        generated = generated_file.read()
+        generated = re.sub(
+            r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}", "Generation date: .", generated
+        )
+    with open(
+        "tests/test_registries/test_registry_no_title_last_updated.rflx", "r"
+    ) as known_valid_file:
+        known_valid = known_valid_file.read()
+    assert generated == known_valid
 
 
 def test_cli() -> None:
