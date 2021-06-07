@@ -37,3 +37,8 @@ test_python_coverage:
 
 test_python_validation_tool:
 	python3 -m pytest -n$(shell nproc) -vv tests/test_validation_tool.py
+
+test_python_iana_to_rflx:
+	python3 -m pytest -n$(shell nproc) -vv --cov=tools.iana_to_rflx --cov-branch tests/test_iana_to_rflx.py
+	coverage html
+	firefox htmlcov/tools_iana_to_rflx_py.html
