@@ -198,10 +198,11 @@ def test_no_package_name() -> None:
             iana_to_rflx(f, True)
 
 
-def test_no_type_name() -> None:
+def test_no_type_name(tmp_path: Path) -> None:
+    out_path = tmp_path / "test_registry_no_type_name.rflx"
     with pytest.raises(IANAError, match=r"^could not find registry title$"):
         with open("tests/iana_to_rflx/test_registries/test_registry_no_type_name.xml", "r") as f:
-            iana_to_rflx(f, True)
+            iana_to_rflx(f, True, out_path)
 
 
 def test_no_title_last_updated(tmp_path: Path) -> None:
