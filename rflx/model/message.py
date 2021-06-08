@@ -121,8 +121,8 @@ class AbstractMessage(mty.Type):
 
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
 
-        self._enum_literals = mty.qualified_enum_literals(self.all_types, self.package)
-        self._type_literals = mty.qualified_type_literals(self.all_types)
+        self._enum_literals = mty.qualified_enum_literals(self.dependencies, self.package)
+        self._type_literals = mty.qualified_type_literals(self.dependencies)
 
         if not state and (structure or types):
             try:
@@ -197,8 +197,8 @@ class AbstractMessage(mty.Type):
         )
 
     @property
-    def all_types(self) -> List[mty.Type]:
-        return [self, *unique(a for t in self.types.values() for a in t.all_types)]
+    def dependencies(self) -> List[mty.Type]:
+        return [self, *unique(a for t in self.types.values() for a in t.dependencies)]
 
     @abstractmethod
     def copy(

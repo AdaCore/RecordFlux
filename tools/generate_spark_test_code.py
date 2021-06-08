@@ -24,7 +24,7 @@ MODELS = [
     tests.data.models.NULL_MODEL,
     tests.data.models.TLV_MODEL,
     tests.data.models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-    Model(tests.data.models.FIXED_SIZE_SIMPLE_MESSAGE.all_types),
+    Model(tests.data.models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
 ]
 
 SPECIFICATION_FILES = [

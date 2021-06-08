@@ -39,11 +39,11 @@ def test_type_type() -> None:
     assert NewType("P::T").type_ == rty.Undefined()
 
 
-def test_type_all_types() -> None:
+def test_type_dependencies() -> None:
     class NewType(Type):
         pass
 
-    assert NewType("P::T").all_types == [NewType("P::T")]
+    assert NewType("P::T").dependencies == [NewType("P::T")]
 
 
 def test_modular_size() -> None:
@@ -295,12 +295,12 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
     )
 
 
-def test_sequence_all_types() -> None:
-    assert models.SEQUENCE_MODULAR_VECTOR.all_types == [
+def test_sequence_dependencies() -> None:
+    assert models.SEQUENCE_MODULAR_VECTOR.dependencies == [
         models.SEQUENCE_MODULAR_VECTOR,
         models.SEQUENCE_MODULAR_INTEGER,
     ]
-    assert models.SEQUENCE_INNER_MESSAGES.all_types == [
+    assert models.SEQUENCE_INNER_MESSAGES.dependencies == [
         models.SEQUENCE_INNER_MESSAGES,
         models.SEQUENCE_INNER_MESSAGE,
         models.SEQUENCE_LENGTH,
