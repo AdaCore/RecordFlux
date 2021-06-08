@@ -49,7 +49,7 @@ class Type(Base):
         return rty.Undefined()
 
     @property
-    def all_types(self) -> ty.List["Type"]:
+    def dependencies(self) -> ty.List["Type"]:
         """
         Return a list consisting of the type and all types on which the type depends. The
         dependencies are determined recursively.
@@ -521,8 +521,8 @@ class Sequence(Composite):
         return expr.Size(self.element_type.name)
 
     @property
-    def all_types(self) -> ty.List["Type"]:
-        return [self, *self.element_type.all_types]
+    def dependencies(self) -> ty.List["Type"]:
+        return [self, *self.element_type.dependencies]
 
 
 class Opaque(Composite):

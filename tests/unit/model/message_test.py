@@ -3090,14 +3090,14 @@ def test_paths() -> None:
     }
 
 
-def test_message_all_types() -> None:
-    assert TLV_MESSAGE.all_types == [
+def test_message_dependencies() -> None:
+    assert TLV_MESSAGE.dependencies == [
         TLV_MESSAGE,
         TLV_TAG,
         TLV_LENGTH,
         OPAQUE,
     ]
-    assert SEQUENCE_MESSAGES_MESSAGE.all_types == [
+    assert SEQUENCE_MESSAGES_MESSAGE.dependencies == [
         SEQUENCE_MESSAGES_MESSAGE,
         SEQUENCE_LENGTH,
         SEQUENCE_INNER_MESSAGES,
