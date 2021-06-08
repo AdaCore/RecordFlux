@@ -2670,11 +2670,9 @@ class Generator:
             [],
             [],
             [
-                # WORKAROUND:
-                # Limitation of GNAT Community 2020
+                # WORKAROUND: Componolit/Workarounds#36
                 # An access constant type cannot be used here, because the "implicit conversion
                 # between access types with different designated types is not yet supported".
-                # The warning is no longer shown in later versions of SPARK.
                 Pragma(
                     "Warnings",
                     [
