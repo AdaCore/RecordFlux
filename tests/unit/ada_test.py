@@ -217,6 +217,7 @@ def test_number_str_bin() -> None:
 
 def test_string_str() -> None:
     assert str(ada.String("X Y")) == '"X Y"'
+    assert str(ada.String('X "Y"')) == '"X ""Y"""'
 
 
 def test_raise_str() -> None:

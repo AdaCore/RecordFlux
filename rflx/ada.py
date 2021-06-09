@@ -488,6 +488,7 @@ class Aggregate(Expr):
 
 class String(Aggregate):
     def __init__(self, data: str) -> None:
+        data = data.replace('"', '""')
         super().__init__(*[Number(ord(d)) for d in data])
         self.data = data
 
