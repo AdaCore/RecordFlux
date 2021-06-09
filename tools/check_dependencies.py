@@ -11,14 +11,12 @@ def check_dependencies() -> bool:
     requirements = get_distribution("RecordFlux").requires(extras=("devel",))
     for r in requirements:
         try:
-            pkg = get_distribution(r.name)  # type: ignore
-            if r.specifier and not r.specifier.contains(pkg.version):  # type: ignore
-                print(
-                    f"{r.name} has version {pkg.version}, should be {r.specifier}"  # type: ignore
-                )
+            pkg = get_distribution(r.project_name)
+            if pkg not in r:
+                print(f"{r.project_name} has version {pkg.version}, should be {r}")
                 result = False
         except DistributionNotFound:
-            print(f"{r.name} not found")  # type: ignore
+            print(f"{r.project_name} not found")
             result = False
 
     return result

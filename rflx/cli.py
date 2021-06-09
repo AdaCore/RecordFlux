@@ -122,9 +122,9 @@ in the report."""
 
 def version() -> str:
     dependencies = [
-        f"{r.name} {get_distribution(r.name).version}"  # type: ignore[attr-defined]
+        f"{r.project_name} {get_distribution(r.project_name).version}"
         for r in get_distribution("RecordFlux").requires()
-        if not r.name.startswith("RecordFlux")  # type: ignore[attr-defined]
+        if not r.project_name.startswith("RecordFlux")
     ]
     return "\n".join(
         [
