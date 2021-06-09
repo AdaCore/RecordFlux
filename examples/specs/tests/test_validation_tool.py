@@ -234,14 +234,14 @@ def test_cli_invalid_identifier() -> None:
                 "-s",
                 "tests/validation_tool/in_ethernet.rflx",
                 "-m",
-                "Ethernet.Frame",
+                "Ethernet Frame",
                 "-v",
                 "tests/validation_tool/ethernet/frame/valid",
                 "-i",
                 "tests/validation_tool/ethernet/frame/invalid",
             ]
         )
-        == 'invalid identifier "Ethernet.Frame" : id: error: "." in identifier parts'
+        == 'invalid identifier: id: error: " " in identifier parts of "Ethernet Frame"'
     )
 
 
