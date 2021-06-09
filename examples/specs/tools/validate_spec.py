@@ -99,7 +99,7 @@ def cli(argv: List[str]) -> Union[int, str]:
     try:
         identifier = ID(args.message_identifier)
     except RecordFluxError as e:
-        return f'invalid identifier "{args.message_identifier}" : {e}'
+        return f"invalid identifier: {e}"
 
     try:
         pyrflx = PyRFLX.from_specs(
