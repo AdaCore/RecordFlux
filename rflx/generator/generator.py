@@ -400,15 +400,13 @@ class Generator:
             [
                 Pragma(
                     "Warnings",
-                    [Variable("Off"), String('use clause for type ""U64"" * has no effect')],
+                    [Variable("Off"), String('use clause for type "U64" * has no effect')],
                 ),
                 Pragma(
                     "Warnings",
                     [
                         Variable("Off"),
-                        String(
-                            '""LENGTH"" is already use-visible through previous use_type_clause'
-                        ),
+                        String('"LENGTH" is already use-visible through previous use_type_clause'),
                     ],
                 ),  # required when user-defined type Index is subtype of Length
                 UseTypeClause(
@@ -425,14 +423,12 @@ class Generator:
                     "Warnings",
                     [
                         Variable("On"),
-                        String(
-                            '""LENGTH"" is already use-visible through previous use_type_clause'
-                        ),
+                        String('"LENGTH" is already use-visible through previous use_type_clause'),
                     ],
                 ),
                 Pragma(
                     "Warnings",
-                    [Variable("On"), String('use clause for type ""U64"" * has no effect')],
+                    [Variable("On"), String('use clause for type "U64" * has no effect')],
                 ),
             ]
         )
@@ -2469,7 +2465,7 @@ class Generator:
                         CallStatement("Take_Buffer", [Variable("Ctx"), Variable("Buffer")]),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("Off"), String('unused assignment to ""Buffer""')],
+                            [Variable("Off"), String('unused assignment to "Buffer"')],
                         ),
                         CallStatement(
                             f"{common.sequence_name(message, f)}.Initialize",
@@ -2484,7 +2480,7 @@ class Generator:
                         ),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("On"), String('unused assignment to ""Buffer""')],
+                            [Variable("On"), String('unused assignment to "Buffer"')],
                         ),
                     ],
                 )
@@ -2752,7 +2748,7 @@ class Generator:
                     "Warnings",
                     [
                         Variable("Off"),
-                        String('""Buffer"" is not modified, could be of access constant type'),
+                        String('"Buffer" is not modified, could be of access constant type'),
                     ],
                 ),
                 ExpressionFunctionDeclaration(
@@ -2763,7 +2759,7 @@ class Generator:
                     "Warnings",
                     [
                         Variable("On"),
-                        String('""Buffer"" is not modified, could be of access constant type'),
+                        String('"Buffer" is not modified, could be of access constant type'),
                     ],
                 ),
             ],
@@ -3199,12 +3195,12 @@ class Generator:
                 # generic sequence package is prevented by adding a with-clause for this package.
                 Pragma(
                     "Warnings",
-                    [Variable("Off"), String('unit ""*RFLX_Types"" is not referenced')],
+                    [Variable("Off"), String('unit "*RFLX_Types" is not referenced')],
                 ),
                 WithClause(self.__prefix * const.TYPES_PACKAGE),
                 Pragma(
                     "Warnings",
-                    [Variable("On"), String('unit ""*RFLX_Types"" is not referenced')],
+                    [Variable("On"), String('unit "*RFLX_Types" is not referenced')],
                 ),
             ],
             package,
@@ -3218,10 +3214,10 @@ class Generator:
         if constraints == expr.TRUE:
             specification.extend(
                 [
-                    Pragma("Warnings", [Variable("Off"), String('unused variable ""Val""')]),
+                    Pragma("Warnings", [Variable("Off"), String('unused variable "Val"')]),
                     Pragma(
                         "Warnings",
-                        [Variable("Off"), String('formal parameter ""Val"" is not referenced')],
+                        [Variable("Off"), String('formal parameter "Val" is not referenced')],
                     ),
                 ]
             )
@@ -3233,9 +3229,9 @@ class Generator:
                 [
                     Pragma(
                         "Warnings",
-                        [Variable("On"), String('formal parameter ""Val"" is not referenced')],
+                        [Variable("On"), String('formal parameter "Val" is not referenced')],
                     ),
-                    Pragma("Warnings", [Variable("On"), String('unused variable ""Val""')]),
+                    Pragma("Warnings", [Variable("On"), String('unused variable "Val"')]),
                 ]
             )
 
@@ -3266,10 +3262,10 @@ class Generator:
         if enum.always_valid:
             specification.extend(
                 [
-                    Pragma("Warnings", [Variable("Off"), String('unused variable ""Val""')]),
+                    Pragma("Warnings", [Variable("Off"), String('unused variable "Val"')]),
                     Pragma(
                         "Warnings",
-                        [Variable("Off"), String('formal parameter ""Val"" is not referenced')],
+                        [Variable("Off"), String('formal parameter "Val" is not referenced')],
                     ),
                 ]
             )
@@ -3279,9 +3275,9 @@ class Generator:
                 [
                     Pragma(
                         "Warnings",
-                        [Variable("On"), String('formal parameter ""Val"" is not referenced')],
+                        [Variable("On"), String('formal parameter "Val" is not referenced')],
                     ),
-                    Pragma("Warnings", [Variable("On"), String('unused variable ""Val""')]),
+                    Pragma("Warnings", [Variable("On"), String('unused variable "Val"')]),
                 ]
             )
 
@@ -3548,7 +3544,7 @@ class Generator:
                         ),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("Off"), String('unused assignment to ""Buffer""')],
+                            [Variable("Off"), String('unused assignment to "Buffer"')],
                         ),
                         CallStatement(
                             sdu_identifier * "Initialize",
@@ -3561,7 +3557,7 @@ class Generator:
                         ),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("On"), String('unused assignment to ""Buffer""')],
+                            [Variable("On"), String('unused assignment to "Buffer"')],
                         ),
                     ],
                 )
@@ -3691,7 +3687,7 @@ class Generator:
                             [
                                 Variable("Off"),
                                 String(
-                                    f'""{sdu_context}"" is set by ""Take_Buffer""'
+                                    f'"{sdu_context}" is set by "Take_Buffer"'
                                     " but not used after the call"
                                 ),
                             ],
@@ -3705,7 +3701,7 @@ class Generator:
                             [
                                 Variable("On"),
                                 String(
-                                    f'""{sdu_context}"" is set by ""Take_Buffer""'
+                                    f'"{sdu_context}" is set by "Take_Buffer"'
                                     " but not used after the call"
                                 ),
                             ],
