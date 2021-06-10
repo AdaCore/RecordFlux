@@ -1,4 +1,5 @@
 import glob
+import importlib
 import re
 import subprocess
 import warnings
@@ -39,6 +40,8 @@ def test_iana_specs_synchronized(registry_file_name: str) -> None:
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_validate_spec(spec: str) -> None:
     pyrflx = PyRFLX.from_specs([spec], True)
+    checksum_module = importlib.import_module("tests.checksum")
+    all_checksum_functions = checksum_module.checksum_functions  # type: ignore
 
     for package in pyrflx:
         for message_value in package:
@@ -54,13 +57,16 @@ def test_validate_spec(spec: str) -> None:
 
             directory_invalid = test_data_dir / "invalid"
             directory_valid = test_data_dir / "valid"
+            checksum_functions = None
+            if str(message_value.identifier) in all_checksum_functions:
+                checksum_functions = all_checksum_functions[str(message_value.identifier)]
 
             validate(
                 message_value.identifier,
                 pyrflx,
                 directory_invalid,
                 directory_valid,
-                checksum_functions=None,
+                checksum_functions=checksum_functions,
                 json_output=None,
                 abort_on_error=False,
                 coverage=True,

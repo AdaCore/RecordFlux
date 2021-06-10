@@ -2,4 +2,4 @@ def checksum_test() -> int:
     pass
 
 
-checksum_functions = {"IGMP::Message": {"No_Field": checksum_test}}
+checksum_functions = {"ICMP::Message": {"No_Field": checksum_test}}

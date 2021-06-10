@@ -1,17 +1,17 @@
-def igmp_checksum(message: bytes, **kwargs: object) -> int:
-    first_arg = kwargs.get("Typ'First .. Checksum'First - 1")
+def icmp_checksum(message: bytes, **kwargs: object) -> int:
+    first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
     assert isinstance(first_arg, tuple)
-    typ_first, checksum_first_minus_one = first_arg
-    assert typ_first == 0 and checksum_first_minus_one == 15
+    tag_first, checksum_first_minus_one = first_arg
+    assert tag_first == 0 and checksum_first_minus_one == 15
     second_arg = kwargs.get("Checksum'Last + 1 .. Message'Last")
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
-    assert checksum_last_plus_one == 32
+    assert checksum_last_plus_one == 32 and data_last == 511
     checksum_size = kwargs.get("Checksum'Size")
     assert isinstance(checksum_size, int)
     assert checksum_size == 16
 
-    checksum_bytes = message[typ_first : (checksum_first_minus_one + 1) // 8]
+    checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
     checksum_bytes += b"\x00" * (checksum_size // 8)
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
     return internet_checksum(checksum_bytes)
@@ -35,4 +35,4 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     return intermediary_result ^ 0xFFFF
 
 
-checksum_functions = {"IGMP::Message": {"Checksum": igmp_checksum}}
+checksum_functions = {"ICMP::Message": {"Checksum": icmp_checksum}}
