@@ -115,28 +115,26 @@ def cli(argv: List[str]) -> Union[int, str]:
         try:
             checksum_module = importlib.import_module(str(args.checksum_functions))
         except ImportError as e:
-            raise ValidationError(
+            return (
                 f"The provided module {args.checksum_functions} cannot be "
                 f"imported. Make sure the module name is provided as "
                 f"package.module and not as a file system path. {e}"
-            ) from e
+            )
 
         try:
             all_checksum_functions = checksum_module.checksum_functions  # type: ignore
-        except AttributeError as e:
-            raise ValidationError(
+        except AttributeError:
+            return (
                 f"The checksum module at {args.checksum_functions} "
                 f'does not contain a dict with the name "checksum_function". '
                 "Provide a dict that maps the message identifier to a dict "
                 "that maps the name of each checksum field to a callable "
                 "checksum function."
-            ) from e
+            )
         try:
             checksum_functions = all_checksum_functions[args.message_identifier]
-        except KeyError as e:
-            raise ValidationError(
-                f"The checksum_function dict does not contain a key for " f"{identifier}"
-            ) from e
+        except KeyError:
+            return f"The checksum_function dict does not contain a key for " f"{identifier}"
 
     try:
         pyrflx = PyRFLX.from_specs(
@@ -191,7 +189,7 @@ def validate(
         try:
             message_value.set_checksum_function(checksum_functions)
         except RecordFluxError as e:
-            raise ValidationError(f"Could not set provided checksum functions: {e}") from e
+            raise ValidationError(f"Error while setting checksum functions: {e}") from e
 
     incorrectly_classified = 0
     coverage_info = CoverageInformation(list(pyrflx), coverage)

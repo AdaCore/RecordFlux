@@ -406,7 +406,29 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     assert captured_output.out == valid_output
 
 
-def test_checksum() -> None:
+def test_validation_coverage_threshold_invalid():
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/in_ethernet.rflx",
+                "-m",
+                "Ethernet::Frame",
+                "-i",
+                "tests/validation_tool/ethernet/frame/invalid",
+                "-v",
+                "tests/validation_tool/ethernet/frame/valid",
+                "-c",
+                "--target-coverage=110",
+                "--no-verification",
+            ]
+        )
+        == "target coverage must be between 0 and 100, got 110.0"
+    )
+
+
+def test_cli_checksum() -> None:
     assert (
         cli(
             [
@@ -422,4 +444,90 @@ def test_checksum() -> None:
             ]
         )
         == 0
+    )
+
+
+def test_cli_checksum_import_error() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/igmp.rflx",
+                "-m",
+                "IGMP::Message",
+                "-v",
+                "tests/data/igmp/valid/",
+                "-f",
+                "tests/checksum",
+            ]
+        )
+        == "The provided module tests/checksum cannot be imported. Make sure the module name "
+        "is provided as package.module and not as a file system path. "
+        "No module named 'tests/checksum'"
+    )
+
+
+def test_cli_checksum_missing_attribute() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/igmp.rflx",
+                "-m",
+                "IGMP::Message",
+                "-v",
+                "tests/data/igmp/valid/",
+                "-f",
+                "tests.validation_tool.missing_checksum_functions_attrib",
+                "--no-verification",
+            ]
+        )
+        == "The checksum module at "
+        "tests.validation_tool.missing_checksum_functions_attrib does not contain a "
+        'dict with the name "checksum_function". Provide a dict that maps the message '
+        "identifier to a dict that maps the name of each checksum field to a callable "
+        "checksum function."
+    )
+
+
+def test_cli_checksum_functions_missing_key():
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/igmp.rflx",
+                "-m",
+                "IGMP::Message",
+                "-v",
+                "tests/data/igmp/valid/",
+                "-f",
+                "tests.validation_tool.missing_key",
+                "--no-verification",
+            ]
+        )
+        == "The checksum_function dict does not contain a key for IGMP::Message"
+    )
+
+
+def test_cli_checksum_setting_functions_failed():
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/igmp.rflx",
+                "-m",
+                "IGMP::Message",
+                "-v",
+                "tests/data/igmp/valid/",
+                "-f",
+                "tests.validation_tool.invalid_checksum_field",
+                "--no-verification",
+            ]
+        )
+        == "Error while setting checksum functions: "
+        "pyrflx: error: cannot set checksum function: field No_Field is not defined"
     )
