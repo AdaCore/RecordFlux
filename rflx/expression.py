@@ -1409,6 +1409,12 @@ class Call(Name):
             result.extend(t.variables())
         return result
 
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *[e for a in self.args for e in a.findall(match)],
+        ]
+
     def substituted(
         self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
@@ -2272,6 +2278,13 @@ class Binding(Expr):
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *self.expr.findall(match),
+            *[e for v in self.data.values() for e in v.findall(match)],
+        ]
 
     def simplified(self) -> Expr:
         facts: Mapping[Name, Expr] = {Variable(k): self.data[k].simplified() for k in self.data}
