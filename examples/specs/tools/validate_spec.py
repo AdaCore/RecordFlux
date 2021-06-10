@@ -1,6 +1,7 @@
 #!/usr/bin/env -S python3 -O
 
 import argparse
+import importlib
 import json
 import os
 import sys
@@ -8,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import Dict, List, Optional, TextIO, Type, Union
+from typing import Any, Callable, Dict, List, Optional, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
@@ -47,6 +48,14 @@ def cli(argv: List[str]) -> Union[int, str]:
         "--directory-invalid",
         type=Path,
         help="path to directory with known valid examples",
+        default=None,
+    )
+
+    parser.add_argument(
+        "-f",
+        "--checksum_functions",
+        type=Path,
+        help="path to the module containing the checksum functions",
         default=None,
     )
 
@@ -101,6 +110,34 @@ def cli(argv: List[str]) -> Union[int, str]:
     except RecordFluxError as e:
         return f"invalid identifier: {e}"
 
+    checksum_functions = None
+    if args.checksum_functions is not None:
+        try:
+            checksum_module = importlib.import_module(str(args.checksum_functions))
+        except ImportError as e:
+            raise ValidationError(
+                f"The provided module {args.checksum_functions} cannot be "
+                f"imported. Make sure the module name is provided as "
+                f"package.module and not as a file system path. {e}"
+            ) from e
+
+        try:
+            all_checksum_functions = checksum_module.checksum_functions  # type: ignore
+        except AttributeError as e:
+            raise ValidationError(
+                f"The checksum module at {args.checksum_functions} "
+                f'does not contain a dict with the name "checksum_function". '
+                "Provide a dict that maps the message identifier to a dict "
+                "that maps the name of each checksum field to a callable "
+                "checksum function."
+            ) from e
+        try:
+            checksum_functions = all_checksum_functions[args.message_identifier]
+        except KeyError as e:
+            raise ValidationError(
+                f"The checksum_function dict does not contain a key for " f"{identifier}"
+            ) from e
+
     try:
         pyrflx = PyRFLX.from_specs(
             [str(args.specification)], skip_model_verification=args.no_verification
@@ -115,6 +152,7 @@ def cli(argv: List[str]) -> Union[int, str]:
             args.directory_invalid,
             args.directory_valid,
             args.json_output,
+            checksum_functions,
             args.abort_on_error,
             args.coverage,
             args.target_coverage,
@@ -131,6 +169,7 @@ def validate(
     directory_invalid: Optional[Path],
     directory_valid: Optional[Path],
     json_output: Optional[Path],
+    checksum_functions: Optional[Dict[str, Callable[[Any], int]]],
     abort_on_error: bool = False,
     coverage: bool = False,
     target_coverage: float = 0.00,
@@ -147,6 +186,12 @@ def validate(
             f'message "{msg_identifier.name}" could not be found '
             f'in package "{msg_identifier.parent}"'
         ) from e
+
+    if checksum_functions is not None:
+        try:
+            message_value.set_checksum_function(checksum_functions)
+        except RecordFluxError as e:
+            raise ValidationError(f"Could not set provided checksum functions: {e}") from e
 
     incorrectly_classified = 0
     coverage_info = CoverageInformation(list(pyrflx), coverage)

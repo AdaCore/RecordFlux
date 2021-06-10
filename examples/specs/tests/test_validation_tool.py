@@ -404,3 +404,22 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     with open("tests/validation_tool/valid_cov_output_in_ethernet.txt", "r") as f:
         valid_output = f.read().replace("Directory: .", f"Directory: {os.getcwd()}")
     assert captured_output.out == valid_output
+
+
+def test_checksum() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "igmp.rflx",
+                "-m",
+                "IGMP::Message",
+                "-v",
+                "tests/data/igmp/valid/",
+                "-f",
+                "tests.checksum",
+            ]
+        )
+        == 0
+    )
