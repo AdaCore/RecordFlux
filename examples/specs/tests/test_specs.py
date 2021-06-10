@@ -60,6 +60,7 @@ def test_validate_spec(spec: str) -> None:
                 pyrflx,
                 directory_invalid,
                 directory_valid,
+                checksum_functions=None,
                 json_output=None,
                 abort_on_error=False,
                 coverage=True,
