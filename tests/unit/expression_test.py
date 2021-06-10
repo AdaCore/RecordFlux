@@ -1696,6 +1696,13 @@ def test_call_variables() -> None:
     assert result == expected
 
 
+def test_call_findall() -> None:
+    assert Call("X", [Variable("Y"), Variable("Z")]).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("Y"),
+        Variable("Z"),
+    ]
+
+
 def test_call_str() -> None:
     assert str(Call("Test", [])) == "Test"
     assert str(-Call("Test", [])) == "(-Test)"
@@ -2060,6 +2067,17 @@ def test_binding_type_error() -> None:
         r'^<stdin>:10:40: model: error: undefined variable "B"\n'
         r'<stdin>:10:20: model: error: undefined variable "A"$',
     )
+
+
+def test_binding_findall() -> None:
+    assert Binding(
+        And(Variable("A"), Variable("Bound")), {"Bound": Less(Variable("B"), Variable("C"))}
+    ).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("A"),
+        Variable("Bound"),
+        Variable("B"),
+        Variable("C"),
+    ]
 
 
 def test_binding_substituted() -> None:
