@@ -406,7 +406,7 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     assert captured_output.out == valid_output
 
 
-def test_validation_coverage_threshold_invalid():
+def test_validation_coverage_threshold_invalid() -> None:
     assert (
         cli(
             [
@@ -434,11 +434,11 @@ def test_cli_checksum() -> None:
             [
                 "validate_spec",
                 "-s",
-                "igmp.rflx",
+                "tests/validation_tool/icmp.rflx",
                 "-m",
-                "IGMP::Message",
+                "ICMP::Message",
                 "-v",
-                "tests/data/igmp/valid/",
+                "tests/data/icmp/message/valid/",
                 "-f",
                 "tests.checksum",
             ]
@@ -453,17 +453,17 @@ def test_cli_checksum_import_error() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/igmp.rflx",
+                "tests/validation_tool/icmp.rflx",
                 "-m",
-                "IGMP::Message",
+                "ICMP::Message",
                 "-v",
-                "tests/data/igmp/valid/",
+                "tests/data/icmp/message/valid/",
                 "-f",
                 "tests/checksum",
             ]
         )
-        == "The provided module tests/checksum cannot be imported. Make sure the module name "
-        "is provided as package.module and not as a file system path. "
+        == "The provided module tests/checksum cannot be imported. "
+        "Make sure the module name is provided as package.module and not as a file system path. "
         "No module named 'tests/checksum'"
     )
 
@@ -474,11 +474,11 @@ def test_cli_checksum_missing_attribute() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/igmp.rflx",
+                "tests/validation_tool/icmp.rflx",
                 "-m",
-                "IGMP::Message",
+                "ICMP::Message",
                 "-v",
-                "tests/data/igmp/valid/",
+                "tests/data/icmp/message/valid/",
                 "-f",
                 "tests.validation_tool.missing_checksum_functions_attrib",
                 "--no-verification",
@@ -492,37 +492,37 @@ def test_cli_checksum_missing_attribute() -> None:
     )
 
 
-def test_cli_checksum_functions_missing_key():
+def test_cli_checksum_functions_missing_key() -> None:
     assert (
         cli(
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/igmp.rflx",
+                "tests/validation_tool/icmp.rflx",
                 "-m",
-                "IGMP::Message",
+                "ICMP::Message",
                 "-v",
-                "tests/data/igmp/valid/",
+                "tests/data/icmp/message/valid/",
                 "-f",
                 "tests.validation_tool.missing_key",
                 "--no-verification",
             ]
         )
-        == "The checksum_function dict does not contain a key for IGMP::Message"
+        == "The checksum_function dict does not contain a key for ICMP::Message"
     )
 
 
-def test_cli_checksum_setting_functions_failed():
+def test_cli_checksum_setting_functions_failed() -> None:
     assert (
         cli(
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/igmp.rflx",
+                "tests/validation_tool/icmp.rflx",
                 "-m",
-                "IGMP::Message",
+                "ICMP::Message",
                 "-v",
-                "tests/data/igmp/valid/",
+                "tests/data/icmp/message/valid/",
                 "-f",
                 "tests.validation_tool.invalid_checksum_field",
                 "--no-verification",
