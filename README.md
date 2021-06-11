@@ -269,7 +269,8 @@ if parse_message(b"\x01\x00\x04\x01\x02\x03\x04") != create_message():
 As a prerequisite, the following dependencies need to be installed:
 
 - [GNAT Community](https://www.adacore.com/download) >= 2021
-- [GMP](https://gmplib.org/) This is provided as a package for various distributions, e.g., libgmp-dev (Debian/Ubuntu), gmp-devel (Fedora) or gmp (Arch Linux).
+- [GMP](https://gmplib.org/) is provided as a package for various distributions, e.g., `libgmp-dev` (Debian/Ubuntu), `gmp-devel` (Fedora) or `gmp` (Arch Linux).
+- Optional: [Graphviz](https://graphviz.org/) is required for plotting graphs. It is provided as package `graphviz` for various distributions.
 
 RecordFlux can be installed from PyPI:
 
