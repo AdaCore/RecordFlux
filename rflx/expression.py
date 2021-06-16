@@ -1285,11 +1285,12 @@ class Selected(Name):
         selector: StrID,
         negative: bool = False,
         immutable: bool = False,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
         self.prefix = prefix
         self.selector = ID(selector)
-        super().__init__(negative, immutable, rty.Undefined(), location)
+        super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Selected":
         return self.__class__(self.prefix, self.selector, not self.negative)
@@ -1330,6 +1331,7 @@ class Selected(Name):
             return expr.__class__(
                 expr.prefix.substituted(func),
                 expr.selector,
+                type_=expr.type_,
                 location=expr.location,
             )
         return expr
@@ -2241,12 +2243,7 @@ class MessageAggregate(Expr):
 
 
 class Binding(Expr):
-    def __init__(
-        self,
-        expr: Expr,
-        data: Mapping[StrID, Expr],
-        location: Location = None,
-    ) -> None:
+    def __init__(self, expr: Expr, data: Mapping[StrID, Expr], location: Location = None) -> None:
         super().__init__(expr.type_, location)
         self.expr = expr
         self.data = {ID(k): v for k, v in data.items()}
