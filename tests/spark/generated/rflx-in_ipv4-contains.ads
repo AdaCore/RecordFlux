@@ -15,7 +15,9 @@ package RFLX.In_IPv4.Contains with
     (GNATprove, Terminating)
 is
 
-   use type RFLX_Types.Index, RFLX_Types.Bit_Index;
+   use type RFLX_Types.Index;
+
+   use type RFLX_Types.Bit_Index;
 
    function UDP_Datagram_In_IPv4_Packet_Payload (Ctx : RFLX.IPv4.Packet.Context) return Boolean is
      (RFLX.IPv4.Packet.Has_Buffer (Ctx)
