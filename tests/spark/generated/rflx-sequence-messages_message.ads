@@ -13,7 +13,17 @@ is
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   use type RFLX_Types.Bytes, RFLX_Types.Bytes_Ptr, RFLX_Types.Length, RFLX_Types.Index, RFLX_Types.Bit_Index, RFLX_Types.U64;
+   use type RFLX_Types.Bytes;
+
+   use type RFLX_Types.Bytes_Ptr;
+
+   use type RFLX_Types.Length;
+
+   use type RFLX_Types.Index;
+
+   use type RFLX_Types.Bit_Index;
+
+   use type RFLX_Types.U64;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 

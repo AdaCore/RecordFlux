@@ -13,7 +13,9 @@ package RFLX.In_Ethernet.Contains with
     (GNATprove, Terminating)
 is
 
-   use type RFLX_Types.Index, RFLX_Types.Bit_Index;
+   use type RFLX_Types.Index;
+
+   use type RFLX_Types.Bit_Index;
 
    function IPv4_Packet_In_Ethernet_Frame_Payload (Ctx : RFLX.Ethernet.Frame.Context) return Boolean is
      (RFLX.Ethernet.Frame.Has_Buffer (Ctx)

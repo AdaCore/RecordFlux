@@ -742,11 +742,11 @@ class Declaration(Base):
 
 
 class ContextItem(Base):
-    def __init__(self, *identifiers: StrID) -> None:
-        self.identifiers = list(map(ID, identifiers))
+    def __init__(self, identifier: StrID) -> None:
+        self.identifier = ID(identifier)
 
     def __hash__(self) -> int:
-        return hash(tuple(self.identifiers))
+        return hash(self.identifier)
 
     @abstractmethod
     def __str__(self) -> str:
@@ -755,20 +755,17 @@ class ContextItem(Base):
 
 class WithClause(ContextItem):
     def __str__(self) -> str:
-        identifiers = ", ".join(map(str, self.identifiers))
-        return f"with {identifiers};"
+        return f"with {self.identifier};"
 
 
 class UsePackageClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        identifiers = ", ".join(map(str, self.identifiers))
-        return f"use {identifiers};"
+        return f"use {self.identifier};"
 
 
 class UseTypeClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        identifiers = ", ".join(map(str, self.identifiers))
-        return f"use type {identifiers};"
+        return f"use type {self.identifier};"
 
 
 class Aspect(Base):
@@ -1645,8 +1642,7 @@ class SubprogramRenamingDeclaration(Subprogram):
 
 class Pragma(Declaration, ContextItem):
     def __init__(self, identifier: StrID, parameters: List[Expr] = None) -> None:
-        super().__init__()
-        self.identifier = ID(identifier)
+        super().__init__(identifier)
         self.pragma_parameters = parameters or []
 
     def __eq__(self, other: object) -> bool:

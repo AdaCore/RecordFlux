@@ -235,15 +235,16 @@ class Generator:
     def __create_unit(
         self,
         identifier: ID,
-        declaration_context: ty.List[ContextItem],
+        declaration_context: ty.Sequence[ContextItem] = None,
+        body_context: ty.Sequence[ContextItem] = None,
         formal_parameters: ty.List[FormalDeclaration] = None,
         terminating: bool = True,
     ) -> PackageUnit:
-        for p in reversed(CONFIGURATION_PRAGMAS):
-            declaration_context.insert(0, p)
+        declaration_context = declaration_context if declaration_context else []
+        body_context = body_context if body_context else []
 
         unit = PackageUnit(
-            declaration_context,
+            [*CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
                 self.__prefix * identifier,
                 formal_parameters=formal_parameters,
@@ -252,7 +253,7 @@ class Generator:
                     *([Annotate("GNATprove", "Terminating")] if terminating else []),
                 ],
             ),
-            list(CONFIGURATION_PRAGMAS),
+            [*CONFIGURATION_PRAGMAS, *body_context],
             PackageBody(self.__prefix * identifier, aspects=[SparkMode()]),
         )
         self._units[identifier] = unit
@@ -292,9 +293,6 @@ class Generator:
 
         context.append(WithClause(self.__prefix * const.TYPES_PACKAGE))
 
-        unit_name = ID(message.identifier)
-        unit = self.__create_unit(unit_name, context)
-
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
@@ -309,6 +307,8 @@ class Generator:
 
             elif isinstance(field_type, Sequence):
                 context.append(WithClause(self.__prefix * ID(field_type.identifier)))
+
+        unit = self.__create_unit(ID(message.identifier), context)
 
         scalar_fields = {}
         composite_fields = []
@@ -409,8 +409,9 @@ class Generator:
                         String('"LENGTH" is already use-visible through previous use_type_clause'),
                     ],
                 ),  # required when user-defined type Index is subtype of Length
-                UseTypeClause(
-                    *[
+                *[
+                    UseTypeClause(t)
+                    for t in [
                         *([const.TYPES_BYTES] if composite_fields else []),
                         const.TYPES_BYTES_PTR,
                         const.TYPES_LENGTH,
@@ -418,7 +419,7 @@ class Generator:
                         const.TYPES_BIT_INDEX,
                         const.TYPES_U64,
                     ]
-                ),
+                ],
                 Pragma(
                     "Warnings",
                     [
@@ -3124,7 +3125,9 @@ class Generator:
                 )
 
         if not null_sdu:
-            unit += UnitPart([UseTypeClause(const.TYPES_INDEX, const.TYPES_BIT_INDEX)])
+            unit += UnitPart(
+                [UseTypeClause(const.TYPES_INDEX), UseTypeClause(const.TYPES_BIT_INDEX)]
+            )
 
         if refinement.pdu.package != refinement.package:
             pdu_package = (
