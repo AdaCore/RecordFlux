@@ -47,9 +47,9 @@ def write_registry(
     always_valid: bool,
     file: TextIO,
 ) -> None:
-    if registry.find("iana:record", NAMESPACE) is None:
-        return
     records = registry.findall("iana:record", NAMESPACE)
+    if len(records) == 0:
+        return
     title = registry.find("iana:title", NAMESPACE)
     if title is None or title.text is None:
         raise IANAError("could not find registry title")
@@ -62,18 +62,7 @@ def write_registry(
     file.write(f"{'':<6}(\n")
     size = max((record.bit_length for record in normalized_records))
     for record in normalized_records:
-        name = record.name
-        if name in DUPLICATES or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
-            name += f"_{record.value.replace('#','_')}"
-        if name.startswith(tuple(d for d in string.digits)):
-            name = f"{registry_title}_{name}"
-        DUPLICATES.append(name)
-
-        if record.comment:
-            for comment_line in record.comment:
-                file.write(f"{'':<7}-- {comment_line}\n")
-            file.write(f"{'':<7}--\n")
-        file.write(f"{'':<7}{f'{name} => {record.value}'},\n\n")
+        file.write(str(record))
 
     file.seek(file.tell() - 3)
     file.write(")\n")
@@ -105,6 +94,12 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
         if re.search(r"RESERVED|UNASSIGNED", name, flags=re.I):
             continue
 
+        if name in DUPLICATES or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
+            name += f"_{value.replace('#', '_')}"
+        if name.startswith(tuple(d for d in string.digits)):
+            name = f"{registry_name}_{name}"
+        DUPLICATES.append(name)
+
         comment = [
             element
             for element in record.iterfind("*", NAMESPACE)
@@ -117,6 +112,7 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
             normalized_records[value].join(r, registry_name)
         else:
             normalized_records[value] = r
+
     return list(normalized_records.values())
 
 
@@ -144,25 +140,31 @@ class Record:
 
     @property
     def comment(self) -> List[str]:
-        return _normalize_comment(self.comment_list, self.alternative_names)
+        comments = [
+            f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
+            if c.tag is not None and c.text is not None
+            else f"Ref: {c.attrib['data']}"
+            for c in self.comment_list
+        ]
+        comments.extend(self.alternative_names)
 
+        c = ", ".join(comments)
+        if c != "":
+            c = c.replace("\n", " ")
+            c = " ".join(c.split())
+            lines = len(c) // 80 + 1
+            return [c[i * 80 : i * 80 + 80] for i in range(lines)]
+        return []
 
-def _normalize_comment(comment_list: List[Element], alternative_names: List[str]) -> List[str]:
-    comments = [
-        f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
-        if c.tag is not None and c.text is not None
-        else f"Ref: {c.attrib['data']}"
-        for c in comment_list
-    ]
-    comments.extend(alternative_names)
-
-    c = ", ".join(comments)
-    if c != "":
-        c = c.replace("\n", " ")
-        c = " ".join(c.split())
-        lines = len(c) // 80 + 1
-        return [c[i * 80 : i * 80 + 80] for i in range(lines)]
-    return []
+    def __str__(self) -> str:
+        str_repr = ""
+        comment = self.comment
+        if comment:
+            for comment_line in comment:
+                str_repr += f"{'':<7}-- {comment_line}\n"
+            str_repr += f"{'':<7}--\n"
+        str_repr += f"{'':<7}{f'{self.name} => {self.value}'},\n\n"
+        return str_repr
 
 
 def _normalize_name(description_text: str) -> str:
