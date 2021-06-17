@@ -15,10 +15,10 @@ import rflx.specification.const
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
 # append "reset" as a workaround for Issue: RecordFlux#678
 RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS) + "|reset"
-DUPLICATES: List[str] = []
 
 
 def iana_to_rflx(xml_input: TextIO, always_valid: bool, output_file: Optional[Path] = None) -> None:
+    duplicates: List[str] = []
     xml_str = xml_input.read()
     root = ElementTree.fromstring(xml_str)
     registry_id = root.get("id")
@@ -39,7 +39,7 @@ def iana_to_rflx(xml_input: TextIO, always_valid: bool, output_file: Optional[Pa
             file.write(f"-- Registry last updated on {last_updated.text}\n\n")
         file.write(f"package {package_name} is\n\n")
         for registry in root.findall(root.tag):
-            write_registry(registry, always_valid, file)
+            duplicates = write_registry(registry, always_valid, file, duplicates)
         file.write(f"end {package_name};")
 
 
@@ -47,17 +47,18 @@ def write_registry(
     registry: Element,
     always_valid: bool,
     file: TextIO,
-) -> None:
+    duplicates: List[str],
+) -> List[str]:
     records = registry.findall("iana:record", NAMESPACE)
     if len(records) == 0:
-        return
+        return duplicates
     title = registry.find("iana:title", NAMESPACE)
     if title is None or title.text is None:
         raise IANAError("could not find registry title")
     registry_title = _normalize_name(title.text)
-    normalized_records = _normalize_records(records, registry_title)
+    normalized_records, duplicates = _normalize_records(records, registry_title, duplicates)
     if not normalized_records:
-        return
+        return duplicates
 
     file.write(f"{'':<3}type {registry_title} is\n")
     file.write(f"{'':<6}(\n")
@@ -73,9 +74,12 @@ def write_registry(
     else:
         file.write(";")
     file.write("\n\n")
+    return duplicates
 
 
-def _normalize_records(records: List[Element], registry_name: str) -> List["Record"]:
+def _normalize_records(
+    records: List[Element], registry_name: str, duplicates: List[str]
+) -> Tuple[List["Record"], List[str]]:
     normalized_records: Dict[str, Record] = {}
     for record in records:
         name_tag = _get_name_tag(record)
@@ -95,11 +99,11 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
         if re.search(r"RESERVED|UNASSIGNED", name, flags=re.I):
             continue
 
-        if name in DUPLICATES or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
+        if name in duplicates or re.match(RESERVED_WORDS, name, re.I | re.X) is not None:
             name += f"_{value.replace('#', '_')}"
         if name.startswith(tuple(d for d in string.digits)):
             name = f"{registry_name}_{name}"
-        DUPLICATES.append(name)
+        duplicates.append(name)
 
         comment = [
             element
@@ -114,7 +118,7 @@ def _normalize_records(records: List[Element], registry_name: str) -> List["Reco
         else:
             normalized_records[value] = r
 
-    return list(normalized_records.values())
+    return list(normalized_records.values()), duplicates
 
 
 def _get_name_tag(record: Element) -> str:
