@@ -889,7 +889,7 @@ package Bootp_Dhcp_Parameters is
 
        -- Ref: rfc6926
        --
-       Reset => 6,
+       Reset_6 => 6,
 
        -- Ref: rfc6926
        --
