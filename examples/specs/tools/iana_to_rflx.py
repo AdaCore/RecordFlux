@@ -13,7 +13,8 @@ from xml.etree.ElementTree import Element
 import rflx.specification.const
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
-RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
+# append "reset" as a workaround for Issue: RecordFlux#678
+RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS) + "|reset"
 DUPLICATES: List[str] = []
 
 
