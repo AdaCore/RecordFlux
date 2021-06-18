@@ -105,8 +105,8 @@ test_runtime:
 
 test_installation:
 	rm -rf $(build-dir)/pip
-	python setup.py sdist
-	pip install RecordFlux --no-deps --no-index --find-links dist/ --target $(build-dir)/pip
+	python3 setup.py sdist
+	pip3 install RecordFlux --no-deps --no-index --find-links dist/ --target $(build-dir)/pip
 
 prove: prove_tests prove_apps
 
