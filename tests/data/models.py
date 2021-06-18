@@ -41,7 +41,7 @@ NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), False
+    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), always_valid=False
 )
 TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(16)))
 TLV_MESSAGE = Message(
@@ -59,7 +59,10 @@ TLV_MESSAGE = Message(
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
 
 TLV_WITH_CHECKSUM_TAG = Enumeration(
-    "TLV_With_Checksum::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), False
+    "TLV_With_Checksum::Tag",
+    [("Msg_Data", Number(1)), ("Msg_Error", Number(3))],
+    Number(8),
+    always_valid=False,
 )
 TLV_WITH_CHECKSUM_LENGTH = ModularInteger("TLV_With_Checksum::Length", Pow(Number(2), Number(16)))
 TLV_WITH_CHECKSUM_CHECKSUM = ModularInteger(
@@ -159,7 +162,7 @@ ENUMERATION_PRIORITY = Enumeration(
     "Enumeration::Priority",
     [("Low", Number(1)), ("Medium", Number(4)), ("High", Number(7))],
     Number(8),
-    True,
+    always_valid=True,
 )
 ENUMERATION_MESSAGE = Message(
     "Enumeration::Message",
@@ -178,14 +181,14 @@ SEQUENCE_ENUMERATION = Enumeration(
     "Sequence::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
-    False,
+    always_valid=False,
 )
 SEQUENCE_ENUMERATION_VECTOR = Sequence("Sequence::Enumeration_Vector", SEQUENCE_ENUMERATION)
 SEQUENCE_AV_ENUMERATION = Enumeration(
     "Sequence::AV_Enumeration",
     [("AV_Zero", Number(0)), ("AV_One", Number(1)), ("AV_Two", Number(2))],
     Number(8),
-    True,
+    always_valid=True,
 )
 SEQUENCE_AV_ENUMERATION_VECTOR = Sequence(
     "Sequence::AV_Enumeration_Vector", SEQUENCE_AV_ENUMERATION
@@ -300,7 +303,7 @@ ENUMERATION = Enumeration(
     "P::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
-    False,
+    always_valid=False,
 )
 
 MESSAGE = Message(

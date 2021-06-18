@@ -1030,7 +1030,7 @@ class MessageValue(TypeValue):
         self._fields[checksum.field_name].typeval.assign(0)
         checksum.calculated = True
         checksum_value = self._calculate_checksum(checksum)
-        self.set(checksum.field_name, checksum_value, False)
+        self.set(checksum.field_name, checksum_value, checksum_calculation=False)
 
     def _calculate_checksum(
         self, checksum: "MessageValue.Checksum"

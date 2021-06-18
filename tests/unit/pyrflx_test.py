@@ -528,7 +528,10 @@ def test_integer_value_range() -> None:
 def fixture_enum_value() -> EnumValue:
     return EnumValue(
         Enumeration(
-            "Test::Enum", [("One", expr.Number(1)), ("Two", expr.Number(2))], expr.Number(8), False
+            "Test::Enum",
+            [("One", expr.Number(1)), ("Two", expr.Number(2))],
+            expr.Number(8),
+            always_valid=False,
         )
     )
 
@@ -570,7 +573,10 @@ def test_enum_value_parse(enum_value: EnumValue) -> None:
 def fixture_enum_value_imported() -> EnumValue:
     return EnumValue(
         Enumeration(
-            "Test::Enum", [("One", expr.Number(1)), ("Two", expr.Number(2))], expr.Number(8), False
+            "Test::Enum",
+            [("One", expr.Number(1)), ("Two", expr.Number(2))],
+            expr.Number(8),
+            always_valid=False,
         ),
         imported=True,
     )
@@ -751,7 +757,7 @@ def test_sequence_parse_from_bytes(
     sequence_type_foo_value.parse(b"\x03\x05\x06\x07")
     assert sequence_type_foo_value.bytestring == b"\x03\x05\x06\x07"
     sequence_message_value = message_sequence_value.clone()
-    sequence_message_value.parse(b"\x02\x05\x06", False)
+    sequence_message_value.parse(b"\x02\x05\x06", check=False)
     assert sequence_message_value.bytestring == b"\x02\x05\x06"
 
 
@@ -829,7 +835,7 @@ def test_sequence_assign_invalid(
         msg_sequence.parse(Bitstring("00000000000000"))
 
     tlv_message_value.set("Tag", "Msg_Data")
-    tlv_message_value._fields["Length"].typeval.assign(111111111111111, False)
+    tlv_message_value._fields["Length"].typeval.assign(111111111111111, check=False)
     with pytest.raises(
         PyRFLXError,
         match=(

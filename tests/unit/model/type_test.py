@@ -186,13 +186,21 @@ def test_range_invalid_size_exceeds_limit() -> None:
 def test_enumeration_size() -> None:
     assert_equal(
         Enumeration(
-            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+            "P::T",
+            [("A", Number(1))],
+            Pow(Number(2), Number(5)),
+            always_valid=False,
+            location=Location((34, 3)),
         ).size,
         Number(32),
     )
     assert_equal(
         Enumeration(
-            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+            "P::T",
+            [("A", Number(1))],
+            Pow(Number(2), Number(5)),
+            always_valid=False,
+            location=Location((34, 3)),
         ).size_expr,
         Pow(Number(2), Number(5)),
     )
@@ -201,13 +209,21 @@ def test_enumeration_size() -> None:
 def test_enumeration_value_count() -> None:
     assert_equal(
         Enumeration(
-            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), False, Location((34, 3))
+            "P::T",
+            [("A", Number(1))],
+            Pow(Number(2), Number(5)),
+            always_valid=False,
+            location=Location((34, 3)),
         ).value_count,
         Number(1),
     )
     assert_equal(
         Enumeration(
-            "P::T", [("A", Number(1))], Pow(Number(2), Number(5)), True, Location((34, 3))
+            "P::T",
+            [("A", Number(1))],
+            Pow(Number(2), Number(5)),
+            always_valid=True,
+            location=Location((34, 3)),
         ).value_count,
         Number(2 ** 32),
     )
@@ -216,7 +232,11 @@ def test_enumeration_value_count() -> None:
 def test_enumeration_invalid_size_variable() -> None:
     assert_type_error(
         Enumeration(
-            "P::T", [("A", Number(1))], Add(Number(8), Variable("X")), False, Location((34, 3))
+            "P::T",
+            [("A", Number(1))],
+            Add(Number(8), Variable("X")),
+            always_valid=False,
+            location=Location((34, 3)),
         ),
         r'^<stdin>:34:3: model: error: size of "T" contains variable$',
     )
@@ -224,7 +244,13 @@ def test_enumeration_invalid_size_variable() -> None:
 
 def test_enumeration_invalid_literal_value() -> None:
     assert_type_error(
-        Enumeration("P::T", [("A", Number(2 ** 63))], Number(64), False, Location((10, 5))),
+        Enumeration(
+            "P::T",
+            [("A", Number(2 ** 63))],
+            Number(64),
+            always_valid=False,
+            location=Location((10, 5)),
+        ),
         r'^<stdin>:10:5: model: error: enumeration value of "T"'
         r" outside of permitted range \(0 .. 2\*\*63 - 1\)$",
     )
@@ -232,14 +258,22 @@ def test_enumeration_invalid_literal_value() -> None:
 
 def test_enumeration_invalid_size_too_small() -> None:
     assert_type_error(
-        Enumeration("P::T", [("A", Number(256))], Number(8), False, Location((10, 5))),
+        Enumeration(
+            "P::T", [("A", Number(256))], Number(8), always_valid=False, location=Location((10, 5))
+        ),
         r'^<stdin>:10:5: model: error: size of "T" too small$',
     )
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
     assert_type_error(
-        Enumeration("P::T", [("A", Number(256))], Number(128), False, Location((8, 20))),
+        Enumeration(
+            "P::T",
+            [("A", Number(256))],
+            Number(128),
+            always_valid=False,
+            location=Location((8, 20)),
+        ),
         r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
     )
 
@@ -248,16 +282,22 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
     with pytest.raises(
         RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'
     ):
-        Enumeration("P::T", [("A", Number(0)), ("B", Number(1))], Number(1), True).error.propagate()
+        Enumeration(
+            "P::T", [("A", Number(0)), ("B", Number(1))], Number(1), always_valid=True
+        ).error.propagate()
 
 
 def test_enumeration_invalid_literal() -> None:
     assert_type_error(
-        Enumeration("P::T", [("A B", Number(1))], Number(8), False, Location(((1, 2)))),
+        Enumeration(
+            "P::T", [("A B", Number(1))], Number(8), always_valid=False, location=Location(((1, 2)))
+        ),
         r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     )
     assert_type_error(
-        Enumeration("P::T", [("A.B", Number(1))], Number(8), False, Location((6, 4))),
+        Enumeration(
+            "P::T", [("A.B", Number(1))], Number(8), always_valid=False, location=Location((6, 4))
+        ),
         r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
     )
 
@@ -268,7 +308,7 @@ def test_enumeration_invalid_duplicate_elements() -> None:
             "P::T",
             [(ID("Foo", Location((3, 27))), Number(1)), (ID("Foo", Location((3, 32))), Number(2))],
             Number(1),
-            False,
+            always_valid=False,
         ),
         r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
         r"<stdin>:3:27: model: info: previous occurrence",
@@ -286,7 +326,7 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
                 (ID("Bar", Location((3, 42))), Number(4)),
             ],
             Number(2),
-            False,
+            always_valid=False,
         ),
         r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
         r"<stdin>:3:27: model: info: previous occurrence\n"

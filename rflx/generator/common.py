@@ -624,13 +624,13 @@ def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declar
             ["First"],
             const.TYPES_BIT_INDEX,
             ada.Call("Field_First", [ada.Variable("Ctx"), field_name]),
-            True,
+            constant=True,
         ),
         ada.ObjectDeclaration(
             ["Last"],
             const.TYPES_BIT_INDEX,
             ada.Call("Field_Last", [ada.Variable("Ctx"), field_name]),
-            True,
+            constant=True,
         ),
     ]
 

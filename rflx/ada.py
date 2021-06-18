@@ -983,7 +983,7 @@ class PackageDeclaration(Declaration):
             f"{generic_formal_part(self.formal_parameters)}"
             f"package {self.identifier}{aspect_specification(self.aspects)}\nis\n\n"
             f"{declarative_items(self.declarations)}"
-            f"{declarative_items(self.private_declarations, True)}"
+            f"{declarative_items(self.private_declarations, private=True)}"
             f"end {self.identifier};\n"
         )
 
