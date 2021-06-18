@@ -4,6 +4,9 @@
 # number of processors available to use.
 jobs=0
 
+load-plugins=
+	tools.rflx_pylint_checker
+
 [MESSAGES CONTROL]
 
 # Enable/disable the message, report, category or checker with the given id(s).
