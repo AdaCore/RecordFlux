@@ -4,8 +4,16 @@
 # number of processors available to use.
 jobs=0
 
+# Add the `tools` directory (which contains our custom pylint plugin) to the
+# module search path. This way, the user does not have to set PYTHONPATH which
+# will ease IDE integration.
+init-hook="
+	from pylint.config import find_pylintrc;
+	import os, sys;
+	sys.path.append(os.path.join(os.path.dirname(find_pylintrc()), 'tools'))"
+
 load-plugins=
-	tools.rflx_pylint_checker
+	rflx_pylint_checker
 
 [MESSAGES CONTROL]
 

@@ -43,7 +43,7 @@ check_flake8:
 	flake8 $(python-packages) ide/gnatstudio
 
 check_pylint:
-	PYTHONPATH=. pylint $(python-packages)
+	pylint $(python-packages)
 
 check_mypy:
 	mypy --pretty $(python-packages)
