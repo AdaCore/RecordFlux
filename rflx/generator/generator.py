@@ -847,9 +847,11 @@ class Generator:
                     specification,
                     [
                         ObjectDeclaration(
-                            ["Buffer_First"], const.TYPES_INDEX, First("Buffer"), True
+                            ["Buffer_First"], const.TYPES_INDEX, First("Buffer"), constant=True
                         ),
-                        ObjectDeclaration(["Buffer_Last"], const.TYPES_INDEX, Last("Buffer"), True),
+                        ObjectDeclaration(
+                            ["Buffer_Last"], const.TYPES_INDEX, Last("Buffer"), constant=True
+                        ),
                     ],
                     [
                         Assignment(
@@ -1787,15 +1789,15 @@ class Generator:
                             ["First"],
                             const.TYPES_BIT_LENGTH,
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                            True,
-                            [Ghost()],
+                            constant=True,
+                            aspects=[Ghost()],
                         ),
                         ObjectDeclaration(
                             ["Size"],
                             const.TYPES_BIT_LENGTH,
                             Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                            True,
-                            [Ghost()],
+                            constant=True,
+                            aspects=[Ghost()],
                         ),
                     ],
                     [
@@ -2569,7 +2571,7 @@ class Generator:
                             Call(
                                 f"{common.sequence_name(message, f)}.Valid", [Variable("Seq_Ctx")]
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
                     ],
@@ -3374,7 +3376,7 @@ class Generator:
                                 *[
                                     c.ada_expr()
                                     for c in self.__refinement_conditions(
-                                        refinement, pdu_context, condition_fields, False
+                                        refinement, pdu_context, condition_fields, null_sdu=False
                                     )
                                 ],
                                 Call(contains_function_name(refinement), [Variable(pdu_context)]),
@@ -3444,7 +3446,7 @@ class Generator:
                                     Variable(refined_field_affixed_name),
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
@@ -3456,7 +3458,7 @@ class Generator:
                                     Variable(refined_field_affixed_name),
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(["Buffer"], const.TYPES_BYTES_PTR),
                     ],

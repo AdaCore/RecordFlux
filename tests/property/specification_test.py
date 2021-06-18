@@ -20,7 +20,7 @@ from tests.utils import parse_bool_expression, parse_expression, parse_math_expr
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_math_expression(str(expression), True)
+    parsed_expression = parse_math_expression(str(expression), extended=True)
     assert parsed_expression == expression
 
 
@@ -39,7 +39,7 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
-    parsed_expression = parse_bool_expression(str(expression), True)
+    parsed_expression = parse_bool_expression(str(expression), extended=True)
     assert parsed_expression == expression
 
 

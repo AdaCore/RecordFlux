@@ -252,7 +252,7 @@ def test_name_conflict_field_enum() -> None:
         "P::T",
         [(ID("X", Location((3, 27))), Number(1)), (ID("Y", Location((3, 32))), Number(2))],
         Number(8),
-        False,
+        always_valid=False,
     )
 
     structure = [
@@ -620,7 +620,9 @@ def test_undefined_variable(
     operation: ty.Callable[[Expr, Expr], Expr], condition: ty.Tuple[Expr, Expr]
 ) -> None:
     mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
-    enum_type = Enumeration("P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), True)
+    enum_type = Enumeration(
+        "P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), always_valid=True
+    )
 
     structure = [
         Link(INITIAL, Field("F1")),
@@ -1133,7 +1135,7 @@ def test_exclusive_prefixed_enum_valid() -> None:
             "P2::Enumeration",
             [("One", Number(2)), ("Two", Number(1))],
             Number(8),
-            False,
+            always_valid=False,
         ),
     }
     Message("P::M", structure, types)
@@ -1414,15 +1416,15 @@ def test_invalid_type_condition_enum() -> None:
         "P::E1",
         [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
         Number(8),
-        False,
-        Location((10, 4)),
+        always_valid=False,
+        location=Location((10, 4)),
     )
     e2 = Enumeration(
         "P::E2",
         [("E4", Number(1)), ("E5", Number(2)), ("E6", Number(3))],
         Number(8),
-        False,
-        Location((11, 4)),
+        always_valid=False,
+        location=Location((11, 4)),
     )
     types = {
         Field("F1"): e1,
@@ -3191,7 +3193,7 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         "P2::E",
         [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
         Number(8),
-        False,
+        always_valid=False,
     )
 
     x = Field("X")

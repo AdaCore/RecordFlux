@@ -812,7 +812,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
@@ -829,7 +829,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                     ],
                     [
@@ -906,7 +906,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
@@ -923,7 +923,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                     ],
                     [
@@ -1000,7 +1000,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                         ObjectDeclaration(
                             ["Last"],
@@ -1017,7 +1017,7 @@ class ParserGenerator:
                                     )
                                 ],
                             ),
-                            True,
+                            constant=True,
                         ),
                     ],
                     [

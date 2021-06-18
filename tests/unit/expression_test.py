@@ -529,7 +529,7 @@ def test_math_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> Non
 
 
 def test_add_neg() -> None:
-    assert -Add(Variable("X"), Number(1)) == Add(Variable("X", True), Number(-1))
+    assert -Add(Variable("X"), Number(1)) == Add(Variable("X", negative=True), Number(-1))
 
 
 def test_add_variables() -> None:
@@ -540,7 +540,9 @@ def test_add_simplified() -> None:
     assert Add(Variable("X"), Number(1)).simplified() == Add(Variable("X"), Number(1))
     assert Add(Variable("X"), Number(0)).simplified() == Variable("X")
     assert Add(Number(2), Number(3), Number(5)).simplified() == Number(10)
-    assert Add(Variable("X"), Variable("Y"), Variable("X", True)).simplified() == Variable("Y")
+    assert Add(Variable("X"), Variable("Y"), Variable("X", negative=True)).simplified() == Variable(
+        "Y"
+    )
     assert Add(Variable("X"), Variable("Y"), Variable("X"), -Variable("X")).simplified() == Add(
         Variable("X"), Variable("Y")
     )
@@ -649,7 +651,7 @@ def test_sub_z3expr() -> None:
 
 
 def test_div_neg() -> None:
-    assert -Div(Variable("X"), Number(1)) == Div(Variable("X", True), Number(1))
+    assert -Div(Variable("X"), Number(1)) == Div(Variable("X", negative=True), Number(1))
 
 
 def test_div_variables() -> None:
@@ -737,12 +739,12 @@ def test_variable_type_error() -> None:
 
 
 def test_variable_neg() -> None:
-    assert -Variable("X") == Variable("X", True)
+    assert -Variable("X") == Variable("X", negative=True)
 
 
 def test_variable_variables() -> None:
     assert Variable("X").variables() == [Variable("X")]
-    assert (-Variable("X")).variables() == [Variable("X", True)]
+    assert (-Variable("X")).variables() == [Variable("X", negative=True)]
 
 
 def test_variable_substituted() -> None:
@@ -767,7 +769,7 @@ def test_variable_simplified() -> None:
 
 def test_variable_z3expr() -> None:
     assert Variable("X").z3expr() == z3.Int("X")
-    assert Variable("X", True).z3expr() == -z3.Int("X")
+    assert Variable("X", negative=True).z3expr() == -z3.Int("X")
     assert z3.simplify(Sub(Variable("X"), Variable("X")).z3expr()) == z3.IntVal(0)
 
 
@@ -844,7 +846,7 @@ def test_attribute_type_error(expr: Expr, match: str) -> None:
 
 
 def test_attribute_neg() -> None:
-    assert -First("X") == First("X", True)
+    assert -First("X") == First("X", negative=True)
 
 
 def test_attributes_findall() -> None:

@@ -572,8 +572,8 @@ BOOLEAN = Enumeration(
         (ID("True", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))), expr.Number(1)),
     ],
     expr.Number(1),
-    False,
-    Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    always_valid=False,
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
 )
 
 BUILTIN_TYPES = {

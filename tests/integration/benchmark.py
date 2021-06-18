@@ -17,7 +17,9 @@ class Benchmark:
         print("Loading...")
         start = perf_counter()
         self.__pyrflx = PyRFLX.from_specs(
-            [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")], True, True
+            [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")],
+            skip_model_verification=True,
+            skip_message_verification=True,
         )
         self.__ipv4 = self.__pyrflx["IPv4"]
         self.__icmp = self.__pyrflx["ICMP"]

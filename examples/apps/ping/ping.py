@@ -31,7 +31,7 @@ def icmp_checksum(message: bytes, **kwargs: object) -> int:
     return utils.internet_checksum(checksum_bytes)
 
 
-PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], True)
+PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], skip_model_verification=True)
 ICMP = PYRFLX["ICMP"]
 ICMP.set_checksum_functions({"Message": {"Checksum": icmp_checksum}})
 IP = PYRFLX["IPv4"]
