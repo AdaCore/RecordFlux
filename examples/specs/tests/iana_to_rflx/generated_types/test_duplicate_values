@@ -5,5 +5,5 @@
        -- _2, alternative_name = Duplicate_Value_3
        --
        Duplicate_Values_5 => 5)
-   with Size => 3;
+   with Size => 3, Always_Valid;
 

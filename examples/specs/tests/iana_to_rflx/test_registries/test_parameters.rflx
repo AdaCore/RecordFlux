@@ -10,7 +10,7 @@ package Test_Parameters is
        -- dtls = Y, Ref: rfc5246
        --
        Dss_Fixed_Dh => 4)
-   with Size => 3;
+   with Size => 3, Always_Valid;
 
    type Comma_Separated_Hex_Values is
       (
@@ -21,7 +21,7 @@ package Test_Parameters is
        -- dtls = Y, rec = N, Ref: rfc5246
        --
        Tls_Rsa_With_Null_Md5 => 16#0001#)
-   with Size => 4;
+   with Size => 4, Always_Valid;
 
    type Hexadecimal_Values is
       (
@@ -30,7 +30,7 @@ package Test_Parameters is
        Rsa_Pkcs1_Sha256_Legacy => 16#0420#,
 
        Rsa_Pkcs1_Sha384 => 16#0501#)
-   with Size => 12;
+   with Size => 12, Always_Valid;
 
    type Decimal_Values_With_Name_And_Description_Tag is
       (
@@ -41,7 +41,7 @@ package Test_Parameters is
        -- length = N, description = N/4 Printer Server addresses, Ref: rfc2132
        --
        Lpr_Server => 9)
-   with Size => 4;
+   with Size => 4, Always_Valid;
 
    type Decimal_Values_With_Code_Tag is
       (
@@ -68,7 +68,7 @@ package Test_Parameters is
        -- _2, alternative_name = Duplicate_Value_3
        --
        Duplicate_Values_5 => 5)
-   with Size => 3;
+   with Size => 3, Always_Valid;
 
    type Duplicate_Identifiers is
       (
@@ -82,7 +82,7 @@ package Test_Parameters is
    type Numerically_Starting_Identifiers is
       (
        Numerically_Starting_Identifiers_123_Numerically_Starting_Identifier => 5)
-   with Size => 3;
+   with Size => 3, Always_Valid;
 
    type All_Possible_Name_Tags is
       (
