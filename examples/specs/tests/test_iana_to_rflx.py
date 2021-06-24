@@ -119,7 +119,7 @@ def test_normalize_name() -> None:
 
 
 def test_normalize_records(records_registry_hex_values: List[Element]) -> None:
-    normalized_records, duplicates = _normalize_records(
+    normalized_records, highest_bit_length = _normalize_records(
         records_registry_hex_values, "REGISTRY_NAME", []
     )
     assert len(normalized_records) == 2
@@ -133,11 +133,11 @@ def test_normalize_records(records_registry_hex_values: List[Element]) -> None:
     assert record_sha384.value == "16#0501#"
     assert record_sha384.comment == []
     assert record_sha384.bit_length == 12
-    assert duplicates == ["rsa_pkcs1_sha256_legacy", "rsa_pkcs1_sha384"]
+    assert highest_bit_length == 12
 
 
 def test_normalize_duplicate_value_records(duplicate_value_records: List[Element]) -> None:
-    normalized_records, duplicates = _normalize_records(
+    normalized_records, highest_bit_length = _normalize_records(
         duplicate_value_records, "REGISTRY_NAME", []
     )
     assert len(normalized_records) == 1
@@ -149,23 +149,23 @@ def test_normalize_duplicate_value_records(duplicate_value_records: List[Element
         "_2, alternative_name = Duplicate_Value_3",
     ]
     assert unified_record.value
-    assert duplicates == ["Duplicate Value 1", "Duplicate Value 2", "Duplicate Value 3"]
+    assert highest_bit_length == 3
 
 
 def test_normalize_rec_missing_tag(no_value_no_name_tags_record: List[Element]) -> None:
-    normalized_records, duplicates = _normalize_records(
+    normalized_records, highest_bit_length = _normalize_records(
         no_value_no_name_tags_record, "REGISTRY_NAME", []
     )
     assert normalized_records == []
-    assert duplicates == []
+    assert highest_bit_length == 0
 
 
 def test_normalize_reserved_values(reserved_unassigned_records: List[Element]) -> None:
-    normalized_records, duplicates = _normalize_records(
+    normalized_records, highest_bit_length = _normalize_records(
         reserved_unassigned_records, "REGISTRY_NAME", []
     )
     assert normalized_records == []
-    assert duplicates == []
+    assert highest_bit_length == 12
 
 
 def test_get_name_tag(all_name_tags_record: Element) -> None:
@@ -177,6 +177,7 @@ def test_write_registries(tmp_path: Path, registries: List[Element]) -> None:
         identifier = registry.get("id")
         assert identifier is not None
         tmp_registry_path = tmp_path / identifier
+
         with open(tmp_registry_path, "w+") as f:
             write_registry(registry, True, f, [])
         assert filecmp.cmp(
