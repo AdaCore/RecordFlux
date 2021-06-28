@@ -1875,7 +1875,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
                   end message;
             end Test;
         """,
-        r"^<stdin>:8:22: parser: error: Expected 'First', got 'null'",
+        r"^<stdin>:9:25: parser: error: Expected ':', got 'then'",
     )
 
 
@@ -2493,3 +2493,42 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
+
+
+def test_parse_reserved_words_as_enum_literals() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """
+        package Test is
+            type A is (Reset => 1, package => 2) with Size => 8;
+        end Test;
+        """
+    )
+
+
+def test_parse_reserved_word_as_channel_name() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """
+        package Test is
+           generic
+              Channel : Channel with Readable, Writable;
+           session Session with
+              Initial => A,
+              Final => B
+           is
+           begin
+              state A
+              is
+                 Avail : Boolean := Channel'Has_Data;
+              begin
+              transition
+                 then A if Avail
+                 then B
+              end A;
+
+              state B is null state;
+           end Session;
+        end Test;
+        """
+    )
