@@ -1,5 +1,9 @@
-import librflxlang
+import re
 
+import librflxlang
+import pytest
+
+from language.lexer import rflx_lexer
 from tests.utils import to_dict
 
 
@@ -264,3 +268,155 @@ def test_suffix_precedence() -> None:
             "kind": {"_kind": "AttrSize", "_value": "Size"},
         },
     }
+
+
+KEYWORDS = [l for l in rflx_lexer.literals_map if re.match("[A-Za-z_]+", l)]
+
+KEYWORD_TESTS = [
+    (keyword, t.format(keyword=keyword), r)
+    for (t, r) in [
+        (
+            "for some {keyword} in Variable => {keyword} + 1",
+            librflxlang.GrammarRule.quantified_expression_rule,
+        ),
+        (
+            "[for {keyword} in Variable => {keyword} - 1 when {keyword} > 10]",
+            librflxlang.GrammarRule.comprehension_rule,
+        ),
+        (
+            "{keyword} (Variable + 1)",
+            librflxlang.GrammarRule.call_rule,
+        ),
+        (
+            "{keyword} => Data",
+            librflxlang.GrammarRule.message_aggregate_association_rule,
+        ),
+        (
+            "Data.{keyword}",
+            librflxlang.GrammarRule.extended_suffix_rule,
+        ),
+        (
+            "Data where {keyword} = 100",
+            librflxlang.GrammarRule.extended_suffix_rule,
+        ),
+        (
+            "{keyword} => True",
+            librflxlang.GrammarRule.aspect_rule,
+        ),
+        (
+            "then {keyword} with First => Previous'First if Previous > 100",
+            librflxlang.GrammarRule.then_rule,
+        ),
+        (
+            "{keyword} : Some::Type;",
+            librflxlang.GrammarRule.component_item_rule,
+        ),
+        (
+            "{keyword} => (1, 30..34)",
+            librflxlang.GrammarRule.checksum_association_rule,
+        ),
+        (
+            "{keyword}, {keyword}, Elem_1, Elem_2",
+            librflxlang.GrammarRule.positional_enumeration_rule,
+        ),
+        (
+            "{keyword} => 42",
+            librflxlang.GrammarRule.element_value_association_rule,
+        ),
+        (
+            "type {keyword} is new Other_Type",
+            librflxlang.GrammarRule.type_declaration_rule,
+        ),
+        (
+            "for Some::{keyword} use ({keyword} => Some::{keyword}) if {keyword} > 100",
+            librflxlang.GrammarRule.type_refinement_rule,
+        ),
+        (
+            "type {keyword} is private",
+            librflxlang.GrammarRule.private_type_declaration_rule,
+        ),
+        (
+            "{keyword} : Some::{keyword}",
+            librflxlang.GrammarRule.function_parameter_rule,
+        ),
+        (
+            "with function {keyword} return Some::{keyword}",
+            librflxlang.GrammarRule.formal_function_declaration_rule,
+        ),
+        (
+            "{keyword} : Channel with Readable, Writable",
+            librflxlang.GrammarRule.channel_declaration_rule,
+        ),
+        (
+            "with Initial => {keyword}, Final => {keyword}",
+            librflxlang.GrammarRule.session_aspects_rule,
+        ),
+        (
+            "{keyword} : Some::Type renames Fun",
+            librflxlang.GrammarRule.renaming_declaration_rule,
+        ),
+        (
+            "{keyword} : Some::Type := 42",
+            librflxlang.GrammarRule.variable_declaration_rule,
+        ),
+        (
+            "{keyword} := 42",
+            librflxlang.GrammarRule.assignment_statement_rule,
+        ),
+        (
+            "{keyword}'Append (42)",
+            librflxlang.GrammarRule.list_attribute_rule,
+        ),
+        (
+            "{keyword}'Reset",
+            librflxlang.GrammarRule.reset_rule,
+        ),
+        (
+            "then {keyword} if {keyword} = 42",
+            librflxlang.GrammarRule.conditional_transition_rule,
+        ),
+        (
+            'then {keyword} with Desc => "foo"',
+            librflxlang.GrammarRule.transition_rule,
+        ),
+        (
+            'then {keyword} with Desc => "foo"',
+            librflxlang.GrammarRule.transition_rule,
+        ),
+        (
+            "begin transition then {keyword} end {keyword}",
+            librflxlang.GrammarRule.state_body_rule,
+        ),
+        (
+            "state {keyword} is null state",
+            librflxlang.GrammarRule.state_rule,
+        ),
+        (
+            "generic session {keyword} with "
+            "Initial => {keyword}, Final => {keyword} is begin end {keyword}",
+            librflxlang.GrammarRule.session_declaration_rule,
+        ),
+        (
+            """
+                package {keyword} is
+                end {keyword};
+            """,
+            librflxlang.GrammarRule.package_declaration_rule,
+        ),
+        (
+            "with {keyword};",
+            librflxlang.GrammarRule.context_item_rule,
+        ),
+    ]
+    for keyword in [k.lower() for k in KEYWORDS] + [k.lower().capitalize() for k in KEYWORDS]
+]
+
+
+@pytest.mark.parametrize(
+    "text,rule",
+    [(t, r) for _, t, r in KEYWORD_TESTS],
+    ids=[f"{k}->{r[:-5]}" for (k, _, r) in KEYWORD_TESTS],
+)
+def test_keyword_identifiers(text: str, rule: str) -> None:
+    unit = parse_buffer(text, rule=rule)
+    assert len(unit.diagnostics) == 0, text + "\n".join(str(d) for d in unit.diagnostics)
