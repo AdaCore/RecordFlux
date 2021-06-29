@@ -276,19 +276,19 @@ KEYWORD_TESTS = [
     (keyword, t.format(keyword=keyword), r)
     for (t, r) in [
         (
-            "for some {keyword} in Variable => {keyword} + 1",
+            "for some {keyword} in {keyword} => {keyword} + 1",
             librflxlang.GrammarRule.quantified_expression_rule,
         ),
         (
-            "[for {keyword} in Variable => {keyword} - 1 when {keyword} > 10]",
+            "[for {keyword} in {keyword} => {keyword} - 1 when {keyword} > {keyword}]",
             librflxlang.GrammarRule.comprehension_rule,
         ),
         (
-            "{keyword} (Variable + 1)",
+            "{keyword} (Variable + {keyword})",
             librflxlang.GrammarRule.call_rule,
         ),
         (
-            "{keyword} => Data",
+            "{keyword} => {keyword}",
             librflxlang.GrammarRule.message_aggregate_association_rule,
         ),
         (
@@ -296,7 +296,7 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.extended_suffix_rule,
         ),
         (
-            "Data where {keyword} = 100",
+            "{keyword} where {keyword} = {keyword}",
             librflxlang.GrammarRule.extended_suffix_rule,
         ),
         (
@@ -304,11 +304,11 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.aspect_rule,
         ),
         (
-            "then {keyword} with First => Previous'First if Previous > 100",
+            "then {keyword} with First => {keyword}'First if {keyword} > {keyword}",
             librflxlang.GrammarRule.then_rule,
         ),
         (
-            "{keyword} : Some::Type;",
+            "{keyword} : {keyword};",
             librflxlang.GrammarRule.component_item_rule,
         ),
         (
@@ -324,11 +324,11 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.element_value_association_rule,
         ),
         (
-            "type {keyword} is new Other_Type",
+            "type {keyword} is new {keyword}",
             librflxlang.GrammarRule.type_declaration_rule,
         ),
         (
-            "for Some::{keyword} use ({keyword} => Some::{keyword}) if {keyword} > 100",
+            "for {keyword} use ({keyword} => {keyword}) if {keyword} > {keyword}",
             librflxlang.GrammarRule.type_refinement_rule,
         ),
         (
@@ -336,11 +336,11 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.private_type_declaration_rule,
         ),
         (
-            "{keyword} : Some::{keyword}",
+            "{keyword} : {keyword}",
             librflxlang.GrammarRule.function_parameter_rule,
         ),
         (
-            "with function {keyword} return Some::{keyword}",
+            "with function {keyword} return {keyword}",
             librflxlang.GrammarRule.formal_function_declaration_rule,
         ),
         (
@@ -352,19 +352,19 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.session_aspects_rule,
         ),
         (
-            "{keyword} : Some::Type renames Fun",
+            "{keyword} : {keyword} renames {keyword}",
             librflxlang.GrammarRule.renaming_declaration_rule,
         ),
         (
-            "{keyword} : Some::Type := 42",
+            "{keyword} : {keyword} := {keyword}",
             librflxlang.GrammarRule.variable_declaration_rule,
         ),
         (
-            "{keyword} := 42",
+            "{keyword} := {keyword}",
             librflxlang.GrammarRule.assignment_statement_rule,
         ),
         (
-            "{keyword}'Append (42)",
+            "{keyword}'Append ({keyword})",
             librflxlang.GrammarRule.list_attribute_rule,
         ),
         (
@@ -372,7 +372,7 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.reset_rule,
         ),
         (
-            "then {keyword} if {keyword} = 42",
+            "then {keyword} if {keyword} = {keyword}",
             librflxlang.GrammarRule.conditional_transition_rule,
         ),
         (
