@@ -128,7 +128,7 @@ def create_assignment(assignment: Statement, filename: Path) -> stmt.Statement:
     return stmt.Assignment(
         create_id(assignment.f_identifier, filename),
         create_expression(assignment.f_expression, filename),
-        node_location(assignment, filename),
+        location=node_location(assignment, filename),
     )
 
 
@@ -546,7 +546,7 @@ def create_renaming_decl(declaration: RenamingDecl, filename: Path) -> decl.Basi
         create_id(declaration.f_identifier, filename),
         model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename), None),
         selected,
-        node_location(declaration, filename),
+        location=node_location(declaration, filename),
     )
 
 
@@ -567,7 +567,7 @@ def create_function_decl(
         create_id(declaration.f_identifier, filename),
         arguments,
         create_id(declaration.f_return_type_identifier, filename),
-        node_location(declaration, filename),
+        location=node_location(declaration, filename),
     )
 
 

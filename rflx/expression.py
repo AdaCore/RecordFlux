@@ -1118,32 +1118,47 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
 
 class Length(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
 
 class First(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
 
 class Last(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
 
 class ValidChecksum(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
     def z3expr(self) -> z3.BoolRef:
@@ -1155,14 +1170,20 @@ class ValidChecksum(Attribute):
 
 
 class Valid(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
 
 class Present(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         if isinstance(self.prefix, Selected):
             error = self.prefix.prefix.check_type_instance(rty.Message)
         else:
@@ -1177,19 +1198,25 @@ class Present(Attribute):
 
 
 class HasData(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type(rty.Channel(readable=True, writable=False))
 
 
 class Head(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.prefix.check_type_instance(rty.Composite)
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = (
             self.prefix.type_.element
             if isinstance(self.prefix.type_, (rty.Aggregate, rty.Sequence))
             else rty.Any()
         )
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = self.prefix.check_type_instance(rty.Composite)
         if not isinstance(self.prefix, (Variable, Selected)):
             error.append(
                 "prefix of attribute Head must be a name",
@@ -1201,8 +1228,11 @@ class Head(Attribute):
 
 
 class Opaque(Attribute):
-    def _check_type_subexpr(self) -> RecordFluxError:
+    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+        super().__init__(prefix, negative)
         self.type_ = rty.OPAQUE
+
+    def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Message)
 
 
