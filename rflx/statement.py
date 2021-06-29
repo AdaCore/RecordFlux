@@ -9,8 +9,11 @@ from rflx.identifier import ID, StrID
 
 
 class Statement(Base):
-    def __init__(self, identifier: StrID, location: Location = None):
+    def __init__(
+        self, identifier: StrID, type_: rty.Type = rty.Undefined(), location: Location = None
+    ):
         self.identifier = ID(identifier)
+        self.type_ = type_
         self.location = location
 
     @abstractmethod
@@ -26,8 +29,14 @@ class Statement(Base):
 
 
 class Assignment(Statement):
-    def __init__(self, identifier: StrID, expression: Expr, location: Location = None) -> None:
-        super().__init__(identifier, location)
+    def __init__(
+        self,
+        identifier: StrID,
+        expression: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(identifier, type_, location)
         self.expression = expression
 
     def __str__(self) -> str:
@@ -51,9 +60,10 @@ class AttributeStatement(Statement):
         identifier: StrID,
         attribute: str,
         parameters: Sequence[Expr],
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        super().__init__(identifier, location)
+        super().__init__(identifier, type_, location)
         self.attribute = attribute
         self.parameters = parameters
 
@@ -71,8 +81,14 @@ class AttributeStatement(Statement):
 
 
 class ListAttributeStatement(AttributeStatement):
-    def __init__(self, identifier: StrID, parameter: Expr, location: Location = None) -> None:
-        super().__init__(identifier, self.__class__.__name__, [parameter], location)
+    def __init__(
+        self,
+        identifier: StrID,
+        parameter: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
 
 class Append(ListAttributeStatement):
@@ -116,8 +132,10 @@ class Extend(ListAttributeStatement):
 
 
 class Reset(AttributeStatement):
-    def __init__(self, identifier: StrID, location: Location = None) -> None:
-        super().__init__(identifier, self.__class__.__name__, [], location)
+    def __init__(
+        self, identifier: StrID, type_: rty.Type = rty.Undefined(), location: Location = None
+    ) -> None:
+        super().__init__(identifier, self.__class__.__name__, [], type_, location)
 
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -134,8 +152,14 @@ class Reset(AttributeStatement):
 
 
 class ChannelAttributeStatement(AttributeStatement):
-    def __init__(self, identifier: StrID, parameter: Expr, location: Location = None) -> None:
-        super().__init__(identifier, self.__class__.__name__, [parameter], location)
+    def __init__(
+        self,
+        identifier: StrID,
+        parameter: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]

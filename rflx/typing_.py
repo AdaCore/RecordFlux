@@ -70,7 +70,7 @@ class Type:
 
 @attr.s(frozen=True)
 class Undefined(Type):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "undefined"
+    DESCRIPTIVE_NAME: ty.ClassVar[str] = "undefined type"
 
     def is_compatible(self, other: Type) -> bool:
         return False

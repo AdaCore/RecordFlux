@@ -49,11 +49,12 @@ class TypeCheckableDeclaration(Declaration):
         self,
         identifier: StrID,
         type_identifier: StrID,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ):
         super().__init__(identifier, location)
         self.__type_identifier = ID(type_identifier)
-        self.__type: rty.Type = rty.Undefined()
+        self.__type: rty.Type = type_
 
     @property
     def type_identifier(self) -> ID:
@@ -83,9 +84,10 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Expr = None,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ):
-        super().__init__(identifier, type_identifier, location)
+        super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
 
     def __str__(self) -> str:
@@ -117,9 +119,10 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Selected,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ):
-        super().__init__(identifier, type_identifier, location)
+        super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
 
     def __str__(self) -> str:
@@ -169,11 +172,13 @@ class FormalDeclaration(Declaration):
 
 
 class Argument(Base):
-    def __init__(self, identifier: StrID, type_identifier: StrID):
+    def __init__(
+        self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.Undefined()
+    ):
         super().__init__()
         self.__identifier = ID(identifier)
         self.__type_identifier = ID(type_identifier)
-        self.type_: rty.Type = rty.Undefined()
+        self.type_ = type_
 
     def __str__(self) -> str:
         return f"{self.__identifier} : {self.__type_identifier}"
@@ -191,9 +196,10 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         identifier: StrID,
         arguments: Sequence[Argument],
         return_type: StrID,
+        type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ):
-        super().__init__(identifier, return_type, location)
+        super().__init__(identifier, return_type, type_, location)
         self.__arguments = arguments
         self.__return_type = ID(return_type)
 

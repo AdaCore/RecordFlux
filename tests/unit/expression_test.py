@@ -822,7 +822,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
                 Comprehension(
                     "X",
                     Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
-                    Variable("X"),
+                    Variable("X", type_=rty.Integer("B")),
                     TRUE,
                     location=Location((10, 30)),
                 )
