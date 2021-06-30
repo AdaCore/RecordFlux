@@ -16,7 +16,7 @@ from tools.iana_to_rflx import (
     _normalize_value,
     cli,
     iana_to_rflx,
-    write_registry,
+    write_type,
 )
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
@@ -179,7 +179,7 @@ def test_write_registries(tmp_path: Path, registries: List[Element]) -> None:
         tmp_registry_path = tmp_path / identifier
 
         with open(tmp_registry_path, "w+") as f:
-            write_registry(registry, True, f, [])
+            write_type(registry, True, f, [])
         assert filecmp.cmp(
             tmp_registry_path, Path("tests/iana_to_rflx/generated_types") / identifier
         )
