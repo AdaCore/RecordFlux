@@ -37,11 +37,11 @@ def iana_to_rflx(xml_input: TextIO, always_valid: bool, output_file: Optional[Pa
             file.write(f"-- Registry last updated on {last_updated.text}\n\n")
         file.write(f"package {package_name} is\n\n")
         for registry in root.findall(root.tag):
-            write_registry(registry, always_valid, file, duplicates)
+            write_type(registry, always_valid, file, duplicates)
         file.write(f"end {package_name};\n")
 
 
-def write_registry(
+def write_type(
     registry: Element,
     always_valid: bool,
     file: TextIO,
@@ -76,8 +76,8 @@ def write_registry(
 
 def _normalize_records(
     records: List[Element], registry_name: str, duplicates: List[str]
-) -> Tuple[List["Record"], int]:
-    normalized_records: Dict[str, Record] = {}
+) -> Tuple[List["EnumLiteral"], int]:
+    normalized_records: Dict[str, EnumLiteral] = {}
     highest_bit_length = 0
     for record in records:
         name_tag = _get_name_tag(record)
@@ -114,7 +114,7 @@ def _normalize_records(
             not in [f"{{{NAMESPACE['iana']}}}{name_tag}", f"{{{NAMESPACE['iana']}}}{value_tag}"]
         ]
 
-        r = Record(rflx_name, rflx_value, bit_length, comment)
+        r = EnumLiteral(rflx_name, rflx_value, bit_length, comment)
         if rflx_value in normalized_records:
             normalized_records[rflx_value].join(r, registry_name)
         else:
@@ -133,7 +133,7 @@ def _get_name_tag(record: Element) -> str:
     return ""
 
 
-class Record:
+class EnumLiteral:
     def __init__(
         self,
         rflx_name: str,
@@ -147,7 +147,7 @@ class Record:
         self.comment_list = comments or []
         self.alternative_names: List[str] = []
 
-    def join(self, duplicate: "Record", registry_name: str) -> None:
+    def join(self, duplicate: "EnumLiteral", registry_name: str) -> None:
         self.name = f"{registry_name}_{self.value.replace('#', '_')}"
         self.comment_list.extend(duplicate.comment_list)
         self.alternative_names.append(f"alternative_name = {duplicate.name}")
