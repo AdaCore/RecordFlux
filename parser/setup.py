@@ -85,15 +85,11 @@ class MakeParser(orig.build_py):
 
 
 class BuildParser(MakeParser):
-    # pylint: disable=too-many-ancestors
-
     def run(self) -> None:
         self.make_parser("build/langkit")
 
 
 class BuildWithParser(MakeParser):
-    # pylint: disable=too-many-ancestors
-
     def initialize_options(self) -> None:
         os.environ["GNATCOLL_ICONV_OPT"] = "-v"
         output_path = Path("python/librflxlang/")
@@ -167,7 +163,7 @@ setup(
             "flake8 >=3, <4",
             "isort >=5, <6",
             "mypy >=0.770",
-            "pylint >=2.6.0, <3",
+            "pylint >=2.9.0, <3",
             "pytest >=5, <6",
             "pytest-cov >=2.10.0, <3",
             "pytest-xdist >=1.32.0, <2",
