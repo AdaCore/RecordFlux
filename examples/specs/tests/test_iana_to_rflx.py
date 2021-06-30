@@ -95,7 +95,7 @@ def fixture_unassigned_reserved(registries: Element) -> List[Element]:
 def test_normalize_hex_value() -> None:
     assert _normalize_hex_value("0xAA,0x11") == "16#AA11#"
     assert _normalize_hex_value("0x0123") == "16#0123#"
-    with pytest.raises(IANAError, match="Cannot normalize hex value XY"):
+    with pytest.raises(IANAError, match='cannot normalize hex value "XY"'):
         _normalize_hex_value("XY")
 
 
@@ -206,7 +206,7 @@ def test_iana_to_rflx(tmp_path: Path) -> None:
 
 
 def test_no_package_name() -> None:
-    with pytest.raises(IANAError, match=r"^No registry ID found$"):
+    with pytest.raises(IANAError, match=r"^no registry ID found$"):
         with open("tests/iana_to_rflx/test_registries/test_registry_no_package_name.xml", "r") as f:
             iana_to_rflx(f, True)
 
@@ -247,5 +247,5 @@ def test_cli(tmp_path: Path) -> None:
     assert cli(["-a", "-o", str(out), "tests/iana_to_rflx/test_registries/test.xml"]) == 0
     assert (
         cli(["-a", "-o", str(out), "tests/iana_to_rflx/test_registries/test_invalid_hex_value.xml"])
-        == "Cannot normalize hex value 0xXX,0xZZ"
+        == 'cannot normalize hex value "0xXX,0xZZ"'
     )

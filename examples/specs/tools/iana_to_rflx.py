@@ -23,7 +23,7 @@ def iana_to_rflx(xml_input: TextIO, always_valid: bool, output_file: Optional[Pa
     root = ElementTree.fromstring(xml_str)
     registry_id = root.get("id")
     if registry_id is None:
-        raise IANAError("No registry ID found")
+        raise IANAError("no registry ID found")
     package_name = _normalize_name(registry_id)
     last_updated = root.find("iana:updated", NAMESPACE)
     title = root.find("iana:title", NAMESPACE)
@@ -212,12 +212,12 @@ def _normalize_hex_value(hex_value: str) -> str:
             re.match(r"^0x[0-9A-Fa-f]{2},0x[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}$", hex_value) is not None
         ):  # 0xCC,0xAF-FF
             return f"16#{hex_value[2:4]}{hex_value[10:12]}#".upper()
-        raise IANAError(f"Cannot normalize hex value range {hex_value}")
+        raise IANAError(f'cannot normalize hex value range "{hex_value}"')
     if re.match(r"^0x[0-9A-F]{2},0x[0-9A-F]{2}$", hex_value) is not None:  # 0x0A,0xFF
         return f"16#{hex_value.replace('0x', '').replace(',', '')}#".upper()
     if re.match(r"^0x[0-9A-F]+$", hex_value) is not None:  # 0xA1A1
         return f"16#{hex_value[2:]}#".upper()
-    raise IANAError(f"Cannot normalize hex value {hex_value}")
+    raise IANAError(f'cannot normalize hex value "{hex_value}"')
 
 
 class IANAError(Exception):
@@ -226,18 +226,22 @@ class IANAError(Exception):
 
 def cli(argv: List[str]) -> Union[int, str]:
     parser = argparse.ArgumentParser(
-        description="generate a RecordFlux specification file from the provided IANA XML document."
+        description="Generate a RecordFlux specification file from the provided IANA XML document."
     )
     parser.add_argument(
-        "-a", "--always-valid", help="add Always_Valid aspect to ech type", action="store_true"
+        "-a",
+        "--always-valid",
+        help="Add an Always_Valid aspect to each type that does not "
+        "explicitly cover all possible values for the types length.",
+        action="store_true",
     )
     parser.add_argument(
-        "-o", "--output-file", help="write the specification to the specified file", type=Path
+        "-o", "--output-file", help="Write the specification to the specified file.", type=Path
     )
-    parser.add_argument("files", type=argparse.FileType("r"), nargs="?", default=sys.stdin)
+    parser.add_argument("file", type=argparse.FileType("r"), nargs="?", default=sys.stdin)
     args = parser.parse_args(argv[1:])
     try:
-        iana_to_rflx(args.files, args.always_valid, args.output_file)
+        iana_to_rflx(args.file, args.always_valid, args.output_file)
     except IANAError as e:
         return f"{e}"
     return 0
