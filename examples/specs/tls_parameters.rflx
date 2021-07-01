@@ -1120,7 +1120,7 @@ package Tls_Parameters is
        Bad_Record_Mac => 20,
 
        -- dtls = Y, Ref: rfc8446
-       Record_Overflow_22 => 22,
+       Record_Overflow => 22,
 
        -- dtls = Y, Ref: rfc8446
        Handshake_Failure => 40,
@@ -1147,7 +1147,7 @@ package Tls_Parameters is
        Unknown_Ca => 48,
 
        -- dtls = Y, Ref: rfc8446
-       Access_Denied_49 => 49,
+       Access_Denied => 49,
 
        -- dtls = Y, Ref: rfc8446
        Decode_Error => 50,
@@ -1162,16 +1162,16 @@ package Tls_Parameters is
        Protocol_Version => 70,
 
        -- dtls = Y, Ref: rfc8446
-       Insufficient_Security_71 => 71,
+       Insufficient_Security => 71,
 
        -- dtls = Y, Ref: rfc8446
-       Internal_Error_80 => 80,
+       Internal_Error => 80,
 
        -- dtls = Y, Ref: rfc7507
-       Inappropriate_Fallback_86 => 86,
+       Inappropriate_Fallback => 86,
 
        -- dtls = Y, Ref: rfc8446
-       User_Canceled_90 => 90,
+       User_Canceled => 90,
 
        -- dtls = Y, Ref: rfc8446
        Missing_Extension => 109,
@@ -1203,10 +1203,10 @@ package Tls_Parameters is
        Server_Hello => 2,
 
        -- dtls = Y, Ref: rfc4507, Ref: rfc8446, Ref: rfc8447
-       New_Session_Ticket_Renamed_From_Newsessionticket_4 => 4,
+       New_Session_Ticket_Renamed_From_Newsessionticket => 4,
 
        -- dtls = Y, Ref: rfc8446
-       End_Of_Early_Data_5 => 5,
+       End_Of_Early_Data => 5,
 
        -- dtls = Y, Ref: rfc8446
        Encrypted_Extensions => 8,
@@ -1215,7 +1215,7 @@ package Tls_Parameters is
        Requestconnectionid => 9,
 
        -- dtls = Y, Ref: RFC-ietf-tls-dtls13-43
-       Newconnectionid_10 => 10,
+       Newconnectionid => 10,
 
        -- dtls = Y, Ref: rfc8446
        Certificate => 11,
@@ -1412,7 +1412,7 @@ package Tls_Parameters is
 
    type Tls_Supplemental_Data_Formats_Supplementaldatatype is
       (-- dtls = Y, Ref: rfc4681
-       User_Mapping_Data_0 => 0,
+       User_Mapping_Data => 0,
 
        -- dtls = Y, Ref: rfc5878
        Authz_Data => 16386)
@@ -1472,7 +1472,7 @@ package Tls_Parameters is
        Sha512 => 6,
 
        -- dtls = Y, Ref: rfc8422
-       Intrinsic_8 => 8)
+       Intrinsic => 8)
    with Size => 8, Always_Valid;
 
    type Tls_Authorization_Data_Formats is
@@ -1552,13 +1552,13 @@ package Tls_Parameters is
        Eccsi_Sha256 => 16#0704#,
 
        -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
-       Iso_Ibs1_0705 => 16#0705#,
+       Iso_Ibs1 => 16#0705#,
 
        -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
-       Iso_Ibs2_0706 => 16#0706#,
+       Iso_Ibs2 => 16#0706#,
 
        -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
-       Iso_Chinese_Ibs_0707 => 16#0707#,
+       Iso_Chinese_Ibs => 16#0707#,
 
        -- recommended = N, Ref: rfc8998
        Sm2sig_Sm3 => 16#0708#,
