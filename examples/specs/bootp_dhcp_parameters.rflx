@@ -26,7 +26,7 @@ package Bootp_Dhcp_Parameters is
        Name_Server => 5,
 
        -- length = N, description = N/4 DNS Server addresses, Ref: rfc2132
-       Domain_Server_6 => 6,
+       Domain_Server => 6,
 
        -- length = N, description = N/4 Logging Server addresses, Ref: rfc2132
        Log_Server => 7,
@@ -54,7 +54,7 @@ package Bootp_Dhcp_Parameters is
        Merit_Dump_File => 14,
 
        -- length = N, description = The DNS domain name of the client, Ref: rfc2132
-       Domain_Name_15 => 15,
+       Domain_Name => 15,
 
        -- length = N, description = Swap Server address, Ref: rfc2132
        Swap_Server => 16,
@@ -66,7 +66,7 @@ package Bootp_Dhcp_Parameters is
        Extension_File => 18,
 
        -- length = 1, description = Enable/Disable IP Forwarding, Ref: rfc2132
-       Forward_On_Off_19 => 19,
+       Forward_On_Off => 19,
 
        -- length = 1, description = Enable/Disable Source Routing, Ref: rfc2132
        Srcrte_On_Off => 20,
@@ -240,7 +240,7 @@ package Bootp_Dhcp_Parameters is
        Stda_Server => 76,
 
        -- length = N, description = User Class Information, Ref: rfc3004
-       User_Class_77 => 77,
+       User_Class => 77,
 
        -- length = N, description = directory agent information, Ref: rfc2610
        Directory_Agent => 78,
@@ -258,7 +258,7 @@ package Bootp_Dhcp_Parameters is
        Relay_Agent_Information => 82,
 
        -- length = N, description = Internet Storage Name Service, Ref: rfc4174
-       Isns_83 => 83,
+       Isns => 83,
 
        -- length = N, description = Novell Directory Services, Ref: rfc2241
        Nds_Servers => 85,
@@ -297,7 +297,7 @@ package Bootp_Dhcp_Parameters is
        Uuid_Guid => 97,
 
        -- length = N, description = Open Group's User Authentication, Ref: rfc2485
-       User_Auth_98 => 98,
+       User_Auth => 98,
 
        -- Ref: rfc4776
        Geoconf_Civic => 99,
@@ -335,7 +335,7 @@ package Bootp_Dhcp_Parameters is
        Subnet_Selection_Option => 118,
 
        -- length = N, description = DNS domain search list, Ref: rfc3397
-       Domain_Search_119 => 119,
+       Domain_Search => 119,
 
        -- length = N, description = SIP Servers DHCP Option, Ref: rfc3361
        Sip_Servers_Dhcp_Option => 120,
@@ -357,7 +357,7 @@ package Bootp_Dhcp_Parameters is
 
        -- Ref: rfc4578, alternative_name = Pxe_Undefined_Vendor_Specific, alternative_name
        -- = Etherboot_Signature_6_Bytes_E4_45_74_68_00_00, alternative_name =
-       -- Docsis_Full_Security_Server_Ip_Address_128, alternative_name =
+       -- Docsis_Full_Security_Server_Ip_Address, alternative_name =
        -- Tftp_Server_Ip_Address_For_Ip_Phone_Software_Load
        Bootp_Vendor_Extensions_And_Dhcp_Options_128 => 128,
 
@@ -372,7 +372,7 @@ package Bootp_Dhcp_Parameters is
        Bootp_Vendor_Extensions_And_Dhcp_Options_130 => 130,
 
        -- Ref: rfc4578, alternative_name = Pxe_Undefined_Vendor_Specific, alternative_name
-       -- = Remote_Statistics_Server_Ip_Address_131
+       -- = Remote_Statistics_Server_Ip_Address
        Bootp_Vendor_Extensions_And_Dhcp_Options_131 => 131,
 
        -- Ref: rfc4578, alternative_name = Pxe_Undefined_Vendor_Specific, alternative_name
@@ -421,7 +421,7 @@ package Bootp_Dhcp_Parameters is
        Geoloc => 144,
 
        -- length = 1, description = Forcerenew Nonce Capable, Ref: rfc6704
-       Forcerenew_Nonce_Capable_145 => 145,
+       Forcerenew_Nonce_Capable => 145,
 
        -- length = N, description = Information for selecting RDNSS, Ref: rfc6731
        Rdnss_Selection => 146,
@@ -647,7 +647,7 @@ package Bootp_Dhcp_Parameters is
        Malformedquery => 3,
 
        -- Ref: rfc6926
-       Notallowed_4 => 4,
+       Notallowed => 4,
 
        -- Ref: rfc7724
        Datamissing => 5,
@@ -682,7 +682,7 @@ package Bootp_Dhcp_Parameters is
        Reset_6 => 6,
 
        -- Ref: rfc6926
-       Remote_7 => 7,
+       Remote => 7,
 
        -- Ref: rfc6926
        Transitioning => 8)
@@ -731,7 +731,7 @@ package Bootp_Dhcp_Parameters is
        Agent_Remote_Id_Sub_Option => 2,
 
        -- Ref: rfc3256
-       Docsis_Device_Class_Suboption_4 => 4,
+       Docsis_Device_Class_Suboption => 4,
 
        -- Ref: rfc3527
        Link_Selection_Sub_Option => 5,
@@ -758,16 +758,16 @@ package Bootp_Dhcp_Parameters is
        Relay_Agent_Identifier_Sub_Option => 12,
 
        -- Ref: rfc7839
-       Access_Technology_Type_Sub_Option_13 => 13,
+       Access_Technology_Type_Sub_Option => 13,
 
        -- Ref: rfc7839
-       Access_Network_Name_Sub_Option_14 => 14,
+       Access_Network_Name_Sub_Option => 14,
 
        -- Ref: rfc7839
-       Access_Point_Name_Sub_Option_15 => 15,
+       Access_Point_Name_Sub_Option => 15,
 
        -- Ref: rfc7839
-       Access_Point_Bssid_Sub_Option_16 => 16,
+       Access_Point_Bssid_Sub_Option => 16,
 
        -- Ref: rfc7839
        Operator_Identifier_Sub_Option => 17,
@@ -806,7 +806,7 @@ package Bootp_Dhcp_Parameters is
 
    type Authentication_Suboption_Value_8_Replay_Detection_Method_Rdm_Identifier_Values is
       (-- Ref: rfc4030
-       Use_Of_A_Monotonically_Increasing_Counter_Value_1 => 1)
+       Use_Of_A_Monotonically_Increasing_Counter_Value => 1)
    with Size => 1;
 
    type Ieee_802_21_Service_Type_Mos_Dhcpv4_Address_And_Fqdn_Sub_Options is
@@ -828,7 +828,7 @@ package Bootp_Dhcp_Parameters is
        Rfc2685_Vpn_Id => 1,
 
        -- Ref: rfc6926
-       All_Vpns_Wildcard_254 => 254,
+       All_Vpns_Wildcard => 254,
 
        -- Ref: rfc6607
        Global_Default_Vpn => 255)

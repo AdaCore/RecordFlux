@@ -107,7 +107,7 @@ def _convert_registry_to_enum_type(
         if re.search(r"RESERVED|UNASSIGNED", rflx_name, flags=re.I):
             continue
 
-        if re.match(RESERVED_WORDS, rflx_name, re.I | re.X) is not None:
+        if re.fullmatch(RESERVED_WORDS, rflx_name, re.I | re.X) is not None:
             rflx_name += f"_{rflx_value.replace('16#', '').replace('#', '')}"
         if rflx_name.startswith(tuple(d for d in string.digits)):
             rflx_name = f"{registry_title}_{rflx_name}"

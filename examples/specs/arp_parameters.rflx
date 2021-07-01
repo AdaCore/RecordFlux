@@ -28,10 +28,10 @@ package Arp_Parameters is
        Drarp_Error => 7,
 
        -- Ref: rfc2390
-       Inarp_Request_8 => 8,
+       Inarp_Request => 8,
 
        -- Ref: rfc2390
-       Inarp_Reply_9 => 9,
+       Inarp_Reply => 9,
 
        -- Ref: rfc1577
        Arp_Nak => 10,
@@ -177,7 +177,7 @@ package Arp_Parameters is
        Ipsec_Tunnel => 31,
 
        -- Ref: rfc4391
-       Infiniband_Tm_32 => 32,
+       Infiniband_Tm => 32,
 
        -- xref = Jeff Anderson, Telecommunications Industry of America (TIA) TR-8.5
        -- Formulating Group, <cja015&motorola.com>, June 2004

@@ -110,7 +110,7 @@ package Protocol_Numbers is
 
        -- description = ISO Transport Protocol Class 4, Ref: rfc905, xref = <mystery
        -- contact>
-       Iso_Tp4_29 => 29,
+       Iso_Tp4 => 29,
 
        -- description = Bulk Data Transfer Protocol, Ref: rfc969, Ref: David_Clark
        Netblt => 30,
@@ -267,7 +267,7 @@ package Protocol_Numbers is
        Wb_Expak => 79,
 
        -- description = ISO Internet Protocol, Ref: Marshall_T_Rose
-       Iso_Ip_80 => 80,
+       Iso_Ip => 80,
 
        -- description = VMTP, Ref: Dave_Cheriton
        Vmtp => 81,
@@ -337,7 +337,7 @@ package Protocol_Numbers is
 
        -- description = Ipsilon Flow Management Protocol, Ref: Bob_Hinden, xref = November
        -- 1995, 1997.
-       Ifmp_101 => 101,
+       Ifmp => 101,
 
        -- description = PNNI over IP, Ref: Ross_Callon
        Pnni => 102,
@@ -407,7 +407,7 @@ package Protocol_Numbers is
        Ptp => 123,
 
        -- Ref: Tony_Przygienda
-       Isis_Over_Ipv4_124 => 124,
+       Isis_Over_Ipv4 => 124,
 
        -- Ref: Criag_Partridge
        Fire => 125,
