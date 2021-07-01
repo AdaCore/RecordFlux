@@ -2,6 +2,8 @@ VERBOSE ?= @
 
 python-packages := tests tools
 
+IANA_REGISTRIES_DIR := tests/iana_registries
+
 .PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy format test test_python
 
 all: check test
@@ -42,3 +44,19 @@ test_python_iana_to_rflx:
 	python3 -m pytest -n$(shell nproc) -vv --cov=tools.iana_to_rflx --cov-branch tests/test_iana_to_rflx.py
 	coverage html
 	firefox htmlcov/tools_iana_to_rflx_py.html
+
+generate_iana: generate_iana_protocol_numbers generate_iana_tls_parameters generate_iana_bootp_dhcp_parameters generate_iana_arp_parameters
+
+generate_iana_protocol_numbers:
+	python3 ./tools/iana_to_rflx.py ./iana_registries/protocol-numbers.xml -a
+
+generate_iana_tls_parameters:
+	python3 ./tools/iana_to_rflx.py ./iana_registries/tls-parameters.xml -a
+
+generate_iana_bootp_dhcp_parameters:
+	python3 ./tools/iana_to_rflx.py ./iana_registries/bootp-dhcp-parameters.xml
+
+generate_iana_arp_parameters:
+	python3 ./tools/iana_to_rflx.py ./iana_registries/arp-parameters.xml
+
+
