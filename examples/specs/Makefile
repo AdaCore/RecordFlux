@@ -27,10 +27,13 @@ format:
 	black -l 100 $(python-packages)
 	isort $(python-packages)
 
-test: test_python
+test: test_python_coverage
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv
+
+test_python_coverage:
+	python3 -m pytest -n$(shell nproc) -vv --cov=tools --cov-branch --cov-fail-under=58 --cov-report=term-missing:skip-covered tests
 
 test_python_validation_tool:
 	python3 -m pytest -n$(shell nproc) -vv tests/test_validation_tool.py
