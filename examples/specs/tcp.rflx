@@ -1,141 +1,115 @@
 package TCP is
 
-    -- RFC 793
+   --  RFC 793
 
-    type Source_Port is mod 2**16;
-    type Destination_Port is mod 2**16;
-    type Sequence_Number is mod 2**32;
-    type Acknowledgment_Number is mod 2**32;
-    type Data_Offset is range 5 .. 2**4 - 1 with Size => 4;
+   type Port is mod 2**16;
+   type Sequence_Number is mod 2**32;
+   type Acknowledgment_Number is mod 2**32;
+   type Data_Offset is range 5 .. 2**4 - 1 with Size => 4;
+   type Reserved is range 0 .. 0 with Size => 3;
+   type Window is mod 2**16;
+   type Checksum is mod 2**16;
+   type Urgent_Pointer is mod 2**16;
 
-    -- Reserved for future use. Must be zero.
-    type Reserved is range 0 .. 0 with Size => 3;
+   type Kind is
+      (End_Of_Option_List   => 0,
+       No_Operation         => 1,
+       Maximum_Segment_Size => 2,
+       Window_Scale         => 3,  --  RFC 7323
+       SACK_Permitted       => 4,  --  RFC 2018
+       SACK                 => 5,  --  RFC 2018
+       Timestamps           => 8)  --  RFC 7323
+   with Size => 8;
 
-    type Window is mod 2**16;
-    type Checksum is mod 2**16;
-    type Urgent_Pointer is mod 2**16;
+   type Length is range 2 .. 2**8 - 1 with Size => 8;
+   type TSval is mod 2**32;
+   type TSecr is mod 2**32;
+   type Shift_Cnt is mod 2**8;
+   type Max_Seg_Size is mod 2**16;
+   type SACK_Edge is mod 2**32;
 
-    -- Timestamp and Window_Scale options are described in RFC 7323
-    -- Selective Acknowledgment Options (SACK) and SACK_Permitted are described in RFC 2018
-    -- No_Operation, End_Of_Options_List are described in RFC 793
-    -- Maximum_Segment_Size is described in RFC 793 and RFC 879
+   type SACK_Block is
+      message
+         Left_Edge : SACK_Edge;
+         Right_Edge : SACK_Edge;
+      end message;
 
-    type Kind is
-       (End_Of_Option_List     => 16#00#,
-        No_Operation           => 16#01#,
-        Maximum_Segment_Size   => 16#02#,
-        Window_Scale           => 16#03#,
-        SACK_Permitted         => 16#04#,
-        SACK                   => 16#05#,
-        Timestamps             => 16#08#)
-    with Size => 8;
+   type SACK_Blocks is sequence of SACK_Block;
 
-    type Length is range 2 .. 2**8 - 1 with Size => 8;
-    type TSval is mod 2**32;
-    type TSecr is mod 2**32;
-    type Shift_Cnt is mod 2**8;
-    type Max_Seg_Size is mod 2**16;
-    type Unsigned_Integer is range 0 .. 2**32 - 1 with Size => 32;
+   type Option is
+      message
+         Kind : Kind
+            then null
+               if Kind = End_Of_Option_List or Kind = No_Operation
+                  and Message'Size = Kind'Size
+            then Length
+               if Kind = Maximum_Segment_Size
+                  or Kind = Window_Scale
+                  or Kind = SACK_Permitted
+                  or Kind = SACK
+                  or Kind = Timestamps;
+         Length : Length
+            then Shift_Cnt
+               if Kind = Window_Scale
+                  and Length = (TCP::Kind'Size + TCP::Length'Size + TCP::Shift_Cnt'Size) / 8
+            then Max_Seg_Size
+               if Kind = Maximum_Segment_Size
+                  and Length = (TCP::Kind'Size + TCP::Length'Size + TCP::Max_Seg_Size'Size) / 8
+                  --  "This field must only be sent in the initial connection request (i.e., in segments with the SYN control bit set)."
+                  --  ISSUE: Componolit/RecordFlux#78
+            then SACK_Blocks
+               if Kind = SACK
+            then TSval
+               if Kind = Timestamps
+                  and Length = (TCP::Kind'Size + TCP::Length'Size + TCP::TSval'Size +  TCP::TSecr'Size) / 8
+            then null
+               if Kind = SACK_Permitted
+                  and Length = (TCP::Kind'Size + TCP::Length'Size) / 8
+                  and Message'Size = Length * 8;
+         Shift_Cnt : Shift_Cnt
+            then null
+               if Message'Size = Length * 8;
+         Max_Seg_Size : Max_Seg_Size
+            then null
+               if Message'Size = Length * 8;
+         SACK_Blocks : SACK_Blocks
+            with Size => Length * 8 - Kind'Size - Length'Size
+            then null
+               if Message'Size = Length * 8;
+         TSval : TSval;
+         TSecr : TSecr
+            then null
+               if Message'Size = Length * 8;
+      end message;
 
-    type SACK_Data is sequence of Unsigned_Integer;
+   type Options is sequence of Option;
 
-    type Option is
-       message
-          Kind : Kind
-             then null
-                if Kind = End_Of_Option_List or Kind = No_Operation
-             then Length
-                if Kind = Maximum_Segment_Size
-                   or Kind = Window_Scale
-                   or Kind = SACK_Permitted
-                   or Kind = SACK
-                   or Kind = Timestamps;
-          Length : Length
-             then Shift_Cnt
-                if Kind = Window_Scale
-                --  ISSUE: Componolit/RecordFlux#681
-                --  and Length = Kind'Size + Length'Size +TCP:: Shift_Cnt
-             then Max_Seg_Size
-                if Kind = Maximum_Segment_Size
-                --  ISSUE: Componolit/RecordFlux#681
-                --  and Length = Kind'Size + Length'Size + TCP::Max_Seg_Size
-             then SACK_Data
-                if Kind = SACK
-                --  ISSUE: Componolit/RecordFlux#681
-                --  and Length = Kind'Size + Length'Size + TCP::SACK_Data'Size
-             then TSval
-                if Kind = Timestamps
-                --  ISSUE: Componolit/RecordFlux#681
-                --  and Length = Kind'Size + Length'Size + TCP::TSval + TCP::TSecr
-             then null
-
-             -- ISSUE: Componolit/RecordFlux#554
-                if Kind = SACK_Permitted and Message'Size = Length * 8;
-          Shift_Cnt : Shift_Cnt
-             then null
-
-             -- ISSUE: Componolit/RecordFlux#554
-                if Kind = Window_Scale and Message'Size = Length * 8;
-          Max_Seg_Size : Max_Seg_Size
-             then null
-
-             -- ISSUE: Componolit/RecordFlux#554
-                if Kind = Maximum_Segment_Size and Message'Size = Length * 8;
-          SACK_Data : SACK_Data
-              with Size => Length * 8 - Kind'Size - Length'Size
-             then null
-
-             -- ISSUE: Componolit/RecordFlux#554
-                if Kind = SACK and Message'Size = Length * 8 and SACK_Data'Size mod 64 = 0;
-          TSval : TSval;
-          TSecr : TSecr
-                if Kind = Timestamps
-             then null
-                if Message'Size = Length * 8;
-       end message;
-
-    type Options is sequence of Option;
-
-    type Segment is
-        message
-            Source_Port : Source_Port;
-            Destination_Port : Destination_Port;
-            Sequence_Number : Sequence_Number;
-            Acknowledgment_Number : Acknowledgment_Number;
-            Data_Offset : Data_Offset;
-            Reserved : Reserved;
-            -- NS, CWR and ECN are experimental, added by RFC 3168 and 3540
-            NS : Boolean;
-            CWR : Boolean;
-            ECN : Boolean;
-
-            -- The following flags are defined in RFC 793, 3.1
-
-            -- Urgent Pointer field
-            URG : Boolean;
-            -- Acknowledgement field
-            ACK : Boolean;
-            -- Push function
-            PSH : Boolean;
-            -- Reset the connection
-            RST : Boolean;
-            -- Synchronize sequence numbers
-            SYN : Boolean;
-            -- No more data from sender
-            FIN : Boolean;
-
-            Window : Window;
-            Checksum : Checksum;
-            Urgent_Pointer : Urgent_Pointer;
-            Options : Options
-                with Size => (Data_Offset * 32) - (Urgent_Pointer'Last - Source_Port'First + 1);
-            Data : Opaque
-                with Size => Message'Size - (Data_Offset * 32);
-        --        then null
-        --           if Checksum'Valid_Checksum;
-        end message;
-        -- ISSUE: Componolit/RecordFLux-specifications#45
-        -- with
-        --   Checksum => (Checksum => (Source_Port'First .. Checksum'First - 1, Checksum'Size, Checksum'Last + 1 .. Message'Last));
+   type Segment is
+      message
+         Source_Port : Port;
+         Destination_Port : Port;
+         Sequence_Number : Sequence_Number;
+         Acknowledgment_Number : Acknowledgment_Number;
+         Data_Offset : Data_Offset;
+         Reserved : Reserved;
+         NS : Boolean;   --  Nonce Sum (RFC 3540)
+         CWR : Boolean;  --  Congestion Window Reduced (RFC 3168)
+         ECN : Boolean;  --  ECN-Echo (RFC 3168)
+         URG : Boolean;  --  Urgent Pointer field significant (RFC793, 3.1)
+         ACK : Boolean;  --  Acknowledgement field significant (RFC793, 3.1)
+         PSH : Boolean;  --  Push function (RFC793, 3.1)
+         RST : Boolean;  --  Reset the connection (RFC793, 3.1)
+         SYN : Boolean;  --  Synchronize sequence numbers (RFC793, 3.1)
+         FIN : Boolean;  --  No more data from sender (RFC793, 3.1)
+         Window : Window;
+         Checksum : Checksum;
+         Urgent_Pointer : Urgent_Pointer;
+         Options : Options
+            with Size => (Data_Offset * 32) - (Urgent_Pointer'Last - Source_Port'First + 1)
+            if URG = True or (URG = False and Urgent_Pointer = 0);
+         Data : Opaque
+            with Size => Message'Size - (Data_Offset * 32)
+            if (Options'Last - Source_Port'First + 1) mod 32 = 0;
+      end message;
 
 end TCP;
