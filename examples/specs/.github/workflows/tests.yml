@@ -91,4 +91,4 @@ jobs:
         pip install -r requirements.txt
     - name: Test
       run: |
-        python3 -m pytest -n $(nproc) -vv
+        make test

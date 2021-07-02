@@ -4,5 +4,6 @@ flake8
 isort
 mypy
 pylint
+pytest-cov
 pytest-xdist
 scapy
