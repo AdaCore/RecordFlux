@@ -160,13 +160,13 @@ setup(
     extras_require={
         "devel": [
             "black ==20.8b1",
-            "flake8 >=3, <4",
-            "isort >=5, <6",
-            "mypy >=0.770",
-            "pylint >=2.9.0, <3",
-            "pytest >=5, <6",
-            "pytest-cov >=2.10.0, <3",
-            "pytest-xdist >=1.32.0, <2",
+            "flake8 >=3.9.2, <3.10",
+            "isort >=5.9.1, <5.10",
+            "mypy ==0.910",
+            "pylint >=2.9.3, <2.10",
+            "pytest >=6.2.4, <6.3",
+            "pytest-cov >=2.12.1, <2.13",
+            "pytest-xdist >=2.3.0, <2.4",
             LANGKIT,
         ]
     },
