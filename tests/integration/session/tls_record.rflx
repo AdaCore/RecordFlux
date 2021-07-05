@@ -1,5 +1,4 @@
 with TLS_Alert;
-with TLS_Handshake;
 
 package TLS_Record is
 
@@ -39,9 +38,6 @@ package TLS_Record is
 
    for TLS_Record use (Fragment => TLS_Alert::Alert)
        if Tag = Alert;
-
-   for TLS_Record use (Fragment => TLS_Handshake::Handshake)
-       if Tag = Handshake;
 
    type TLS_Inner_Plaintext is
       message

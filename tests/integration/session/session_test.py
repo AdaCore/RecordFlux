@@ -8,7 +8,7 @@ from tests import utils
 TESTDIR = "tests/integration/session"
 
 
-@pytest.mark.parametrize("spec", ["tls_handshake_session", "tls_record_session"])
+@pytest.mark.parametrize("spec", ["tls_record_session"])
 def test_session(spec: str, tmp_path: Path) -> None:
     p = Parser()
     p.parse(Path(f"{TESTDIR}/{spec}.rflx"))

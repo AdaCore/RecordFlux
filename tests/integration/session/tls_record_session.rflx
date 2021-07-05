@@ -418,7 +418,8 @@ package TLS_Record_Session is
 
       state Heartbeat_Control_Configure is
       begin
-         Heartbeat_Receive_Enabled := Heartbeat_Control_Message.Remote = TLS_Handshake::Peer_Allowed_To_Send;  -- FIXME: correct association: send/receive <-> local/remote
+         -- FIXME: ensure correct association: send/receive <-> local/remote
+         Heartbeat_Receive_Enabled := Heartbeat_Control_Message.Remote = GreenTLS::Heartbeat_Enabled;
          Heartbeat_Send_Enabled := Heartbeat_Control_Message.Local = GreenTLS::Heartbeat_Enabled;
       transition
          then Idle
