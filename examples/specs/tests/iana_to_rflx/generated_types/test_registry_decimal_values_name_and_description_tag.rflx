@@ -10,7 +10,7 @@ package Test_Registry_Decimal_Values_Name_And_Description_Tag is
        Quotes_Server => 8,
 
        -- length = N, description = N/4 Printer Server addresses, Ref: rfc2132
-       Lpr_Server => 9)
+       LPR_Server => 9)
    with Size => 4, Always_Valid;
 
 end Test_Registry_Decimal_Values_Name_And_Description_Tag;

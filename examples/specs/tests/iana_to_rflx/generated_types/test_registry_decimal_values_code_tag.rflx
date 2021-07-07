@@ -7,10 +7,10 @@ package Test_Registry_Decimal_Values_Code_Tag is
 
    type Decimal_Values_With_Code_Tag is
       (-- Ref: rfc5494
-       Reply => 0,
+       REPLY => 0,
 
        -- Ref: rfc826, Ref: rfc5227
-       Request => 1)
+       REQUEST => 1)
    with Size => 1;
 
 end Test_Registry_Decimal_Values_Code_Tag;

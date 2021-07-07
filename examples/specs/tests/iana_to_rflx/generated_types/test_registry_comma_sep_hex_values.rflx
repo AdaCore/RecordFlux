@@ -7,10 +7,10 @@ package Test_Registry_Comma_Sep_Hex_Values is
 
    type Comma_Separated_Hex_Values is
       (-- dtls = Y, rec = N, Ref: rfc5246
-       Tls_Null_With_Null_Null => 16#0000#,
+       TLS_NULL_WITH_NULL_NULL => 16#0000#,
 
        -- dtls = Y, rec = N, Ref: rfc5246
-       Tls_Rsa_With_Null_Md5 => 16#0001#)
+       TLS_RSA_WITH_NULL_MD5 => 16#0001#)
    with Size => 4, Always_Valid;
 
 end Test_Registry_Comma_Sep_Hex_Values;
