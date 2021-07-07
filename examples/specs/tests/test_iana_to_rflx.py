@@ -87,14 +87,15 @@ def test_normalize_value() -> None:
 
 
 def test_normalize_name() -> None:
-    assert _normalize_name("TLS_RSA_WITH_NULL_MD5") == "Tls_Rsa_With_Null_Md5"
+    assert _normalize_name("A") == "A"
+    assert _normalize_name("TLS_RSA_WITH_NULL_MD5") == "TLS_RSA_WITH_NULL_MD5"
     assert _normalize_name("Quotes Server") == "Quotes_Server"
-    assert _normalize_name("Ethernet (10Mb)") == "Ethernet_10mb"
-    assert _normalize_name("NSFNET-IGP") == "Nsfnet_Igp"
-    assert _normalize_name("RSVP-E2E-\nIGNORE") == "Rsvp_E2e_Ignore"
+    assert _normalize_name("Ethernet (10Mb)") == "Ethernet_10Mb"
+    assert _normalize_name("NSFNET-IGP") == "NSFNET_IGP"
+    assert _normalize_name("RSVP-E2E-\nIGNORE") == "RSVP_E2E_IGNORE"
     assert (
         _normalize_name("TIA-102 Project 25 Common Air Interface (CAI)")
-        == "Tia_102_Project_25_Common_Air_Interface_Cai"
+        == "TIA_102_Project_25_Common_Air_Interface_CAI"
     )
 
 
