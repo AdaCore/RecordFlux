@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from pathlib import Path
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
@@ -51,11 +50,11 @@ def test_registry_output(registry: Path, tmp_path: Path) -> None:
         known_valid = known_valid_file.read()
         assert re.sub(
             r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
-            f"Generation date: .",
+            "Generation date: .",
             generated,
         ) == re.sub(
             r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
-            f"Generation date: .",
+            "Generation date: .",
             known_valid,
         )
 
