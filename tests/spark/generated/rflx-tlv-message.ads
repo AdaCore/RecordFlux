@@ -252,11 +252,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if
-           Valid'Result
-        then
-           Structural_Valid (Ctx, Fld)
-           and Present (Ctx, Fld));
+       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
@@ -318,10 +314,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Tag)
        and Get_Tag (Ctx) = Val
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Tag))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Tag))
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Value)
        and (if
@@ -374,10 +367,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Value))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Value))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -399,10 +389,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Value))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Value))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -426,10 +413,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Value))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Value))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -455,10 +439,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Value))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Value))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -506,11 +487,7 @@ private
          end case;
       end record with
      Dynamic_Predicate =>
-       (if
-           State = S_Valid
-           or State = S_Structural_Valid
-        then
-           Valid_Value (Field_Cursor.Value));
+       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -528,11 +505,7 @@ private
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if
-          Buffer /= null
-       then
-          Buffer'First = Buffer_First
-          and Buffer'Last = Buffer_Last)
+     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
@@ -563,14 +536,8 @@ private
                           then
                              (Valid (Cursors (F_Length))
                               and then Cursors (F_Value).Predecessor = F_Length)))
-      and then ((if
-                    Invalid (Cursors (F_Tag))
-                 then
-                    Invalid (Cursors (F_Length)))
-                and then (if
-                             Invalid (Cursors (F_Length))
-                          then
-                             Invalid (Cursors (F_Value))))
+      and then ((if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Length)))
+                and then (if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Value))))
       and then (if
                    Structural_Valid (Cursors (F_Tag))
                 then

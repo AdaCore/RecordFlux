@@ -170,11 +170,6 @@ is
        Valid (Val);
 
    function To_Base (Val : RFLX.Sequence.AV_Enumeration) return RFLX.Sequence.AV_Enumeration_Base is
-     ((if
-          Val.Known
-       then
-          To_Base (Val.Enum)
-       else
-          Val.Raw));
+     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
 
 end RFLX.Sequence;

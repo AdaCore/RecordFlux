@@ -57,12 +57,7 @@ is
    end Write;
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
-     ((if
-          Ctx.Message_Last = Ctx.First - 1
-       then
-          0
-       else
-          Ctx.Message_Last - Ctx.First + 1));
+     ((if Ctx.Message_Last = Ctx.First - 1 then 0 else Ctx.Message_Last - Ctx.First + 1));
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if
@@ -203,10 +198,7 @@ is
               Valid_Value (Value)
               and Field_Condition (Ctx, Value)
             then
-               pragma Assert ((if
-                                  Fld = F_Data
-                               then
-                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+               pragma Assert ((if Fld = F_Data then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                case Fld is
                   when F_Message_Type =>
                      Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
@@ -268,10 +260,7 @@ is
        and then Valid_Next (Ctx, Val.Fld)
        and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
        and then (for all F in Field'Range =>
-                    (if
-                        Structural_Valid (Ctx.Cursors (F))
-                     then
-                        Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
+                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Fst = Field_First (Ctx, Val.Fld)
@@ -280,10 +269,7 @@ is
        and Fst <= Lst + 1
        and Lst <= Ctx.Last
        and (for all F in Field'Range =>
-               (if
-                   Structural_Valid (Ctx.Cursors (F))
-                then
-                   Ctx.Cursors (F).Last <= Lst))
+               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

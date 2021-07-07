@@ -254,11 +254,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if
-           Valid'Result
-        then
-           Structural_Valid (Ctx, Fld)
-           and Present (Ctx, Fld));
+       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
@@ -362,10 +358,7 @@ is
        and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
        and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and (if
-               Field_Size (Ctx, F_Modular_Vector) > 0
-            then
-               Present (Ctx, F_Modular_Vector));
+       and (if Field_Size (Ctx, F_Modular_Vector) > 0 then Present (Ctx, F_Modular_Vector));
 
    procedure Set_Range_Vector (Ctx : in out Context; Seq_Ctx : Sequence.Range_Vector.Context) with
      Pre =>
@@ -394,10 +387,7 @@ is
        and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
        and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and (if
-               Field_Size (Ctx, F_Range_Vector) > 0
-            then
-               Present (Ctx, F_Range_Vector));
+       and (if Field_Size (Ctx, F_Range_Vector) > 0 then Present (Ctx, F_Range_Vector));
 
    procedure Set_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : Sequence.Enumeration_Vector.Context) with
      Pre =>
@@ -425,10 +415,7 @@ is
        and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and (if
-               Field_Size (Ctx, F_Enumeration_Vector) > 0
-            then
-               Present (Ctx, F_Enumeration_Vector));
+       and (if Field_Size (Ctx, F_Enumeration_Vector) > 0 then Present (Ctx, F_Enumeration_Vector));
 
    procedure Set_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : Sequence.AV_Enumeration_Vector.Context) with
      Pre =>
@@ -457,10 +444,7 @@ is
        and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and (if
-               Field_Size (Ctx, F_AV_Enumeration_Vector) > 0
-            then
-               Present (Ctx, F_AV_Enumeration_Vector));
+       and (if Field_Size (Ctx, F_AV_Enumeration_Vector) > 0 then Present (Ctx, F_AV_Enumeration_Vector));
 
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Sequence.Modular_Vector.Context) with
      Pre =>
@@ -780,11 +764,7 @@ private
          end case;
       end record with
      Dynamic_Predicate =>
-       (if
-           State = S_Valid
-           or State = S_Structural_Valid
-        then
-           Valid_Value (Field_Cursor.Value));
+       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -802,11 +782,7 @@ private
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if
-          Buffer /= null
-       then
-          Buffer'First = Buffer_First
-          and Buffer'Last = Buffer_Last)
+     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
@@ -846,22 +822,10 @@ private
                           then
                              (Structural_Valid (Cursors (F_Enumeration_Vector))
                               and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector)))
-      and then ((if
-                    Invalid (Cursors (F_Length))
-                 then
-                    Invalid (Cursors (F_Modular_Vector)))
-                and then (if
-                             Invalid (Cursors (F_Modular_Vector))
-                          then
-                             Invalid (Cursors (F_Range_Vector)))
-                and then (if
-                             Invalid (Cursors (F_Range_Vector))
-                          then
-                             Invalid (Cursors (F_Enumeration_Vector)))
-                and then (if
-                             Invalid (Cursors (F_Enumeration_Vector))
-                          then
-                             Invalid (Cursors (F_AV_Enumeration_Vector))))
+      and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Modular_Vector)))
+                and then (if Invalid (Cursors (F_Modular_Vector)) then Invalid (Cursors (F_Range_Vector)))
+                and then (if Invalid (Cursors (F_Range_Vector)) then Invalid (Cursors (F_Enumeration_Vector)))
+                and then (if Invalid (Cursors (F_Enumeration_Vector)) then Invalid (Cursors (F_AV_Enumeration_Vector))))
       and then (if
                    Structural_Valid (Cursors (F_Length))
                 then
