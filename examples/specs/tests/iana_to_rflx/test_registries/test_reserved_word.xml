@@ -1,0 +1,14 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_reserved_word">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_reserved_word">
+        <title>reserved word</title>
+        <record>
+            <value>0</value>
+            <description>constant</description>
+        </record>
+    </registry>
+</registry>

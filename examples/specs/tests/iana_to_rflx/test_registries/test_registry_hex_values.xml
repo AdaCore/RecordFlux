@@ -1,0 +1,20 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_registry_hex_values">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_registry_hex_values">
+        <title>hexadecimal values</title>
+        <record date="2020-03-09">
+            <value>0x0420</value>
+            <description>rsa_pkcs1_sha256_legacy</description>
+            <recommended>N</recommended>
+            <xref type="draft" data="draft-davidben-tls13-pkcs1-00"/>
+        </record>
+        <record date="2018-05-29">
+            <value>0x0501</value>
+            <description>rsa_pkcs1_sha384</description>
+        </record>
+    </registry>
+</registry>

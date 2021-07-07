@@ -1,0 +1,24 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_registry_comma_sep_hex_values">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_registry_comma_sep_hex_values">
+        <title>comma separated hex-values</title>
+        <record>
+            <value>0x00,0x00</value>
+            <description>TLS_NULL_WITH_NULL_NULL</description>
+            <dtls>Y</dtls>
+            <rec>N</rec>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+        <record>
+            <value>0x00,0x01</value>
+            <description>TLS_RSA_WITH_NULL_MD5</description>
+            <dtls>Y</dtls>
+            <rec>N</rec>
+            <xref type="rfc" data="rfc5246"/>
+        </record>
+    </registry>
+</registry>

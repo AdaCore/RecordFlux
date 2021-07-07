@@ -1,4 +1,4 @@
-<registry xmlns="http://www.iana.org/assignments" id="test_parameters">
+<registry xmlns="http://www.iana.org/assignments" id="test_registry_no_type_name">
     <title>Test IANA XML Title</title>
     <category>Test IANA XML Category</category>
     <created>2021-06-03</created>

@@ -3,11 +3,10 @@
 -- Test IANA XML Title
 -- Registry last updated on 2021-06-03
 
-package Test_All_Name_Tags is
+package Test_Reserved_Word is
 
-   type All_Possible_Name_Tags is
-      (-- description = Description, code = Code, type = Type
-       Name => 0)
+   type Reserved_Word is
+      (Constant_0 => 0)
    with Size => 0;
 
-end Test_All_Name_Tags;
+end Test_Reserved_Word;
