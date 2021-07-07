@@ -57,12 +57,7 @@ is
    end Write;
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
-     ((if
-          Ctx.Message_Last = Ctx.First - 1
-       then
-          0
-       else
-          Ctx.Message_Last - Ctx.First + 1));
+     ((if Ctx.Message_Last = Ctx.First - 1 then 0 else Ctx.Message_Last - Ctx.First + 1));
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if

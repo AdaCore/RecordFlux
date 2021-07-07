@@ -585,16 +585,29 @@ class IfExpr(Expr):
         self.else_expression = else_expression
 
     def _update_str(self) -> None:
-        self._str = ""
-        for c, e in self.condition_expressions:
-            if not self._str:
-                self._str = f"(if\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
-            else:
-                self._str += f"\n elsif\n{indent(str(c), 4)}\n then\n{indent(str(e), 4)}"
+        condition_expressions = [(str(c), str(e)) for c, e in self.condition_expressions]
+        else_expression = str(self.else_expression)
+
+        expression = "".join(
+            f"if {c} then {e}" if i == 0 else f" elsif {c} then {e}"
+            for i, (c, e) in enumerate(condition_expressions)
+        )
         if self.else_expression:
-            self._str += f"\n else\n{indent(str(self.else_expression), 4)}"
-        self._str += ")"
-        self._str = intern(self._str)
+            expression += f" else {else_expression}"
+        expression = " ".join(expression.split())
+
+        if len(expression) > 100:
+            expression = ""
+            expression = "".join(
+                f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                if i == 0
+                else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                for i, (c, e) in enumerate(condition_expressions)
+            )
+            if self.else_expression:
+                expression += f"\n else\n{indent(else_expression, 4)}"
+
+        self._str = intern(f"({expression})")
 
     @property
     def precedence(self) -> Precedence:

@@ -56,11 +56,6 @@ is
        Valid (Val);
 
    function To_Base (Val : RFLX.Universal.Option_Type) return RFLX.Universal.Option_Type_Base is
-     ((if
-          Val.Known
-       then
-          To_Base (Val.Enum)
-       else
-          Val.Raw));
+     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
 
 end RFLX.Universal;

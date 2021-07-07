@@ -278,11 +278,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if
-           Valid'Result
-        then
-           Structural_Valid (Ctx, Fld)
-           and Present (Ctx, Fld));
+       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
@@ -817,10 +813,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Sequence_Number)
        and Get_Sequence_Number (Ctx) = Val
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Sequence_Number))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Sequence_Number))
        and Invalid (Ctx, F_Unused_24)
        and Invalid (Ctx, F_Originate_Timestamp)
        and Invalid (Ctx, F_Data)
@@ -989,10 +982,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Transmit_Timestamp)
        and Get_Transmit_Timestamp (Ctx) = Val
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Transmit_Timestamp))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Transmit_Timestamp))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1035,10 +1025,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1062,10 +1049,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1091,10 +1075,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1122,10 +1103,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1201,11 +1179,7 @@ private
          end case;
       end record with
      Dynamic_Predicate =>
-       (if
-           State = S_Valid
-           or State = S_Structural_Valid
-        then
-           Valid_Value (Field_Cursor.Value));
+       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -1223,11 +1197,7 @@ private
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if
-          Buffer /= null
-       then
-          Buffer'First = Buffer_First
-          and Buffer'Last = Buffer_Last)
+     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
@@ -1360,22 +1330,10 @@ private
                           then
                              (Valid (Cursors (F_Receive_Timestamp))
                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp)))
-      and then ((if
-                    Invalid (Cursors (F_Tag))
-                 then
-                    Invalid (Cursors (F_Code_Destination_Unreachable)))
-                and then (if
-                             Invalid (Cursors (F_Tag))
-                          then
-                             Invalid (Cursors (F_Code_Redirect)))
-                and then (if
-                             Invalid (Cursors (F_Tag))
-                          then
-                             Invalid (Cursors (F_Code_Time_Exceeded)))
-                and then (if
-                             Invalid (Cursors (F_Tag))
-                          then
-                             Invalid (Cursors (F_Code_Zero)))
+      and then ((if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Destination_Unreachable)))
+                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Redirect)))
+                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Time_Exceeded)))
+                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Zero)))
                 and then (if
                              Invalid (Cursors (F_Code_Destination_Unreachable))
                              and then Invalid (Cursors (F_Code_Redirect))
@@ -1383,34 +1341,13 @@ private
                              and then Invalid (Cursors (F_Code_Zero))
                           then
                              Invalid (Cursors (F_Checksum)))
-                and then (if
-                             Invalid (Cursors (F_Checksum))
-                          then
-                             Invalid (Cursors (F_Gateway_Internet_Address)))
-                and then (if
-                             Invalid (Cursors (F_Checksum))
-                          then
-                             Invalid (Cursors (F_Identifier)))
-                and then (if
-                             Invalid (Cursors (F_Checksum))
-                          then
-                             Invalid (Cursors (F_Pointer)))
-                and then (if
-                             Invalid (Cursors (F_Checksum))
-                          then
-                             Invalid (Cursors (F_Unused_32)))
-                and then (if
-                             Invalid (Cursors (F_Identifier))
-                          then
-                             Invalid (Cursors (F_Sequence_Number)))
-                and then (if
-                             Invalid (Cursors (F_Pointer))
-                          then
-                             Invalid (Cursors (F_Unused_24)))
-                and then (if
-                             Invalid (Cursors (F_Sequence_Number))
-                          then
-                             Invalid (Cursors (F_Originate_Timestamp)))
+                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Gateway_Internet_Address)))
+                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Identifier)))
+                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Pointer)))
+                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Unused_32)))
+                and then (if Invalid (Cursors (F_Identifier)) then Invalid (Cursors (F_Sequence_Number)))
+                and then (if Invalid (Cursors (F_Pointer)) then Invalid (Cursors (F_Unused_24)))
+                and then (if Invalid (Cursors (F_Sequence_Number)) then Invalid (Cursors (F_Originate_Timestamp)))
                 and then (if
                              Invalid (Cursors (F_Gateway_Internet_Address))
                              and then Invalid (Cursors (F_Sequence_Number))
@@ -1418,14 +1355,8 @@ private
                              and then Invalid (Cursors (F_Unused_32))
                           then
                              Invalid (Cursors (F_Data)))
-                and then (if
-                             Invalid (Cursors (F_Originate_Timestamp))
-                          then
-                             Invalid (Cursors (F_Receive_Timestamp)))
-                and then (if
-                             Invalid (Cursors (F_Receive_Timestamp))
-                          then
-                             Invalid (Cursors (F_Transmit_Timestamp))))
+                and then (if Invalid (Cursors (F_Originate_Timestamp)) then Invalid (Cursors (F_Receive_Timestamp)))
+                and then (if Invalid (Cursors (F_Receive_Timestamp)) then Invalid (Cursors (F_Transmit_Timestamp))))
       and then (if
                    Structural_Valid (Cursors (F_Tag))
                 then

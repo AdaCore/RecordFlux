@@ -60,11 +60,6 @@ is
        Valid (Val);
 
    function To_Base (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
-     ((if
-          Val.Known
-       then
-          To_Base (Val.Enum)
-       else
-          Val.Raw));
+     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
 
 end RFLX.Enumeration;

@@ -282,11 +282,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if
-           Valid'Result
-        then
-           Structural_Valid (Ctx, Fld)
-           and Present (Ctx, Fld));
+       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
@@ -1091,10 +1087,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1155,10 +1148,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and (if
-               Field_Size (Ctx, F_Options) > 0
-            then
-               Present (Ctx, F_Options));
+       and (if Field_Size (Ctx, F_Options) > 0 then Present (Ctx, F_Options));
 
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
@@ -1172,10 +1162,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1211,10 +1198,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1252,10 +1236,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1435,11 +1416,7 @@ private
          end case;
       end record with
      Dynamic_Predicate =>
-       (if
-           State = S_Valid
-           or State = S_Structural_Valid
-        then
-           Valid_Value (Field_Cursor.Value));
+       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -1457,11 +1434,7 @@ private
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if
-          Buffer /= null
-       then
-          Buffer'First = Buffer_First
-          and Buffer'Last = Buffer_Last)
+     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
@@ -1563,70 +1536,22 @@ private
                           then
                              (Structural_Valid (Cursors (F_Options))
                               and then Cursors (F_Payload).Predecessor = F_Options)))
-      and then ((if
-                    Invalid (Cursors (F_Version))
-                 then
-                    Invalid (Cursors (F_IHL)))
-                and then (if
-                             Invalid (Cursors (F_IHL))
-                          then
-                             Invalid (Cursors (F_DSCP)))
-                and then (if
-                             Invalid (Cursors (F_DSCP))
-                          then
-                             Invalid (Cursors (F_ECN)))
-                and then (if
-                             Invalid (Cursors (F_ECN))
-                          then
-                             Invalid (Cursors (F_Total_Length)))
-                and then (if
-                             Invalid (Cursors (F_Total_Length))
-                          then
-                             Invalid (Cursors (F_Identification)))
-                and then (if
-                             Invalid (Cursors (F_Identification))
-                          then
-                             Invalid (Cursors (F_Flag_R)))
-                and then (if
-                             Invalid (Cursors (F_Flag_R))
-                          then
-                             Invalid (Cursors (F_Flag_DF)))
-                and then (if
-                             Invalid (Cursors (F_Flag_DF))
-                          then
-                             Invalid (Cursors (F_Flag_MF)))
-                and then (if
-                             Invalid (Cursors (F_Flag_MF))
-                          then
-                             Invalid (Cursors (F_Fragment_Offset)))
-                and then (if
-                             Invalid (Cursors (F_Fragment_Offset))
-                          then
-                             Invalid (Cursors (F_TTL)))
-                and then (if
-                             Invalid (Cursors (F_TTL))
-                          then
-                             Invalid (Cursors (F_Protocol)))
-                and then (if
-                             Invalid (Cursors (F_Protocol))
-                          then
-                             Invalid (Cursors (F_Header_Checksum)))
-                and then (if
-                             Invalid (Cursors (F_Header_Checksum))
-                          then
-                             Invalid (Cursors (F_Source)))
-                and then (if
-                             Invalid (Cursors (F_Source))
-                          then
-                             Invalid (Cursors (F_Destination)))
-                and then (if
-                             Invalid (Cursors (F_Destination))
-                          then
-                             Invalid (Cursors (F_Options)))
-                and then (if
-                             Invalid (Cursors (F_Options))
-                          then
-                             Invalid (Cursors (F_Payload))))
+      and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
+                and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
+                and then (if Invalid (Cursors (F_DSCP)) then Invalid (Cursors (F_ECN)))
+                and then (if Invalid (Cursors (F_ECN)) then Invalid (Cursors (F_Total_Length)))
+                and then (if Invalid (Cursors (F_Total_Length)) then Invalid (Cursors (F_Identification)))
+                and then (if Invalid (Cursors (F_Identification)) then Invalid (Cursors (F_Flag_R)))
+                and then (if Invalid (Cursors (F_Flag_R)) then Invalid (Cursors (F_Flag_DF)))
+                and then (if Invalid (Cursors (F_Flag_DF)) then Invalid (Cursors (F_Flag_MF)))
+                and then (if Invalid (Cursors (F_Flag_MF)) then Invalid (Cursors (F_Fragment_Offset)))
+                and then (if Invalid (Cursors (F_Fragment_Offset)) then Invalid (Cursors (F_TTL)))
+                and then (if Invalid (Cursors (F_TTL)) then Invalid (Cursors (F_Protocol)))
+                and then (if Invalid (Cursors (F_Protocol)) then Invalid (Cursors (F_Header_Checksum)))
+                and then (if Invalid (Cursors (F_Header_Checksum)) then Invalid (Cursors (F_Source)))
+                and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Destination)))
+                and then (if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Options)))
+                and then (if Invalid (Cursors (F_Options)) then Invalid (Cursors (F_Payload))))
       and then (if
                    Structural_Valid (Cursors (F_Version))
                 then

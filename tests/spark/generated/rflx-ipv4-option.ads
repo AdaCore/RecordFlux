@@ -259,11 +259,7 @@ is
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if
-           Valid'Result
-        then
-           Structural_Valid (Ctx, Fld)
-           and Present (Ctx, Fld));
+       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
@@ -384,10 +380,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Number)
        and Get_Option_Number (Ctx) = Val
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Number))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Number))
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
        and (if
@@ -462,10 +455,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -489,10 +479,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -518,10 +505,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -549,10 +533,7 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Data)
-       and (if
-               Structural_Valid_Message (Ctx)
-            then
-               Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -606,11 +587,7 @@ private
          end case;
       end record with
      Dynamic_Predicate =>
-       (if
-           State = S_Valid
-           or State = S_Structural_Valid
-        then
-           Valid_Value (Field_Cursor.Value));
+       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -628,11 +605,7 @@ private
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if
-          Buffer /= null
-       then
-          Buffer'First = Buffer_First
-          and Buffer'Last = Buffer_Last)
+     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and First <= Last + 1
@@ -685,22 +658,10 @@ private
                                         or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
                                             and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
                                             and Cursors (F_Option_Number).Value.Option_Number_Value = 8)))))
-      and then ((if
-                    Invalid (Cursors (F_Copied))
-                 then
-                    Invalid (Cursors (F_Option_Class)))
-                and then (if
-                             Invalid (Cursors (F_Option_Class))
-                          then
-                             Invalid (Cursors (F_Option_Number)))
-                and then (if
-                             Invalid (Cursors (F_Option_Number))
-                          then
-                             Invalid (Cursors (F_Option_Length)))
-                and then (if
-                             Invalid (Cursors (F_Option_Length))
-                          then
-                             Invalid (Cursors (F_Option_Data))))
+      and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
+                and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
+                and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
+                and then (if Invalid (Cursors (F_Option_Length)) then Invalid (Cursors (F_Option_Data))))
       and then (if
                    Structural_Valid (Cursors (F_Copied))
                 then

@@ -125,21 +125,42 @@ def test_if_str() -> None:
     assert_equal(
         str(
             ada.If(
-                [(ada.Variable("X"), ada.Number(1)), (ada.Variable("Y"), ada.Number(2))],
+                [
+                    (ada.Variable("X"), ada.Number(1)),
+                    (ada.Variable("Y"), ada.Number(2)),
+                ],
                 ada.Number(3),
+            )
+        ),
+        "(if X then 1 elsif Y then 2 else 3)",
+    )
+    assert_equal(
+        str(
+            ada.If(
+                [
+                    (
+                        ada.Variable("Some_Complex_Condition"),
+                        ada.Variable("Some_Complex_Expression"),
+                    ),
+                    (
+                        ada.Variable("Another_Complex_Condition"),
+                        ada.Variable("Another_Complex_Expression"),
+                    ),
+                ],
+                ada.Variable("Some_Complex_Expression"),
             )
         ),
         multilinestr(
             """(if
-                   X
+                   Some_Complex_Condition
                 then
-                   1
+                   Some_Complex_Expression
                 elsif
-                   Y
+                   Another_Complex_Condition
                 then
-                   2
+                   Another_Complex_Expression
                 else
-                   3)"""
+                   Some_Complex_Expression)"""
         ),
     )
 
@@ -228,10 +249,74 @@ def test_raise_str() -> None:
 def test_expr_str() -> None:
     assert_equal(
         str(
+            ada.If(
+                [
+                    (
+                        ada.Or(
+                            ada.And(ada.Variable("X"), ada.Variable("Y")),
+                            ada.Variable("Z"),
+                        ),
+                        ada.Number(1),
+                    ),
+                    (ada.Variable("Y"), ada.Number(2)),
+                ],
+                ada.Div(ada.Mul(ada.Variable("A"), ada.Number(3)), ada.Number(8)),
+            )
+        ),
+        "(if (X and Y) or Z then 1 elsif Y then 2 else (A * 3) / 8)",
+    )
+    assert_equal(
+        str(
+            ada.If(
+                [
+                    (
+                        ada.Or(
+                            ada.And(ada.Variable("Variable_X"), ada.Variable("Variable_Y")),
+                            ada.Variable("Variable_Z"),
+                        ),
+                        ada.Number(1),
+                    ),
+                    (ada.Variable("Variable_Y"), ada.Number(2)),
+                ],
+                ada.Div(ada.Mul(ada.Variable("Variable_A"), ada.Number(3)), ada.Number(8)),
+            )
+        ),
+        multilinestr(
+            """(if
+                   (Variable_X
+                    and Variable_Y)
+                   or Variable_Z
+                then
+                   1
+                elsif
+                   Variable_Y
+                then
+                   2
+                else
+                   (Variable_A * 3) / 8)"""
+        ),
+    )
+    assert_equal(
+        str(
             ada.And(
                 ada.If(
-                    [(ada.Variable("X"), ada.Number(1)), (ada.Variable("Y"), ada.Number(2))],
-                    ada.Number(3),
+                    [
+                        (
+                            ada.Or(
+                                ada.And(
+                                    ada.Variable("Variable_X"),
+                                    ada.Variable("Variable_Y"),
+                                ),
+                                ada.Variable("Variable_Z"),
+                            ),
+                            ada.Number(1),
+                        ),
+                        (ada.Variable("Variable_Y"), ada.Number(2)),
+                    ],
+                    ada.Div(
+                        ada.Mul(ada.Variable("Variable_A"), ada.Number(3)),
+                        ada.Number(8),
+                    ),
                 ),
                 ada.Variable("A"),
                 ada.Or(ada.Variable("B"), ada.Variable("C")),
@@ -240,15 +325,17 @@ def test_expr_str() -> None:
         ),
         multilinestr(
             """(if
-                   X
+                   (Variable_X
+                    and Variable_Y)
+                   or Variable_Z
                 then
                    1
                 elsif
-                   Y
+                   Variable_Y
                 then
                    2
                 else
-                   3)
+                   (Variable_A * 3) / 8)
                and A
                and (B
                     or C)
@@ -261,23 +348,40 @@ def test_expr_str() -> None:
                 "X",
                 ada.Variable("Z"),
                 ada.If(
-                    [(ada.Variable("X"), ada.Number(1)), (ada.Variable("Y"), ada.Number(2))],
-                    ada.Number(3),
+                    [
+                        (
+                            ada.Or(
+                                ada.And(
+                                    ada.Variable("Variable_X"),
+                                    ada.Variable("Variable_Y"),
+                                ),
+                                ada.Variable("Variable_Z"),
+                            ),
+                            ada.Number(1),
+                        ),
+                        (ada.Variable("Variable_Y"), ada.Number(2)),
+                    ],
+                    ada.Div(
+                        ada.Mul(ada.Variable("Variable_A"), ada.Number(3)),
+                        ada.Number(8),
+                    ),
                 ),
             )
         ),
         multilinestr(
             """(for all X of Z =>
                    (if
-                       X
+                       (Variable_X
+                        and Variable_Y)
+                       or Variable_Z
                     then
                        1
                     elsif
-                       Y
+                       Variable_Y
                     then
                        2
                     else
-                       3))"""
+                       (Variable_A * 3) / 8))"""
         ),
     )
     assert str(ada.Equal(ada.String("S"), ada.Variable("X"))) == '"S" = X'

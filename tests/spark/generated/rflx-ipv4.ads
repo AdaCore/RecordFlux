@@ -240,12 +240,7 @@ is
        Valid (Val);
 
    function To_Base (Val : RFLX.IPv4.Protocol) return RFLX.IPv4.Protocol_Base is
-     ((if
-          Val.Known
-       then
-          To_Base (Val.Enum)
-       else
-          Val.Raw));
+     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
 
    type Header_Checksum is mod 2**16 with
      Size =>
