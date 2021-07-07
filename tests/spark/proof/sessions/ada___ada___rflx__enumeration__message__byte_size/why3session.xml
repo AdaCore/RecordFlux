@@ -21,7 +21,7 @@
   <proof prover="0"><result status="valid" steps="63508"/></proof>
   </goal>
   <goal name="def&#39;vc.3" proved="true">
-  <proof prover="0"><result status="valid" steps="131109"/></proof>
+  <proof prover="0"><result status="valid" steps="132837"/></proof>
   </goal>
  </transf>
  </goal>
