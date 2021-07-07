@@ -1,0 +1,22 @@
+<registry xmlns="http://www.iana.org/assignments" id="test_duplicate_identifiers">
+    <title>Test IANA XML Title</title>
+    <category>Test IANA XML Category</category>
+    <created>2021-06-03</created>
+    <updated>2021-06-03</updated>
+
+    <registry id="test_duplicate_identifiers">
+        <title>duplicate identifiers</title>
+        <record>
+            <value>1</value>
+            <type>Duplicate Identifier</type>
+        </record>
+        <record>
+            <value>2</value>
+            <type>Duplicate Identifier</type>
+        </record>
+        <record>
+            <value>3</value>
+            <type>Duplicate Identifier</type>
+        </record>
+    </registry>
+</registry>

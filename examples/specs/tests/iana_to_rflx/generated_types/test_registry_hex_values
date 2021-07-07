@@ -1,9 +1,0 @@
-   type Hexadecimal_Values is
-      (
-       -- recommended = N, Ref: draft-davidben-tls13-pkcs1-00
-       --
-       Rsa_Pkcs1_Sha256_Legacy => 16#0420#,
-
-       Rsa_Pkcs1_Sha384 => 16#0501#)
-   with Size => 12, Always_Valid;
-
