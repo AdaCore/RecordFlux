@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element
 
 import pytest
 
+import tools
 from tools.iana_to_rflx import (
     IANAError,
     _get_name_tag,
@@ -100,12 +101,11 @@ def test_normalize_name() -> None:
 
 
 def test_get_name_tag() -> None:
-    namespace = {"iana": "http://www.iana.org/assignments"}
     with open("tests/iana_to_rflx/test_registries/test_all_name_tags.xml", "r") as f:
         registry = ElementTree.fromstring(f.read())
-        sub_registry = registry.find("iana:registry", namespace)
+        sub_registry = registry.find("iana:registry",  tools.iana_to_rflx.NAMESPACE)
         assert isinstance(sub_registry, Element)
-        record = sub_registry.find("iana:record", namespace)
+        record = sub_registry.find("iana:record",  tools.iana_to_rflx.NAMESPACE)
         assert isinstance(record, Element)
         assert _get_name_tag(record) == "name"
 
