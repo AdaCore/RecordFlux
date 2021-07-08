@@ -44,7 +44,7 @@ def test_registry_output(registry: Path, tmp_path: Path) -> None:
         iana_to_rflx(f, True, generated_spec_file)
 
     with open(generated_spec_file, "r") as generated_file, open(
-        Path(f"tests/iana_to_rflx/generated_types/{registry}.rflx"), "r"
+        Path(f"tests/iana_to_rflx/generated_valid_specs/{registry}.rflx"), "r"
     ) as known_valid_file:
         generated = generated_file.read()
         known_valid = known_valid_file.read()
