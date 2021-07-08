@@ -6,10 +6,12 @@
 package Arp_Parameters is
 
    type Operation_Codes is
-      (-- Ref: rfc826, Ref: rfc5227
+      (-- Ref: rfc826
+       -- Ref: rfc5227
        REQUEST => 1,
 
-       -- Ref: rfc826, Ref: rfc5227
+       -- Ref: rfc826
+       -- Ref: rfc5227
        REPLY => 2,
 
        -- Ref: rfc903
@@ -72,7 +74,8 @@ package Arp_Parameters is
        -- Ref: Grenville_Armitage
        MARS_Redirect_Map => 22,
 
-       -- Ref: Mitsuru_Maruyama, Ref: rfc2176
+       -- Ref: Mitsuru_Maruyama
+       -- Ref: rfc2176
        MAPOS_UNARP => 23,
 
        -- Ref: rfc5494
@@ -155,7 +158,8 @@ package Arp_Parameters is
        -- Ref: Myron_Hattig
        IEEE_1394_1995 => 24,
 
-       -- Ref: Mitsuru_Maruyama, Ref: rfc2176
+       -- Ref: Mitsuru_Maruyama
+       -- Ref: rfc2176
        MAPOS => 25,
 
        -- Ref: Marion_Pitts
@@ -180,7 +184,7 @@ package Arp_Parameters is
        InfiniBand_TM => 32,
 
        -- xref = Jeff Anderson, Telecommunications Industry of America (TIA) TR-8.5
-       -- Formulating Group, <cja015&motorola.com>, June 2004
+       --  Formulating Group, <cja015&motorola.com>, June 2004
        TIA_102_Project_25_Common_Air_Interface_CAI => 33,
 
        -- Ref: Scott_Guthery_2

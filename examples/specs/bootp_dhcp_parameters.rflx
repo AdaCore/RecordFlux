@@ -6,267 +6,440 @@
 package Bootp_Dhcp_Parameters is
 
    type BOOTP_Vendor_Extensions_And_DHCP_Options is
-      (-- length = 0, description = None, Ref: rfc2132
+      (-- length = 0
+       -- description = None
+       -- Ref: rfc2132
        Pad => 0,
 
-       -- length = 4, description = Subnet Mask Value, Ref: rfc2132
+       -- length = 4
+       -- description = Subnet Mask Value
+       -- Ref: rfc2132
        Subnet_Mask => 1,
 
-       -- length = 4, description = Time Offset in Seconds from UTC
-       -- (note: deprecated by 100 and 101), Ref: rfc2132
+       -- length = 4
+       -- description = Time Offset in Seconds from UTC                    (note:
+       --  deprecated by 100 and 101)
+       -- Ref: rfc2132
        Time_Offset => 2,
 
-       -- length = N, description = N/4 Router addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Router addresses
+       -- Ref: rfc2132
        Router => 3,
 
-       -- length = N, description = N/4 Timeserver addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Timeserver addresses
+       -- Ref: rfc2132
        Time_Server => 4,
 
-       -- length = N, description = N/4 IEN-116 Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 IEN-116 Server addresses
+       -- Ref: rfc2132
        Name_Server => 5,
 
-       -- length = N, description = N/4 DNS Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 DNS Server addresses
+       -- Ref: rfc2132
        Domain_Server => 6,
 
-       -- length = N, description = N/4 Logging Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Logging Server addresses
+       -- Ref: rfc2132
        Log_Server => 7,
 
-       -- length = N, description = N/4 Quotes Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Quotes Server addresses
+       -- Ref: rfc2132
        Quotes_Server => 8,
 
-       -- length = N, description = N/4 Printer Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Printer Server addresses
+       -- Ref: rfc2132
        LPR_Server => 9,
 
-       -- length = N, description = N/4 Impress Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 Impress Server addresses
+       -- Ref: rfc2132
        Impress_Server => 10,
 
-       -- length = N, description = N/4 RLP Server addresses, Ref: rfc2132
+       -- length = N
+       -- description = N/4 RLP Server addresses
+       -- Ref: rfc2132
        RLP_Server => 11,
 
-       -- length = N, description = Hostname string, Ref: rfc2132
+       -- length = N
+       -- description = Hostname string
+       -- Ref: rfc2132
        Hostname => 12,
 
-       -- length = 2, description = Size of boot file in 512 byte chunks, Ref: rfc2132
+       -- length = 2
+       -- description = Size of boot file in 512 byte chunks
+       -- Ref: rfc2132
        Boot_File_Size => 13,
 
-       -- length = N, description = Client to dump and name the file to dump it to, Ref:
-       -- rfc2132
+       -- length = N
+       -- description = Client to dump and name the file to dump it to
+       -- Ref: rfc2132
        Merit_Dump_File => 14,
 
-       -- length = N, description = The DNS domain name of the client, Ref: rfc2132
+       -- length = N
+       -- description = The DNS domain name of the client
+       -- Ref: rfc2132
        Domain_Name => 15,
 
-       -- length = N, description = Swap Server address, Ref: rfc2132
+       -- length = N
+       -- description = Swap Server address
+       -- Ref: rfc2132
        Swap_Server => 16,
 
-       -- length = N, description = Path name for root disk, Ref: rfc2132
+       -- length = N
+       -- description = Path name for root disk
+       -- Ref: rfc2132
        Root_Path => 17,
 
-       -- length = N, description = Path name for more BOOTP info, Ref: rfc2132
+       -- length = N
+       -- description = Path name for more BOOTP info
+       -- Ref: rfc2132
        Extension_File => 18,
 
-       -- length = 1, description = Enable/Disable IP Forwarding, Ref: rfc2132
+       -- length = 1
+       -- description = Enable/Disable IP Forwarding
+       -- Ref: rfc2132
        Forward_On_Off => 19,
 
-       -- length = 1, description = Enable/Disable Source Routing, Ref: rfc2132
+       -- length = 1
+       -- description = Enable/Disable Source Routing
+       -- Ref: rfc2132
        SrcRte_On_Off => 20,
 
-       -- length = N, description = Routing Policy Filters, Ref: rfc2132
+       -- length = N
+       -- description = Routing Policy Filters
+       -- Ref: rfc2132
        Policy_Filter => 21,
 
-       -- length = 2, description = Max Datagram Reassembly Size, Ref: rfc2132
+       -- length = 2
+       -- description = Max Datagram Reassembly Size
+       -- Ref: rfc2132
        Max_DG_Assembly => 22,
 
-       -- length = 1, description = Default IP Time to Live, Ref: rfc2132
+       -- length = 1
+       -- description = Default IP Time to Live
+       -- Ref: rfc2132
        Default_IP_TTL => 23,
 
-       -- length = 4, description = Path MTU Aging Timeout, Ref: rfc2132
+       -- length = 4
+       -- description = Path MTU Aging Timeout
+       -- Ref: rfc2132
        MTU_Timeout => 24,
 
-       -- length = N, description = Path MTU  Plateau Table, Ref: rfc2132
+       -- length = N
+       -- description = Path MTU  Plateau Table
+       -- Ref: rfc2132
        MTU_Plateau => 25,
 
-       -- length = 2, description = Interface MTU Size, Ref: rfc2132
+       -- length = 2
+       -- description = Interface MTU Size
+       -- Ref: rfc2132
        MTU_Interface => 26,
 
-       -- length = 1, description = All Subnets are Local, Ref: rfc2132
+       -- length = 1
+       -- description = All Subnets are Local
+       -- Ref: rfc2132
        MTU_Subnet => 27,
 
-       -- length = 4, description = Broadcast Address, Ref: rfc2132
+       -- length = 4
+       -- description = Broadcast Address
+       -- Ref: rfc2132
        Broadcast_Address => 28,
 
-       -- length = 1, description = Perform Mask Discovery, Ref: rfc2132
+       -- length = 1
+       -- description = Perform Mask Discovery
+       -- Ref: rfc2132
        Mask_Discovery => 29,
 
-       -- length = 1, description = Provide Mask to Others, Ref: rfc2132
+       -- length = 1
+       -- description = Provide Mask to Others
+       -- Ref: rfc2132
        Mask_Supplier => 30,
 
-       -- length = 1, description = Perform Router Discovery, Ref: rfc2132
+       -- length = 1
+       -- description = Perform Router Discovery
+       -- Ref: rfc2132
        Router_Discovery => 31,
 
-       -- length = 4, description = Router Solicitation Address, Ref: rfc2132
+       -- length = 4
+       -- description = Router Solicitation Address
+       -- Ref: rfc2132
        Router_Request => 32,
 
-       -- length = N, description = Static Routing Table, Ref: rfc2132
+       -- length = N
+       -- description = Static Routing Table
+       -- Ref: rfc2132
        Static_Route => 33,
 
-       -- length = 1, description = Trailer Encapsulation, Ref: rfc2132
+       -- length = 1
+       -- description = Trailer Encapsulation
+       -- Ref: rfc2132
        Trailers => 34,
 
-       -- length = 4, description = ARP Cache Timeout, Ref: rfc2132
+       -- length = 4
+       -- description = ARP Cache Timeout
+       -- Ref: rfc2132
        ARP_Timeout => 35,
 
-       -- length = 1, description = Ethernet Encapsulation, Ref: rfc2132
+       -- length = 1
+       -- description = Ethernet Encapsulation
+       -- Ref: rfc2132
        Ethernet => 36,
 
-       -- length = 1, description = Default TCP Time to Live, Ref: rfc2132
+       -- length = 1
+       -- description = Default TCP Time to Live
+       -- Ref: rfc2132
        Default_TCP_TTL => 37,
 
-       -- length = 4, description = TCP Keepalive Interval, Ref: rfc2132
+       -- length = 4
+       -- description = TCP Keepalive Interval
+       -- Ref: rfc2132
        Keepalive_Time => 38,
 
-       -- length = 1, description = TCP Keepalive Garbage, Ref: rfc2132
+       -- length = 1
+       -- description = TCP Keepalive Garbage
+       -- Ref: rfc2132
        Keepalive_Data => 39,
 
-       -- length = N, description = NIS Domain Name, Ref: rfc2132
+       -- length = N
+       -- description = NIS Domain Name
+       -- Ref: rfc2132
        NIS_Domain => 40,
 
-       -- length = N, description = NIS Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = NIS Server Addresses
+       -- Ref: rfc2132
        NIS_Servers => 41,
 
-       -- length = N, description = NTP Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = NTP Server Addresses
+       -- Ref: rfc2132
        NTP_Servers => 42,
 
-       -- length = N, description = Vendor Specific Information, Ref: rfc2132
+       -- length = N
+       -- description = Vendor Specific Information
+       -- Ref: rfc2132
        Vendor_Specific => 43,
 
-       -- length = N, description = NETBIOS Name Servers, Ref: rfc2132
+       -- length = N
+       -- description = NETBIOS Name Servers
+       -- Ref: rfc2132
        NETBIOS_Name_Srv => 44,
 
-       -- length = N, description = NETBIOS Datagram Distribution, Ref: rfc2132
+       -- length = N
+       -- description = NETBIOS Datagram Distribution
+       -- Ref: rfc2132
        NETBIOS_Dist_Srv => 45,
 
-       -- length = 1, description = NETBIOS Node Type, Ref: rfc2132
+       -- length = 1
+       -- description = NETBIOS Node Type
+       -- Ref: rfc2132
        NETBIOS_Node_Type => 46,
 
-       -- length = N, description = NETBIOS Scope, Ref: rfc2132
+       -- length = N
+       -- description = NETBIOS Scope
+       -- Ref: rfc2132
        NETBIOS_Scope => 47,
 
-       -- length = N, description = X Window Font Server, Ref: rfc2132
+       -- length = N
+       -- description = X Window Font Server
+       -- Ref: rfc2132
        X_Window_Font => 48,
 
-       -- length = N, description = X Window Display Manager, Ref: rfc2132
+       -- length = N
+       -- description = X Window Display Manager
+       -- Ref: rfc2132
        X_Window_Manager => 49,
 
-       -- length = 4, description = Requested IP Address, Ref: rfc2132
+       -- length = 4
+       -- description = Requested IP Address
+       -- Ref: rfc2132
        Address_Request => 50,
 
-       -- length = 4, description = IP Address Lease Time, Ref: rfc2132
+       -- length = 4
+       -- description = IP Address Lease Time
+       -- Ref: rfc2132
        Address_Time => 51,
 
-       -- length = 1, description = Overload "sname" or "file", Ref: rfc2132
+       -- length = 1
+       -- description = Overload "sname" or "file"
+       -- Ref: rfc2132
        Overload => 52,
 
-       -- length = 1, description = DHCP Message Type, Ref: rfc2132
+       -- length = 1
+       -- description = DHCP Message Type
+       -- Ref: rfc2132
        DHCP_Msg_Type => 53,
 
-       -- length = 4, description = DHCP Server Identification, Ref: rfc2132
+       -- length = 4
+       -- description = DHCP Server Identification
+       -- Ref: rfc2132
        DHCP_Server_Id => 54,
 
-       -- length = N, description = Parameter Request List, Ref: rfc2132
+       -- length = N
+       -- description = Parameter Request List
+       -- Ref: rfc2132
        Parameter_List => 55,
 
-       -- length = N, description = DHCP Error Message, Ref: rfc2132
+       -- length = N
+       -- description = DHCP Error Message
+       -- Ref: rfc2132
        DHCP_Message => 56,
 
-       -- length = 2, description = DHCP Maximum Message Size, Ref: rfc2132
+       -- length = 2
+       -- description = DHCP Maximum Message Size
+       -- Ref: rfc2132
        DHCP_Max_Msg_Size => 57,
 
-       -- length = 4, description = DHCP Renewal (T1) Time, Ref: rfc2132
+       -- length = 4
+       -- description = DHCP Renewal (T1) Time
+       -- Ref: rfc2132
        Renewal_Time => 58,
 
-       -- length = 4, description = DHCP Rebinding (T2) Time, Ref: rfc2132
+       -- length = 4
+       -- description = DHCP Rebinding (T2) Time
+       -- Ref: rfc2132
        Rebinding_Time => 59,
 
-       -- length = N, description = Class Identifier, Ref: rfc2132
+       -- length = N
+       -- description = Class Identifier
+       -- Ref: rfc2132
        Class_Id => 60,
 
-       -- length = N, description = Client Identifier, Ref: rfc2132
+       -- length = N
+       -- description = Client Identifier
+       -- Ref: rfc2132
        Client_Id => 61,
 
-       -- length = N, description = NetWare/IP Domain Name, Ref: rfc2242
+       -- length = N
+       -- description = NetWare/IP Domain Name
+       -- Ref: rfc2242
        NetWare_IP_Domain => 62,
 
-       -- length = N, description = NetWare/IP sub Options, Ref: rfc2242
+       -- length = N
+       -- description = NetWare/IP sub Options
+       -- Ref: rfc2242
        NetWare_IP_Option => 63,
 
-       -- length = N, description = NIS+ v3 Client Domain Name, Ref: rfc2132
+       -- length = N
+       -- description = NIS+ v3 Client Domain Name
+       -- Ref: rfc2132
        NIS_Domain_Name => 64,
 
-       -- length = N, description = NIS+ v3 Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = NIS+ v3 Server Addresses
+       -- Ref: rfc2132
        NIS_Server_Addr => 65,
 
-       -- length = N, description = TFTP Server Name, Ref: rfc2132
+       -- length = N
+       -- description = TFTP Server Name
+       -- Ref: rfc2132
        Server_Name => 66,
 
-       -- length = N, description = Boot File Name, Ref: rfc2132
+       -- length = N
+       -- description = Boot File Name
+       -- Ref: rfc2132
        Bootfile_Name => 67,
 
-       -- length = N, description = Home Agent Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Home Agent Addresses
+       -- Ref: rfc2132
        Home_Agent_Addrs => 68,
 
-       -- length = N, description = Simple Mail Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Simple Mail Server Addresses
+       -- Ref: rfc2132
        SMTP_Server => 69,
 
-       -- length = N, description = Post Office Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Post Office Server Addresses
+       -- Ref: rfc2132
        POP3_Server => 70,
 
-       -- length = N, description = Network News Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Network News Server Addresses
+       -- Ref: rfc2132
        NNTP_Server => 71,
 
-       -- length = N, description = WWW Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = WWW Server Addresses
+       -- Ref: rfc2132
        WWW_Server => 72,
 
-       -- length = N, description = Finger Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Finger Server Addresses
+       -- Ref: rfc2132
        Finger_Server => 73,
 
-       -- length = N, description = Chat Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = Chat Server Addresses
+       -- Ref: rfc2132
        IRC_Server => 74,
 
-       -- length = N, description = StreetTalk Server Addresses, Ref: rfc2132
+       -- length = N
+       -- description = StreetTalk Server Addresses
+       -- Ref: rfc2132
        StreetTalk_Server => 75,
 
-       -- length = N, description = ST Directory Assist. Addresses, Ref: rfc2132
+       -- length = N
+       -- description = ST Directory Assist. Addresses
+       -- Ref: rfc2132
        STDA_Server => 76,
 
-       -- length = N, description = User Class Information, Ref: rfc3004
+       -- length = N
+       -- description = User Class Information
+       -- Ref: rfc3004
        User_Class => 77,
 
-       -- length = N, description = directory agent information, Ref: rfc2610
+       -- length = N
+       -- description = directory agent information
+       -- Ref: rfc2610
        Directory_Agent => 78,
 
-       -- length = N, description = service location agent scope, Ref: rfc2610
+       -- length = N
+       -- description = service location agent scope
+       -- Ref: rfc2610
        Service_Scope => 79,
 
-       -- length = 0, description = Rapid Commit, Ref: rfc4039
+       -- length = 0
+       -- description = Rapid Commit
+       -- Ref: rfc4039
        Rapid_Commit => 80,
 
-       -- length = N, description = Fully Qualified Domain Name, Ref: rfc4702
+       -- length = N
+       -- description = Fully Qualified Domain Name
+       -- Ref: rfc4702
        Client_FQDN => 81,
 
-       -- length = N, description = Relay Agent Information, Ref: rfc3046
+       -- length = N
+       -- description = Relay Agent Information
+       -- Ref: rfc3046
        Relay_Agent_Information => 82,
 
-       -- length = N, description = Internet Storage Name Service, Ref: rfc4174
+       -- length = N
+       -- description = Internet Storage Name Service
+       -- Ref: rfc4174
        ISNS => 83,
 
-       -- length = N, description = Novell Directory Services, Ref: rfc2241
+       -- length = N
+       -- description = Novell Directory Services
+       -- Ref: rfc2241
        NDS_Servers => 85,
 
-       -- length = N, description = Novell Directory Services, Ref: rfc2241
+       -- length = N
+       -- description = Novell Directory Services
+       -- Ref: rfc2241
        NDS_Tree_Name => 86,
 
-       -- length = N, description = Novell Directory Services, Ref: rfc2241
+       -- length = N
+       -- description = Novell Directory Services
+       -- Ref: rfc2241
        NDS_Context => 87,
 
        -- Ref: rfc4280
@@ -275,7 +448,9 @@ package Bootp_Dhcp_Parameters is
        -- Ref: rfc4280
        BCMCS_Controller_IPv4_Address_Option => 89,
 
-       -- length = N, description = Authentication, Ref: rfc3118
+       -- length = N
+       -- description = Authentication
+       -- Ref: rfc3118
        Authentication => 90,
 
        -- Ref: rfc4388
@@ -284,111 +459,160 @@ package Bootp_Dhcp_Parameters is
        -- Ref: rfc4388
        Associated_Ip_Option => 92,
 
-       -- length = N, description = Client System Architecture, Ref: rfc4578
+       -- length = N
+       -- description = Client System Architecture
+       -- Ref: rfc4578
        Client_System => 93,
 
-       -- length = N, description = Client Network Device Interface, Ref: rfc4578
+       -- length = N
+       -- description = Client Network Device Interface
+       -- Ref: rfc4578
        Client_NDI => 94,
 
-       -- length = N, description = Lightweight Directory Access Protocol, Ref: rfc3679
+       -- length = N
+       -- description = Lightweight Directory Access Protocol
+       -- Ref: rfc3679
        LDAP => 95,
 
-       -- length = N, description = UUID/GUID-based Client Identifier, Ref: rfc4578
+       -- length = N
+       -- description = UUID/GUID-based Client Identifier
+       -- Ref: rfc4578
        UUID_GUID => 97,
 
-       -- length = N, description = Open Group's User Authentication, Ref: rfc2485
+       -- length = N
+       -- description = Open Group's User Authentication
+       -- Ref: rfc2485
        User_Auth => 98,
 
        -- Ref: rfc4776
        GEOCONF_CIVIC => 99,
 
-       -- length = N, description = IEEE 1003.1 TZ String, Ref: rfc4833
+       -- length = N
+       -- description = IEEE 1003.1 TZ String
+       -- Ref: rfc4833
        PCode => 100,
 
-       -- length = N, description = Reference to the TZ Database, Ref: rfc4833
+       -- length = N
+       -- description = Reference to the TZ Database
+       -- Ref: rfc4833
        TCode => 101,
 
-       -- length = 4, description = Number of seconds that DHCPv4 should be disabled, Ref:
-       -- rfc8925
+       -- length = 4
+       -- description = Number of seconds that DHCPv4 should be disabled
+       -- Ref: rfc8925
        IPv6_Only_Preferred => 108,
 
-       -- length = 16, description = DHCPv4 over DHCPv6 Softwire Source Address Option,
+       -- length = 16
+       -- description = DHCPv4 over DHCPv6 Softwire Source Address Option
        -- Ref: rfc8539
        OPTION_DHCP4O6_S46_SADDR => 109,
 
-       -- length = N, description = NetInfo Parent Server Address, Ref: rfc3679
+       -- length = N
+       -- description = NetInfo Parent Server Address
+       -- Ref: rfc3679
        Netinfo_Address => 112,
 
-       -- length = N, description = NetInfo Parent Server Tag, Ref: rfc3679
+       -- length = N
+       -- description = NetInfo Parent Server Tag
+       -- Ref: rfc3679
        Netinfo_Tag => 113,
 
-       -- length = N, description = DHCP Captive-Portal, Ref: rfc8910
+       -- length = N
+       -- description = DHCP Captive-Portal
+       -- Ref: rfc8910
        DHCP_Captive_Portal => 114,
 
-       -- length = N, description = DHCP Auto-Configuration, Ref: rfc2563
+       -- length = N
+       -- description = DHCP Auto-Configuration
+       -- Ref: rfc2563
        Auto_Config => 116,
 
-       -- length = N, description = Name Service Search, Ref: rfc2937
+       -- length = N
+       -- description = Name Service Search
+       -- Ref: rfc2937
        Name_Service_Search => 117,
 
-       -- length = 4, description = Subnet Selection Option, Ref: rfc3011
+       -- length = 4
+       -- description = Subnet Selection Option
+       -- Ref: rfc3011
        Subnet_Selection_Option => 118,
 
-       -- length = N, description = DNS domain search list, Ref: rfc3397
+       -- length = N
+       -- description = DNS domain search list
+       -- Ref: rfc3397
        Domain_Search => 119,
 
-       -- length = N, description = SIP Servers DHCP Option, Ref: rfc3361
+       -- length = N
+       -- description = SIP Servers DHCP Option
+       -- Ref: rfc3361
        SIP_Servers_DHCP_Option => 120,
 
-       -- length = N, description = Classless Static Route Option, Ref: rfc3442
+       -- length = N
+       -- description = Classless Static Route Option
+       -- Ref: rfc3442
        Classless_Static_Route_Option => 121,
 
-       -- length = N, description = CableLabs Client Configuration, Ref: rfc3495
+       -- length = N
+       -- description = CableLabs Client Configuration
+       -- Ref: rfc3495
        CCC => 122,
 
-       -- length = 16, description = GeoConf Option, Ref: rfc6225
+       -- length = 16
+       -- description = GeoConf Option
+       -- Ref: rfc6225
        GeoConf_Option => 123,
 
-       -- description = Vendor-Identifying Vendor Class, Ref: rfc3925
+       -- description = Vendor-Identifying Vendor Class
+       -- Ref: rfc3925
        V_I_Vendor_Class => 124,
 
-       -- description = Vendor-Identifying Vendor-Specific Information, Ref: rfc3925
+       -- description = Vendor-Identifying Vendor-Specific Information
+       -- Ref: rfc3925
        V_I_Vendor_Specific_Information => 125,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = Etherboot_Signature_6_Bytes_E4_45_74_68_00_00, alternative_name =
-       -- DOCSIS_Full_Security_Server_IP_Address, alternative_name =
-       -- TFTP_Server_IP_Address_For_IP_Phone_Software_Load
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = Etherboot_Signature_6_Bytes_E4_45_74_68_00_00
+       -- alternative_name = DOCSIS_Full_Security_Server_IP_Address
+       -- alternative_name = TFTP_Server_IP_Address_For_IP_Phone_Software_Load
        BOOTP_Vendor_Extensions_And_DHCP_Options_128 => 128,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = Kernel_Options_Variable_Length_String, alternative_name =
-       -- Call_Server_IP_Address
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = Kernel_Options_Variable_Length_String
+       -- alternative_name = Call_Server_IP_Address
        BOOTP_Vendor_Extensions_And_DHCP_Options_129 => 129,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = Ethernet_Interface_Variable_Length_String, alternative_name =
-       -- Discrimination_String_To_Identify_Vendor
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = Ethernet_Interface_Variable_Length_String
+       -- alternative_name = Discrimination_String_To_Identify_Vendor
        BOOTP_Vendor_Extensions_And_DHCP_Options_130 => 130,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = Remote_Statistics_Server_IP_Address
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = Remote_Statistics_Server_IP_Address
        BOOTP_Vendor_Extensions_And_DHCP_Options_131 => 131,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = IEEE_802_1Q_VLAN_ID
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = IEEE_802_1Q_VLAN_ID
        BOOTP_Vendor_Extensions_And_DHCP_Options_132 => 132,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = IEEE_802_1D_P_Layer_2_Priority
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = IEEE_802_1D_P_Layer_2_Priority
        BOOTP_Vendor_Extensions_And_DHCP_Options_133 => 133,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = Diffserv_Code_Point_DSCP_For_VoIP_Signalling_And_Media_Streams
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name =
+       --  Diffserv_Code_Point_DSCP_For_VoIP_Signalling_And_Media_Streams
        BOOTP_Vendor_Extensions_And_DHCP_Options_134 => 134,
 
-       -- Ref: rfc4578, alternative_name = PXE_Undefined_Vendor_Specific, alternative_name
-       -- = HTTP_Proxy_For_Phone_Specific_Applications
+       -- Ref: rfc4578
+       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = HTTP_Proxy_For_Phone_Specific_Applications
        BOOTP_Vendor_Extensions_And_DHCP_Options_135 => 135,
 
        -- Ref: rfc5192
@@ -397,119 +621,167 @@ package Bootp_Dhcp_Parameters is
        -- Ref: rfc5223
        OPTION_V4_LOST => 137,
 
-       -- length = N, description = CAPWAP Access Controller addresses, Ref: rfc5417
+       -- length = N
+       -- description = CAPWAP Access Controller addresses
+       -- Ref: rfc5417
        OPTION_CAPWAP_AC_V4 => 138,
 
-       -- length = N, description = a series of suboptions, Ref: rfc5678
+       -- length = N
+       -- description = a series of suboptions
+       -- Ref: rfc5678
        OPTION_IPv4_Address_MoS => 139,
 
-       -- length = N, description = a series of suboptions, Ref: rfc5678
+       -- length = N
+       -- description = a series of suboptions
+       -- Ref: rfc5678
        OPTION_IPv4_FQDN_MoS => 140,
 
-       -- length = N, description = List of domain names to search for SIP User Agent
-       -- Configuration , Ref: rfc6011
+       -- length = N
+       -- description = List of domain names to search for SIP User Agent Configuration
+       -- Ref: rfc6011
        SIP_UA_Configuration_Service_Domains => 141,
 
-       -- length = N, description = ANDSF IPv4 Address Option for DHCPv4, Ref: rfc6153
+       -- length = N
+       -- description = ANDSF IPv4 Address Option for DHCPv4
+       -- Ref: rfc6153
        OPTION_IPv4_Address_ANDSF => 142,
 
-       -- length = N, description = This option provides a list of URIs for SZTP bootstrap
-       -- servers, Ref: rfc8572
+       -- length = N
+       -- description = This option provides a list of URIs for SZTP bootstrap servers
+       -- Ref: rfc8572
        OPTION_V4_SZTP_REDIRECT => 143,
 
-       -- length = 16, description = Geospatial Location with Uncertainty, Ref: rfc6225
+       -- length = 16
+       -- description = Geospatial Location with Uncertainty
+       -- Ref: rfc6225
        GeoLoc => 144,
 
-       -- length = 1, description = Forcerenew Nonce Capable, Ref: rfc6704
+       -- length = 1
+       -- description = Forcerenew Nonce Capable
+       -- Ref: rfc6704
        FORCERENEW_NONCE_CAPABLE => 145,
 
-       -- length = N, description = Information for selecting RDNSS, Ref: rfc6731
+       -- length = N
+       -- description = Information for selecting RDNSS
+       -- Ref: rfc6731
        RDNSS_Selection => 146,
 
-       -- length = N, description = The name of the peer DOTS agent., Ref: rfc8973
+       -- length = N
+       -- description = The name of the peer DOTS agent.
+       -- Ref: rfc8973
        OPTION_V4_DOTS_RI => 147,
 
-       -- length = N (the minimal length is 4), description = N/4 IPv4 addresses of peer
-       -- DOTS agent(s)., Ref: rfc8973
+       -- length = N (the minimal length is 4)
+       -- description = N/4 IPv4 addresses of peer DOTS agent(s).
+       -- Ref: rfc8973
        OPTION_V4_DOTS_ADDRESS => 148,
 
-       -- Ref: rfc5859, alternative_name = TFTP_Server_Address, alternative_name =
-       -- Etherboot, alternative_name = GRUB_Configuration_Path_Name
+       -- Ref: rfc5859
+       -- alternative_name = TFTP_Server_Address
+       -- alternative_name = Etherboot
+       -- alternative_name = GRUB_Configuration_Path_Name
        BOOTP_Vendor_Extensions_And_DHCP_Options_150 => 150,
 
-       -- length = N+1, description = Status code and optional N byte text message
-       -- describing status., Ref: rfc6926
+       -- length = N+1
+       -- description = Status code and optional N byte text message describing status.
+       -- Ref: rfc6926
        Status_Code => 151,
 
-       -- length = 4, description = Absolute time (seconds since Jan 1, 1970) message was
-       -- sent., Ref: rfc6926
+       -- length = 4
+       -- description = Absolute time (seconds since Jan 1, 1970) message was sent.
+       -- Ref: rfc6926
        Base_Time => 152,
 
-       -- length = 4, description = Number of seconds in the past when client entered
-       -- current state., Ref: rfc6926
+       -- length = 4
+       -- description = Number of seconds in the past when client entered current state.
+       -- Ref: rfc6926
        Start_Time_Of_State => 153,
 
-       -- length = 4, description = Absolute time (seconds since Jan 1, 1970) for
-       -- beginning of query., Ref: rfc6926
+       -- length = 4
+       -- description = Absolute time (seconds since Jan 1, 1970) for beginning of query.
+       -- Ref: rfc6926
        Query_Start_Time => 154,
 
-       -- length = 4, description = Absolute time (seconds since Jan 1, 1970) for end of
-       -- query., Ref: rfc6926
+       -- length = 4
+       -- description = Absolute time (seconds since Jan 1, 1970) for end of query.
+       -- Ref: rfc6926
        Query_End_Time => 155,
 
-       -- length = 1, description = State of IP address., Ref: rfc6926
+       -- length = 1
+       -- description = State of IP address.
+       -- Ref: rfc6926
        Dhcp_State => 156,
 
-       -- length = 1, description =  Indicates information came from local or remote
-       -- server., Ref: rfc6926
+       -- length = 1
+       -- description =  Indicates information came from local or remote server.
+       -- Ref: rfc6926
        Data_Source => 157,
 
-       -- length = Variable; the minimum length is 5., description =  Includes one or
-       -- multiple lists of PCP server IP addresses;        each list is treated as a
-       -- separate PCP server., Ref: rfc7291
+       -- length = Variable; the minimum length is 5.
+       -- description =  Includes one or multiple lists of PCP server IP addresses;
+       --  each list is treated as a separate PCP server.
+       -- Ref: rfc7291
        OPTION_V4_PCP_SERVER => 158,
 
-       -- length = 4, description = This option is used to configure a set of ports bound
-       -- to a        shared IPv4 address., Ref: rfc7618
+       -- length = 4
+       -- description = This option is used to configure a set of ports bound to a
+       --  shared IPv4 address.
+       -- Ref: rfc7618
        OPTION_V4_PORTPARAMS => 159,
 
-       -- length = N (variable), description = Manufacturer Usage Descriptions, Ref:
-       -- rfc8520
+       -- length = N (variable)
+       -- description = Manufacturer Usage Descriptions
+       -- Ref: rfc8520
        OPTION_MUD_URL_V4 => 161,
        Etherboot_Tentatively_Assigned_2005_06_23 => 175,
        IP_Telephone_Tentatively_Assigned_2005_06_23 => 176,
 
-       -- alternative_name = Etherboot_Tentatively_Assigned_2005_06_23, alternative_name =
-       -- PacketCable_And_CableHome_Replaced_By_122
+       -- alternative_name = Etherboot_Tentatively_Assigned_2005_06_23
+       -- alternative_name = PacketCable_And_CableHome_Replaced_By_122
        BOOTP_Vendor_Extensions_And_DHCP_Options_177 => 177,
 
-       -- length = 4, description = magic string = F1:00:74:7E, Ref: rfc5071, xref =
-       -- Deprecated
+       -- length = 4
+       -- description = magic string = F1:00:74:7E
+       -- Ref: rfc5071
+       -- xref = Deprecated
        PXELINUX_Magic => 208,
 
-       -- length = N, description = Configuration file, Ref: rfc5071
+       -- length = N
+       -- description = Configuration file
+       -- Ref: rfc5071
        Configuration_File => 209,
 
-       -- length = N, description = Path Prefix Option, Ref: rfc5071
+       -- length = N
+       -- description = Path Prefix Option
+       -- Ref: rfc5071
        Path_Prefix => 210,
 
-       -- length = 4, description = Reboot Time, Ref: rfc5071
+       -- length = 4
+       -- description = Reboot Time
+       -- Ref: rfc5071
        Reboot_Time => 211,
 
-       -- length = 18 + N, description = OPTION_6RD with N/4 6rd BR addresses, Ref:
-       -- rfc5969
+       -- length = 18 + N
+       -- description = OPTION_6RD with N/4 6rd BR addresses
+       -- Ref: rfc5969
        OPTION_6RD => 212,
 
-       -- length = N, description = Access Network Domain Name, Ref: rfc5986
+       -- length = N
+       -- description = Access Network Domain Name
+       -- Ref: rfc5986
        OPTION_V4_ACCESS_DOMAIN => 213,
 
-       -- length = N, description = Subnet Allocation Option, Ref: rfc6656
+       -- length = N
+       -- description = Subnet Allocation Option
+       -- Ref: rfc6656
        Subnet_Allocation_Option => 220,
 
        -- Ref: rfc6607
        Virtual_Subnet_Selection_VSS_Option => 221,
 
-       -- length = 0, description = None, Ref: rfc2132
+       -- length = 0
+       -- description = None
+       -- Ref: rfc2132
        End_255 => 255)
    with Size => 8;
 
@@ -824,7 +1096,8 @@ package Bootp_Dhcp_Parameters is
       (-- Ref: rfc6607
        Network_Virtual_Terminal_NVT_ASCII_VPN_Identifier => 0,
 
-       -- Ref: rfc2685, Ref: rfc6607
+       -- Ref: rfc2685
+       -- Ref: rfc6607
        RFC2685_VPN_ID => 1,
 
        -- Ref: rfc6926

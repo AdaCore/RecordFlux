@@ -6,1623 +6,2581 @@
 package Tls_Parameters is
 
    type TLS_ClientCertificateType_Identifiers is
-      (-- dtls = Y, Ref: rfc5246
+      (-- dtls = Y
+       -- Ref: rfc5246
        Rsa_Sign => 1,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Dss_Sign => 2,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Rsa_Fixed_Dh => 3,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Dss_Fixed_Dh => 4,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Ecdsa_Sign => 64,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Rsa_Fixed_Ecdh => 65,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Ecdsa_Fixed_Ecdh => 66,
 
-       -- dtls = Y, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        Gost_Sign256 => 67,
 
-       -- dtls = Y, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        Gost_Sign512 => 68)
    with Size => 8, Always_Valid;
 
    type TLS_Cipher_Suites is
-      (-- dtls = Y, rec = N, Ref: rfc5246
+      (-- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_NULL_WITH_NULL_NULL => 16#0000#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_NULL_MD5 => 16#0001#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_NULL_SHA => 16#0002#,
 
-       -- dtls = N, rec = N, Ref: rfc4346, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc4346
+       -- Ref: rfc6347
        TLS_RSA_EXPORT_WITH_RC4_40_MD5 => 16#0003#,
 
-       -- dtls = N, rec = N, Ref: rfc5246, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc5246
+       -- Ref: rfc6347
        TLS_RSA_WITH_RC4_128_MD5 => 16#0004#,
 
-       -- dtls = N, rec = N, Ref: rfc5246, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc5246
+       -- Ref: rfc6347
        TLS_RSA_WITH_RC4_128_SHA => 16#0005#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5 => 16#0006#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_RSA_WITH_IDEA_CBC_SHA => 16#0007#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_RSA_EXPORT_WITH_DES40_CBC_SHA => 16#0008#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_RSA_WITH_DES_CBC_SHA => 16#0009#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_3DES_EDE_CBC_SHA => 16#000A#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA => 16#000B#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_DH_DSS_WITH_DES_CBC_SHA => 16#000C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA => 16#000D#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA => 16#000E#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_DH_RSA_WITH_DES_CBC_SHA => 16#000F#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA => 16#0010#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA => 16#0011#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_DHE_DSS_WITH_DES_CBC_SHA => 16#0012#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA => 16#0013#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA => 16#0014#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_DHE_RSA_WITH_DES_CBC_SHA => 16#0015#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA => 16#0016#,
 
-       -- dtls = N, rec = N, Ref: rfc4346, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc4346
+       -- Ref: rfc6347
        TLS_DH_Anon_EXPORT_WITH_RC4_40_MD5 => 16#0017#,
 
-       -- dtls = N, rec = N, Ref: rfc5246, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc5246
+       -- Ref: rfc6347
        TLS_DH_Anon_WITH_RC4_128_MD5 => 16#0018#,
 
-       -- dtls = Y, rec = N, Ref: rfc4346
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4346
        TLS_DH_Anon_EXPORT_WITH_DES40_CBC_SHA => 16#0019#,
 
-       -- dtls = Y, rec = N, Ref: rfc5469, xref = SC-tls-des-idea-ciphers-to-historic
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5469
+       -- xref = SC-tls-des-idea-ciphers-to-historic
        TLS_DH_Anon_WITH_DES_CBC_SHA => 16#001A#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_Anon_WITH_3DES_EDE_CBC_SHA => 16#001B#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_DES_CBC_SHA => 16#001E#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_3DES_EDE_CBC_SHA => 16#001F#,
 
-       -- dtls = N, rec = N, Ref: rfc2712, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc2712
+       -- Ref: rfc6347
        TLS_KRB5_WITH_RC4_128_SHA => 16#0020#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_IDEA_CBC_SHA => 16#0021#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_DES_CBC_MD5 => 16#0022#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_3DES_EDE_CBC_MD5 => 16#0023#,
 
-       -- dtls = N, rec = N, Ref: rfc2712, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc2712
+       -- Ref: rfc6347
        TLS_KRB5_WITH_RC4_128_MD5 => 16#0024#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_WITH_IDEA_CBC_MD5 => 16#0025#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA => 16#0026#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA => 16#0027#,
 
-       -- dtls = N, rec = N, Ref: rfc2712, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc2712
+       -- Ref: rfc6347
        TLS_KRB5_EXPORT_WITH_RC4_40_SHA => 16#0028#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5 => 16#0029#,
 
-       -- dtls = Y, rec = N, Ref: rfc2712
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc2712
        TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5 => 16#002A#,
 
-       -- dtls = N, rec = N, Ref: rfc2712, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc2712
+       -- Ref: rfc6347
        TLS_KRB5_EXPORT_WITH_RC4_40_MD5 => 16#002B#,
 
-       -- dtls = Y, rec = N, Ref: rfc4785
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4785
        TLS_PSK_WITH_NULL_SHA => 16#002C#,
 
-       -- dtls = Y, rec = N, Ref: rfc4785
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4785
        TLS_DHE_PSK_WITH_NULL_SHA => 16#002D#,
 
-       -- dtls = Y, rec = N, Ref: rfc4785
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4785
        TLS_RSA_PSK_WITH_NULL_SHA => 16#002E#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_AES_128_CBC_SHA => 16#002F#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_DSS_WITH_AES_128_CBC_SHA => 16#0030#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_RSA_WITH_AES_128_CBC_SHA => 16#0031#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_DSS_WITH_AES_128_CBC_SHA => 16#0032#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_RSA_WITH_AES_128_CBC_SHA => 16#0033#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_Anon_WITH_AES_128_CBC_SHA => 16#0034#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_AES_256_CBC_SHA => 16#0035#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_DSS_WITH_AES_256_CBC_SHA => 16#0036#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_RSA_WITH_AES_256_CBC_SHA => 16#0037#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_DSS_WITH_AES_256_CBC_SHA => 16#0038#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_RSA_WITH_AES_256_CBC_SHA => 16#0039#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_Anon_WITH_AES_256_CBC_SHA => 16#003A#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_NULL_SHA256 => 16#003B#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_AES_128_CBC_SHA256 => 16#003C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_RSA_WITH_AES_256_CBC_SHA256 => 16#003D#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_DSS_WITH_AES_128_CBC_SHA256 => 16#003E#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_RSA_WITH_AES_128_CBC_SHA256 => 16#003F#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_DSS_WITH_AES_128_CBC_SHA256 => 16#0040#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_RSA_WITH_CAMELLIA_128_CBC_SHA => 16#0041#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA => 16#0042#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA => 16#0043#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA => 16#0044#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA => 16#0045#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_Anon_WITH_CAMELLIA_128_CBC_SHA => 16#0046#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_RSA_WITH_AES_128_CBC_SHA256 => 16#0067#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_DSS_WITH_AES_256_CBC_SHA256 => 16#0068#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_RSA_WITH_AES_256_CBC_SHA256 => 16#0069#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_DSS_WITH_AES_256_CBC_SHA256 => 16#006A#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DHE_RSA_WITH_AES_256_CBC_SHA256 => 16#006B#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_Anon_WITH_AES_128_CBC_SHA256 => 16#006C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5246
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5246
        TLS_DH_Anon_WITH_AES_256_CBC_SHA256 => 16#006D#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_RSA_WITH_CAMELLIA_256_CBC_SHA => 16#0084#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA => 16#0085#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA => 16#0086#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA => 16#0087#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA => 16#0088#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_Anon_WITH_CAMELLIA_256_CBC_SHA => 16#0089#,
 
-       -- dtls = N, rec = N, Ref: rfc4279, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc4279
+       -- Ref: rfc6347
        TLS_PSK_WITH_RC4_128_SHA => 16#008A#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_PSK_WITH_3DES_EDE_CBC_SHA => 16#008B#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_PSK_WITH_AES_128_CBC_SHA => 16#008C#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_PSK_WITH_AES_256_CBC_SHA => 16#008D#,
 
-       -- dtls = N, rec = N, Ref: rfc4279, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc4279
+       -- Ref: rfc6347
        TLS_DHE_PSK_WITH_RC4_128_SHA => 16#008E#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA => 16#008F#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_DHE_PSK_WITH_AES_128_CBC_SHA => 16#0090#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_DHE_PSK_WITH_AES_256_CBC_SHA => 16#0091#,
 
-       -- dtls = N, rec = N, Ref: rfc4279, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc4279
+       -- Ref: rfc6347
        TLS_RSA_PSK_WITH_RC4_128_SHA => 16#0092#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA => 16#0093#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_RSA_PSK_WITH_AES_128_CBC_SHA => 16#0094#,
 
-       -- dtls = Y, rec = N, Ref: rfc4279
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4279
        TLS_RSA_PSK_WITH_AES_256_CBC_SHA => 16#0095#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_RSA_WITH_SEED_CBC_SHA => 16#0096#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_DH_DSS_WITH_SEED_CBC_SHA => 16#0097#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_DH_RSA_WITH_SEED_CBC_SHA => 16#0098#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_DHE_DSS_WITH_SEED_CBC_SHA => 16#0099#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_DHE_RSA_WITH_SEED_CBC_SHA => 16#009A#,
 
-       -- dtls = Y, rec = N, Ref: rfc4162
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc4162
        TLS_DH_Anon_WITH_SEED_CBC_SHA => 16#009B#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_RSA_WITH_AES_128_GCM_SHA256 => 16#009C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_RSA_WITH_AES_256_GCM_SHA384 => 16#009D#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5288
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5288
        TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 => 16#009E#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5288
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5288
        TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 => 16#009F#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_RSA_WITH_AES_128_GCM_SHA256 => 16#00A0#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_RSA_WITH_AES_256_GCM_SHA384 => 16#00A1#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 => 16#00A2#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 => 16#00A3#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_DSS_WITH_AES_128_GCM_SHA256 => 16#00A4#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_DSS_WITH_AES_256_GCM_SHA384 => 16#00A5#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_Anon_WITH_AES_128_GCM_SHA256 => 16#00A6#,
 
-       -- dtls = Y, rec = N, Ref: rfc5288
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5288
        TLS_DH_Anon_WITH_AES_256_GCM_SHA384 => 16#00A7#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_AES_128_GCM_SHA256 => 16#00A8#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_AES_256_GCM_SHA384 => 16#00A9#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5487
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_AES_128_GCM_SHA256 => 16#00AA#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5487
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_AES_256_GCM_SHA384 => 16#00AB#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_AES_128_GCM_SHA256 => 16#00AC#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_AES_256_GCM_SHA384 => 16#00AD#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_AES_128_CBC_SHA256 => 16#00AE#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_AES_256_CBC_SHA384 => 16#00AF#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_NULL_SHA256 => 16#00B0#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_PSK_WITH_NULL_SHA384 => 16#00B1#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_AES_128_CBC_SHA256 => 16#00B2#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_AES_256_CBC_SHA384 => 16#00B3#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_NULL_SHA256 => 16#00B4#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_DHE_PSK_WITH_NULL_SHA384 => 16#00B5#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_AES_128_CBC_SHA256 => 16#00B6#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_AES_256_CBC_SHA384 => 16#00B7#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_NULL_SHA256 => 16#00B8#,
 
-       -- dtls = Y, rec = N, Ref: rfc5487
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5487
        TLS_RSA_PSK_WITH_NULL_SHA384 => 16#00B9#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BA#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BB#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BC#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BD#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BE#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_Anon_WITH_CAMELLIA_128_CBC_SHA256 => 16#00BF#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C0#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C1#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C2#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C3#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C4#,
 
-       -- dtls = Y, rec = N, Ref: rfc5932
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5932
        TLS_DH_Anon_WITH_CAMELLIA_256_CBC_SHA256 => 16#00C5#,
 
-       -- dtls = N, rec = N, Ref: rfc8998
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8998
        TLS_SM4_GCM_SM3 => 16#00C6#,
 
-       -- dtls = N, rec = N, Ref: rfc8998
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8998
        TLS_SM4_CCM_SM3 => 16#00C7#,
 
-       -- dtls = Y, rec = N, Ref: rfc5746
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5746
        TLS_EMPTY_RENEGOTIATION_INFO_SCSV => 16#00FF#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
        TLS_AES_128_GCM_SHA256 => 16#1301#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
        TLS_AES_256_GCM_SHA384 => 16#1302#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
        TLS_CHACHA20_POLY1305_SHA256 => 16#1303#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
        TLS_AES_128_CCM_SHA256 => 16#1304#,
 
-       -- dtls = Y, rec = N, Ref: rfc8446, xref = IESG Action 2018-08-16
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8446
+       -- xref = IESG Action 2018-08-16
        TLS_AES_128_CCM_8_SHA256 => 16#1305#,
 
-       -- dtls = Y, rec = N, Ref: rfc7507
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7507
        TLS_FALLBACK_SCSV => 16#5600#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_ECDSA_WITH_NULL_SHA => 16#C001#,
 
-       -- dtls = N, rec = N, Ref: rfc8422, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8422
+       -- Ref: rfc6347
        TLS_ECDH_ECDSA_WITH_RC4_128_SHA => 16#C002#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA => 16#C003#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA => 16#C004#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA => 16#C005#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_ECDSA_WITH_NULL_SHA => 16#C006#,
 
-       -- dtls = N, rec = N, Ref: rfc8422, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8422
+       -- Ref: rfc6347
        TLS_ECDHE_ECDSA_WITH_RC4_128_SHA => 16#C007#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA => 16#C008#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA => 16#C009#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA => 16#C00A#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_RSA_WITH_NULL_SHA => 16#C00B#,
 
-       -- dtls = N, rec = N, Ref: rfc8422, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8422
+       -- Ref: rfc6347
        TLS_ECDH_RSA_WITH_RC4_128_SHA => 16#C00C#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA => 16#C00D#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_RSA_WITH_AES_128_CBC_SHA => 16#C00E#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_RSA_WITH_AES_256_CBC_SHA => 16#C00F#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_RSA_WITH_NULL_SHA => 16#C010#,
 
-       -- dtls = N, rec = N, Ref: rfc8422, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8422
+       -- Ref: rfc6347
        TLS_ECDHE_RSA_WITH_RC4_128_SHA => 16#C011#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA => 16#C012#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA => 16#C013#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA => 16#C014#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_Anon_WITH_NULL_SHA => 16#C015#,
 
-       -- dtls = N, rec = N, Ref: rfc8422, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8422
+       -- Ref: rfc6347
        TLS_ECDH_Anon_WITH_RC4_128_SHA => 16#C016#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_Anon_WITH_3DES_EDE_CBC_SHA => 16#C017#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_Anon_WITH_AES_128_CBC_SHA => 16#C018#,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        TLS_ECDH_Anon_WITH_AES_256_CBC_SHA => 16#C019#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA => 16#C01A#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA => 16#C01B#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA => 16#C01C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_WITH_AES_128_CBC_SHA => 16#C01D#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA => 16#C01E#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA => 16#C01F#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_WITH_AES_256_CBC_SHA => 16#C020#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA => 16#C021#,
 
-       -- dtls = Y, rec = N, Ref: rfc5054
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5054
        TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA => 16#C022#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 => 16#C023#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 => 16#C024#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256 => 16#C025#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384 => 16#C026#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 => 16#C027#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 => 16#C028#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256 => 16#C029#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384 => 16#C02A#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5289
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5289
        TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 => 16#C02B#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5289
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5289
        TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 => 16#C02C#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256 => 16#C02D#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384 => 16#C02E#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5289
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5289
        TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 => 16#C02F#,
 
-       -- dtls = Y, rec = Y, Ref: rfc5289
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc5289
        TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 => 16#C030#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256 => 16#C031#,
 
-       -- dtls = Y, rec = N, Ref: rfc5289
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5289
        TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384 => 16#C032#,
 
-       -- dtls = N, rec = N, Ref: rfc5489, Ref: rfc6347
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc5489
+       -- Ref: rfc6347
        TLS_ECDHE_PSK_WITH_RC4_128_SHA => 16#C033#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA => 16#C034#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA => 16#C035#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA => 16#C036#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 => 16#C037#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 => 16#C038#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_NULL_SHA => 16#C039#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_NULL_SHA256 => 16#C03A#,
 
-       -- dtls = Y, rec = N, Ref: rfc5489
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc5489
        TLS_ECDHE_PSK_WITH_NULL_SHA384 => 16#C03B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_WITH_ARIA_128_CBC_SHA256 => 16#C03C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_WITH_ARIA_256_CBC_SHA384 => 16#C03D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256 => 16#C03E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384 => 16#C03F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256 => 16#C040#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384 => 16#C041#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256 => 16#C042#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384 => 16#C043#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256 => 16#C044#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384 => 16#C045#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_Anon_WITH_ARIA_128_CBC_SHA256 => 16#C046#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_Anon_WITH_ARIA_256_CBC_SHA384 => 16#C047#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256 => 16#C048#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384 => 16#C049#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256 => 16#C04A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384 => 16#C04B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256 => 16#C04C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384 => 16#C04D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256 => 16#C04E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384 => 16#C04F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_WITH_ARIA_128_GCM_SHA256 => 16#C050#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_WITH_ARIA_256_GCM_SHA384 => 16#C051#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256 => 16#C052#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384 => 16#C053#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256 => 16#C054#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384 => 16#C055#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256 => 16#C056#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384 => 16#C057#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256 => 16#C058#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384 => 16#C059#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_Anon_WITH_ARIA_128_GCM_SHA256 => 16#C05A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DH_Anon_WITH_ARIA_256_GCM_SHA384 => 16#C05B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256 => 16#C05C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384 => 16#C05D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256 => 16#C05E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384 => 16#C05F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256 => 16#C060#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384 => 16#C061#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256 => 16#C062#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384 => 16#C063#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_PSK_WITH_ARIA_128_CBC_SHA256 => 16#C064#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_PSK_WITH_ARIA_256_CBC_SHA384 => 16#C065#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256 => 16#C066#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384 => 16#C067#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256 => 16#C068#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384 => 16#C069#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_PSK_WITH_ARIA_128_GCM_SHA256 => 16#C06A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_PSK_WITH_ARIA_256_GCM_SHA384 => 16#C06B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256 => 16#C06C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384 => 16#C06D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256 => 16#C06E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384 => 16#C06F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256 => 16#C070#,
 
-       -- dtls = Y, rec = N, Ref: rfc6209
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6209
        TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384 => 16#C071#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#C072#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 => 16#C073#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#C074#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 => 16#C075#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#C076#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384 => 16#C077#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256 => 16#C078#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384 => 16#C079#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C07A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C07B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C07C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C07D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C07E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C07F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256 => 16#C080#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384 => 16#C081#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256 => 16#C082#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384 => 16#C083#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_Anon_WITH_CAMELLIA_128_GCM_SHA256 => 16#C084#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DH_Anon_WITH_CAMELLIA_256_GCM_SHA384 => 16#C085#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C086#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C087#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C088#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C089#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C08A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C08B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256 => 16#C08C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384 => 16#C08D#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256 => 16#C08E#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384 => 16#C08F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256 => 16#C090#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384 => 16#C091#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256 => 16#C092#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384 => 16#C093#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 => 16#C094#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 => 16#C095#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 => 16#C096#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 => 16#C097#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256 => 16#C098#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384 => 16#C099#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 => 16#C09A#,
 
-       -- dtls = Y, rec = N, Ref: rfc6367
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6367
        TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 => 16#C09B#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_RSA_WITH_AES_128_CCM => 16#C09C#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_RSA_WITH_AES_256_CCM => 16#C09D#,
 
-       -- dtls = Y, rec = Y, Ref: rfc6655
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc6655
        TLS_DHE_RSA_WITH_AES_128_CCM => 16#C09E#,
 
-       -- dtls = Y, rec = Y, Ref: rfc6655
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc6655
        TLS_DHE_RSA_WITH_AES_256_CCM => 16#C09F#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_RSA_WITH_AES_128_CCM_8 => 16#C0A0#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_RSA_WITH_AES_256_CCM_8 => 16#C0A1#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_DHE_RSA_WITH_AES_128_CCM_8 => 16#C0A2#,
 
-       -- dtls = N, rec = N, Ref: rfc6655
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc6655
        TLS_DHE_RSA_WITH_AES_256_CCM_8 => 16#C0A3#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_WITH_AES_128_CCM => 16#C0A4#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_WITH_AES_256_CCM => 16#C0A5#,
 
-       -- dtls = Y, rec = Y, Ref: rfc6655
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc6655
        TLS_DHE_PSK_WITH_AES_128_CCM => 16#C0A6#,
 
-       -- dtls = Y, rec = Y, Ref: rfc6655
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc6655
        TLS_DHE_PSK_WITH_AES_256_CCM => 16#C0A7#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_WITH_AES_128_CCM_8 => 16#C0A8#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_WITH_AES_256_CCM_8 => 16#C0A9#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_DHE_WITH_AES_128_CCM_8 => 16#C0AA#,
 
-       -- dtls = Y, rec = N, Ref: rfc6655
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc6655
        TLS_PSK_DHE_WITH_AES_256_CCM_8 => 16#C0AB#,
 
-       -- dtls = Y, rec = N, Ref: rfc7251
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7251
        TLS_ECDHE_ECDSA_WITH_AES_128_CCM => 16#C0AC#,
 
-       -- dtls = Y, rec = N, Ref: rfc7251
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7251
        TLS_ECDHE_ECDSA_WITH_AES_256_CCM => 16#C0AD#,
 
-       -- dtls = Y, rec = N, Ref: rfc7251
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7251
        TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 => 16#C0AE#,
 
-       -- dtls = Y, rec = N, Ref: rfc7251
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7251
        TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8 => 16#C0AF#,
 
-       -- dtls = Y, rec = N, Ref: rfc8492
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8492
        TLS_ECCPWD_WITH_AES_128_GCM_SHA256 => 16#C0B0#,
 
-       -- dtls = Y, rec = N, Ref: rfc8492
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8492
        TLS_ECCPWD_WITH_AES_256_GCM_SHA384 => 16#C0B1#,
 
-       -- dtls = Y, rec = N, Ref: rfc8492
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8492
        TLS_ECCPWD_WITH_AES_128_CCM_SHA256 => 16#C0B2#,
 
-       -- dtls = Y, rec = N, Ref: rfc8492
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8492
        TLS_ECCPWD_WITH_AES_256_CCM_SHA384 => 16#C0B3#,
 
-       -- dtls = Y, rec = N, Ref: draft-camwinget-tls-ts13-macciphersuites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-camwinget-tls-ts13-macciphersuites
        TLS_SHA256_SHA256 => 16#C0B4#,
 
-       -- dtls = Y, rec = N, Ref: draft-camwinget-tls-ts13-macciphersuites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-camwinget-tls-ts13-macciphersuites
        TLS_SHA384_SHA384 => 16#C0B5#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC => 16#C100#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC => 16#C101#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        TLS_GOSTR341112_256_WITH_28147_CNT_IMIT => 16#C102#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L => 16#C103#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        TLS_GOSTR341112_256_WITH_MAGMA_MGM_L => 16#C104#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S => 16#C105#,
 
-       -- dtls = N, rec = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- dtls = N
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        TLS_GOSTR341112_256_WITH_MAGMA_MGM_S => 16#C106#,
 
-       -- dtls = Y, rec = Y, Ref: rfc7905
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc7905
        TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 => 16#CCA8#,
 
-       -- dtls = Y, rec = Y, Ref: rfc7905
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc7905
        TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 => 16#CCA9#,
 
-       -- dtls = Y, rec = Y, Ref: rfc7905
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc7905
        TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 => 16#CCAA#,
 
-       -- dtls = Y, rec = N, Ref: rfc7905
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7905
        TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 => 16#CCAB#,
 
-       -- dtls = Y, rec = Y, Ref: rfc7905
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc7905
        TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 => 16#CCAC#,
 
-       -- dtls = Y, rec = Y, Ref: rfc7905
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc7905
        TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 => 16#CCAD#,
 
-       -- dtls = Y, rec = N, Ref: rfc7905
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7905
        TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 => 16#CCAE#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8442
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8442
        TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256 => 16#D001#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8442
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8442
        TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384 => 16#D002#,
 
-       -- dtls = Y, rec = N, Ref: rfc8442
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8442
        TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256 => 16#D003#,
 
-       -- dtls = Y, rec = Y, Ref: rfc8442
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8442
        TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256 => 16#D005#)
    with Size => 16, Always_Valid;
 
    type TLS_ContentType is
-      (-- dtls = Y, Ref: rfc8446
+      (-- dtls = Y
+       -- Ref: rfc8446
        Change_Cipher_Spec => 20,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Alert => 21,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Handshake => 22,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Application_Data => 23,
 
-       -- dtls = Y, Ref: rfc6520
+       -- dtls = Y
+       -- Ref: rfc6520
        Heartbeat => 24,
 
-       -- dtls = Y, Ref: draft-ietf-tls-dtls-connection-id
+       -- dtls = Y
+       -- Ref: draft-ietf-tls-dtls-connection-id
        Tls12_Cid_TEMPORARY_Registered_2019_07_02_Extension_Registered_2020_07_28_Expires_2021_07_02 => 25,
 
-       -- dtls = Y, Ref: RFC-ietf-tls-dtls13-43
+       -- dtls = Y
+       -- Ref: RFC-ietf-tls-dtls13-43
        ACK => 26)
    with Size => 8, Always_Valid;
 
    type TLS_Alerts is
-      (-- dtls = Y, Ref: rfc8446
+      (-- dtls = Y
+       -- Ref: rfc8446
        Close_Notify => 0,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Unexpected_Message => 10,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Bad_Record_Mac => 20,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Record_Overflow => 22,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Handshake_Failure => 40,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Bad_Certificate => 42,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Unsupported_Certificate => 43,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Revoked => 44,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Expired => 45,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Unknown => 46,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Illegal_Parameter => 47,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Unknown_Ca => 48,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Access_Denied => 49,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Decode_Error => 50,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Decrypt_Error => 51,
 
-       -- dtls = Y, Ref: RFC-ietf-tls-dtls13-43
+       -- dtls = Y
+       -- Ref: RFC-ietf-tls-dtls13-43
        The_Too_Many_Cids_Requested => 52,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Protocol_Version => 70,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Insufficient_Security => 71,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Internal_Error => 80,
 
-       -- dtls = Y, Ref: rfc7507
+       -- dtls = Y
+       -- Ref: rfc7507
        Inappropriate_Fallback => 86,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        User_Canceled => 90,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Missing_Extension => 109,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Unsupported_Extension => 110,
 
-       -- dtls = Y, Ref: rfc6066
+       -- dtls = Y
+       -- Ref: rfc6066
        Unrecognized_Name => 112,
 
-       -- dtls = Y, Ref: rfc6066
+       -- dtls = Y
+       -- Ref: rfc6066
        Bad_Certificate_Status_Response => 113,
 
-       -- dtls = Y, Ref: rfc4279
+       -- dtls = Y
+       -- Ref: rfc4279
        Unknown_Psk_Identity => 115,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Required => 116,
 
-       -- dtls = Y, Ref: rfc7301, Ref: rfc8447
+       -- dtls = Y
+       -- Ref: rfc7301
+       -- Ref: rfc8447
        No_Application_Protocol => 120)
    with Size => 8, Always_Valid;
 
    type TLS_HandshakeType is
-      (-- dtls = Y, Ref: rfc8446
+      (-- dtls = Y
+       -- Ref: rfc8446
        Client_Hello => 1,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Server_Hello => 2,
 
-       -- dtls = Y, Ref: rfc4507, Ref: rfc8446, Ref: rfc8447
+       -- dtls = Y
+       -- Ref: rfc4507
+       -- Ref: rfc8446
+       -- Ref: rfc8447
        New_Session_Ticket_Renamed_From_NewSessionTicket => 4,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        End_Of_Early_Data => 5,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Encrypted_Extensions => 8,
 
-       -- dtls = Y, Ref: RFC-ietf-tls-dtls13-43
+       -- dtls = Y
+       -- Ref: RFC-ietf-tls-dtls13-43
        RequestConnectionId => 9,
 
-       -- dtls = Y, Ref: RFC-ietf-tls-dtls13-43
+       -- dtls = Y
+       -- Ref: RFC-ietf-tls-dtls13-43
        NewConnectionId => 10,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate => 11,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Request => 13,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Certificate_Verify => 15,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Finished => 20,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Key_Update => 24,
 
-       -- dtls = Y, Ref: rfc8879
+       -- dtls = Y
+       -- Ref: rfc8879
        Compressed_Certificate => 25,
 
-       -- dtls = Y, Ref: rfc8870
+       -- dtls = Y
+       -- Ref: rfc8870
        Ekt_Key => 26,
 
-       -- dtls = Y, Ref: rfc8446
+       -- dtls = Y
+       -- Ref: rfc8446
        Message_Hash => 254)
    with Size => 8, Always_Valid;
 
    type TLS_Supported_Groups is
-      (-- dtls = Y, rec = N, Ref: rfc8422
+      (-- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect163k1 => 1,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect163r1 => 2,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect163r2 => 3,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect193r1 => 4,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect193r2 => 5,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect233k1 => 6,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect233r1 => 7,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect239k1 => 8,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect283k1 => 9,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect283r1 => 10,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect409k1 => 11,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect409r1 => 12,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect571k1 => 13,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Sect571r1 => 14,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp160k1 => 15,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp160r1 => 16,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp160r2 => 17,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp192k1 => 18,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp192r1 => 19,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp224k1 => 20,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp224r1 => 21,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp256k1 => 22,
 
-       -- dtls = Y, rec = Y, Ref: rfc8422
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8422
        Secp256r1 => 23,
 
-       -- dtls = Y, rec = Y, Ref: rfc8422
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8422
        Secp384r1 => 24,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Secp521r1 => 25,
 
-       -- dtls = Y, rec = N, Ref: rfc7027
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7027
        BrainpoolP256r1 => 26,
 
-       -- dtls = Y, rec = N, Ref: rfc7027
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7027
        BrainpoolP384r1 => 27,
 
-       -- dtls = Y, rec = N, Ref: rfc7027
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7027
        BrainpoolP512r1 => 28,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446, Ref: rfc8422
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
+       -- Ref: rfc8422
        X25519 => 29,
 
-       -- dtls = Y, rec = Y, Ref: rfc8446, Ref: rfc8422
+       -- dtls = Y
+       -- rec = Y
+       -- Ref: rfc8446
+       -- Ref: rfc8422
        X448 => 30,
 
-       -- dtls = Y, rec = N, Ref: rfc8734
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8734
        BrainpoolP256r1tls13 => 31,
 
-       -- dtls = Y, rec = N, Ref: rfc8734
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8734
        BrainpoolP384r1tls13 => 32,
 
-       -- dtls = Y, rec = N, Ref: rfc8734
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8734
        BrainpoolP512r1tls13 => 33,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC256A => 34,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC256B => 35,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC256C => 36,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC256D => 37,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC512A => 38,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC512B => 39,
 
-       -- dtls = Y, rec = N, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        GC512C => 40,
 
-       -- dtls = N, rec = N, Ref: rfc8998
+       -- dtls = N
+       -- rec = N
+       -- Ref: rfc8998
        CurveSM2 => 41,
 
-       -- dtls = Y, rec = N, Ref: rfc7919
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7919
        Ffdhe2048 => 256,
 
-       -- dtls = Y, rec = N, Ref: rfc7919
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7919
        Ffdhe3072 => 257,
 
-       -- dtls = Y, rec = N, Ref: rfc7919
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7919
        Ffdhe4096 => 258,
 
-       -- dtls = Y, rec = N, Ref: rfc7919
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7919
        Ffdhe6144 => 259,
 
-       -- dtls = Y, rec = N, Ref: rfc7919
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc7919
        Ffdhe8192 => 260,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Arbitrary_Explicit_Prime_Curves => 65281,
 
-       -- dtls = Y, rec = N, Ref: rfc8422
+       -- dtls = Y
+       -- rec = N
+       -- Ref: rfc8422
        Arbitrary_Explicit_Char2_Curves => 65282)
    with Size => 16, Always_Valid;
 
    type TLS_EC_Point_Formats is
-      (-- dtls = Y, Ref: rfc8422
+      (-- dtls = Y
+       -- Ref: rfc8422
        Uncompressed => 0,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        AnsiX962_Compressed_Prime => 1,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        AnsiX962_Compressed_Char2 => 2)
    with Size => 8, Always_Valid;
 
    type TLS_EC_Curve_Types is
-      (-- dtls = Y, Ref: rfc8422
+      (-- dtls = Y
+       -- Ref: rfc8422
        Explicit_Prime => 1,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Explicit_Char2 => 2,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Named_Curve => 3)
    with Size => 8, Always_Valid;
 
    type TLS_Supplemental_Data_Formats_SupplementalDataType is
-      (-- dtls = Y, Ref: rfc4681
+      (-- dtls = Y
+       -- Ref: rfc4681
        User_Mapping_Data => 0,
 
-       -- dtls = Y, Ref: rfc5878
+       -- dtls = Y
+       -- Ref: rfc5878
        Authz_Data => 16386)
    with Size => 16, Always_Valid;
 
    type TLS_UserMappingType_Values is
-      (-- dtls = Y, Ref: rfc4681
+      (-- dtls = Y
+       -- Ref: rfc4681
        Upn_Domain_Hint => 64)
    with Size => 8, Always_Valid;
 
    type TLS_SignatureAlgorithm is
-      (-- dtls = Y, Ref: rfc5246
+      (-- dtls = Y
+       -- Ref: rfc5246
        Anonymous => 0,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Rsa => 1,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Dsa => 2,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Ecdsa => 3,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Ed25519_7 => 7,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Ed448_8 => 8,
 
-       -- dtls = Y, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        Gostr34102012_256 => 64,
 
-       -- dtls = Y, Ref: draft-smyshlyaev-tls12-gost-suites
+       -- dtls = Y
+       -- Ref: draft-smyshlyaev-tls12-gost-suites
        Gostr34102012_512 => 65)
    with Size => 8, Always_Valid;
 
    type TLS_HashAlgorithm is
-      (-- dtls = Y, Ref: rfc5246
+      (-- dtls = Y
+       -- Ref: rfc5246
        None => 0,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Md5 => 1,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Sha1 => 2,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Sha224 => 3,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Sha256 => 4,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Sha384 => 5,
 
-       -- dtls = Y, Ref: rfc5246
+       -- dtls = Y
+       -- Ref: rfc5246
        Sha512 => 6,
 
-       -- dtls = Y, Ref: rfc8422
+       -- dtls = Y
+       -- Ref: rfc8422
        Intrinsic => 8)
    with Size => 8, Always_Valid;
 
    type TLS_Authorization_Data_Formats is
-      (-- dtls = Y, Ref: rfc5878
+      (-- dtls = Y
+       -- Ref: rfc5878
        X509_Attr_Cert => 0,
 
-       -- dtls = Y, Ref: rfc5878
+       -- dtls = Y
+       -- Ref: rfc5878
        Saml_Assertion => 1,
 
-       -- dtls = Y, Ref: rfc5878
+       -- dtls = Y
+       -- Ref: rfc5878
        X509_Attr_Cert_Url => 2,
 
-       -- dtls = Y, Ref: rfc5878
+       -- dtls = Y
+       -- Ref: rfc5878
        Saml_Assertion_Url => 3,
 
-       -- dtls = Y, Ref: rfc6042
+       -- dtls = Y
+       -- Ref: rfc6042
        Keynote_Assertion_List => 64,
 
-       -- dtls = Y, Ref: rfc6042
+       -- dtls = Y
+       -- Ref: rfc6042
        Keynote_Assertion_List_Url => 65,
 
-       -- dtls = Y, Ref: rfc7562
+       -- dtls = Y
+       -- Ref: rfc7562
        Dtcp_Authorization => 66)
    with Size => 8, Always_Valid;
 
    type TLS_Heartbeat_Message_Types is
-      (-- dtls = Y, Ref: rfc6520
+      (-- dtls = Y
+       -- Ref: rfc6520
        Heartbeat_Request => 1,
 
-       -- dtls = Y, Ref: rfc6520
+       -- dtls = Y
+       -- Ref: rfc6520
        Heartbeat_Response => 2)
    with Size => 8, Always_Valid;
 
    type TLS_Heartbeat_Modes is
-      (-- dtls = Y, Ref: rfc6520
+      (-- dtls = Y
+       -- Ref: rfc6520
        Peer_Allowed_To_Send => 1,
 
-       -- dtls = Y, Ref: rfc6520
+       -- dtls = Y
+       -- Ref: rfc6520
        Peer_Not_Allowed_To_Send => 2)
    with Size => 8, Always_Valid;
 
    type TLS_SignatureScheme is
-      (-- recommended = Y, Ref: rfc8446
+      (-- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pkcs1_Sha1 => 16#0201#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ecdsa_Sha1 => 16#0203#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pkcs1_Sha256 => 16#0401#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ecdsa_Secp256r1_Sha256 => 16#0403#,
 
-       -- recommended = N, Ref: draft-davidben-tls13-pkcs1-00
+       -- recommended = N
+       -- Ref: draft-davidben-tls13-pkcs1-00
        Rsa_Pkcs1_Sha256_Legacy => 16#0420#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pkcs1_Sha384 => 16#0501#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ecdsa_Secp384r1_Sha384 => 16#0503#,
 
-       -- recommended = N, Ref: draft-davidben-tls13-pkcs1-00
+       -- recommended = N
+       -- Ref: draft-davidben-tls13-pkcs1-00
        Rsa_Pkcs1_Sha384_Legacy => 16#0520#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pkcs1_Sha512 => 16#0601#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ecdsa_Secp521r1_Sha512 => 16#0603#,
 
-       -- recommended = N, Ref: draft-davidben-tls13-pkcs1-00
+       -- recommended = N
+       -- Ref: draft-davidben-tls13-pkcs1-00
        Rsa_Pkcs1_Sha512_Legacy => 16#0620#,
 
-       -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
+       -- recommended = N
+       -- Ref: draft-wang-tls-raw-public-key-with-ibc
        Eccsi_Sha256 => 16#0704#,
 
-       -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
+       -- recommended = N
+       -- Ref: draft-wang-tls-raw-public-key-with-ibc
        Iso_Ibs1 => 16#0705#,
 
-       -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
+       -- recommended = N
+       -- Ref: draft-wang-tls-raw-public-key-with-ibc
        Iso_Ibs2 => 16#0706#,
 
-       -- recommended = N, Ref: draft-wang-tls-raw-public-key-with-ibc
+       -- recommended = N
+       -- Ref: draft-wang-tls-raw-public-key-with-ibc
        Iso_Chinese_Ibs => 16#0707#,
 
-       -- recommended = N, Ref: rfc8998
+       -- recommended = N
+       -- Ref: rfc8998
        Sm2sig_Sm3 => 16#0708#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_256a => 16#0709#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_256b => 16#070A#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_256c => 16#070B#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_256d => 16#070C#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_512a => 16#070D#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_512b => 16#070E#,
 
-       -- recommended = N, Ref: draft-smyshlyaev-tls13-gost-suites
+       -- recommended = N
+       -- Ref: draft-smyshlyaev-tls13-gost-suites
        Gostr34102012_512c => 16#070F#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Rsae_Sha256 => 16#0804#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Rsae_Sha384 => 16#0805#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Rsae_Sha512 => 16#0806#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ed25519_0807 => 16#0807#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Ed448_0808 => 16#0808#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Pss_Sha256 => 16#0809#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Pss_Sha384 => 16#080A#,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Rsa_Pss_Pss_Sha512 => 16#080B#,
 
-       -- recommended = N, Ref: rfc8734
+       -- recommended = N
+       -- Ref: rfc8734
        Ecdsa_BrainpoolP256r1tls13_Sha256 => 16#081A#,
 
-       -- recommended = N, Ref: rfc8734
+       -- recommended = N
+       -- Ref: rfc8734
        Ecdsa_BrainpoolP384r1tls13_Sha384 => 16#081B#,
 
-       -- recommended = N, Ref: rfc8734
+       -- recommended = N
+       -- Ref: rfc8734
        Ecdsa_BrainpoolP512r1tls13_Sha512 => 16#081C#)
    with Size => 16, Always_Valid;
 
    type TLS_PskKeyExchangeMode is
-      (-- recommended = Y, Ref: rfc8446
+      (-- recommended = Y
+       -- Ref: rfc8446
        Psk_Ke => 0,
 
-       -- recommended = Y, Ref: rfc8446
+       -- recommended = Y
+       -- Ref: rfc8446
        Psk_Dhe_Ke => 1)
    with Size => 8, Always_Valid;
 
