@@ -41,9 +41,7 @@ test_python_validation_tool:
 	python3 -m pytest -n$(shell nproc) -vv tests/test_validation_tool.py
 
 test_python_iana_to_rflx:
-	python3 -m pytest -n$(shell nproc) -vv --cov=tools.iana_to_rflx --cov-branch tests/test_iana_to_rflx.py
-	coverage html
-	firefox htmlcov/tools_iana_to_rflx_py.html
+	python3 -m pytest -n$(shell nproc) -vv --cov=tools.iana_to_rflx --cov-branch tests/test_iana_to_rflx.py --cov-fail-under=100 --cov-report=term-missing:skip-covered
 
 generate_iana: generate_iana_protocol_numbers generate_iana_tls_parameters generate_iana_bootp_dhcp_parameters generate_iana_arp_parameters
 
@@ -58,5 +56,3 @@ generate_iana_bootp_dhcp_parameters:
 
 generate_iana_arp_parameters:
 	python3 ./tools/iana_to_rflx.py ./iana_registries/arp-parameters.xml
-
-
