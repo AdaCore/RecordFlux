@@ -72,9 +72,9 @@ def test_normalize_hex_value() -> None:
     assert _normalize_hex_value("0xCD-CF,*") == "16#CFFF#"
     assert _normalize_hex_value("0xCB,*") == "16#CBFF#"
     assert _normalize_hex_value("0xCC,0xAF-FF") == "16#CCFF#"
-    with pytest.raises(IANAError, match='cannot normalize hex value range "XY-XY"'):
+    with pytest.raises(IANAError, match=r'^cannot normalize hex value range "XY-XY"$'):
         _normalize_hex_value("XY-XY")
-    with pytest.raises(IANAError, match='cannot normalize hex value "XY"'):
+    with pytest.raises(IANAError, match=r'^cannot normalize hex value "XY"$'):
         _normalize_hex_value("XY")
 
 
