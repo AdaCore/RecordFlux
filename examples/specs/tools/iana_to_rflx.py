@@ -196,9 +196,12 @@ class EnumLiteral:
         if len(self.alternative_names) > 1:
             comments.extend(self.alternative_names)
 
-        formatted_comments = ", ".join(comments)
-        if formatted_comments != "":
-            return textwrap.wrap(formatted_comments, width=80)
+        formatted_comments = [
+            textwrap.wrap(comment, width=80, subsequent_indent=f"{'':<7}--  ")
+            for comment in comments
+        ]
+        if len(formatted_comments) > 0:
+            return ["\n".join(formatted_comment) for formatted_comment in formatted_comments]
         return []
 
     def __str__(self) -> str:

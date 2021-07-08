@@ -24,6 +24,7 @@ from tools.iana_to_rflx import (
         "test_duplicate_identifiers",
         "test_duplicate_values",
         "test_empty_registry",
+        "test_long_comment",
         "test_no_value_no_name_tags",
         "test_numeric_identifiers",
         "test_registry_comma_sep_hex_values",
@@ -103,9 +104,9 @@ def test_normalize_name() -> None:
 def test_get_name_tag() -> None:
     with open("tests/iana_to_rflx/test_registries/test_all_name_tags.xml", "r") as f:
         registry = ElementTree.fromstring(f.read())
-        sub_registry = registry.find("iana:registry",  tools.iana_to_rflx.NAMESPACE)
+        sub_registry = registry.find("iana:registry", tools.iana_to_rflx.NAMESPACE)
         assert isinstance(sub_registry, Element)
-        record = sub_registry.find("iana:record",  tools.iana_to_rflx.NAMESPACE)
+        record = sub_registry.find("iana:record", tools.iana_to_rflx.NAMESPACE)
         assert isinstance(record, Element)
         assert _get_name_tag(record) == "name"
 
