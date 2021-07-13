@@ -296,7 +296,7 @@ $ make install_gnatstudio
 
 Contributions and feedback to RecordFlux are very welcome. To discuss a bug or an enhancement, [open a ticket on GitHub](https://github.com/Componolit/RecordFlux/issues/new/choose) and select the appropriate issue template. Please give sufficient information about your issue, the software version you are using and your environment such that the developers can understand and (if necessary) reproduce the problem. If none of the provided issue templates fit your needs, feel free to open [a blank issue](https://github.com/Componolit/RecordFlux/issues/new).
 
-See [`doc/Development.md`](/doc/Development.md) on how to contribute to RecordFlux.
+See [the development documentation](/doc/Development.md) on how to contribute to RecordFlux.
 
 ## Limitations
 
