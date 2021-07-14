@@ -484,11 +484,8 @@ def test_cli_checksum_missing_attribute() -> None:
                 "--no-verification",
             ]
         )
-        == "The checksum module at "
-        "tests.validation_tool.missing_checksum_functions_attrib does not contain a "
-        'dict with the name "checksum_function". Provide a dict that maps the message '
-        "identifier to a dict that maps the name of each checksum field to a callable "
-        "checksum function."
+        == "The checksum module at tests.validation_tool.missing_checksum_functions_attrib"
+        ' does not contain an attribute with the name "checksum_function".'
     )
 
 
@@ -530,4 +527,86 @@ def test_cli_checksum_setting_functions_failed() -> None:
         )
         == "Error while setting checksum functions: "
         "pyrflx: error: cannot set checksum function: field No_Field is not defined"
+    )
+
+
+def test_cli_no_callable_checksum() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/icmp.rflx",
+                "-m",
+                "ICMP::Message",
+                "-v",
+                "tests/data/icmp/message/valid/",
+                "-f",
+                "tests.validation_tool.missing_checksum_callable",
+                "--no-verification",
+            ]
+        )
+        == 'The value at key "Checksum" is not a callable checksum function.'
+    )
+
+
+def test_cli_checksum_function_attribute_not_dict() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/icmp.rflx",
+                "-m",
+                "ICMP::Message",
+                "-v",
+                "tests/data/icmp/message/valid/",
+                "-f",
+                "tests.validation_tool.checksum_attribute_not_dict",
+                "--no-verification",
+            ]
+        )
+        == "The attribute checksum_function of tests.validation_tool.checksum_attribute_not_dict"
+        " is not a dict."
+    )
+
+
+def test_cli_no_callable_checksum() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/icmp.rflx",
+                "-m",
+                "ICMP::Message",
+                "-v",
+                "tests/data/icmp/message/valid/",
+                "-f",
+                "tests.validation_tool.missing_checksum_callable",
+                "--no-verification",
+            ]
+        )
+        == 'The value at key "Checksum" is not a callable checksum function.'
+    )
+
+
+def test_cli_checksum_function_attribute_not_dict() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/icmp.rflx",
+                "-m",
+                "ICMP::Message",
+                "-v",
+                "tests/data/icmp/message/valid/",
+                "-f",
+                "tests.validation_tool.checksum_attribute_not_dict",
+                "--no-verification",
+            ]
+        )
+        == "The attribute checksum_function of tests.validation_tool.checksum_attribute_not_dict"
+        " is not a dict."
     )
