@@ -59,7 +59,10 @@ package IPv4 is
          Options : Options
             with Size => IHL * 32 - (Destination'Last - Message'First + 1);
          Payload : Opaque
-            with Size => Total_Length * 8 - (IHL * 32);
-      end message;
+            with Size => Total_Length * 8 - (IHL * 32)
+					then null
+						if Header_Checksum'Valid_Checksum;
+      end message with
+         Checksum => (Header_Checksum => (Version'First .. Header_Checksum'First - 1, Header_Checksum'Size, Header_Checksum'Last + 1 .. Payload'First - 1));
 
 end IPv4;
