@@ -1227,15 +1227,9 @@ def test_set_checksum_to_pyrflx_invalid_id(
             }
         )
 
-
-def test_set_checksum_to_pyrflx_package_not_found(
-    pyrflx_checksum: PyRFLX,
-    tlv_checksum_function: ty.Callable,
-    refinement_checksum_function: ty.Callable,
-) -> None:
     with pytest.raises(
         PyRFLXError,
-        match="^pyrflx: error: Not_A_Package is not a package in pyrflx$",
+        match="^pyrflx: error: Not_A_Package is not a valid identifier$",
     ):
         pyrflx_checksum.set_checksum_functions(
             {
@@ -1243,6 +1237,17 @@ def test_set_checksum_to_pyrflx_package_not_found(
                 "TLV_With_Checksum::Message": {"Checksum": tlv_checksum_function},
             }
         )
+
+
+def test_set_checksum_to_pyrflx_package_not_found(
+    pyrflx_checksum: PyRFLX,
+    refinement_checksum_function: ty.Callable,
+) -> None:
+    pyrflx_checksum.set_checksum_functions(
+        {
+            "Not_A_Package::Not_A_Message": {"Checksum": refinement_checksum_function},
+        }
+    )
 
 
 @pytest.mark.parametrize(
