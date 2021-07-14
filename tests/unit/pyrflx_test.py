@@ -1140,28 +1140,109 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
 
 
-def test_refinement_with_checksum() -> None:
+@pytest.fixture(name="tlv_checksum_function")
+def fixture_tlv_checksum_function() -> ty.Callable:
     def tlv_checksum(_: bytes, **__: object) -> int:
         return 0
 
+    return tlv_checksum
+
+
+@pytest.fixture(name="refinement_checksum_function")
+def fixture_refinement_checksum_function() -> ty.Callable:
     def msg_checksum(_: bytes, **__: object) -> int:
         return 0xFF
 
-    pyrflx_ = PyRFLX.from_specs(
+    return msg_checksum
+
+
+@pytest.fixture(name="pyrflx_checksum")
+def fixture_prflx_checksum() -> PyRFLX:
+    return PyRFLX.from_specs(
         [SPEC_DIR / "refinement_with_checksum.rflx", SPEC_DIR / "tlv_with_checksum.rflx"]
     )
-    refinement_package = pyrflx_["Refinement_With_Checksum"]
-    tlv_package = pyrflx_["TLV_With_Checksum"]
-    refinement_package.set_checksum_functions({"Message": {"Checksum": msg_checksum}})
-    tlv_package.set_checksum_functions({"Message": {"Checksum": tlv_checksum}})
+
+
+def test_refinement_with_checksum(
+    pyrflx_checksum: PyRFLX,
+    tlv_checksum_function: ty.Callable,
+    refinement_checksum_function: ty.Callable,
+) -> None:
+    refinement_package = pyrflx_checksum["Refinement_With_Checksum"]
+    tlv_package = pyrflx_checksum["TLV_With_Checksum"]
+    refinement_package.set_checksum_functions(
+        {"Message": {"Checksum": refinement_checksum_function}}
+    )
+    tlv_package.set_checksum_functions({"Message": {"Checksum": tlv_checksum_function}})
     data = b"\x09\xff\x01\x00\x02\x01\x02\x00\x00\x00\x00"
     message = refinement_package["Message"]
-    message.set_checksum_function({"Checksum": msg_checksum})
+    message.set_checksum_function({"Checksum": refinement_checksum_function})
     message.parse(data)
     assert message.valid_message
     tlv_message = message.get("Payload")
     assert isinstance(tlv_message, MessageValue)
     assert tlv_message.valid_message
+
+
+def test_set_checksum_to_pyrflx(
+    pyrflx_checksum: PyRFLX,
+    tlv_checksum_function: ty.Callable,
+    refinement_checksum_function: ty.Callable,
+) -> None:
+    # pylint: disable=protected-access
+    pyrflx_checksum.set_checksum_functions(
+        {
+            "Refinement_With_Checksum::Message": {"Checksum": refinement_checksum_function},
+            "TLV_With_Checksum::Message": {"Checksum": tlv_checksum_function},
+        }
+    )
+    refinement_with_checksum_msg = pyrflx_checksum["Refinement_With_Checksum"]["Message"]
+    tlv_with_checksum_msg = pyrflx_checksum["TLV_With_Checksum"]["Message"]
+    assert callable(refinement_with_checksum_msg._checksums["Checksum"].function)
+    assert callable(tlv_with_checksum_msg._checksums["Checksum"].function)
+    assert (
+        refinement_with_checksum_msg._checksums["Checksum"].function.__name__
+        == refinement_checksum_function.__name__
+    )
+    assert (
+        tlv_with_checksum_msg._checksums["Checksum"].function.__name__
+        == tlv_checksum_function.__name__
+    )
+
+
+def test_set_checksum_to_pyrflx_invalid_id(
+    pyrflx_checksum: PyRFLX,
+    tlv_checksum_function: ty.Callable,
+    refinement_checksum_function: ty.Callable,
+) -> None:
+    with pytest.raises(
+        PyRFLXError,
+        match="^pyrflx: error: Refinement_With_Checksum:Message is not a valid identifier:"
+        ' id: error: ":" in identifier parts of "Refinement_With_Checksum:Message"$',
+    ):
+        pyrflx_checksum.set_checksum_functions(
+            {
+                "Refinement_With_Checksum:Message": {"Checksum": refinement_checksum_function},
+                "TLV_With_Checksum::Message": {"Checksum": tlv_checksum_function},
+            }
+        )
+
+
+def test_set_checksum_to_pyrflx_package_not_found(
+    pyrflx_checksum: PyRFLX,
+    tlv_checksum_function: ty.Callable,
+    refinement_checksum_function: ty.Callable,
+) -> None:
+    with pytest.raises(
+        PyRFLXError,
+        match="^pyrflx: error: Not_A_Package is not a package in pyrflx$",
+    ):
+        pyrflx_checksum.set_checksum_functions(
+            {
+                "Not_A_Package": {"Checksum": refinement_checksum_function},
+                "TLV_With_Checksum::Message": {"Checksum": tlv_checksum_function},
+            }
+        )
 
 
 @pytest.mark.parametrize(

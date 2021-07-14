@@ -1,12 +1,14 @@
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, Union
+from typing import Callable, Dict, Iterable, Iterator, Union
 
+from rflx.error import RecordFluxError
 from rflx.identifier import ID
 from rflx.model import Model
 from rflx.pyrflx.typevalue import MessageValue, RefinementValue
 from rflx.specification import Parser
 
+from . import PyRFLXError
 from .package import Package
 
 log = logging.getLogger(__name__)
@@ -49,6 +51,20 @@ class PyRFLX:
         parser.parse(*paths)
         model = parser.create_model()
         return cls(model, skip_message_verification)
+
+    def set_checksum_functions(self, functions: Dict[str, Dict[str, Callable]]) -> None:
+        for identifier_str, checksum_field_function in functions.items():
+            try:
+                message_identifier = ID(identifier_str)
+            except RecordFluxError as e:
+                raise PyRFLXError(f"{identifier_str} is not a valid identifier: {e}") from e
+
+            try:
+                package = self[str(message_identifier.parent)]
+            except (KeyError, RecordFluxError) as e:
+                raise PyRFLXError(f"{message_identifier} is not a package in pyrflx") from e
+
+            package.set_checksum_functions({str(message_identifier.name): checksum_field_function})
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]

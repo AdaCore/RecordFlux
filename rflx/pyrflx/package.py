@@ -23,5 +23,5 @@ class Package(Base):
         return self.__messages.values().__iter__()
 
     def set_checksum_functions(self, functions: Dict[str, Dict[str, Callable]]) -> None:
-        for key, value in functions.items():
-            self.__messages[key].set_checksum_function(value)
+        for message_name, field_name in functions.items():
+            self.__messages[message_name].set_checksum_function(field_name)
