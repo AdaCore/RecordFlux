@@ -126,15 +126,18 @@ def cli(argv: List[str]) -> Union[int, str]:
         except AttributeError:
             return (
                 f"The checksum module at {args.checksum_functions} "
-                f'does not contain a dict with the name "checksum_function". '
-                "Provide a dict that maps the message identifier to a dict "
-                "that maps the name of each checksum field to a callable "
-                "checksum function."
+                f'does not contain an attribute with the name "checksum_function".'
             )
+        if not isinstance(all_checksum_functions, dict):
+            return f"The attribute checksum_function of {args.checksum_functions} is not a dict."
         try:
             checksum_functions = all_checksum_functions[args.message_identifier]
         except KeyError:
-            return f"The checksum_function dict does not contain a key for " f"{identifier}"
+            return f"The checksum_function dict does not contain a key for {identifier}"
+
+        for message_name, checksum_func_callable in checksum_functions.items():
+            if not callable(checksum_func_callable):
+                return f'The value at key "{message_name}" is not a callable checksum function.'
 
     try:
         pyrflx = PyRFLX.from_specs(
@@ -178,18 +181,17 @@ def validate(
         raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
 
     try:
+        package = pyrflx[str(msg_identifier.parent)]
+        #if checksum_functions is not None:
+        package.set_checksum_functions(checksum_functions)
         message_value = pyrflx[str(msg_identifier.parent)][str(msg_identifier.name)]
     except KeyError as e:
         raise ValidationError(
             f'message "{msg_identifier.name}" could not be found '
             f'in package "{msg_identifier.parent}"'
         ) from e
-
-    if checksum_functions is not None:
-        try:
-            message_value.set_checksum_function(checksum_functions)
-        except RecordFluxError as e:
-            raise ValidationError(f"Error while setting checksum functions: {e}") from e
+    except RecordFluxError as e:
+        raise ValidationError(f"Error while setting checksum functions: {e}") from e
 
     incorrectly_classified = 0
     coverage_info = CoverageInformation(list(pyrflx), coverage)
