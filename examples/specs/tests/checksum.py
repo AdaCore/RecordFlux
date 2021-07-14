@@ -17,6 +17,25 @@ def icmp_checksum(message: bytes, **kwargs: object) -> int:
     return internet_checksum(checksum_bytes)
 
 
+def ip_header_checksum(message: bytes, **kwargs: object) -> int:
+    first_arg = kwargs.get("Version'First .. Header_Checksum'First - 1")
+    assert isinstance(first_arg, tuple)
+    version_first, checksum_first_minus_one = first_arg
+    assert version_first == 0 and checksum_first_minus_one == 79
+    second_arg = kwargs.get("Header_Checksum'Last + 1 .. Payload'First - 1")
+    assert isinstance(second_arg, tuple)
+    checksum_last_plus_one, options_last = second_arg
+    assert checksum_last_plus_one == 96
+    checksum_size = kwargs.get("Header_Checksum'Size")
+    assert isinstance(checksum_size, int)
+    assert checksum_size == 16
+
+    checksum_bytes = message[version_first : (checksum_first_minus_one + 1) // 8]
+    checksum_bytes += b"\x00" * (checksum_size // 8)
+    checksum_bytes += message[(checksum_last_plus_one // 8) : (options_last + 1) // 8]
+    return internet_checksum(checksum_bytes)
+
+
 def internet_checksum(checksum_bytes: bytes) -> int:
     def add_ones_complement(num1: int, num2: int) -> int:
         mod = 1 << 16
@@ -35,4 +54,7 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     return intermediary_result ^ 0xFFFF
 
 
-checksum_functions = {"ICMP::Message": {"Checksum": icmp_checksum}}
+checksum_functions = {
+    "ICMP::Message": {"Checksum": icmp_checksum},
+    "IPv4::Packet": {"Header_Checksum": ip_header_checksum},
+}
