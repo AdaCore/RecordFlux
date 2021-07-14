@@ -59,12 +59,14 @@ class PyRFLX:
             except RecordFluxError as e:
                 raise PyRFLXError(f"{identifier_str} is not a valid identifier: {e}") from e
 
-            try:
-                package = self[str(message_identifier.parent)]
-            except (KeyError, RecordFluxError) as e:
-                raise PyRFLXError(f"{message_identifier} is not a package in pyrflx") from e
+            if len(message_identifier.parts) < 2:
+                raise PyRFLXError(f"{identifier_str} is not a valid identifier")
 
-            package.set_checksum_functions({str(message_identifier.name): checksum_field_function})
+            if str(message_identifier.parent) in self.__packages.keys():
+                package = self[str(message_identifier.parent)]
+                package.set_checksum_functions(
+                    {str(message_identifier.name): checksum_field_function}
+                )
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]
