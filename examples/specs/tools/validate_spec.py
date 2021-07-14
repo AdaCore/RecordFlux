@@ -110,7 +110,13 @@ def cli(argv: List[str]) -> Union[int, str]:
     except RecordFluxError as e:
         return f"invalid identifier: {e}"
 
-    checksum_functions = None
+    try:
+        pyrflx = PyRFLX.from_specs(
+            [str(args.specification)], skip_model_verification=args.no_verification
+        )
+    except FileNotFoundError as e:
+        return f"specification {e}"
+
     if args.checksum_functions is not None:
         try:
             checksum_module = importlib.import_module(str(args.checksum_functions))
@@ -139,12 +145,10 @@ def cli(argv: List[str]) -> Union[int, str]:
             if not callable(checksum_func_callable):
                 return f'The value at key "{message_name}" is not a callable checksum function.'
 
-    try:
-        pyrflx = PyRFLX.from_specs(
-            [str(args.specification)], skip_model_verification=args.no_verification
-        )
-    except FileNotFoundError as e:
-        return f"specification {e}"
+        try:
+            pyrflx.set_checksum_functions(all_checksum_functions)
+        except PyRFLXError as e:
+            return f"Could not set checksum function to pyrflx: {e}"
 
     try:
         validate(
@@ -153,7 +157,6 @@ def cli(argv: List[str]) -> Union[int, str]:
             args.directory_invalid,
             args.directory_valid,
             args.json_output,
-            checksum_functions,
             args.abort_on_error,
             args.coverage,
             args.target_coverage,
@@ -170,7 +173,6 @@ def validate(
     directory_invalid: Optional[Path],
     directory_valid: Optional[Path],
     json_output: Optional[Path],
-    checksum_functions: Optional[Dict[str, Callable[[Any], int]]],
     abort_on_error: bool = False,
     coverage: bool = False,
     target_coverage: float = 0.00,
@@ -181,9 +183,6 @@ def validate(
         raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
 
     try:
-        package = pyrflx[str(msg_identifier.parent)]
-        #if checksum_functions is not None:
-        package.set_checksum_functions(checksum_functions)
         message_value = pyrflx[str(msg_identifier.parent)][str(msg_identifier.name)]
     except KeyError as e:
         raise ValidationError(
