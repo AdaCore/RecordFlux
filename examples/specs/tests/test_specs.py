@@ -1,5 +1,4 @@
 import glob
-import importlib
 import re
 import subprocess
 import warnings
@@ -9,6 +8,7 @@ from xml.etree import ElementTree
 import pytest
 from rflx.pyrflx import PyRFLX
 
+import tests.checksum as checksum
 import tools.iana_to_rflx
 from tools.validate_spec import validate
 
@@ -17,7 +17,9 @@ DATA_PATH = Path("tests/data/")
 
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_spec(spec: str, tmp_path: Path) -> None:
-    subprocess.run(["rflx", "generate", "-d", tmp_path, spec], check=True)
+    subprocess.run(
+        ["rflx", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec], check=True
+    )
     subprocess.run(["gprbuild", "-U"], check=True, cwd=tmp_path)
 
 
@@ -40,8 +42,7 @@ def test_iana_specs_synchronized(registry_file_name: str) -> None:
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_validate_spec(spec: str) -> None:
     pyrflx = PyRFLX.from_specs([spec], True)
-    checksum_module = importlib.import_module("tests.checksum")
-    all_checksum_functions = checksum_module.checksum_functions  # type: ignore
+    all_checksum_functions = checksum.checksum_functions  # type: ignore[attr-defined]
 
     for package in pyrflx:
         for message_value in package:
