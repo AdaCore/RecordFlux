@@ -525,49 +525,8 @@ def test_cli_checksum_setting_functions_failed() -> None:
                 "--no-verification",
             ]
         )
-        == "Error while setting checksum functions: "
-        "pyrflx: error: cannot set checksum function: field No_Field is not defined"
-    )
-
-
-def test_cli_no_callable_checksum() -> None:
-    assert (
-        cli(
-            [
-                "validate_spec",
-                "-s",
-                "tests/validation_tool/icmp.rflx",
-                "-m",
-                "ICMP::Message",
-                "-v",
-                "tests/data/icmp/message/valid/",
-                "-f",
-                "tests.validation_tool.missing_checksum_callable",
-                "--no-verification",
-            ]
-        )
-        == 'The value at key "Checksum" is not a callable checksum function.'
-    )
-
-
-def test_cli_checksum_function_attribute_not_dict() -> None:
-    assert (
-        cli(
-            [
-                "validate_spec",
-                "-s",
-                "tests/validation_tool/icmp.rflx",
-                "-m",
-                "ICMP::Message",
-                "-v",
-                "tests/data/icmp/message/valid/",
-                "-f",
-                "tests.validation_tool.checksum_attribute_not_dict",
-                "--no-verification",
-            ]
-        )
-        == "The attribute checksum_function of tests.validation_tool.checksum_attribute_not_dict"
-        " is not a dict."
+        == "Could not set checksum function to pyrflx: pyrflx: error: "
+        "cannot set checksum function: field No_Field is not defined"
     )
 
 

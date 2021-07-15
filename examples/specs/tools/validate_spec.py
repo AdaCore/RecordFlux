@@ -9,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, TextIO, Type, Union
+from typing import Dict, List, Optional, TextIO, Type, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID
@@ -19,6 +19,7 @@ from rflx.pyrflx.typevalue import MessageValue
 
 
 def cli(argv: List[str]) -> Union[int, str]:
+    # pylint: disable=too-many-return-statements, too-many-branches
     parser = argparse.ArgumentParser(
         description="validate specification against a set of known valid or invalid messages"
     )
@@ -189,8 +190,6 @@ def validate(
             f'message "{msg_identifier.name}" could not be found '
             f'in package "{msg_identifier.parent}"'
         ) from e
-    except RecordFluxError as e:
-        raise ValidationError(f"Error while setting checksum functions: {e}") from e
 
     incorrectly_classified = 0
     coverage_info = CoverageInformation(list(pyrflx), coverage)
