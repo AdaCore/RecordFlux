@@ -101,14 +101,15 @@ package ICMP is
             then Originate_Timestamp
                if Tag = Timestamp_Msg or Tag = Timestamp_Reply
             then null
-               if Tag = Information_Request or Tag = Information_Reply
+               if (Tag = Information_Request or Tag = Information_Reply) and Checksum'Valid_Checksum
             then Data
                with Size => Message'Last - Sequence_Number'Last
                if Tag = Echo_Reply or Tag = Echo_Request;
          Originate_Timestamp : Timestamp;
          Receive_Timestamp : Timestamp;
          Transmit_Timestamp : Timestamp
-            then null;
+            then null
+            	 if Checksum'Valid_Checksum;
          Data : Opaque
             then null
                if Checksum'Valid_Checksum;
