@@ -129,7 +129,7 @@ def cli(argv: List[str]) -> Union[int, str]:
             )
 
         try:
-            all_checksum_functions = checksum_module.checksum_functions  # type: ignore
+            all_checksum_functions = checksum_module.checksum_functions # type: ignore[attr-defined]
         except AttributeError:
             return (
                 f"The checksum module at {args.checksum_functions} "
