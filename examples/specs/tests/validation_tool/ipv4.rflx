@@ -1,4 +1,4 @@
-with IANA;
+with Protocol_Numbers;
 
 package IPv4 is
 
@@ -52,14 +52,17 @@ package IPv4 is
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
-         Protocol : IANA::Protocol_Number;
+         Protocol : Protocol_Numbers::Assigned_Internet_Protocol_Numbers;
          Header_Checksum : Header_Checksum;
          Source : Address;
          Destination : Address;
          Options : Options
             with Size => IHL * 32 - (Destination'Last - Message'First + 1);
          Payload : Opaque
-            with Size => Total_Length * 8 - (IHL * 32);
-      end message;
+            with Size => Total_Length * 8 - (IHL * 32)
+               then null
+                  if Header_Checksum'Valid_Checksum;
+      end message with
+         Checksum => (Header_Checksum => (Version'First .. Header_Checksum'First - 1, Header_Checksum'Size, Header_Checksum'Last + 1 .. Payload'First - 1));
 
 end IPv4;

@@ -1,0 +1,17 @@
+package Checksum_Message is
+
+   type Field_A is mod 2**8;
+   type Field_B is mod 2**8;
+   type Checksum is mod 2**8;
+
+   type Message is
+      message
+         Field_A : Field_A;
+         Field_B : Field_B;
+         Checksum : Checksum
+            then null
+               if Checksum'Valid_Checksum;
+      end message with
+         Checksum => (Checksum => (Field_A'First .. Field_B'Last, Checksum'Size));
+
+end Checksum_Message;

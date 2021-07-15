@@ -24,6 +24,8 @@ def test_cli_error_msg_not_in_package() -> None:
                 "tests/validation_tool/ethernet/frame/valid",
                 "-i",
                 "tests/validation_tool/ethernet/frame/invalid",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -112,6 +114,8 @@ def test_cli_output_file_exists(tmp_path: Path) -> None:
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_file}",
+                "-f",
+                "tests.checksum",
             ]
         )
     ) == f"output file already exists: {tmp_file}"
@@ -128,6 +132,8 @@ def test_cli_path_does_not_exist() -> None:
                 "Ethernet::Frame",
                 "-i",
                 "tests/validation_tool/ethernet/non_existent_dir",
+                "-f",
+                "tests.checksum",
             ]
         )
     ) == "tests/validation_tool/ethernet/non_existent_dir does not exist or is not a directory"
@@ -147,6 +153,8 @@ def test_cli_path_is_not_directory(tmp_path: Path) -> None:
                 "Ethernet::Frame",
                 "-i",
                 f"{tmp_file}",
+                "-f",
+                "tests.checksum",
             ]
         )
     ) == f"{tmp_file} does not exist or is not a directory"
@@ -174,6 +182,8 @@ def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path_restricted}/test.json",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -194,6 +204,8 @@ def test_cli_abort_on_error() -> None:
             "tests/validation_tool/ethernet/frame/invalid",
             "-i",
             "tests/validation_tool/ethernet/frame/valid",
+            "-f",
+            "tests.checksum",
             "--abort-on-error",
             "--no-verification",
         ]
@@ -219,6 +231,8 @@ def test_cli_not_regular_file(tmpdir: Path) -> None:
                 "Ethernet::Frame",
                 "-v",
                 f"{tmpdir}",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -273,6 +287,8 @@ def test_validation_positive() -> None:
                 "tests/validation_tool/ethernet/frame/valid",
                 "-i",
                 "tests/validation_tool/ethernet/frame/invalid",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -295,6 +311,8 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-o",
                 f"{tmp_path}/output.json",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -320,6 +338,8 @@ def test_validation_negative() -> None:
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-i",
                 "tests/validation_tool/ethernet/frame/valid",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -346,6 +366,8 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
                 "tests/validation_tool/ethernet/frame/valid",
                 "-o",
                 f"{tmp_path}/output.json",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -369,6 +391,8 @@ def test_validation_coverage(capsys: CaptureFixture[str]) -> None:
                 "tests/validation_tool/ethernet/frame/invalid",
                 "--coverage",
                 "--target-coverage=100",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -395,6 +419,8 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
                 "tests/validation_tool/ethernet/frame/valid",
                 "-c",
                 "--target-coverage=90",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -421,6 +447,8 @@ def test_validation_coverage_threshold_invalid() -> None:
                 "tests/validation_tool/ethernet/frame/valid",
                 "-c",
                 "--target-coverage=110",
+                "-f",
+                "tests.checksum",
                 "--no-verification",
             ]
         )
@@ -453,11 +481,11 @@ def test_cli_checksum_import_error() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
-                "ICMP::Message",
+                "Checksum_Message::Message",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests/checksum",
             ]
@@ -474,11 +502,11 @@ def test_cli_checksum_missing_attribute() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
-                "ICMP::Message",
+                "Checksum_Message::Message",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests.validation_tool.missing_checksum_functions_attrib",
                 "--no-verification",
@@ -489,44 +517,45 @@ def test_cli_checksum_missing_attribute() -> None:
     )
 
 
+def test_cli_checksum_functions_no_checksum_provided() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/checksum_message.rflx",
+                "-m",
+                "Checksum_Message::Message",
+                "-v",
+                "tests/validation_tool/checksum_message/valid",
+                "--no-verification",
+            ]
+        )
+        == "No checksum functions have been provided, but the following messages define a checksum:"
+        ' Checksum_Message::Message at field "Checksum".'
+    )
+
+
 def test_cli_checksum_functions_missing_key() -> None:
     assert (
         cli(
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message_with_refinement.rflx",
                 "-m",
-                "ICMP::Message",
+                "Ethernet::Frame",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests.validation_tool.missing_key",
                 "--no-verification",
             ]
         )
-        == "The checksum_function dict does not contain a key for ICMP::Message"
-    )
-
-
-def test_cli_checksum_setting_functions_failed() -> None:
-    assert (
-        cli(
-            [
-                "validate_spec",
-                "-s",
-                "tests/validation_tool/icmp.rflx",
-                "-m",
-                "ICMP::Message",
-                "-v",
-                "tests/data/icmp/message/valid/",
-                "-f",
-                "tests.validation_tool.invalid_checksum_field",
-                "--no-verification",
-            ]
-        )
-        == "Could not set checksum function to pyrflx: pyrflx: error: "
-        "cannot set checksum function: field No_Field is not defined"
+        == "The following messages define checksum fields, but no checksum function has been "
+        'provided: Checksum_Message::Message at field "Checksum".'
     )
 
 
@@ -536,11 +565,13 @@ def test_cli_no_callable_checksum() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
-                "ICMP::Message",
+                "Checksum_Message::Message",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests.validation_tool.missing_checksum_callable",
                 "--no-verification",
@@ -556,11 +587,13 @@ def test_cli_checksum_function_attribute_not_dict() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
-                "ICMP::Message",
+                "Checksum_Message::Message",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests.validation_tool.checksum_attribute_not_dict",
                 "--no-verification",
