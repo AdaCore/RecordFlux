@@ -42,7 +42,7 @@ def test_iana_specs_synchronized(registry_file_name: str) -> None:
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_validate_spec(spec: str) -> None:
     pyrflx = PyRFLX.from_specs([spec], True)
-    all_checksum_functions = checksum.checksum_functions  # type: ignore[attr-defined]
+    all_checksum_functions = checksum.checksum_functions
     pyrflx.set_checksum_functions(all_checksum_functions)
 
     for package in pyrflx:
