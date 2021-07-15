@@ -2,4 +2,4 @@ def checksum_test() -> int:
     pass
 
 
-checksum_functions = {"Ethernet::Message": {"Checksum": checksum_test}}
+checksum_functions = {"Checksum_Message_With_Refinement::Message": {"Checksum": checksum_test}}

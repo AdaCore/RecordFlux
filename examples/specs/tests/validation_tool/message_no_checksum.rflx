@@ -1,0 +1,10 @@
+package Message_No_Checksum is
+
+   type Field_A is mod 2**24;
+
+   type Message is
+      message
+         Field_A : Field_A;
+      end message;
+
+end Message_No_Checksum;
