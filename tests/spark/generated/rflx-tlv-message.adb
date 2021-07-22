@@ -53,6 +53,7 @@ is
       Length : RFLX_Types.Length;
    begin
       Write (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Last)), Length);
+      pragma Assert (Length <= Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Last))'Length, "Length <= Buffer'Length is not ensured by postcondition of ""Write""");
       Reset (Ctx, Ctx.First, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (RFLX_Types.To_Index (Ctx.First)) + Length - 1));
    end Write;
 

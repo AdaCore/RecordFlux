@@ -1265,6 +1265,29 @@ class Generator:
                                 Variable("Length"),
                             ],
                         ),
+                        # ISSUE: Componolit/Workarounds#39
+                        # Improve the check message in case of a wrong instantiation of "Write".
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                LessEqual(
+                                    Variable("Length"),
+                                    Length(
+                                        Indexed(
+                                            Variable("Ctx.Buffer.all"),
+                                            ValueRange(
+                                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Last")]),
+                                            ),
+                                        )
+                                    ),
+                                ),
+                                String(
+                                    "Length <= Buffer'Length is not ensured by postcondition of"
+                                    ' "Write"'
+                                ),
+                            ],
+                        ),
                         CallStatement(
                             "Reset",
                             [
