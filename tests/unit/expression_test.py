@@ -1266,6 +1266,12 @@ def test_value_range_substituted() -> None:
     )
 
 
+def test_value_range_ada_expr() -> None:
+    assert ValueRange(Variable("X"), Variable("Y")).ada_expr() == ada.ValueRange(
+        ada.Variable("X"), ada.Variable("Y")
+    )
+
+
 @pytest.mark.parametrize("expr", [ForAllIn, ForSomeIn])
 def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> None:
     assert_type(

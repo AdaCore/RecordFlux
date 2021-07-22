@@ -114,6 +114,7 @@ def test_top_level_package_no_prefix(tmp_path: Path) -> None:
     assert list(tmp_path.glob("*")) == []
 
 
+@pytest.mark.parametrize("embedded", [True, False])
 @pytest.mark.parametrize(
     "left,right",
     [
@@ -123,23 +124,63 @@ def test_top_level_package_no_prefix(tmp_path: Path) -> None:
 )
 @pytest.mark.parametrize("relation", [expr.Equal, expr.NotEqual])
 def test_substitution_relation_aggregate(
-    relation: Callable[[expr.Expr, expr.Expr], expr.Relation], left: expr.Expr, right: expr.Expr
+    relation: Callable[[expr.Expr, expr.Expr], expr.Relation],
+    left: expr.Expr,
+    right: expr.Expr,
+    embedded: bool,
 ) -> None:
-    equal_call = expr.Call(
-        "Equal",
-        [
-            expr.Variable("Ctx"),
-            expr.Variable("F_Value"),
-            expr.Aggregate(
-                expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(1)),
-                expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(2)),
-            ),
-        ],
+    aggregate = expr.Aggregate(
+        expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(1)),
+        expr.Val(expr.Variable(const.TYPES * "Byte"), expr.Number(2)),
     )
+    expected: expr.Expr
+    if embedded:
+        expected = relation(
+            expr.Indexed(
+                expr.Variable(expr.ID("Buffer") * "all"),
+                expr.ValueRange(
+                    expr.Call(
+                        const.TYPES_TO_INDEX,
+                        [
+                            expr.Selected(
+                                expr.Indexed(
+                                    expr.Variable("Cursors"),
+                                    expr.Variable("F_Value"),
+                                ),
+                                "First",
+                            )
+                        ],
+                    ),
+                    expr.Call(
+                        const.TYPES_TO_INDEX,
+                        [
+                            expr.Selected(
+                                expr.Indexed(
+                                    expr.Variable("Cursors"),
+                                    expr.Variable("F_Value"),
+                                ),
+                                "Last",
+                            )
+                        ],
+                    ),
+                ),
+            ),
+            aggregate,
+        )
+    else:
+        equal_call = expr.Call(
+            "Equal",
+            [
+                expr.Variable("Ctx"),
+                expr.Variable("F_Value"),
+                aggregate,
+            ],
+        )
+        expected = equal_call if relation == expr.Equal else expr.Not(equal_call)
 
-    assert_equal(
-        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE, "")),
-        equal_call if relation == expr.Equal else expr.Not(equal_call),
+    assert (
+        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE, "", embedded))
+        == expected
     )
 
 

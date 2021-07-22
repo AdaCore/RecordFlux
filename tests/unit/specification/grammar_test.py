@@ -361,6 +361,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
         ("X", expr.Variable("X")),
         ("X in Y", expr.In(expr.Variable("X"), expr.Variable("Y"))),
         ("X not in Y", expr.NotIn(expr.Variable("X"), expr.Variable("Y"))),
+        ("X < Y", expr.Less(expr.Variable("X"), expr.Variable("Y"))),
     ],
 )
 def test_expression_base(string: str, expected: expr.Expr) -> None:

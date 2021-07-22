@@ -41,7 +41,7 @@ def substitution(
             if field and len(field.identifier.parts) == 1 and aggregate:
                 assert field in message.fields
                 if embedded:
-                    return expr.Equal(
+                    return expression.__class__(
                         expr.Indexed(
                             expr.Variable(expr.ID("Buffer") * "all"),
                             expr.ValueRange(
