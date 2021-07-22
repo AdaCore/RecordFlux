@@ -773,7 +773,7 @@ def test_invalid_relation_to_opaque() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected sequence type "Opaque"'
+        r'^<stdin>:10:20: model: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found type universal integer \(42\)\n"
         r"model: info: on path Length -> Data -> Final$",
@@ -797,7 +797,7 @@ def test_invalid_relation_to_aggregate() -> None:
         structure,
         types,
         r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found sequence type "Opaque"'
+        r'<stdin>:10:20: model: info: found sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:30: model: error: expected integer type\n"
         r"<stdin>:10:30: model: info: found aggregate"
@@ -848,7 +848,7 @@ def test_opaque_aggregate_out_of_range() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected sequence type "Opaque"'
+        r'^<stdin>:10:20: model: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"

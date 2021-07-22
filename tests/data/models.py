@@ -58,6 +58,9 @@ TLV_MESSAGE = Message(
 )
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
 
+TLV_MESSAGES = Sequence("TLV::Messages", TLV_MESSAGE)
+TLV_TAGS = Sequence("TLV::Tags", TLV_TAG)
+
 TLV_WITH_CHECKSUM_TAG = Enumeration(
     "TLV_With_Checksum::Tag",
     [("Msg_Data", Number(1)), ("Msg_Error", Number(3))],
@@ -298,7 +301,7 @@ INVALID_MESSAGE = UnprovenMessage(
 )
 
 MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
-RANGE_INTEGER = RangeInteger("P::Range", Number(1), Number(100), Number(8))
+RANGE_INTEGER = RangeInteger("P::Range_Integer", Number(1), Number(100), Number(8))
 ENUMERATION = Enumeration(
     "P::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
@@ -331,8 +334,10 @@ UNIVERSAL_MESSAGE_TYPE = Enumeration(
     size=Number(8),
     always_valid=False,
 )
-UNIVERSAL_LENGTH = ModularInteger("Universal::Length", Pow(Number(2), Number(16)))
-UNIVERSAL_VALUE = RangeInteger("Universal::Value", Number(0), Number(100), Number(8))
+UNIVERSAL_LENGTH = RangeInteger(
+    "Universal::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+)
+UNIVERSAL_VALUE = ModularInteger("Universal::Value", Number(256))
 UNIVERSAL_VALUES = Sequence("Universal::Values", UNIVERSAL_VALUE)
 UNIVERSAL_OPTION_TYPE = Enumeration(
     "Universal::Option_Type",
@@ -451,6 +456,7 @@ UNIVERSAL_MESSAGE = Message(
     },
 )
 UNIVERSAL_MESSAGES = Sequence("Universal::Messages", UNIVERSAL_MESSAGE)
+UNIVERSAL_REFINEMENT = Refinement("Universal", UNIVERSAL_MESSAGE, Field("Data"), UNIVERSAL_OPTION)
 UNIVERSAL_MODEL = Model(
     [
         UNIVERSAL_MESSAGE_TYPE,
@@ -462,6 +468,7 @@ UNIVERSAL_MODEL = Model(
         UNIVERSAL_OPTIONS,
         UNIVERSAL_LENGTH,
         UNIVERSAL_MESSAGE,
+        UNIVERSAL_REFINEMENT,
     ]
 )
 

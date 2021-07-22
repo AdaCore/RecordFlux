@@ -1652,6 +1652,11 @@ def test_selected_variables() -> None:
     assert result == expected
 
 
+def test_selected_z3expr() -> None:
+    assert Selected(Variable("X"), "Y").z3expr() == z3.Int("X.Y")
+    assert Selected(Variable("X"), "Y", negative=True).z3expr() == -z3.Int("X.Y")
+
+
 def test_in_variables() -> None:
     result = In(Variable("A"), Variable("B")).variables()
     expected = [Variable("A"), Variable("B")]

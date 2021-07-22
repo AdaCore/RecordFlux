@@ -84,8 +84,10 @@ def assert_compilable_code_string(
     assert_compilable_code(parser.create_model(), tmp_path, prefix)
 
 
-def assert_compilable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
-    _create_files(tmp_path, model, prefix)
+def assert_compilable_code(
+    model: Model, tmp_path: pathlib.Path, main: str = None, prefix: str = None
+) -> None:
+    _create_files(tmp_path, model, main, prefix)
 
     p = subprocess.run(["gprbuild", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
     if p.returncode:
@@ -94,36 +96,76 @@ def assert_compilable_code(model: Model, tmp_path: pathlib.Path, prefix: str = N
         )
 
 
-def assert_provable_code(model: Model, tmp_path: pathlib.Path, prefix: str = None) -> None:
-    _create_files(tmp_path, model, prefix)
+def assert_executable_code(
+    model: Model, tmp_path: pathlib.Path, main: str, prefix: str = None
+) -> str:
+    assert_compilable_code(model, tmp_path, main, prefix)
 
-    p = subprocess.run(["gnatprove", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+    p = subprocess.run(
+        ["./" + main.split(".")[0]],
+        cwd=tmp_path,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=10,
+    )
     if p.returncode:
         raise AssertionError(
-            f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
+            f"non-zero exit status {p.returncode}\n{p.stdout.decode('utf-8')}",
         )
+    return p.stdout.decode("utf-8")
 
 
-def _create_files(tmp_path: pathlib.Path, model: Model, prefix: str = None) -> None:
+def assert_provable_code(
+    model: Model,
+    tmp_path: pathlib.Path,
+    main: str = None,
+    prefix: str = None,
+    units: Sequence[str] = None,
+) -> None:
+    _create_files(tmp_path, model, main, prefix)
+
+    def run(command: Sequence[str]) -> None:
+        p = subprocess.run(command, cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+        if p.returncode:
+            raise AssertionError(
+                f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
+            )
+
+    if units:
+        for unit in units:
+            run(["gnatprove", "-Ptest", "-u", unit])
+    else:
+        run(["gnatprove", "-Ptest"])
+
+
+def _create_files(
+    tmp_path: pathlib.Path,
+    model: Model,
+    main: str = None,
+    prefix: str = None,
+) -> None:
     shutil.copy("defaults.gpr", tmp_path)
+    main = f'"{main}"' if main else ""
     with open(tmp_path / "test.gpr", "x") as f:
         f.write(
-            """
-            with "defaults";
+            f"""
+with "defaults";
 
-            project Test is
-                for Source_Dirs use (".");
+project Test is
+    for Source_Dirs use (".");
+    for Main use ({main});
 
-                package Builder is
-                   for Default_Switches ("Ada") use
-                      Defaults.Builder_Switches & Defaults.Compiler_Switches;
-                end Builder;
+    package Builder is
+       for Default_Switches ("Ada") use
+          Defaults.Builder_Switches & Defaults.Compiler_Switches;
+    end Builder;
 
-                package Prove is
-                   for Proof_Switches ("Ada") use
-                      Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
-                end Prove;
-            end Test;
+    package Prove is
+       for Proof_Switches ("Ada") use
+          Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+    end Prove;
+end Test;
             """
         )
 

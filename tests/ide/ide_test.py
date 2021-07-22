@@ -114,7 +114,7 @@ def test_multiple_errors() -> None:
             f"{path}:180:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",
             f"{path}:180:19: model: info: on path Length -> Data1 -> Data2",
-            f'{path}:184:27: model: error: expected sequence type "Opaque"'
+            f'{path}:184:27: model: error: expected sequence type "__INTERNAL__::Opaque"'
             ' with element integer type "Byte" (0 .. 255)',
             f"{path}:184:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",

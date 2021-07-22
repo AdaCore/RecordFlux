@@ -1,6 +1,6 @@
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
-from rflx import ada, expression as expr, model
+from rflx import ada, expression as expr, identifier as rid, model
 from rflx.const import BUILTINS_PACKAGE
 
 from . import const
@@ -729,6 +729,14 @@ def full_enum_name(enum_type: model.Enumeration) -> ada.ID:
 
 def sequence_name(message: model.Message, field: model.Field) -> ada.ID:
     return ada.ID(message.types[field].identifier)
+
+
+def contains_function_name(
+    refinement_package: rid.ID, pdu: rid.ID, sdu: rid.ID, field: rid.ID
+) -> str:
+    sdu_name = sdu.name if sdu.parent == refinement_package else sdu
+    pdu_name = pdu.name if pdu.parent == refinement_package else pdu
+    return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
 def size_dependent_condition(message: model.Message) -> bool:

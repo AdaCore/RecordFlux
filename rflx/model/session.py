@@ -43,7 +43,7 @@ class State(Base):
         transitions: Sequence[Transition] = None,
         exception_transition: Transition = None,
         actions: Sequence[stmt.Statement] = None,
-        declarations: Sequence[decl.Declaration] = None,
+        declarations: Sequence[decl.BasicDeclaration] = None,
         description: str = None,
         location: Location = None,
     ):
@@ -97,14 +97,29 @@ class State(Base):
         return self.__actions
 
     @property
+    def is_null(self) -> bool:
+        return not self.__transitions
+
+    @property
     def has_exceptions(self) -> bool:
         return any(
-            isinstance(a, (stmt.Append, stmt.Extend))
+            isinstance(a, (stmt.Append, stmt.Extend, stmt.Write))
             or (
                 isinstance(a, stmt.Assignment)
-                and isinstance(
-                    a.expression,
-                    (expr.Selected, expr.Head, expr.Comprehension, expr.MessageAggregate),
+                and (
+                    a.expression.findall(
+                        lambda x: isinstance(
+                            x,
+                            (
+                                expr.Selected,
+                                expr.Head,
+                                expr.Comprehension,
+                                expr.MessageAggregate,
+                                expr.Conversion,
+                                expr.Opaque,
+                            ),
+                        )
+                    )
                 )
             )
             for a in self.__actions
