@@ -22,15 +22,11 @@ from tests.const import GENERATED_DIR, SPEC_DIR
 class CodeBlockType(enum.Enum):
     UNKNOWN = enum.auto()
     RFLX = enum.auto()
-    RFLX_PARTIAL = enum.auto()
-    RFLX_CONTEXT = enum.auto()
-    RFLX_DECLARATION = enum.auto()
     ADA = enum.auto()
     PYTHON = enum.auto()
 
 
 def check_code_blocks() -> bool:
-    # pylint: disable=too-many-branches
     valid = True
     code_blocks = []
     inside = False
@@ -41,17 +37,12 @@ def check_code_blocks() -> bool:
                 if not inside and l.startswith("```"):
                     inside = True
                     block = ""
-                    if l.endswith("Ada RFLX\n"):
+                    if l.startswith("```Ada RFLX"):
                         block_type = CodeBlockType.RFLX
-                    elif l.endswith("Ada RFLX partial\n"):
-                        block_type = CodeBlockType.RFLX_PARTIAL
-                    elif l.endswith("Ada RFLX context\n"):
-                        block_type = CodeBlockType.RFLX_CONTEXT
-                    elif l.endswith("Ada RFLX declaration\n"):
-                        block_type = CodeBlockType.RFLX_DECLARATION
-                    elif l.endswith("Ada\n"):
+                        subtype = l[12:-1]
+                    elif l == "```Ada\n":
                         block_type = CodeBlockType.ADA
-                    elif l.endswith("Python\n"):
+                    elif l == "```Python\n":
                         block_type = CodeBlockType.PYTHON
                     else:
                         block_type = CodeBlockType.UNKNOWN
@@ -59,7 +50,7 @@ def check_code_blocks() -> bool:
 
                 if inside and l.startswith("```"):
                     inside = False
-                    code_blocks.append((block_type, block))
+                    code_blocks.append((block_type, subtype, block))
                     continue
 
                 if inside:
@@ -69,22 +60,18 @@ def check_code_blocks() -> bool:
     os.symlink(os.getcwd() / SPEC_DIR, "build" / SPEC_DIR)
     os.chdir("build")
 
-    for block_type, block in code_blocks:
-        valid = check_code(block, block_type) and valid
+    for block_type, subtype, block in code_blocks:
+        valid = check_code(block, block_type, subtype) and valid
 
     os.unlink(SPEC_DIR)
 
     return valid
 
 
-def check_code(block: str, block_type: CodeBlockType) -> bool:
-    if block_type in [
-        CodeBlockType.RFLX,
-        CodeBlockType.RFLX_PARTIAL,
-        CodeBlockType.RFLX_CONTEXT,
-        CodeBlockType.RFLX_DECLARATION,
-    ]:
-        return check_rflx_code(block, block_type)
+def check_code(block: str, block_type: CodeBlockType, subtype: str = None) -> bool:
+    if block_type == CodeBlockType.RFLX:
+        assert subtype is not None
+        return check_rflx_code(block, subtype)
     if block_type is CodeBlockType.ADA:
         return check_ada_code(block)
     if block_type is CodeBlockType.PYTHON:
@@ -99,20 +86,19 @@ def parse(data: str, rule: GrammarRule) -> None:
         error.propagate()
 
 
-def check_rflx_code(block: str, block_type: CodeBlockType) -> bool:
+def check_rflx_code(block: str, subtype: str) -> bool:
     try:
-        if block_type == CodeBlockType.RFLX:
+        if subtype == "":
             parser = rflx.specification.Parser()
             parser.parse_string(block)
             parser.create_model()
-        elif block_type == CodeBlockType.RFLX_PARTIAL:
-            parse(data=block, rule=GrammarRule.specification_rule)
-        elif block_type == CodeBlockType.RFLX_CONTEXT:
-            parse(data=block, rule=GrammarRule.context_clause_rule)
-        elif block_type == CodeBlockType.RFLX_DECLARATION:
-            parse(data=block, rule=GrammarRule.basic_declarations_rule)
+        else:
+            if not hasattr(GrammarRule, f"{subtype}_rule"):
+                print_error(f'invalid code block subtype "{subtype}"', block)
+                return False
+            parse(data=block, rule=getattr(GrammarRule, f"{subtype}_rule"))
     except RecordFluxError as e:
-        print(f"{e}\n\naffected code block:\n\n{block}")
+        print_error(str(e), block)
         return False
     return True
 
@@ -132,7 +118,7 @@ def check_ada_code(block: str) -> bool:
         os.unlink(f"{unit}.o")
     except subprocess.CalledProcessError:
         valid = False
-        print(f"\naffected code block:\n\n{block}")
+        print_error("", block)
 
     os.unlink(f"{unit}.adb")
 
@@ -150,11 +136,15 @@ def check_python_code(block: str) -> bool:
         subprocess.run(["python3", filename], check=True)
     except subprocess.CalledProcessError:
         valid = False
-        print(f"\naffected code block:\n\n{block}")
+        print_error("", block)
 
     os.unlink(filename)
 
     return valid
+
+
+def print_error(message: str, code_block: str) -> None:
+    print(f"{message}\n\n```\n{code_block}\n```\n" + "-" * 68 + "\n")
 
 
 if __name__ == "__main__":
