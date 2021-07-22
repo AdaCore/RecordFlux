@@ -9,7 +9,13 @@ import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, OPAQUE, Private, Sequence, Session, State, Transition
-from tests.data.models import NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE, TLV_MESSAGE, TLV_TAG
+from tests.data.models import (
+    NULL_MESSAGE,
+    NULL_MESSAGE_IN_TLV_MESSAGE,
+    TLV_MESSAGE,
+    TLV_TAG,
+    UNIVERSAL_MESSAGE,
+)
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
 
 TLV_MESSAGES = Sequence("TLV::Messages", TLV_MESSAGE)
@@ -1222,7 +1228,7 @@ def test_renaming_invalid() -> None:
                     Transition(
                         target=ID("End"),
                         condition=expr.Equal(
-                            expr.Length(expr.Variable("Null_Message")), expr.Number(0)
+                            expr.Length(expr.Variable("Universal_Message")), expr.Number(0)
                         ),
                     ),
                     Transition(
@@ -1236,17 +1242,17 @@ def test_renaming_invalid() -> None:
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
             decl.RenamingDeclaration(
-                "Null_Message",
-                "Null::Message",
+                "Universal_Message",
+                "Universal::Message",
                 expr.Selected(expr.Variable("Message"), "Value"),
                 location=Location((10, 20)),
             ),
         ],
         parameters=[],
-        types=[NULL_MESSAGE, TLV_MESSAGE],
+        types=[UNIVERSAL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: invalid renaming to "Null_Message"\n'
+            r'<stdin>:10:20: model: error: invalid renaming to "Universal_Message"\n'
             r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
