@@ -8,7 +8,7 @@ We will get back to you within a working day to discuss the next steps.
 
 ## Confidential Reporting
 
-Please report the vulnerability using a public GitHub issue as described above. Unfortunately, GitHub does not currently support private issues in public repository or any other way of reporting security vulnerabilities confidentially (cf. https://github.com/isaacs/github/issues/37).
+If you would like to report a security vulnerability confidentially, please send an email to [recordflux_remove_this_text_including_first_underscore@componolit.com](mailto:recordflux_remove_this_text_including_first_underscore@componolit.com) (make sure to change the address as described).
 
 ## Supported Versions
 
