@@ -93,6 +93,7 @@ test_apps:
 	python3 examples/apps/icmp_socket.py
 	$(MAKE) -C examples/apps/ping test_python
 	$(MAKE) -C examples/apps/ping test_spark
+	$(MAKE) -C examples/apps/dhcp_client test
 
 test_specs:
 	cd examples/specs && python3 -m pytest -n$(shell nproc) -vv tests/test_specs.py
@@ -118,6 +119,7 @@ prove_tests_cvc4: $(test-files)
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove
+	$(MAKE) -C examples/apps/dhcp_client prove
 
 install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
@@ -125,6 +127,7 @@ install_gnatstudio:
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
 	$(MAKE) -C examples/apps/ping clean
+	$(MAKE) -C examples/apps/dhcp_client clean
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
@@ -134,6 +137,7 @@ remove-prefix = $(VERBOSE) \
 clean_proof:
 	rm -rf tests/spark/proof/*
 	$(MAKE) -C examples/apps/ping clean_proof
+	$(MAKE) -C examples/apps/dhcp_client clean_proof
 
 $(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
 	$(remove-prefix)

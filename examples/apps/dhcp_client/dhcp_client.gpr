@@ -1,0 +1,36 @@
+with "../../../defaults";
+
+project DHCP_Client is
+
+   for Languages use ("Ada", "RecordFlux");
+   for Source_Dirs use ("specs", "src", "generated");
+   for Object_Dir use "obj";
+   for Create_Missing_Dirs use "True";
+   for Main use ("dhcp_client");
+
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+   end Compiler;
+
+   package Naming is
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+   end Naming;
+
+   package RecordFlux is
+      for Output_Dir use "generated";
+   end RecordFlux;
+
+   package Builder is
+      for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;
+   end Builder;
+
+   package Binder is
+      for Default_Switches ("Ada") use Defaults.Binder_Switches;
+   end Binder;
+
+   package Prove is
+      for Proof_Dir use "proof";
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches & ("--timeout=300");
+   end Prove;
+
+end DHCP_Client;
