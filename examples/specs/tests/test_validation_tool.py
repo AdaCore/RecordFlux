@@ -462,13 +462,13 @@ def test_cli_checksum() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/icmp.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
-                "ICMP::Message",
+                "Checksum_Message::Message",
                 "-v",
-                "tests/data/icmp/message/valid/",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
-                "tests.checksum",
+                "tests.validation_tool.checksum_message_checksum_function",
             ]
         )
         == 0
