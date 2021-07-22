@@ -184,6 +184,10 @@ class Argument(Base):
         return f"{self.__identifier} : {self.__type_identifier}"
 
     @property
+    def identifier(self) -> ID:
+        return self.__identifier
+
+    @property
     def type_identifier(self) -> ID:
         return self.__type_identifier
 
@@ -216,6 +220,10 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     @property
     def arguments(self) -> Sequence[Argument]:
         return self.__arguments
+
+    @property
+    def return_type(self) -> ID:
+        return self.__return_type
 
 
 class ChannelDeclaration(FormalDeclaration):

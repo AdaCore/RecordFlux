@@ -1109,7 +1109,7 @@ class Attribute(Name):
         return getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
 
     def z3expr(self) -> z3.ExprRef:
-        if not isinstance(self.prefix, Variable):
+        if not isinstance(self.prefix, (Variable, Selected)):
             raise Z3TypeError("illegal prefix of attribute")
         name = f"{self.prefix}'{self.__class__.__name__}"
         if self.negative:
@@ -1371,7 +1371,9 @@ class Selected(Name):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
+        if self.negative:
+            return -z3.Int(self.representation)
+        return z3.Int(self.representation)
 
 
 class Call(Name):
@@ -1563,6 +1565,49 @@ class String(Aggregate):
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
         return z3.BoolVal(False)
+
+
+class NamedAggregate(Expr):
+    """Only used by code generator and therefore provides minimum functionality"""
+
+    def __init__(self, *elements: Tuple[Union[StrID, "ValueRange"], Expr]) -> None:
+        super().__init__()
+        self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
+
+    def _update_str(self) -> None:
+        assert len(self.elements) > 0
+        self._str = intern(
+            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
+        )
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def simplified(self) -> Expr:
+        raise NotImplementedError
+
+    def ada_expr(self) -> ada.Expr:
+        elements: List[Tuple[Union[ada.StrID, ada.ValueRange], ada.Expr]] = [
+            (
+                ada.ID(n)
+                if isinstance(n, ID)
+                else ada.ValueRange(n.lower.ada_expr(), n.upper.ada_expr()),
+                e.ada_expr(),
+            )
+            for n, e in self.elements
+        ]
+        return ada.NamedAggregate(*elements)
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
 
 class Relation(BinExpr):

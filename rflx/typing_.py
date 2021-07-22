@@ -254,7 +254,7 @@ class Sequence(Composite):
         return Undefined()
 
 
-OPAQUE = Sequence("Opaque", Integer("Byte", Bounds(0, 255)))
+OPAQUE = Sequence(const.INTERNAL_PACKAGE * "Opaque", Integer("Byte", Bounds(0, 255)))
 
 
 @attr.s(frozen=True)

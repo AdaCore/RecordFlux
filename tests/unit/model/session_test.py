@@ -8,18 +8,17 @@ import rflx.expression as expr
 import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import BOOLEAN, OPAQUE, Private, Sequence, Session, State, Transition
+from rflx.model import BOOLEAN, OPAQUE, Private, Session, State, Transition
 from tests.data.models import (
     NULL_MESSAGE,
     NULL_MESSAGE_IN_TLV_MESSAGE,
     TLV_MESSAGE,
+    TLV_MESSAGES,
     TLV_TAG,
+    TLV_TAGS,
     UNIVERSAL_MESSAGE,
 )
 from tests.utils import assert_equal, assert_session_model_error, multilinestr
-
-TLV_MESSAGES = Sequence("TLV::Messages", TLV_MESSAGE)
-TLV_TAGS = Sequence("TLV::Tags", TLV_TAG)
 
 
 def test_str() -> None:
@@ -854,6 +853,7 @@ def test_channel_write() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[stmt.Write("Some_Channel", expr.Variable("M"))],
             ),
@@ -955,6 +955,7 @@ def test_channel_write_invalid_mode() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
@@ -1585,6 +1586,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Data",
@@ -1618,6 +1620,7 @@ def test_assignment_opaque_function_result() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Data",
@@ -1648,6 +1651,7 @@ def test_assignment_opaque_function_binding() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Data",
@@ -1679,6 +1683,7 @@ def test_conversion() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Converted",
@@ -1706,6 +1711,7 @@ def test_conversion_undefined() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Converted",
@@ -1741,6 +1747,7 @@ def test_conversion_invalid_argument() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Converted",
@@ -1772,6 +1779,7 @@ def test_conversion_invalid() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
                 actions=[
                     stmt.Assignment(
                         "Converted",
@@ -1951,7 +1959,9 @@ def test_undefined_type_in_declarations(declarations: ty.Sequence[decl.BasicDecl
         ],
     ],
 )
-def test_undefined_type_in_local_declarations(declarations: ty.Sequence[decl.Declaration]) -> None:
+def test_undefined_type_in_local_declarations(
+    declarations: ty.Sequence[decl.BasicDeclaration],
+) -> None:
     assert_session_model_error(
         states=[
             State(

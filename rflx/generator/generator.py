@@ -18,6 +18,7 @@ from rflx.ada import (
     AndThen,
     Annotate,
     ArrayType,
+    Aspect,
     Assignment,
     Call,
     CallStatement,
@@ -49,6 +50,7 @@ from rflx.ada import (
     IfStatement,
     In,
     Indexed,
+    InitialCondition,
     InOutParameter,
     InstantiationUnit,
     Last,
@@ -124,22 +126,18 @@ from rflx.model import (
     Refinement,
     Scalar,
     Sequence,
+    Session,
     Type,
 )
 
 from . import common, const
 from .parser import ParserGenerator
 from .serializer import SerializerGenerator
+from .session import SessionGenerator
 
 log = logging.getLogger(__name__)
 
 NULL = Variable("null")
-
-CONFIGURATION_PRAGMAS = [
-    Pragma("Style_Checks", [String("N3aAbcdefhiIklnOprStux")]),
-    # ISSUE: Componolit/RecordFlux#508
-    Pragma("Warnings", [Variable("Off"), String("redundant conversion")]),
-]
 
 
 class Generator:
@@ -205,7 +203,7 @@ class Generator:
                 continue
 
             if t.package not in self._units:
-                self.__create_unit(ID(t.package), [], terminating=False)
+                self.__create_unit(ID(t.package), terminating=False)
 
             if isinstance(t, (Scalar, Composite)):
                 self.__create_type(t, ID(t.package))
@@ -232,28 +230,49 @@ class Generator:
             else:
                 assert False, f'unexpected type "{type(t).__name__}"'
 
-    def __create_unit(
+        for s in model.sessions:
+            if s.package not in self._units:
+                self.__create_unit(ID(s.package), terminating=False)
+
+            self.__create_session(s)
+
+    def __create_session(self, session: Session) -> None:
+        session_generator = SessionGenerator(session, self.__prefix, debug=True)
+        unit = self.__create_unit(
+            session_generator.unit_identifier,
+            session_generator.declaration_context,
+            session_generator.body_context,
+            session_generator.formal_parameters,
+            [InitialCondition(Variable("Uninitialized"))],
+            terminating=False,
+        )
+        unit += session_generator.unit_part
+
+    def __create_unit(  # pylint: disable = too-many-arguments
         self,
         identifier: ID,
         declaration_context: ty.Sequence[ContextItem] = None,
         body_context: ty.Sequence[ContextItem] = None,
         formal_parameters: ty.List[FormalDeclaration] = None,
+        aspects: ty.Sequence[Aspect] = None,
         terminating: bool = True,
     ) -> PackageUnit:
         declaration_context = declaration_context if declaration_context else []
         body_context = body_context if body_context else []
+        aspects = aspects if aspects else []
 
         unit = PackageUnit(
-            [*CONFIGURATION_PRAGMAS, *declaration_context],
+            [*const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
                 self.__prefix * identifier,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
                     *([Annotate("GNATprove", "Terminating")] if terminating else []),
+                    *aspects,
                 ],
             ),
-            [*CONFIGURATION_PRAGMAS, *body_context],
+            [*const.CONFIGURATION_PRAGMAS, *body_context],
             PackageBody(self.__prefix * identifier, aspects=[SparkMode()]),
         )
         self._units[identifier] = unit
@@ -266,7 +285,7 @@ class Generator:
         context: ty.List[ContextItem],
         instantiation: GenericPackageInstantiation,
     ) -> InstantiationUnit:
-        for p in reversed(CONFIGURATION_PRAGMAS):
+        for p in reversed(const.CONFIGURATION_PRAGMAS):
             context.insert(0, p)
 
         unit = InstantiationUnit(context, instantiation)
@@ -3955,17 +3974,12 @@ def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
 
 
 def contains_function_name(refinement: Refinement) -> str:
-    sdu_name = (
-        ID(refinement.sdu.name)
-        if refinement.sdu.package == refinement.package
-        else refinement.sdu.identifier
+    return common.contains_function_name(
+        refinement.package,
+        refinement.pdu.identifier,
+        refinement.sdu.identifier,
+        refinement.field.identifier,
     )
-    pdu_name = (
-        ID(refinement.pdu.name)
-        if refinement.pdu.package == refinement.package
-        else refinement.pdu.identifier
-    )
-    return f"{sdu_name.flat}_In_{pdu_name.flat}_{refinement.field.name}"
 
 
 def context_cursors_initialization(message: Message) -> Expr:

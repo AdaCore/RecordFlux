@@ -1,3 +1,5 @@
+import pytest
+
 import rflx.ada as ada
 from tests.utils import assert_equal, multilinestr
 
@@ -109,8 +111,15 @@ def test_indexed_str() -> None:
 
 
 def test_aggregate_str() -> None:
-    assert str(ada.Aggregate(ada.Number(1))) == "(1)"
     assert str(ada.Aggregate(ada.Number(1), ada.Number(2))) == "(1, 2)"
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_aggregate_invalid() -> None:
+    with pytest.raises(AssertionError):
+        str(ada.Aggregate())
+    with pytest.raises(AssertionError):
+        str(ada.Aggregate(ada.Number(1)))
 
 
 def test_in_str() -> None:
@@ -239,6 +248,24 @@ def test_number_str_bin() -> None:
 def test_string_str() -> None:
     assert str(ada.String("X Y")) == '"X Y"'
     assert str(ada.String('X "Y"')) == '"X ""Y"""'
+
+
+def test_named_aggregate_str() -> None:
+    assert (
+        str(
+            ada.NamedAggregate(
+                ("X", ada.Number(1)),
+                (ada.ValueRange(ada.Number(2), ada.Number(3)), ada.Variable("Y")),
+            )
+        )
+        == "(X => 1, 2 .. 3 => Y)"
+    )
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_named_aggregate_invalid() -> None:
+    with pytest.raises(AssertionError):
+        str(ada.NamedAggregate())
 
 
 def test_raise_str() -> None:
