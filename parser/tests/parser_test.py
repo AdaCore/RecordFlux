@@ -280,7 +280,7 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.quantified_expression_rule,
         ),
         (
-            "[for {keyword} in {keyword} => {keyword} - 1 when {keyword} > {keyword}]",
+            "[for {keyword} in {keyword} if {keyword} > {keyword} => {keyword} - 1]",
             librflxlang.GrammarRule.comprehension_rule,
         ),
         (

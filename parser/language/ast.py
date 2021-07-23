@@ -617,8 +617,8 @@ class Comprehension(Expr):
 
     iterator = Field(type=UnqualifiedID)
     sequence = Field(type=Expr)
-    selector = Field(type=Expr)
     condition = Field(type=Expr)
+    selector = Field(type=Expr)
 
 
 class Call(Expr):

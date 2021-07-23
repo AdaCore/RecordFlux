@@ -1140,7 +1140,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
-            "[for X in Y => X.A when X.B = Z]",
+            "[for X in Y if X.B = Z => X.A]",
             {
                 "_kind": "Comprehension",
                 "sequence": {
@@ -2016,7 +2016,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
-            "[for E in L => E.B when E.T = A]'Head",
+            "[for E in L if E.T = A => E.B]'Head",
             {
                 "_kind": "Attribute",
                 "expression": {
@@ -2090,7 +2090,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
-            "[for E in L => E.B when E.T = A]'Head.D",
+            "[for E in L if E.T = A => E.B]'Head.D",
             {
                 "_kind": "SelectNode",
                 "expression": {
@@ -2152,7 +2152,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
-            "(for some S in P::X ([for E in C.A => E when E.T = P.L]'Head.D).H => S.G = G) = False",
+            "(for some S in P::X ([for E in C.A if E.T = P.L => E]'Head.D).H => S.G = G) = False",
             {
                 "_kind": "BinOp",
                 "left": {

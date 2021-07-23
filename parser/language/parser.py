@@ -187,9 +187,9 @@ grammar.add_rules(
         grammar.unqualified_identifier,
         "in",
         grammar.extended_expression,
+        Opt("if", grammar.extended_expression),
         "=>",
         grammar.extended_expression,
-        Opt("when", grammar.extended_expression),
         "]",
     ),
     call=ast.Call(

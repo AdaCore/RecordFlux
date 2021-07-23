@@ -184,7 +184,6 @@ rflx_lexer.add_rules(
     (Literal("not"), Token.Not),
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
-    (Literal("when"), Token.When),
     (Literal("where"), Token.Where),
     (Literal("use"), Token.Use),
     (Literal("all"), Token.All),
