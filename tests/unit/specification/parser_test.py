@@ -2211,18 +2211,18 @@ def test_create_model_checksum() -> None:
                type M is
                   message
                      A : T
+                        if A > 10
                         then B
                            if A < 100;
-                     B : T
-                        if A > 10;
+                     B : T;
                   end message;
             """,
         """
                type M is
                   message
-                     A : T;
-                     B : T
+                     A : T
                         if A > 10 and A < 100;
+                     B : T;
                   end message;
             """,
         """
@@ -2363,23 +2363,23 @@ def test_message_field_size(spec: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "link, field",
+    "field_a, link, field_b",
     [
-        ("with First => A'First, Size => 8 if A > 10 and A < 100", ""),
-        ("with First => A'First, Size => 8 if A < 100", "if A > 10"),
-        ("with First => A'First, Size => 8", "if A > 10 and A < 100"),
-        ("with First => A'First if A > 10 and A < 100", "with Size => 8"),
-        ("with First => A'First if A < 100", "with Size => 8 if A > 10"),
-        ("with First => A'First", "with Size => 8 if A > 10 and A < 100"),
-        ("with Size => 8 if A > 10 and A < 100", "with First => A'First"),
-        ("with Size => 8 if A < 100", "with First => A'First if A > 10"),
-        ("with Size => 8", "with First => A'First if A > 10 and A < 100"),
-        ("if A > 10 and A < 100", "with First => A'First, Size => 8"),
-        ("if A < 100", "with First => A'First, Size => 8 if A > 10"),
-        ("", "with First => A'First, Size => 8 if A > 10 and A < 100"),
+        ("", "with First => A'First, Size => 8 if A > 10 and A < 100", ""),
+        ("if A > 10", "with First => A'First, Size => 8 if A < 100", ""),
+        ("if A > 10 and A < 100", "with First => A'First, Size => 8", ""),
+        ("", "with First => A'First if A > 10 and A < 100", "with Size => 8"),
+        ("if A > 10", "with First => A'First if A < 100", "with Size => 8"),
+        (" if A > 10 and A < 100", "with First => A'First", "with Size => 8"),
+        ("", "with Size => 8 if A > 10 and A < 100", "with First => A'First"),
+        ("if A > 10", "with Size => 8 if A < 100", "with First => A'First"),
+        ("if A > 10 and A < 100", "with Size => 8", "with First => A'First"),
+        ("", "if A > 10 and A < 100", "with First => A'First, Size => 8"),
+        ("if A > 10", "if A < 100", "with First => A'First, Size => 8"),
+        ("if A > 10 and A < 100", "", "with First => A'First, Size => 8"),
     ],
 )
-def test_message_field_condition_and_aspects(link: str, field: str) -> None:
+def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: str) -> None:
     assert_messages_string(
         f"""
             package Test is
@@ -2389,8 +2389,11 @@ def test_message_field_condition_and_aspects(link: str, field: str) -> None:
                type M is
                   message
                      A : T
-                        then B {link};
-                     B : Opaque {field};
+                        {field_a}
+                        then B
+                           {link};
+                     B : Opaque
+                           {field_b};
                   end message;
 
             end Test;
