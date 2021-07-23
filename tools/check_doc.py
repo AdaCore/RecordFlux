@@ -26,34 +26,54 @@ class CodeBlockType(enum.Enum):
     PYTHON = enum.auto()
 
 
-def check_code_blocks() -> bool:
+class State(enum.Enum):
+    OUTSIDE = enum.auto()
+    INSIDE = enum.auto()
+    HEADER = enum.auto()
+
+
+def check_code_blocks() -> bool:  # pylint: disable=too-many-branches
     valid = True
     code_blocks = []
-    inside = False
+    state = State.OUTSIDE
 
-    for p in [pathlib.Path("README.md")] + list(pathlib.Path("doc").rglob("*.md")):
+    for p in [pathlib.Path("README.md")] + list(pathlib.Path("doc").rglob("*.adoc")):
+        is_markdown = p.suffix == ".md"
         with open(p) as f:
+            if is_markdown:
+                prefix = "```"
+                separator = "```"
+            else:
+                prefix = "[source,"
+                separator = "----"
             for l in f:
-                if not inside and l.startswith("```"):
-                    inside = True
+                if state == State.OUTSIDE and l.startswith(prefix):
+                    if is_markdown:
+                        state = State.INSIDE
+                    else:
+                        state = State.HEADER
                     block = ""
-                    if l.startswith("```Ada RFLX"):
+                    if l.startswith(f"{prefix}ada,rflx"):
                         block_type = CodeBlockType.RFLX
-                        subtype = l[12:-1]
-                    elif l == "```Ada\n":
+                        subtype = l[len(prefix) + 9 : -2]
+                    elif l.startswith(f"{prefix}ada"):
                         block_type = CodeBlockType.ADA
-                    elif l == "```Python\n":
+                    elif l.startswith(f"{prefix}python"):
                         block_type = CodeBlockType.PYTHON
                     else:
                         block_type = CodeBlockType.UNKNOWN
                     continue
 
-                if inside and l.startswith("```"):
-                    inside = False
+                if state == State.HEADER and l == f"{separator}\n":
+                    state = State.INSIDE
+                    continue
+
+                if state == State.INSIDE and l == f"{separator}\n":
+                    state = State.OUTSIDE
                     code_blocks.append((block_type, subtype, block))
                     continue
 
-                if inside:
+                if state == State.INSIDE:
                     block += l
 
     ("build" / SPEC_DIR.parent).mkdir(parents=True, exist_ok=True)

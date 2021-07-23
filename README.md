@@ -56,7 +56,7 @@ The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In 
 
 The structure of messages is often non-linear because of optional fields. For this reason the specification uses a graph-based representation. The order of fields is defined by then clauses. Then clauses are also used to state conditions and aspects of the following field. A more detailed description can be found in the [Language Reference](doc/Language-Reference.md#message-type).
 
-```Ada RFLX
+```ada,rflx
 package TLV is
 
    type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
@@ -82,7 +82,7 @@ end TLV;
 
 With the sub-command `check` the correctness of the given specification file can be checked.
 
-```Console
+```console
 $ rflx check tests/data/specs/tlv.rflx
 Parsing tests/data/specs/tlv.rflx
 Processing TLV
@@ -90,7 +90,7 @@ Processing TLV
 
 The sub-command `generate` is used to generate the code based on the specification. The target directory and the specification files have to be given.
 
-```Console
+```console
 $ mkdir /tmp/generated
 $ rflx generate -d /tmp/generated tests/data/specs/tlv.rflx
 Parsing tests/data/specs/tlv.rflx
@@ -174,7 +174,7 @@ All types and subprograms related to `Message` can be found in the package `RFLX
 
 A simple program to parse a `TLV.Message` could be as follows:
 
-```Ada
+```ada
 with Ada.Text_IO;
 with RFLX.RFLX_Builtin_Types;
 with RFLX.TLV.Message;
@@ -208,7 +208,7 @@ In case that a valid message is contained in `Buffer` the value of `Tag` is read
 
 A `TLV.Message` can be generated as follows:
 
-```Ada
+```ada
 with Ada.Text_IO;
 with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bytes;
 with RFLX.TLV.Message;
@@ -238,7 +238,7 @@ end Main;
 The following code shows how PyRFLX can be used to parse and generate messages in Python:
 
 
-```Python
+```python
 import sys
 
 from rflx.pyrflx import MessageValue, PyRFLX
@@ -275,7 +275,7 @@ As a prerequisite, the following dependencies need to be installed:
 
 RecordFlux can be installed from PyPI:
 
-```Console
+```console
 $ pip3 install RecordFlux
 ```
 
@@ -288,7 +288,7 @@ By default the following dependencies are installed:
 
 Optionally, the GNAT Studio IDE integration for RecordFlux can be installed. It enables syntax highlighting for RecordFlux specifications and allows for running RecordFlux from within GNAT Studio. In the RecordFlux source directory do:
 
-```Console
+```console
 $ make install_gnatstudio
 ```
 
