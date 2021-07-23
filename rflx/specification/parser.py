@@ -814,8 +814,6 @@ def create_message_types(
 def create_message_structure(
     error: RecordFluxError, components: Components, filename: Path
 ) -> List[model.Link]:
-    # pylint: disable=too-many-branches, too-many-locals
-
     def extract_aspect(aspects: List[Aspect]) -> Tuple[expr.Expr, expr.Expr]:
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
@@ -886,58 +884,6 @@ def create_message_structure(
             target_node = model.Field(target_id) if target_id else model.FINAL
             structure.append(model.Link(source_node, target_node))
 
-        condition = (
-            create_bool_expression(component.f_condition, filename)
-            if component.f_condition
-            else expr.TRUE
-        )
-        size, first = extract_aspect(component.f_aspects)
-        if first != expr.UNDEFINED or size != expr.UNDEFINED or condition != expr.TRUE:
-            for l in (l for l in structure if l.target.identifier == component_identifier):
-                if first != expr.UNDEFINED:
-                    if l.first == expr.UNDEFINED:
-                        l.first = first
-                    else:
-                        error.append(
-                            f'first aspect of field "{component_identifier}"'
-                            " conflicts with previous"
-                            " specification",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            first.location,
-                        )
-                        error.append(
-                            "previous specification of first",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            l.first.location,
-                        )
-
-                if size != expr.UNDEFINED:
-                    if l.size == expr.UNDEFINED:
-                        l.size = size
-                    else:
-                        error.append(
-                            f'size aspect of field "{component_identifier}" conflicts with previous'
-                            " specification",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            size.location,
-                        )
-                        error.append(
-                            "previous specification of size",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            l.size.location,
-                        )
-
-                if condition != expr.TRUE:
-                    l.condition = (
-                        expr.And(condition, l.condition, location=l.condition.location)
-                        if l.condition != expr.TRUE
-                        else condition
-                    )
-
         for then in component.f_thens:
             if then.f_target.kind_name != "NullID" and not any(
                 then.f_target.text == c.f_identifier.text for c in components.f_components
@@ -951,7 +897,79 @@ def create_message_structure(
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
 
+        merge_component_aspects(
+            error, component_identifier, structure, *extract_aspect(component.f_aspects)
+        )
+        merge_component_condition(
+            component_identifier,
+            structure,
+            create_bool_expression(component.f_condition, filename)
+            if component.f_condition
+            else expr.TRUE,
+        )
+
     return structure
+
+
+def merge_component_aspects(
+    error: RecordFluxError,
+    component_identifier: ID,
+    structure: Sequence[model.Link],
+    size: Expr,
+    first: Expr,
+) -> None:
+    if first != expr.UNDEFINED or size != expr.UNDEFINED:
+        for l in (l for l in structure if l.target.identifier == component_identifier):
+            if first != expr.UNDEFINED:
+                if l.first == expr.UNDEFINED:
+                    l.first = first
+                else:
+                    error.append(
+                        f'first aspect of field "{component_identifier}"'
+                        " conflicts with previous"
+                        " specification",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        first.location,
+                    )
+                    error.append(
+                        "previous specification of first",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        l.first.location,
+                    )
+
+            if size != expr.UNDEFINED:
+                if l.size == expr.UNDEFINED:
+                    l.size = size
+                else:
+                    error.append(
+                        f'size aspect of field "{component_identifier}" conflicts with previous'
+                        " specification",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        size.location,
+                    )
+                    error.append(
+                        "previous specification of size",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        l.size.location,
+                    )
+
+
+def merge_component_condition(
+    component_identifier: ID,
+    structure: Sequence[model.Link],
+    condition: Expr,
+) -> None:
+    if condition != expr.TRUE:
+        for l in (l for l in structure if l.source.identifier == component_identifier):
+            l.condition = (
+                expr.And(condition, l.condition, location=l.condition.location)
+                if l.condition != expr.TRUE
+                else condition
+            )
 
 
 def create_message_aspects(

@@ -85,29 +85,29 @@ with Size => 16, Always_Valid;
 
 ## Message Type
 
-A message type is a collection components. Additional then clauses allow to define conditions and dependencies between components.
+A message type is a collection fields. Additional then clauses enable the definition of conditions and dependencies between fields.
 
 #### Syntax
 
 *message_type* ::= __type__ *name* __is__ *message_definition* __;__
 
-*message_definition* ::= __message__ [ *null_component* ] *component* { *component* } __end message__ [ __with__ *message_aspects* ] | __null message__
+*message_definition* ::= __message__ [ *null_field* ] *field* { *field* } __end message__ [ __with__ *message_aspects* ] | __null message__
 
-*component* ::= *component_name* __:__ *component_type*
-                   [__with__ *aspects*]
-                   [__if__ *condition*]
-                   { *then_clause* } __;__
+*field* ::= *field_name* __:__ *field_type*
+             [ __with__ *aspects* ]
+             [ __if__ *condition* ]
+             { *then_clause* } __;__
 
-*null_component* ::= __null__
-                         *then_clause* __;__
+*null_field* ::= __null__
+                    *then_clause* __;__
 
-*then_clause* ::= __then__ *component_name*
-                     [__with__ *aspects*]
-                     [__if__ *condition*]
+*then_clause* ::= __then__ *field_name*
+                   [ __with__ *aspects* ]
+                   [ __if__ *condition* ]
 
-*component_name* ::= *name* | __null__
+*field_name* ::= *name* | __null__
 
-*component_type* ::= *name*
+*field_type* ::= *name*
 
 *aspects* ::= *aspect* { __,__ *aspect* }
 
@@ -137,7 +137,7 @@ A message type is a collection components. Additional then clauses allow to defi
 
 #### Static Semantics
 
-A message type specifies the message format of a protocol. Each component corresponds to one field in a message. A then clause of a component allows to define which field follows. If no then clause is given, it is assumed that always the next component of the message follows. If no further component follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally a then clause can contain a condition under which the corresponding field follows and aspects which allow to define the size of the next field and the location of its first bit. These aspects can also be specified in the component. Each aspect can be specified either in the component or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the component containing the then clause). A condition can also be added to a component. A component condition is equivalent to adding a condition to all incoming then clauses. If a component condition as well as a condition at an incoming then clause exists, both conditions are combined by a logical conjunction. If required, a null component can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
+A message type specifies the message format of a protocol. A message is represented by a graph-based model. Each node in the graph corresponds to one field in a message. The links in the graph define the order of the fields. A link is represented by a then clause in the specification. If no then clause is given, it is assumed that always the next field of the message follows. If no further field follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally, a then clause can contain a condition under which the corresponding field follows and aspects which enable the definition of the size of the next field and the location of its first bit. These aspects can also be specified for the field directly. Each aspect can be specified either for the field or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the field containing the then clause). A condition can also be added for the field directly. A field condition is equivalent to adding a condition to all then clauses. If a field condition as well as a condition at a then clause exists, both conditions are combined by a logical conjunction. If required, a null field can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
 
 The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields must be always defined by a size aspect. Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
 
@@ -175,15 +175,15 @@ type Empty_Message is null message;
 
 ## Type Refinement
 
-A type refinement describes the relation of a component in a message type to another message type.
+A type refinement describes the relation of an opaque field in a message type to another message type.
 
 #### Syntax
 
-*type_refinement* ::= __for__ *refined_type_name* __use__ __(__ *refined_component_name* __=>__ *message_type_name* __)__ [ __if__ *condition* ] __;__
+*type_refinement* ::= __for__ *refined_type_name* __use__ __(__ *refined_field_name* __=>__ *message_type_name* __)__ [ __if__ *condition* ] __;__
 
 *refined_type_name* ::= *qualified_name*
 
-*refined_component_name* ::= *name*
+*refined_field_name* ::= *name*
 
 *message_type_name* ::= *qualified_name*
 
@@ -193,7 +193,7 @@ A type refinement describes the relation of a component in a message type to ano
 
 #### Static Semantics
 
-A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only components of type `Opaque` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to components of the refined type. To indicate that a refined component is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
+A type refinement describes under which condition a specific protocol message can be expected inside of a payload field. Only fields of type `Opaque` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to fields of the refined type. To indicate that a refined field is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
 
 #### Example
 
@@ -204,7 +204,7 @@ for Ethernet::Frame use (Payload => IPv4::Packet)
 
 ## Type Derivation
 
-A type derivation allows to create a new message type based on an existing message type.
+A type derivation enables the creation of a new message type based on an existing message type.
 
 #### Syntax
 
