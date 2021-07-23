@@ -57,16 +57,16 @@ class PyRFLX:
             try:
                 message_identifier = ID(identifier_str)
             except RecordFluxError as e:
-                raise PyRFLXError(f"{identifier_str} is not a valid identifier: {e}") from e
+                raise PyRFLXError(f'"{identifier_str}" is not a valid identifier: {e}') from e
 
             if len(message_identifier.parts) < 2:
-                raise PyRFLXError(f"{identifier_str} is not a valid identifier")
+                raise PyRFLXError(f'"{identifier_str}" is not a valid identifier')
 
-            if str(message_identifier.parent) in self.__packages.keys():
-                package = self[str(message_identifier.parent)]
-                package.set_checksum_functions(
-                    {str(message_identifier.name): checksum_field_function}
-                )
+            if str(message_identifier.parent) not in self.__packages.keys():
+                raise PyRFLXError(f'"{message_identifier}" is not a package in pyrflx')
+
+            package = self[str(message_identifier.parent)]
+            package.set_checksum_functions({str(message_identifier.name): checksum_field_function})
 
     def __getitem__(self, key: str) -> Package:
         return self.__packages[key]
