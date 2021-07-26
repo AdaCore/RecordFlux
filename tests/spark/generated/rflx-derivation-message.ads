@@ -46,6 +46,7 @@ is
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
+       and Buffer_Last < RFLX_Types.Index'Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Index'Last
        and First mod RFLX_Types.Byte'Size = 1
@@ -85,6 +86,7 @@ is
        not Ctx'Constrained
        and then Buffer /= null
        and then Buffer'Length > 0
+       and then Buffer'Last < RFLX_Types.Index'Last
        and then RFLX_Types.To_Index (First) >= Buffer'First
        and then RFLX_Types.To_Index (Last) <= Buffer'Last
        and then First <= Last + 1
@@ -107,13 +109,14 @@ is
 
    procedure Reset (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       not Ctx'Constrained
+       and Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
+       and Ctx.First = RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First)
+       and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx);
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
@@ -173,7 +176,7 @@ is
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
+       and Ctx.First = RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First)
        and Initialized (Ctx);
 
    function Has_Buffer (Ctx : Context) return Boolean;
@@ -510,6 +513,7 @@ private
      ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
+                and Buffer_Last < RFLX_Types.Index'Last
                 and First <= Last + 1
                 and Last < RFLX_Types.Bit_Index'Last
                 and First mod RFLX_Types.Byte'Size = 1

@@ -355,7 +355,7 @@ class Generator:
         unit += self.__create_initialize_procedure()
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
-        unit += self.__create_reset_procedure(message)
+        unit += self.__create_reset_procedure()
         unit += self.__create_restricted_reset_procedure(message)
         unit += self.__create_take_buffer_procedure()
         unit += self.__create_copy_procedure()
@@ -833,6 +833,7 @@ class Generator:
                                 Not(Constrained("Ctx")),
                                 NotEqual(Variable("Buffer"), NULL),
                                 Greater(Length("Buffer"), Number(0)),
+                                Less(Last("Buffer"), Last(const.TYPES_INDEX)),
                                 GreaterEqual(
                                     Call(const.TYPES_TO_INDEX, [Variable("First")]),
                                     First("Buffer"),
@@ -944,7 +945,19 @@ class Generator:
         )
 
     @staticmethod
-    def __create_reset_procedure(message: Message) -> UnitPart:
+    def __create_reset_procedure() -> UnitPart:
+        """
+        Reset the state and buffer bounds of the context.
+
+        Buffer bounds that were set during the initialization of the context will not be preserved.
+        The effect of this procedure is semantically equivalent to:
+
+        ```
+        Take_Buffer (Context, Buffer);
+        Initialize (Context, Buffer);
+        ```
+        """
+
         specification = ProcedureSpecification(
             "Reset",
             [InOutParameter(["Ctx"], "Context")],
@@ -956,7 +969,10 @@ class Generator:
                     specification,
                     [
                         Precondition(
-                            Call("Has_Buffer", [Variable("Ctx")]),
+                            And(
+                                Not(Constrained("Ctx")),
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                            )
                         ),
                         Postcondition(
                             And(
@@ -966,10 +982,22 @@ class Generator:
                                     for e in [
                                         Variable("Ctx.Buffer_First"),
                                         Variable("Ctx.Buffer_Last"),
-                                        Variable("Ctx.First"),
-                                        Variable("Ctx.Last"),
                                     ]
                                 ],
+                                Equal(
+                                    Variable("Ctx.First"),
+                                    Call(
+                                        const.TYPES * "To_First_Bit_Index",
+                                        [Variable("Ctx.Buffer_First")],
+                                    ),
+                                ),
+                                Equal(
+                                    Variable("Ctx.Last"),
+                                    Call(
+                                        const.TYPES * "To_Last_Bit_Index",
+                                        [Variable("Ctx.Buffer_Last")],
+                                    ),
+                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -981,8 +1009,14 @@ class Generator:
                     specification,
                     [],
                     [
-                        Assignment("Ctx.Cursors", context_cursors_initialization(message)),
-                        Assignment("Ctx.Message_Last", Sub(Variable("Ctx.First"), Number(1))),
+                        CallStatement(
+                            "Reset",
+                            [
+                                Variable("Ctx"),
+                                Call(const.TYPES_TO_FIRST_BIT_INDEX, [First("Ctx.Buffer")]),
+                                Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Ctx.Buffer")]),
+                            ],
+                        )
                     ],
                 )
             ],
@@ -1222,6 +1256,12 @@ class Generator:
 
     @staticmethod
     def __create_write_procedure() -> UnitPart:
+        """
+        Write data into the buffer of the context using an externally provided subprogram.
+
+        The complete buffer of the context can be overwritten. Buffer bounds that were set during
+        the initialization of the context will not be considered or preserved.
+        """
         specification = ProcedureSpecification(
             "Write",
             [InOutParameter(["Ctx"], "Context")],
@@ -1246,9 +1286,15 @@ class Generator:
                                     for e in [
                                         Variable("Ctx.Buffer_First"),
                                         Variable("Ctx.Buffer_Last"),
-                                        Variable("Ctx.First"),
                                     ]
                                 ],
+                                Equal(
+                                    Variable("Ctx.First"),
+                                    Call(
+                                        const.TYPES * "To_First_Bit_Index",
+                                        [Variable("Ctx.Buffer_First")],
+                                    ),
+                                ),
                                 Call("Initialized", [Variable("Ctx")]),
                             )
                         ),
@@ -1274,13 +1320,7 @@ class Generator:
                         CallStatement(
                             "Write",
                             [
-                                Indexed(
-                                    Variable("Ctx.Buffer.all"),
-                                    ValueRange(
-                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Last")]),
-                                    ),
-                                ),
+                                Variable("Ctx.Buffer.all"),
                                 Variable("Length"),
                             ],
                         ),
@@ -1292,13 +1332,7 @@ class Generator:
                                 LessEqual(
                                     Variable("Length"),
                                     Length(
-                                        Indexed(
-                                            Variable("Ctx.Buffer.all"),
-                                            ValueRange(
-                                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Last")]),
-                                            ),
-                                        )
+                                        Variable("Ctx.Buffer.all"),
                                     ),
                                 ),
                                 String(
@@ -1311,19 +1345,16 @@ class Generator:
                             "Reset",
                             [
                                 Variable("Ctx"),
-                                Variable("Ctx.First"),
+                                Call(
+                                    const.TYPES_TO_FIRST_BIT_INDEX, [Variable("Ctx.Buffer_First")]
+                                ),
                                 Call(
                                     const.TYPES_TO_LAST_BIT_INDEX,
                                     [
                                         Add(
                                             Call(
                                                 const.TYPES_LENGTH,
-                                                [
-                                                    Call(
-                                                        const.TYPES_TO_INDEX,
-                                                        [Variable("Ctx.First")],
-                                                    )
-                                                ],
+                                                [Variable("Ctx.Buffer_First")],
                                             ),
                                             Variable("Length"),
                                             -Number(1),
@@ -2515,8 +2546,6 @@ class Generator:
                             [
                                 Variable("Seq_Ctx"),
                                 Variable("Buffer"),
-                                Variable("Ctx.Buffer_First"),
-                                Variable("Ctx.Buffer_Last"),
                                 Variable("First"),
                                 Variable("Last"),
                             ],

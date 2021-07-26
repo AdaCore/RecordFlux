@@ -20,8 +20,7 @@ is
 
    procedure Reset (Ctx : in out Context) is
    begin
-      Ctx.Cursors := (F_Payload => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final));
-      Ctx.Message_Last := Ctx.First - 1;
+      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer'First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer'Last));
    end Reset;
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
@@ -52,9 +51,9 @@ is
    procedure Write (Ctx : in out Context) is
       Length : RFLX_Types.Length;
    begin
-      Write (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Last)), Length);
-      pragma Assert (Length <= Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Last))'Length, "Length <= Buffer'Length is not ensured by postcondition of ""Write""");
-      Reset (Ctx, Ctx.First, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (RFLX_Types.To_Index (Ctx.First)) + Length - 1));
+      Write (Ctx.Buffer.all, Length);
+      pragma Assert (Length <= Ctx.Buffer.all'Length, "Length <= Buffer'Length is not ensured by postcondition of ""Write""");
+      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Length - 1));
    end Write;
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
