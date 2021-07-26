@@ -2704,8 +2704,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 Variable(buffer_id(identifier)),
                 *(
                     [
-                        First(buffer_id(identifier)),
-                        Last(buffer_id(identifier)),
                         first
                         or Call(const.TYPES_TO_FIRST_BIT_INDEX, [First(buffer_id(identifier))]),
                         last or Call(const.TYPES_TO_FIRST_BIT_INDEX, [Last(buffer_id(identifier))]),

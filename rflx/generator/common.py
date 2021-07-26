@@ -500,6 +500,7 @@ def public_context_predicate() -> ada.Expr:
         ada.LessEqual(
             ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
         ),
+        ada.Less(ada.Variable("Buffer_Last"), ada.Last(const.TYPES_INDEX)),
         ada.LessEqual(ada.Variable("First"), ada.Add(ada.Variable("Last"), ada.Number(1))),
         ada.Less(ada.Variable("Last"), ada.Last(const.TYPES_BIT_INDEX)),
         ada.Equal(ada.Mod(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),

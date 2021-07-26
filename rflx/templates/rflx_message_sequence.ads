@@ -27,6 +27,7 @@ is
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
+       and Buffer_Last < RFLX_Types.Index'Last
        and First <= Last + 1
        and Last <= RFLX_Types.Bit_Length'Last - 1
        and First mod RFLX_Types.Byte'Size = 1
@@ -50,12 +51,12 @@ is
      Depends =>
        (Ctx => Buffer, Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        (not Ctx'Constrained
         and then Buffer /= null
-        and then Buffer'First = Buffer_First
-        and then Buffer'Last = Buffer_Last
+        and then Buffer'Length > 0
+        and then Buffer'Last < RFLX_Types.Index'Last
         and then RFLX_Types.To_Index (First) >= Buffer'First
         and then RFLX_Types.To_Index (Last) <= Buffer'Last
         and then First <= Last + 1
@@ -66,13 +67,13 @@ is
        (Buffer = null
         and Has_Buffer (Ctx)
         and Valid (Ctx)
-        and Ctx.Buffer_First = Buffer_First
-        and Ctx.Buffer_Last = Buffer_Last
+        and Ctx.Buffer_First = Buffer'First'Old
+        and Ctx.Buffer_Last = Buffer'Last'Old
         and Ctx.First = First
         and Ctx.Last = Last
         and Sequence_Last (Ctx) = First - 1),
      Depends =>
-       (Ctx => (Buffer, Buffer_First, Buffer_Last, First, Last), Buffer => null);
+       (Ctx => (Buffer, First, Last), Buffer => null);
 
    procedure Reset (Ctx : in out Context) with
      Pre =>
@@ -195,6 +196,7 @@ private
            and Buffer'Last = Buffer_Last))
         and RFLX_Types.To_Index (First) >= Buffer_First
         and RFLX_Types.To_Index (Last) <= Buffer_Last
+        and Buffer_Last < RFLX_Types.Index'Last
         and First <= Last + 1
         and Last <= RFLX_Types.Bit_Length'Last - 1
         and First - 1 <= Sequence_Last

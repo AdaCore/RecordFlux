@@ -2458,13 +2458,13 @@ def test_body(model: Model) -> None:
 
 
 def session_main(
-    message: Tuple[int, ...] = None,
+    messages: Sequence[Tuple[int, ...]] = None,
     read: bool = True,
     write: bool = True,
     context: Sequence[ada.ContextItem] = None,
     subprograms: Sequence[ada.SubprogramBody] = None,
 ) -> Mapping[str, str]:
-    assert (message and write) or not (message and write)
+    assert (messages and write) or not (messages and write)
 
     context = context or []
     subprograms = subprograms or []
@@ -2472,13 +2472,15 @@ def session_main(
     io_functions_body: List[ada.Declaration] = []
     parameters: List[ada.StrID] = []
 
-    if write and message:
+    if write and messages:
         has_data_func_spec = ada.FunctionSpecification("Has_Data", "Boolean")
         io_functions_decl.append(ada.SubprogramDeclaration(has_data_func_spec))
         io_functions_body.append(
             ada.ExpressionFunctionDeclaration(
                 has_data_func_spec,
-                ada.Less(ada.Variable("Written_Messages"), ada.Number(1)) if write else ada.FALSE,
+                ada.Less(ada.Variable("Written_Messages"), ada.Number(len(messages)))
+                if write
+                else ada.FALSE,
             )
         )
         parameters.append("Lib.Has_Data")
@@ -2510,9 +2512,35 @@ def session_main(
                 [
                     ada.UseTypeClause("RFLX" * const.TYPES_INDEX),
                     ada.ObjectDeclaration(
+                        ["None"],
+                        ada.Slice(
+                            ada.Variable("RFLX" * const.TYPES_BYTES),
+                            ada.Last("RFLX" * const.TYPES_INDEX),
+                            ada.First("RFLX" * const.TYPES_INDEX),
+                        ),
+                    ),
+                    ada.ObjectDeclaration(
                         ["M"],
                         "RFLX" * const.TYPES_BYTES,
-                        ada.Aggregate(*[ada.Number(b) for b in message]),
+                        ada.If(
+                            [
+                                (
+                                    ada.Equal(ada.Variable("Written_Messages"), ada.Number(i)),
+                                    ada.Aggregate(*[ada.Number(b) for b in message])
+                                    if len(message) > 1
+                                    else ada.NamedAggregate(
+                                        *[
+                                            (
+                                                ada.First("RFLX" * const.TYPES_INDEX),
+                                                ada.Number(message[0]),
+                                            )
+                                        ]
+                                    ),
+                                )
+                                for i, message in enumerate(messages)
+                            ],
+                            ada.Variable("None"),
+                        ),
                         constant=True,
                     ),
                 ],
@@ -2908,7 +2936,7 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((1, 0, 1, 0)),
+        complement=session_main([(1, 0, 1, 0)]),
         expected_output="State: Start\nWrite: 1 0 1 0\nState: Reply\nRead: 1 0 1 2\n",
         spark_units=["main", "lib", "rflx-p"],
     ),
@@ -2965,7 +2993,7 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((1, 0, 1, 0)),
+        complement=session_main([(1, 0, 1, 0)]),
         expected_output="State: Start\nState: Reply\nWrite: 1 0 1 0\nRead: 1 0 1 0\nState: Start\n",
         spark_units=["main", "lib", "rflx-p"],
     ),
@@ -3062,7 +3090,7 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((2, 0, 1, 20)),
+        complement=session_main([(2, 0, 1, 20)]),
         expected_output="State: Start\nWrite: 2 0 1 20\nState: Reply\nRead: 2 0 1 42\n",
         spark_units=["main", "lib", "rflx-p"],
     ),
@@ -3407,7 +3435,7 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((5, 0, 10, 1, 0, 1, 2, 0, 1, 0, 2, 3, 4)),
+        complement=session_main([(5, 0, 10, 1, 0, 1, 2, 0, 1, 0, 2, 3, 4)]),
         expected_output=(
             "State: Start\nWrite: 5 0 10 1 0 1 2 0 1 0 2 3 4\nState: Reply\nRead: 4 0 2 1 1\n"
         ),
@@ -3611,7 +3639,7 @@ end RFLX.P;
             ],
         ),
         complement=session_main(
-            (1, 0, 3, 0, 1, 2),
+            [(1, 0, 3, 0, 1, 2)],
             context=[
                 ada.WithClause("RFLX.Universal"),
                 ada.WithClause("RFLX.Fixed_Size.Simple_Message"),
@@ -3747,7 +3775,7 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((1, 0, 5, 1, 0, 2, 4, 2)),
+        complement=session_main([(1, 0, 5, 1, 0, 2, 4, 2)]),
         expected_output="State: Start\nWrite: 1 0 5 1 0 2 4 2\nState: Reply\nRead: 1 0 2 4 2\n",
         spark_units=["main", "lib", "rflx-p"],
     ),
@@ -3839,8 +3867,79 @@ end RFLX.P;
                 )
             ],
         ),
-        complement=session_main((1, 0, 1, 0)),
+        complement=session_main([(1, 0, 1, 0)]),
         expected_output="State: Start\nWrite: 1 0 1 0\nState: Reply\nRead: 1 0 1 2\n",
+        spark_units=["main", "lib", "rflx-p"],
+    ),
+    "session_reuse_of_message": GeneratorTestCase(
+        Model(
+            [*models.UNIVERSAL_MODEL.types],
+            [
+                Session(
+                    identifier="P::S",
+                    initial=ID("Start"),
+                    final=ID("End"),
+                    states=[
+                        State(
+                            "Start",
+                            transitions=[
+                                Transition(
+                                    target=ID("Reply"),
+                                    condition=expr.And(
+                                        expr.Equal(
+                                            expr.Valid("Message"),  # §S-S-T-VAT, §S-E-AT-V-V
+                                            expr.TRUE,  # §S-S-T-L
+                                        ),
+                                    ),
+                                ),
+                                Transition(
+                                    target=ID("End"),
+                                ),  # §S-S-T-N
+                            ],
+                            declarations=[],
+                            actions=[
+                                stmt.Read("Channel", expr.Variable("Message")),  # §S-S-A-RD-V
+                            ],
+                        ),
+                        State(
+                            "Reply",
+                            transitions=[
+                                Transition(
+                                    target=ID("Start"),
+                                    condition=expr.HasData("Channel"),  # §S-S-T-HDAT
+                                ),
+                                Transition(
+                                    target=ID("End"),
+                                ),  # §S-S-T-N
+                            ],
+                            exception_transition=Transition(target=ID("End")),  # §S-S-E
+                            declarations=[],
+                            actions=[
+                                stmt.Write("Channel", expr.Variable("Message")),  # §S-S-A-WR-V
+                            ],
+                        ),
+                        State("End"),  # §S-S-N
+                    ],
+                    declarations=[
+                        decl.VariableDeclaration(
+                            "Message", "Universal::Message"
+                        ),  # §S-D-V-T-M, §S-D-V-E-N
+                    ],
+                    parameters=[
+                        decl.ChannelDeclaration(
+                            "Channel", readable=True, writable=True
+                        ),  # §S-P-C-RW
+                    ],
+                    types=[*models.UNIVERSAL_MODEL.types],
+                )
+            ],
+        ),
+        complement=session_main([(0,), (1, 0, 1, 0), (1, 0, 2, 0, 3)]),
+        expected_output=(
+            "State: Start\nWrite: 0\nState: Reply\nRead: 0\n"
+            "State: Start\nWrite: 1 0 1 0\nState: Reply\nRead: 1 0 1 0\n"
+            "State: Start\nWrite: 1 0 2 0 3\nState: Reply\nRead: 1 0 2 0 3\n"
+        ),
         spark_units=["main", "lib", "rflx-p"],
     ),
 }

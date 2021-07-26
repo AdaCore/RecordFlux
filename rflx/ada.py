@@ -511,7 +511,7 @@ class String(Aggregate):
 
 
 class NamedAggregate(Expr):
-    def __init__(self, *elements: Tuple[Union[StrID, "ValueRange"], Expr]) -> None:
+    def __init__(self, *elements: Tuple[Union[StrID, Expr], Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
