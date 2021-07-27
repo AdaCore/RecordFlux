@@ -761,13 +761,13 @@ class MessageValue(TypeValue):
             first = self._get_first(field_name)
             assert first is not None
             field.first = first
-            self.set(field_name, value[current_pos_in_bitstring:])
+            self._set_parsed_value(field_name, value[current_pos_in_bitstring:])
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         def set_field_with_size(field_name: str, field_size: int) -> ty.Tuple[int, int]:
             assert isinstance(value, Bitstring)
             last_pos_in_bitstr = current_pos_in_bitstring = get_current_pos_in_bitstr(field_name)
-            self.set(
+            self._set_parsed_value(
                 field_name,
                 value[current_pos_in_bitstring : current_pos_in_bitstring + field_size],
             )
@@ -815,11 +815,8 @@ class MessageValue(TypeValue):
         self.__update_simplified_mapping(field)
         self.accessible_fields.append(field_name)
 
-    def set(
-        self,
-        field_name: str,
-        value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring],
-        checksum_calculation: bool = True,
+    def _set_checked(
+        self, field_name: str, value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring]
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -842,11 +839,6 @@ class MessageValue(TypeValue):
                     f"{[str(o.condition) for o in self._type.outgoing(Field(field_name))]}"
                     f" for field {field_name} have been met by the assigned value: {value!s}"
                 )
-
-        if self._skip_verification:
-            assert not isinstance(value, Bitstring)
-            self._set_unchecked(field_name, value)
-            return
 
         if field_name in self.accessible_fields:
             field = self._fields[field_name]
@@ -897,13 +889,32 @@ class MessageValue(TypeValue):
         self.__update_simplified_mapping()
         check_outgoing_condition_satisfied()
 
-        if checksum_calculation:
-            self._preset_fields(field_name)
-            for checksum in self._checksums.values():
-                if (
-                    not self._fields[checksum.field_name].set or checksum.calculated
-                ) and self._is_checksum_settable(checksum):
-                    self._set_checksum(checksum)
+    def set(
+        self,
+        field_name: str,
+        value: ty.Union[bytes, int, str, ty.Sequence[TypeValue]],
+    ) -> None:
+        if self._skip_verification:
+            self._set_unchecked(field_name, value)
+            return
+        self._set_checked(field_name, value)
+        self._preset_fields(field_name)
+        for checksum in self._checksums.values():
+            if (
+                not self._fields[checksum.field_name].set or checksum.calculated
+            ) and self._is_checksum_settable(checksum):
+                self._fields[checksum.field_name].typeval.assign(0)
+                checksum.calculated = True
+                checksum_value = self._calculate_checksum(checksum)
+                self._set_checked(checksum.field_name, checksum_value)
+
+    def _set_parsed_value(
+        self,
+        field_name: str,
+        value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring],
+    ) -> None:
+        self._set_checked(field_name, value)
+        self._preset_fields(field_name)
 
     def _preset_fields(self, fld: str) -> None:
         assert not self._skip_verification
@@ -1025,12 +1036,6 @@ class MessageValue(TypeValue):
             self._is_checksum_settable(checksum)
             checksum_value = self._calculate_checksum(checksum)
             self._fields[checksum.field_name].typeval.assign(checksum_value)
-
-    def _set_checksum(self, checksum: "MessageValue.Checksum") -> None:
-        self._fields[checksum.field_name].typeval.assign(0)
-        checksum.calculated = True
-        checksum_value = self._calculate_checksum(checksum)
-        self.set(checksum.field_name, checksum_value, checksum_calculation=False)
 
     def _calculate_checksum(
         self, checksum: "MessageValue.Checksum"
