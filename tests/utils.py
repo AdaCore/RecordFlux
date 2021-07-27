@@ -169,7 +169,9 @@ end Test;
             """
         )
 
-    generator = Generator(model, prefix if prefix else "RFLX", ignore_unsupported_checksum=True)
+    generator = Generator(
+        model, prefix if prefix else "RFLX", debug=True, ignore_unsupported_checksum=True
+    )
     generator.write_units(tmp_path)
     generator.write_library_files(tmp_path)
     generator.write_top_level_package(tmp_path)
