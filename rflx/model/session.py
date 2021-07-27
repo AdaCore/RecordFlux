@@ -279,7 +279,10 @@ class Session(AbstractSession):
     def __validate_state_reachability(self) -> None:
         inputs: Dict[ID, List[ID]] = {}
         for s in self.states:
-            for t in s.transitions:
+            for t in [
+                *s.transitions,
+                *([s.exception_transition] if s.exception_transition else []),
+            ]:
                 if t.target in inputs:
                     inputs[t.target].append(s.identifier)
                 else:
