@@ -561,7 +561,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     Variable(context_id(d.identifier) * "Buffer_First"),
                                     First(const.TYPES_INDEX),
                                 ),
-                                Equal(
+                                Equal(  # ISSUE: Componolit/RecordFlux#713
                                     Variable(context_id(d.identifier) * "Buffer_Last"),
                                     Add(First(const.TYPES_INDEX), Number(4095)),
                                 ),
@@ -1186,7 +1186,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     for s in [
                                         expr.Size(v).substituted(self._substitution()).ada_expr()
                                     ]
-                                    for e in [
+                                    for e in [  # ISSUE: Componolit/RecordFlux#713
                                         LessEqual(s, Number(4096 * 8)),
                                         Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
                                     ]
@@ -2038,7 +2038,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         """
         Ensure that sequence is valid.
 
-        A deffered exception is raised in case of an invalid sequence.
+        A deferred exception is raised in case of an invalid sequence.
         """
         # ISSUE: Componlit/RecordFlux#569
         return IfStatement(
@@ -2371,7 +2371,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler = None,
     ) -> IfStatement:
-        """Might raises a deferred exception."""
+        """A deferred exception might be raised."""
         # ISSUE: Componolit/RecordFlux#577
         return self._if_valid_sequence(
             sequence_type,
@@ -2467,7 +2467,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         selector: expr.Expr,
         condition: expr.Expr,
     ) -> While:
-        """Might raises a deferred exception."""
+        """A deferred exception might be raised."""
         assert not isinstance(selector, expr.MessageAggregate)
 
         assert isinstance(target_type.element, (rty.Integer, rty.Enumeration, rty.Message))
@@ -2681,7 +2681,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     initialization
                     if initialization
                     else NamedAggregate(
-                        (
+                        (  # ISSUE: Componolit/RecordFlux#713
                             ValueRange(
                                 First(const.TYPES_INDEX),
                                 Add(First(const.TYPES_INDEX), Number(4095)),
@@ -2715,7 +2715,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
 
     def _copy_to_buffer(self, type_: ID, source_context: ID, target_buffer: ID) -> IfStatement:
-        """Might raises a deferred exception."""
+        """A deferred exception might be raised."""
         self._session_context.used_types_body.add(const.TYPES_LENGTH)
         return IfStatement(
             [
