@@ -5,15 +5,11 @@ package Channel with
   SPARK_Mode
 is
 
-   Network : Boolean with Volatile;
-
-   Send_Socket : GNAT.Sockets.Socket_Type;
-
-   Receive_Socket : GNAT.Sockets.Socket_Type;
+   Socket : GNAT.Sockets.Socket_Type;
 
    procedure Send (Buffer : RFLX.RFLX_Builtin_Types.Bytes) with
       Global =>
-         (Output => Network);
+         (Output => Socket);
 
    use type RFLX.RFLX_Builtin_Types.Length;
 
