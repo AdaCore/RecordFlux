@@ -400,7 +400,7 @@ DUMMY_SESSION = Session(
 def test_session_create_formal_parameters(
     parameter: decl.FormalDeclaration, expected: Sequence[ada.FormalDeclaration]
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     assert session_generator._create_formal_parameters([parameter]) == expected
 
@@ -482,7 +482,7 @@ class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
 def test_session_create_formal_parameters_error(
     parameter: decl.FormalDeclaration, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -721,7 +721,7 @@ def test_session_create_formal_parameters_error(
 def test_session_evaluate_declarations(
     declaration: decl.BasicDeclaration, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     assert session_generator._evaluate_declarations([declaration], session_global) == expected
 
@@ -749,7 +749,7 @@ def test_session_evaluate_declarations(
 def test_session_evaluate_declarations_error(
     declaration: decl.BasicDeclaration, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -1008,7 +1008,7 @@ def test_session_declare(
     session_global: bool,
     expected: EvaluatedDeclarationStr,
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     result = session_generator._declare(ID("X"), type_, expression, constant, session_global)
     assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
@@ -1040,7 +1040,7 @@ def test_session_declare(
 def test_session_declare_error(
     type_: rty.Type, expression: expr.Expr, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -1801,7 +1801,7 @@ class UnknownStatement(stmt.Statement):
     ],
 )
 def test_session_state_action(action: stmt.Statement, expected: str) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     assert (
         "\n".join(
@@ -1836,7 +1836,7 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
 def test_session_state_action_error(
     action: stmt.Statement, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2127,7 +2127,7 @@ def test_session_assign_error(
     error_type: Type[BaseError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2165,7 +2165,7 @@ def test_session_assign_error(
 def test_session_append_error(
     append: stmt.Append, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2189,7 +2189,7 @@ def test_session_append_error(
     ],
 )
 def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_msg: str) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2213,7 +2213,7 @@ def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_
 def test_session_write_error(
     write: stmt.Write, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2334,7 +2334,7 @@ def test_session_write_error(
     ],
 )
 def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     assert expression.substituted(session_generator._substitution()) == expected
 
@@ -2362,7 +2362,7 @@ def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> Non
 def test_session_substitution_error(
     expression: expr.Expr, error_type: Type[BaseError], error_msg: str
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
         expression.substituted(session_generator._substitution())
@@ -2415,7 +2415,7 @@ def test_session_substitution_equality(
     right: expr.Expr,
     expected: expr.Expr,
 ) -> None:
-    session_generator = SessionGenerator(DUMMY_SESSION)
+    session_generator = SessionGenerator(DUMMY_SESSION, debug=True)
     # pylint: disable = protected-access
     assert relation(left, right).substituted(session_generator._substitution()) == expected
     assert relation(right, left).substituted(session_generator._substitution()) == expected

@@ -52,6 +52,11 @@ def main(argv: List[str]) -> Union[int, str]:
         "-d", "--directory", help="output directory", default=".", type=Path
     )
     parser_generate.add_argument(
+        "--debug",
+        help="enable adding of debug output to generated code",
+        action="store_true",
+    )
+    parser_generate.add_argument(
         "--ignore-unsupported-checksum",
         help="ignore checksum aspects during code generation",
         action="store_true",
@@ -155,6 +160,7 @@ def generate(args: argparse.Namespace) -> None:
         model,
         args.prefix,
         reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
+        debug=args.debug,
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
     )
     generator.write_units(args.directory)

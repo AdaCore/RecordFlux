@@ -140,16 +140,18 @@ log = logging.getLogger(__name__)
 NULL = Variable("null")
 
 
-class Generator:
+class Generator:  # pylint: disable = too-many-instance-attributes
     def __init__(
         self,
         model: Model,
         prefix: str = "",
         reproducible: bool = False,
+        debug: bool = False,
         ignore_unsupported_checksum: bool = False,
     ) -> None:
         self.__prefix = str(ID(prefix)) if prefix else ""
         self.__reproducible = reproducible
+        self.__debug = debug
         self.__ignore_unsupported_checksum = ignore_unsupported_checksum
         self.__parser = ParserGenerator(self.__prefix)
         self.__serializer = SerializerGenerator(self.__prefix)
@@ -237,7 +239,7 @@ class Generator:
             self.__create_session(s)
 
     def __create_session(self, session: Session) -> None:
-        session_generator = SessionGenerator(session, self.__prefix, debug=True)
+        session_generator = SessionGenerator(session, self.__prefix, debug=self.__debug)
         unit = self.__create_unit(
             session_generator.unit_identifier,
             session_generator.declaration_context,

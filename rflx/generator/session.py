@@ -130,7 +130,7 @@ class ExceptionHandler:
 
 
 class SessionGenerator:  # pylint: disable = too-many-instance-attributes
-    def __init__(self, session: model.Session, prefix: str = "", debug: bool = True) -> None:
+    def __init__(self, session: model.Session, prefix: str = "", debug: bool = False) -> None:
         self._session = session
         self._prefix = prefix
         self._debug = debug

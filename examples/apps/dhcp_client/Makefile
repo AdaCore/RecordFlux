@@ -21,7 +21,7 @@ clean_proof:
 	rm -rf proof/*
 
 $(src): $(specs)
-	rflx generate -d generated $^
+	rflx generate -d generated --debug $^
 
 $(bin): $(src)  $(wildcard src/*)
 	gprbuild -Pdhcp_client
