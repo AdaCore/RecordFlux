@@ -1,4 +1,6 @@
-== Language Reference
+= Language Reference
+:toc:
+:numbered:
 
 The specification language describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in *bold*. References to syntactic categories are xref:none[highlighted]. To convey some semantic information the name of some syntactic categories are prefixed by a non-highlighted part. Syntactic categories with prefixes are equivalent to the category without the prefix. The following basic elements are used to describe the syntax of the language:
 
@@ -18,9 +20,9 @@ The type system is inspired by Ada, but differs in some details. In contrast to 
 
 Some parts of this document are marked by tags of the form [ §A-B-C ]. These tags are added for testing purposes and can be ignored by the reader.
 
-=== Scalar Types
+== Scalar Types
 
-==== Integer Type
+=== Integer Type
 
 An integer type is used to represent numbers. Two types of integers are supported: modular type and range type.
 
@@ -58,7 +60,7 @@ type Address is mod 2**48
 type Type_Length is range 46 .. 2**16 - 1 with Size => 16
 ----
 
-==== Enumeration Type
+=== Enumeration Type
 
 An enumeration type represents a value out of a list of possible values.
 
@@ -102,13 +104,13 @@ type Ether_Type is
 with Size => 16, Always_Valid
 ----
 
-==== Boolean
+=== Boolean
 
 `Boolean` is a built-in enumeration type with the literals `False => 0` and `True => 1` with a size of 1 bit.
 
-=== Message Type
+== Message Type
 
-A message type is a collection of fields. Additional then clauses enable the definition of conditions and dependencies between fields.
+A message type is a collection of fields. Additional xref:syntax-then_clause[then clauses] enable the definition of conditions and dependencies between fields.
 
 *Syntax*
 
@@ -207,7 +209,7 @@ type Frame is
 type Empty_Message is null message
 ----
 
-=== Type Refinement
+== Type Refinement
 
 A type refinement describes the relation of an opaque field in a message type to another message type.
 
@@ -224,14 +226,14 @@ refined_type_name ::= xref:syntax-qualified_name[qualified_name]
 [[syntax-message_type_name]]
 message_type_name ::= xref:syntax-qualified_name[qualified_name]
 [[syntax-qualified_name]]
-qualified_name ::= xref:syntax-name[name] { **.** xref:syntax-name[name] }
+qualified_name ::= xref:syntax-name[name] { **::** xref:syntax-name[name] }
 [[syntax-condition]]
 condition ::= xref:syntax-boolean_expression[boolean_expression]
 ----
 
 *Static Semantics*
 
-A type refinement describes under which condition a specific message can be expected inside of a payload field. Only fields of type `Opaque` can be refined. Types defined in other packages are referenced by a qualified name in the form package_name.message_type_name. The condition can refer to fields of the refined type. To indicate that a refined field is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
+A type refinement describes under which condition a specific message can be expected inside of a payload field. Only fields of type `Opaque` can be refined. Types defined in other packages are referenced by a qualified name in the form `Package_Name::Message_Type_Name`. The condition can refer to fields of the refined type. To indicate that a refined field is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
 
 *Example*
 
@@ -241,7 +243,7 @@ for Ethernet::Frame use (Payload => IPv4::Packet)
    if Ether_Type = Ethernet::IPV4
 ----
 
-=== Type Derivation
+== Type Derivation
 
 A type derivation enables the creation of a new message type based on an existing message type.
 
@@ -266,7 +268,7 @@ A derived message type derives its specification from a base type. Type refineme
 type Specific_Extension is new Extension
 ----
 
-=== Sequence Type
+== Sequence Type
 
 A sequence type represents a list of similar elements.
 
@@ -289,7 +291,7 @@ A sequence consists of a number of elements with similar type. Scalar types as w
 type Options is sequence of Option
 ----
 
-=== Protocol Sessions [§S]
+== Protocol Sessions [§S]
 
 A session defines the dynamic behavior of a protocol using a finite state machine. The external interface of a session is defined by parameters. The initial and final state is defined by aspects. The declaration part enables the declaration of session global variables. The main part of a session definition are the state definitions.
 
@@ -307,6 +309,7 @@ session ::=
    *is*
     { xref:syntax-session_declaration[session_declaration] }
    *begin*
+      xref:syntax-state[state]
     { xref:syntax-state[state] }
    *end* xref:syntax-name[name]
 ----
@@ -345,7 +348,7 @@ begin
 end S
 ----
 
-==== Session Parameters [§S-P]
+=== Session Parameters [§S-P]
 
 Private types, functions and channels can be defined as session parameters.
 
@@ -357,7 +360,7 @@ Private types, functions and channels can be defined as session parameters.
 session_parameter ::= ( xref:syntax-private_type_declaration[private_type_declaration] | xref:syntax-function_declaration[function_declaration] | xref:syntax-channel_declaration[channel_declaration] ) *;*
 ----
 
-===== Private Types [§S-P-P]
+==== Private Types [§S-P-P]
 
 A private type represents an externally defined type.
 
@@ -376,7 +379,7 @@ private_type_declaration ::= *type* xref:syntax-name[name] *is private*
 type Hash is private
 ----
 
-===== Functions [§S-P-F]
+==== Functions [§S-P-F]
 
 Functions enable the execution of externally defined code.
 
@@ -386,9 +389,9 @@ Functions enable the execution of externally defined code.
 ----
 [[syntax-function_declaration]]
 function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-function_parameter[function_parameter] { **,** xref:syntax-function_parameter[function_parameter] } **)** ]
-----
 [[syntax-function_parameter]]
 function_parameter ::= parameter_xref:syntax-name[name] *:* type_xref:syntax-name[name]
+----
 
 *Static Semantics*
 
@@ -419,7 +422,7 @@ For each function declaration in the session specification a formal procedure de
 with function Decrypt (Key_Update_Message : Key_Update_Message; Sequence_Number : Sequence_Number; Encrypted_Record : Opaque) return TLS_Inner_Plaintext
 ----
 
-===== Channels [§S-P-C]
+==== Channels [§S-P-C]
 
 Channels provide a way for communicating with other systems using messages.
 
@@ -448,7 +451,7 @@ Properties of channels:
 Data_Channel : Channel with Readable, Writable
 ----
 
-==== Declarations [§S-D]
+=== Declarations [§S-D]
 
 Variables and renamings can be globally declared (i.e. for the scope of the complete session).
 
@@ -460,7 +463,7 @@ Variables and renamings can be globally declared (i.e. for the scope of the com
 session_declaration ::= ( xref:syntax-variable_declaration[variable_declaration] | xref:syntax-renaming_declaration[renaming_declaration] ) **;**
 ----
 
-===== Variable Declaration [§S-D-V]
+==== Variable Declaration [§S-D-V]
 
 A declared variable must have a type and can be optionally initialized using an expression.
 
@@ -510,7 +513,7 @@ Initialization expressions [§S-D-V-E]:
 Error_Sent : Boolean := False
 ----
 
-===== Renaming Declaration [§S-D-R]
+==== Renaming Declaration [§S-D-R]
 
 *Syntax*
 
@@ -527,7 +530,7 @@ renaming_declaration ::= xref:syntax-name[name] *:* message_type_xref:syntax-nam
 Client_Hello_Message : TLS_Handshake::Client_Hello renames Client_Hello_Handshake_Message.Payload
 ----
 
-==== States [§S-S]
+=== States [§S-S]
 
 A state defines the to be executed actions and the transitions to subsequent states.
 
@@ -593,7 +596,7 @@ end A
 state B is null state
 ----
 
-===== State Declarations [§S-S-D]
+==== State Declarations [§S-S-D]
 
 Variable declarations [§S-S-D-V] and § renaming declarations [§S-S-D-R] in a state have a state-local scope, i.e., local declarations cannot be accessed from other states.
 
@@ -638,7 +641,7 @@ Initialization expressions [§S-S-D-V-E]:
 * Conversions [§S-S-D-V-E-CV]
 ====
 
-===== State Transitions [§S-S-T]
+==== State Transitions [§S-S-T]
 
 State transitions define the conditions for the change to subsequent states. An arbitrary number of conditional transitions can be defined. The last transition in a state definition is the default transition, which does not contain any condition.
 
@@ -689,7 +692,7 @@ then B
    if Z = True and G (F) = True
 ----
 
-===== State Actions [§S-S-A]
+==== State Actions [§S-S-A]
 
 The state actions are executed after entering a state.
 
@@ -701,7 +704,7 @@ The state actions are executed after entering a state.
 state_action ::= ( xref:syntax-assignment[assignment] | xref:syntax-append[append] | xref:syntax-extend[extend] | xref:syntax-reset[reset] | xref:syntax-read[read] | xref:syntax-write[write] ) *;*
 ----
 
-====== Assignment Statements [§S-S-A-A]
+===== Assignment Statements [§S-S-A-A]
 
 An assignment sets the value of variable.
 
@@ -747,7 +750,7 @@ An assignment always creates a copy of the original object.
 Error_Sent := True
 ----
 
-====== Append Attribute Statements [§S-S-A-AP]
+===== Append Attribute Statements [§S-S-A-AP]
 
 An element is added to the end of a sequence using the Append attribute.
 
@@ -793,7 +796,7 @@ Appending an element to a sequence might lead to an exception transition.
 Parameter_Request_List'Append (DHCP::Domain_Name_Option)
 ----
 
-====== Extend Attribute Statements [§S-S-A-EX]
+===== Extend Attribute Statements [§S-S-A-EX]
 
 The Extend attributes adds a sequence of elements to the end of a sequence.
 
@@ -839,7 +842,7 @@ Extending a sequence might lead to an exception transition.
 Parameter_Request_List'Extend (Parameters)
 ----
 
-====== Reset Attribute Statements [§S-S-A-RS]
+===== Reset Attribute Statements [§S-S-A-RS]
 
 The state of a message or sequence can be cleared using the Reset attribute.
 
@@ -885,7 +888,7 @@ The existing state of a message or sequence is removed (and the corresponding bu
 Message'Reset
 ----
 
-====== Read Attribute Statements [§S-S-A-RD]
+===== Read Attribute Statements [§S-S-A-RD]
 
 The read attribute statement is used to retrieve a message from a channel.
 
@@ -927,7 +930,7 @@ Expressions:
 Data_Channel'Read (Message)
 ----
 
-====== Write Attribute Statements [§S-S-A-WR]
+===== Write Attribute Statements [§S-S-A-WR]
 
 A message can be sent through a channel using a write attribute statement.
 
@@ -973,7 +976,7 @@ Writing an invalid message leads to an exception transition. This behavior will 
 Data_Channel'Write (Message)
 ----
 
-==== Expressions [§S-E]
+=== Expressions [§S-E]
 
 *Syntax*
 
@@ -983,7 +986,7 @@ Data_Channel'Write (Message)
 expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | xref:syntax-mathematical_expression[mathematical_expression] | xref:syntax-boolean_expression[boolean_expression] | xref:syntax-message_aggregate[message_aggregate] | xref:syntax-aggregate[aggregate] | xref:syntax-attribute_reference[attribute_reference] | xref:syntax-selected[selected] | xref:syntax-comprehension[comprehension] | xref:syntax-binding[binding] | xref:syntax-quantified_expression[quantified_expression] | xref:syntax-call[call] | xref:syntax-conversion[conversion]
 ----
 
-===== Literals
+==== Literals
 
 *Syntax*
 
@@ -993,7 +996,7 @@ expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | x
 literal ::= xref:syntax-name[name] | xref:syntax-number[number]
 ----
 
-===== Variables
+==== Variables
 
 *Syntax*
 
@@ -1003,7 +1006,7 @@ literal ::= xref:syntax-name[name] | xref:syntax-number[number]
 variable ::= xref:syntax-name[name]
 ----
 
-===== Message Aggregates
+==== Message Aggregates
 
 *Syntax*
 
@@ -1035,7 +1038,7 @@ TLS_Record::TLS_Record'(Tag => TLS_Record::Alert, Legacy_Record_Version => TLS_R
 Null_Message'(null message)
 ----
 
-===== Aggregates [§S-E-A]
+==== Aggregates [§S-E-A]
 
 An aggregate is a collection of elements.
 
@@ -1089,7 +1092,7 @@ Expressions [§S-E-A-E]:
 []
 ----
 
-===== Attribute Expressions [§S-E-AT]
+==== Attribute Expressions [§S-E-AT]
 
 *Syntax*
 
@@ -1211,7 +1214,7 @@ The use of the Opaque attribute on an invalid message or the use of the Head att
 Message'Valid
 ----
 
-===== Selected Expressions [§S-E-S]
+==== Selected Expressions [§S-E-S]
 
 The Selected expression is used to get a value of a message field.
 
@@ -1248,7 +1251,7 @@ Expressions:
 
 *Dynamic Semantics*
 
-An access to an invalid message field leads to an exception transition. This behavior will change in the future (cf. https://github.com/Componolit/RecordFlux/issues/569[#569]).
+Accesses to message fields that were detected as invalid during parsing lead to an exception transition. This behavior will change in the future (cf. https://github.com/Componolit/RecordFlux/issues/569[#569]).
 
 *Example*
 
@@ -1257,7 +1260,7 @@ An access to an invalid message field leads to an exception transition. This beh
 Ethernet_Frame.Payload
 ----
 
-===== List Comprehensions [§S-E-LC]
+==== List Comprehensions [§S-E-LC]
 
 A list comprehension provides a way to create a new sequence based on an exisiting sequence.
 
@@ -1289,7 +1292,7 @@ comprehension ::= *[* *for* xref:syntax-name[name] *in* iterable_xref:syntax-exp
 
 *Dynamic Semantics*
 
-An access to an invalid element in iterable__expression_ leads to an exception transition. This behavior will change in the future (cf. https://github.com/Componolit/RecordFlux/issues/569[#569]).
+An access to an invalid element in iterable_xref:syntax-expression[expression] leads to an exception transition. This behavior will change in the future (cf. https://github.com/Componolit/RecordFlux/issues/569[#569]).
 
 *Example*
 
@@ -1298,7 +1301,7 @@ An access to an invalid element in iterable__expression_ leads to an exception t
 [for O in Offer.Options => O.DHCP_Message_Type when O.Code = DHCP::DHCP_Message_Type_Option]
 ----
 
-===== Bindings [§S-E-B]
+==== Bindings [§S-E-B]
 
 A binding can be used to name a subexpression and enables the use of a subexpression multiple times without the need for duplicating the expression or declaring a separate variable.
 
@@ -1349,7 +1352,7 @@ TLS_Alert::Alert'(Level => Level, Description => Description)
       Description = GreenTLS_Alert_Message.Description
 ----
 
-===== Quantified Expressions [§S-E-Q]
+==== Quantified Expressions [§S-E-Q]
 
 Quantified expressions enable reasoning about properties of sequences.
 
@@ -1411,7 +1414,7 @@ Predicate expressions [§S-E-Q-P]:
 for all E in Server_Hello_Message.Extensions => E.Tag /= TLS_Handshake::ET_Supported_Versions
 ----
 
-===== Calls [§S-E-CL]
+==== Calls [§S-E-CL]
 
 All functions which are declared in the session parameters can be called.
 
@@ -1454,7 +1457,7 @@ Argument expressions:
 Decrypt (Key_Update_Message, Sequence_Number, TLS_Record_Message.Encrypted_Record)
 ----
 
-===== Conversions [§S-E-CV]
+==== Conversions [§S-E-CV]
 
 An opaque field of a message can be converted to a message.
 
@@ -1502,7 +1505,7 @@ An invalid condition of a refinement leads to an exception transition. This beha
 Key_Update_Message (Handshake_Control_Message.Data)
 ----
 
-=== Package
+== Package
 
 A package is used to structure a specification.
 
@@ -1566,10 +1569,42 @@ package Ethernet is
                if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
       end message;
 
+   generic
+      Input : Channel with Readable;
+      Output : Channel with Writable;
+   session Validator with
+      Initial => Validate,
+      Final => Error
+   is
+      Frame : Ethernet::Frame;
+   begin
+      state Validate
+      is
+      begin
+         Input'Read (Frame);
+      transition
+         then Forward
+            if Frame'Valid
+         then Validate
+      end Validate;
+
+      state Forward
+      is
+      begin
+         Output'Write (Frame);
+      transition
+         then Validate
+      exception
+         then Error
+      end Forward;
+
+      state Error is null state;
+   end Validator;
+
 end Ethernet;
 ----
 
-=== Context Clause
+== Context Clause
 
 The context clause is used to specify the relation to other packages and consists of a list of with clauses.
 
@@ -1578,7 +1613,7 @@ The context clause is used to specify the relation to other packages and consist
 [subs="+macros,quotes"]
 ----
 [[syntax-context]]
-context ::= { *with* xref:syntax-package[package]xref:syntax-name[name] *;* }
+context ::= { *with* package_xref:syntax-name[name] *;* }
 ----
 
 *Static Semantics*
@@ -1593,7 +1628,7 @@ with Ethernet;
 with IPv4;
 ----
 
-=== File
+== File
 
 A RecordFlux specification file is recognized by the file extension `.rflx`. Each specification file contains exactly one package. The file name must match the package name in lower case characters.
 
