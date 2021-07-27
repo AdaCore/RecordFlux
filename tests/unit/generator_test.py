@@ -2648,7 +2648,7 @@ def session_main(
         [],
         [
             ada.CallStatement(
-                "Ada.Text_IO.Put", [ada.BinAdd(ada.Variable("Prefix"), ada.String(":"))]
+                "Ada.Text_IO.Put", [ada.Concatenation(ada.Variable("Prefix"), ada.String(":"))]
             ),
             ada.ForOf(
                 "B",

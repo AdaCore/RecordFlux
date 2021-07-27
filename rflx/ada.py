@@ -239,7 +239,7 @@ class Add(AssExpr):
         return " + "
 
 
-class BinAdd(AssExpr):
+class Concatenation(AssExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.BINARY_ADDING_OPERATOR
