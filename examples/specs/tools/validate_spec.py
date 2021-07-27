@@ -470,7 +470,7 @@ class OutputWriter:
         traceback: Optional[TracebackType],
     ) -> None:
         if self.file is not None:
-            self.file.write("\n]")
+            self.file.write("\n]\n")
             self.file.close()
 
     def write_result(self, validation_result: ValidationResult) -> None:

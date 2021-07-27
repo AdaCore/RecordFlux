@@ -456,7 +456,7 @@ def test_validation_coverage_threshold_invalid() -> None:
     )
 
 
-def test_cli_checksum() -> None:
+def test_cli_checksum_positive() -> None:
     assert (
         cli(
             [
@@ -467,11 +467,34 @@ def test_cli_checksum() -> None:
                 "Checksum_Message::Message",
                 "-v",
                 "tests/validation_tool/checksum_message/valid",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
                 "-f",
                 "tests.validation_tool.checksum_message_checksum_function",
             ]
         )
         == 0
+    )
+
+
+def test_cli_checksum_negative() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/checksum_message.rflx",
+                "-m",
+                "Checksum_Message::Message",
+                "-v",
+                "tests/validation_tool/checksum_message/all",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
+                "-f",
+                "tests.validation_tool.checksum_message_checksum_function",
+            ]
+        )
+        == "1 messages were classified incorrectly"
     )
 
 
@@ -578,6 +601,51 @@ def test_cli_no_callable_checksum() -> None:
             ]
         )
         == 'The value at key "Checksum" is not a callable checksum function.'
+    )
+
+
+def test_cli_no_checksum_func_dict() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/checksum_message.rflx",
+                "-m",
+                "Checksum_Message::Message",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
+                "-v",
+                "tests/validation_tool/checksum_message/valid",
+                "-f",
+                "tests.validation_tool.missing_checksum_func_dict",
+                "--no-verification",
+            ]
+        )
+        == "The value at key Checksum_Message::Message is not a dict."
+    )
+
+
+def test_cli_no_cannot_set_checksum_to_pyrflx() -> None:
+    assert (
+        cli(
+            [
+                "validate_spec",
+                "-s",
+                "tests/validation_tool/checksum_message.rflx",
+                "-m",
+                "Checksum_Message::Message",
+                "-i",
+                "tests/validation_tool/checksum_message/invalid",
+                "-v",
+                "tests/validation_tool/checksum_message/valid",
+                "-f",
+                "tests.validation_tool.message_not_in_package",
+                "--no-verification",
+            ]
+        )
+        == "Could not set checksum function to pyrflx: "
+        'pyrflx: error: "Package" is not a message in Checksum_Message'
     )
 
 
