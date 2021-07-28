@@ -79,7 +79,7 @@ package DHCP_Client is
          Offer_Message_Type : DHCP::DHCP_Message_Type;
       begin
          Channel'Read (Offer);
-         Offer_Message_Types := [for O in Offer.Options => O.DHCP_Message_Type when O'Valid and O.Code = DHCP::DHCP_Message_Type_Option];
+         Offer_Message_Types := [for O in Offer.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
          Offer_Message_Type := Offer_Message_Types'Head;
       transition
          then Send_Request
@@ -140,7 +140,7 @@ package DHCP_Client is
          Ack_Message_Type : DHCP::DHCP_Message_Type;
       begin
          Channel'Read (Ack);
-         Ack_Message_Types := [for O in Ack.Options => O.DHCP_Message_Type when O'Valid and O.Code = DHCP::DHCP_Message_Type_Option];
+         Ack_Message_Types := [for O in Ack.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
          Ack_Message_Type := Ack_Message_Types'Head;
       transition
          then Success

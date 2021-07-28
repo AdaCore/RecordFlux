@@ -1301,7 +1301,7 @@ An access to an invalid element in iterable_xref:syntax-expression[expression] l
 
 [source,ada,rflx,extended_primary]
 ----
-[for O in Offer.Options => O.DHCP_Message_Type when O.Code = DHCP::DHCP_Message_Type_Option]
+[for O in Offer.Options if O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type]
 ----
 
 ==== Bindings [§S-E-B]

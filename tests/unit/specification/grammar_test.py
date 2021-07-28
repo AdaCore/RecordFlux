@@ -339,7 +339,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
             ),
         ),
         (
-            "[for X in Y => X.A when X.B = Z]",
+            "[for X in Y if X.B = Z => X.A]",
             expr.Comprehension(
                 "X",
                 expr.Variable("Y"),
@@ -447,7 +447,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
             ),
         ),
         (
-            "[for E in L => E.B when E.T = A]'Head",
+            "[for E in L if E.T = A => E.B]'Head",
             expr.Head(
                 expr.Comprehension(
                     "E",
@@ -459,7 +459,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
         ),
         ("A'Head.D", expr.Selected(expr.Head(expr.Variable("A")), "D")),
         (
-            "[for E in L => E.B when E.T = A]'Head.D",
+            "[for E in L if E.T = A => E.B]'Head.D",
             expr.Selected(
                 expr.Head(
                     expr.Comprehension(
@@ -473,7 +473,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
             ),
         ),
         (
-            "(for some S in P::X ([for E in C.A => E when E.T = P.L]'Head.D).H => S.G = G) = False",
+            "(for some S in P::X ([for E in C.A if E.T = P.L => E]'Head.D).H => S.G = G) = False",
             expr.Equal(
                 expr.ForSomeIn(
                     "S",
