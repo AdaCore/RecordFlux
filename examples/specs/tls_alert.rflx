@@ -36,9 +36,8 @@ package TLS_Alert is
       message
          Level : Alert_Level;
          Description : Alert_Description
-            then null
-               if (Level = WARNING and (Description = CLOSE_NOTIFY or Description = USER_CANCELED))
-                  or (Level = FATAL and Description /= CLOSE_NOTIFY and Description /= USER_CANCELED);
+            if (Level = WARNING and (Description = CLOSE_NOTIFY or Description = USER_CANCELED))
+               or (Level = FATAL and Description /= CLOSE_NOTIFY and Description /= USER_CANCELED);
       end message;
 
 end TLS_Alert;

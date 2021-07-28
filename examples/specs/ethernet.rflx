@@ -81,8 +81,7 @@ package Ethernet is
             then Payload
                with Size => Message'Last - Ether_Type'Last;
          Payload : Opaque
-            then null
-               if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
+            if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
       end message;
 
 end Ethernet;

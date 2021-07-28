@@ -43,12 +43,12 @@ package IPv4 is
          IHL : IHL;
          DSCP : DCSP;
          ECN : ECN;
-         Total_Length : Total_Length;
-         Identification : Identification
+         Total_Length : Total_Length
             if Total_Length >= IHL * 4;
-         Flag_R : Boolean;
-         Flag_DF : Boolean
+         Identification : Identification;
+         Flag_R : Boolean
             if Flag_R = False;
+         Flag_DF : Boolean;
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;
