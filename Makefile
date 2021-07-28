@@ -124,6 +124,12 @@ prove_apps:
 install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
+install_devel:
+	pip3 install -e ".[devel]"
+
+upgrade_devel:
+	tools/upgrade_dependencies.py
+
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
 	$(MAKE) -C examples/apps/ping clean
