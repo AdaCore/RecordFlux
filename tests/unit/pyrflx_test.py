@@ -1014,6 +1014,13 @@ def test_checksum_parse_invalid(icmp_checksum_message_value: MessageValue) -> No
     assert not icmp_checksum_message_value.valid_message
 
 
+def test_checksum_parse_invalid_tlv(tlv_checksum_package: Package) -> None:
+    tlv_checksum_message = tlv_checksum_package["Message"]
+    tlv_checksum_message.set_checksum_function({"Checksum": checksum_function_255})
+    tlv_checksum_message.parse(b"\x01\x00\x02\xAB\xCD\x00\x00\x00\xF1")
+    assert not tlv_checksum_message.valid_message
+
+
 def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> None:
     test_data = (
         b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
