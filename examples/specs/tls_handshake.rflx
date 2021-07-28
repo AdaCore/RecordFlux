@@ -114,10 +114,10 @@ package TLS_Handshake is
 
    type Client_Hello is
       message
-         Legacy_Version : Protocol_Version;
-         Random : Opaque
-            with Size => 32 * 8
+         Legacy_Version : Protocol_Version
             if Legacy_Version = TLS_1_2;
+         Random : Opaque
+            with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
          Legacy_Session_ID : Opaque
             with Size => Legacy_Session_ID_Length * 8;
@@ -144,10 +144,10 @@ package TLS_Handshake is
 
    type Server_Hello is
       message
-         Legacy_Version : Protocol_Version;
-         Random : Opaque
-            with Size => 32 * 8
+         Legacy_Version : Protocol_Version
             if Legacy_Version = TLS_1_2;
+         Random : Opaque
+            with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
          Legacy_Session_ID : Opaque
             with Size => Legacy_Session_ID_Length * 8;

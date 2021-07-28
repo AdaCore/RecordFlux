@@ -103,13 +103,13 @@ package TCP is
          FIN : Boolean;  --  No more data from sender (RFC793, 3.1)
          Window : Window;
          Checksum : Checksum;
-         Urgent_Pointer : Urgent_Pointer;
+         Urgent_Pointer : Urgent_Pointer
+            if URG = True or (URG = False and Urgent_Pointer = 0);
          Options : Options
             with Size => (Data_Offset * 32) - (Urgent_Pointer'Last - Source_Port'First + 1)
-            if URG = True or (URG = False and Urgent_Pointer = 0);
-         Data : Opaque
-            with Size => Message'Size - (Data_Offset * 32)
             if (Options'Last - Source_Port'First + 1) mod 32 = 0;
+         Data : Opaque
+            with Size => Message'Size - (Data_Offset * 32);
       end message;
 
 end TCP;
