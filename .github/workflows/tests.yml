@@ -172,7 +172,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["python_verification"]
+        target: ["python_property_verification"]
         python-version: [3.7]
     steps:
     - uses: actions/checkout@v2

@@ -27,4 +27,6 @@ def test_code_compilation(tmp_path_factory: Any, model: Model) -> None:
     max_examples=math.ceil(settings.default.max_examples / 200),
 )
 def test_code_verification(tmp_path_factory: Any, model: Model) -> None:
-    utils.assert_provable_code(model, tmp_path_factory.mktemp("code_verification"))
+    utils.assert_provable_code(
+        model, tmp_path_factory.mktemp("code_verification"), cache_proof_results=False
+    )

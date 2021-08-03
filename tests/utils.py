@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 import subprocess
@@ -122,8 +123,21 @@ def assert_provable_code(
     main: str = None,
     prefix: str = None,
     units: Sequence[str] = None,
+    cache_proof_results: bool = True,
 ) -> None:
-    _create_files(tmp_path, model, main, prefix)
+    proof_dir = (
+        # ISSUE: Componolit/Workarounds#40
+        # GNATprove does not support absolute paths for Proof_Dir.
+        os.path.relpath(
+            pathlib.Path.cwd()
+            / pathlib.Path("tests/spark/proof")
+            / os.environ.get("PYTEST_CURRENT_TEST", ".").split()[0].replace("/", "-"),
+            tmp_path,
+        )
+        if cache_proof_results
+        else None
+    )
+    _create_files(tmp_path, model, main, prefix, proof_dir)
 
     def run(command: Sequence[str]) -> None:
         p = subprocess.run(command, cwd=tmp_path, check=False, stderr=subprocess.PIPE)
@@ -144,27 +158,29 @@ def _create_files(
     model: Model,
     main: str = None,
     prefix: str = None,
+    proof_dir: Union[str, pathlib.Path] = None,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     main = f'"{main}"' if main else ""
+    proof_dir = f'for Proof_Dir use "{proof_dir}";\n      ' if proof_dir else ""
     with open(tmp_path / "test.gpr", "x") as f:
         f.write(
             f"""
 with "defaults";
 
 project Test is
-    for Source_Dirs use (".");
-    for Main use ({main});
+   for Source_Dirs use (".");
+   for Main use ({main});
 
-    package Builder is
-       for Default_Switches ("Ada") use
-          Defaults.Builder_Switches & Defaults.Compiler_Switches;
-    end Builder;
+   package Builder is
+      for Default_Switches ("Ada") use
+         Defaults.Builder_Switches & Defaults.Compiler_Switches;
+   end Builder;
 
-    package Prove is
-       for Proof_Switches ("Ada") use
-          Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
-    end Prove;
+   package Prove is
+      {proof_dir}for Proof_Switches ("Ada") use
+         Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+   end Prove;
 end Test;
             """
         )
