@@ -2518,6 +2518,8 @@ def session_main(
                             ada.Last("RFLX" * const.TYPES_INDEX),
                             ada.First("RFLX" * const.TYPES_INDEX),
                         ),
+                        ada.NamedAggregate(("others", ada.First("RFLX" * const.TYPES_BYTE))),
+                        constant=True,
                     ),
                     ada.ObjectDeclaration(
                         ["M"],
