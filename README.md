@@ -281,6 +281,7 @@ $ pip3 install RecordFlux
 
 By default the following dependencies are installed:
 
+- [attrs](https://github.com/python-attrs/attrs)
 - [icontract](https://github.com/Parquery/icontract)
 - [PyDotPlus](https://github.com/carlos-jenkins/pydotplus)
 - [Z3](https://github.com/Z3Prover/z3)
