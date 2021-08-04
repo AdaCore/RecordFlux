@@ -301,7 +301,7 @@ See [the development documentation](/doc/Development.md) on how to contribute to
 
 ## Limitations
 
-A list of known limitations for version 0.4.1 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.4.1).
+A list of known limitations for version 0.5.0 can be found [here](https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.5.0).
 
 ## Background
 
