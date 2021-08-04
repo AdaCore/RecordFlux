@@ -59,6 +59,7 @@ def test_modular_type() -> None:
             },
         },
         "identifier": {"_kind": "UnqualifiedID", "_value": "Modular_Type"},
+        "parameters": None,
     }
 
 
@@ -337,7 +338,7 @@ KEYWORD_TESTS = [
         ),
         (
             "{keyword} : {keyword}",
-            librflxlang.GrammarRule.function_parameter_rule,
+            librflxlang.GrammarRule.parameter_rule,
         ),
         (
             "with function {keyword} return {keyword}",

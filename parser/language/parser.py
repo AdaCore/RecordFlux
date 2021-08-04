@@ -412,6 +412,7 @@ grammar.add_rules(
     type_declaration=ast.TypeDecl(
         "type",
         grammar.unqualified_identifier,
+        Opt(grammar.parameter_list),
         "is",
         Or(
             grammar.enumeration_type_definition,
@@ -435,15 +436,13 @@ grammar.add_rules(
     private_type_declaration=ast.FormalPrivateTypeDecl(
         "type", grammar.unqualified_identifier, "is", "private"
     ),
-    function_parameter=ast.Parameter(
-        grammar.unqualified_identifier, ":", grammar.qualified_identifier
-    ),
-    function_parameter_list=ast.Parameters("(", List(grammar.function_parameter, sep=";"), ")"),
+    parameter=ast.Parameter(grammar.unqualified_identifier, ":", grammar.qualified_identifier),
+    parameter_list=ast.Parameters("(", List(grammar.parameter, sep=";"), ")"),
     formal_function_declaration=ast.FormalFunctionDecl(
         "with",
         "function",
         grammar.unqualified_identifier,
-        Opt(grammar.function_parameter_list),
+        Opt(grammar.parameter_list),
         "return",
         grammar.qualified_identifier,
     ),

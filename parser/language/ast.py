@@ -38,6 +38,17 @@ class ID(AbstractID):
     name = Field(type=UnqualifiedID)
 
 
+class Parameter(RFLXNode):
+
+    identifier = Field(type=UnqualifiedID)
+    type_identifier = Field(type=ID)
+
+
+class Parameters(RFLXNode):
+
+    parameters = Field(type=Parameter.list)
+
+
 @abstract
 class Declaration(RFLXNode):
     """
@@ -58,6 +69,7 @@ class TypeDecl(Declaration):
     """
 
     identifier = Field(type=UnqualifiedID)
+    parameters = Field(type=Parameters)
     definition = Field(type=TypeDef)
 
 
@@ -548,17 +560,6 @@ class Specification(RFLXNode):
 
     context_clause = Field(type=ContextItem.list)
     package_declaration = Field(type=Package)
-
-
-class Parameter(RFLXNode):
-
-    identifier = Field(type=UnqualifiedID)
-    type_identifier = Field(type=ID)
-
-
-class Parameters(RFLXNode):
-
-    parameters = Field(type=Parameter.list)
 
 
 class FormalFunctionDecl(FormalDecl):

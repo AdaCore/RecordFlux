@@ -3425,6 +3425,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                     "mod": {"_kind": "NumericLiteral", "_value": "8"},
                 },
                 "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                "parameters": None,
             },
         ),
         (
@@ -3440,6 +3441,50 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                     },
                 },
                 "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                "parameters": None,
+            },
+        ),
+        (
+            "type T (P : A::B) is message F : C::D; end message",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "MessageTypeDef",
+                    "checksums": None,
+                    "components": {
+                        "_kind": "Components",
+                        "components": [
+                            {
+                                "_kind": "Component",
+                                "aspects": [],
+                                "condition": None,
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
+                                "thens": [],
+                                "type_identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "D"},
+                                    "package": {"_kind": "UnqualifiedID", "_value": "C"},
+                                },
+                            }
+                        ],
+                        "initial_component": None,
+                    },
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                "parameters": {
+                    "_kind": "Parameters",
+                    "parameters": [
+                        {
+                            "_kind": "Parameter",
+                            "identifier": {"_kind": "UnqualifiedID", "_value": "P"},
+                            "type_identifier": {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "B"},
+                                "package": {"_kind": "UnqualifiedID", "_value": "A"},
+                            },
+                        }
+                    ],
+                },
             },
         ),
     ],
