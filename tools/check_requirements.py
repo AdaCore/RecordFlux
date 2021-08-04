@@ -108,7 +108,7 @@ def parse_requirements(requirements_file: Path) -> Tuple[List[Requirement], bool
             if "§" not in l:
                 continue
 
-            match = re.search(r"(?:^|[-#.!?§] )([^-#.!?§]*)? \[(§[^\]]+)\]", l)
+            match = re.search(r"(?:^|[-#.!?§/*] )([^-#.!?§/*]*)? \[(§[^\]]+)\]", l)
             if match:
                 for identifier in re.findall(ID_REGEX, match.group(2)):
                     req = Requirement(identifier, match.group(1))
