@@ -23,7 +23,7 @@ The type system is inspired by Ada, but differs in some details. In contrast to 
 
 == Scalar Types
 
-=== Integer Type
+=== Integer Types
 
 An integer type is used to represent numbers. Two types of integers are supported: modular type and range type.
 
@@ -61,7 +61,7 @@ type Address is mod 2**48
 type Type_Length is range 46 .. 2**16 - 1 with Size => 16
 ----
 
-=== Enumeration Type
+=== Enumeration Types
 
 An enumeration type represents a value out of a list of possible values.
 
@@ -109,7 +109,7 @@ with Size => 16, Always_Valid
 
 `Boolean` is a built-in enumeration type with the literals `False => 0` and `True => 1` with a size of 1 bit.
 
-== Message Type
+== Message Types
 
 A message type is a collection of fields. Additional xref:syntax-then_clause[then clauses] enable the definition of conditions and dependencies between fields.
 
@@ -210,7 +210,7 @@ type Frame is
 type Empty_Message is null message
 ----
 
-== Type Refinement
+== Type Refinements
 
 A type refinement describes the relation of an opaque field in a message type to another message type.
 
@@ -244,7 +244,7 @@ for Ethernet::Frame use (Payload => IPv4::Packet)
    if Ether_Type = Ethernet::IPV4
 ----
 
-== Type Derivation
+== Type Derivations
 
 A type derivation enables the creation of a new message type based on an existing message type.
 
@@ -269,7 +269,7 @@ A derived message type derives its specification from a base type. Type refineme
 type Specific_Extension is new Extension
 ----
 
-== Sequence Type
+== Sequence Types
 
 A sequence type represents a list of similar elements.
 
@@ -1540,7 +1540,7 @@ An invalid condition of a refinement leads to an exception transition. This beha
 Key_Update_Message (Handshake_Control_Message.Data)
 ----
 
-== Package
+== Packages
 
 A package is used to structure a specification.
 
@@ -1639,7 +1639,7 @@ package Ethernet is
 end Ethernet;
 ----
 
-== Context Clause
+== Context Clauses
 
 The context clause is used to specify the relation to other packages and consists of a list of with clauses.
 
@@ -1663,7 +1663,7 @@ with Ethernet;
 with IPv4;
 ----
 
-== File
+== Files
 
 A RecordFlux specification file is recognized by the file extension `.rflx`. Each specification file contains exactly one package. The file name must match the package name in lower case characters.
 
