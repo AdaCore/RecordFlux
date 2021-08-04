@@ -4,20 +4,15 @@
 
 The specification language describes protocol message formats based on types. For each type of the specification language a description of its syntax and semantics and an example is given. A simple variant of Backus-Naur Form is used to describe the syntax. Reserved keywords and literals are marked in *bold*. References to syntactic categories are xref:none[highlighted]. To convey some semantic information the name of some syntactic categories are prefixed by a non-highlighted part. Syntactic categories with prefixes are equivalent to the category without the prefix. The following basic elements are used to describe the syntax of the language:
 
-[[syntax-name]]
-name: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., `Mixed_Case_With_Underscores`).
+[[syntax-name]]name: A name consists of alphanumeric characters and underscores. By convention a name starts with a capital and after each underscore follows a capital as well (e.g., `Mixed_Case_With_Underscores`).
 
-[[syntax-number]]
-number: A number consists of numerical digits. An underscore can be added between two digits to improve readability (e.g., `1_234`).
+[[syntax-number]]number: A number consists of numerical digits. An underscore can be added between two digits to improve readability (e.g., `1_234`).
 
-[[syntax-string]]
-string: A string literal is a sequence of characters delimited by double quotes (e.g., `"String"`).
+[[syntax-string]]string: A string literal is a sequence of characters delimited by double quotes (e.g., `"String"`).
 
-[[syntax-mathematical_expression]]
-mathematical_expression: A mathematical expression consists of numbers and names combined by mathematical operators (addition *+*, subtraction *-*, multiplication *\**, division */*, exponentiation **********).
+[[syntax-mathematical_expression]]mathematical_expression: A mathematical expression consists of numbers and names combined by mathematical operators (addition *+*, subtraction *-*, multiplication *\**, division */*, exponentiation **********).
 
-[[syntax-boolean_expression]]
-boolean_expression: A boolean expression consists of relations (*<*, *<=*, *=*, */=*, *>=*, *>*) between names and numbers combined by boolean operators (conjunction *and*, disjunction *or*).
+[[syntax-boolean_expression]]boolean_expression: A boolean expression consists of relations (*<*, *<=*, *=*, */=*, *>=*, *>*) between names and numbers combined by boolean operators (conjunction *and*, disjunction *or*).
 
 The type system is inspired by Ada, but differs in some details. In contrast to Ada, integer variables are considered type-compatible. Explicit type conversions of integer variables are neither required nor supported.
 
@@ -31,16 +26,15 @@ An integer type is used to represent numbers. Two types of integers are supporte
 
 [subs="+macros,quotes"]
 ----
-[[syntax-modular_type]]
-modular_type ::= *type* xref:syntax-name[name] *is* *mod* xref:syntax-modulus[modulus]
-[[syntax-range_type]]
-range_type ::= *type* xref:syntax-name[name] *is* *range* xref:syntax-first[first] *..* xref:syntax-last[last] *with Size =>* xref:syntax-number[number]
-[[syntax-modulus]]
-modulus ::= xref:syntax-mathematical_expression[mathematical_expression]
-[[syntax-first]]
-first ::= xref:syntax-mathematical_expression[mathematical_expression]
-[[syntax-last]]
-last ::= xref:syntax-mathematical_expression[mathematical_expression]
+[[syntax-modular_type]]modular_type ::= *type* xref:syntax-name[name] *is* *mod* xref:syntax-modulus[modulus]
+
+[[syntax-range_type]]range_type ::= *type* xref:syntax-name[name] *is* *range* xref:syntax-first[first] *..* xref:syntax-last[last] *with Size =>* xref:syntax-number[number]
+
+[[syntax-modulus]]modulus ::= xref:syntax-mathematical_expression[mathematical_expression]
+
+[[syntax-first]]first ::= xref:syntax-mathematical_expression[mathematical_expression]
+
+[[syntax-last]]last ::= xref:syntax-mathematical_expression[mathematical_expression]
 ----
 
 *Static Semantics*
@@ -55,7 +49,6 @@ The set of values of a range type consists of all numbers from the lower bound t
 ----
 type Address is mod 2**48
 ----
-
 [source,ada,rflx,basic_declaration]
 ----
 type Type_Length is range 46 .. 2**16 - 1 with Size => 16
@@ -69,18 +62,17 @@ An enumeration type represents a value out of a list of possible values.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-enumeration_type]]
-enumeration_type ::= *type* xref:syntax-name[name] *is* *(* xref:syntax-literals[literals] *)* *with* xref:syntax-enumeration_aspects[enumeration_aspects]
-[[syntax-literals]]
-literals ::= xref:syntax-literal[literal] { **,** xref:syntax-literal[literal] }
-[[syntax-literal]]
-literal ::= xref:syntax-name[name] [*=>* xref:syntax-number[number]]
-[[syntax-enumeration_aspects]]
-enumeration_aspects ::= xref:syntax-enumeration_aspect[enumeration_aspect] { **,** xref:syntax-enumeration_aspect[enumeration_aspect] }
-[[syntax-enumeration_aspect]]
-enumeration_aspect ::= xref:syntax-size_aspect[size_aspect] | xref:syntax-always_valid_aspect[always_valid_aspect]
-[[syntax-always_valid_aspect]]
-always_valid_aspect ::= *Always_Valid* [ *=>* ( *True* | *False* ) ]
+[[syntax-enumeration_type]]enumeration_type ::= *type* xref:syntax-name[name] *is* *(* xref:syntax-literals[literals] *)* *with* xref:syntax-enumeration_aspects[enumeration_aspects]
+
+[[syntax-literals]]literals ::= xref:syntax-literal[literal] { **,** xref:syntax-literal[literal] }
+
+[[syntax-literal]]literal ::= xref:syntax-name[name] [*=>* xref:syntax-number[number]]
+
+[[syntax-enumeration_aspects]]enumeration_aspects ::= xref:syntax-enumeration_aspect[enumeration_aspect] { **,** xref:syntax-enumeration_aspect[enumeration_aspect] }
+
+[[syntax-enumeration_aspect]]enumeration_aspect ::= xref:syntax-size_aspect[size_aspect] | xref:syntax-always_valid_aspect[always_valid_aspect]
+
+[[syntax-always_valid_aspect]]always_valid_aspect ::= *Always_Valid* [ *=>* ( *True* | *False* ) ]
 ----
 
 *Static Semantics*
@@ -93,7 +85,6 @@ The set of values of an enumeration type consists of the list of declared enumer
 ----
 type Tag is (Msg_Error, Msg_Data) with Size => 1
 ----
-
 [source,ada,rflx,basic_declaration]
 ----
 type Ether_Type is
@@ -117,8 +108,7 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
 
 [subs="+macros,quotes"]
 ----
-[[syntax-message_type]]
-message_type ::=
+[[syntax-message_type]]message_type ::=
    *type* xref:syntax-name[name] *is*
     ( *message*
        [ xref:syntax-null_field[null_field] ]
@@ -127,45 +117,45 @@ message_type ::=
       *end message* [ *with*
          xref:syntax-message_aspects[message_aspects] ]
     | *null message* )
-[[syntax-field]]
-field ::=
+
+[[syntax-field]]field ::=
    field_xref:syntax-name[name] *:* type_xref:syntax-name[name]
     [ *with* xref:syntax-aspects[aspects] ]
     [ *if* xref:syntax-condition[condition] ]
     { xref:syntax-then_clause[then_clause] } *;*
-[[syntax-null_field]]
-null_field ::= *null* xref:syntax-then_clause[then_clause] *;*
-[[syntax-then_clause]]
-then_clause ::=
+
+[[syntax-null_field]]null_field ::= *null* xref:syntax-then_clause[then_clause] *;*
+
+[[syntax-then_clause]]then_clause ::=
    *then* field_xref:syntax-name[name]
     [ *with* xref:syntax-aspects[aspects] ]
     [ *if* xref:syntax-condition[condition] ]
-[[syntax-aspects]]
-aspects ::= xref:syntax-aspect[aspect] { *,* xref:syntax-aspect[aspect] }
-[[syntax-aspect]]
-aspect ::= xref:syntax-first_aspect[first_aspect] | xref:syntax-size_aspect[size_aspect]
-[[syntax-first_aspect]]
-first_aspect ::= *First* *=>* xref:syntax-mathematical_expression[mathematical_expression]
-[[syntax-size_aspect]]
-size_aspect ::= *Size* *=>* xref:syntax-mathematical_expression[mathematical_expression]
-[[syntax-condition]]
-condition ::= xref:syntax-boolean_expression[boolean_expression]
-[[syntax-message_aspects]]
-message_aspects ::= xref:syntax-message_aspect[message_aspect] { *,* xref:syntax-message_aspect[message_aspect] }
-[[syntax-message_aspect]]
-message_aspect ::= xref:syntax-checksum_aspect[checksum_aspect]
-[[syntax-checksum_aspect]]
-checksum_aspect ::= *Checksum* *=>* *(* xref:syntax-checksum_definition[checksum_definition] { *,* xref:syntax-checksum_definition[checksum_definition] } *)*
-[[syntax-checksum_definition]]
-checksum_definition ::= xref:syntax-name[name] *=>* *(* xref:syntax-checksum_element[checksum_element] { *,* xref:syntax-checksum_element[checksum_element] } *)*
-[[syntax-checksum_element]]
-checksum_element ::= xref:syntax-name[name] | xref:syntax-name[name]*'Size* | xref:syntax-field_range[field_range]
-[[syntax-field_range]]
-field_range ::= xref:syntax-field_range_first[field_range_first] *..* xref:syntax-field_range_last[field_range_last]
-[[syntax-field_range_first]]
-field_range_first ::= xref:syntax-name[name]*'First* | xref:syntax-name[name]*'Last + 1*
-[[syntax-field_range_last]]
-field_range_last ::= xref:syntax-name[name]*'Last* | xref:syntax-name[name]*'First - 1*
+
+[[syntax-aspects]]aspects ::= xref:syntax-aspect[aspect] { *,* xref:syntax-aspect[aspect] }
+
+[[syntax-aspect]]aspect ::= xref:syntax-first_aspect[first_aspect] | xref:syntax-size_aspect[size_aspect]
+
+[[syntax-first_aspect]]first_aspect ::= *First* *=>* xref:syntax-mathematical_expression[mathematical_expression]
+
+[[syntax-size_aspect]]size_aspect ::= *Size* *=>* xref:syntax-mathematical_expression[mathematical_expression]
+
+[[syntax-condition]]condition ::= xref:syntax-boolean_expression[boolean_expression]
+
+[[syntax-message_aspects]]message_aspects ::= xref:syntax-message_aspect[message_aspect] { *,* xref:syntax-message_aspect[message_aspect] }
+
+[[syntax-message_aspect]]message_aspect ::= xref:syntax-checksum_aspect[checksum_aspect]
+
+[[syntax-checksum_aspect]]checksum_aspect ::= *Checksum* *=>* *(* xref:syntax-checksum_definition[checksum_definition] { *,* xref:syntax-checksum_definition[checksum_definition] } *)*
+
+[[syntax-checksum_definition]]checksum_definition ::= xref:syntax-name[name] *=>* *(* xref:syntax-checksum_element[checksum_element] { *,* xref:syntax-checksum_element[checksum_element] } *)*
+
+[[syntax-checksum_element]]checksum_element ::= xref:syntax-name[name] | xref:syntax-name[name]*'Size* | xref:syntax-field_range[field_range]
+
+[[syntax-field_range]]field_range ::= xref:syntax-field_range_first[field_range_first] *..* xref:syntax-field_range_last[field_range_last]
+
+[[syntax-field_range_first]]field_range_first ::= xref:syntax-name[name]*'First* | xref:syntax-name[name]*'Last + 1*
+
+[[syntax-field_range_last]]field_range_last ::= xref:syntax-name[name]*'Last* | xref:syntax-name[name]*'First - 1*
 ----
 
 *Static Semantics*
@@ -204,7 +194,6 @@ type Frame is
             if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
    end message
 ----
-
 [source,ada,rflx,basic_declaration]
 ----
 type Empty_Message is null message
@@ -218,18 +207,17 @@ A type refinement describes the relation of an opaque field in a message type to
 
 [subs="+macros,quotes"]
 ----
-[[syntax-type_refinement]]
-type_refinement ::=
+[[syntax-type_refinement]]type_refinement ::=
    *for* xref:syntax-refined_type_name[refined_type_name] *use* **( **refined_field_xref:syntax-name[name] **=>** xref:syntax-message_type_name[message_type_name] **)**
     [ **if** xref:syntax-condition[condition] ]
-[[syntax-refined_type_name]]
-refined_type_name ::= xref:syntax-qualified_name[qualified_name]
-[[syntax-message_type_name]]
-message_type_name ::= xref:syntax-qualified_name[qualified_name]
-[[syntax-qualified_name]]
-qualified_name ::= xref:syntax-name[name] { **::** xref:syntax-name[name] }
-[[syntax-condition]]
-condition ::= xref:syntax-boolean_expression[boolean_expression]
+
+[[syntax-refined_type_name]]refined_type_name ::= xref:syntax-qualified_name[qualified_name]
+
+[[syntax-message_type_name]]message_type_name ::= xref:syntax-qualified_name[qualified_name]
+
+[[syntax-qualified_name]]qualified_name ::= xref:syntax-name[name] { **::** xref:syntax-name[name] }
+
+[[syntax-condition]]condition ::= xref:syntax-boolean_expression[boolean_expression]
 ----
 
 *Static Semantics*
@@ -252,10 +240,9 @@ A type derivation enables the creation of a new message type based on an existin
 
 [subs="+macros,quotes"]
 ----
-[[syntax-type_derivation]]
-type_derivation ::= *type* xref:syntax-name[name] *is new* xref:syntax-base_type_name[base_type_name]
-[[syntax-base_type_name]]
-base_type_name ::= xref:syntax-qualified_name[qualified_name]
+[[syntax-type_derivation]]type_derivation ::= *type* xref:syntax-name[name] *is new* xref:syntax-base_type_name[base_type_name]
+
+[[syntax-base_type_name]]base_type_name ::= xref:syntax-qualified_name[qualified_name]
 ----
 
 *Static Semantics*
@@ -277,8 +264,7 @@ A sequence type represents a list of similar elements.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-sequence_type]]
-sequence_type ::= *type* xref:syntax-name[name] *is sequence of* element_type_xref:syntax-name[name]
+[[syntax-sequence_type]]sequence_type ::= *type* xref:syntax-name[name] *is sequence of* element_type_xref:syntax-name[name]
 ----
 
 *Static Semantics*
@@ -302,8 +288,7 @@ A session defines the dynamic behavior of a protocol using a finite state machin
 
 [subs="+macros,quotes"]
 ----
-[[syntax-session]]
-session ::=
+[[syntax-session]]session ::=
    *generic*
     { xref:syntax-session_parameter[session_parameter] }
    *session* xref:syntax-name[name] *with*
@@ -361,8 +346,7 @@ Private types, functions and channels can be defined as session parameters.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-session_parameter]]
-session_parameter ::= ( xref:syntax-private_type_declaration[private_type_declaration] | xref:syntax-function_declaration[function_declaration] | xref:syntax-channel_declaration[channel_declaration] ) *;*
+[[syntax-session_parameter]]session_parameter ::= ( xref:syntax-private_type_declaration[private_type_declaration] | xref:syntax-function_declaration[function_declaration] | xref:syntax-channel_declaration[channel_declaration] ) *;*
 ----
 
 ==== Private Types
@@ -375,8 +359,7 @@ A private type represents an externally defined type.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-private_type_declaration]]
-private_type_declaration ::= *type* xref:syntax-name[name] *is private*
+[[syntax-private_type_declaration]]private_type_declaration ::= *type* xref:syntax-name[name] *is private*
 ----
 
 *Example*
@@ -396,10 +379,9 @@ Functions enable the execution of externally defined code.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-function_declaration]]
-function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-function_parameter[function_parameter] { **,** xref:syntax-function_parameter[function_parameter] } **)** ]
-[[syntax-function_parameter]]
-function_parameter ::= parameter_xref:syntax-name[name] *:* type_xref:syntax-name[name]
+[[syntax-function_declaration]]function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-function_parameter[function_parameter] { **,** xref:syntax-function_parameter[function_parameter] } **)** ]
+
+[[syntax-function_parameter]]function_parameter ::= parameter_xref:syntax-name[name] *:* type_xref:syntax-name[name]
 ----
 
 *Static Semantics*
@@ -449,10 +431,9 @@ Channels provide a way for communicating with other systems using messages.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-channel_declaration]]
-channel_declaration ::= xref:syntax-name[name] *: Channel with* xref:syntax-channel_aspect[channel_aspect] { *,* xref:syntax-channel_aspect[channel_aspect] }
-[[syntax-channel_aspect]]
-channel_aspect ::= *Readable* | *Writable*
+[[syntax-channel_declaration]]channel_declaration ::= xref:syntax-name[name] *: Channel with* xref:syntax-channel_aspect[channel_aspect] { *,* xref:syntax-channel_aspect[channel_aspect] }
+
+[[syntax-channel_aspect]]channel_aspect ::= *Readable* | *Writable*
 ----
 
 *Static Semantics*
@@ -480,8 +461,7 @@ Variables and renamings can be globally declared (i.e. for the scope of the com
 
 [subs="+macros,quotes"]
 ----
-[[syntax-session_declaration]]
-session_declaration ::= ( xref:syntax-variable_declaration[variable_declaration] | xref:syntax-renaming_declaration[renaming_declaration] ) **;**
+[[syntax-session_declaration]]session_declaration ::= ( xref:syntax-variable_declaration[variable_declaration] | xref:syntax-renaming_declaration[renaming_declaration] ) **;**
 ----
 
 ==== Variable Declaration
@@ -494,8 +474,7 @@ A declared variable must have a type and can be optionally initialized using an 
 
 [subs="+macros,quotes"]
 ----
-[[syntax-variable_declaration]]
-variable_declaration ::= variable_xref:syntax-name[name] *:* type_xref:syntax-name[name] [ *:=* initialization_xref:syntax-expression[expression] ]
+[[syntax-variable_declaration]]variable_declaration ::= variable_xref:syntax-name[name] *:* type_xref:syntax-name[name] [ *:=* initialization_xref:syntax-expression[expression] ]
 ----
 
 // *Static Semantics*
@@ -542,8 +521,7 @@ Error_Sent : Boolean := False
 
 [subs="+macros,quotes"]
 ----
-[[syntax-renaming_declaration]]
-renaming_declaration ::= xref:syntax-name[name] *:* message_type_xref:syntax-name[name] *renames* message_variable_xref:syntax-name[name] *.* field_xref:syntax-name[name]
+[[syntax-renaming_declaration]]renaming_declaration ::= xref:syntax-name[name] *:* message_type_xref:syntax-name[name] *renames* message_variable_xref:syntax-name[name] *.* field_xref:syntax-name[name]
 ----
 
 *Example*
@@ -563,8 +541,7 @@ A state defines the to be executed actions and the transitions to subsequent sta
 
 [subs="+macros,quotes"]
 ----
-[[syntax-state]]
-state ::=
+[[syntax-state]]state ::=
    *state* xref:syntax-name[name]
     [ *with* xref:syntax-description_aspect[description_aspect] ]
    *is*
@@ -578,8 +555,8 @@ state ::=
      xref:syntax-transition[transition] ]
    *end* xref:syntax-name[name]
  | *state* xref:syntax-name[name] *is null state*
-[[syntax-description_aspect]]
-description_aspect ::= *Desc =>* xref:syntax-string[string]
+
+[[syntax-description_aspect]]description_aspect ::= *Desc =>* xref:syntax-string[string]
 ----
 
 *Static Semantics*
@@ -619,7 +596,6 @@ transition
    then A
 end A
 ----
-
 [source,ada,rflx,state]
 ----
 state B is null state
@@ -637,8 +613,7 @@ Variable declarations and renaming declarations in a state have a state-local sc
 
 [subs="+macros,quotes"]
 ----
-[[syntax-state_declaration]]
-state_declaration ::= ( xref:syntax-variable_declaration[variable_declaration] | xref:syntax-renaming_declaration[renaming_declaration] ) *;*
+[[syntax-state_declaration]]state_declaration ::= ( xref:syntax-variable_declaration[variable_declaration] | xref:syntax-renaming_declaration[renaming_declaration] ) *;*
 ----
 
 *Static Semantics*
@@ -682,12 +657,11 @@ State transitions define the conditions for the change to subsequent states. An 
 
 [subs="+macros,quotes"]
 ----
-[[syntax-conditional_transition]]
-conditional_transition ::=
+[[syntax-conditional_transition]]conditional_transition ::=
    xref:syntax-transition[transition]
       *if* conditional_xref:syntax-expression[expression]
-[[syntax-transition]]
-transition ::=
+
+[[syntax-transition]]transition ::=
    *then* state_xref:syntax-name[name]
     [ *with* xref:syntax-description_aspect[description_aspect] ]
 ----
@@ -733,8 +707,7 @@ The state actions are executed after entering a state.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-state_action]]
-state_action ::= ( xref:syntax-assignment[assignment] | xref:syntax-append[append] | xref:syntax-extend[extend] | xref:syntax-reset[reset] | xref:syntax-read[read] | xref:syntax-write[write] ) *;*
+[[syntax-state_action]]state_action ::= ( xref:syntax-assignment[assignment] | xref:syntax-append[append] | xref:syntax-extend[extend] | xref:syntax-reset[reset] | xref:syntax-read[read] | xref:syntax-write[write] ) *;*
 ----
 
 ===== Assignment Statements
@@ -747,8 +720,7 @@ An assignment sets the value of variable.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-assignment]]
-assignment ::= variable_xref:syntax-name[name] *:=* xref:syntax-expression[expression]
+[[syntax-assignment]]assignment ::= variable_xref:syntax-name[name] *:=* xref:syntax-expression[expression]
 ----
 
 // *Static Semantics*
@@ -793,8 +765,7 @@ An element is added to the end of a sequence using the Append attribute.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-append]]
-append ::= sequence_xref:syntax-name[name]*'Append (* xref:syntax-expression[expression] *)*
+[[syntax-append]]append ::= sequence_xref:syntax-name[name]*'Append (* xref:syntax-expression[expression] *)*
 ----
 
 // *Static Semantics*
@@ -839,8 +810,7 @@ The Extend attributes adds a sequence of elements to the end of a sequence.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-extend]]
-extend ::= sequence_xref:syntax-name[name]*'Extend (* xref:syntax-expression[expression] *)*
+[[syntax-extend]]extend ::= sequence_xref:syntax-name[name]*'Extend (* xref:syntax-expression[expression] *)*
 ----
 
 // *Static Semantics*
@@ -885,8 +855,7 @@ The state of a message or sequence can be cleared using the Reset attribute.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-reset]]
-reset ::= xref:syntax-name[name]*'Reset*
+[[syntax-reset]]reset ::= xref:syntax-name[name]*'Reset*
 ----
 
 // *Static Semantics*
@@ -931,8 +900,7 @@ The read attribute statement is used to retrieve a message from a channel.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-read]]
-read ::= channel_xref:syntax-name[name]*'Read (* xref:syntax-expression[expression] *)*
+[[syntax-read]]read ::= channel_xref:syntax-name[name]*'Read (* xref:syntax-expression[expression] *)*
 ----
 
 // *Static Semantics*
@@ -973,8 +941,7 @@ A message can be sent through a channel using a write attribute statement.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-write]]
-write ::= channel_xref:syntax-name[name]*'Write (* xref:syntax-expression[expression] *)*
+[[syntax-write]]write ::= channel_xref:syntax-name[name]*'Write (* xref:syntax-expression[expression] *)*
 ----
 
 // *Static Semantics*
@@ -1017,8 +984,7 @@ Data_Channel'Write (Message)
 
 [subs="+macros,quotes"]
 ----
-[[syntax-expression]]
-expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | xref:syntax-mathematical_expression[mathematical_expression] | xref:syntax-boolean_expression[boolean_expression] | xref:syntax-message_aggregate[message_aggregate] | xref:syntax-aggregate[aggregate] | xref:syntax-attribute_reference[attribute_reference] | xref:syntax-selected[selected] | xref:syntax-comprehension[comprehension] | xref:syntax-binding[binding] | xref:syntax-quantified_expression[quantified_expression] | xref:syntax-call[call] | xref:syntax-conversion[conversion]
+[[syntax-expression]]expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | xref:syntax-mathematical_expression[mathematical_expression] | xref:syntax-boolean_expression[boolean_expression] | xref:syntax-message_aggregate[message_aggregate] | xref:syntax-aggregate[aggregate] | xref:syntax-attribute_reference[attribute_reference] | xref:syntax-selected[selected] | xref:syntax-comprehension[comprehension] | xref:syntax-binding[binding] | xref:syntax-quantified_expression[quantified_expression] | xref:syntax-call[call] | xref:syntax-conversion[conversion]
 ----
 
 ==== Literals
@@ -1027,8 +993,7 @@ expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | x
 
 [subs="+macros,quotes"]
 ----
-[[syntax-literal]]
-literal ::= xref:syntax-name[name] | xref:syntax-number[number]
+[[syntax-literal]]literal ::= xref:syntax-name[name] | xref:syntax-number[number]
 ----
 
 ==== Variables
@@ -1037,8 +1002,7 @@ literal ::= xref:syntax-name[name] | xref:syntax-number[number]
 
 [subs="+macros,quotes"]
 ----
-[[syntax-variable]]
-variable ::= xref:syntax-name[name]
+[[syntax-variable]]variable ::= xref:syntax-name[name]
 ----
 
 ==== Message Aggregates
@@ -1047,12 +1011,11 @@ variable ::= xref:syntax-name[name]
 
 [subs="+macros,quotes"]
 ----
-[[syntax-message_aggregate]]
-message_aggregate ::= message_type_xref:syntax-name[name]*'(* xref:syntax-field_values[field_values] *)*
-[[syntax-field_values]]
-field_values ::= xref:syntax-field_value[field_value] { *,* xref:syntax-field_value[field_value] } | *null message*
-[[syntax-field_value]]
-field_value ::= field_xref:syntax-name[name] *=>* xref:syntax-expression[expression]
+[[syntax-message_aggregate]]message_aggregate ::= message_type_xref:syntax-name[name]*'(* xref:syntax-field_values[field_values] *)*
+
+[[syntax-field_values]]field_values ::= xref:syntax-field_value[field_value] { *,* xref:syntax-field_value[field_value] } | *null message*
+
+[[syntax-field_value]]field_value ::= field_xref:syntax-name[name] *=>* xref:syntax-expression[expression]
 ----
 
 *Dynamic Semantics*
@@ -1067,7 +1030,6 @@ Insufficient memory during the message creation leads to an exception transition
 ----
 TLS_Record::TLS_Record'(Tag => TLS_Record::Alert, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size / 8, Fragment => Alert_Message'Opaque)
 ----
-
 [source,ada,rflx,extended_primary]
 ----
 Null_Message'(null message)
@@ -1083,8 +1045,7 @@ An aggregate is a collection of elements.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-aggregate]]
-aggregate ::= *[* xref:syntax-number[number] { *,* xref:syntax-number[number] } *]*
+[[syntax-aggregate]]aggregate ::= *[* xref:syntax-number[number] { *,* xref:syntax-number[number] } *]*
 ----
 
 // *Static Semantics*
@@ -1119,7 +1080,6 @@ aggregate ::= *[* xref:syntax-number[number] { *,* xref:syntax-number[number] } 
 ----
 [0, 1, 2]
 ----
-
 [source,ada,rflx,extended_primary]
 ----
 []
@@ -1133,10 +1093,9 @@ aggregate ::= *[* xref:syntax-number[number] { *,* xref:syntax-number[number] } 
 
 [subs="+macros,quotes"]
 ----
-[[syntax-attribute_reference]]
-attribute_reference ::= xref:syntax-expression[expression]*'*xref:syntax-attribute_designator[attribute_designator]
-[[syntax-attribute_designator]]
-attribute_designator ::= *Valid* | *Opaque* | *Head* | *Has_Data*
+[[syntax-attribute_reference]]attribute_reference ::= xref:syntax-expression[expression]*'*xref:syntax-attribute_designator[attribute_designator]
+
+[[syntax-attribute_designator]]attribute_designator ::= *Valid* | *Opaque* | *Head* | *Has_Data*
 ----
 
 *Static Semantics*
@@ -1259,8 +1218,7 @@ The Selected expression is used to get a value of a message field.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-selected]]
-selected ::= message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name]
+[[syntax-selected]]selected ::= message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name]
 ----
 
 // *Static Semantics*
@@ -1305,8 +1263,7 @@ A list comprehension provides a way to create a new sequence based on an exisiti
 
 [subs="+macros,quotes"]
 ----
-[[syntax-comprehension]]
-comprehension ::= *[* *for* xref:syntax-name[name] *in* iterable_xref:syntax-expression[expression] *=>* selector_xref:syntax-expression[expression] *when* condition_xref:syntax-expression[expression] *]*
+[[syntax-comprehension]]comprehension ::= *[* *for* xref:syntax-name[name] *in* iterable_xref:syntax-expression[expression] *=>* selector_xref:syntax-expression[expression] *when* condition_xref:syntax-expression[expression] *]*
 ----
 
 // *Static Semantics*
@@ -1345,8 +1302,7 @@ A binding can be used to name a subexpression and enables the use of a subexpres
 
 [subs="+macros,quotes"]
 ----
-[[syntax-binding]]
-binding ::=
+[[syntax-binding]]binding ::=
    xref:syntax-expression[expression]
       *where*
          xref:syntax-name[name] *=* sub_xref:syntax-expression[expression] { *,*
@@ -1396,10 +1352,9 @@ Quantified expressions enable reasoning about properties of sequences.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-quantified_expression]]
-quantified_expression ::= *for* xref:syntax-quantifier[quantifier] *in* iterable_xref:syntax-expression[expression] *=>* predicate_xref:syntax-expression[expression]
-[[syntax-quantifier]]
-quantifier ::= *all* | *some*
+[[syntax-quantified_expression]]quantified_expression ::= *for* xref:syntax-quantifier[quantifier] *in* iterable_xref:syntax-expression[expression] *=>* predicate_xref:syntax-expression[expression]
+
+[[syntax-quantifier]]quantifier ::= *all* | *some*
 ----
 
 // *Static Semantics*
@@ -1459,8 +1414,7 @@ All functions which are declared in the session parameters can be called.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-call]]
-call ::= xref:syntax-name[name] [ *(* argument_xref:syntax-expression[expression] { *,* argument_xref:syntax-expression[expression] } *)* ]
+[[syntax-call]]call ::= xref:syntax-name[name] [ *(* argument_xref:syntax-expression[expression] { *,* argument_xref:syntax-expression[expression] } *)* ]
 ----
 
 // *Static Semantics*
@@ -1502,8 +1456,7 @@ An opaque field of a message can be converted to a message.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-conversion]]
-conversion ::= message_type_xref:syntax-name[name] *(* message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name] *)*
+[[syntax-conversion]]conversion ::= message_type_xref:syntax-name[name] *(* message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name] *)*
 ----
 
 *Static Semantics*
@@ -1548,14 +1501,12 @@ A package is used to structure a specification.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-package]]
-package ::=
+[[syntax-package]]package ::=
    *package* xref:syntax-name[name] *is*
       { xref:syntax-basic_declaration[basic_declaration] }
    *end* xref:syntax-name[name] *;*
 
-[[syntax-basic_declaration]]
-basic_declaration := ( xref:syntax-modular_type[modular_type] | xref:syntax-range_type[range_type] | xref:syntax-enumeration_type[enumeration_type] | xref:syntax-message_type[message_type] | xref:syntax-type_refinement[type_refinement] | xref:syntax-session[session] ) *;*
+[[syntax-basic_declaration]]basic_declaration := ( xref:syntax-modular_type[modular_type] | xref:syntax-range_type[range_type] | xref:syntax-enumeration_type[enumeration_type] | xref:syntax-message_type[message_type] | xref:syntax-type_refinement[type_refinement] | xref:syntax-session[session] ) *;*
 ----
 
 *Static Semantics*
@@ -1647,8 +1598,7 @@ The context clause is used to specify the relation to other packages and consist
 
 [subs="+macros,quotes"]
 ----
-[[syntax-context]]
-context ::= { *with* package_xref:syntax-name[name] *;* }
+[[syntax-context]]context ::= { *with* package_xref:syntax-name[name] *;* }
 ----
 
 *Static Semantics*
@@ -1671,8 +1621,7 @@ A RecordFlux specification file is recognized by the file extension `.rflx`. Eac
 
 [subs="+macros,quotes"]
 ----
-[[syntax-file]]
-file ::=
+[[syntax-file]]file ::=
    xref:syntax-context[context]
    xref:syntax-package[package]
 ----
