@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import itertools
 import logging
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -23,6 +24,7 @@ from librflxlang import (
     ModularTypeDef,
     NullID,
     PackageNode,
+    Parameters,
     RangeTypeDef,
     RefinementDecl,
     RenamingDecl,
@@ -267,6 +269,7 @@ def create_id(identifier: NullID, filename: Path) -> ID:
 
 def create_sequence(
     identifier: ID,
+    _parameters: Parameters,
     sequence: SequenceTypeDef,
     types: Sequence[model.Type],
     _skip_verification: bool,
@@ -715,6 +718,7 @@ def create_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
 
 def create_modular(
     identifier: ID,
+    _parameters: Parameters,
     modular: ModularTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
@@ -731,6 +735,7 @@ def create_modular(
 
 def create_range(
     identifier: ID,
+    _parameters: Parameters,
     rangetype: RangeTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
@@ -757,6 +762,7 @@ def create_range(
 
 def create_null_message(
     identifier: ID,
+    _parameters: Parameters,
     message: MessageTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
@@ -769,6 +775,7 @@ def create_null_message(
 
 def create_message(
     identifier: ID,
+    parameters: Parameters,
     message: MessageTypeDef,
     types: Sequence[model.Type],
     skip_verification: bool,
@@ -782,7 +789,7 @@ def create_message(
     components = message.f_components
 
     field_types: Mapping[model.Field, model.Type] = create_message_types(
-        identifier, components, types, filename
+        error, identifier, parameters, components, types, filename
     )
     structure = create_message_structure(error, components, filename)
     aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
@@ -803,7 +810,9 @@ def create_message(
 
 
 def create_message_types(
+    error: RecordFluxError,
     identifier: ID,
+    parameters: Parameters,
     components: Components,
     types: Sequence[model.Type],
     filename: Path,
@@ -811,13 +820,52 @@ def create_message_types(
 
     field_types: Dict[model.Field, model.Type] = {}
 
-    for component in components.f_components:
-        type_identifier = model.qualified_type_identifier(
-            create_id(component.f_type_identifier, filename), identifier.parent
+    for field_identifier, type_identifier in itertools.chain(
+        (
+            (parameter.f_identifier, parameter.f_type_identifier)
+            for parameter in (parameters.f_parameters if parameters else ())
+        ),
+        (
+            (component.f_identifier, component.f_type_identifier)
+            for component in components.f_components
+        ),
+    ):
+        qualified_type_identifier = model.qualified_type_identifier(
+            create_id(type_identifier, filename), identifier.parent
         )
-        field_type = [t for t in types if t.identifier == type_identifier]
+        field_type = [t for t in types if t.identifier == qualified_type_identifier]
         if field_type:
-            field_types[model.Field(create_id(component.f_identifier, filename))] = field_type[0]
+            field = model.Field(create_id(field_identifier, filename))
+            if field not in field_types:
+                field_types[field] = field_type[0]
+            else:
+                error.extend(
+                    [
+                        (
+                            f'name conflict for "{field.identifier}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(field_identifier, filename),
+                        ),
+                        (
+                            "conflicting name",
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            [f.identifier for f in field_types if f == field][0].location,
+                        ),
+                    ]
+                )
+        else:
+            error.extend(
+                [
+                    (
+                        f'undefined type "{qualified_type_identifier}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        qualified_type_identifier.location,
+                    )
+                ]
+            )
 
     return field_types
 
@@ -1028,6 +1076,7 @@ def create_message_aspects(
 
 def create_derived_message(
     identifier: ID,
+    _parameters: Parameters,
     derivation: TypeDerivationDef,
     types: Sequence[model.Type],
     skip_verification: bool,
@@ -1083,6 +1132,7 @@ def create_derived_message(
 
 def create_enumeration(
     identifier: ID,
+    _parameters: Parameters,
     enumeration: EnumerationTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
@@ -1452,8 +1502,20 @@ class Parser:
                     create_id(t.f_identifier, filename), package_id
                 )
                 try:
+                    if not t.f_definition.kind_name == "MessageTypeDef" and t.f_parameters:
+                        error.extend(
+                            [
+                                (
+                                    "only message types can be parameterized",
+                                    Subsystem.PARSER,
+                                    Severity.ERROR,
+                                    node_location(t.f_parameters.f_parameters, filename),
+                                )
+                            ]
+                        )
                     new_type = handlers[t.f_definition.kind_name](
                         identifier,
+                        t.f_parameters,
                         t.f_definition,
                         self.__types,
                         self.skip_verification,

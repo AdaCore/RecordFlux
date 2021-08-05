@@ -88,7 +88,8 @@ def valid_message_field_types(message: "AbstractMessage") -> bool:
 
 
 class MessageState(Base):
-    fields: Optional[Tuple[Field, ...]] = ()
+    parameter_types: Mapping[Field, mty.Type] = {}
+    field_types: Mapping[Field, mty.Type] = {}
     definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
     field_condition: Optional[Mapping[Field, expr.Expr]] = None
     checksums: Mapping[ID, Sequence[expr.Expr]] = {}
@@ -112,15 +113,16 @@ class AbstractMessage(mty.Type):
 
         super().__init__(identifier, location, error)
 
+        assert len(self.identifier.parts) > 1, "type identifier must contain package"
+
         self.structure = sorted(structure)
+
         self.__types = types
         self.__aspects = aspects or {}
         self.__has_unreachable = False
-        self._state = state or MessageState()
         self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
 
-        assert len(self.identifier.parts) > 1, "type identifier must contain package"
-
+        self._state = state or MessageState()
         self._unqualified_enum_literals = {
             l
             for t in self.dependencies
@@ -134,9 +136,12 @@ class AbstractMessage(mty.Type):
             try:
                 self.__validate()
                 self.__normalize()
-                self._state.fields = self.__compute_topological_sorting()
-                if self._state.fields:
-                    self.__types = {f: self.__types[f] for f in self._state.fields}
+                fields = self.__compute_topological_sorting()
+                if fields:
+                    self._state.field_types = {f: self.__types[f] for f in fields}
+                    self._state.parameter_types = {
+                        f: t for f, t in self.__types.items() if f not in fields
+                    }
                 if ID("Checksum") in self.__aspects:
                     self._state.checksums = self.__aspects[ID("Checksum")]
             except RecordFluxError:
@@ -162,6 +167,18 @@ class AbstractMessage(mty.Type):
         if not self.structure or not self.types:
             return f"type {self.name} is null message"
 
+        parameters = "; ".join(
+            [
+                f"{p.identifier} : {type_identifier}"
+                for p, t in self.parameter_types.items()
+                for type_identifier in (
+                    t.name if mty.is_builtin_type(t.identifier) else t.identifier,
+                )
+            ]
+        )
+        if parameters:
+            parameters = f" ({parameters})"
+
         fields = ""
         field_list = [INITIAL, *self.fields]
         for i, f in enumerate(field_list):
@@ -181,11 +198,12 @@ class AbstractMessage(mty.Type):
                 fields += "\n" + indent("\n".join(str(o) for o in outgoing), 3)
             if fields:
                 fields += ";"
-        return f"type {self.name} is\n   message\n{indent(fields, 6)}\n   end message"
+
+        return f"type {self.name}{parameters} is\n   message\n{indent(fields, 6)}\n   end message"
 
     @property
     def dependencies(self) -> List[mty.Type]:
-        return [self, *unique(a for t in self.types.values() for a in t.dependencies)]
+        return [self, *unique(a for t in self.__types.values() for a in t.dependencies)]
 
     @abstractmethod
     def copy(
@@ -204,18 +222,32 @@ class AbstractMessage(mty.Type):
         raise NotImplementedError
 
     @property
+    def parameters(self) -> Tuple[Field, ...]:
+        return tuple(self._state.parameter_types or {})
+
+    @property
     def fields(self) -> Tuple[Field, ...]:
         """Return fields topologically sorted."""
-        return self._state.fields or ()
+        return tuple(self._state.field_types or {})
 
     @property
     def all_fields(self) -> Tuple[Field, ...]:
         return (INITIAL, *self.fields, FINAL)
 
     @property
-    def types(self) -> Mapping[Field, mty.Type]:
+    def parameter_types(self) -> Mapping[Field, mty.Type]:
+        """Return parameters and corresponding types."""
+        return self._state.parameter_types
+
+    @property
+    def field_types(self) -> Mapping[Field, mty.Type]:
         """Return fields and corresponding types topologically sorted."""
-        return self.__types
+        return self._state.field_types
+
+    @property
+    def types(self) -> Mapping[Field, mty.Type]:
+        """Return parameters, fields and corresponding types topologically sorted."""
+        return {**self._state.parameter_types, **self._state.field_types}
 
     @property
     def aspects(self) -> Mapping[ID, Mapping[ID, Sequence[expr.Expr]]]:
@@ -393,7 +425,7 @@ class AbstractMessage(mty.Type):
 
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
-            comp = self.types[Field(field.name)]
+            comp = self.__types[Field(field.name)]
             assert isinstance(comp, mty.Composite)
             result = expr.Equal(
                 expr.Mul(aggregate.length, comp.element_size),
@@ -409,7 +441,7 @@ class AbstractMessage(mty.Type):
 
         scalar_types = [
             (f.name, t)
-            for f, t in self.types.items()
+            for f, t in self.__types.items()
             if isinstance(t, mty.Scalar)
             and ID(f.name) not in self._qualified_enum_literals
             and f.name not in ["Message", "Final"]
@@ -449,28 +481,42 @@ class AbstractMessage(mty.Type):
         ]
 
     def __validate(self) -> None:
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-locals, too-many-branches
 
         type_fields = self.__types.keys() | {INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+        parameters = self.__types.keys() - structure_fields
+
+        for p in parameters:
+            parameter_type = self.__types[p]
+            if not isinstance(parameter_type, mty.Scalar):
+                self.error.extend(
+                    [
+                        (
+                            "parameters must have a scalar type",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            p.identifier.location,
+                        )
+                    ]
+                )
+            elif isinstance(parameter_type, mty.Enumeration) and parameter_type.always_valid:
+                self.error.extend(
+                    [
+                        (
+                            "always valid enumeration types not allowed as parameters",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            p.identifier.location,
+                        )
+                    ]
+                )
 
         for f in structure_fields - type_fields:
             self.error.extend(
                 [
                     (
                         f'missing type for field "{f.name}" in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
-                    )
-                ],
-            )
-
-        for f in type_fields - structure_fields - {FINAL}:
-            self.error.extend(
-                [
-                    (
-                        f'unused field "{f.name}" in "{self.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         f.identifier.location,
@@ -992,7 +1038,7 @@ class Message(AbstractMessage):
             return expression
 
         for p in self.paths(FINAL):
-            types = {}
+            types = {f.identifier: t for f, t in self.types.items() if f in self.parameters}
             path = []
             for l in p:
                 try:
