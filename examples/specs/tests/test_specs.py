@@ -8,9 +8,8 @@ from xml.etree import ElementTree
 import pytest
 from rflx.pyrflx import PyRFLX
 
-import tests.checksum as checksum
 import tools.iana_to_rflx
-from tools.validate_spec import validate
+from tools.validate_spec import set_checksum_to_pyrflx, validate
 
 DATA_PATH = Path("tests/data/")
 
@@ -42,8 +41,7 @@ def test_iana_specs_synchronized(registry_file_name: str) -> None:
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_validate_spec(spec: str) -> None:
     pyrflx = PyRFLX.from_specs([spec], True)
-    all_checksum_functions = checksum.checksum_functions
-    pyrflx.set_checksum_functions(all_checksum_functions)
+    set_checksum_to_pyrflx(pyrflx, Path("tests.checksum"))
 
     for package in pyrflx:
         for message_value in package:

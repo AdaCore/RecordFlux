@@ -7,12 +7,9 @@ def icmp_checksum(message: bytes, **kwargs: object) -> int:
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
     assert checksum_last_plus_one == 32 and data_last == 511
-    checksum_size = kwargs.get("Checksum'Size")
-    assert isinstance(checksum_size, int)
-    assert checksum_size == 16
 
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
-    checksum_bytes += b"\x00" * (checksum_size // 8)
+    checksum_bytes += b"\x00" * 2
     checksum_bytes += message[(checksum_last_plus_one // 8) : (data_last + 1) // 8]
     return internet_checksum(checksum_bytes)
 
@@ -26,12 +23,9 @@ def ip_header_checksum(message: bytes, **kwargs: object) -> int:
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, options_last = second_arg
     assert checksum_last_plus_one == 96
-    checksum_size = kwargs.get("Header_Checksum'Size")
-    assert isinstance(checksum_size, int)
-    assert checksum_size == 16
 
     checksum_bytes = message[version_first : (checksum_first_minus_one + 1) // 8]
-    checksum_bytes += b"\x00" * (checksum_size // 8)
+    checksum_bytes += b"\x00" * 2
     checksum_bytes += message[(checksum_last_plus_one // 8) : (options_last + 1) // 8]
     return internet_checksum(checksum_bytes)
 

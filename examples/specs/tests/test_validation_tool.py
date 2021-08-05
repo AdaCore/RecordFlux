@@ -487,14 +487,14 @@ def test_cli_checksum_negative() -> None:
                 "-m",
                 "Checksum_Message::Message",
                 "-v",
-                "tests/validation_tool/checksum_message/all",
-                "-i",
                 "tests/validation_tool/checksum_message/invalid",
+                "-i",
+                "tests/validation_tool/checksum_message/valid",
                 "-f",
                 "tests.validation_tool.checksum_message_checksum_function",
             ]
         )
-        == "1 messages were classified incorrectly"
+        == "3 messages were classified incorrectly"
     )
 
 
@@ -554,8 +554,9 @@ def test_cli_checksum_functions_no_checksum_provided() -> None:
                 "--no-verification",
             ]
         )
-        == "No checksum functions have been provided, but the following messages define a checksum:"
-        ' Checksum_Message::Message at field "Checksum".'
+        == "The following messages define checksum fields, "
+        "but no checksum function has been provided: "
+        'Checksum_Message::Message at field "Checksum".'
     )
 
 
@@ -565,7 +566,7 @@ def test_cli_checksum_functions_missing_key() -> None:
             [
                 "validate_spec",
                 "-s",
-                "tests/validation_tool/checksum_message_with_refinement.rflx",
+                "tests/validation_tool/checksum_message.rflx",
                 "-m",
                 "Ethernet::Frame",
                 "-i",
