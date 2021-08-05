@@ -167,6 +167,37 @@ M_SMPL_REF_DERI = UnprovenDerivedMessage(
     {Field("NR"): deepcopy(M_NO_REF_DERI)},
 )
 
+PARAMETERIZED_MESSAGE = Message(
+    "P::M",
+    [
+        Link(
+            INITIAL,
+            Field("F1"),
+            size=Mul(Variable("P1"), Number(8)),
+        ),
+        Link(
+            Field("F1"),
+            FINAL,
+            condition=Equal(Variable("P2"), Variable("One")),
+        ),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            condition=Equal(Variable("P2"), Variable("Two")),
+        ),
+        Link(
+            Field("F2"),
+            FINAL,
+        ),
+    ],
+    {
+        Field("P1"): MODULAR_INTEGER,
+        Field("P2"): ENUMERATION,
+        Field("F1"): OPAQUE,
+        Field("F2"): RANGE_INTEGER,
+    },
+)
+
 
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
     msg = f"{expected.full_name} - {msg}" if msg else expected.full_name
@@ -184,6 +215,35 @@ def test_invalid_identifier() -> None:
         Message("A::B::C", [], {}, location=Location((10, 8)))
 
 
+@pytest.mark.parametrize(
+    "parameter_type",
+    [NULL_MESSAGE, TLV_MESSAGE, SEQUENCE_MODULAR_VECTOR, SEQUENCE_INNER_MESSAGES, OPAQUE],
+)
+def test_invalid_parameter_type_composite(parameter_type: Type) -> None:
+    structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
+    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        "^<stdin>:1:2: model: error: parameters must have a scalar type$",
+    )
+
+
+def test_invalid_parameter_type_always_valid_enum() -> None:
+    always_valid_enum = Enumeration(
+        "P::E", [("A", Number(1)), ("B", Number(3))], Number(8), always_valid=True
+    )
+    structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
+    types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        "^<stdin>:1:2: model: error: always valid enumeration types not allowed as parameters$",
+    )
+
+
 def test_missing_type() -> None:
     x = Field(ID("X", Location((5, 6))))
     structure = [Link(INITIAL, x), Link(x, FINAL)]
@@ -192,21 +252,6 @@ def test_missing_type() -> None:
         structure,
         {},
         '^<stdin>:5:6: model: error: missing type for field "X" in "P::M"$',
-    )
-
-
-def test_unused_type() -> None:
-    t = ModularInteger("P::T", Number(2))
-
-    structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field("X"), FINAL),
-    ]
-
-    types = {Field("X"): t, Field(ID("Y", Location((5, 6)))): t}
-
-    assert_message_model_error(
-        structure, types, '^<stdin>:5:6: model: error: unused field "Y" in "P::M"$'
     )
 
 
@@ -394,19 +439,42 @@ def test_cycle() -> None:
     )
 
 
-def test_fields() -> None:
-    assert_equal(
-        ETHERNET_FRAME.fields,
-        (
-            Field("Destination"),
-            Field("Source"),
-            Field("Type_Length_TPID"),
-            Field("TPID"),
-            Field("TCI"),
-            Field("Type_Length"),
-            Field("Payload"),
-        ),
+def test_parameters() -> None:
+    assert ETHERNET_FRAME.parameters == ()
+    assert PARAMETERIZED_MESSAGE.parameters == (
+        Field("P1"),
+        Field("P2"),
     )
+
+
+def test_fields() -> None:
+    assert ETHERNET_FRAME.fields == (
+        Field("Destination"),
+        Field("Source"),
+        Field("Type_Length_TPID"),
+        Field("TPID"),
+        Field("TCI"),
+        Field("Type_Length"),
+        Field("Payload"),
+    )
+    assert PARAMETERIZED_MESSAGE.fields == (
+        Field("F1"),
+        Field("F2"),
+    )
+
+
+def test_parameter_types() -> None:
+    assert PARAMETERIZED_MESSAGE.parameter_types == {
+        Field("P1"): MODULAR_INTEGER,
+        Field("P2"): ENUMERATION,
+    }
+
+
+def test_field_types() -> None:
+    assert PARAMETERIZED_MESSAGE.field_types == {
+        Field("F1"): OPAQUE,
+        Field("F2"): RANGE_INTEGER,
+    }
 
 
 def test_field_condition() -> None:
@@ -3065,7 +3133,7 @@ def test_merge_message_error_name_conflict() -> None:
     m2 = UnprovenMessage(
         "P::M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
-        {Field("F2"): MODULAR_INTEGER},
+        {m2_f2: MODULAR_INTEGER},
         location=Location((15, 3)),
     )
 
@@ -3075,7 +3143,7 @@ def test_merge_message_error_name_conflict() -> None:
     m1 = UnprovenMessage(
         "P::M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
-        {Field("F1"): m2, Field("F1_F2"): MODULAR_INTEGER},
+        {m1_f1: m2, m1_f1_f2: MODULAR_INTEGER},
         location=Location((2, 9)),
     )
 
@@ -3175,12 +3243,17 @@ def test_message_str() -> None:
             Link(Field("P"), FINAL),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O"): MODULAR_INTEGER, Field("P"): MODULAR_INTEGER},
+        {
+            Field("A"): BOOLEAN,
+            Field("L"): MODULAR_INTEGER,
+            Field("O"): MODULAR_INTEGER,
+            Field("P"): MODULAR_INTEGER,
+        },
     )
     assert_equal(
         str(message),
         multilinestr(
-            """type M is
+            """type M (A : Boolean) is
                   message
                      L : Modular
                         then O

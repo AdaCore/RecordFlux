@@ -2473,6 +2473,34 @@ def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: s
     )
 
 
+def test_parameterized_message() -> None:
+    assert_messages_string(
+        """
+            package Test is
+
+               type T is mod 256;
+
+               type M (P : T) is
+                  message
+                     F : Opaque
+                        with Size => P * 8;
+                  end message;
+
+            end Test;
+        """,
+        [
+            Message(
+                "Test::M",
+                [
+                    Link(INITIAL, Field("F"), size=expr.Mul(expr.Variable("P"), expr.Number(8))),
+                    Link(Field("F"), FINAL),
+                ],
+                {Field("P"): T, Field("F"): OPAQUE},
+            ),
+        ],
+    )
+
+
 def test_parse_error_invalid_range_aspect() -> None:
     assert_error_string(
         """
@@ -2510,6 +2538,84 @@ def test_parse_error_invalid_range_aspect() -> None:
 )
 def test_parse_error_invalid_enum(spec: str, error: str) -> None:
     assert_error_string(spec, error)
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        "type X (P : Y) is mod 2**8",
+        "type X (P : Y) is range 1 .. 100 with Size => 8",
+        "type X (P : Y) is (A, B) with Size => 8",
+        "type X (P : Y) is sequence of T",
+        "type X (P : Y) is new M",
+        "type X (P : Y) is null message",
+    ],
+)
+def test_parse_error_invalid_parameterized_type(spec: str) -> None:
+    assert_error_string(
+        f"""
+            package Test is
+               type T is mod 2**8;
+               type M is
+                  message
+                     F : T;
+                  end message;
+               {spec};
+            end Test;
+        """,
+        r"^<stdin>:8:24: parser: error: only message types can be parameterized$",
+    )
+
+
+def test_parse_error_undefined_parameter() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2**8;
+               type M (P : X) is
+                  message
+                     F : T;
+                  end message;
+            end Test;
+        """,
+        r'^<stdin>:4:28: parser: error: undefined type "Test::X"$',
+    )
+
+
+def test_parse_error_name_conflict_between_parameters() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2**8;
+               type M (P : T; P : T) is
+                  message
+                     F : T;
+                  end message;
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:4:31: parser: error: name conflict for "P"\n'
+        r"<stdin>:4:24: parser: info: conflicting name"
+        r"$",
+    )
+
+
+def test_parse_error_name_conflict_between_field_and_parameter() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2**8;
+               type M (P : T) is
+                  message
+                     P : T;
+                  end message;
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:6:22: parser: error: name conflict for "P"\n'
+        r"<stdin>:4:24: parser: info: conflicting name"
+        r"$",
+    )
 
 
 def test_parse_error_duplicate_spec_file_file() -> None:
