@@ -1233,15 +1233,11 @@ def test_set_checksum_to_pyrflx_invalid_id(
 def test_set_checksum_to_pyrflx_package_not_found(
     pyrflx_checksum: PyRFLX,
 ) -> None:
-    with pytest.raises(
-        PyRFLXError,
-        match='^pyrflx: error: "Not_A_Package::Not_A_Message" is not a package in pyrflx$',
-    ):
-        pyrflx_checksum.set_checksum_functions(
-            {
-                "Not_A_Package::Not_A_Message": {"Checksum": checksum_function_255},
-            }
-        )
+    pyrflx_checksum.set_checksum_functions(
+        {
+            "Not_A_Package::Not_A_Message": {"Checksum": checksum_function_255},
+        }
+    )
 
 
 def test_set_checksum_to_pyrflx_message_not_found(
