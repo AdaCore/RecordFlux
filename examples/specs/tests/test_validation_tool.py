@@ -25,7 +25,7 @@ def test_cli_error_msg_not_in_package() -> None:
                 "-i",
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -115,7 +115,7 @@ def test_cli_output_file_exists(tmp_path: Path) -> None:
                 "-o",
                 f"{tmp_file}",
                 "-f",
-                "tests.checksum",
+                "checksum",
             ]
         )
     ) == f"output file already exists: {tmp_file}"
@@ -133,7 +133,7 @@ def test_cli_path_does_not_exist() -> None:
                 "-i",
                 "tests/validation_tool/ethernet/non_existent_dir",
                 "-f",
-                "tests.checksum",
+                "checksum",
             ]
         )
     ) == "tests/validation_tool/ethernet/non_existent_dir does not exist or is not a directory"
@@ -154,7 +154,7 @@ def test_cli_path_is_not_directory(tmp_path: Path) -> None:
                 "-i",
                 f"{tmp_file}",
                 "-f",
-                "tests.checksum",
+                "checksum",
             ]
         )
     ) == f"{tmp_file} does not exist or is not a directory"
@@ -183,7 +183,7 @@ def test_cli_cannot_open_output_file(tmp_path_restricted: Path) -> None:
                 "-o",
                 f"{tmp_path_restricted}/test.json",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -205,7 +205,7 @@ def test_cli_abort_on_error() -> None:
             "-i",
             "tests/validation_tool/ethernet/frame/valid",
             "-f",
-            "tests.checksum",
+            "checksum",
             "--abort-on-error",
             "--no-verification",
         ]
@@ -232,7 +232,7 @@ def test_cli_not_regular_file(tmpdir: Path) -> None:
                 "-v",
                 f"{tmpdir}",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -288,7 +288,7 @@ def test_validation_positive() -> None:
                 "-i",
                 "tests/validation_tool/ethernet/frame/invalid",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -312,7 +312,7 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
                 "-o",
                 f"{tmp_path}/output.json",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -339,7 +339,7 @@ def test_validation_negative() -> None:
                 "-i",
                 "tests/validation_tool/ethernet/frame/valid",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -367,7 +367,7 @@ def test_validation_negative_full_output(tmp_path: Path) -> None:
                 "-o",
                 f"{tmp_path}/output.json",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -392,7 +392,7 @@ def test_validation_coverage(capsys: CaptureFixture[str]) -> None:
                 "--coverage",
                 "--target-coverage=100",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -420,7 +420,7 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
                 "-c",
                 "--target-coverage=90",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
@@ -448,7 +448,7 @@ def test_validation_coverage_threshold_invalid() -> None:
                 "-c",
                 "--target-coverage=110",
                 "-f",
-                "tests.checksum",
+                "checksum",
                 "--no-verification",
             ]
         )
