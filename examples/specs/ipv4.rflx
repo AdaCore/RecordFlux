@@ -63,6 +63,6 @@ package IPv4 is
                then null
                   if Header_Checksum'Valid_Checksum;
       end message with
-         Checksum => (Header_Checksum => (Version'First .. Header_Checksum'First - 1, Header_Checksum'Size, Header_Checksum'Last + 1 .. Payload'First - 1));
+         Checksum => (Header_Checksum => (Version'First .. Header_Checksum'First - 1, Header_Checksum'Last + 1 .. Payload'First - 1));
 
 end IPv4;

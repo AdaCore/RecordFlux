@@ -19,7 +19,6 @@ from rflx.pyrflx.typevalue import MessageValue
 
 
 def cli(argv: List[str]) -> Union[int, str]:
-    # pylint: disable=too-many-return-statements, too-many-branches, too-many-locals
     parser = argparse.ArgumentParser(
         description="validate specification against a set of known valid or invalid messages"
     )
@@ -54,7 +53,7 @@ def cli(argv: List[str]) -> Union[int, str]:
 
     parser.add_argument(
         "-f",
-        "--checksum_functions",
+        "--checksum-functions",
         type=Path,
         help="path to the module containing the checksum functions",
         default=None,
@@ -118,74 +117,10 @@ def cli(argv: List[str]) -> Union[int, str]:
     except FileNotFoundError as e:
         return f"specification {e}"
 
-    defined_checksum_fields = set(
-        (str(message.identifier), str(checksum_field_name))
-        for package in pyrflx
-        for message in package
-        for checksum_field_name in message.model.checksums.keys()
-    )
-
-    if args.checksum_functions is None and len(defined_checksum_fields) > 0:
-        return (
-            "No checksum functions have been provided, "
-            "but the following messages define a checksum: "
-            + ",".join(
-                [
-                    f'{field_name[0]} at field "{field_name[1]}"'
-                    for field_name in defined_checksum_fields
-                ]
-            )
-            + "."
-        )
-
-    if args.checksum_functions is not None:
-        try:
-            checksum_module = importlib.import_module(str(args.checksum_functions))
-        except ImportError as e:
-            return (
-                f"The provided module {args.checksum_functions} cannot be "
-                f"imported. Make sure the module name is provided as "
-                f"package.module and not as a file system path. {e}"
-            )
-
-        try:
-            checksum_functions = checksum_module.checksum_functions  # type: ignore[attr-defined]
-        except AttributeError:
-            return (
-                f"The checksum module at {args.checksum_functions} "
-                f'does not contain an attribute with the name "checksum_function".'
-            )
-        if not isinstance(checksum_functions, dict):
-            return f"The attribute checksum_function of {args.checksum_functions} is not a dict."
-
-        for message_id, checksum_field_mapping in checksum_functions.items():
-            if not isinstance(checksum_field_mapping, dict):
-                return f"The value at key {message_id} is not a dict."
-            for field_name, checksum_func_callable in checksum_field_mapping.items():
-                if not callable(checksum_func_callable):
-                    return f'The value at key "{field_name}" is not a callable checksum function.'
-
-        provided_checksum_fields = set(
-            (message_name, f_name)
-            for message_name, checksum_mapping in checksum_functions.items()
-            for f_name in checksum_mapping.keys()
-        )
-
-        checksum_diff = defined_checksum_fields.difference(provided_checksum_fields)
-        if len(checksum_diff) != 0:
-            return (
-                "The following messages define checksum fields, but no checksum function has been "
-                "provided: "
-                + ",".join(
-                    [f'{field_name[0]} at field "{field_name[1]}"' for field_name in checksum_diff]
-                )
-                + "."
-            )
-
-        try:
-            pyrflx.set_checksum_functions(checksum_functions)
-        except PyRFLXError as e:
-            return f"Could not set checksum function to pyrflx: {e}"
+    try:
+        set_checksum_to_pyrflx(pyrflx, args.checksum_functions)
+    except ValidationError as e:
+        return f"{e}"
 
     try:
         validate(
@@ -202,6 +137,79 @@ def cli(argv: List[str]) -> Union[int, str]:
         return f"{e}"
 
     return 0
+
+
+def set_checksum_to_pyrflx(
+    pyrflx: PyRFLX,
+    checksum_module_path: Optional[Path],
+) -> PyRFLX:
+
+    defined_checksum_fields = set(
+        (str(message.identifier), str(checksum_field_name))
+        for package in pyrflx
+        for message in package
+        for checksum_field_name in message.model.checksums.keys()
+    )
+    provided_checksum_fields = set()
+
+    if checksum_module_path is not None:
+        try:
+            checksum_module = importlib.import_module(str(checksum_module_path))
+        except ImportError as e:
+            raise ValidationError(
+                f"The provided module {checksum_module_path} cannot be "
+                f"imported. Make sure the module name is provided as "
+                f"package.module and not as a file system path. {e}"
+            ) from e
+
+        try:
+            checksum_functions = checksum_module.checksum_functions  # type: ignore[attr-defined]
+        except AttributeError as e:
+            raise ValidationError(
+                f"The checksum module at {checksum_module_path} "
+                f'does not contain an attribute with the name "checksum_function".'
+            ) from e
+
+        if not isinstance(checksum_functions, dict):
+            raise ValidationError(
+                f"The attribute checksum_function of {checksum_module_path} is not a dict."
+            )
+
+        for message_id, checksum_field_mapping in checksum_functions.items():
+            if not isinstance(checksum_field_mapping, dict):
+                raise ValidationError(f"The value at key {message_id} is not a dict.")
+            for field_name, checksum_func_callable in checksum_field_mapping.items():
+                if not callable(checksum_func_callable):
+                    raise ValidationError(
+                        f'The value at key "{field_name}" is not a callable checksum function.'
+                    )
+
+        provided_checksum_fields = set(
+            (message_name, f_name)
+            for message_name, checksum_mapping in checksum_functions.items()
+            for f_name in checksum_mapping.keys()
+        )
+
+        try:
+            pyrflx.set_checksum_functions(checksum_functions)
+        except PyRFLXError as e:
+            raise ValidationError(f"Could not set checksum function to pyrflx: {e}") from e
+
+    checksum_diff = defined_checksum_fields.difference(provided_checksum_fields)
+    if len(checksum_diff) != 0:
+        raise ValidationError(
+            "The following messages define checksum fields, but no checksum function has been "
+            "provided: "
+            + ",".join(
+                [
+                    f'{message_name} at field "{field_name}"'
+                    for message_name, field_name in checksum_diff
+                ]
+            )
+            + "."
+        )
+
+    return pyrflx
 
 
 def validate(

@@ -109,11 +109,11 @@ package ICMP is
          Receive_Timestamp : Timestamp;
          Transmit_Timestamp : Timestamp
             then null
-            	 if Checksum'Valid_Checksum;
+               if Checksum'Valid_Checksum;
          Data : Opaque
             then null
                if Checksum'Valid_Checksum;
       end message with
-         Checksum => (Checksum => (Tag'First .. Checksum'First - 1, Checksum'Size, Checksum'Last + 1 .. Message'Last));
+         Checksum => (Checksum => (Tag'First .. Checksum'First - 1, Checksum'Last + 1 .. Message'Last));
 
 end ICMP;

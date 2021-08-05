@@ -12,6 +12,6 @@ package Checksum_Message is
             then null
                if Checksum'Valid_Checksum;
       end message with
-         Checksum => (Checksum => (Field_A'First .. Field_A'Last, Field_B'First .. Field_B'Last));
+         Checksum => (Checksum => (Field_A, Field_B));
 
 end Checksum_Message;
