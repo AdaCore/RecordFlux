@@ -130,8 +130,10 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
          xref:syntax-message_aspects[message_aspects] ]
     | *null message* )
 
+[[syntax-type_name]]type_name ::= xref:syntax-qualified_name[qualified_name]
+
 [[syntax-field]]field ::=
-   field_xref:syntax-name[name] *:* type_xref:syntax-name[name]
+   field_xref:syntax-name[name] *:* xref:syntax-type_name[type_name]
     [ *with* xref:syntax-aspects[aspects] ]
     [ *if* xref:syntax-condition[condition] ]
     { xref:syntax-then_clause[then_clause] } *;*
@@ -222,12 +224,8 @@ A type refinement describes the relation of an opaque field in a message type to
 [subs="+macros,quotes"]
 ----
 [[syntax-type_refinement]]type_refinement ::=
-   *for* xref:syntax-refined_type_name[refined_type_name] *use* **( **refined_field_xref:syntax-name[name] **=>** xref:syntax-message_type_name[message_type_name] **)**
+   *for* refined_xref:syntax-type_name[type_name] *use* **( **refined_field_xref:syntax-name[name] **=>** message_xref:syntax-type_name[type_name] **)**
     [ **if** xref:syntax-condition[condition] ]
-
-[[syntax-refined_type_name]]refined_type_name ::= xref:syntax-qualified_name[qualified_name]
-
-[[syntax-message_type_name]]message_type_name ::= xref:syntax-qualified_name[qualified_name]
 
 [[syntax-qualified_name]]qualified_name ::= xref:syntax-name[name] { **::** xref:syntax-name[name] }
 
@@ -282,7 +280,7 @@ A sequence type represents a list of similar elements.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-sequence_type]]sequence_type ::= *type* xref:syntax-name[name] *is sequence of* element_type_xref:syntax-name[name]
+[[syntax-sequence_type]]sequence_type ::= *type* xref:syntax-name[name] *is sequence of* element_xref:syntax-type_name[type_name]
 ----
 
 *Static Semantics*
@@ -400,9 +398,9 @@ Functions enable the execution of externally defined code.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-function_declaration]]function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-function_parameter[function_parameter] { **,** xref:syntax-function_parameter[function_parameter] } **)** ]
+[[syntax-function_declaration]]function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-parameter[parameter] { *,* xref:syntax-parameter[parameter] } *)* ]
 
-[[syntax-function_parameter]]function_parameter ::= parameter_xref:syntax-name[name] *:* type_xref:syntax-name[name]
+[[syntax-parameter]]parameter ::= parameter_xref:syntax-name[name] *:* xref:syntax-type_name[type_name]
 ----
 
 *Static Semantics*
@@ -495,7 +493,7 @@ A declared variable must have a type and can be optionally initialized using an 
 
 [subs="+macros,quotes"]
 ----
-[[syntax-variable_declaration]]variable_declaration ::= variable_xref:syntax-name[name] *:* type_xref:syntax-name[name] [ *:=* initialization_xref:syntax-expression[expression] ]
+[[syntax-variable_declaration]]variable_declaration ::= variable_xref:syntax-name[name] *:* xref:syntax-type_name[type_name] [ *:=* initialization_xref:syntax-expression[expression] ]
 ----
 
 // *Static Semantics*
@@ -542,7 +540,7 @@ Error_Sent : Boolean := False
 
 [subs="+macros,quotes"]
 ----
-[[syntax-renaming_declaration]]renaming_declaration ::= xref:syntax-name[name] *:* message_type_xref:syntax-name[name] *renames* message_variable_xref:syntax-name[name] *.* field_xref:syntax-name[name]
+[[syntax-renaming_declaration]]renaming_declaration ::= xref:syntax-name[name] *:* message_xref:syntax-type_name[type_name] *renames* message_variable_xref:syntax-name[name] *.* field_xref:syntax-name[name]
 ----
 
 *Example*
@@ -1032,7 +1030,7 @@ Data_Channel'Write (Message)
 
 [subs="+macros,quotes"]
 ----
-[[syntax-message_aggregate]]message_aggregate ::= message_type_xref:syntax-name[name]*'(* xref:syntax-field_values[field_values] *)*
+[[syntax-message_aggregate]]message_aggregate ::= message_xref:syntax-type_name[type_name]*'(* xref:syntax-field_values[field_values] *)*
 
 [[syntax-field_values]]field_values ::= xref:syntax-field_value[field_value] { *,* xref:syntax-field_value[field_value] } | *null message*
 
@@ -1477,7 +1475,7 @@ An opaque field of a message can be converted to a message.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-conversion]]conversion ::= message_type_xref:syntax-name[name] *(* message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name] *)*
+[[syntax-conversion]]conversion ::= message_xref:syntax-type_name[type_name] *(* message_xref:syntax-expression[expression] *.* field_xref:syntax-name[name] *)*
 ----
 
 *Static Semantics*
