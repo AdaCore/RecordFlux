@@ -16,9 +16,15 @@ The specification language describes protocol message formats based on types. Fo
 
 The type system is inspired by Ada, but differs in some details. In contrast to Ada, integer variables are considered type-compatible. Explicit type conversions of integer variables are neither required nor supported.
 
+// Types [§T]
+
 == Scalar Types
 
 === Integer Types
+
+// Integers [§T-I]
+// Modular Integers [§T-I-M]
+// Range Integers [§T-I-R]
 
 An integer type is used to represent numbers. Two types of integers are supported: modular type and range type.
 
@@ -55,6 +61,8 @@ type Type_Length is range 46 .. 2**16 - 1 with Size => 16
 ----
 
 === Enumeration Types
+
+// Enumerations [§T-E]
 
 An enumeration type represents a value out of a list of possible values.
 
@@ -98,9 +106,13 @@ with Size => 16, Always_Valid
 
 === Boolean
 
+// Booleans [§T-B]
+
 `Boolean` is a built-in enumeration type with the literals `False => 0` and `True => 1` with a size of 1 bit.
 
 == Message Types
+
+// Messages [§T-M]
 
 A message type is a collection of fields. Additional xref:syntax-then_clause[then clauses] enable the definition of conditions and dependencies between fields.
 
@@ -201,6 +213,8 @@ type Empty_Message is null message
 
 == Type Refinements
 
+// Type Refinements [§T-R]
+
 A type refinement describes the relation of an opaque field in a message type to another message type.
 
 *Syntax*
@@ -234,6 +248,8 @@ for Ethernet::Frame use (Payload => IPv4::Packet)
 
 == Type Derivations
 
+// Derived Messages [§T-D]
+
 A type derivation enables the creation of a new message type based on an existing message type.
 
 *Syntax*
@@ -258,6 +274,8 @@ type Specific_Extension is new Extension
 
 == Sequence Types
 
+// Sequences [§T-S]
+
 A sequence type represents a list of similar elements.
 
 *Syntax*
@@ -270,6 +288,9 @@ A sequence type represents a list of similar elements.
 *Static Semantics*
 
 A sequence consists of a number of elements with similar type. Scalar types as well as message types can be used as element type. When a sequence is used in a message type, its bit length has to be specified by a size aspect.
+
+// Sequence of scalars [§T-S-S]
+// Sequence of messages [§T-S-M]
 
 *Example*
 
