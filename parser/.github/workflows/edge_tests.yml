@@ -33,7 +33,7 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         pip install .[devel]
-        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux') if 'devel' in r))")
+        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux-language') if 'devel' in r))")
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -60,7 +60,7 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         pip install .[devel]
-        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux') if 'devel' in r))")
+        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux-language') if 'devel' in r))")
     - name: Test
       run: |
         make test
