@@ -403,3 +403,24 @@ def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
            end Test;
         """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
+    spec = """
+           package Test is
+
+              type Length is mod 2 ** 8;
+
+              type Packet is
+                 message
+                    Length_1 : Length;
+                    Length_2 : Length
+                       then Payload
+                          with Size => Length_2 * 256 + Length_1
+                          if (Length_2 * 256 + Length_1) mod 8 = 0;
+                    Payload : Opaque;
+                 end message;
+
+           end Test;
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)

@@ -519,7 +519,7 @@ is
       Set_Length (Ctx, Struct.Length);
       Set_Checksum (Ctx, Struct.Checksum);
       declare
-         Payload_Size : constant RFLX_Types.Bit_Length := RFLX_Types.Bit_Length ((Struct.Length - 8) * 8);
+         Payload_Size : constant RFLX_Types.Bit_Length := (RFLX_Types.Bit_Length (Struct.Length) - 8) * 8;
       begin
          if Payload_Size = Field_Size (Ctx, F_Payload) then
             Set_Payload (Ctx, Struct.Payload (Struct.Payload'First .. Struct.Payload'First + RFLX_Types.Index (RFLX_Types.To_Length (Payload_Size) + 1) - 2));
