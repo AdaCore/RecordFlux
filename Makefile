@@ -90,7 +90,6 @@ test_spark_optimized: $(test-files)
 	$(test-bin)
 
 test_apps:
-	python3 examples/apps/icmp_socket.py
 	$(MAKE) -C examples/apps/ping test_python
 	$(MAKE) -C examples/apps/ping test_spark
 	$(MAKE) -C examples/apps/dhcp_client test
