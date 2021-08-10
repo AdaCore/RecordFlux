@@ -3067,17 +3067,25 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                     ObjectDeclaration(
                                         [field_size],
                                         const.TYPES_BIT_LENGTH,
-                                        Call(
-                                            const.TYPES_BIT_LENGTH,
-                                            [
-                                                link.size.substituted(
-                                                    lambda x: expr.Variable("Struct" * x.identifier)
-                                                    if isinstance(x, expr.Variable)
-                                                    and Field(x.identifier) in message.fields
-                                                    else x
-                                                ).ada_expr()
-                                            ],
-                                        ),
+                                        link.size.substituted(
+                                            lambda x: expr.Size(
+                                                expr.Variable("Struct" * x.prefix.identifier)
+                                            )
+                                            if isinstance(x, expr.Size)
+                                            and isinstance(x.prefix, expr.Variable)
+                                            and Field(x.prefix.identifier) in message.fields
+                                            else x
+                                        )
+                                        .substituted(
+                                            lambda x: expr.Call(
+                                                const.TYPES_BIT_LENGTH,
+                                                [expr.Variable("Struct" * x.identifier)],
+                                            )
+                                            if isinstance(x, expr.Variable)
+                                            and Field(x.identifier) in message.fields
+                                            else x
+                                        )
+                                        .ada_expr(),
                                         constant=True,
                                     )
                                 ],
