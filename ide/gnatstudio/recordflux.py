@@ -333,7 +333,9 @@ def output_dir():
 
 def generate_all(filenames=None):
     filenames = filenames or get_source_files()
-    return run(filenames, mode="generate", options=["-d", output_dir()])
+    return run(
+        filenames, mode="generate", options=["-d", output_dir(), "--ignore-unsupported-checksum"]
+    )
 
 
 def generate(filename):
