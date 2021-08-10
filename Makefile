@@ -19,8 +19,9 @@ test-bin := $(noprefix-dir)/$(build-dir)/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
-.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_spark test_apps test_specs test_runtime \
+.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc \
+	format \
+	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps clean
 
 all: check test prove
@@ -58,7 +59,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: test_python_coverage test_python_property test_spark test_runtime test_installation
+test: test_python_coverage test_python_property test_spark test_apps test_specs test_runtime test_installation
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "(verification or not verification) and not hypothesis" tests
