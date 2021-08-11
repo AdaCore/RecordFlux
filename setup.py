@@ -40,7 +40,7 @@ setup(
         "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Networking",
     ],
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(include=("rflx", "rflx.*")),
     package_data={"rflx": ["py.typed", "templates/*"]},
     python_requires=">=3.7",
     install_requires=[
