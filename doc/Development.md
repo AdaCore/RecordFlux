@@ -33,3 +33,32 @@ When submitting a pull request, your topic branch should be rebased to the curre
 We enforce 100% branch coverage for Python code using [pytest](https://pytest.org). Make sure to add relevant test cases to achieve that for your code. See [the test documentation](/tests/README.md) and have a look at the existing test cases in the `tests` directory to get an idea of the structure of our test suite. Our Python code is also statically type-checked using [mypy](http://mypy-lang.org/). Make sure to include the required type annotations with your code.
 
 Your code will be reviewed by at least one core developer before inclusion into the project. Don't be discouraged should we have many comments and ask you for a lot of changes to your pull request. This even happens to the most experienced developers in our project and we consider these discussions an essential part of the development process and a necessity to maintain high quality. Don't hesitate to open an issue if you have any question or submit the pull request in draft mode first.
+
+## Checklist for releasing new versions
+
+- [ ] Prepare release notes
+- [ ] Update submodules
+- [ ] Test GNAT Studio plugin
+    - Check verification, generation and display of message graph for example apps
+- [ ] Add version to limitations labels on GitHub
+- [ ] Change version in limitations link in README
+- [ ] Change version in code
+- [ ] Generate distribution archive
+    - `python3 setup.py sdist`
+- [ ] Check distribution archive
+    - Check content of archive (e.g., that documentation is contained)
+    - Install in new virtual environment
+    - Ensure that no additional packages to `rflx` are installed
+    - Test `rflx` executable
+- [ ] Upload to TestPyPI
+    - `twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Check project on TestPyPI
+- [ ] Test installation from TestPyPI
+    - `pip3 install --index-url https://test.pypi.org/simple/ --no-deps RecordFlux`
+- [ ] Upload to PyPI
+    - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Add tag to git repository
+    - Note: Commit IDs change when a PR is merged on GitHub, so it should be ensured that the right branch is checked out.
+    - `git tag -a vX.Y.Z -m ""`
+    - `git push --follow-tags`
+- [ ] Publish release notes on GitHub
