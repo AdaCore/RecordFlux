@@ -41,6 +41,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Install Ada toolchain
+      uses: ada-actions/toolchain@ce2021
+      with:
+        distrib: community
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
