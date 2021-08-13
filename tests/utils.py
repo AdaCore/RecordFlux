@@ -118,6 +118,15 @@ def assert_executable_code(
     return p.stdout.decode("utf-8")
 
 
+def assert_provable_code_string(
+    specification: str, tmp_path: pathlib.Path, prefix: str = None, units: Sequence[str] = None
+) -> None:
+    parser = Parser()
+    parser.parse_string(specification)
+
+    assert_provable_code(parser.create_model(), tmp_path, prefix=prefix, units=units)
+
+
 def assert_provable_code(
     model: Model,
     tmp_path: pathlib.Path,
@@ -162,27 +171,27 @@ def _create_files(
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     main = f'"{main}"' if main else ""
-    with open(tmp_path / "test.gpr", "x") as f:
-        f.write(
-            f"""
-with "defaults";
+    (tmp_path / "test.gpr").write_text(
+        multilinestr(
+            f"""with "defaults";
 
-project Test is
-   for Source_Dirs use (".");
-   for Main use ({main});
+               project Test is
+                  for Source_Dirs use (".");
+                  for Main use ({main});
 
-   package Builder is
-      for Default_Switches ("Ada") use
-         Defaults.Builder_Switches & Defaults.Compiler_Switches;
-   end Builder;
+                  package Builder is
+                     for Default_Switches ("Ada") use
+                        Defaults.Builder_Switches & Defaults.Compiler_Switches;
+                  end Builder;
 
-   package Prove is
-      for Proof_Dir use "proof";
-      for Proof_Switches ("Ada") use Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
-   end Prove;
-end Test;
-            """
+                  package Prove is
+                     for Proof_Dir use "proof";
+                     for Proof_Switches ("Ada") use
+                        Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+                  end Prove;
+               end Test;"""
         )
+    )
 
     generator = Generator(
         model, prefix if prefix else "RFLX", debug=True, ignore_unsupported_checksum=True

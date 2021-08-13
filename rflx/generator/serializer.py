@@ -99,7 +99,7 @@ class SerializerGenerator:
                         *common.field_byte_location_declarations(),
                         *unique(
                             self.insert_function(common.full_base_type_name(t))
-                            for t in message.types.values()
+                            for t in message.field_types.values()
                             if isinstance(t, Scalar)
                         ),
                     ],
@@ -217,7 +217,7 @@ class SerializerGenerator:
                                         ]
                                     ),
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -431,7 +431,7 @@ class SerializerGenerator:
                             ),
                         ],
                     )
-                    for f, t in message.types.items()
+                    for f, t in message.field_types.items()
                     if message.is_possibly_empty(f)
                 ],
             ],
@@ -460,7 +460,7 @@ class SerializerGenerator:
                     ],
                     self.__set_sequence_field(message, f),
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if message.is_possibly_empty(f)
             ],
         )
@@ -601,7 +601,7 @@ class SerializerGenerator:
                         ),
                     ],
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
             ],
             [
@@ -623,7 +623,7 @@ class SerializerGenerator:
                         ),
                     ],
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
             ],
         )
@@ -691,7 +691,7 @@ class SerializerGenerator:
                     ],
                     formal_parameters(f),
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
             ],
             [
@@ -715,7 +715,7 @@ class SerializerGenerator:
                         ),
                     ],
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
             ],
         )
@@ -750,12 +750,12 @@ class SerializerGenerator:
                         ),
                     ],
                 )
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
             ],
             [
                 s
-                for f, t in message.types.items()
+                for f, t in message.field_types.items()
                 if isinstance(t, Opaque)
                 for s in [
                     SubprogramBody(
@@ -841,7 +841,7 @@ class SerializerGenerator:
                 if p != FINAL
             ],
             *common.valid_path_to_next_field_condition(message, field, self.prefix),
-            *const.CONTEXT_INVARIANT,
+            *common.context_invariant(message),
             *[
                 Equal(e, Old(e))
                 for e in [
@@ -857,7 +857,7 @@ class SerializerGenerator:
                 + [
                     Call(f"Get_{p.name}", [Variable("Ctx")])
                     for p in message.definite_predecessors(field)
-                    for t in [message.types[p]]
+                    for t in [message.field_types[p]]
                     if isinstance(t, Scalar) and int(t.value_count) > 1
                 ]
             ],

@@ -49,16 +49,6 @@ TYPES_TO_LAST_BIT_INDEX = TYPES * "To_Last_Bit_Index"
 TYPES_OFFSET = TYPES * "Offset"
 TYPES_U64 = TYPES * "U64"
 
-CONTEXT_INVARIANT = [
-    ada.Equal(e, ada.Old(e))
-    for e in (
-        ada.Variable("Ctx.Buffer_First"),
-        ada.Variable("Ctx.Buffer_Last"),
-        ada.Variable("Ctx.First"),
-        ada.Variable("Ctx.Last"),
-    )
-]
-
 UNREACHABLE = ada.Raise("Program_Error")
 
 CONFIGURATION_PRAGMAS = [

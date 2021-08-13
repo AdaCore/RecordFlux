@@ -336,7 +336,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         sequence_fields = {}
         opaque_fields = []
 
-        for f, t in message.types.items():
+        for f, t in message.field_types.items():
             if isinstance(t, Scalar):
                 scalar_fields[f] = t
             if isinstance(t, Composite):
@@ -352,17 +352,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         unit += self.__create_cursor_type(message)
         unit += self.__create_cursor_validation_functions()
         unit += self.__create_valid_context_function(message, composite_fields)
-        unit += self.__create_context_type()
+        unit += self.__create_context_type(message)
         unit += self.__create_field_dependent_type(message)
-        unit += self.__create_initialize_procedure()
+        unit += self.__create_initialize_procedure(message)
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
-        unit += self.__create_reset_procedure()
+        unit += self.__create_reset_procedure(message)
         unit += self.__create_restricted_reset_procedure(message)
-        unit += self.__create_take_buffer_procedure()
+        unit += self.__create_take_buffer_procedure(message)
         unit += self.__create_copy_procedure()
         unit += self.__create_read_procedure()
-        unit += self.__create_write_procedure()
+        unit += self.__create_write_procedure(message)
         unit += self.__create_has_buffer_function()
         unit += self.__create_size_function()
         unit += self.__create_byte_size_function()
@@ -507,7 +507,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 if isinstance(t, Scalar)
                                 else TRUE,
                             )
-                            for f, t in message.types.items()
+                            for f, t in message.field_types.items()
                         ]
                         + [
                             (Variable(INITIAL.affixed_name), FALSE),
@@ -576,7 +576,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_context_type() -> UnitPart:
+    def __create_context_type(message: Message) -> UnitPart:
         """
         Components of a context type:
 
@@ -605,6 +605,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ),
             Discriminant(["First"], const.TYPES_BIT_INDEX, First(const.TYPES_BIT_INDEX)),
             Discriminant(["Last"], const.TYPES_BIT_LENGTH, First(const.TYPES_BIT_LENGTH)),
+            *[
+                Discriminant(
+                    [p.name],
+                    common.ada_type_identifier(t.identifier),
+                    First(common.ada_type_identifier(t.identifier)),
+                )
+                for p, t in message.parameter_types.items()
+            ],
         ]
 
         return UnitPart(
@@ -657,6 +665,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                     Variable("Context.Message_Last"),
                                     Variable("Context.Buffer"),
                                     Variable("Context.Cursors"),
+                                    *[
+                                        Variable("Context" * ID(p.identifier))
+                                        for p in message.parameter_types
+                                    ],
                                 ],
                             )
                         )
@@ -670,7 +682,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         variants = []
         construction_functions = []
 
-        for f, t in message.types.items():
+        for f, t in message.field_types.items():
             if isinstance(t, Composite) and not common.is_compared_to_aggregate(f, message):
                 null_fields.append(f)
             elif isinstance(t, Scalar):
@@ -748,10 +760,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_initialize_procedure() -> UnitPart:
+    def __create_initialize_procedure(message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
-            [OutParameter(["Ctx"], "Context"), InOutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
+            [
+                OutParameter(["Ctx"], "Context"),
+                InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
+                *message_parameters(message),
+            ],
         )
 
         return UnitPart(
@@ -787,10 +803,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         [Variable("Ctx.Buffer_Last")],
                                     ),
                                 ),
-                                Call("Initialized", [Variable("Ctx")]),
+                                *initialize_conditions(message),
                             )
                         ),
-                        Depends({"Ctx": ["Buffer"], "Buffer": []}),
+                        Depends(
+                            {
+                                "Ctx": ["Buffer", *[p.name for p in message.parameter_types]],
+                                "Buffer": [],
+                            }
+                        ),
                     ],
                 )
             ],
@@ -806,6 +827,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Variable("Buffer"),
                                 Call(const.TYPES_TO_FIRST_BIT_INDEX, [First("Buffer")]),
                                 Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Buffer")]),
+                                *[Variable(ID(p.identifier)) for p in message.parameter_types],
                             ],
                         )
                     ],
@@ -822,6 +844,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["First"], const.TYPES_BIT_INDEX),
                 Parameter(["Last"], const.TYPES_BIT_LENGTH),
+                *message_parameters(message),
             ],
         )
 
@@ -858,10 +881,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Equal(Variable("Ctx.Buffer_Last"), Old(Last("Buffer"))),
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
-                                Call("Initialized", [Variable("Ctx")]),
+                                *initialize_conditions(message),
                             )
                         ),
-                        Depends({"Ctx": ["Buffer", "First", "Last"], "Buffer": []}),
+                        Depends(
+                            {
+                                "Ctx": [
+                                    "Buffer",
+                                    "First",
+                                    "Last",
+                                    *[p.name for p in message.parameter_types],
+                                ],
+                                "Buffer": [],
+                            }
+                        ),
                     ],
                 )
             ],
@@ -884,6 +917,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Variable("Buffer_Last"),
                                 Variable("First"),
                                 Variable("Last"),
+                                *[Variable(ID(p.identifier)) for p in message.parameter_types],
                                 Sub(Variable("First"), Number(1)),
                                 Variable("Buffer"),
                                 context_cursors_initialization(message),
@@ -947,7 +981,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_reset_procedure() -> UnitPart:
+    def __create_reset_procedure(message: Message) -> UnitPart:
         """
         Reset the state and buffer bounds of the context.
 
@@ -962,7 +996,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
         specification = ProcedureSpecification(
             "Reset",
-            [InOutParameter(["Ctx"], "Context")],
+            [
+                InOutParameter(["Ctx"], "Context"),
+                *message_parameters(message),
+            ],
         )
 
         return UnitPart(
@@ -1000,7 +1037,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         [Variable("Ctx.Buffer_Last")],
                                     ),
                                 ),
-                                Call("Initialized", [Variable("Ctx")]),
+                                *initialize_conditions(message),
                             )
                         ),
                     ],
@@ -1017,6 +1054,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Variable("Ctx"),
                                 Call(const.TYPES_TO_FIRST_BIT_INDEX, [First("Ctx.Buffer")]),
                                 Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Ctx.Buffer")]),
+                                *[Variable(ID(p.identifier)) for p in message.parameter_types],
                             ],
                         )
                     ],
@@ -1032,6 +1070,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 InOutParameter(["Ctx"], "Context"),
                 Parameter(["First"], const.TYPES_BIT_INDEX),
                 Parameter(["Last"], const.TYPES_BIT_LENGTH),
+                *message_parameters(message),
             ],
         )
 
@@ -1070,7 +1109,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 ],
                                 Equal(Variable("Ctx.First"), Variable("First")),
                                 Equal(Variable("Ctx.Last"), Variable("Last")),
-                                Call("Initialized", [Variable("Ctx")]),
+                                *initialize_conditions(message),
                             )
                         ),
                     ],
@@ -1088,6 +1127,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Variable("Ctx.Buffer_Last"),
                                 Variable("First"),
                                 Variable("Last"),
+                                *[Variable(ID(p.identifier)) for p in message.parameter_types],
                                 Sub(Variable("First"), Number(1)),
                                 Variable("Ctx.Buffer"),
                                 context_cursors_initialization(message),
@@ -1099,7 +1139,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_take_buffer_procedure() -> UnitPart:
+    def __create_take_buffer_procedure(message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Take_Buffer",
             [InOutParameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
@@ -1117,7 +1157,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 NotEqual(Variable("Buffer"), NULL),
                                 Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
                                 Equal(Variable("Ctx.Buffer_Last"), Last("Buffer")),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [Call("Context_Cursors", [Variable("Ctx")])]
@@ -1257,7 +1297,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_write_procedure() -> UnitPart:
+    def __create_write_procedure(message: Message) -> UnitPart:
         """
         Write data into the buffer of the context using an externally provided subprogram.
 
@@ -1363,6 +1403,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         ),
                                     ],
                                 ),
+                                *[
+                                    Variable(ID("Ctx" * p.identifier))
+                                    for p in message.parameter_types
+                                ],
                             ],
                         ),
                     ],
@@ -1446,7 +1490,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ]
             cases: ty.List[ty.Tuple[Expr, Expr]] = []
             for target, links in target_links:
-                field_type = message.types[target]
+                field_type = message.field_types[target]
                 size: Expr
                 if isinstance(field_type, Scalar):
                     size = Size(self.__prefix * common.full_base_type_name(field_type))
@@ -1649,7 +1693,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 }
             )
             if field not in (INITIAL, FINAL):
-                if isinstance(message.types[field], Scalar):
+                if isinstance(message.field_types[field], Scalar):
                     c = c.substituted(
                         lambda x: expr.Call(
                             const.TYPES_U64, [expr.Variable(expr.ID("Val") * f"{field.name}_Value")]
@@ -1658,7 +1702,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                         else x
                     )
                 elif isinstance(
-                    message.types[field], Composite
+                    message.field_types[field], Composite
                 ) and common.is_compared_to_aggregate(field, message):
                     c = c.substituted(
                         lambda x: expr.Variable(expr.ID("Val") * f"{field.name}_Value")
@@ -1944,7 +1988,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                     if len(message.fields) > 1
                                     else []
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -2434,7 +2478,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                     "Present",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -2631,7 +2675,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 Variable("Buffer"),
             ]
 
-            field_type = message.types[field]
+            field_type = message.field_types[field]
             assert isinstance(field_type, Sequence)
 
             return arguments
@@ -2664,7 +2708,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         [Variable("Seq_Ctx")],
                                     )
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -2808,6 +2852,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 Parameter(["Message_Last"], const.TYPES_BIT_LENGTH),
                 Parameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Cursors"], "Field_Cursors"),
+                *message_parameters(message),
             ],
         )
 
@@ -2893,14 +2938,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         components = []
 
         for path in message.paths(FINAL):
-            if any(isinstance(t, Opaque) for t in message.types.values()):
+            if any(isinstance(t, Opaque) for t in message.field_types.values()):
                 field_size = message.max_field_sizes()
 
             for link in path:
                 if link.target == FINAL:
                     continue
 
-                type_ = message.types[link.target]
+                type_ = message.field_types[link.target]
 
                 component_type: ty.Union[ID, Expr]
 
@@ -2949,7 +2994,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 if link.target == FINAL:
                     continue
 
-                type_ = message.types[link.target]
+                type_ = message.field_types[link.target]
 
                 if isinstance(type_, Scalar):
                     statements.append(
@@ -3007,7 +3052,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 if link.target == FINAL:
                     continue
 
-                type_ = message.types[link.target]
+                type_ = message.field_types[link.target]
 
                 if isinstance(type_, (Scalar, Opaque)):
                     if isinstance(type_, Enumeration) and type_.always_valid:
@@ -3954,6 +3999,13 @@ def create_file(filename: Path, content: str) -> None:
         f.write(content)
 
 
+def message_parameters(message: Message) -> ty.List[Parameter]:
+    return [
+        Parameter([p.name], common.ada_type_identifier(t.identifier))
+        for p, t in message.parameter_types.items()
+    ]
+
+
 def modular_types(integer: ModularInteger) -> ty.List[Declaration]:
     return [
         ModularType(
@@ -4044,6 +4096,19 @@ def context_cursors_initialization(message: Message) -> Expr:
             ),
         ),
     )
+
+
+def initialize_conditions(message: Message) -> ty.Sequence[Expr]:
+    return [
+        *[
+            Equal(
+                Variable("Ctx" * ID(p.name)),
+                Variable(p.name),
+            )
+            for p, t in message.parameter_types.items()
+        ],
+        Call("Initialized", [Variable("Ctx")]),
+    ]
 
 
 def switch_update_conditions(message: Message, field: Field) -> ty.Sequence[Expr]:
