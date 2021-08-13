@@ -22,10 +22,16 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Install toolchain
+    - name: Cache Ada toolchain
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/work/gnat
+        key: ${{ runner.os }}-gnat-ce2021
+    - name: Install Ada toolchain
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
+        install_dir: /home/runner/work/gnat
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -57,10 +63,16 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Install toolchain
+    - name: Cache Ada toolchain
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/work/gnat
+        key: ${{ runner.os }}-gnat-ce2021
+    - name: Install Ada toolchain
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
+        install_dir: /home/runner/work/gnat
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH

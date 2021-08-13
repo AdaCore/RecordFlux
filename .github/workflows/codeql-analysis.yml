@@ -41,10 +41,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Cache Ada toolchain
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/work/gnat
+        key: ${{ runner.os }}-gnat-ce2021
+
     - name: Install Ada toolchain
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
+        install_dir: /home/runner/work/gnat
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
