@@ -3269,3 +3269,91 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         r' of "P::M"'
         r"$",
     )
+
+
+def test_message_type_with_message_aspect() -> None:
+    inner = UnprovenMessage(
+        "P::I",
+        [
+            Link(INITIAL, Field("I1")),
+            Link(
+                Field("I1"),
+                Field("I2"),
+                condition=Less(Variable("I1"), Number(128)),
+                size=Sub(Size(ID("Message", location=Location((5, 10)))), Number(8)),
+            ),
+            Link(
+                Field("I1"),
+                Field("I2"),
+                condition=GreaterEqual(Variable("I1"), Number(128)),
+                size=Sub(
+                    Sub(Last(ID("Message", location=Location((6, 10)))), First("Message")),
+                    Number(7),
+                ),
+            ),
+            Link(Field("I2"), FINAL),
+        ],
+        {Field("I1"): MODULAR_INTEGER, Field("I2"): OPAQUE},
+    )
+    valid_outer = (
+        UnprovenMessage(
+            "P::O",
+            [
+                Link(INITIAL, Field("O1")),
+                Link(Field("O1"), Field("O2")),
+                Link(Field("O2"), FINAL),
+            ],
+            {Field("O1"): MODULAR_INTEGER, Field("O2"): inner},
+        )
+        .merged()
+        .proven()
+    )
+    assert_equal(
+        valid_outer,
+        Message(
+            "P::O",
+            [
+                Link(INITIAL, Field("O1")),
+                Link(Field("O1"), Field("O2_I1")),
+                Link(
+                    Field("O2_I1"),
+                    Field("O2_I2"),
+                    condition=Less(Variable("O2_I1"), Number(128)),
+                    size=Add(Add(Add(Last("Message"), -First("O2_I1")), Number(1)), -Number(8)),
+                ),
+                Link(
+                    Field("O2_I1"),
+                    Field("O2_I2"),
+                    condition=GreaterEqual(Variable("O2_I1"), Number(128)),
+                    size=Add(Add(Last("Message"), -First("O2_I1")), -Number(7)),
+                ),
+                Link(Field("O2_I2"), FINAL),
+            ],
+            {Field("O1"): MODULAR_INTEGER, Field("O2_I1"): MODULAR_INTEGER, Field("O2_I2"): OPAQUE},
+        ),
+    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "<stdin>:2:10: model: error: Message types with message attribute may only be used for"
+            " fields preceeding FINAL\n"
+            "<stdin>:5:10: model: info: Message attribute used in P::I\n"
+            "<stdin>:6:10: model: info: Message attribute used in P::I"
+            "$"
+        ),
+    ):
+        o1 = Field(ID("O1", location=Location((2, 10))))
+        valid_outer = (
+            UnprovenMessage(
+                "P::O",
+                [
+                    Link(INITIAL, o1),
+                    Link(o1, Field("O2")),
+                    Link(Field("O2"), FINAL),
+                ],
+                {o1: inner, Field("O2"): MODULAR_INTEGER},
+            )
+            .merged()
+            .proven()
+        )
