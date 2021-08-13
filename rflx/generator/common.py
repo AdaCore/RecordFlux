@@ -154,6 +154,18 @@ def substitution_facts(
             expr.Number(1),
         )
 
+    def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
+        if isinstance(parameter_type, model.Enumeration):
+            if embedded:
+                return expr.Call("To_Base", [expr.Variable(parameter.name)])
+            return expr.Call("To_Base", [expr.Variable("Ctx" * parameter.identifier)])
+        if isinstance(parameter_type, model.Scalar):
+            if embedded:
+                return expr.Variable(parameter.name)
+            return expr.Variable("Ctx" * parameter.identifier)
+
+        assert False, f'unexpected type "{type(parameter_type).__name__}"'
+
     def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
         if isinstance(field_type, model.Enumeration):
             if public:
@@ -187,8 +199,12 @@ def substitution_facts(
         **{expr.Last(f.name): type_conversion(field_last(f)) for f in message.fields},
         **{expr.Size(f.name): type_conversion(field_size(f)) for f in message.fields},
         **{
+            expr.Variable(p.identifier): type_conversion(parameter_value(p, t))
+            for p, t in message.parameter_types.items()
+        },
+        **{
             expr.Variable(f.name): type_conversion(field_value(f, t))
-            for f, t in message.types.items()
+            for f, t in message.field_types.items()
         },
         **{
             expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
@@ -508,6 +524,19 @@ def public_context_predicate() -> ada.Expr:
     )
 
 
+def context_invariant(message: model.Message) -> Sequence[ada.Expr]:
+    return [
+        ada.Equal(e, ada.Old(e))
+        for e in [
+            ada.Variable("Ctx.Buffer_First"),
+            ada.Variable("Ctx.Buffer_Last"),
+            ada.Variable("Ctx.First"),
+            ada.Variable("Ctx.Last"),
+            *[ada.Variable("Ctx" * ada.ID(p.name)) for p in message.parameters],
+        ]
+    ]
+
+
 def valid_path_to_next_field_condition(
     message: model.Message, field: model.Field, prefix: str
 ) -> Sequence[ada.Expr]:
@@ -694,6 +723,13 @@ def field_condition_call(message: model.Message, field: model.Field, value: ada.
             ),
         ],
     )
+
+
+def ada_type_identifier(type_identifier: rid.ID) -> ada.ID:
+    if model.is_builtin_type(type_identifier):
+        return ada.ID(type_identifier.name)
+
+    return ada.ID(type_identifier)
 
 
 def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:

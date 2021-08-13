@@ -90,7 +90,7 @@ class ParserGenerator:
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
             aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
-            if isinstance(message.types[field], Scalar):
+            if isinstance(message.field_types[field], Scalar):
                 aggregate.append(
                     (
                         f"{field.name}_Value",
@@ -107,9 +107,9 @@ class ParserGenerator:
                         ),
                     )
                 )
-            elif isinstance(message.types[field], Composite) and common.is_compared_to_aggregate(
-                field, message
-            ):
+            elif isinstance(
+                message.field_types[field], Composite
+            ) and common.is_compared_to_aggregate(field, message):
                 aggregate.append(
                     (
                         f"{field.name}_Value",
@@ -124,7 +124,7 @@ class ParserGenerator:
 
         comparison_to_aggregate = any(
             (isinstance(t, Composite) and common.is_compared_to_aggregate(f, message))
-            for f, t in message.types.items()
+            for f, t in message.field_types.items()
         )
 
         return UnitPart(
@@ -166,7 +166,7 @@ class ParserGenerator:
                         ),
                         *unique(
                             self.extract_function(common.full_base_type_name(t))
-                            for f, t in message.types.items()
+                            for f, t in message.field_types.items()
                             if isinstance(t, Scalar)
                         ),
                     ]
@@ -351,7 +351,7 @@ class ParserGenerator:
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                             )
                         ),
                     ],
@@ -464,7 +464,7 @@ class ParserGenerator:
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Old(Call("Has_Buffer", [Variable("Ctx")])),
                                 ),
-                                *const.CONTEXT_INVARIANT,
+                                *common.context_invariant(message),
                             )
                         ),
                     ],
@@ -1046,7 +1046,7 @@ class ParserGenerator:
                     else expr.AndThen(
                         expr.Call(
                             "Structural_Valid"
-                            if structural and isinstance(message.types[l.target], Composite)
+                            if structural and isinstance(message.field_types[l.target], Composite)
                             else "Valid",
                             [
                                 expr.Variable("Ctx"),
