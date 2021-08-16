@@ -348,6 +348,49 @@ class AbstractMessage(mty.Type):
 
         return self.copy(structure=structure, types=types)
 
+    def replaced_message_attributes(self) -> Tuple["AbstractMessage", List[Optional[Location]]]:
+        """
+        Replace all occurences of the message attribute Message'Size by the equivalent term
+        Message'Last - Message'First + 1. Then replace all occurences of the message attribute
+        Message'First by a reference to the first field of a message. Return the new message and
+        a list of locations where Message'Last or Message'Size have been used.
+        """
+        first_field = self.outgoing(INITIAL)[0].target
+        locations = []
+
+        def replace(expression: expr.Expr) -> expr.Expr:
+            if (
+                not isinstance(expression, expr.Attribute)
+                or not isinstance(expression.prefix, expr.Variable)
+                or expression.prefix.name != "Message"
+            ):
+                return expression
+            if isinstance(expression, expr.First):
+                return expr.First(ID(first_field.identifier, location=expression.location))
+            locations.append(expression.location)
+            if isinstance(expression, expr.Last):
+                return expression
+            if isinstance(expression, expr.Size):
+                return expr.Add(
+                    expr.Sub(expr.Last("Message"), expr.First(first_field.identifier)),
+                    expr.Number(1),
+                    location=expression.location,
+                )
+            assert False
+
+        structure = [
+            Link(
+                l.source,
+                l.target,
+                l.condition.substituted(replace),
+                l.size.substituted(replace),
+                l.first.substituted(replace),
+                l.location,
+            )
+            for l in self.structure
+        ]
+        return self.copy(structure=structure), locations
+
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self.types[Field(field.name)]
@@ -1569,52 +1612,6 @@ class DerivedMessage(Message):
         return copy(self)
 
 
-def replace_message_attributes(
-    message: AbstractMessage,
-) -> Tuple[AbstractMessage, List[Optional[Location]]]:
-    """
-    Replace all occurences of the message attribute Message'Size by the equivalent term
-    Message'Last - Message'First + 1. Then replace all occurences of the message attribute
-    Message'First by a reference to the first field of the message. Return the new message and
-    a list of locations where Message'Last or Message'Size have been used.
-    """
-    first_field = message.outgoing(INITIAL)[0].target
-    locations = []
-
-    def replace(expression: expr.Expr) -> expr.Expr:
-        if (
-            not isinstance(expression, expr.Attribute)
-            or not isinstance(expression.prefix, expr.Variable)
-            or expression.prefix.name != "Message"
-        ):
-            return expression
-        if isinstance(expression, expr.First):
-            return expr.First(expr.ID(first_field.identifier, location=expression.location))
-        locations.append(expression.location)
-        if isinstance(expression, expr.Last):
-            return expression
-        if isinstance(expression, expr.Size):
-            return expr.Add(
-                expr.Sub(expr.Last("Message"), expr.First(first_field.identifier)),
-                expr.Number(1),
-                location=expression.location,
-            )
-        raise NotImplementedError
-
-    structure = [
-        Link(
-            l.source,
-            l.target,
-            l.condition.substituted(replace),
-            l.size.substituted(replace),
-            l.first.substituted(replace),
-            l.location,
-        )
-        for l in message.structure
-    ]
-    return message.copy(structure=structure), locations
-
-
 class UnprovenMessage(AbstractMessage):
     # pylint: disable=too-many-arguments
     def copy(
@@ -1679,24 +1676,22 @@ class UnprovenMessage(AbstractMessage):
                 break
 
             field, inner_message = inner_messages.pop(0)
-            inner_message, message_attribute_locations = replace_message_attributes(
-                inner_message.prefixed(f"{field.name}_")
-            )
+            inner_message, message_attribute_locations = inner_message.prefixed(
+                f"{field.name}_"
+            ).replaced_message_attributes()
 
-            message_next_fields = message.outgoing(field)
-            if len(message_attribute_locations) > 0 and (
-                len(message_next_fields) > 1 or message_next_fields[0].target != FINAL
+            if len(message_attribute_locations) > 0 and any(
+                n.target != FINAL for n in message.outgoing(field)
             ):
                 self.error.append(
-                    "Message types with message attribute may only be used for fields preceeding"
-                    " FINAL",
+                    "message types with message attribute may only be used for last field",
                     Subsystem.MODEL,
                     Severity.ERROR,
                     field.identifier.location,
                 )
                 for loc in message_attribute_locations:
                     self.error.append(
-                        f"Message attribute used in {inner_message.identifier}",
+                        f'message attribute used in "{inner_message.identifier}"',
                         Subsystem.MODEL,
                         Severity.INFO,
                         loc,
