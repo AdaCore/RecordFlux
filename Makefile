@@ -62,25 +62,25 @@ format:
 test: test_python_coverage test_python_property test_spark test_apps test_specs test_runtime test_installation
 
 test_python:
-	python3 -m pytest -n$(shell nproc) -vv -m "(verification or not verification) and not hypothesis" tests
+	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
 test_python_unit:
-	python3 -m pytest -n$(shell nproc) -vv -m "verification or not verification" tests/unit
+	python3 -m pytest -n$(shell nproc) -vv tests/unit
 
 test_python_integration:
-	python3 -m pytest -n$(shell nproc) -vv -m "verification or not verification" tests/integration
+	python3 -m pytest -n$(shell nproc) -vv tests/integration
 
 test_python_property:
-	python3 -m pytest -vv tests/property
+	python3 -m pytest -vv -m "not verification" tests/property
 
 test_python_property_verification:
 	python3 -m pytest -vv -m "verification" -s tests/property
 
 test_python_optimized:
-	python3 -O -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
+	python3 -O -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "(verification or not verification) and not hypothesis" tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_spark: $(test-files)
 	gprbuild -P$(project) -Xtest=$(TEST)
