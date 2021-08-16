@@ -3271,7 +3271,7 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
     )
 
 
-def test_message_type_with_message_aspect() -> None:
+def test_message_type_with_message_attribute() -> None:
     inner = UnprovenMessage(
         "P::I",
         [
@@ -3336,10 +3336,10 @@ def test_message_type_with_message_aspect() -> None:
         RecordFluxError,
         match=(
             "^"
-            "<stdin>:2:10: model: error: Message types with message attribute may only be used for"
-            " fields preceeding FINAL\n"
-            "<stdin>:5:10: model: info: Message attribute used in P::I\n"
-            "<stdin>:6:10: model: info: Message attribute used in P::I"
+            "<stdin>:2:10: model: error: message types with message attribute may only be used for"
+            " last field\n"
+            '<stdin>:5:10: model: info: message attribute used in "P::I"\n'
+            '<stdin>:6:10: model: info: message attribute used in "P::I"'
             "$"
         ),
     ):
