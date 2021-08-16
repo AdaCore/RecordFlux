@@ -228,6 +228,7 @@ def test_parse_integer_type_spec() -> None:
                             "last": {"_kind": "NumericLiteral", "_value": "2_000"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Page_Num"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -242,6 +243,7 @@ def test_parse_integer_type_spec() -> None:
                             "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Line_Size"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -250,6 +252,7 @@ def test_parse_integer_type_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -258,6 +261,7 @@ def test_parse_integer_type_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "64"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Hash_Index"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
@@ -351,6 +355,7 @@ def test_parse_enumeration_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Day"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -395,6 +400,7 @@ def test_parse_enumeration_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Protocol"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -434,6 +440,7 @@ def test_parse_enumeration_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Gender"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -485,6 +492,7 @@ def test_parse_enumeration_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Priority"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Enumeration_Type"},
@@ -510,6 +518,7 @@ def test_parse_sequence_type_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -522,6 +531,7 @@ def test_parse_sequence_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Bytes"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -585,6 +595,7 @@ def test_parse_sequence_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "Byte"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -603,12 +614,14 @@ def test_parse_sequence_type_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -621,6 +634,7 @@ def test_parse_sequence_type_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Sequence_Type"},
@@ -646,6 +660,7 @@ def test_parse_message_type_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -724,6 +739,7 @@ def test_parse_message_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -739,6 +755,7 @@ def test_parse_message_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -754,12 +771,14 @@ def test_parse_message_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -783,6 +802,7 @@ def test_parse_message_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -798,12 +818,14 @@ def test_parse_message_type_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -812,6 +834,7 @@ def test_parse_message_type_spec() -> None:
                             "_value": "null " "message",
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
@@ -837,6 +860,7 @@ def test_parse_type_refinement_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -915,6 +939,7 @@ def test_parse_type_refinement_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -930,6 +955,7 @@ def test_parse_type_refinement_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -945,12 +971,14 @@ def test_parse_type_refinement_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -974,6 +1002,7 @@ def test_parse_type_refinement_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -989,17 +1018,20 @@ def test_parse_type_refinement_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
                         "definition": {"_kind": "NullMessageTypeDef", "_value": "null message"},
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
@@ -1093,6 +1125,7 @@ def test_parse_type_derivation_spec() -> None:
                             "mod": {"_kind": "NumericLiteral", "_value": "256"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1113,12 +1146,14 @@ def test_parse_type_derivation_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "T"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     }
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1131,6 +1166,7 @@ def test_parse_type_derivation_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Test"},
@@ -1162,6 +1198,7 @@ def test_parse_ethernet_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Address"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1186,6 +1223,7 @@ def test_parse_ethernet_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Type_Length"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1200,6 +1238,7 @@ def test_parse_ethernet_spec() -> None:
                             "last": {"_kind": "NumericLiteral", "_value": "16#8100#"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "TPID"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1213,6 +1252,7 @@ def test_parse_ethernet_spec() -> None:
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
+                        "parameters": None,
                     },
                     {
                         "_kind": "TypeDecl",
@@ -1239,6 +1279,7 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1257,6 +1298,7 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1382,6 +1424,7 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1397,6 +1440,7 @@ def test_parse_ethernet_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "TPID"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1412,6 +1456,7 @@ def test_parse_ethernet_spec() -> None:
                                             "name": {"_kind": "UnqualifiedID", "_value": "TCI"},
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1566,6 +1611,7 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                     {
                                         "_kind": "Component",
@@ -1668,12 +1714,14 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             "package": None,
                                         },
+                                        "type_arguments": [],
                                     },
                                 ],
                                 "initial_component": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Frame"},
+                        "parameters": None,
                     },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Ethernet"},
