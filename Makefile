@@ -21,7 +21,7 @@ endif
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc \
 	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
+	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_verification test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps clean
 
 all: check test prove
@@ -78,6 +78,9 @@ test_python_property_verification:
 
 test_python_optimized:
 	python3 -O -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
+
+test_python_verification:
+	python3 -O -m pytest -n$(shell nproc) -vv -m "verification and not hypothesis" tests
 
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
