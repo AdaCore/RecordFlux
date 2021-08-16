@@ -495,20 +495,29 @@ jobs:
   verification_apps:
     name: Verification (apps)
     needs: skip_check_apps
-    if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - ping
+          - dhcp_client
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -517,16 +526,19 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Cache Ada toolchain
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install Ada toolchain
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -534,8 +546,9 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install .[devel]
     - name: Verify
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
-        make prove_apps
+        make -C examples/apps/${{ matrix.app }} prove
 
   skip_check_specs:
     name: Skip Check Specs
