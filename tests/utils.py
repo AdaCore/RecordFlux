@@ -2,6 +2,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+from distutils.dir_util import copy_tree
 from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 import pytest
@@ -126,18 +127,15 @@ def assert_provable_code(
     cache_proof_results: bool = True,
 ) -> None:
     proof_dir = (
-        # ISSUE: Componolit/Workarounds#40
-        # GNATprove does not support absolute paths for Proof_Dir.
-        os.path.relpath(
-            pathlib.Path.cwd()
-            / pathlib.Path("tests/spark/proof")
-            / os.environ.get("PYTEST_CURRENT_TEST", ".").split()[0].replace("/", "-"),
-            tmp_path,
-        )
-        if cache_proof_results
-        else None
+        pathlib.Path.cwd()
+        / pathlib.Path("tests/spark/proof")
+        / os.environ.get("PYTEST_CURRENT_TEST", ".").split()[0].replace("/", "-")
     )
-    _create_files(tmp_path, model, main, prefix, proof_dir)
+
+    if cache_proof_results and proof_dir.exists():
+        copy_tree(str(proof_dir), str(tmp_path / "proof"))
+
+    _create_files(tmp_path, model, main, prefix)
 
     def run(command: Sequence[str]) -> None:
         p = subprocess.run(command, cwd=tmp_path, check=False, stderr=subprocess.PIPE)
@@ -152,17 +150,18 @@ def assert_provable_code(
     else:
         run(["gnatprove", "-Ptest"])
 
+    if cache_proof_results:
+        copy_tree(str(tmp_path / "proof"), str(proof_dir))
+
 
 def _create_files(
     tmp_path: pathlib.Path,
     model: Model,
     main: str = None,
     prefix: str = None,
-    proof_dir: Union[str, pathlib.Path] = None,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     main = f'"{main}"' if main else ""
-    proof_dir = f'for Proof_Dir use "{proof_dir}";\n      ' if proof_dir else ""
     with open(tmp_path / "test.gpr", "x") as f:
         f.write(
             f"""
@@ -178,8 +177,8 @@ project Test is
    end Builder;
 
    package Prove is
-      {proof_dir}for Proof_Switches ("Ada") use
-         Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+      for Proof_Dir use "proof";
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
    end Prove;
 end Test;
             """
