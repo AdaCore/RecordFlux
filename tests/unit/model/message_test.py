@@ -1744,7 +1744,10 @@ def test_field_after_message_start(monkeypatch: ty.Any) -> None:
         types,
         r"^"
         r'model: error: negative start for field "F2" [(]F1 -> F2[)]\n'
-        r'model: info: unsatisfied "Message\'First - 1000 >= Message\'First"'
+        r'model: info: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
+        r'model: error: negative start for field "Final" [(]F1 -> F2 -> Final[)]\n'
+        r'model: info: unsatisfied "F2\'Last = [(]Message\'First - 1000 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "F2\'Last [+] 1 >= Message\'First"'
         r"$",
     )
 
