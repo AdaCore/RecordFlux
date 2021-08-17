@@ -69,7 +69,6 @@ grammar.add_rules(
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
     variable=ast.Variable(grammar.qualified_identifier),
-    unqualified_variable=ast.UnqualifiedVariable(grammar.unqualified_identifier),
     sequence_aggregate=ast.SequenceAggregate(
         "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
     ),

@@ -539,11 +539,6 @@ class MessageTypeDef(AbstractMessageTypeDef):
     checksums = Field(type=ChecksumAspect)
 
 
-class UnqualifiedVariable(Expr):
-
-    identifier = Field(type=UnqualifiedID)
-
-
 class Variable(Expr):
 
     identifier = Field(type=ID)
