@@ -676,24 +676,56 @@ class AbstractMessage(mty.Type):
         )
 
 
-def check_proofs(
-    proofs: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
-) -> RecordFluxError:
-    result = RecordFluxError()
-    for goal, facts, expected, error, unsat in proofs:
-        proof = goal.check(facts)
-        if proof.result == expected:
-            continue
-        result.extend(error)
-        if unsat:
-            result.extend(
-                [
-                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                    for m, locn in proof.error
-                ]
-            )
-        break
-    return result
+class Proofs:
+    def __init__(self) -> None:
+        self.proofs: List[
+            List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
+        ] = []
+        self.current: List[
+            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]
+        ] = []
+
+    def add(
+        self,
+        goal: expr.Expr,
+        facts: List[expr.Expr],
+        expected: expr.ProofResult,
+        message: RecordFluxError,
+        add_unsat: bool = False,
+    ) -> None:
+        self.current.append((goal, facts, expected, message, add_unsat))
+
+    def pop(self) -> None:
+        if self.current:
+            self.proofs.append(copy(self.current))
+            self.current.clear()
+
+    @classmethod
+    def check_proof(
+        cls,
+        argument: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]],
+    ) -> RecordFluxError:
+        result = RecordFluxError()
+        for goal, facts, expected, message, add_unsat in argument:
+            proof = goal.check(facts)
+            if proof.result == expected:
+                continue
+            result.extend(message)
+            if add_unsat:
+                result.extend(
+                    [
+                        (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                        for m, locn in proof.error
+                    ]
+                )
+        return result
+
+    def check(self, error: RecordFluxError) -> None:
+        self.pop()
+        with ProcessPoolExecutor() as executor:
+            for e in executor.map(Proofs.check_proof, self.proofs):
+                error.extend(e)
+        error.propagate()
 
 
 class Message(AbstractMessage):
@@ -1495,155 +1527,132 @@ class Message(AbstractMessage):
                         )
 
     def __prove_field_positions(self) -> None:
-        def proofs() -> List[
-            List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
-        ]:
-            # pylint: disable=too-many-locals
-            results = []
-            for f in (*self.fields, FINAL):
-                for path in self.paths(f):
-                    last = path[-1]
-                    negative = expr.Less(
-                        self.__target_size(last), expr.Number(0), last.size.location
-                    )
-                    start = expr.GreaterEqual(
-                        self.__target_first(last),
-                        expr.First("Message"),
-                        last.source.identifier.location,
+        # pylint: disable=too-many-locals
+        proofs = Proofs()
+        for f in (*self.fields, FINAL):
+            for path in self.paths(f):
+                last = path[-1]
+                negative = expr.Less(self.__target_size(last), expr.Number(0), last.size.location)
+                start = expr.GreaterEqual(
+                    self.__target_first(last),
+                    expr.First("Message"),
+                    last.source.identifier.location,
+                )
+
+                facts = [fact for link in path for fact in self.__link_expression(link)]
+
+                outgoing = self.outgoing(f)
+                if f != FINAL and outgoing:
+                    facts.append(
+                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
                     )
 
-                    facts = [fact for link in path for fact in self.__link_expression(link)]
+                facts.extend(self.type_constraints(negative))
+                facts.extend(self.type_constraints(start))
 
-                    outgoing = self.outgoing(f)
-                    if f != FINAL and outgoing:
-                        facts.append(
-                            expr.Or(
-                                *[o.condition for o in outgoing], location=f.identifier.location
+                proof = expr.TRUE.check(facts)
+
+                # Only check positions of reachable paths
+                if proof.result != expr.ProofResult.SAT:
+                    continue
+
+                error = RecordFluxError()
+                path_message = " -> ".join([l.target.name for l in path])
+                error.extend(
+                    [
+                        (
+                            f'negative size for field "{f.name}" ({path_message})',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        )
+                    ],
+                )
+                proofs.add(negative, facts, expr.ProofResult.UNSAT, error)
+
+                error = RecordFluxError()
+                path_message = " -> ".join([last.target.name for last in path])
+                error.extend(
+                    [
+                        (
+                            f'negative start for field "{f.name}" ({path_message})',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.identifier.location,
+                        )
+                    ],
+                )
+                proofs.add(start, facts, expr.ProofResult.SAT, error, add_unsat=True)
+
+                if f in self.types:
+                    t = self.types[f]
+                    if isinstance(t, mty.Opaque):
+                        element_size = t.element_size
+                        start_aligned = expr.Not(
+                            expr.Equal(
+                                expr.Mod(self.__target_first(last), element_size),
+                                expr.Number(1),
+                                last.location,
                             )
                         )
 
-                    facts.extend(self.type_constraints(negative))
-                    facts.extend(self.type_constraints(start))
-
-                    proof = expr.TRUE.check(facts)
-
-                    # Only check positions of reachable paths
-                    if proof.result != expr.ProofResult.SAT:
-                        continue
-
-                    result: List[
-                        Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]
-                    ] = []
-
-                    error = RecordFluxError()
-                    path_message = " -> ".join([l.target.name for l in path])
-                    error.extend(
-                        [
-                            (
-                                f'negative size for field "{f.name}" ({path_message})',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                f.identifier.location,
-                            )
-                        ],
-                    )
-                    result.append((negative, facts, expr.ProofResult.UNSAT, error, False))
-
-                    error = RecordFluxError()
-                    path_message = " -> ".join([last.target.name for last in path])
-                    error.extend(
-                        [
-                            (
-                                f'negative start for field "{f.name}" ({path_message})',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.identifier.location,
-                            )
-                        ],
-                    )
-                    result.append((start, facts, expr.ProofResult.SAT, error, True))
-
-                    if f in self.types:
-                        t = self.types[f]
-                        if isinstance(t, mty.Opaque):
-                            element_size = t.element_size
-                            start_aligned = expr.Not(
-                                expr.Equal(
-                                    expr.Mod(self.__target_first(last), element_size),
-                                    expr.Number(1),
-                                    last.location,
-                                )
-                            )
-
-                            error = RecordFluxError()
-                            path_message = " -> ".join([p.target.name for p in path])
-                            error.extend(
-                                [
-                                    (
-                                        f'opaque field "{f.name}" not aligned to {element_size} '
-                                        f"bit boundary ({path_message})",
-                                        Subsystem.MODEL,
-                                        Severity.ERROR,
-                                        f.identifier.location,
-                                    )
-                                ],
-                            )
-                            result.append(
+                        error = RecordFluxError()
+                        path_message = " -> ".join([p.target.name for p in path])
+                        error.extend(
+                            [
                                 (
-                                    start_aligned,
-                                    [
-                                        *facts,
-                                        *self.message_constraints(),
-                                        *self.type_constraints(start_aligned),
-                                    ],
-                                    expr.ProofResult.UNSAT,
-                                    error,
-                                    False,
+                                    f'opaque field "{f.name}" not aligned to {element_size} '
+                                    f"bit boundary ({path_message})",
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    f.identifier.location,
                                 )
-                            )
+                            ],
+                        )
+                        proofs.add(
+                            start_aligned,
+                            [
+                                *facts,
+                                *self.message_constraints(),
+                                *self.type_constraints(start_aligned),
+                            ],
+                            expr.ProofResult.UNSAT,
+                            error,
+                        )
 
-                            is_multiple_of_element_size = expr.Not(
-                                expr.Equal(
-                                    expr.Mod(self.__target_size(last), element_size),
-                                    expr.Number(0),
-                                    last.location,
-                                )
+                        is_multiple_of_element_size = expr.Not(
+                            expr.Equal(
+                                expr.Mod(self.__target_size(last), element_size),
+                                expr.Number(0),
+                                last.location,
                             )
+                        )
 
-                            error = RecordFluxError()
-                            path_message = " -> ".join([p.target.name for p in path])
-                            error.extend(
-                                [
-                                    (
-                                        f'size of opaque field "{f.name}" not multiple'
-                                        f" of {element_size} bit ({path_message})",
-                                        Subsystem.MODEL,
-                                        Severity.ERROR,
-                                        f.identifier.location,
-                                    )
-                                ],
-                            )
-                            result.append(
+                        error = RecordFluxError()
+                        path_message = " -> ".join([p.target.name for p in path])
+                        error.extend(
+                            [
                                 (
-                                    is_multiple_of_element_size,
-                                    [
-                                        *facts,
-                                        *self.message_constraints(),
-                                        *self.type_constraints(is_multiple_of_element_size),
-                                    ],
-                                    expr.ProofResult.UNSAT,
-                                    error,
-                                    False,
-                                ),
-                            )
-                    results.append(result)
-            return results
-
-        with ProcessPoolExecutor() as executor:
-            errors = executor.map(check_proofs, proofs())
-            for e in errors:
-                self.error.extend(e)
-        self.error.propagate()
+                                    f'size of opaque field "{f.name}" not multiple'
+                                    f" of {element_size} bit ({path_message})",
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    f.identifier.location,
+                                )
+                            ]
+                        )
+                        proofs.add(
+                            is_multiple_of_element_size,
+                            [
+                                *facts,
+                                *self.message_constraints(),
+                                *self.type_constraints(is_multiple_of_element_size),
+                            ],
+                            expr.ProofResult.UNSAT,
+                            error,
+                        )
+                proofs.pop()
+        proofs.check(self.error)
 
     def __prove_message_size(self) -> None:
         """

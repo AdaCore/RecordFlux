@@ -1594,7 +1594,10 @@ def test_invalid_negative_field_size_modular() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^model: error: negative size for field "F2" [(]F1 -> F2[)]$',
+        r"^"
+        r'model: error: negative size for field "F2" [(]F1 -> F2[)]\n'
+        r'model: error: size of opaque field "F2" not multiple of 8 bit [(]F1 -> F2[)]'
+        "$",
     )
 
 
