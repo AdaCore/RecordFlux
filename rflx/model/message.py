@@ -3,6 +3,7 @@
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
@@ -673,6 +674,26 @@ class AbstractMessage(mty.Type):
             ],
             location=final.identifier.location,
         )
+
+
+def check_proofs(
+    proofs: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
+) -> RecordFluxError:
+    result = RecordFluxError()
+    for goal, facts, expected, error, unsat in proofs:
+        proof = goal.check(facts)
+        if proof.result == expected:
+            continue
+        result.extend(error)
+        if unsat:
+            result.extend(
+                [
+                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                    for m, locn in proof.error
+                ]
+            )
+        break
+    return result
 
 
 class Message(AbstractMessage):
@@ -1516,21 +1537,29 @@ class Message(AbstractMessage):
 
                     error = RecordFluxError()
                     path_message = " -> ".join([l.target.name for l in path])
-                    error.append(
-                        f'negative size for field "{f.name}" ({path_message})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
+                    error.extend(
+                        [
+                            (
+                                f'negative size for field "{f.name}" ({path_message})',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                f.identifier.location,
+                            )
+                        ],
                     )
                     result.append((negative, facts, expr.ProofResult.UNSAT, error, False))
 
                     error = RecordFluxError()
                     path_message = " -> ".join([last.target.name for last in path])
-                    error.append(
-                        f'negative start for field "{f.name}" ({path_message})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.identifier.location,
+                    error.extend(
+                        [
+                            (
+                                f'negative start for field "{f.name}" ({path_message})',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.identifier.location,
+                            )
+                        ],
                     )
                     result.append((start, facts, expr.ProofResult.SAT, error, True))
 
@@ -1548,12 +1577,16 @@ class Message(AbstractMessage):
 
                             error = RecordFluxError()
                             path_message = " -> ".join([p.target.name for p in path])
-                            error.append(
-                                f'opaque field "{f.name}" not aligned to {element_size} '
-                                f"bit boundary ({path_message})",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                f.identifier.location,
+                            error.extend(
+                                [
+                                    (
+                                        f'opaque field "{f.name}" not aligned to {element_size} '
+                                        f"bit boundary ({path_message})",
+                                        Subsystem.MODEL,
+                                        Severity.ERROR,
+                                        f.identifier.location,
+                                    )
+                                ],
                             )
                             result.append(
                                 (
@@ -1579,12 +1612,16 @@ class Message(AbstractMessage):
 
                             error = RecordFluxError()
                             path_message = " -> ".join([p.target.name for p in path])
-                            error.append(
-                                f'size of opaque field "{f.name}" not multiple of {element_size}'
-                                f" bit ({path_message})",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                f.identifier.location,
+                            error.extend(
+                                [
+                                    (
+                                        f'size of opaque field "{f.name}" not multiple'
+                                        f" of {element_size} bit ({path_message})",
+                                        Subsystem.MODEL,
+                                        Severity.ERROR,
+                                        f.identifier.location,
+                                    )
+                                ],
                             )
                             result.append(
                                 (
@@ -1602,36 +1639,10 @@ class Message(AbstractMessage):
                     results.append(result)
             return results
 
-        def check(
-            proofs: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
-        ) -> RecordFluxError:
-            result = RecordFluxError()
-            for goal, facts, expected, error, unsat in proofs:
-                proof = goal.check(facts)
-                if proof.result == expected:
-                    continue
-                result.extend(error)
-                if unsat:
-                    result.extend(
-                        [
-                            (
-                                f'negative start for field "{f.name}" ({path_message})',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.identifier.location,
-                            ),
-                            *[
-                                (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                                for m, locn in proof.error
-                            ],
-                        ]
-                    )
-                break
-            return result
-
-        errors = map(check, proofs())
-        for e in errors:
-            self.error.extend(e)
+        with ProcessPoolExecutor() as executor:
+            errors = executor.map(check_proofs, proofs())
+            for e in errors:
+                self.error.extend(e)
         self.error.propagate()
 
     def __prove_message_size(self) -> None:
