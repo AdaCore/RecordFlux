@@ -2917,7 +2917,30 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         ),
         (
             "C'Reset",
-            {"_kind": "Reset", "identifier": {"_kind": "UnqualifiedID", "_value": "C"}},
+            {
+                "_kind": "Reset",
+                "identifier": {"_kind": "UnqualifiedID", "_value": "C"},
+                "associations": [],
+            },
+        ),
+        (
+            "C'Reset (A => 1, B => 2)",
+            {
+                "_kind": "Reset",
+                "identifier": {"_kind": "UnqualifiedID", "_value": "C"},
+                "associations": [
+                    {
+                        "_kind": "MessageAggregateAssociation",
+                        "expression": {"_kind": "NumericLiteral", "_value": "1"},
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                    },
+                    {
+                        "_kind": "MessageAggregateAssociation",
+                        "expression": {"_kind": "NumericLiteral", "_value": "2"},
+                        "identifier": {"_kind": "UnqualifiedID", "_value": "B"},
+                    },
+                ],
+            },
         ),
     ],
 )
@@ -3463,7 +3486,10 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                                 "type_identifier": {
                                     "_kind": "ID",
                                     "name": {"_kind": "UnqualifiedID", "_value": "D"},
-                                    "package": {"_kind": "UnqualifiedID", "_value": "C"},
+                                    "package": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "C",
+                                    },
                                 },
                             }
                         ],

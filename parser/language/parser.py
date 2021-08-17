@@ -501,7 +501,12 @@ grammar.add_rules(
         grammar.extended_expression,
         ")",
     ),
-    reset=ast.Reset(grammar.unqualified_identifier, "'", "Reset"),
+    reset=ast.Reset(
+        grammar.unqualified_identifier,
+        "'",
+        "Reset",
+        Opt("(", List(grammar.message_aggregate_association, sep=","), ")"),
+    ),
     attribute_statement=Or(grammar.list_attribute, grammar.reset),
     action=Or(grammar.assignment_statement, grammar.attribute_statement),
     conditional_transition=ast.ConditionalTransition(

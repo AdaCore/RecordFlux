@@ -129,6 +129,34 @@ class ParenExpression(Expr):
     data = Field(type=Expr)
 
 
+class MessageAggregateAssociation(RFLXNode):
+
+    identifier = Field(type=UnqualifiedID)
+    expression = Field(type=Expr)
+
+
+@abstract
+class BaseAggregate(RFLXNode):
+    """
+    Base class for message aggregates
+    """
+
+
+class NullMessageAggregate(BaseAggregate):
+    pass
+
+
+class MessageAggregateAssociations(BaseAggregate):
+
+    associations = Field(type=MessageAggregateAssociation.list)
+
+
+class MessageAggregate(Expr):
+
+    identifier = Field(type=ID)
+    values = Field(type=BaseAggregate)
+
+
 class RefinementDecl(Declaration):
     """
     Refinement declaration (for Message use (Field => Inner_Type))
@@ -248,6 +276,7 @@ class Reset(Statement):
     """
 
     identifier = Field(type=UnqualifiedID)
+    associations = Field(type=MessageAggregateAssociation.list)
 
 
 @abstract
@@ -632,34 +661,6 @@ class Conversion(Expr):
 
     target_identifier = Field(type=ID)
     argument = Field(type=Expr)
-
-
-class MessageAggregateAssociation(RFLXNode):
-
-    identifier = Field(type=UnqualifiedID)
-    expression = Field(type=Expr)
-
-
-@abstract
-class BaseAggregate(RFLXNode):
-    """
-    Base class for message aggregates
-    """
-
-
-class NullMessageAggregate(BaseAggregate):
-    pass
-
-
-class MessageAggregateAssociations(BaseAggregate):
-
-    associations = Field(type=MessageAggregateAssociation.list)
-
-
-class MessageAggregate(Expr):
-
-    identifier = Field(type=ID)
-    values = Field(type=BaseAggregate)
 
 
 class TermAssoc(RFLXNode):
