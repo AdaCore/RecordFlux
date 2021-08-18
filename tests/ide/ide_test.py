@@ -130,6 +130,8 @@ def test_multiple_errors() -> None:
             f'{path}:250:19: model: error: undefined variable "F1"',
             f"{path}:250:19: model: info: on path F1",
             f'{path}:257:18: model: error: negative size for field "F2" (F1 -> F2)',
+            f"{path}:257:18: model: error: size of opaque field "
+            f'"F2" not multiple of 8 bit (F1 -> F2)',
             f'{path}:254:9: model: error: negative start for field "Final" (F1 -> F2 -> Final)',
             f"{path}:257:18: model: info: unsatisfied \"F2'Last ="
             " (F1'Last + 1 + (F1 - 2**33)) - 1\"",
