@@ -691,12 +691,13 @@ class ParallelProofs:
         facts: List[expr.Expr],
         expected: expr.ProofResult,
         message: RecordFluxError,
-        unexpected: bool = False,
+        negate: bool = False,
         add_unsat: bool = False,
     ) -> None:
-        self.current.append((goal, facts, expected, message, unexpected, add_unsat))
+        # pylint: disable=too-many-arguments
+        self.current.append((goal, facts, expected, message, negate, add_unsat))
 
-    def pop(self) -> None:
+    def push(self) -> None:
         if self.current:
             self.proofs.append(copy(self.current))
             self.current.clear()
@@ -704,12 +705,14 @@ class ParallelProofs:
     @classmethod
     def check_proof(
         cls,
-        argument: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]],
+        argument: List[
+            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]
+        ],
     ) -> RecordFluxError:
         result = RecordFluxError()
-        for goal, facts, expected, message, unexpected, add_unsat in argument:
+        for goal, facts, expected, message, negate, add_unsat in argument:
             proof = goal.check(facts)
-            if unexpected == (proof.result != expected):
+            if negate == (proof.result != expected):
                 continue
             result.extend(message)
             if add_unsat:
@@ -722,7 +725,7 @@ class ParallelProofs:
         return result
 
     def check(self, error: RecordFluxError) -> None:
-        self.pop()
+        self.push()
         with ProcessPoolExecutor() as executor:
             for e in executor.map(ParallelProofs.check_proof, self.proofs):
                 error.extend(e)
@@ -1287,39 +1290,48 @@ class Message(AbstractMessage):
             )
 
     def __prove_conflicting_conditions(self) -> None:
+        proofs = ParallelProofs()
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
                         conflict = expr.And(c1.condition, c2.condition)
-                        proof = conflict.check(self.type_constraints(conflict))
-                        if proof.result == expr.ProofResult.SAT:
-                            c1_message = str(c1.condition).replace("\n", " ")
-                            c2_message = str(c2.condition).replace("\n", " ")
-                            self.error.extend(
-                                [
-                                    (
-                                        f'conflicting conditions for field "{f.name}"',
-                                        Subsystem.MODEL,
-                                        Severity.ERROR,
-                                        f.identifier.location,
-                                    ),
-                                    (
-                                        f"condition {i1} ({f.identifier} ->"
-                                        f" {c1.target.identifier}): {c1_message}",
-                                        Subsystem.MODEL,
-                                        Severity.INFO,
-                                        c1.condition.location,
-                                    ),
-                                    (
-                                        f"condition {i2} ({f.identifier} ->"
-                                        f" {c2.target.identifier}): {c2_message}",
-                                        Subsystem.MODEL,
-                                        Severity.INFO,
-                                        c2.condition.location,
-                                    ),
-                                ],
-                            )
+                        error = RecordFluxError()
+                        c1_message = str(c1.condition).replace("\n", " ")
+                        c2_message = str(c2.condition).replace("\n", " ")
+                        error.extend(
+                            [
+                                (
+                                    f'conflicting conditions for field "{f.name}"',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    f.identifier.location,
+                                ),
+                                (
+                                    f"condition {i1} ({f.identifier} ->"
+                                    f" {c1.target.identifier}): {c1_message}",
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    c1.condition.location,
+                                ),
+                                (
+                                    f"condition {i2} ({f.identifier} ->"
+                                    f" {c2.target.identifier}): {c2_message}",
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    c2.condition.location,
+                                ),
+                            ],
+                        )
+                        proofs.add(
+                            conflict,
+                            self.type_constraints(conflict),
+                            expr.ProofResult.SAT,
+                            error,
+                            negate=True,
+                        )
+            proofs.push()
+        proofs.check(self.error)
 
     def __prove_reachability(self) -> None:
         def has_final(field: Field) -> bool:
@@ -1446,6 +1458,7 @@ class Message(AbstractMessage):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
+        proofs = ParallelProofs()
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
 
             facts: Sequence[expr.Expr]
@@ -1478,30 +1491,31 @@ class Message(AbstractMessage):
             facts.extend([f for l in path for f in self.__link_expression(l)])
 
             # Coverage expression must be False, i.e. no bits left
-            proof = expr.TRUE.check(facts)
-            if proof.result == expr.ProofResult.SAT:
-                self.error.extend(
-                    [
+            error = RecordFluxError()
+            error.extend(
+                [
+                    (
+                        "path does not cover whole message",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    ),
+                    *[
                         (
-                            "path does not cover whole message",
+                            f'on path: "{l.target.identifier}"',
                             Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.identifier.location,
-                        ),
-                        *[
-                            (
-                                f'on path: "{l.target.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                l.target.identifier.location,
-                            )
-                            for l in path
-                        ],
-                    ]
-                )
-                return
+                            Severity.INFO,
+                            l.target.identifier.location,
+                        )
+                        for l in path
+                    ],
+                ]
+            )
+            proofs.add(expr.TRUE, facts, expr.ProofResult.SAT, error, negate=True)
+        proofs.check(self.error)
 
     def __prove_overlays(self) -> None:
+        proofs = ParallelProofs()
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1509,23 +1523,21 @@ class Message(AbstractMessage):
                     overlaid = expr.Equal(
                         self.__target_last(l), expr.Last(l.first.prefix), l.location
                     )
-                    proof = overlaid.check(facts)
-                    if proof.result != expr.ProofResult.SAT:
-                        self.error.extend(
-                            [
-                                (
-                                    f'field "{f.name}" not congruent with'
-                                    f' overlaid field "{l.first.prefix}"',
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    self.identifier.location,
-                                ),
-                                *[
-                                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                                    for m, l in proof.error
-                                ],
-                            ]
-                        )
+                    error = RecordFluxError()
+                    error.extend(
+                        [
+                            (
+                                f'field "{f.name}" not congruent with'
+                                f' overlaid field "{l.first.prefix}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.identifier.location,
+                            )
+                        ],
+                    )
+                    proofs.add(overlaid, facts, expr.ProofResult.SAT, error, add_unsat=True)
+            proofs.push()
+        proofs.check(self.error)
 
     def __prove_field_positions(self) -> None:
         # pylint: disable=too-many-locals
@@ -1652,13 +1664,14 @@ class Message(AbstractMessage):
                             expr.ProofResult.UNSAT,
                             error,
                         )
-                proofs.pop()
+                proofs.push()
         proofs.check(self.error)
 
     def __prove_message_size(self) -> None:
         """
         Prove that all message paths lead to a message with a size that is a multiple of 8 bit.
         """
+        proofs = ParallelProofs()
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
@@ -1679,27 +1692,31 @@ class Message(AbstractMessage):
                 *type_constraints,
                 *field_size_constraints,
             ]
-            proof = expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)).check(
-                facts
+            error = RecordFluxError()
+            error.extend(
+                [
+                    (
+                        "message size must be multiple of 8 bit",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    ),
+                    (
+                        "on path " + " -> ".join(l.target.name for l in path),
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        self.identifier.location,
+                    ),
+                ],
             )
-            if proof.result == expr.ProofResult.SAT:
-                self.error.extend(
-                    [
-                        (
-                            "message size must be multiple of 8 bit",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.identifier.location,
-                        ),
-                        (
-                            "on path " + " -> ".join(l.target.name for l in path),
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.identifier.location,
-                        ),
-                    ],
-                )
-                return
+            proofs.add(
+                expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)),
+                facts,
+                expr.ProofResult.SAT,
+                error,
+                negate=True,
+            )
+        proofs.check(self.error)
 
     def __prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
         conditions = [l.condition for l in path if l.condition != expr.TRUE]
