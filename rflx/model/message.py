@@ -676,13 +676,13 @@ class AbstractMessage(mty.Type):
         )
 
 
-class Proofs:
+class ParallelProofs:
     def __init__(self) -> None:
         self.proofs: List[
-            List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]]
+            List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]]
         ] = []
         self.current: List[
-            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]
+            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]
         ] = []
 
     def add(
@@ -691,9 +691,10 @@ class Proofs:
         facts: List[expr.Expr],
         expected: expr.ProofResult,
         message: RecordFluxError,
+        unexpected: bool = False,
         add_unsat: bool = False,
     ) -> None:
-        self.current.append((goal, facts, expected, message, add_unsat))
+        self.current.append((goal, facts, expected, message, unexpected, add_unsat))
 
     def pop(self) -> None:
         if self.current:
@@ -706,9 +707,9 @@ class Proofs:
         argument: List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool]],
     ) -> RecordFluxError:
         result = RecordFluxError()
-        for goal, facts, expected, message, add_unsat in argument:
+        for goal, facts, expected, message, unexpected, add_unsat in argument:
             proof = goal.check(facts)
-            if proof.result == expected:
+            if unexpected == (proof.result != expected):
                 continue
             result.extend(message)
             if add_unsat:
@@ -723,7 +724,7 @@ class Proofs:
     def check(self, error: RecordFluxError) -> None:
         self.pop()
         with ProcessPoolExecutor() as executor:
-            for e in executor.map(Proofs.check_proof, self.proofs):
+            for e in executor.map(ParallelProofs.check_proof, self.proofs):
                 error.extend(e)
         error.propagate()
 
@@ -1528,7 +1529,7 @@ class Message(AbstractMessage):
 
     def __prove_field_positions(self) -> None:
         # pylint: disable=too-many-locals
-        proofs = Proofs()
+        proofs = ParallelProofs()
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
