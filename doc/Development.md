@@ -57,6 +57,8 @@ Your code will be reviewed by at least one core developer before inclusion into 
     - `pip3 install --index-url https://test.pypi.org/simple/ --no-deps RecordFlux`
 - [ ] Upload to PyPI
     - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Test installation from PyPI
+    - `pip3 install RecordFlux`
 - [ ] Add tag to git repository
     - Note: Commit IDs change when a PR is merged on GitHub, so it should be ensured that the right branch is checked out.
     - `git tag -a vX.Y.Z -m ""`
