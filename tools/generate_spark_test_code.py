@@ -1,10 +1,8 @@
 #!/usr/bin/env -S python3 -O
 
-import argparse
 import logging
-import pathlib
 import sys
-from typing import Sequence
+from pathlib import Path
 
 import tests.data.models
 from rflx.generator import Generator
@@ -15,6 +13,7 @@ from tests.const import SPEC_DIR
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
 
+OUTPUT_DIRECTORY = Path("tests/spark/generated")
 
 MODELS = [
     tests.data.models.EXPRESSION_MODEL,
@@ -35,25 +34,32 @@ SPECIFICATION_FILES = [
     SPEC_DIR / "udp.rflx",
 ]
 
+FEATURE_TESTS = [p for p in Path("tests/integration").iterdir() if p.is_dir()]
 
-def main(argv: Sequence[str]) -> int:
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        "directory", metavar="DIRECTORY", help="output directory", type=pathlib.Path
-    )
-    args = arg_parser.parse_args(argv[1:])
 
+def main() -> int:
     parser = Parser()
     parser.parse(*SPECIFICATION_FILES)
 
     for model in [parser.create_model(), *MODELS]:
-        generator = Generator(model, "RFLX", reproducible=True)
-        generator.write_units(args.directory)
-        generator.write_library_files(args.directory)
-        generator.write_top_level_package(args.directory)
+        generator = Generator(model, "RFLX", reproducible=True, ignore_unsupported_checksum=True)
+        generator.write_units(OUTPUT_DIRECTORY)
+        generator.write_library_files(OUTPUT_DIRECTORY)
+        generator.write_top_level_package(OUTPUT_DIRECTORY)
+
+    for feature_test in FEATURE_TESTS:
+        output_directory = feature_test / "generated"
+        parser = Parser()
+        parser.parse(feature_test / "test.rflx")
+        generator = Generator(
+            parser.create_model(), "RFLX", reproducible=True, ignore_unsupported_checksum=True
+        )
+        generator.write_units(output_directory)
+        generator.write_library_files(output_directory)
+        generator.write_top_level_package(output_directory)
 
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())
