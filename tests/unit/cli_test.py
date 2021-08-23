@@ -160,3 +160,22 @@ def test_main_unexpected_exception(monkeypatch: Any, tmp_path: Path) -> None:
         str(cli.main(["rflx", "generate", "-d", str(tmp_path), SPEC_FILE])),
         re.DOTALL,
     )
+
+
+def test_fail_fast() -> None:
+    assert (
+        len(
+            str(
+                cli.main(
+                    [
+                        "rflx",
+                        "--max-errors",
+                        "5",
+                        "check",
+                        str(SPEC_DIR / "multiple_errors.rflx"),
+                    ]
+                )
+            ).split("\n")
+        )
+        == 10
+    )

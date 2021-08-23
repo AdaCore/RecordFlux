@@ -11,7 +11,7 @@ import librflxlang
 from pkg_resources import get_distribution
 
 from rflx import __version__
-from rflx.error import RecordFluxError, Severity, Subsystem, fail
+from rflx.error import FAIL_AFTER_VALUE, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Message, Model, Session
@@ -33,6 +33,13 @@ def main(argv: List[str]) -> Union[int, str]:
         action="store_true",
         help=("skip time-consuming verification of model"),
     )
+    parser.add_argument(
+        "--max-errors",
+        type=int,
+        default=0,
+        metavar=("NUM"),
+        help="exit after at most NUM errors",
+    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -47,8 +54,8 @@ def main(argv: List[str]) -> Union[int, str]:
         "-p",
         "--prefix",
         type=str,
-        default="RFLX",
-        help=("add prefix to generated packages " f"(default: {DEFAULT_PREFIX})"),
+        default=DEFAULT_PREFIX,
+        help="add prefix to generated packages (default: %(default)s)",
     )
     parser_generate.add_argument(
         "-n", "--no-library", help="omit generating library files", action="store_true"
@@ -98,6 +105,8 @@ def main(argv: List[str]) -> Union[int, str]:
 
     if args.quiet:
         logging.disable(logging.CRITICAL)
+
+    FAIL_AFTER_VALUE.v = args.max_errors
 
     try:
         args.func(args)
