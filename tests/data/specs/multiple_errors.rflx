@@ -1,0 +1,12 @@
+package Multiple_Errors is
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+   type INVALID is mod 2**8;
+end Multiple_Errors;

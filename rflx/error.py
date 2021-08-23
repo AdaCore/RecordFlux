@@ -2,9 +2,13 @@ from abc import abstractmethod
 from collections import deque
 from enum import Enum, auto
 from pathlib import Path
+from threading import local
 from typing import Deque, List, NoReturn, Optional, Tuple, TypeVar, Union
 
 from rflx.common import Base, verbose_repr
+
+FAIL_AFTER_VALUE = local()
+FAIL_AFTER_VALUE.v = 0
 
 
 class Location(Base):
@@ -138,21 +142,32 @@ class BaseError(Exception, Base):
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
         self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
+        if get_fail_after() > 0 and len(self.__errors) >= get_fail_after():
+            raise self
 
     def appendleft(
         self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
     ) -> None:
         self.__errors.appendleft(BaseError.Entry(message, subsystem, severity, location))
+        if get_fail_after() > 0 and len(self.__errors) >= get_fail_after():
+            raise self
 
     def extend(
         self,
         entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
     ) -> None:
+        # pylint: disable = global-statement
+        global FAIL_AFTER_VALUE
         if isinstance(entries, BaseError):
             self.__errors.extend(entries.errors)
         else:
             for message, subsystem, severity, location in entries:
                 self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
+        num_errors = len(
+            list(e for e in self.__errors if e.severity in (Severity.WARNING, Severity.ERROR))
+        )
+        if 0 < FAIL_AFTER_VALUE.v <= num_errors:
+            raise self
 
     def check(self) -> bool:
         return len(self.__errors) > 0
