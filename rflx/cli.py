@@ -11,7 +11,7 @@ import librflxlang
 from pkg_resources import get_distribution
 
 from rflx import __version__
-from rflx.error import FAIL_AFTER_VALUE, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import ERROR_CONFIG, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.model import Message, Model, Session
@@ -106,7 +106,7 @@ def main(argv: List[str]) -> Union[int, str]:
     if args.quiet:
         logging.disable(logging.CRITICAL)
 
-    FAIL_AFTER_VALUE.v = args.max_errors
+    ERROR_CONFIG.fail_after_value = args.max_errors
 
     try:
         args.func(args)
