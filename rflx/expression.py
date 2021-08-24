@@ -1188,11 +1188,15 @@ class Present(Attribute):
             error = self.prefix.prefix.check_type_instance(rty.Message)
         else:
             error = RecordFluxError()
-            error.append(
-                "invalid prefix for attribute Present",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            error.extend(
+                [
+                    (
+                        "invalid prefix for attribute Present",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ]
             )
         return error
 
@@ -1218,11 +1222,15 @@ class Head(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.prefix.check_type_instance(rty.Composite)
         if not isinstance(self.prefix, (Variable, Selected)):
-            error.append(
-                "prefix of attribute Head must be a name",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.prefix.location,
+            error.extend(
+                [
+                    (
+                        "prefix of attribute Head must be a name",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.prefix.location,
+                    )
+                ],
             )
         return error
 
@@ -1331,14 +1339,18 @@ class Selected(Name):
             if self.selector in self.prefix.type_.fields:
                 self.type_ = self.prefix.type_.field_types[self.selector]
             else:
-                error.append(
-                    f'invalid field "{self.selector}" for {self.prefix.type_}',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
-                )
                 error.extend(
-                    _similar_field_names(self.selector, self.prefix.type_.fields, self.location)
+                    [
+                        (
+                            f'invalid field "{self.selector}" for {self.prefix.type_}',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        ),
+                        *_similar_field_names(
+                            self.selector, self.prefix.type_.fields, self.location
+                        ),
+                    ]
                 )
                 self.type_ = rty.Any()
         else:
@@ -1405,19 +1417,27 @@ class Call(Name):
 
         if self.type_ != rty.Undefined():
             if len(self.args) < len(self.argument_types):
-                error.append(
-                    "missing function arguments",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                error.extend(
+                    [
+                        (
+                            "missing function arguments",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
 
             if len(self.args) > len(self.argument_types):
-                error.append(
-                    "too many function arguments",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                error.extend(
+                    [
+                        (
+                            "too many function arguments",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
 
         return error
@@ -2035,26 +2055,38 @@ class Conversion(Expr):
             if self.argument_types:
                 error += self.argument.prefix.check_type(tuple(self.argument_types))
             else:
-                error.append(
-                    f'invalid conversion to "{self.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                error.extend(
+                    [
+                        (
+                            f'invalid conversion to "{self.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
                 if isinstance(self.argument.prefix.type_, rty.Message):
-                    error.append(
-                        f'refinement for message "{self.argument.prefix.type_.identifier}"'
-                        " would make operation legal",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.location,
+                    error.extend(
+                        [
+                            (
+                                f'refinement for message "{self.argument.prefix.type_.identifier}"'
+                                " would make operation legal",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                self.location,
+                            )
+                        ],
                     )
         else:
-            error.append(
-                "invalid argument for conversion, expected message field",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.argument.location,
+            error.extend(
+                [
+                    (
+                        "invalid argument for conversion, expected message field",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.argument.location,
+                    )
+                ],
             )
 
         return error
@@ -2224,13 +2256,17 @@ class MessageAggregate(Expr):
 
         for i, (field, expr) in enumerate(self.field_values.items()):
             if field not in self.type_.fields:
-                error.append(
-                    f'invalid field "{field}" for {self.type_}',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    field.location,
+                error.extend(
+                    [
+                        (
+                            f'invalid field "{field}" for {self.type_}',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            field.location,
+                        ),
+                        *_similar_field_names(field, self.type_.fields, field.location),
+                    ]
                 )
-                error.extend(_similar_field_names(field, self.type_.fields, field.location))
                 continue
 
             field_type = self.type_.field_types[field]
@@ -2249,27 +2285,37 @@ class MessageAggregate(Expr):
             }
 
             if not field_combinations:
-                error.append(
-                    f'invalid position for field "{field}" of {self.type_}',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    field.location,
+                error.extend(
+                    [
+                        (
+                            f'invalid position for field "{field}" of {self.type_}',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            field.location,
+                        )
+                    ],
                 )
                 break
 
         if field_combinations and all(len(c) > len(self.field_values) for c in field_combinations):
-            error.append(
-                f"missing fields for {self.type_}",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-            error.append(
-                "possible next fields: "
-                + ", ".join(unique(c[len(self.field_values)] for c in sorted(field_combinations))),
-                Subsystem.MODEL,
-                Severity.INFO,
-                self.location,
+            error.extend(
+                [
+                    (
+                        f"missing fields for {self.type_}",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    (
+                        "possible next fields: "
+                        + ", ".join(
+                            unique(c[len(self.field_values)] for c in sorted(field_combinations))
+                        ),
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        self.location,
+                    ),
+                ],
             )
 
         return error
@@ -2435,20 +2481,20 @@ def _entity_name(expr: Expr) -> str:
 
 def _similar_field_names(
     field: ID, fields: Iterable[ID], location: Optional[Location]
-) -> RecordFluxError:
+) -> List[Tuple[str, Subsystem, Severity, Optional[Location]]]:
     field_similarity = sorted(
         ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
         key=lambda x: x[1],
         reverse=True,
     )
     similar_fields = [f for f, s in field_similarity if s >= 0.5]
-
-    error = RecordFluxError()
     if similar_fields:
-        error.append(
-            "similar field names: " + ", ".join(str(f) for f in similar_fields),
-            Subsystem.MODEL,
-            Severity.INFO,
-            location,
-        )
-    return error
+        return [
+            (
+                "similar field names: " + ", ".join(str(f) for f in similar_fields),
+                Subsystem.MODEL,
+                Severity.INFO,
+                location,
+            )
+        ]
+    return []

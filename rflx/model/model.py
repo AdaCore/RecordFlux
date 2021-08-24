@@ -55,39 +55,48 @@ class Model(Base):
 
         for t in self.__types:
             if t.identifier in types:
-                error.append(
-                    f'conflicting refinement of "{t.pdu.identifier}" with "{t.sdu.identifier}"'
-                    if isinstance(t, message.Refinement)
-                    else f'name conflict for type "{t.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    t.location,
-                )
-                error.append(
-                    "previous occurrence of refinement"
-                    if isinstance(t, message.Refinement)
-                    else f'previous occurrence of "{t.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    types[t.identifier].location,
+                error.extend(
+                    [
+                        (
+                            f'conflicting refinement of "{t.pdu.identifier}" with'
+                            f' "{t.sdu.identifier}"'
+                            if isinstance(t, message.Refinement)
+                            else f'name conflict for type "{t.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            t.location,
+                        ),
+                        (
+                            "previous occurrence of refinement"
+                            if isinstance(t, message.Refinement)
+                            else f'previous occurrence of "{t.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            types[t.identifier].location,
+                        ),
+                    ],
                 )
             types[t.identifier] = t
 
         for s in self.__sessions:
             if s.identifier in types or s.identifier in sessions:
-                error.append(
-                    f'name conflict for session "{s.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    s.location,
-                )
-                error.append(
-                    f'previous occurrence of "{s.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    types[s.identifier].location
-                    if s.identifier in types
-                    else sessions[s.identifier].location,
+                error.extend(
+                    [
+                        (
+                            f'name conflict for session "{s.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            s.location,
+                        ),
+                        (
+                            f'previous occurrence of "{s.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            types[s.identifier].location
+                            if s.identifier in types
+                            else sessions[s.identifier].location,
+                        ),
+                    ],
                 )
             sessions[s.identifier] = s
 
@@ -115,22 +124,24 @@ class Model(Base):
 
             if identical_literals:
                 literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
-                error.append(
-                    f"conflicting literals: {literals_message}",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    e2.location,
-                )
                 error.extend(
                     [
                         (
-                            f'previous occurrence of "{l}"',
+                            f"conflicting literals: {literals_message}",
                             Subsystem.MODEL,
-                            Severity.INFO,
-                            l.location,
-                        )
-                        for l in sorted(identical_literals)
-                    ]
+                            Severity.ERROR,
+                            e2.location,
+                        ),
+                        *[
+                            (
+                                f'previous occurrence of "{l}"',
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                l.location,
+                            )
+                            for l in sorted(identical_literals)
+                        ],
+                    ],
                 )
 
         literals = [
@@ -147,17 +158,21 @@ class Model(Base):
             and l.name == t.identifier.name
         ]
         for literal, conflicting_type in name_conflicts:
-            error.append(
-                f'literal "{literal.name}" conflicts with type declaration',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                literal.location,
-            )
-            error.append(
-                f'conflicting type "{conflicting_type.identifier}"',
-                Subsystem.MODEL,
-                Severity.INFO,
-                conflicting_type.location,
+            error.extend(
+                [
+                    (
+                        f'literal "{literal.name}" conflicts with type declaration',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        literal.location,
+                    ),
+                    (
+                        f'conflicting type "{conflicting_type.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        conflicting_type.location,
+                    ),
+                ],
             )
 
         return error

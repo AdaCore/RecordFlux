@@ -106,17 +106,21 @@ class Append(ListAttributeStatement):
             if isinstance(statement_type.element, rty.Message) and isinstance(
                 self.parameter, Variable
             ):
-                error.append(
-                    "appending independently created message not supported",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.parameter.location,
-                )
-                error.append(
-                    "message aggregate should be used instead",
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    self.parameter.location,
+                error.extend(
+                    [
+                        (
+                            "appending independently created message not supported",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.parameter.location,
+                        ),
+                        (
+                            "message aggregate should be used instead",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            self.parameter.location,
+                        ),
+                    ],
                 )
         return error
 

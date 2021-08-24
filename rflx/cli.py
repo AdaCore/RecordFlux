@@ -186,7 +186,7 @@ def parse(files: Sequence[Path], skip_verification: bool = False) -> Model:
 
     for f in files:
         if not f.is_file():
-            error.append(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR)
+            error.extend([(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR, None)])
             continue
 
         present_files.append(Path(f))

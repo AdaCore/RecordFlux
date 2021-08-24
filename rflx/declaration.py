@@ -147,18 +147,22 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
             if ID(r.field) == self.expression.selector and r.sdu.is_compatible(declaration_type):
                 break
         else:
-            error.append(
-                f'invalid renaming to "{self.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
-            )
-            error.append(
-                f'refinement for message "{self.expression.prefix.type_.identifier}"'
-                " would make operation legal",
-                Subsystem.MODEL,
-                Severity.INFO,
-                self.location,
+            error.extend(
+                [
+                    (
+                        f'invalid renaming to "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    (
+                        f'refinement for message "{self.expression.prefix.type_.identifier}"'
+                        " would make operation legal",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        self.location,
+                    ),
+                ],
             )
         return error + self.expression.check_type(rty.OPAQUE)
 

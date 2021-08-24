@@ -301,10 +301,15 @@ def messages(
     try:
         return message.proven()
     except error.RecordFluxError as e:
-        e.append(
-            f"incorrectly generated message:\n {message!r}",
-            error.Subsystem.MODEL,
-            error.Severity.INFO,
+        e.extend(
+            [
+                (
+                    f"incorrectly generated message:\n {message!r}",
+                    error.Subsystem.MODEL,
+                    error.Severity.INFO,
+                    None,
+                )
+            ],
         )
         raise e
 

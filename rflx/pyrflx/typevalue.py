@@ -40,7 +40,7 @@ from rflx.model import (
     Type,
 )
 from rflx.pyrflx.bitstring import Bitstring
-from rflx.pyrflx.error import PyRFLXError, Severity, Subsystem
+from rflx.pyrflx.error import PyRFLXError
 
 
 class TypeValue(Base):
@@ -353,12 +353,11 @@ class OpaqueValue(CompositeValue):
             try:
                 nested_msg.parse(value, check)
             except PyRFLXError as e:
-                e.appendleft(
-                    f"Error while parsing nested message {self._refinement_message.identifier}",
-                    Subsystem.PYRFLX,
-                    Severity.ERROR,
+                new_exception = PyRFLXError(
+                    f"Error while parsing nested message {self._refinement_message.identifier}"
                 )
-                raise e
+                new_exception.extend(e)
+                raise new_exception from e
             assert nested_msg.valid_message
             self._nested_message = nested_msg
             self._value = nested_msg.bytestring
@@ -452,13 +451,12 @@ class SequenceValue(CompositeValue):
                 try:
                     nested_message.parse(value, check)
                 except PyRFLXError as e:
-                    e.appendleft(
+                    new_exception = PyRFLXError(
                         f"cannot parse nested messages in sequence of type "
-                        f"{self._element_type.full_name}",
-                        Subsystem.PYRFLX,
-                        Severity.ERROR,
+                        f"{self._element_type.full_name}"
                     )
-                    raise e
+                    new_exception.extend(e)
+                    raise new_exception from e
                 assert nested_message.valid_message
                 self._value.append(nested_message)
                 value = value[len(nested_message.bitstring) :]
@@ -877,12 +875,9 @@ class MessageValue(TypeValue):
                         f" != {type(value).__name__}"
                     )
             except PyRFLXError as e:
-                e.appendleft(
-                    f"cannot set value for field {field_name}",
-                    Subsystem.PYRFLX,
-                    Severity.ERROR,
-                )
-                raise e
+                new_exception = PyRFLXError(f"cannot set value for field {field_name}")
+                new_exception.extend(e)
+                raise new_exception from e
         else:
             raise PyRFLXError(f"cannot access field {field_name}")
 
