@@ -7,8 +7,8 @@ from typing import Deque, List, NoReturn, Optional, Tuple, TypeVar, Union
 
 from rflx.common import Base, verbose_repr
 
-FAIL_AFTER_VALUE = local()
-FAIL_AFTER_VALUE.v = 0
+ERROR_CONFIG = local()
+ERROR_CONFIG.fail_after_value = 0
 
 
 class Location(Base):
@@ -143,7 +143,7 @@ class BaseError(Exception, Base):
         entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
     ) -> None:
         # pylint: disable = global-statement
-        global FAIL_AFTER_VALUE
+        global ERROR_CONFIG
         if isinstance(entries, BaseError):
             self.__errors.extend(entries.errors)
         else:
@@ -152,7 +152,7 @@ class BaseError(Exception, Base):
         num_errors = len(
             list(e for e in self.__errors if e.severity in (Severity.WARNING, Severity.ERROR))
         )
-        if 0 < FAIL_AFTER_VALUE.v <= num_errors:
+        if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
             raise self
 
     def check(self) -> bool:
