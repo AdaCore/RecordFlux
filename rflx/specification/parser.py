@@ -88,15 +88,19 @@ def diagnostics_to_error(
 
     for diag in diagnostics:
         loc = diag.sloc_range
-        error.append(
-            diag.message,
-            Subsystem.PARSER,
-            Severity.ERROR,
-            Location(
-                start=(loc.start.line, loc.start.column),
-                source=filename,
-                end=(loc.end.line, loc.end.column),
-            ),
+        error.extend(
+            [
+                (
+                    diag.message,
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    Location(
+                        start=(loc.start.line, loc.start.column),
+                        source=filename,
+                        end=(loc.end.line, loc.end.column),
+                    ),
+                )
+            ],
         )
     return True
 
@@ -823,11 +827,15 @@ def create_message_structure(
             elif aspect.f_identifier.text == "First":
                 first = create_math_expression(aspect.f_value, filename)
             else:
-                error.append(
-                    f'invalid aspect "{aspect.f_identifier.text}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(aspect.f_identifier, filename),
+                error.extend(
+                    [
+                        (
+                            f'invalid aspect "{aspect.f_identifier.text}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(aspect.f_identifier, filename),
+                        )
+                    ],
                 )
         return size, first
 
@@ -867,11 +875,15 @@ def create_message_structure(
         )
         component_identifier = create_id(component.f_identifier, filename)
         if component.f_identifier.text.lower() == "message":
-            error.append(
-                'reserved word "Message" used as identifier',
-                Subsystem.PARSER,
-                Severity.ERROR,
-                component_identifier.location,
+            error.extend(
+                [
+                    (
+                        'reserved word "Message" used as identifier',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        component_identifier.location,
+                    )
+                ],
             )
             continue
 
@@ -888,11 +900,15 @@ def create_message_structure(
             if then.f_target.kind_name != "NullID" and not any(
                 then.f_target.text == c.f_identifier.text for c in components.f_components
             ):
-                error.append(
-                    f'undefined field "{then.f_target.text}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(then.f_target, filename) if then.f_target else None,
+                error.extend(
+                    [
+                        (
+                            f'undefined field "{then.f_target.text}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(then.f_target, filename) if then.f_target else None,
+                        )
+                    ],
                 )
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
@@ -924,37 +940,45 @@ def merge_component_aspects(
                 if l.first == expr.UNDEFINED:
                     l.first = first
                 else:
-                    error.append(
-                        f'first aspect of field "{component_identifier}"'
-                        " conflicts with previous"
-                        " specification",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        first.location,
-                    )
-                    error.append(
-                        "previous specification of first",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        l.first.location,
+                    error.extend(
+                        [
+                            (
+                                f'first aspect of field "{component_identifier}"'
+                                " conflicts with previous"
+                                " specification",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                first.location,
+                            ),
+                            (
+                                "previous specification of first",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                l.first.location,
+                            ),
+                        ],
                     )
 
             if size != expr.UNDEFINED:
                 if l.size == expr.UNDEFINED:
                     l.size = size
                 else:
-                    error.append(
-                        f'size aspect of field "{component_identifier}" conflicts with previous'
-                        " specification",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        size.location,
-                    )
-                    error.append(
-                        "previous specification of size",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        l.size.location,
+                    error.extend(
+                        [
+                            (
+                                f'size aspect of field "{component_identifier}" conflicts with'
+                                " previous specification",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                size.location,
+                            ),
+                            (
+                                "previous specification of size",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                l.size.location,
+                            ),
+                        ],
                     )
 
 
@@ -1020,17 +1044,21 @@ def create_derived_message(
 
     if not base_messages:
         error = RecordFluxError()
-        error.append(
-            f'illegal derivation "{identifier}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            identifier.location,
-        )
-        error.append(
-            f'invalid base message type "{base_name}"',
-            Subsystem.PARSER,
-            Severity.INFO,
-            base_types[0].identifier.location,
+        error.extend(
+            [
+                (
+                    f'illegal derivation "{identifier}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    identifier.location,
+                ),
+                (
+                    f'invalid base message type "{base_name}"',
+                    Subsystem.PARSER,
+                    Severity.INFO,
+                    base_types[0].identifier.location,
+                ),
+            ],
         )
         error.propagate()
 
@@ -1068,20 +1096,28 @@ def create_enumeration(
                     elif av_expr == expr.Variable("False"):
                         always_valid = False
                     else:
-                        error.append(
-                            f"invalid Always_Valid expression: {av_expr}",
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            node_location(a.f_value, filename),
+                        error.extend(
+                            [
+                                (
+                                    f"invalid Always_Valid expression: {av_expr}",
+                                    Subsystem.PARSER,
+                                    Severity.ERROR,
+                                    node_location(a.f_value, filename),
+                                )
+                            ],
                         )
                 else:
                     always_valid = True
         if not size:
-            error.append(
-                f'no size set for "{identifier}"',
-                Subsystem.PARSER,
-                Severity.ERROR,
-                identifier.location,
+            error.extend(
+                [
+                    (
+                        f'no size set for "{identifier}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        identifier.location,
+                    )
+                ],
             )
         error.propagate()
         assert size
@@ -1163,43 +1199,58 @@ def create_refinement(
 def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> None:
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
-        error.append(
-            f'illegal prefix "RFLX" in package identifier "{identifier}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(package.f_identifier, name),
+        error.extend(
+            [
+                (
+                    f'illegal prefix "RFLX" in package identifier "{identifier}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(package.f_identifier, name),
+                )
+            ],
         )
     if identifier != package.f_end_identifier.text:
-        error.append(
-            f'inconsistent package identifier "{package.f_end_identifier.text}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(package.f_end_identifier, name),
-        )
-        error.append(
-            f'previous identifier was "{identifier}"',
-            Subsystem.PARSER,
-            Severity.INFO,
-            node_location(package.f_identifier, name),
+        error.extend(
+            [
+                (
+                    f'inconsistent package identifier "{package.f_end_identifier.text}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(package.f_end_identifier, name),
+                ),
+                (
+                    f'previous identifier was "{identifier}"',
+                    Subsystem.PARSER,
+                    Severity.INFO,
+                    node_location(package.f_identifier, name),
+                ),
+            ],
         )
     if name != STDIN:
         expected_filename = f"{identifier.lower()}.rflx"
         if name.name != expected_filename:
-
-            error.append(
-                f'file name does not match unit name "{identifier}",'
-                f' should be "{expected_filename}"',
-                Subsystem.PARSER,
-                Severity.ERROR,
-                node_location(package.f_identifier, name),
+            error.extend(
+                [
+                    (
+                        f'file name does not match unit name "{identifier}",'
+                        f' should be "{expected_filename}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(package.f_identifier, name),
+                    )
+                ],
             )
     for t in package.f_declarations:
         if isinstance(t, TypeDecl) and model.is_builtin_type(create_id(t.f_identifier, name).name):
-            error.append(
-                f'illegal redefinition of built-in type "{t.f_identifier.text}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                node_location(t, name),
+            error.extend(
+                [
+                    (
+                        f'illegal redefinition of built-in type "{t.f_identifier.text}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        node_location(t, name),
+                    )
+                ],
             )
 
 
@@ -1239,22 +1290,24 @@ class Parser:
             for context in spec.f_context_clause:
                 item = create_id(context.f_item, filename)
                 if item in transitions:
-                    error.append(
-                        f'dependency cycle when including "{transitions[0]}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        transitions[0].location,
-                    )
                     error.extend(
                         [
                             (
-                                f'when including "{i}"',
+                                f'dependency cycle when including "{transitions[0]}"',
                                 Subsystem.PARSER,
-                                Severity.INFO,
-                                i.location,
-                            )
-                            for i in transitions[1:] + [item]
-                        ]
+                                Severity.ERROR,
+                                transitions[0].location,
+                            ),
+                            *[
+                                (
+                                    f'when including "{i}"',
+                                    Subsystem.PARSER,
+                                    Severity.INFO,
+                                    i.location,
+                                )
+                                for i in transitions[1:] + [item]
+                            ],
+                        ],
                     )
                     continue
                 withed_file = filename.parent / f"{str(item).lower()}.rflx"
@@ -1266,20 +1319,26 @@ class Parser:
                 packagefile in self.__specifications
                 and filename != self.__specifications[packagefile].filename
             ):
-                error.append(
-                    "duplicate specification",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(spec.f_package_declaration.f_identifier, filename),
-                )
-                error.append(
-                    "previous specification",
-                    Subsystem.PARSER,
-                    Severity.INFO,
-                    node_location(
-                        self.__specifications[packagefile].spec.f_package_declaration.f_identifier,
-                        self.__specifications[packagefile].filename,
-                    ),
+                error.extend(
+                    [
+                        (
+                            "duplicate specification",
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(spec.f_package_declaration.f_identifier, filename),
+                        ),
+                        (
+                            "previous specification",
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            node_location(
+                                self.__specifications[
+                                    packagefile
+                                ].spec.f_package_declaration.f_identifier,
+                                self.__specifications[packagefile].filename,
+                            ),
+                        ),
+                    ],
                 )
             self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 

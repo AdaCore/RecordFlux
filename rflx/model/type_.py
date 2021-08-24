@@ -19,11 +19,15 @@ class Type(Base):
         self.error = error or RecordFluxError()
 
         if len(identifier.parts) != 2:
-            self.error.append(
-                f'invalid format of type identifier "{identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
+            self.error.extend(
+                [
+                    (
+                        f'invalid format of type identifier "{identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        location,
+                    )
+                ],
             )
 
         self.identifier = identifier
@@ -111,29 +115,41 @@ class ModularInteger(Integer):
         modulus_num = modulus.simplified()
 
         if not isinstance(modulus_num, expr.Number):
-            self.error.append(
-                f'modulus of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'modulus of "{self.name}" contains variable',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
             return
 
         modulus_int = int(modulus_num)
 
         if modulus_int > 2 ** 64:
-            self.error.append(
-                f'modulus of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                modulus.location,
+            self.error.extend(
+                [
+                    (
+                        f'modulus of "{self.name}" exceeds limit (2**64)',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        modulus.location,
+                    )
+                ],
             )
         if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            self.error.append(
-                f'modulus of "{self.name}" not power of two',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'modulus of "{self.name}" not power of two',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         self.__modulus = modulus
@@ -187,35 +203,51 @@ class RangeInteger(Integer):
         size_num = size.simplified()
 
         if not isinstance(first_num, expr.Number):
-            self.error.append(
-                f'first of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'first of "{self.name}" contains variable',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         if not isinstance(last_num, expr.Number):
-            self.error.append(
-                f'last of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'last of "{self.name}" contains variable',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
             return
         if int(last_num) >= 2 ** 63:
-            self.error.append(
-                f'last of "{self.name}" exceeds limit (2**63 - 1)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'last of "{self.name}" exceeds limit (2**63 - 1)',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         if not isinstance(size_num, expr.Number):
-            self.error.append(
-                f'size of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'size of "{self.name}" contains variable',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         if self.error.check():
@@ -226,33 +258,49 @@ class RangeInteger(Integer):
         assert isinstance(size_num, expr.Number)
 
         if first_num < expr.Number(0):
-            self.error.append(
-                f'first of "{self.name}" negative',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'first of "{self.name}" negative',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
         if first_num > last_num:
-            self.error.append(
-                f'range of "{self.name}" negative',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'range of "{self.name}" negative',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         if int(last_num).bit_length() > int(size_num):
-            self.error.append(
-                f'size of "{self.name}" too small',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'size of "{self.name}" too small',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
         if int(size_num) > 64:
-            self.error.append(
-                f'size of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'size of "{self.name}" exceeds limit (2**64)',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         self.__first_expr = first
@@ -329,27 +377,35 @@ class Enumeration(Scalar):
         for i1, e1 in enumerate(literals):
             for i2, e2 in enumerate(literals):
                 if i2 < i1 and e1[0] == e2[0]:
-                    self.error.append(
-                        f'duplicate literal "{e1[0]}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        e1[0].location if isinstance(e1[0], ID) else self.location,
-                    )
-                    self.error.append(
-                        "previous occurrence",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        e2[0].location if isinstance(e2[0], ID) else self.location,
+                    self.error.extend(
+                        [
+                            (
+                                f'duplicate literal "{e1[0]}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                e1[0].location if isinstance(e1[0], ID) else self.location,
+                            ),
+                            (
+                                "previous occurrence",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                e2[0].location if isinstance(e2[0], ID) else self.location,
+                            ),
+                        ],
                     )
 
         self.literals = {}
         for k, v in literals:
             if " " in str(k) or "." in str(k):
-                self.error.append(
-                    f'invalid literal name "{k}" in "{self.name}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                self.error.extend(
+                    [
+                        (
+                            f'invalid literal name "{k}" in "{self.name}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
                 continue
             self.literals[ID(k)] = v
@@ -357,11 +413,15 @@ class Enumeration(Scalar):
         size_num = size.simplified()
 
         if not isinstance(size_num, expr.Number):
-            self.error.append(
-                f'size of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'size of "{self.name}" contains variable',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
             return
 
@@ -369,46 +429,64 @@ class Enumeration(Scalar):
             min_literal_value = min(map(int, self.literals.values()))
             max_literal_value = max(map(int, self.literals.values()))
             if min_literal_value < 0 or max_literal_value > 2 ** 63 - 1:
-                self.error.append(
-                    f'enumeration value of "{self.name}"'
-                    " outside of permitted range (0 .. 2**63 - 1)",
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                self.error.extend(
+                    [
+                        (
+                            f'enumeration value of "{self.name}"'
+                            " outside of permitted range (0 .. 2**63 - 1)",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
             if max_literal_value.bit_length() > int(size_num):
-                self.error.append(
-                    f'size of "{self.name}" too small',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                self.error.extend(
+                    [
+                        (
+                            f'size of "{self.name}" too small',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        )
+                    ],
                 )
         if int(size_num) > 64:
-            self.error.append(
-                f'size of "{self.name}" exceeds limit (2**64)',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'size of "{self.name}" exceeds limit (2**64)',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
         for i1, v1 in enumerate(self.literals.values()):
             for i2, v2 in enumerate(self.literals.values()):
                 if i1 < i2 and v1 == v2:
-                    self.error.append(
-                        f'duplicate enumeration value "{v1}" in "{self.name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        v2.location,
-                    )
-                    self.error.append(
-                        "previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location
+                    self.error.extend(
+                        [
+                            (
+                                f'duplicate enumeration value "{v1}" in "{self.name}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                v2.location,
+                            ),
+                            ("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location),
+                        ]
                     )
 
         if always_valid and len(self.literals) == 2 ** int(size_num):
-            self.error.append(
-                f'unnecessary always-valid aspect on "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [
+                    (
+                        f'unnecessary always-valid aspect on "{self.name}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    )
+                ],
             )
 
         self.always_valid = always_valid
@@ -476,34 +554,42 @@ class Sequence(Composite):
         if not isinstance(element_type, Scalar) and not (
             isinstance(element_type, message.Message) and element_type.structure
         ):
-            self.error.append(
-                f'invalid element type of sequence "{self.name}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
-            )
-            self.error.append(
-                f'type "{element_type.name}" must be scalar or non-null message',
-                Subsystem.MODEL,
-                Severity.INFO,
-                element_type.location,
+            self.error.extend(
+                [
+                    (
+                        f'invalid element type of sequence "{self.name}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        location,
+                    ),
+                    (
+                        f'type "{element_type.name}" must be scalar or non-null message',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        element_type.location,
+                    ),
+                ],
             )
 
         if isinstance(element_type, Scalar):
             element_type_size = element_type.size.simplified()
             if not isinstance(element_type_size, expr.Number) or int(element_type_size) % 8 != 0:
-                self.error.append(
-                    f'unsupported element type size of sequence "{self.name}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    location,
-                )
-                self.error.append(
-                    f'type "{element_type.name}" has size {element_type_size},'
-                    r" must be multiple of 8",
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    element_type.location,
+                self.error.extend(
+                    [
+                        (
+                            f'unsupported element type size of sequence "{self.name}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            location,
+                        ),
+                        (
+                            f'type "{element_type.name}" has size {element_type_size},'
+                            r" must be multiple of 8",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            element_type.location,
+                        ),
+                    ],
                 )
 
     def __repr__(self) -> str:

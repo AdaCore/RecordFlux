@@ -164,11 +164,15 @@ class AbstractSession(Base):
         }
 
         if len(self.identifier.parts) != 2:
-            self.error.append(
-                f'invalid session name "{self.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.identifier.location,
+            self.error.extend(
+                [
+                    (
+                        f'invalid session name "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    )
+                ],
             )
 
         self._literals = {
@@ -217,11 +221,8 @@ class Session(AbstractSession):
 
     def __validate_states(self) -> None:
         if not self.states:
-            self.error.append(
-                "empty states",
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.extend(
+                [("empty states", Subsystem.MODEL, Severity.ERROR, self.location)],
             )
 
         self.__validate_state_existence()
@@ -231,28 +232,40 @@ class Session(AbstractSession):
     def __validate_state_existence(self) -> None:
         state_identifiers = [s.identifier for s in self.states]
         if self.initial not in state_identifiers:
-            self.error.append(
-                f'initial state "{self.initial}" does not exist in "{self.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.initial.location,
+            self.error.extend(
+                [
+                    (
+                        f'initial state "{self.initial}" does not exist in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.initial.location,
+                    )
+                ],
             )
         if self.final not in state_identifiers:
-            self.error.append(
-                f'final state "{self.final}" does not exist in "{self.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.final.location,
+            self.error.extend(
+                [
+                    (
+                        f'final state "{self.final}" does not exist in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.final.location,
+                    )
+                ],
             )
         for s in self.states:
             for t in s.transitions:
                 if t.target not in state_identifiers:
-                    self.error.append(
-                        f'transition from state "{s.identifier}" to non-existent state'
-                        f' "{t.target}" in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        t.target.location,
+                    self.error.extend(
+                        [
+                            (
+                                f'transition from state "{s.identifier}" to non-existent state'
+                                f' "{t.target}" in "{self.identifier}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                t.target.location,
+                            )
+                        ],
                     )
 
     def __validate_duplicate_states(self) -> None:
@@ -263,17 +276,21 @@ class Session(AbstractSession):
         for identifier, states in identifier_states.items():
             if len(states) >= 2:
                 for s in states[1:]:
-                    self.error.append(
-                        f'duplicate state "{identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        s.location,
-                    )
-                    self.error.append(
-                        f'previous definition of state "{identifier}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        states[0].location,
+                    self.error.extend(
+                        [
+                            (
+                                f'duplicate state "{identifier}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                s.location,
+                            ),
+                            (
+                                f'previous definition of state "{identifier}"',
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                states[0].location,
+                            ),
+                        ],
                     )
 
     def __validate_state_reachability(self) -> None:
@@ -289,19 +306,27 @@ class Session(AbstractSession):
                     inputs[t.target] = [s.identifier]
 
             if s.identifier != self.initial and s.identifier not in inputs:
-                self.error.append(
-                    f'unreachable state "{s.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    s.location,
+                self.error.extend(
+                    [
+                        (
+                            f'unreachable state "{s.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            s.location,
+                        )
+                    ],
                 )
 
             if s.identifier != self.final and not s.transitions:
-                self.error.append(
-                    f'detached state "{s.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    s.location,
+                self.error.extend(
+                    [
+                        (
+                            f'detached state "{s.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            s.location,
+                        )
+                    ],
                 )
 
     def __validate_declarations(
@@ -312,26 +337,34 @@ class Session(AbstractSession):
         visible_declarations = dict(visible_declarations)
 
         def undefined_type(type_identifier: StrID, location: Optional[Location]) -> None:
-            self.error.append(
-                f'undefined type "{type_identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                location,
+            self.error.extend(
+                [
+                    (
+                        f'undefined type "{type_identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        location,
+                    )
+                ],
             )
 
         for k, d in declarations.items():
             if k in visible_declarations:
-                self.error.append(
-                    f'local variable "{k}" shadows previous declaration',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    d.location,
-                )
-                self.error.append(
-                    f'previous declaration of variable "{k}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    visible_declarations[k].location,
+                self.error.extend(
+                    [
+                        (
+                            f'local variable "{k}" shadows previous declaration',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            d.location,
+                        ),
+                        (
+                            f'previous declaration of variable "{k}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            visible_declarations[k].location,
+                        ),
+                    ],
                 )
 
             self.__reference_variable_declaration(d.variables(), visible_declarations)
@@ -339,11 +372,8 @@ class Session(AbstractSession):
             if isinstance(d, decl.TypeDeclaration):
                 type_identifier = mty.qualified_type_identifier(k, self.package)
                 if type_identifier in self.types:
-                    self.error.append(
-                        f'type "{k}" shadows type',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        d.location,
+                    self.error.extend(
+                        [(f'type "{k}" shadows type', Subsystem.MODEL, Severity.ERROR, d.location)],
                     )
                 self.types[type_identifier] = d.type_definition
 
@@ -403,19 +433,27 @@ class Session(AbstractSession):
             self.__reference_variable_declaration(t.condition.variables(), declarations)
 
         if not state.exception_transition and state.has_exceptions:
-            self.error.append(
-                f'missing exception transition in state "{state.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                state.location,
+            self.error.extend(
+                [
+                    (
+                        f'missing exception transition in state "{state.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        state.location,
+                    )
+                ],
             )
 
         if state.exception_transition and not state.has_exceptions:
-            self.error.append(
-                f'unnecessary exception transition in state "{state.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                state.exception_transition.location,
+            self.error.extend(
+                [
+                    (
+                        f'unnecessary exception transition in state "{state.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        state.exception_transition.location,
+                    )
+                ],
             )
 
     def __validate_usage(self) -> None:
@@ -423,11 +461,15 @@ class Session(AbstractSession):
         local_declarations = ((k, d) for s in self.states for k, d in s.declarations.items())
         for k, d in itertools.chain(global_declarations, local_declarations):
             if not d.is_referenced:
-                self.error.append(
-                    f'unused {d.DESCRIPTIVE_NAME} "{k}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    d.location,
+                self.error.extend(
+                    [
+                        (
+                            f'unused {d.DESCRIPTIVE_NAME} "{k}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            d.location,
+                        )
+                    ],
                 )
 
     def __typify_variable(

@@ -138,20 +138,6 @@ class BaseError(Exception, Base):
     def errors(self) -> Deque["BaseError.Entry"]:
         return self.__errors
 
-    def append(
-        self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
-    ) -> None:
-        self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
-        if get_fail_after() > 0 and len(self.__errors) >= get_fail_after():
-            raise self
-
-    def appendleft(
-        self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
-    ) -> None:
-        self.__errors.appendleft(BaseError.Entry(message, subsystem, severity, location))
-        if get_fail_after() > 0 and len(self.__errors) >= get_fail_after():
-            raise self
-
     def extend(
         self,
         entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
@@ -220,7 +206,7 @@ def _fail(
     severity: Severity = Severity.ERROR,
     location: Location = None,
 ) -> NoReturn:
-    error.append(message, subsystem, severity, location)
+    error.extend([(message, subsystem, severity, location)])
     error.propagate()
     assert False
 
@@ -232,5 +218,5 @@ def warn(
     location: Location = None,
 ) -> None:
     e = RecordFluxError()
-    e.append(message, subsystem, severity, location)
+    e.extend([(message, subsystem, severity, location)])
     print(e)

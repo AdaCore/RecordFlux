@@ -346,17 +346,11 @@ def check_type(
         desc = (
             " or ".join(map(str, expected_types)) if isinstance(expected, tuple) else str(expected)
         )
-        error.append(
-            f"expected {desc}",
-            Subsystem.MODEL,
-            Severity.ERROR,
-            location,
-        )
-        error.append(
-            f"found {actual}",
-            Subsystem.MODEL,
-            Severity.INFO,
-            location,
+        error.extend(
+            [
+                (f"expected {desc}", Subsystem.MODEL, Severity.ERROR, location),
+                (f"found {actual}", Subsystem.MODEL, Severity.INFO, location),
+            ],
         )
 
     return error
@@ -381,17 +375,11 @@ def check_type_instance(
             if isinstance(expected, tuple)
             else expected.DESCRIPTIVE_NAME
         )
-        error.append(
-            f"expected {desc}",
-            Subsystem.MODEL,
-            Severity.ERROR,
-            location,
-        )
-        error.append(
-            f"found {actual}",
-            Subsystem.MODEL,
-            Severity.INFO,
-            location,
+        error.extend(
+            [
+                (f"expected {desc}", Subsystem.MODEL, Severity.ERROR, location),
+                (f"found {actual}", Subsystem.MODEL, Severity.INFO, location),
+            ],
         )
 
     return error
@@ -399,10 +387,14 @@ def check_type_instance(
 
 def _undefined_type(location: ty.Optional[Location], description: str = "") -> RecordFluxError:
     error = RecordFluxError()
-    error.append(
-        "undefined" + (f" {description}" if description else ""),
-        Subsystem.MODEL,
-        Severity.ERROR,
-        location,
+    error.extend(
+        [
+            (
+                "undefined" + (f" {description}" if description else ""),
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
+        ],
     )
     return error
