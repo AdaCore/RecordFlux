@@ -1415,6 +1415,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     def __create_path_condition_function(self, message: Message) -> UnitPart:
+        """Check if the condition at the incoming link to the field is valid."""
+
         def condition(field: Field, message: Message) -> Expr:
             cases: ty.List[ty.Tuple[Expr, Expr]] = [
                 (
@@ -1671,6 +1673,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     def __create_field_condition_function(self, message: Message) -> UnitPart:
+        """Check if the condition at any outgoing link of the field is valid."""
+
         def condition(field: Field, message: Message) -> Expr:
             c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
             c = c.substituted(

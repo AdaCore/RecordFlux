@@ -91,7 +91,7 @@ class MessageState(Base):
     parameter_types: Mapping[Field, mty.Type] = {}
     field_types: Mapping[Field, mty.Type] = {}
     definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
-    field_condition: Optional[Mapping[Field, expr.Expr]] = None
+    path_condition: Optional[Mapping[Field, expr.Expr]] = None
     checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
@@ -291,12 +291,13 @@ class AbstractMessage(mty.Type):
             }
         return self._state.definite_predecessors[field]
 
-    def field_condition(self, field: Field) -> expr.Expr:
-        if self._state.field_condition is None:
-            self._state.field_condition = {
-                f: self.__compute_field_condition(f).simplified() for f in self.all_fields
+    def path_condition(self, field: Field) -> expr.Expr:
+        """Return conjunction of all conditions on path from INITIAL to field."""
+        if self._state.path_condition is None:
+            self._state.path_condition = {
+                f: self.__compute_path_condition(f).simplified() for f in self.all_fields
             }
-        return self._state.field_condition[field]
+        return self._state.path_condition[field]
 
     def field_size(self, field: Field) -> expr.Number:
         """Return field size if field size is fixed and fail otherwise."""
@@ -709,15 +710,15 @@ class AbstractMessage(mty.Type):
             if all(any(f == pf.source for pf in p) for p in self.paths(final))
         )
 
-    def __compute_field_condition(self, final: Field) -> expr.Expr:
-        if final == INITIAL:
+    def __compute_path_condition(self, field: Field) -> expr.Expr:
+        if field == INITIAL:
             return expr.TRUE
         return expr.Or(
             *[
-                expr.And(self.__compute_field_condition(l.source), l.condition)
-                for l in self.incoming(final)
+                expr.And(self.__compute_path_condition(l.source), l.condition)
+                for l in self.incoming(field)
             ],
-            location=final.identifier.location,
+            location=field.identifier.location,
         )
 
 
@@ -1252,9 +1253,7 @@ class Message(AbstractMessage):
 
         checked = {
             e.prefix.identifier
-            for e in self.field_condition(FINAL).findall(
-                lambda x: isinstance(x, expr.ValidChecksum)
-            )
+            for e in self.path_condition(FINAL).findall(lambda x: isinstance(x, expr.ValidChecksum))
             if isinstance(e, expr.ValidChecksum) and isinstance(e.prefix, expr.Variable)
         }
         for name in set(self.checksums) - checked:
@@ -1952,7 +1951,7 @@ class UnprovenMessage(AbstractMessage):
                             [
                                 *inner_message.message_constraints(),
                                 *inner_message.type_constraints(merged_condition),
-                                inner_message.field_condition(final_link.source),
+                                inner_message.path_condition(final_link.source),
                             ]
                         )
                         if proof.result != expr.ProofResult.UNSAT:
