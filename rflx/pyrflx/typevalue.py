@@ -922,7 +922,7 @@ class MessageValue(TypeValue):
             if first is None:
                 break
 
-            if (self.__simplified(self._type.field_condition(Field(nxt))) == TRUE) and (
+            if (self.__simplified(self._type.path_condition(Field(nxt))) == TRUE) and (
                 self._is_valid_composite_field(nxt)
                 if isinstance(self._fields[nxt].typeval, CompositeValue)
                 else size is not None
@@ -1146,7 +1146,7 @@ class MessageValue(TypeValue):
             for f in self.accessible_fields
             if (
                 self._fields[f].set
-                and self.__simplified(self._type.field_condition(Field(f))) == TRUE
+                and self.__simplified(self._type.path_condition(Field(f))) == TRUE
                 and any(
                     self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))
                 )
