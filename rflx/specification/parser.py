@@ -43,7 +43,7 @@ import rflx.declaration as decl
 import rflx.expression as expr
 import rflx.model as model
 import rflx.statement as stmt
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
 from rflx.specification.const import RESERVED_WORDS
 
@@ -1212,6 +1212,8 @@ class SpecificationNode:
 
 class Parser:
     def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
+        if skip_verification:
+            warn("model verification skipped", Subsystem.MODEL)
         self.skip_verification = skip_verification
         self.__specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
         self.__types: List[model.Type] = [

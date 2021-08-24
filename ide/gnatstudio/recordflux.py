@@ -298,15 +298,18 @@ def get_source_files():
     raise GPS.Exception("No files found")
 
 
-def run(files, mode, options=None):
+def run(files, mode, skip_verification=False, options=None):
     assert mode == "check" or mode == "generate" or mode == "graph"
     options = options or []
 
     GPS.MDI.save_all(force=True)
     GPS.Locations.remove_category("RecordFlux")
 
-    return "rflx {mode} {options} {files}".format(
-        mode=mode, files=" ".join(files), options=" ".join(options)
+    return "rflx {skip_verification}{mode} {options} {files}".format(
+        skip_verification="--no-verification " if skip_verification else "",
+        mode=mode,
+        files=" ".join(files),
+        options=" ".join(options),
     )
 
 
@@ -344,9 +347,7 @@ def generate(filename):
 
 def graph(filename, unverified=False):
     options = ["-d", output_dir()]
-    if unverified:
-        options.append("--no-verification")
-    return run([filename], mode="graph", options=options)
+    return run([filename], mode="graph", skip_verification=unverified, options=options)
 
 
 def get_message_name(locations, name, line, column):

@@ -28,6 +28,11 @@ def main(argv: List[str]) -> Union[int, str]:
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
     )
     parser.add_argument("--version", action="store_true")
+    parser.add_argument(
+        "--no-verification",
+        action="store_true",
+        help=("skip time-consuming verification of model"),
+    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -79,11 +84,6 @@ def main(argv: List[str]) -> Union[int, str]:
         "files", metavar="FILE", type=Path, nargs="+", help="specification file"
     )
     parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=Path)
-    parser_graph.add_argument(
-        "--no-verification",
-        action="store_true",
-        help=("skip time-consuming verification of model"),
-    )
     parser_graph.set_defaults(func=graph)
 
     args = parser.parse_args(argv[1:])
@@ -141,7 +141,7 @@ def version() -> str:
 
 
 def check(args: argparse.Namespace) -> None:
-    parse(args.files)
+    parse(args.files, args.no_verification)
 
 
 def generate(args: argparse.Namespace) -> None:
@@ -154,7 +154,7 @@ def generate(args: argparse.Namespace) -> None:
     if not args.directory.is_dir():
         fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
 
-    model = parse(args.files)
+    model = parse(args.files, args.no_verification)
 
     generator = Generator(
         model,
