@@ -114,7 +114,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["python"]
+        target: ["python_coverage"]
         python-version: [3.7, 3.8, 3.9]
         include:
           - target: "python_unit"
@@ -122,8 +122,6 @@ jobs:
           - target: "python_property"
             python-version: 3.7
           - target: "python_optimized"
-            python-version: 3.7
-          - target: "python_coverage"
             python-version: 3.7
     steps:
     - uses: actions/checkout@v2
