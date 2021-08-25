@@ -1087,6 +1087,11 @@ class MessageValue(TypeValue):
                 or not isinstance(field_val.first, Number)
                 or not field_val.first.value <= len(bits)
             ):
+                # ISSUE: nedbat/coveragepy#772
+                # A dummy statement is needed to disable the peephole optimizer, so that the break
+                # statement is detected during coverage analysis.
+                # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
+                dummy = 0  # noqa: F841
                 break
             bits = f"{bits[: field_val.first.value]}{str(self._fields[field].typeval.bitstring)}"
             field = self._next_field(field)
