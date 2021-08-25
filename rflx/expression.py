@@ -1397,8 +1397,8 @@ class Selected(Name):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         if isinstance(self.prefix.type_, rty.Message):
-            if self.selector in self.prefix.type_.fields:
-                self.type_ = self.prefix.type_.field_types[self.selector]
+            if self.selector in self.prefix.type_.types:
+                self.type_ = self.prefix.type_.types[self.selector]
             else:
                 error.extend(
                     [
@@ -1409,7 +1409,9 @@ class Selected(Name):
                             self.location,
                         ),
                         *_similar_field_names(
-                            self.selector, self.prefix.type_.fields, self.location
+                            self.selector,
+                            self.prefix.type_.parameters | self.prefix.type_.fields,
+                            self.location,
                         ),
                     ]
                 )
@@ -1512,7 +1514,9 @@ class Call(Name):
         return call
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Call(ada.ID(self.identifier), [a.ada_expr() for a in self.args], self.negative)
+        return ada.Call(
+            ada.ID(self.identifier), [a.ada_expr() for a in self.args], {}, self.negative
+        )
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -2316,7 +2320,7 @@ class MessageAggregate(Expr):
         field_combinations = set(self.type_.field_combinations)
 
         for i, (field, expr) in enumerate(self.field_values.items()):
-            if field not in self.type_.fields:
+            if field not in self.type_.types:
                 error.extend(
                     [
                         (
@@ -2325,12 +2329,12 @@ class MessageAggregate(Expr):
                             Severity.ERROR,
                             field.location,
                         ),
-                        *_similar_field_names(field, self.type_.fields, field.location),
+                        *_similar_field_names(field, self.type_.types, field.location),
                     ]
                 )
                 continue
 
-            field_type = self.type_.field_types[field]
+            field_type = self.type_.types[field]
 
             if field_type == rty.OPAQUE:
                 if not any(

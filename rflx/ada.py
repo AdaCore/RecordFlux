@@ -451,22 +451,31 @@ class Call(Name):
     def __init__(
         self,
         identifier: StrID,
-        args: Sequence[Expr] = None,
+        arguments: Sequence[Expr] = None,
+        named_arguments: Mapping[ID, Expr] = None,
         negative: bool = False,
     ) -> None:
         self.identifier = ID(identifier)
-        self.args = args or []
+        self.arguments = arguments or []
+        self.named_arguments = named_arguments or {}
         super().__init__(negative)
 
     def __neg__(self) -> "Call":
-        return self.__class__(self.identifier, self.args, not self.negative)
+        return self.__class__(
+            self.identifier, self.arguments, self.named_arguments, not self.negative
+        )
 
     @property
     def _representation(self) -> str:
-        args = ", ".join(map(str, self.args))
-        if args:
-            args = f" ({args})"
-        call = f"{self.identifier}{args}"
+        arguments = ", ".join(
+            [
+                *(str(a) for a in self.arguments),
+                *(f"{n} => {a}" for n, a in self.named_arguments.items()),
+            ]
+        )
+        if arguments:
+            arguments = f" ({arguments})"
+        call = f"{self.identifier}{arguments}"
         return call
 
 
@@ -1416,12 +1425,23 @@ class Assignment(Statement):
 
 
 class CallStatement(Statement):
-    def __init__(self, identifier: StrID, arguments: Sequence[Expr] = None) -> None:
+    def __init__(
+        self,
+        identifier: StrID,
+        arguments: Sequence[Expr] = None,
+        named_arguments: Mapping[ID, Expr] = None,
+    ) -> None:
         self.identifier = ID(identifier)
         self.arguments = arguments or []
+        self.named_arguments = named_arguments or {}
 
     def __str__(self) -> str:
-        arguments = ", ".join(map(str, self.arguments))
+        arguments = ", ".join(
+            [
+                *(str(a) for a in self.arguments),
+                *(f"{n} => {a}" for n, a in self.named_arguments.items()),
+            ]
+        )
         arguments = f" ({arguments})" if arguments else ""
         return f"{self.identifier}{arguments};"
 

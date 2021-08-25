@@ -126,7 +126,12 @@ def create_transition(transition: Transition, filename: Path) -> model.Transitio
 
 def create_reset(reset: Statement, filename: Path) -> stmt.Statement:
     return stmt.Reset(
-        create_id(reset.f_identifier, filename), location=node_location(reset, filename)
+        create_id(reset.f_identifier, filename),
+        {
+            create_id(c.f_identifier, filename): create_expression(c.f_expression, filename)
+            for c in reset.f_associations
+        },
+        location=node_location(reset, filename),
     )
 
 

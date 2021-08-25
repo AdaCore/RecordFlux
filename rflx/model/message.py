@@ -808,10 +808,17 @@ class Message(AbstractMessage):
     def type_(self) -> rty.Message:
         return rty.Message(
             self.full_name,
-            {tuple(l.target.name for l in p if l.target != FINAL) for p in self.paths(FINAL)}
+            {
+                (
+                    *(p.name for p in self.parameters),
+                    *(l.target.name for l in p if l.target != FINAL),
+                )
+                for p in self.paths(FINAL)
+            }
             if self.structure
             else set(),
-            {f.identifier: t.type_ for f, t in self.types.items()},
+            {f.identifier: t.type_ for f, t in self._state.parameter_types.items()},
+            {f.identifier: t.type_ for f, t in self._state.field_types.items()},
             [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
             self.is_definite,
         )
@@ -897,9 +904,10 @@ class Message(AbstractMessage):
         failures = []
 
         for path in self.paths(FINAL):
-            if not self.has_fixed_size and fields != set(
-                l.target for l in path if l.target != FINAL
-            ):
+            if not self.has_fixed_size and fields != {
+                *self.parameters,
+                *(l.target for l in path if l.target != FINAL),
+            }:
                 continue
             message_size = expr.Add(
                 *[

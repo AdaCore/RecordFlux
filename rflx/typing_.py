@@ -269,6 +269,7 @@ class Message(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "message type"
     identifier: ID = attr.ib(converter=ID)
     field_combinations: ty.Set[ty.Tuple[str, ...]] = attr.ib(factory=set)
+    parameter_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
     field_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
     refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
     is_definite: bool = attr.ib(False)
@@ -277,8 +278,16 @@ class Message(IndependentType):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
     @property
+    def parameters(self) -> ty.Set[ID]:
+        return set(self.parameter_types.keys())
+
+    @property
     def fields(self) -> ty.Set[ID]:
         return set(self.field_types.keys())
+
+    @property
+    def types(self) -> ty.Mapping[ID, Type]:
+        return {**self.parameter_types, **self.field_types}
 
 
 @attr.s(frozen=True)
