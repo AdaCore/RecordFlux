@@ -1883,6 +1883,7 @@ def test_comprehension_str() -> None:
                 {
                     ("X",),
                 },
+                {},
                 {
                     ID("X"): rty.OPAQUE,
                 },

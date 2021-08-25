@@ -3201,7 +3201,9 @@ def test_set_refinements() -> None:
     assert message.type_.refinements == [
         rty.Refinement(
             "F",
-            rty.Message("P::M", {("F",)}, {ID("F"): rty.OPAQUE}, refinements=[], is_definite=True),
+            rty.Message(
+                "P::M", {("F",)}, {}, {ID("F"): rty.OPAQUE}, refinements=[], is_definite=True
+            ),
             "In_Message",
         )
     ]

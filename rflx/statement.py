@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Callable, Sequence
+from typing import Callable, Dict, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -148,9 +148,14 @@ class Extend(ListAttributeStatement):
 
 class Reset(AttributeStatement):
     def __init__(
-        self, identifier: StrID, type_: rty.Type = rty.Undefined(), location: Location = None
+        self,
+        identifier: StrID,
+        associations: Dict[ID, Expr] = None,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
+        self.associations = associations or {}
 
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]

@@ -636,7 +636,11 @@ def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
         ("A'Extend (B)", stmt.Extend("A", expr.Variable("B"))),
         ("A'Read (B)", stmt.Read("A", expr.Variable("B"))),
         ("A'Write (B)", stmt.Write("A", expr.Variable("B"))),
-        ("C'Reset", stmt.Reset("C")),
+        ("A'Reset", stmt.Reset("A")),
+        (
+            "A'Reset (B => 1, C => 2)",
+            stmt.Reset("A", {ID("B"): expr.Number(1), ID("C"): expr.Number(2)}),
+        ),
     ],
 )
 def test_attribute_statement(string: str, expected: stmt.Statement) -> None:

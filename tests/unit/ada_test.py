@@ -417,6 +417,20 @@ def test_expr_str() -> None:
 def test_call_str() -> None:
     assert str(ada.Call("A", [])) == "A"
     assert str(ada.Call("A", [ada.Variable("B"), ada.Variable("C")])) == "A (B, C)"
+    assert (
+        str(ada.Call("A", [], {ada.ID("B"): ada.Number(1), ada.ID("C"): ada.Number(2)}))
+        == "A (B => 1, C => 2)"
+    )
+    assert (
+        str(
+            ada.Call(
+                "A",
+                [ada.Variable("B"), ada.Variable("C")],
+                {ada.ID("D"): ada.Number(1), ada.ID("E"): ada.Number(2)},
+            )
+        )
+        == "A (B, C, D => 1, E => 2)"
+    )
     assert str(-ada.Call("A", [])) == "(-A)"
 
 
@@ -484,4 +498,23 @@ def test_subprogram_renaming_declaration() -> None:
     assert (
         str(ada.SubprogramRenamingDeclaration(ada.ProcedureSpecification("A"), "B"))
         == "procedure A renames B;"
+    )
+
+
+def test_call_statement_str() -> None:
+    assert str(ada.CallStatement("A", [])) == "A;"
+    assert str(ada.CallStatement("A", [ada.Variable("B"), ada.Variable("C")])) == "A (B, C);"
+    assert (
+        str(ada.CallStatement("A", [], {ada.ID("B"): ada.Number(1), ada.ID("C"): ada.Number(2)}))
+        == "A (B => 1, C => 2);"
+    )
+    assert (
+        str(
+            ada.CallStatement(
+                "A",
+                [ada.Variable("B"), ada.Variable("C")],
+                {ada.ID("D"): ada.Number(1), ada.ID("E"): ada.Number(2)},
+            )
+        )
+        == "A (B, C, D => 1, E => 2);"
     )
