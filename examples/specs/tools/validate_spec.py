@@ -368,7 +368,7 @@ class CoverageInformation:
     def __print_coverage_overview(self) -> None:
         print("\n")
         print("-" * 80)
-        print(f"{'RecordFlux Validation Coverage Report' : ^80}")
+        print(f"{'RecordFlux Validation Coverage Report' : ^80}".rstrip())
         print(f"Directory: {os.getcwd()}")
         print("-" * 80)
         print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
@@ -389,18 +389,18 @@ class CoverageInformation:
     def __print_link_coverage(self) -> None:
         print("\n")
         print("=" * 80)
-        print(f"{'Uncovered Links' : ^80}")
+        print(f"{'Uncovered Links' : ^80}".rstrip())
         print("=" * 80)
         for file in self.__spec_files:
             uncovered_links = self.file_uncovered_links(file)
             if len(uncovered_links) != 0:
                 print("\n")
-                print(f"{file : ^80}")
+                print(f"{file : ^80}".rstrip())
                 print("-" * 80)
                 for link in uncovered_links:
                     print(
                         f"{str(link.location):<17}"
-                        f": missing link {link.source.name:^25} -> {link.target.name:^20}"
+                        f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip()
                     )
 
 
