@@ -3,6 +3,8 @@ import difflib
 import itertools
 import operator
 from abc import abstractmethod
+from concurrent.futures import ProcessPoolExecutor
+from copy import copy
 from enum import Enum
 from functools import lru_cache
 from sys import intern
@@ -82,6 +84,60 @@ class Proof:
             (" ".join(str(facts[str(fact)]).replace("\n", " ").split()), facts[fact].location)
             for fact in sorted([str(h) for h in solver.unsat_core()])
         ]
+
+
+class ParallelProofs:
+    def __init__(self) -> None:
+        self.proofs: List[
+            List[Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]]
+        ] = []
+        self.current: List[
+            Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]
+        ] = []
+
+    def add(
+        self,
+        goal: "Expr",
+        facts: List["Expr"],
+        expected: ProofResult,
+        message: RecordFluxError,
+        negate: bool = False,
+        add_unsat: bool = False,
+    ) -> None:
+        # pylint: disable=too-many-arguments
+        self.current.append((goal, facts, expected, message, negate, add_unsat))
+
+    def push(self) -> None:
+        if self.current:
+            self.proofs.append(copy(self.current))
+            self.current.clear()
+
+    @classmethod
+    def check_proof(
+        cls,
+        argument: List[Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]],
+    ) -> RecordFluxError:
+        result = RecordFluxError()
+        for goal, facts, expected, message, negate, add_unsat in argument:
+            proof = goal.check(facts)
+            if negate == (proof.result != expected):
+                continue
+            result.extend(message)
+            if add_unsat:
+                result.extend(
+                    [
+                        (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                        for m, locn in proof.error
+                    ]
+                )
+        return result
+
+    def check(self, error: RecordFluxError) -> None:
+        self.push()
+        with ProcessPoolExecutor() as executor:
+            for e in executor.map(ParallelProofs.check_proof, self.proofs):
+                error.extend(e)
+        error.propagate()
 
 
 class Expr(DBC, Base):

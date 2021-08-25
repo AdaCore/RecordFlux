@@ -3,7 +3,6 @@
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
@@ -676,62 +675,6 @@ class AbstractMessage(mty.Type):
         )
 
 
-class ParallelProofs:
-    def __init__(self) -> None:
-        self.proofs: List[
-            List[Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]]
-        ] = []
-        self.current: List[
-            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]
-        ] = []
-
-    def add(
-        self,
-        goal: expr.Expr,
-        facts: List[expr.Expr],
-        expected: expr.ProofResult,
-        message: RecordFluxError,
-        negate: bool = False,
-        add_unsat: bool = False,
-    ) -> None:
-        # pylint: disable=too-many-arguments
-        self.current.append((goal, facts, expected, message, negate, add_unsat))
-
-    def push(self) -> None:
-        if self.current:
-            self.proofs.append(copy(self.current))
-            self.current.clear()
-
-    @classmethod
-    def check_proof(
-        cls,
-        argument: List[
-            Tuple[expr.Expr, List[expr.Expr], expr.ProofResult, RecordFluxError, bool, bool]
-        ],
-    ) -> RecordFluxError:
-        result = RecordFluxError()
-        for goal, facts, expected, message, negate, add_unsat in argument:
-            proof = goal.check(facts)
-            if negate == (proof.result != expected):
-                continue
-            result.extend(message)
-            if add_unsat:
-                result.extend(
-                    [
-                        (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                        for m, locn in proof.error
-                    ]
-                )
-        return result
-
-    def check(self, error: RecordFluxError) -> None:
-        self.push()
-        with ProcessPoolExecutor() as executor:
-            for e in executor.map(ParallelProofs.check_proof, self.proofs):
-                error.extend(e)
-        error.propagate()
-
-
 class Message(AbstractMessage):
     # pylint: disable=too-many-arguments
     def __init__(
@@ -1290,7 +1233,7 @@ class Message(AbstractMessage):
             )
 
     def __prove_conflicting_conditions(self) -> None:
-        proofs = ParallelProofs()
+        proofs = expr.ParallelProofs()
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -1458,7 +1401,7 @@ class Message(AbstractMessage):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        proofs = ParallelProofs()
+        proofs = expr.ParallelProofs()
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
 
             facts: Sequence[expr.Expr]
@@ -1515,7 +1458,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def __prove_overlays(self) -> None:
-        proofs = ParallelProofs()
+        proofs = expr.ParallelProofs()
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1541,7 +1484,7 @@ class Message(AbstractMessage):
 
     def __prove_field_positions(self) -> None:
         # pylint: disable=too-many-locals
-        proofs = ParallelProofs()
+        proofs = expr.ParallelProofs()
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
@@ -1671,7 +1614,7 @@ class Message(AbstractMessage):
         """
         Prove that all message paths lead to a message with a size that is a multiple of 8 bit.
         """
-        proofs = ParallelProofs()
+        proofs = expr.ParallelProofs()
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
