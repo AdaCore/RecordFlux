@@ -5,6 +5,7 @@ import operator
 from abc import abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from copy import copy
+from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from sys import intern
@@ -86,44 +87,47 @@ class Proof:
         ]
 
 
+@dataclass
+class ProofJob:
+    goal: "Expr"
+    facts: List["Expr"]
+    expected: ProofResult
+    error: RecordFluxError
+    negate: bool
+    add_unsat: bool
+
+
 class ParallelProofs:
     def __init__(self) -> None:
-        self.proofs: List[
-            List[Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]]
-        ] = []
-        self.current: List[
-            Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]
-        ] = []
+        self.__proofs: List[List[ProofJob]] = []
+        self.__current: List[ProofJob] = []
 
     def add(
         self,
         goal: "Expr",
         facts: List["Expr"],
         expected: ProofResult,
-        message: RecordFluxError,
+        error: RecordFluxError,
         negate: bool = False,
         add_unsat: bool = False,
     ) -> None:
         # pylint: disable=too-many-arguments
-        self.current.append((goal, facts, expected, message, negate, add_unsat))
+        self.__current.append(ProofJob(goal, facts, expected, error, negate, add_unsat))
 
     def push(self) -> None:
-        if self.current:
-            self.proofs.append(copy(self.current))
-            self.current.clear()
+        if self.__current:
+            self.__proofs.append(copy(self.__current))
+            self.__current.clear()
 
-    @classmethod
-    def check_proof(
-        cls,
-        argument: List[Tuple["Expr", List["Expr"], ProofResult, RecordFluxError, bool, bool]],
-    ) -> RecordFluxError:
+    @staticmethod
+    def check_proof(jobs: List[ProofJob]) -> RecordFluxError:
         result = RecordFluxError()
-        for goal, facts, expected, message, negate, add_unsat in argument:
-            proof = goal.check(facts)
-            if negate == (proof.result != expected):
+        for job in jobs:
+            proof = job.goal.check(job.facts)
+            if job.negate == (proof.result != job.expected):
                 continue
-            result.extend(message)
-            if add_unsat:
+            result.extend(job.error)
+            if job.add_unsat:
                 result.extend(
                     [
                         (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
@@ -135,7 +139,7 @@ class ParallelProofs:
     def check(self, error: RecordFluxError) -> None:
         self.push()
         with ProcessPoolExecutor() as executor:
-            for e in executor.map(ParallelProofs.check_proof, self.proofs):
+            for e in executor.map(ParallelProofs.check_proof, self.__proofs):
                 error.extend(e)
         error.propagate()
 
