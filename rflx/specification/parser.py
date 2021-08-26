@@ -270,6 +270,7 @@ def create_sequence(
     sequence: SequenceTypeDef,
     types: Sequence[model.Type],
     _skip_verification: bool,
+    _workers: int,
     _cache: Cache,
     filename: Path,
 ) -> model.Sequence:
@@ -717,6 +718,7 @@ def create_modular(
     modular: ModularTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
+    _workers: int,
     _cache: Cache,
     filename: Path,
 ) -> model.ModularInteger:
@@ -732,6 +734,7 @@ def create_range(
     rangetype: RangeTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
+    _workers: int,
     _cache: Cache,
     filename: Path,
 ) -> model.RangeInteger:
@@ -757,6 +760,7 @@ def create_null_message(
     message: MessageTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
+    _workers: int,
     _cache: Cache,
     _filename: Path,
 ) -> model.Message:
@@ -768,9 +772,11 @@ def create_message(
     message: MessageTypeDef,
     types: Sequence[model.Type],
     skip_verification: bool,
+    workers: int,
     cache: Cache,
     filename: Path,
 ) -> model.Message:
+    # pylint: disable=too-many-arguments
 
     error = RecordFluxError()
     components = message.f_components
@@ -787,6 +793,7 @@ def create_message(
                 identifier, structure, field_types, aspects, type_location(identifier, message)
             ).merged(),
             skip_verification,
+            workers,
             cache,
         )
     except RecordFluxError as e:
@@ -1024,9 +1031,11 @@ def create_derived_message(
     derivation: TypeDerivationDef,
     types: Sequence[model.Type],
     skip_verification: bool,
+    workers: int,
     cache: Cache,
     filename: Path,
 ) -> model.Message:
+    # pylint: disable=too-many-arguments
     base_id = create_id(derivation.f_base, filename)
     base_name = model.qualified_type_identifier(base_id, identifier.parent)
 
@@ -1067,6 +1076,7 @@ def create_derived_message(
             identifier, base_messages[0], location=type_location(identifier, derivation)
         ).merged(),
         skip_verification,
+        workers,
         cache,
     )
 
@@ -1076,6 +1086,7 @@ def create_enumeration(
     enumeration: EnumerationTypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
+    _workers: int,
     _cache: Cache,
     filename: Path,
 ) -> model.Enumeration:
@@ -1147,10 +1158,10 @@ def create_enumeration(
 
 
 def create_proven_message(
-    unproven_message: model.UnprovenMessage, skip_verification: bool, cache: Cache
+    unproven_message: model.UnprovenMessage, skip_verification: bool, workers: int, cache: Cache
 ) -> model.Message:
     proven_message = unproven_message.proven(
-        skip_verification or cache.is_verified(unproven_message)
+        skip_verification or cache.is_verified(unproven_message), workers
     )
 
     cache.add_verified(unproven_message)
@@ -1262,10 +1273,13 @@ class SpecificationNode:
 
 
 class Parser:
-    def __init__(self, skip_verification: bool = False, cached: bool = False) -> None:
+    def __init__(
+        self, skip_verification: bool = False, cached: bool = False, workers: int = 1
+    ) -> None:
         if skip_verification:
             warn("model verification skipped", Subsystem.MODEL)
         self.skip_verification = skip_verification
+        self.__workers = workers
         self.__specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
         self.__types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
@@ -1443,6 +1457,7 @@ class Parser:
                         t.f_definition,
                         self.__types,
                         self.skip_verification,
+                        self.__workers,
                         self.__cache,
                         filename,
                     )

@@ -200,7 +200,7 @@ class AbstractMessage(mty.Type):
         raise NotImplementedError
 
     @abstractmethod
-    def proven(self, skip_proof: bool = False) -> "Message":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> "Message":
         raise NotImplementedError
 
     @property
@@ -687,10 +687,12 @@ class Message(AbstractMessage):
         error: RecordFluxError = None,
         state: MessageState = None,
         skip_proof: bool = False,
+        workers: int = 1,
     ) -> None:
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
         self._refinements: List["Refinement"] = []
+        self.__workers = workers
 
         if not self.error.check() and not skip_proof:
             self.verify()
@@ -733,7 +735,7 @@ class Message(AbstractMessage):
             error if error else self.error,
         )
 
-    def proven(self, skip_proof: bool = False) -> "Message":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> "Message":
         return copy(self)
 
     def is_possibly_empty(self, field: Field) -> bool:
@@ -1233,7 +1235,7 @@ class Message(AbstractMessage):
             )
 
     def __prove_conflicting_conditions(self) -> None:
-        proofs = expr.ParallelProofs()
+        proofs = expr.ParallelProofs(self.__workers)
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -1401,7 +1403,7 @@ class Message(AbstractMessage):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        proofs = expr.ParallelProofs()
+        proofs = expr.ParallelProofs(self.__workers)
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
 
             facts: Sequence[expr.Expr]
@@ -1458,7 +1460,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def __prove_overlays(self) -> None:
-        proofs = expr.ParallelProofs()
+        proofs = expr.ParallelProofs(self.__workers)
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1484,7 +1486,7 @@ class Message(AbstractMessage):
 
     def __prove_field_positions(self) -> None:
         # pylint: disable=too-many-locals
-        proofs = expr.ParallelProofs()
+        proofs = expr.ParallelProofs(self.__workers)
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
@@ -1614,7 +1616,7 @@ class Message(AbstractMessage):
         """
         Prove that all message paths lead to a message with a size that is a multiple of 8 bit.
         """
-        proofs = expr.ParallelProofs()
+        proofs = expr.ParallelProofs(self.__workers)
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
@@ -1756,7 +1758,7 @@ class DerivedMessage(Message):
             error if error else self.error,
         )
 
-    def proven(self, skip_proof: bool = False) -> "DerivedMessage":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> "DerivedMessage":
         return copy(self)
 
 
@@ -1780,7 +1782,7 @@ class UnprovenMessage(AbstractMessage):
             error if error else self.error,
         )
 
-    def proven(self, skip_proof: bool = False) -> Message:
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
         return Message(
             identifier=self.identifier,
             structure=self.structure,
@@ -1789,6 +1791,7 @@ class UnprovenMessage(AbstractMessage):
             error=self.error,
             state=self._state,
             skip_proof=skip_proof,
+            workers=workers,
         )
 
     @ensure(lambda result: valid_message_field_types(result))
@@ -2004,7 +2007,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             error if error else self.error,
         )
 
-    def proven(self, skip_proof: bool = False) -> DerivedMessage:
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
         return DerivedMessage(
             self.identifier,
             self.base if isinstance(self.base, Message) else self.base.proven(),
