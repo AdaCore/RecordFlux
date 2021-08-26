@@ -98,9 +98,10 @@ class ProofJob:
 
 
 class ParallelProofs:
-    def __init__(self) -> None:
+    def __init__(self, workers: int) -> None:
         self.__proofs: List[List[ProofJob]] = []
         self.__current: List[ProofJob] = []
+        self.__workers = workers
 
     def add(
         self,
@@ -138,7 +139,7 @@ class ParallelProofs:
 
     def check(self, error: RecordFluxError) -> None:
         self.push()
-        with ProcessPoolExecutor() as executor:
+        with ProcessPoolExecutor(max_workers=self.__workers) as executor:
             for e in executor.map(ParallelProofs.check_proof, self.__proofs):
                 error.extend(e)
         error.propagate()

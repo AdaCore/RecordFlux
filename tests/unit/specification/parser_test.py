@@ -112,7 +112,9 @@ def test_create_model_cached() -> None:
 def test_create_proven_message(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
     c = cache.Cache()
-    assert parser.create_proven_message(models.VALID_MESSAGE, skip_verification=False, cache=c)
+    assert parser.create_proven_message(
+        models.VALID_MESSAGE, skip_verification=False, workers=1, cache=c
+    )
     assert c.is_verified(models.VALID_MESSAGE)
 
 
@@ -120,7 +122,9 @@ def test_create_proven_message_error(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
     c = cache.Cache()
     with pytest.raises(RecordFluxError):
-        parser.create_proven_message(models.INVALID_MESSAGE, skip_verification=False, cache=c)
+        parser.create_proven_message(
+            models.INVALID_MESSAGE, skip_verification=False, workers=1, cache=c
+        )
     assert not c.is_verified(models.INVALID_MESSAGE)
 
 

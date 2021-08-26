@@ -4,6 +4,7 @@ import logging
 import os
 import traceback
 from collections import defaultdict
+from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Dict, List, Sequence, Union
 
@@ -39,6 +40,13 @@ def main(argv: List[str]) -> Union[int, str]:
         default=0,
         metavar=("NUM"),
         help="exit after at most NUM errors",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=cpu_count(),
+        metavar=("NUM"),
+        help="parallelize proofs among NUM workers (default: %(default)d)",
     )
 
     subparsers = parser.add_subparsers(dest="subcommand")
@@ -150,7 +158,7 @@ def version() -> str:
 
 
 def check(args: argparse.Namespace) -> None:
-    parse(args.files, args.no_verification)
+    parse(args.files, args.no_verification, args.workers)
 
 
 def generate(args: argparse.Namespace) -> None:
@@ -163,7 +171,7 @@ def generate(args: argparse.Namespace) -> None:
     if not args.directory.is_dir():
         fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
 
-    model = parse(args.files, args.no_verification)
+    model = parse(args.files, args.no_verification, args.workers)
 
     generator = Generator(
         model,
@@ -179,8 +187,8 @@ def generate(args: argparse.Namespace) -> None:
         generator.write_top_level_package(args.directory)
 
 
-def parse(files: Sequence[Path], skip_verification: bool = False) -> Model:
-    parser = Parser(skip_verification, cached=True)
+def parse(files: Sequence[Path], skip_verification: bool = False, workers: int = 1) -> Model:
+    parser = Parser(skip_verification, cached=True, workers=workers)
     error = RecordFluxError()
     present_files = []
 
