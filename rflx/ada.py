@@ -1891,6 +1891,16 @@ class UnitPart:
     private: List[Declaration] = dataclass_field(default_factory=list)
     statements: List[Statement] = dataclass_field(default_factory=list)
 
+    def __add__(self, other: object) -> "UnitPart":
+        if isinstance(other, UnitPart):
+            return UnitPart(
+                self.specification + other.specification,
+                self.body + other.body,
+                self.private + other.private,
+                self.statements + other.statements,
+            )
+        return NotImplemented
+
     def __iadd__(self, other: object) -> "UnitPart":
         if isinstance(other, UnitPart):
             self.specification += other.specification
