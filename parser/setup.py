@@ -8,7 +8,7 @@ from typing import Any
 import setuptools.command.build_py as orig
 from setuptools import setup
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 base_dir = os.path.dirname(os.path.abspath(__file__))
 LANGKIT = f"langkit @ file://localhost/{base_dir}/contrib/langkit#egg=langkit"
 

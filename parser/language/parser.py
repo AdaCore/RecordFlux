@@ -352,11 +352,15 @@ grammar.add_rules(
         Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
     ),
+    component_type_argument=ast.ComponentTypeArgument(
+        grammar.unqualified_identifier, "=>", grammar.expression
+    ),
     null_component_item=ast.NullComponent("null", grammar.then, ";"),
     component_item=ast.Component(
         grammar.unqualified_identifier,
         ":",
         grammar.qualified_identifier,
+        Opt("(", List(grammar.component_type_argument, sep=","), ")"),
         Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
         List(grammar.then, empty_valid=True),

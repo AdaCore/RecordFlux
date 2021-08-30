@@ -469,6 +469,12 @@ class Then(RFLXNode):
     condition = Field(type=Expr)
 
 
+class ComponentTypeArgument(RFLXNode):
+
+    identifier = Field(type=UnqualifiedID)
+    expression = Field(type=Expr)
+
+
 class NullComponent(RFLXNode):
 
     then = Field(type=Then)
@@ -481,6 +487,7 @@ class Component(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
+    type_arguments = Field(type=ComponentTypeArgument.list)
     aspects = Field(type=Aspect.list)
     condition = Field(type=Expr)
     thens = Field(type=Then.list)

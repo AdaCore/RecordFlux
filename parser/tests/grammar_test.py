@@ -3468,6 +3468,59 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
             },
         ),
         (
+            "type T is message F : A::B (C => D); end message",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "MessageTypeDef",
+                    "checksums": None,
+                    "components": {
+                        "_kind": "Components",
+                        "components": [
+                            {
+                                "_kind": "Component",
+                                "aspects": [],
+                                "condition": None,
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
+                                "thens": [],
+                                "type_identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "B"},
+                                    "package": {
+                                        "_kind": "UnqualifiedID",
+                                        "_value": "A",
+                                    },
+                                },
+                                "type_arguments": [
+                                    {
+                                        "_kind": "ComponentTypeArgument",
+                                        "expression": {
+                                            "_kind": "Variable",
+                                            "identifier": {
+                                                "_kind": "ID",
+                                                "name": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "D",
+                                                },
+                                                "package": None,
+                                            },
+                                        },
+                                        "identifier": {
+                                            "_kind": "UnqualifiedID",
+                                            "_value": "C",
+                                        },
+                                    }
+                                ],
+                            }
+                        ],
+                        "initial_component": None,
+                    },
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                "parameters": None,
+            },
+        ),
+        (
             "type T (P : A::B) is message F : C::D; end message",
             {
                 "_kind": "TypeDecl",
@@ -3491,6 +3544,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                                         "_value": "C",
                                     },
                                 },
+                                "type_arguments": [],
                             }
                         ],
                         "initial_component": None,
