@@ -77,6 +77,7 @@ from rflx.ada import (
 )
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Subsystem, fail, fatal_fail
+from rflx.model.type_ import is_builtin_type, is_internal_type
 
 from . import const
 
@@ -87,6 +88,7 @@ class SessionContext:
     referenced_types_body: Set[rid.ID] = dataclass_field(default_factory=set)
     referenced_packages_body: Set[rid.ID] = dataclass_field(default_factory=set)
     referenced_has_data: Set[rid.ID] = dataclass_field(default_factory=set)
+    used_types: Set[rid.ID] = dataclass_field(default_factory=set)
     used_types_body: Set[rid.ID] = dataclass_field(default_factory=set)
     state_exception: Set[rid.ID] = dataclass_field(default_factory=set)
 
@@ -342,9 +344,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
     def _create_context(self) -> Tuple[List[ContextItem], List[ContextItem]]:
-        declaration_context: List[ContextItem] = [
-            WithClause(self._prefix * const.TYPES_PACKAGE),
-        ]
+        declaration_context: List[ContextItem] = []
+
+        if self._session_context.used_types | self._session_context.used_types_body:
+            declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+
         body_context: List[ContextItem] = [
             *([WithClause("Ada.Text_IO")] if self._debug else []),
         ]
@@ -377,7 +381,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-        for type_identifier in self._session_context.used_types_body:
+        for type_identifier in (
+            self._session_context.used_types_body - self._session_context.used_types
+        ):
             if type_identifier.parent in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]:
                 continue
             if type_identifier in [const.TYPES_LENGTH, const.TYPES_INDEX, const.TYPES_BIT_LENGTH]:
@@ -411,7 +417,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
 
         unit = UnitPart()
-        unit += self._create_declarations(self._session, evaluated_declarations.global_declarations)
         unit += self._create_uninitialized_function(self._session.declarations.values())
         unit += self._create_states(self._session)
         unit += self._create_initialized_procedure(self._session)
@@ -428,15 +433,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
         unit += self._create_tick_procedure(self._session)
         unit += self._create_run_procedure()
-        return unit
+        return (
+            self._create_declarations(self._session, evaluated_declarations.global_declarations)
+            + unit
+        )
 
-    @staticmethod
     def _create_declarations(
-        session: model.Session, declarations: Sequence[Declaration]
+        self, session: model.Session, declarations: Sequence[Declaration]
     ) -> UnitPart:
         return UnitPart(
             private=[
-                UseTypeClause(const.TYPES_INDEX),
+                *[
+                    UseTypeClause(self._prefix * ID(t))
+                    for t in self._session_context.used_types
+                    if not is_builtin_type(t) and not is_internal_type(t)
+                ],
                 EnumerationType(
                     "Session_State", {ID(f"S_{s.identifier}"): None for s in session.states}
                 ),
@@ -536,9 +547,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return UnitPart(body=unit_body)
 
-    @staticmethod
-    def _create_initialized_procedure(session: model.Session) -> UnitPart:
+    def _create_initialized_procedure(self, session: model.Session) -> UnitPart:
         specification = FunctionSpecification("Initialized", "Boolean")
+        context_declarations = [
+            d
+            for d in session.declarations.values()
+            if isinstance(d, decl.VariableDeclaration)
+            and isinstance(d.type_, (rty.Message, rty.Sequence))
+        ]
+        if context_declarations:
+            self._session_context.used_types.add(const.TYPES_INDEX)
         return UnitPart(
             [
                 SubprogramDeclaration(specification),
@@ -549,9 +567,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     AndThen(
                         *[
                             e
-                            for d in session.declarations.values()
-                            if isinstance(d, decl.VariableDeclaration)
-                            and isinstance(d.type_, (rty.Message, rty.Sequence))
+                            for d in context_declarations
                             for e in [
                                 Call(
                                     ID(d.type_identifier) * "Has_Buffer",
@@ -2671,8 +2687,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ),
         ]
 
-    @staticmethod
-    def _allocate_buffer(identifier: rid.ID, initialization: Expr = None) -> Assignment:
+    def _allocate_buffer(self, identifier: rid.ID, initialization: Expr = None) -> Assignment:
+        self._session_context.used_types_body.add(const.TYPES_INDEX)
         return Assignment(
             buffer_id(identifier),
             New(
