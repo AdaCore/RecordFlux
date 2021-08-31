@@ -977,13 +977,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
             or expression.type_ == rty.OPAQUE
         ):
+            value = expression.substituted(self._substitution())
+            assert isinstance(
+                target_type, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence)
+            )
             return self._if_valid_fields(
                 expression,
                 [
                     Assignment(
                         ID(target),
-                        expression.substituted(self._substitution()).ada_expr(),
-                    )
+                        value.ada_expr()
+                        if target_type.is_compatible_strong(expression.type_)
+                        else expr.Conversion(target_type.identifier, value).ada_expr(),
+                    ),
                 ],
                 exception_handler,
             )

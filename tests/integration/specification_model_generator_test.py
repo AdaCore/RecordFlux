@@ -424,3 +424,55 @@ def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
            end Test;
         """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
+    spec = """
+        package Test is
+
+           type Length is range 0 .. 2**24 - 1 with Size => 32;
+
+           type Packet is
+              message
+                 Length : Length;
+                 Payload : Opaque
+                    with Size => Length * 8;
+              end message;
+
+           generic
+              Transport : Channel with Readable, Writable;
+           session Session with
+              Initial => Receive,
+              Final => Error
+           is
+              Packet : Packet;
+           begin
+              state Receive
+              is
+              begin
+                 Transport'Read (Packet);
+              transition
+                 then Send
+                    if Packet'Valid
+                 then Error
+              end Receive;
+
+              state Send
+              is
+                 Send_Size : Length;
+              begin
+                 Send_Size := Packet'Size / 8;
+                 Transport'Write (Packet'(Length => Send_Size,
+                                          Payload => Packet'Opaque));
+              transition
+                 then Receive
+              exception
+                 then Error
+              end Send;
+
+              state Error is null state;
+           end Session;
+
+        end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)
