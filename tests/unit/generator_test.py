@@ -1145,8 +1145,15 @@ class UnknownStatement(stmt.Statement):
             " + RFLX_Types.Bit_Length (B * 8 + 24) - 1);\n"
             "            Universal.Message.Set_Message_Type (X_Ctx, A);\n"
             "            Universal.Message.Set_Length (X_Ctx, B);\n"
-            "            Universal.Message.Set_Data (X_Ctx,"
+            "            if Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data)"
+            " = Universal.Option.Message_Data (C_Ctx)'Size then\n"
+            "               Universal.Message.Set_Data (X_Ctx,"
             " Universal.Option.Message_Data (C_Ctx));\n"
+            "            else\n"
+            '               Ada.Text_IO.Put_Line ("Error: invalid message field size for'
+            ' ""C\'Opaque""");\n'
+            "               RFLX_Exception := True;\n"
+            "            end if;\n"
             "         else\n"
             '            Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
             "            RFLX_Exception := True;\n"
@@ -1160,11 +1167,6 @@ class UnknownStatement(stmt.Statement):
             '         pragma Warnings (On, "unused assignment to ""C_Ctx""");\n'
             "         RFLX_Types.Free (C_Buffer);\n"
             "      end;\n"
-            "      if RFLX_Exception then\n"
-            "         State := S_E;\n"
-            "         pragma Finalization;\n"
-            "         return;\n"
-            "      end if;\n"
             "   end;\n"
             "   if RFLX_Exception then\n"
             "      State := S_E;\n"
@@ -1225,23 +1227,8 @@ class UnknownStatement(stmt.Statement):
             "            Universal.Message.To_Context (X, X_Ctx);\n"
             "         end;\n"
             "      end;\n"
-            "      if RFLX_Exception then\n"
-            "         State := S_E;\n"
-            "         pragma Finalization;\n"
-            "         return;\n"
-            "      end if;\n"
             "   end;\n"
-            "   if RFLX_Exception then\n"
-            "      State := S_E;\n"
-            "      pragma Finalization;\n"
-            "      return;\n"
-            "   end if;\n"
-            "end;\n"
-            "if RFLX_Exception then\n"
-            "   State := S_E;\n"
-            "   pragma Finalization;\n"
-            "   return;\n"
-            "end if;",
+            "end;",
         ),
         (
             stmt.Assignment(
@@ -1305,8 +1292,14 @@ class UnknownStatement(stmt.Statement):
             " - 1);\n"
             "      Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Data);\n"
             "      Universal.Message.Set_Length (A_Ctx, Universal.Length (2));\n"
-            "      Universal.Message.Set_Data (A_Ctx, (RFLX_Types.Byte'Val (3),"
-            " RFLX_Types.Byte'Val (4)));\n"
+            "      if Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Data)"
+            " = 2 * RFLX_Types.Byte'Size then\n"
+            "         Universal.Message.Set_Data (A_Ctx,"
+            " (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));\n"
+            "      else\n"
+            '         Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[3, 4]""");\n'
+            "         RFLX_Exception := True;\n"
+            "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx""");\n'
             "      RFLX_Exception := True;\n"
@@ -1500,7 +1493,15 @@ class UnknownStatement(stmt.Statement):
             " - 1);\n"
             "   Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);\n"
             "   Universal.Message.Set_Length (X_Ctx, Universal.Length (0));\n"
-            "   Universal.Message.Set_Data_Empty (X_Ctx);\n"
+            "   if Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data)"
+            " = 0 * RFLX_Types.Byte'Size then\n"
+            "      Universal.Message.Set_Data_Empty (X_Ctx);\n"
+            "   else\n"
+            '      Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""");\n'
+            "      State := S_E;\n"
+            "      pragma Finalization;\n"
+            "      return;\n"
+            "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
             "   State := S_E;\n"
@@ -1548,7 +1549,16 @@ class UnknownStatement(stmt.Statement):
             " + RFLX_Types.Bit_Length ((Universal.Option.Size (Y_Ctx) / 8) * 8 + 24) - 1);\n"
             "      Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);\n"
             "      Universal.Message.Set_Length (X_Ctx, Universal.Option.Size (Y_Ctx) / 8);\n"
-            "      Universal.Message.Set_Data (X_Ctx, Universal.Option.Message_Data (Y_Ctx));\n"
+            "      if Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data)"
+            " = Universal.Option.Message_Data (Y_Ctx)'Size then\n"
+            "         Universal.Message.Set_Data (X_Ctx, Universal.Option.Message_Data (Y_Ctx));\n"
+            "      else\n"
+            '         Ada.Text_IO.Put_Line ("Error: invalid message field size'
+            ' for ""Y\'Opaque""");\n'
+            "         State := S_E;\n"
+            "         pragma Finalization;\n"
+            "         return;\n"
+            "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
             "      State := S_E;\n"
@@ -1639,11 +1649,55 @@ class UnknownStatement(stmt.Statement):
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First)"
             " + RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx) * 8 + 24) - 1);\n"
-            "      Universal.Message.Set_Message_Type (X_Ctx,"
+            "      if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Message_Type) then\n"
+            "         Universal.Message.Set_Message_Type (X_Ctx,"
             " Universal.Message.Get_Message_Type (Y_Ctx));\n"
-            "      Universal.Message.Set_Length (X_Ctx,"
+            "         if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Length) then\n"
+            "            Universal.Message.Set_Length (X_Ctx,"
             " Universal.Length (Universal.Message.Get_Length (Y_Ctx)));\n"
-            "      Universal.Message.Set_Data (X_Ctx, Universal.Message.Get_Data (Y_Ctx));\n"
+            "            if Universal.Message.Valid_Next (Y_Ctx, Universal.Message.F_Data) then\n"
+            "               if Universal.Message.Field_Size (X_Ctx,"
+            " Universal.Message.F_Data) = Universal.Message.Field_Size (Y_Ctx,"
+            " Universal.Message.F_Data) then\n"
+            "                  if Universal.Message.Structural_Valid (Y_Ctx,"
+            " Universal.Message.F_Data) then\n"
+            "                     Universal.Message.Set_Data (X_Ctx,"
+            " Universal.Message.Get_Data (Y_Ctx));\n"
+            "                  else\n"
+            '                     Ada.Text_IO.Put_Line ("Error: access to invalid message field'
+            ' in ""Y.Data""");\n'
+            "                     State := S_E;\n"
+            "                     pragma Finalization;\n"
+            "                     return;\n"
+            "                  end if;\n"
+            "               else\n"
+            '                  Ada.Text_IO.Put_Line ("Error: invalid message field size'
+            ' for ""Y.Data""");\n'
+            "                  State := S_E;\n"
+            "                  pragma Finalization;\n"
+            "                  return;\n"
+            "               end if;\n"
+            "            else\n"
+            '               Ada.Text_IO.Put_Line ("Error: access to invalid next message field'
+            ' for ""Y.Data""");\n'
+            "               State := S_E;\n"
+            "               pragma Finalization;\n"
+            "               return;\n"
+            "            end if;\n"
+            "         else\n"
+            '            Ada.Text_IO.Put_Line ("Error: access to invalid message field'
+            ' in ""Y.Length""");\n'
+            "            State := S_E;\n"
+            "            pragma Finalization;\n"
+            "            return;\n"
+            "         end if;\n"
+            "      else\n"
+            '         Ada.Text_IO.Put_Line ("Error: access to invalid message field'
+            ' in ""Y.Message_Type""");\n'
+            "         State := S_E;\n"
+            "         pragma Finalization;\n"
+            "         return;\n"
+            "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
             "      State := S_E;\n"
@@ -1767,8 +1821,14 @@ class UnknownStatement(stmt.Statement):
             " + RFLX_Types.Bit_Length (32) - 1);\n"
             "      Universal.Message.Set_Message_Type (RFLX_Message_Ctx, Universal.MT_Data);\n"
             "      Universal.Message.Set_Length (RFLX_Message_Ctx, Universal.Length (1));\n"
-            "      Universal.Message.Set_Data (RFLX_Message_Ctx,"
+            "      if Universal.Message.Field_Size (RFLX_Message_Ctx, Universal.Message.F_Data)"
+            " = 1 * RFLX_Types.Byte'Size then\n"
+            "         Universal.Message.Set_Data (RFLX_Message_Ctx,"
             " (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));\n"
+            "      else\n"
+            '         Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[2]""");\n'
+            "         RFLX_Exception := True;\n"
+            "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message'
             ' ""RFLX_Message_Ctx""");\n'
@@ -1810,6 +1870,7 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
             for s in session_generator._state_action(
                 action,
                 ExceptionHandler(
+                    set(),
                     State("S", exception_transition=Transition("E")),
                     [ada.PragmaStatement("Finalization", [])],
                 ),
@@ -1841,7 +1902,7 @@ def test_session_state_action_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._state_action(action, ExceptionHandler(State("S"), []))
+        session_generator._state_action(action, ExceptionHandler(set(), State("S"), []))
 
 
 @pytest.mark.parametrize(
@@ -1954,6 +2015,40 @@ def test_session_state_action_error(
                     "Message_Type": expr.Variable(
                         "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
                     ),
+                    "Length": expr.Size(
+                        expr.Variable(
+                            "Y",
+                            type_=rty.Message("Universal::Option"),
+                            location=Location((10, 20)),
+                        )
+                    ),
+                    "Data": expr.Variable(
+                        "Y",
+                        type_=rty.Message("Universal::Option"),
+                        location=Location((10, 20)),
+                    ),
+                },
+                type_=rty.Message(
+                    "Universal::Message",
+                    field_types={
+                        ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                        ID("Length"): rty.Integer("Universal::Length"),
+                        ID("Data"): rty.OPAQUE,
+                    },
+                ),
+            ),
+            RecordFluxError,
+            r"Size with type universal integer \(undefined\) in message aggregate"
+            r" not yet supported",
+        ),
+        (
+            rty.Message("A"),
+            expr.MessageAggregate(
+                "Universal::Message",
+                {
+                    "Message_Type": expr.Variable(
+                        "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                    ),
                     "Length": expr.Number(1),
                     "Data": expr.Head(
                         expr.Variable(
@@ -1975,7 +2070,7 @@ def test_session_state_action_error(
                 ),
             ),
             RecordFluxError,
-            r'Head with message type "Universal::Option" in message aggregate not yet supported',
+            r'Head with message type "Universal::Option" in expression not yet supported',
         ),
         (
             rty.Integer("A"),
@@ -2136,7 +2231,7 @@ def test_session_assign_error(
             ID("X", location=Location((10, 20))),
             type_,
             expression,
-            ExceptionHandler(State("S", exception_transition=Transition("E")), []),
+            ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
         )
 
 
@@ -2171,7 +2266,7 @@ def test_session_append_error(
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
         session_generator._append(
-            append, ExceptionHandler(State("S", exception_transition=Transition("E")), [])
+            append, ExceptionHandler(set(), State("S", exception_transition=Transition("E")), [])
         )
 
 
@@ -2219,7 +2314,7 @@ def test_session_write_error(
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
         session_generator._write(
-            write, ExceptionHandler(State("S", exception_transition=Transition("E")), [])
+            write, ExceptionHandler(set(), State("S", exception_transition=Transition("E")), [])
         )
 
 

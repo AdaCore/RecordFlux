@@ -1,7 +1,9 @@
 # pylint: disable = too-many-lines
-
+from contextlib import contextmanager
 from dataclasses import dataclass, field as dataclass_field
-from typing import Callable, Iterable, List, NoReturn, Sequence, Set, Tuple
+from typing import Callable, Generator, Iterable, List, NoReturn, Sequence, Set, Tuple
+
+import attr
 
 from rflx import (
     declaration as decl,
@@ -112,12 +114,21 @@ class EvaluatedDeclaration:
         return NotImplemented
 
 
-@dataclass(frozen=True)
+@attr.s()
 class ExceptionHandler:
-    state: model.State
-    finalization: Sequence[Statement]
+    session_context_state_exception: Set[rid.ID] = attr.ib()
+    state: model.State = attr.ib()
+    finalization: Sequence[Statement] = attr.ib()
+    inside_declare: bool = attr.ib(False)
+    raised_deferred_exception: bool = attr.ib(False)
 
     def execute(self) -> Sequence[Statement]:
+        if self.inside_declare:
+            # ISSUE: Componolit/Workarounds#569
+            self.session_context_state_exception.add(self.state.identifier)
+            self.raised_deferred_exception = True
+            return [Assignment("RFLX_Exception", TRUE)]
+
         assert (
             self.state.exception_transition
         ), f'missing exception transition for state "{self.state.identifier}"'
@@ -129,6 +140,40 @@ class ExceptionHandler:
             *self.finalization,
             ReturnStatement(),
         ]
+
+    def execute_deferred(self) -> Sequence[Statement]:
+        # ISSUE: Componolit/Workarounds#569
+        if self.raised_deferred_exception and not self.inside_declare:
+            self.raised_deferred_exception = False
+            return [
+                IfStatement(
+                    [
+                        (
+                            Variable("RFLX_Exception"),
+                            self.execute(),
+                        )
+                    ]
+                )
+            ]
+
+        return []
+
+    @contextmanager
+    def local(self) -> Generator["ExceptionHandler", None, None]:
+        """
+        Return an exception handler which can be used inside declare blocks.
+
+        This is needed because SPARK does not yet support return statements in the scope of a local
+        owning declaration.
+        """
+
+        # ISSUE: Componolit/Workarounds#569
+
+        local_exception_handler = ExceptionHandler(
+            self.session_context_state_exception, self.state, self.finalization, inside_declare=True
+        )
+        yield local_exception_handler
+        self.raised_deferred_exception |= local_exception_handler.raised_deferred_exception
 
 
 class SessionGenerator:  # pylint: disable = too-many-instance-attributes
@@ -419,7 +464,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         unit = UnitPart()
         unit += self._create_uninitialized_function(self._session.declarations.values())
         unit += self._create_states(self._session)
-        unit += self._create_initialized_procedure(self._session)
+        unit += self._create_initialized_function(self._session)
         unit += self._create_active_function(self._session)
         unit += self._create_initialize_procedure(
             self._session,
@@ -493,7 +538,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     s
                     for a in state.actions
                     for s in self._state_action(
-                        a, ExceptionHandler(state, evaluated_declarations.finalization)
+                        a,
+                        ExceptionHandler(
+                            self._session_context.state_exception,
+                            state,
+                            evaluated_declarations.finalization,
+                        ),
                     )
                 ]
                 if state.identifier in self._session_context.state_exception:
@@ -547,7 +597,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return UnitPart(body=unit_body)
 
-    def _create_initialized_procedure(self, session: model.Session) -> UnitPart:
+    def _create_initialized_function(self, session: model.Session) -> UnitPart:
         specification = FunctionSpecification("Initialized", "Boolean")
         context_declarations = [
             d
@@ -763,34 +813,37 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self, action: stmt.Statement, exception_handler: ExceptionHandler
     ) -> Sequence[Statement]:
         if isinstance(action, stmt.Assignment):
-            return self._assign(
+            result = self._assign(
                 action.identifier, action.type_, action.expression, exception_handler
             )
 
-        if isinstance(action, stmt.Append):
-            return self._append(action, exception_handler)
+        elif isinstance(action, stmt.Append):
+            result = self._append(action, exception_handler)
 
-        if isinstance(action, stmt.Extend):
+        elif isinstance(action, stmt.Extend):
             fail(
                 "Extend statement not yet supported",
                 Subsystem.GENERATOR,
                 location=action.location,
             )
 
-        if isinstance(action, stmt.Reset):
-            return self._reset(action)
+        elif isinstance(action, stmt.Reset):
+            result = self._reset(action)
 
-        if isinstance(action, stmt.Read):
-            return self._read(action)
+        elif isinstance(action, stmt.Read):
+            result = self._read(action)
 
-        if isinstance(action, stmt.Write):
-            return self._write(action, exception_handler)
+        elif isinstance(action, stmt.Write):
+            result = self._write(action, exception_handler)
 
-        fatal_fail(
-            f'unexpected statement "{type(action).__name__}"',
-            Subsystem.GENERATOR,
-            location=action.location,
-        )
+        else:
+            fatal_fail(
+                f'unexpected statement "{type(action).__name__}"',
+                Subsystem.GENERATOR,
+                location=action.location,
+            )
+
+        return [*result, *exception_handler.execute_deferred()]
 
     def _declare(
         self,
@@ -898,7 +951,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         variables: Sequence[Tuple[rid.ID, rty.Type, expr.Expr]],
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
         constant: bool = False,
     ) -> Sequence[Statement]:
         if not variables:
@@ -913,32 +966,37 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             constant=constant,
         )
 
-        return [
-            Declare(
-                [
-                    *evaluated_declaration.global_declarations,
-                    *evaluated_declaration.initialization_declarations,
-                ],
-                [
-                    *[
-                        *evaluated_declaration.initialization,
-                        *(self._assign(k, type_, v) if not initialized_in_declaration else []),
+        with exception_handler.local() as local_exception_handler:
+            return [
+                Declare(
+                    [
+                        *evaluated_declaration.global_declarations,
+                        *evaluated_declaration.initialization_declarations,
                     ],
-                    *self._declare_and_assign(
-                        variables[1:], statements, exception_handler, constant
-                    ),
-                    *evaluated_declaration.finalization,
-                ],
-            ),
-            *([self._realize_deferred_exception(exception_handler)] if exception_handler else []),
-        ]
+                    [
+                        *[
+                            *evaluated_declaration.initialization,
+                            *(
+                                self._assign(k, type_, v, local_exception_handler)
+                                if not initialized_in_declaration
+                                else []
+                            ),
+                        ],
+                        *self._declare_and_assign(
+                            variables[1:], statements, exception_handler, constant
+                        ),
+                        *evaluated_declaration.finalization,
+                    ],
+                ),
+                *exception_handler.execute_deferred(),
+            ]
 
     def _assign(
         self,
         target: rid.ID,
         target_type: rty.Type,
         expression: expr.Expr,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         if isinstance(expression, expr.Binding):
             return self._assign_to_binding(target, expression, exception_handler)
@@ -1005,7 +1063,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         target: rid.ID,
         binding: expr.Binding,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         variables = []
 
@@ -1053,15 +1111,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
             variables.append((k, type_, v))
 
-        return self._declare_and_assign(
-            variables,
-            self._assign(target, type_, binding.expr),
-            exception_handler,
-            constant=True,
-        )
+        with exception_handler.local() as local_exception_handler:
+            return self._declare_and_assign(
+                variables,
+                self._assign(target, type_, binding.expr, local_exception_handler),
+                exception_handler,
+                constant=True,
+            )
 
     def _assign_to_selected(
-        self, target: rid.ID, selected: expr.Selected, exception_handler: ExceptionHandler = None
+        self, target: rid.ID, selected: expr.Selected, exception_handler: ExceptionHandler
     ) -> Sequence[Statement]:
         if not isinstance(selected.prefix, expr.Variable):
             fail(
@@ -1109,7 +1168,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             f'Error: access to invalid field "{selector}" of'
                             f' "{message_context}"'
                         ),
-                        *self._raise_exception(exception_handler),
+                        *exception_handler.execute(),
                     ],
                 )
             ]
@@ -1137,7 +1196,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         target: rid.ID,
         message_aggregate: expr.MessageAggregate,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
@@ -1188,10 +1247,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ),
                         ],
                     ),
-                    *self._set_message_fields(target_type, target_context, message_aggregate),
+                    *self._set_message_fields(
+                        target_type, target_context, message_aggregate, exception_handler
+                    ),
                 ],
                 exception_handler,
             ),
+            *exception_handler.execute_deferred(),
         ]
 
         if size_variables:
@@ -1220,7 +1282,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     # ISSUE: Componolit/RecordFlux#569
                     [
                         *self._debug_output(f"Error: unexpected size of {expressions}"),
-                        *self._raise_exception(exception_handler),
+                        *exception_handler.execute(),
                     ],
                 )
             ]
@@ -1228,7 +1290,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return assign_to_message_aggregate
 
     def _assign_to_head(
-        self, target: rid.ID, head: expr.Head, exception_handler: ExceptionHandler = None
+        self, target: rid.ID, head: expr.Head, exception_handler: ExceptionHandler
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix.type_, rty.Sequence)
 
@@ -1286,7 +1348,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             f"Error: access to first element of invalid or empty sequence"
                             f' "{sequence_context}"'
                         ),
-                        *self._raise_exception(exception_handler),
+                        *exception_handler.execute(),
                     ],
                 )
             ]
@@ -1299,93 +1361,96 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target_context = context_id(target)
         target_buffer = buffer_id(target)
         element_context = ID("RFLX_Head_Ctx")
-        return [
-            self._declare_sequence_copy(
-                sequence_identifier,
-                sequence_type,
-                [
-                    IfStatement(
-                        [
-                            (
-                                Call(
-                                    sequence_type * "Has_Element",
-                                    [Variable(copy_id(sequence_context))],
-                                ),
-                                [
-                                    Declare(
-                                        [
-                                            ObjectDeclaration(
-                                                [element_context],
-                                                target_type * "Context",
-                                            ),
-                                        ],
-                                        [
-                                            CallStatement(
-                                                sequence_type * "Switch",
-                                                [
-                                                    Variable(copy_id(sequence_context)),
-                                                    Variable(element_context),
-                                                ],
-                                            ),
-                                            CallStatement(
-                                                target_type * "Verify_Message",
-                                                [Variable(element_context)],
-                                            ),
-                                            self._if_structural_valid_message(
-                                                target_type,
-                                                element_context,
-                                                [
-                                                    *self._take_buffer(
-                                                        ID(target),
-                                                        target_type,
-                                                    ),
-                                                    self._copy_to_buffer(
-                                                        target_type,
-                                                        element_context,
-                                                        target_buffer,
-                                                    ),
-                                                    CallStatement(
-                                                        target_type * "Initialize",
-                                                        [
-                                                            Variable(target_context),
-                                                            Variable(target_buffer),
-                                                        ],
-                                                    ),
-                                                    CallStatement(
-                                                        target_type * "Verify_Message",
-                                                        [
-                                                            Variable(target_context),
-                                                        ],
-                                                    ),
-                                                ],
-                                            ),
-                                            *self._update_context(
-                                                copy_id(sequence_context),
-                                                element_context,
-                                                sequence_type,
-                                            ),
-                                        ],
+        with exception_handler.local() as local_exception_handler:
+            return [
+                self._declare_sequence_copy(
+                    sequence_identifier,
+                    sequence_type,
+                    [
+                        IfStatement(
+                            [
+                                (
+                                    Call(
+                                        sequence_type * "Has_Element",
+                                        [Variable(copy_id(sequence_context))],
                                     ),
-                                ],
-                            )
-                        ],
-                        [
-                            # ISSUE: Componolit/RecordFlux#569
-                            self._raise_deferred_exception(),
-                        ],
-                    )
-                ],
-            ),
-            *([self._realize_deferred_exception(exception_handler)] if exception_handler else []),
-        ]
+                                    [
+                                        Declare(
+                                            [
+                                                ObjectDeclaration(
+                                                    [element_context],
+                                                    target_type * "Context",
+                                                ),
+                                            ],
+                                            [
+                                                CallStatement(
+                                                    sequence_type * "Switch",
+                                                    [
+                                                        Variable(copy_id(sequence_context)),
+                                                        Variable(element_context),
+                                                    ],
+                                                ),
+                                                CallStatement(
+                                                    target_type * "Verify_Message",
+                                                    [Variable(element_context)],
+                                                ),
+                                                self._if_structural_valid_message(
+                                                    target_type,
+                                                    element_context,
+                                                    [
+                                                        *self._take_buffer(
+                                                            ID(target),
+                                                            target_type,
+                                                        ),
+                                                        self._copy_to_buffer(
+                                                            target_type,
+                                                            element_context,
+                                                            target_buffer,
+                                                            local_exception_handler,
+                                                        ),
+                                                        CallStatement(
+                                                            target_type * "Initialize",
+                                                            [
+                                                                Variable(target_context),
+                                                                Variable(target_buffer),
+                                                            ],
+                                                        ),
+                                                        CallStatement(
+                                                            target_type * "Verify_Message",
+                                                            [
+                                                                Variable(target_context),
+                                                            ],
+                                                        ),
+                                                    ],
+                                                    local_exception_handler,
+                                                ),
+                                                *self._update_context(
+                                                    copy_id(sequence_context),
+                                                    element_context,
+                                                    sequence_type,
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                )
+                            ],
+                            local_exception_handler.execute(),
+                        )
+                    ],
+                    exception_handler,
+                ),
+                *exception_handler.execute_deferred(),
+            ]
 
     def _assign_to_comprehension(
         self,
         target: rid.ID,
         target_type: rty.Sequence,
         comprehension: expr.Comprehension,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
+        # pylint: disable = too-many-locals
+
         assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
         if not isinstance(comprehension.type_.element, (rty.Integer, rty.Enumeration)):
             fail(
@@ -1409,29 +1474,28 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
             if isinstance(comprehension.sequence, expr.Variable):
                 sequence_id = ID(rid.ID(f"{comprehension.sequence}"))
-                return [
-                    self._declare_sequence_copy(
-                        sequence_id,
-                        sequence_type_id,
-                        [
-                            self._comprehension(
-                                copy_id(sequence_id),
-                                sequence_type_id,
-                                target_id,
-                                target_type,
-                                iterator_id,
-                                iterator_type_id,
-                                comprehension.selector,
-                                comprehension.condition,
-                            )
-                        ],
-                    ),
-                    *(
-                        [self._realize_deferred_exception(exception_handler)]
-                        if exception_handler
-                        else []
-                    ),
-                ]
+                with exception_handler.local() as local_exception_handler:
+                    return [
+                        self._declare_sequence_copy(
+                            sequence_id,
+                            sequence_type_id,
+                            [
+                                self._comprehension(
+                                    copy_id(sequence_id),
+                                    sequence_type_id,
+                                    target_id,
+                                    target_type,
+                                    iterator_id,
+                                    iterator_type_id,
+                                    comprehension.selector,
+                                    comprehension.condition,
+                                    local_exception_handler,
+                                )
+                            ],
+                            exception_handler,
+                        ),
+                        *exception_handler.execute_deferred(),
+                    ]
 
             if isinstance(comprehension.sequence, expr.Selected):
                 selected = comprehension.sequence
@@ -1453,38 +1517,38 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
                 message_field = ID(selected.selector)
 
-                return [
-                    self._if_structural_valid_message(
-                        message_type,
-                        context_id(message_id),
-                        [
-                            self._declare_message_field_sequence_copy(
-                                message_id,
-                                message_type,
-                                message_field,
-                                sequence_id,
-                                sequence_type_id,
-                                [
-                                    self._comprehension(
-                                        sequence_id,
-                                        sequence_type_id,
-                                        target_id,
-                                        target_type,
-                                        iterator_id,
-                                        iterator_type_id,
-                                        comprehension.selector,
-                                        comprehension.condition,
-                                    )
-                                ],
-                            ),
-                        ],
-                    ),
-                    *(
-                        [self._realize_deferred_exception(exception_handler)]
-                        if exception_handler
-                        else []
-                    ),
-                ]
+                with exception_handler.local() as local_exception_handler:
+                    return [
+                        self._if_structural_valid_message(
+                            message_type,
+                            context_id(message_id),
+                            [
+                                self._declare_message_field_sequence_copy(
+                                    message_id,
+                                    message_type,
+                                    message_field,
+                                    sequence_id,
+                                    sequence_type_id,
+                                    [
+                                        self._comprehension(
+                                            sequence_id,
+                                            sequence_type_id,
+                                            target_id,
+                                            target_type,
+                                            iterator_id,
+                                            iterator_type_id,
+                                            comprehension.selector,
+                                            comprehension.condition,
+                                            local_exception_handler,
+                                        )
+                                    ],
+                                    exception_handler,
+                                ),
+                            ],
+                            exception_handler,
+                        ),
+                        *exception_handler.execute_deferred(),
+                    ]
 
             _unsupported_expression(comprehension.sequence, "as sequence in list comprehension")
 
@@ -1499,7 +1563,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         target: rid.ID,
         call_expr: expr.Call,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         pre_call = []
         post_call = []
@@ -1589,7 +1653,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         target: rid.ID,
         conversion: expr.Conversion,
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         assert isinstance(conversion.type_, rty.Message)
         assert isinstance(conversion.argument, expr.Selected)
@@ -1647,7 +1711,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 # ISSUE: Componolit/RecordFlux#569
                 [
                     *self._debug_output(f'Error: invalid conversion "{conversion}"'),
-                    *self._raise_exception(exception_handler),
+                    *exception_handler.execute(),
                 ],
             )
         ]
@@ -1723,28 +1787,31 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             else:
                 _unsupported_expression(append.parameter, "in Append statement")
 
-            return [
-                check(sequence_type, required_space),
-                Declare(
-                    [ObjectDeclaration([element_context], element_type * "Context")],
-                    [
-                        CallStatement(
-                            sequence_type * "Switch",
-                            [Variable(sequence_context), Variable(element_context)],
-                        ),
-                        *(
-                            self._set_message_fields(
-                                element_type,
-                                element_context,
-                                append.parameters[0],
-                            )
-                            if isinstance(append.parameters[0], expr.MessageAggregate)
-                            else []
-                        ),
-                        *self._update_context(sequence_context, element_context, sequence_type),
-                    ],
-                ),
-            ]
+            with exception_handler.local() as local_exception_handler:
+                return [
+                    check(sequence_type, required_space),
+                    Declare(
+                        [ObjectDeclaration([element_context], element_type * "Context")],
+                        [
+                            CallStatement(
+                                sequence_type * "Switch",
+                                [Variable(sequence_context), Variable(element_context)],
+                            ),
+                            *(
+                                self._set_message_fields(
+                                    element_type,
+                                    element_context,
+                                    append.parameters[0],
+                                    local_exception_handler,
+                                )
+                                if isinstance(append.parameters[0], expr.MessageAggregate)
+                                else []
+                            ),
+                            *self._update_context(sequence_context, element_context, sequence_type),
+                        ],
+                    ),
+                    *exception_handler.execute_deferred(),
+                ]
 
         fatal_fail(
             f"unexpected element type {append.type_.element} in Append statement",
@@ -1797,7 +1864,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         identifier = f"{target_type.flat}_Read"
 
-        def write_statements(exception_handler: ExceptionHandler = None) -> Sequence[Statement]:
+        def write_statements(exception_handler: ExceptionHandler) -> Sequence[Statement]:
             return [
                 self._if_structural_valid_message(
                     target_type,
@@ -1823,11 +1890,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if isinstance(write.parameter, expr.Variable):
             return write_statements(exception_handler)
 
-        return self._declare_and_assign(
-            [(ID("RFLX_Message"), write.parameter.type_, write.parameter)],
-            write_statements(),
-            exception_handler,
-        )
+        with exception_handler.local() as local_exception_handler:
+            return self._declare_and_assign(
+                [(ID("RFLX_Message"), write.parameter.type_, write.parameter)],
+                write_statements(local_exception_handler),
+                exception_handler,
+            )
 
     @staticmethod
     def _reset(
@@ -2046,6 +2114,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
                 _unsupported_expression(expression.prefix, "in Opaque attribute")
 
+            if isinstance(expression, expr.Head):
+                _unsupported_expression(expression, "in expression")
+
             return expression
 
         return func
@@ -2055,7 +2126,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_type: ID,
         sequence_context: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         """
         Ensure that sequence is valid.
@@ -2073,7 +2144,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             # ISSUE: Componolit/RecordFlux#569
             [
                 *self._debug_output(f'Error: invalid sequence "{sequence_context}"'),
-                *self._raise_exception(exception_handler),
+                *exception_handler.execute(),
             ],
         )
 
@@ -2082,7 +2153,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message_type: ID,
         message_context: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         """
         Ensure that message is structurally valid.
@@ -2104,7 +2175,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             # ISSUE: Componolit/RecordFlux#569
             [
                 *self._debug_output(f'Error: invalid message "{message_context}"'),
-                *self._raise_exception(exception_handler),
+                *exception_handler.execute(),
             ],
         )
 
@@ -2114,7 +2185,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message_context: ID,
         message_field: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         """
         Ensure that message field is structurally valid.
@@ -2140,7 +2211,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 *self._debug_output(
                     f'Error: invalid message field "{message_type * message_field}"'
                 ),
-                *self._raise_exception(exception_handler),
+                *exception_handler.execute(),
             ],
         )
 
@@ -2148,7 +2219,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         expression: expr.Expr,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         """
         Ensure that all referenced fields in the expression are valid.
@@ -2177,7 +2248,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         *self._debug_output(
                             f"Error: reference to invalid message field in {expressions}"
                         ),
-                        *self._raise_exception(exception_handler),
+                        *exception_handler.execute(),
                     ],
                 )
             ]
@@ -2189,7 +2260,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         required_space: Expr,
         target_context: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         return IfStatement(
             [
@@ -2207,7 +2278,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
             [
                 *self._debug_output(f'Error: insufficient space in message "{target_context}"'),
-                *self._raise_exception(exception_handler),
+                *exception_handler.execute(),
             ],
         )
 
@@ -2217,7 +2288,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_type: ID,
         sequence_context: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         return IfStatement(
             [
@@ -2240,62 +2311,119 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
             [
                 *self._debug_output(f'Error: insufficient space in sequence "{sequence_context}"'),
-                *self._raise_exception(exception_handler),
+                *exception_handler.execute(),
             ],
         )
 
-    def _raise_exception(self, exception_handler: ExceptionHandler = None) -> Sequence[Statement]:
-        # ISSUE: Componolit/Workarounds#37
-        return (
-            exception_handler.execute() if exception_handler else [self._raise_deferred_exception()]
+    def _ensure(
+        self,
+        statements: List[Statement],
+        property_expression: Expr,
+        error_message: str,
+        exception_handler: ExceptionHandler,
+    ) -> List[Statement]:
+        nested: List[Statement] = []
+        statements.append(
+            IfStatement(
+                [
+                    (
+                        property_expression,
+                        nested,
+                    )
+                ],
+                # ISSUE: Componolit/RecordFlux#569
+                [
+                    *self._debug_output(error_message),
+                    *exception_handler.execute(),
+                ],
+            )
         )
-
-    @staticmethod
-    def _raise_deferred_exception() -> Assignment:
-        # ISSUE: Componolit/Workarounds#37
-        return Assignment("RFLX_Exception", TRUE)
+        return nested
 
     @staticmethod
     def _exit_on_deferred_exception() -> ExitStatement:
-        # ISSUE: Componolit/Workarounds#37
+        # ISSUE: Componolit/Workarounds#569
         return ExitStatement(Variable("RFLX_Exception"))
-
-    def _realize_deferred_exception(self, exception_handler: ExceptionHandler) -> IfStatement:
-        """
-        Execute the exception handler if a deferred exception was raised.
-
-        This is needed because SPARK does not yet support return statements in the scope of a local
-        owning declaration.
-        """
-        # ISSUE: Componolit/Workarounds#37
-        self._session_context.state_exception.add(exception_handler.state.identifier)
-        return IfStatement(
-            [
-                (
-                    Variable("RFLX_Exception"),
-                    exception_handler.execute(),
-                )
-            ]
-        )
 
     def _set_message_fields(
         self,
         target_type: ID,
         target_context: ID,
         message_aggregate: expr.MessageAggregate,
+        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
+        # pylint: disable = too-many-statements, too-many-branches, too-many-locals
+
         assert isinstance(message_aggregate.type_, rty.Message)
 
-        result: List[Statement] = []
+        statements: List[Statement] = []
+        result = statements
 
         for f, v in message_aggregate.field_values.items():
+            if f not in message_aggregate.type_.field_types:
+                continue
+
+            field_type = message_aggregate.type_.field_types[f]
+
+            if isinstance(field_type, rty.Sequence):
+                size: Expr
+                if isinstance(v, expr.Aggregate):
+                    size = Mul(Number(len(v.elements)), Size(const.TYPES_BYTE))
+                elif isinstance(v, expr.Variable) and isinstance(
+                    v.type_, (rty.Message, rty.Sequence)
+                ):
+                    type_ = ID(v.type_.identifier)
+                    context = context_id(v.identifier)
+                    size = Call(type_ * "Size", [Variable(context)])
+                elif isinstance(v, expr.Selected):
+                    assert isinstance(v.prefix, expr.Variable)
+                    assert isinstance(v.prefix.type_, rty.Message)
+                    message_type = ID(v.prefix.type_.identifier)
+                    message_context = context_id(v.prefix.identifier)
+                    statements = self._ensure(
+                        statements,
+                        Call(
+                            target_type * "Valid_Next",
+                            [
+                                Variable(message_context),
+                                Variable(message_type * f"F_{v.selector}"),
+                            ],
+                        ),
+                        f'Error: access to invalid next message field for "{v}"',
+                        exception_handler,
+                    )
+                    size = Call(
+                        message_type * "Field_Size",
+                        [
+                            Variable(message_context),
+                            Variable(message_type * f"F_{v.selector}"),
+                        ],
+                    )
+                else:
+                    size = Size(v.substituted(self._substitution()).ada_expr())
+                statements = self._ensure(
+                    statements,
+                    Equal(
+                        Call(
+                            target_type * "Field_Size",
+                            [
+                                Variable(target_context),
+                                Variable(target_type * f"F_{f}"),
+                            ],
+                        ),
+                        size,
+                    ),
+                    f'Error: invalid message field size for "{v}"',
+                    exception_handler,
+                )
+
             if isinstance(v, (expr.Number, expr.Aggregate)) or (
                 isinstance(v, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr))
                 and isinstance(v.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
             ):
                 field_type = message_aggregate.type_.field_types[f]
                 if isinstance(v, expr.Aggregate) and len(v.elements) == 0:
-                    result.append(
+                    statements.append(
                         CallStatement(target_type * f"Set_{f}_Empty", [Variable(target_context)])
                     )
                 else:
@@ -2303,7 +2431,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     if not field_type.is_compatible_strong(v.type_):
                         assert isinstance(field_type, rty.Integer)
                         value = expr.Conversion(field_type.identifier, value)
-                    result.append(
+                    statements.append(
                         CallStatement(
                             target_type * f"Set_{f}",
                             [
@@ -2314,7 +2442,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     )
             elif isinstance(v, expr.Variable) and isinstance(v.type_, rty.Sequence):
                 sequence_context = context_id(v.identifier)
-                result.extend(
+                statements.extend(
                     [
                         CallStatement(
                             target_type * f"Set_{f}",
@@ -2333,6 +2461,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_context = context_id(v.prefix.identifier)
                 target_field_type = message_aggregate.type_.field_types[f]
                 assert isinstance(target_field_type, (rty.Integer, rty.Enumeration, rty.Sequence))
+                statements = self._ensure(
+                    statements,
+                    Call(
+                        message_type
+                        * ("Structural_Valid" if isinstance(v.type_, rty.Sequence) else "Valid"),
+                        [
+                            Variable(message_context),
+                            Variable(message_type * f"F_{v.selector}"),
+                        ],
+                    ),
+                    f'Error: access to invalid message field in "{v}"',
+                    exception_handler,
+                )
                 get_field_value = Call(
                     message_type * f"Get_{v.selector}", [Variable(message_context)]
                 )
@@ -2341,7 +2482,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     self._session_context.referenced_types_body.add(
                         ID(target_field_type.identifier)
                     )
-                result.extend(
+                statements.extend(
                     [
                         CallStatement(
                             target_type * f"Set_{f}",
@@ -2357,7 +2498,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 assert isinstance(v.prefix.type_, rty.Message)
                 message_type = ID(v.prefix.type_.identifier)
                 message_context = context_id(v.prefix.identifier)
-                result.extend(
+                statements.extend(
                     [
                         CallStatement(
                             target_type * f"Set_{f}",
@@ -2391,38 +2532,40 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_identifier: ID,
         sequence_type: ID,
         statements: Sequence[Statement],
-        exception_handler: ExceptionHandler = None,
+        exception_handler: ExceptionHandler,
     ) -> IfStatement:
         """A deferred exception might be raised."""
         # ISSUE: Componolit/RecordFlux#577
-        return self._if_valid_sequence(
-            sequence_type,
-            context_id(sequence_identifier),
-            [
-                Declare(
-                    self._declare_context_buffer(copy_id(sequence_identifier), sequence_type),
-                    [
-                        self._allocate_buffer(copy_id(sequence_identifier)),
-                        self._copy_to_buffer(
-                            sequence_type,
-                            context_id(sequence_identifier),
-                            ID(f"{copy_id(buffer_id(sequence_identifier))}"),
-                        ),
-                        self._initialize_context(
-                            copy_id(sequence_identifier),
-                            sequence_type,
-                            last=Call(
-                                sequence_type * "Sequence_Last",
-                                [Variable(context_id(sequence_identifier))],
+        with exception_handler.local() as local_exception_handler:
+            return self._if_valid_sequence(
+                sequence_type,
+                context_id(sequence_identifier),
+                [
+                    Declare(
+                        self._declare_context_buffer(copy_id(sequence_identifier), sequence_type),
+                        [
+                            self._allocate_buffer(copy_id(sequence_identifier)),
+                            self._copy_to_buffer(
+                                sequence_type,
+                                context_id(sequence_identifier),
+                                ID(f"{copy_id(buffer_id(sequence_identifier))}"),
+                                local_exception_handler,
                             ),
-                        ),
-                        *statements,
-                        *self._free_context_buffer(copy_id(sequence_identifier), sequence_type),
-                    ],
-                )
-            ],
-            exception_handler,
-        )
+                            self._initialize_context(
+                                copy_id(sequence_identifier),
+                                sequence_type,
+                                last=Call(
+                                    sequence_type * "Sequence_Last",
+                                    [Variable(context_id(sequence_identifier))],
+                                ),
+                            ),
+                            *statements,
+                            *self._free_context_buffer(copy_id(sequence_identifier), sequence_type),
+                        ],
+                    )
+                ],
+                exception_handler,
+            )
 
     def _declare_message_field_sequence_copy(  # pylint: disable = too-many-arguments
         self,
@@ -2432,51 +2575,55 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_identifier: ID,
         sequence_type: ID,
         statements: Sequence[Statement],
+        exception_handler: ExceptionHandler,
     ) -> Declare:
         # ISSUE: Componolit/RecordFlux#577
-        return Declare(
-            self._declare_context_buffer(sequence_identifier, sequence_type),
-            [
-                self._allocate_buffer(sequence_identifier),
-                self._copy_to_buffer(
-                    message_type,
-                    context_id(message_identifier),
-                    ID(f"{buffer_id(sequence_identifier)}"),
-                ),
-                self._if_structural_valid_message_field(
-                    message_type,
-                    context_id(message_identifier),
-                    message_field,
-                    [
-                        self._initialize_context(
-                            sequence_identifier,
-                            sequence_type,
-                            first=Call(
-                                message_type * "Field_First",
-                                [
-                                    Variable(context_id(message_identifier)),
-                                    Variable(
-                                        message_type * model.Field(message_field).affixed_name
-                                    ),
-                                ],
+        with exception_handler.local() as local_exception_handler:
+            return Declare(
+                self._declare_context_buffer(sequence_identifier, sequence_type),
+                [
+                    self._allocate_buffer(sequence_identifier),
+                    self._copy_to_buffer(
+                        message_type,
+                        context_id(message_identifier),
+                        ID(f"{buffer_id(sequence_identifier)}"),
+                        local_exception_handler,
+                    ),
+                    self._if_structural_valid_message_field(
+                        message_type,
+                        context_id(message_identifier),
+                        message_field,
+                        [
+                            self._initialize_context(
+                                sequence_identifier,
+                                sequence_type,
+                                first=Call(
+                                    message_type * "Field_First",
+                                    [
+                                        Variable(context_id(message_identifier)),
+                                        Variable(
+                                            message_type * model.Field(message_field).affixed_name
+                                        ),
+                                    ],
+                                ),
+                                last=Call(
+                                    message_type * "Field_Last",
+                                    [
+                                        Variable(context_id(message_identifier)),
+                                        Variable(
+                                            message_type * model.Field(message_field).affixed_name
+                                        ),
+                                    ],
+                                ),
                             ),
-                            last=Call(
-                                message_type * "Field_Last",
-                                [
-                                    Variable(context_id(message_identifier)),
-                                    Variable(
-                                        message_type * model.Field(message_field).affixed_name
-                                    ),
-                                ],
-                            ),
-                        ),
-                        *statements,
-                        *self._take_buffer(sequence_identifier, sequence_type),
-                    ],
-                ),
-                self._free_buffer(sequence_identifier),
-            ],
-        )
+                            *statements,
+                            *self._take_buffer(sequence_identifier, sequence_type),
+                        ],
+                        local_exception_handler,
+                    ),
+                    self._free_buffer(sequence_identifier),
+                ],
+            )
 
     def _comprehension(  # pylint: disable = too-many-arguments
         self,
@@ -2488,6 +2635,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         iterator_type: ID,
         selector: expr.Expr,
         condition: expr.Expr,
+        exception_handler: ExceptionHandler,
     ) -> While:
         """A deferred exception might be raised."""
         assert not isinstance(selector, expr.MessageAggregate)
@@ -2496,104 +2644,113 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         target_type_id = ID(target_type.identifier)
 
-        return While(
-            Call(
-                sequence_type * "Has_Element",
-                [Variable(context_id(sequence_identifier))],
-            ),
-            [
-                PragmaStatement(
-                    "Loop_Invariant",
-                    [
-                        Call(
-                            sequence_type * "Has_Buffer",
-                            [Variable(context_id(sequence_identifier))],
-                        )
-                    ],
+        with exception_handler.local() as local_exception_handler:
+            return While(
+                Call(
+                    sequence_type * "Has_Element",
+                    [Variable(context_id(sequence_identifier))],
                 ),
-                PragmaStatement(
-                    "Loop_Invariant",
-                    [
-                        Call(
-                            target_type_id * "Has_Buffer",
-                            [Variable(context_id(target_identifier))],
-                        )
-                    ],
-                ),
-                PragmaStatement(
-                    "Loop_Invariant",
-                    [
-                        Call(
-                            target_type_id * "Valid",
-                            [Variable(context_id(target_identifier))],
-                        )
-                    ],
-                ),
-                Declare(
-                    [self._declare_context(iterator_identifier, iterator_type)],
-                    [
-                        CallStatement(
-                            sequence_type * "Switch",
-                            [
-                                Variable(context_id(sequence_identifier)),
-                                Variable(context_id(iterator_identifier)),
-                            ],
-                        ),
-                        CallStatement(
-                            iterator_type * "Verify_Message",
-                            [Variable(context_id(iterator_identifier))],
-                        ),
-                        *self._if_valid_fields(
-                            condition,
-                            [
-                                IfStatement(
-                                    [
-                                        (
-                                            condition.substituted(self._substitution()).ada_expr(),
-                                            [
-                                                self._if_sufficient_space_in_sequence(
-                                                    Size(
-                                                        ID(
-                                                            target_type.element.identifier + "_Enum"
-                                                            if isinstance(
-                                                                target_type.element, rty.Enumeration
+                [
+                    PragmaStatement(
+                        "Loop_Invariant",
+                        [
+                            Call(
+                                sequence_type * "Has_Buffer",
+                                [Variable(context_id(sequence_identifier))],
+                            )
+                        ],
+                    ),
+                    PragmaStatement(
+                        "Loop_Invariant",
+                        [
+                            Call(
+                                target_type_id * "Has_Buffer",
+                                [Variable(context_id(target_identifier))],
+                            )
+                        ],
+                    ),
+                    PragmaStatement(
+                        "Loop_Invariant",
+                        [
+                            Call(
+                                target_type_id * "Valid",
+                                [Variable(context_id(target_identifier))],
+                            )
+                        ],
+                    ),
+                    Declare(
+                        [self._declare_context(iterator_identifier, iterator_type)],
+                        [
+                            CallStatement(
+                                sequence_type * "Switch",
+                                [
+                                    Variable(context_id(sequence_identifier)),
+                                    Variable(context_id(iterator_identifier)),
+                                ],
+                            ),
+                            CallStatement(
+                                iterator_type * "Verify_Message",
+                                [Variable(context_id(iterator_identifier))],
+                            ),
+                            *self._if_valid_fields(
+                                condition,
+                                [
+                                    IfStatement(
+                                        [
+                                            (
+                                                condition.substituted(
+                                                    self._substitution()
+                                                ).ada_expr(),
+                                                [
+                                                    self._if_sufficient_space_in_sequence(
+                                                        Size(
+                                                            ID(
+                                                                target_type.element.identifier
+                                                                + "_Enum"
+                                                                if isinstance(
+                                                                    target_type.element,
+                                                                    rty.Enumeration,
+                                                                )
+                                                                and target_type.element.always_valid
+                                                                else target_type.element.identifier
                                                             )
-                                                            and target_type.element.always_valid
-                                                            else target_type.element.identifier
-                                                        )
+                                                        ),
+                                                        target_type_id,
+                                                        context_id(target_identifier),
+                                                        [
+                                                            CallStatement(
+                                                                target_type_id * "Append_Element",
+                                                                [
+                                                                    Variable(
+                                                                        context_id(
+                                                                            target_identifier
+                                                                        )
+                                                                    ),
+                                                                    selector.substituted(
+                                                                        self._substitution()
+                                                                    ).ada_expr(),
+                                                                ],
+                                                            )
+                                                        ],
+                                                        local_exception_handler,
                                                     ),
-                                                    target_type_id,
-                                                    context_id(target_identifier),
-                                                    [
-                                                        CallStatement(
-                                                            target_type_id * "Append_Element",
-                                                            [
-                                                                Variable(
-                                                                    context_id(target_identifier)
-                                                                ),
-                                                                selector.substituted(
-                                                                    self._substitution()
-                                                                ).ada_expr(),
-                                                            ],
-                                                        )
-                                                    ],
-                                                ),
-                                            ],
-                                        )
-                                    ]
-                                )
-                            ],
-                        ),
-                        *self._update_context(
-                            context_id(sequence_identifier),
-                            context_id(iterator_identifier),
-                            sequence_type,
-                        ),
-                    ],
-                ),
-                self._exit_on_deferred_exception(),
-            ],
-        )
+                                                ],
+                                            )
+                                        ]
+                                    )
+                                ],
+                                exception_handler,
+                            ),
+                            *self._update_context(
+                                context_id(sequence_identifier),
+                                context_id(iterator_identifier),
+                                sequence_type,
+                            ),
+                        ],
+                    ),
+                    self._exit_on_deferred_exception(),
+                ],
+            )
 
     def _free_context_buffer(self, identifier: ID, type_: ID) -> Sequence[Statement]:
         return [
@@ -2736,7 +2893,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _copy_to_buffer(self, type_: ID, source_context: ID, target_buffer: ID) -> IfStatement:
+    def _copy_to_buffer(
+        self, type_: ID, source_context: ID, target_buffer: ID, exception_handler: ExceptionHandler
+    ) -> IfStatement:
         """A deferred exception might be raised."""
         self._session_context.used_types_body.add(const.TYPES_LENGTH)
         return IfStatement(
@@ -2781,9 +2940,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ],
                 )
             ],
-            [
-                self._raise_deferred_exception(),
-            ],
+            exception_handler.execute(),
         )
 
     def _debug_output(self, string: str) -> List[CallStatement]:
