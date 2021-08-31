@@ -1,0 +1,56 @@
+package Test is
+
+   type Length is range 1 .. 2**14 - 1 with Size => 16;
+
+   type Message (Length : Length; Extended : Boolean) is
+      message
+         Data : Opaque
+            with Size => Length * 8
+            then Extension
+                if Extended = True
+            then null
+                if Extended = False;
+         Extension : Opaque
+            with Size => Length * 8;
+      end message;
+
+   generic
+      C : Channel with Readable, Writable;
+   session Session with
+      Initial => Receive,
+      Final => Terminated
+   is
+      M : Message;
+   begin
+      state Receive
+      is
+      begin
+         M'Reset (Length => 2, Extended => False);
+         C'Read (M);
+      transition
+         then Reply
+            if M'Valid
+         then Terminated
+      end Receive;
+
+      state Reply
+      is
+      begin
+         C'Write (Message'(Length => M.Length, Extended => True, Data => M.Data, Extension => [3, 4]));
+      transition
+         then Terminated
+      exception
+         then Error
+      end Reply;
+
+      state Error
+      is
+      begin
+         transition
+            then Terminated
+      end Error;
+
+      state Terminated is null state;
+   end Session;
+
+end Test;

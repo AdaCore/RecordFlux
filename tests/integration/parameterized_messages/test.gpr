@@ -1,0 +1,16 @@
+with "../../../defaults";
+
+project Test is
+
+   for Source_Dirs use ("generated");
+
+   package Builder is
+      for Default_Switches ("Ada") use
+         Defaults.Builder_Switches & Defaults.Compiler_Switches;
+   end Builder;
+
+   package Prove is
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+   end Prove;
+
+end Test;
