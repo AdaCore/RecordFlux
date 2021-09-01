@@ -2,7 +2,7 @@
 
 import itertools
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
@@ -12,6 +12,7 @@ from librflxlang import (
     Aspect,
     ChecksumAspect,
     Components,
+    ComponentTypeArgument,
     Description,
     Diagnostic,
     EnumerationTypeDef,
@@ -788,12 +789,12 @@ def create_message(
     cache: Cache,
     filename: Path,
 ) -> model.Message:
-    # pylint: disable=too-many-arguments
+    # pylint: disable = too-many-arguments, too-many-locals
 
     error = RecordFluxError()
     components = message.f_components
 
-    field_types: Mapping[model.Field, model.Type] = create_message_types(
+    field_types, message_arguments = create_message_types(
         error, identifier, parameters, components, types, filename
     )
     structure = create_message_structure(error, components, filename)
@@ -803,7 +804,7 @@ def create_message(
         result = create_proven_message(
             model.UnprovenMessage(
                 identifier, structure, field_types, aspects, type_location(identifier, message)
-            ).merged(),
+            ).merged(message_arguments),
             skip_verification,
             workers,
             cache,
@@ -821,28 +822,37 @@ def create_message_types(
     components: Components,
     types: Sequence[model.Type],
     filename: Path,
-) -> Mapping[model.Field, model.Type]:
+) -> Tuple[Mapping[model.Field, model.Type], Dict[ID, Dict[ID, expr.Expr]]]:
 
     field_types: Dict[model.Field, model.Type] = {}
+    message_arguments: Dict[ID, Dict[ID, expr.Expr]] = defaultdict(dict)
 
-    for field_identifier, type_identifier in itertools.chain(
+    for field_identifier, type_identifier, type_arguments in itertools.chain(
         (
-            (parameter.f_identifier, parameter.f_type_identifier)
+            (parameter.f_identifier, parameter.f_type_identifier, [])
             for parameter in (parameters.f_parameters if parameters else ())
         ),
         (
-            (component.f_identifier, component.f_type_identifier)
+            (component.f_identifier, component.f_type_identifier, component.f_type_arguments)
             for component in components.f_components
         ),
     ):
         qualified_type_identifier = model.qualified_type_identifier(
             create_id(type_identifier, filename), identifier.parent
         )
-        field_type = [t for t in types if t.identifier == qualified_type_identifier]
+        field_type = next((t for t in types if t.identifier == qualified_type_identifier), None)
         if field_type:
             field = model.Field(create_id(field_identifier, filename))
             if field not in field_types:
-                field_types[field] = field_type[0]
+                if isinstance(field_type, model.Message):
+                    message_arguments[qualified_type_identifier] = create_message_arguments(
+                        error,
+                        field_type,
+                        type_arguments,
+                        qualified_type_identifier.location,
+                        filename,
+                    )
+                field_types[field] = field_type
             else:
                 error.extend(
                     [
@@ -872,7 +882,67 @@ def create_message_types(
                 ]
             )
 
-    return field_types
+    return (field_types, message_arguments)
+
+
+def create_message_arguments(
+    error: RecordFluxError,
+    message: model.Message,
+    type_arguments: Sequence[ComponentTypeArgument],
+    field_type_location: Optional[Location],
+    filename: Path,
+) -> Dict[ID, expr.Expr]:
+    result = {}
+    argument_errors = RecordFluxError()
+
+    for param, arg in itertools.zip_longest(message.parameters, type_arguments):
+        if param:
+            param_id = param.identifier
+        if arg:
+            arg_id = create_id(arg.f_identifier, filename)
+            arg_expression = create_expression(arg.f_expression, filename)
+        if arg and param and arg_id == param_id:
+            result[arg_id] = arg_expression
+        if not param or (arg and arg_id != param_id):
+            argument_errors.extend(
+                [
+                    (
+                        f'unexpected argument "{arg_id}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(arg, filename),
+                    ),
+                    (
+                        "expected no argument"
+                        if not param
+                        else f'expected argument for parameter "{param_id}"',
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        node_location(arg, filename),
+                    ),
+                ]
+            )
+        if not arg:
+            argument_errors.extend(
+                [
+                    (
+                        "missing argument",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        field_type_location,
+                    ),
+                    (
+                        f'expected argument for parameter "{param_id}"',
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        param_id.location,
+                    ),
+                ]
+            )
+
+    error.extend(argument_errors)
+
+    return result
 
 
 def create_message_structure(
