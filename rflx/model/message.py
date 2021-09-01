@@ -363,6 +363,7 @@ class AbstractMessage(mty.Type):
                         if v.identifier in literals
                         and v.identifier not in mty.BUILTIN_LITERALS
                         and v.identifier != ID("Message")
+                        and Field(v.identifier) not in self.parameters
                     },
                 }
             ).simplified()
@@ -377,7 +378,10 @@ class AbstractMessage(mty.Type):
             first = prefixed_expression(l.first)
             structure.append(Link(source, target, condition, size, first, l.location))
 
-        types = {Field(prefix + f.identifier): t for f, t in self.types.items()}
+        types = {
+            **{Field(f.identifier): t for f, t in self.parameter_types.items()},
+            **{Field(prefix + f.identifier): t for f, t in self.field_types.items()},
+        }
 
         return self.copy(structure=structure, types=types)
 
@@ -1848,27 +1852,10 @@ class UnprovenMessage(AbstractMessage):
         )
 
     @ensure(lambda result: valid_message_field_types(result))
-    def merged(self) -> "UnprovenMessage":
-        # pylint: disable=too-many-locals
-        def prune_dangling_fields(
-            structure: List[Link], types: Dict[Field, mty.Type]
-        ) -> Tuple[List[Link], Dict[Field, mty.Type]]:
-            dangling = []
-            progress = True
-            while progress:
-                progress = False
-                fields = {x for l in structure for x in (l.source, l.target) if x != FINAL}
-                for s in fields:
-                    if all(l.source != s for l in structure):
-                        dangling.append(s)
-                        progress = True
-                structure = [l for l in structure if l.target not in dangling]
-
-            return (
-                structure,
-                {k: v for k, v in types.items() if k not in dangling},
-            )
-
+    def merged(
+        self, message_arguments: Mapping[ID, Mapping[ID, expr.Expr]] = None
+    ) -> "UnprovenMessage":
+        message_arguments = message_arguments or {}
         message = self
 
         while True:
@@ -1884,59 +1871,19 @@ class UnprovenMessage(AbstractMessage):
                 f"{field.name}_"
             ).replaced_message_attributes()
 
-            if len(message_attribute_locations) > 0 and any(
-                n.target != FINAL for n in message.outgoing(field)
-            ):
-                self.error.extend(
-                    [
-                        (
-                            "message types with message attribute may only be used for last field",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            field.identifier.location,
-                        ),
-                        *[
-                            (
-                                f'message attribute used in "{inner_message.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                loc,
-                            )
-                            for loc in message_attribute_locations
-                        ],
-                    ]
-                )
+            self._check_message_attributes(
+                message, inner_message, message_attribute_locations, field
+            )
+            self._check_name_conflicts(message, inner_message, field)
 
-            name_conflicts = [
-                f for f in message.fields for g in inner_message.fields if f.name == g.name
-            ]
-
-            if name_conflicts:
-                conflicting = name_conflicts.pop(0)
-                self.error.extend(
-                    [
-                        (
-                            f'name conflict for "{conflicting.identifier}" in'
-                            f' "{message.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            conflicting.identifier.location,
-                        ),
-                        (
-                            f'when merging message "{inner_message.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            inner_message.location,
-                        ),
-                        (
-                            f'into field "{field.name}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            field.identifier.location,
-                        ),
-                    ],
-                )
-
+            message_argument_substitution: Mapping[expr.Name, expr.Expr] = (
+                {
+                    expr.Variable(a): e
+                    for a, e in message_arguments[inner_message.identifier].items()
+                }
+                if inner_message.identifier in message_arguments
+                else {}
+            )
             structure = []
 
             for link in message.structure:
@@ -1946,15 +1893,17 @@ class UnprovenMessage(AbstractMessage):
                         Link(
                             link.source,
                             initial_link.target,
-                            link.condition,
-                            initial_link.size,
-                            link.first,
+                            link.condition.substituted(mapping=message_argument_substitution),
+                            initial_link.size.substituted(mapping=message_argument_substitution),
+                            link.first.substituted(mapping=message_argument_substitution),
                             link.location,
                         )
                     )
                 elif link.source == field:
                     for final_link in inner_message.incoming(FINAL):
-                        merged_condition = expr.And(link.condition, final_link.condition)
+                        merged_condition = expr.And(
+                            link.condition, final_link.condition
+                        ).substituted(mapping=message_argument_substitution)
                         proof = merged_condition.check(
                             [
                                 *inner_message.message_constraints(),
@@ -1968,8 +1917,8 @@ class UnprovenMessage(AbstractMessage):
                                     final_link.source,
                                     link.target,
                                     merged_condition.simplified(),
-                                    link.size,
-                                    link.first,
+                                    link.size.substituted(mapping=message_argument_substitution),
+                                    link.first.substituted(mapping=message_argument_substitution),
                                     link.location,
                                 )
                             )
@@ -1982,10 +1931,15 @@ class UnprovenMessage(AbstractMessage):
 
             types = {
                 **{f: t for f, t in message.types.items() if f != field},
-                **inner_message.types,
+                **{
+                    f: t
+                    for f, t in inner_message.types.items()
+                    if inner_message.identifier not in message_arguments
+                    or f.identifier not in message_arguments[inner_message.identifier]
+                },
             }
 
-            structure, types = prune_dangling_fields(structure, types)
+            structure, types = self._prune_dangling_fields(structure, types)
             if not structure or not types:
                 fail(
                     f'empty message type when merging field "{field.identifier}"',
@@ -1997,6 +1951,89 @@ class UnprovenMessage(AbstractMessage):
             message = message.copy(structure=structure, types=types)
 
         return message
+
+    def _check_message_attributes(
+        self,
+        message: AbstractMessage,
+        inner_message: AbstractMessage,
+        message_attribute_locations: List[Optional[Location]],
+        field: Field,
+    ) -> None:
+        if len(message_attribute_locations) > 0 and any(
+            n.target != FINAL for n in message.outgoing(field)
+        ):
+            self.error.extend(
+                [
+                    (
+                        "message types with message attribute may only be used for last field",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        field.identifier.location,
+                    ),
+                    *[
+                        (
+                            f'message attribute used in "{inner_message.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            loc,
+                        )
+                        for loc in message_attribute_locations
+                    ],
+                ]
+            )
+
+    def _check_name_conflicts(
+        self, message: AbstractMessage, inner_message: AbstractMessage, field: Field
+    ) -> None:
+        name_conflicts = [
+            f for f in message.fields for g in inner_message.fields if f.name == g.name
+        ]
+
+        if name_conflicts:
+            conflicting = name_conflicts.pop(0)
+            self.error.extend(
+                [
+                    (
+                        f'name conflict for "{conflicting.identifier}" in'
+                        f' "{message.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        conflicting.identifier.location,
+                    ),
+                    (
+                        f'when merging message "{inner_message.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        inner_message.location,
+                    ),
+                    (
+                        f'into field "{field.name}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        field.identifier.location,
+                    ),
+                ],
+            )
+
+    @staticmethod
+    def _prune_dangling_fields(
+        structure: List[Link], types: Dict[Field, mty.Type]
+    ) -> Tuple[List[Link], Dict[Field, mty.Type]]:
+        dangling = []
+        progress = True
+        while progress:
+            progress = False
+            fields = {x for l in structure for x in (l.source, l.target) if x != FINAL}
+            for s in fields:
+                if all(l.source != s for l in structure):
+                    dangling.append(s)
+                    progress = True
+            structure = [l for l in structure if l.target not in dangling]
+
+        return (
+            structure,
+            {k: v for k, v in types.items() if k not in dangling},
+        )
 
 
 class UnprovenDerivedMessage(UnprovenMessage):

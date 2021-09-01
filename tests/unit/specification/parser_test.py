@@ -2473,7 +2473,7 @@ def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: s
     )
 
 
-def test_parameterized_message() -> None:
+def test_parameterized_messages() -> None:
     assert_messages_string(
         """
             package Test is
@@ -2483,7 +2483,19 @@ def test_parameterized_message() -> None:
                type M (P : T) is
                   message
                      F : Opaque
-                        with Size => P * 8;
+                        with Size => P * 8
+                        if P < 100;
+                  end message;
+
+               type M_S is
+                  message
+                     F : M (P => 16);
+                  end message;
+
+               type M_D is
+                  message
+                     L : T;
+                     F : M (P => L);
                   end message;
 
             end Test;
@@ -2493,11 +2505,105 @@ def test_parameterized_message() -> None:
                 "Test::M",
                 [
                     Link(INITIAL, Field("F"), size=expr.Mul(expr.Variable("P"), expr.Number(8))),
-                    Link(Field("F"), FINAL),
+                    Link(
+                        Field("F"), FINAL, condition=expr.Less(expr.Variable("P"), expr.Number(100))
+                    ),
                 ],
                 {Field("P"): T, Field("F"): OPAQUE},
             ),
+            Message(
+                "Test::M_S",
+                [
+                    Link(INITIAL, Field("F_F"), size=expr.Mul(expr.Number(16), expr.Number(8))),
+                    Link(Field("F_F"), FINAL, condition=expr.TRUE),
+                ],
+                {Field("F_F"): OPAQUE},
+            ),
+            Message(
+                "Test::M_D",
+                [
+                    Link(INITIAL, Field("L")),
+                    Link(
+                        Field("L"), Field("F_F"), size=expr.Mul(expr.Variable("L"), expr.Number(8))
+                    ),
+                    Link(
+                        Field("F_F"),
+                        FINAL,
+                        condition=expr.Less(expr.Variable("L"), expr.Number(100)),
+                    ),
+                ],
+                {Field("L"): T, Field("F_F"): OPAQUE},
+            ),
         ],
+    )
+
+
+@pytest.mark.parametrize(
+    "parameters, error",
+    [
+        (
+            "",
+            r"^"
+            r"<stdin>:15:26: parser: error: missing argument\n"
+            r'<stdin>:6:26: parser: info: expected argument for parameter "P"'
+            r"$",
+        ),
+        (
+            "(Q => 16)",
+            r"^"
+            r'<stdin>:15:31: parser: error: unexpected argument "Q"\n'
+            r'<stdin>:15:31: parser: info: expected argument for parameter "P"'
+            r"$",
+        ),
+        (
+            "(P => 16, Q => 16)",
+            r"^"
+            r'<stdin>:15:40: parser: error: unexpected argument "Q"\n'
+            r"<stdin>:15:40: parser: info: expected no argument"
+            r"$",
+        ),
+        (
+            "(Q => 16, P => 16)",
+            r"^"
+            r'<stdin>:15:31: parser: error: unexpected argument "Q"\n'
+            r'<stdin>:15:31: parser: info: expected argument for parameter "P"\n'
+            r'<stdin>:15:40: parser: error: unexpected argument "P"\n'
+            r"<stdin>:15:40: parser: info: expected no argument"
+            r"$",
+        ),
+        (
+            "(P => 16, P => 16)",
+            r"^"
+            r'<stdin>:15:40: parser: error: unexpected argument "P"\n'
+            r"<stdin>:15:40: parser: info: expected no argument"
+            r"$",
+        ),
+    ],
+)
+def test_parse_error_invalid_arguments_for_parameterized_messages(
+    parameters: str, error: str
+) -> None:
+    assert_error_string(
+        f"""
+            package Test is
+
+               type T is mod 256;
+
+               type M_P (P : T) is
+                  message
+                     F : Opaque
+                        with Size => P * 8
+                        if P < 100;
+                  end message;
+
+               type M is
+                  message
+                     F : M_P {parameters};
+                  end message;
+
+            end Test;
+        """,
+        error,
     )
 
 
