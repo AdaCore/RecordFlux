@@ -565,13 +565,13 @@ def create_function_decl(
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    create_id(p.f_type_identifier, filename),
+                    model.qualified_type_identifier(create_id(p.f_type_identifier, filename)),
                 )
             )
     return decl.FunctionDeclaration(
         create_id(declaration.f_identifier, filename),
         arguments,
-        create_id(declaration.f_return_type_identifier, filename),
+        model.qualified_type_identifier(create_id(declaration.f_return_type_identifier, filename)),
         location=node_location(declaration, filename),
     )
 
