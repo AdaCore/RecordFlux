@@ -2,7 +2,7 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="90" steplimit="0" memlimit="1000"/>
+<prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="300" steplimit="0" memlimit="1000"/>
 <file format="gnat-json" proved="true">
 <path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
 <path name="gnatprove"/><path name="ada___ada___rflx__dhcp__message__get_field_value__extract__10.gnat-json"/>
@@ -48,7 +48,7 @@
   <proof prover="0"><result status="valid" steps="2517"/></proof>
   </goal>
   <goal name="def&#39;vc.12" proved="true">
-  <proof prover="0"><result status="valid" steps="20482"/></proof>
+  <proof prover="0"><result status="valid" steps="20488"/></proof>
   </goal>
  </transf>
  </goal>

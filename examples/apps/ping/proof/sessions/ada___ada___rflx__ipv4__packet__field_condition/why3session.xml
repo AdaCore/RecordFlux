@@ -22,33 +22,33 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.3" proved="true">
-  <proof prover="0"><result status="valid" steps="175564"/></proof>
+  <proof prover="0"><result status="valid" steps="194104"/></proof>
   </goal>
   <goal name="def&#39;vc.4" proved="true">
-  <proof prover="0"><result status="valid" steps="194075"/></proof>
+  <proof prover="0"><result status="valid" steps="172281"/></proof>
   </goal>
   <goal name="def&#39;vc.5" proved="true">
-  <proof prover="0"><result status="valid" steps="150027"/></proof>
+  <proof prover="0"><result status="valid" steps="150178"/></proof>
   </goal>
   <goal name="def&#39;vc.6" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.7" proved="true">
-  <proof prover="0"><result status="valid" steps="175720"/></proof>
+  <proof prover="0"><result status="valid" steps="194260"/></proof>
   </goal>
   <goal name="def&#39;vc.8" proved="true">
-  <proof prover="0"><result status="valid" steps="194195"/></proof>
+  <proof prover="0"><result status="valid" steps="172401"/></proof>
   </goal>
   <goal name="def&#39;vc.9" proved="true">
-  <proof prover="0"><result status="valid" steps="26229"/></proof>
+  <proof prover="0"><result status="valid" steps="26259"/></proof>
   </goal>
   <goal name="def&#39;vc.10" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.11" proved="true">
-  <proof prover="0"><result status="valid" steps="26336"/></proof>
+  <proof prover="0"><result status="valid" steps="26366"/></proof>
   </goal>
  </transf>
  </goal>
