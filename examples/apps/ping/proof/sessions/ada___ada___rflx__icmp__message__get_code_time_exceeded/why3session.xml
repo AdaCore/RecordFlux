@@ -18,13 +18,13 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.2" proved="true">
-  <proof prover="0"><result status="valid" steps="144004"/></proof>
+  <proof prover="0"><result status="valid" steps="144141"/></proof>
   </goal>
   <goal name="def&#39;vc.3" proved="true">
-  <proof prover="0"><result status="valid" steps="144480"/></proof>
+  <proof prover="0"><result status="valid" steps="144617"/></proof>
   </goal>
   <goal name="def&#39;vc.4" proved="true">
-  <proof prover="0"><result status="valid" steps="206978"/></proof>
+  <proof prover="0"><result status="valid" steps="205245"/></proof>
   </goal>
  </transf>
  </goal>
