@@ -121,7 +121,7 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
 [subs="+macros,quotes"]
 ----
 [[syntax-message_type]]message_type ::=
-   *type* xref:syntax-name[name] *is*
+   *type* xref:syntax-name[name] [ *(* xref:syntax-parameter[parameter] { *,* xref:syntax-parameter[parameter] } *)* ] *is*
     ( *message*
        [ xref:syntax-null_field[null_field] ]
          xref:syntax-field[field]
@@ -130,13 +130,17 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
          xref:syntax-message_aspects[message_aspects] ]
     | *null message* )
 
+[[syntax-parameter]]parameter ::= parameter_xref:syntax-name[name] *:* xref:syntax-type_name[type_name]
+
 [[syntax-type_name]]type_name ::= xref:syntax-qualified_name[qualified_name]
 
 [[syntax-field]]field ::=
-   field_xref:syntax-name[name] *:* xref:syntax-type_name[type_name]
+   field_xref:syntax-name[name] *:* xref:syntax-type_name[type_name] [ *(* xref:syntax-type_argument[type_argument] { *,* xref:syntax-type_argument[type_argument] } *)* ]
     [ *with* xref:syntax-aspects[aspects] ]
     [ *if* xref:syntax-condition[condition] ]
     { xref:syntax-then_clause[then_clause] } *;*
+
+[[syntax-type_argument]]type_argument ::= xref:syntax-named_argument[named_argument]
 
 [[syntax-null_field]]null_field ::= *null* xref:syntax-then_clause[then_clause] *;*
 
@@ -175,6 +179,8 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
 *Static Semantics*
 
 A message type specifies the message format of a protocol. A message is represented by a graph-based model. Each node in the graph corresponds to one field in a message. The links in the graph define the order of the fields. A link is represented by a then clause in the specification. If no then clause is given, it is assumed that always the next field of the message follows. If no further field follows, it is assumed that the message ends with this field. The end of a message can also be denoted explicitly by adding a then clause to __null__. Optionally, a then clause can contain a condition under which the corresponding field follows and aspects which enable the definition of the size of the next field and the location of its first bit. These aspects can also be specified for the field directly. Each aspect can be specified either for the field or in all incoming then clauses, but not in both. The condition can refer to previous fields (including the field containing the then clause). A condition can also be added for the field directly. A field condition is equivalent to adding a condition to all then clauses. If a field condition as well as a condition at a then clause exists, both conditions are combined by a logical conjunction. If required, a null field can be used to specify the size of the first field in the message. An empty message can be represented by a null message.
+
+A message can be parameterized. Message parameters can be used in conditions and aspects and enable the definition of message formats that depend on prior negotiation. Only scalar types are allowed for parameters.
 
 The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields must be always defined by a size aspect. Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
 
@@ -399,8 +405,6 @@ Functions enable the execution of externally defined code.
 [subs="+macros,quotes"]
 ----
 [[syntax-function_declaration]]function_declaration ::= *with function* xref:syntax-name[name] [ *(* xref:syntax-parameter[parameter] { *,* xref:syntax-parameter[parameter] } *)* ]
-
-[[syntax-parameter]]parameter ::= parameter_xref:syntax-name[name] *:* xref:syntax-type_name[type_name]
 ----
 
 *Static Semantics*
@@ -874,11 +878,13 @@ The state of a message or sequence can be cleared using the Reset attribute.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-reset]]reset ::= xref:syntax-name[name]*'Reset*
+[[syntax-reset]]reset ::= xref:syntax-name[name]*'Reset* [ *(* xref:syntax-named_argument_list[named_argument_list] *)* ]
 ----
 
-// *Static Semantics*
-//
+*Static Semantics*
+
+When resetting a parameterized message, the intended values for the parameters of the message must be defined.
+
 // Expressions:
 //
 // * Mathematical Expressions [§S-S-A-RS-ME]
@@ -1030,11 +1036,13 @@ Data_Channel'Write (Message)
 
 [subs="+macros,quotes"]
 ----
-[[syntax-message_aggregate]]message_aggregate ::= message_xref:syntax-type_name[type_name]*'(* xref:syntax-field_values[field_values] *)*
+[[syntax-message_aggregate]]message_aggregate ::= message_xref:syntax-type_name[type_name]*'(* xref:syntax-message_aggregate_association_list[message_aggregate_association_list] *)*
 
-[[syntax-field_values]]field_values ::= xref:syntax-field_value[field_value] { *,* xref:syntax-field_value[field_value] } | *null message*
+[[syntax-message_aggregate_association_list]]message_aggregate_association_list ::= xref:syntax-named_argument_list[named_argument_list] | *null message*
 
-[[syntax-field_value]]field_value ::= field_xref:syntax-name[name] *=>* xref:syntax-expression[expression]
+[[syntax-named_argument]]named_argument ::= parameter_xref:syntax-name[name] *=>* xref:syntax-expression[expression]
+
+[[syntax-named_argument_list]]named_argument_list ::= xref:syntax-named_argument[named_argument] { *,* xref:syntax-named_argument[named_argument] }
 ----
 
 *Dynamic Semantics*
