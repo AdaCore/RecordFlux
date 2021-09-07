@@ -574,6 +574,14 @@ def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
             "with function X (A : B; C : D) return Y",
             decl.FunctionDeclaration("X", [decl.Argument("A", "B"), decl.Argument("C", "D")], "Y"),
         ),
+        (
+            "with function X (A : Boolean) return Boolean",
+            decl.FunctionDeclaration(
+                "X",
+                [decl.Argument("A", str(model.BOOLEAN.identifier))],
+                str(model.BOOLEAN.identifier),
+            ),
+        ),
     ],
 )
 def test_formal_function_declaration(string: str, expected: decl.Declaration) -> None:
