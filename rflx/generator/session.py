@@ -79,7 +79,6 @@ from rflx.ada import (
 )
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Subsystem, fail, fatal_fail
-from rflx.model.type_ import is_builtin_type, is_internal_type
 
 from . import const
 
@@ -490,7 +489,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 *[
                     UseTypeClause(self._prefix * ID(t))
                     for t in self._session_context.used_types
-                    if not is_builtin_type(t) and not is_internal_type(t)
+                    if not model.is_builtin_type(t) and not model.is_internal_type(t)
                 ],
                 EnumerationType(
                     "Session_State", {ID(f"S_{s.identifier}"): None for s in session.states}
