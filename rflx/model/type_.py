@@ -4,50 +4,14 @@ from pathlib import Path
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
-from rflx.common import Base, verbose_repr
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.common import verbose_repr
+from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
-from . import message
+from . import BasicDeclaration, message
 
 
-class Type(Base):
-    def __init__(
-        self, identifier: StrID, location: Location = None, error: RecordFluxError = None
-    ) -> None:
-        identifier = ID(identifier)
-        self.error = error or RecordFluxError()
-
-        if len(identifier.parts) != 2:
-            self.error.extend(
-                [
-                    (
-                        f'invalid format of type identifier "{identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        location,
-                    )
-                ],
-            )
-
-        self.identifier = identifier
-        self.location = location
-
-    def __hash__(self) -> int:
-        return hash(self.identifier)
-
-    @property
-    def full_name(self) -> str:
-        return str(self.identifier)
-
-    @property
-    def name(self) -> str:
-        return str(self.identifier.name)
-
-    @property
-    def package(self) -> ID:
-        return self.identifier.parent
-
+class Type(BasicDeclaration):
     @property
     def type_(self) -> rty.Type:
         return rty.Undefined()

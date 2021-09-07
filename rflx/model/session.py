@@ -5,11 +5,11 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
 from rflx import declaration as decl, expression as expr, statement as stmt, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 from rflx.model import Message, Refinement
 
-from . import type_ as mty
+from . import BasicDeclaration, type_ as mty
 
 
 class Transition(Base):
@@ -126,7 +126,7 @@ class State(Base):
         )
 
 
-class AbstractSession(Base):
+class AbstractSession(BasicDeclaration):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     @abstractmethod
     def __init__(
@@ -140,7 +140,7 @@ class AbstractSession(Base):
         types: Sequence[mty.Type],
         location: Location = None,
     ):
-        self.identifier = ID(identifier)
+        super().__init__(identifier, location)
         self.initial = ID(initial)
         self.final = ID(final)
         self.states = states
@@ -148,7 +148,6 @@ class AbstractSession(Base):
         self.parameters = {p.identifier: p for p in parameters}
         self.types = {t.identifier: t for t in types}
         self.location = location
-        self.error = RecordFluxError()
 
         refinements = [t for t in types if isinstance(t, Refinement)]
 
@@ -162,19 +161,6 @@ class AbstractSession(Base):
             **self.parameters,
             **self.declarations,
         }
-
-        if len(self.identifier.parts) != 2:
-            self.error.extend(
-                [
-                    (
-                        f'invalid session name "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.identifier.location,
-                    )
-                ],
-            )
-
         self._literals = {
             **mty.qualified_type_literals(self.types.values()),
             **mty.enum_literals(self.types.values(), self.package),
@@ -194,10 +180,6 @@ class AbstractSession(Base):
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
             f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
-
-    @property
-    def package(self) -> ID:
-        return self.identifier.parent
 
 
 class Session(AbstractSession):

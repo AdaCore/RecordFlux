@@ -210,9 +210,9 @@ def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
 def test_invalid_identifier() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^<stdin>:10:8: model: error: invalid format of type identifier "A::B::C"$',
+        match='^<stdin>:10:8: model: error: invalid format for identifier "A::B::C"$',
     ):
-        Message("A::B::C", [], {}, location=Location((10, 8)))
+        Message(ID("A::B::C", location=Location((10, 8))), [], {})
 
 
 @pytest.mark.parametrize(
@@ -2774,9 +2774,9 @@ def test_max_field_sizes_error() -> None:
 def test_derived_message_incorrect_base_name() -> None:
     with pytest.raises(
         RecordFluxError,
-        match='^<stdin>:40:8: model: error: invalid format of type identifier "A::B::C"$',
+        match='^<stdin>:40:8: model: error: invalid format for identifier "A::B::C"$',
     ):
-        DerivedMessage("P::M", Message("A::B::C", [], {}, location=Location((40, 8))))
+        DerivedMessage("P::M", Message(ID("A::B::C", location=Location((40, 8))), [], {}))
 
 
 def test_derived_message_proven() -> None:
