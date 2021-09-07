@@ -166,7 +166,6 @@ class ExceptionHandler:
         This is needed because SPARK does not yet support return statements in the scope of a local
         owning declaration.
         """
-
         # ISSUE: Componolit/Workarounds#569
 
         local_exception_handler = ExceptionHandler(
@@ -2166,11 +2165,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        """
-        Ensure that sequence is valid.
-
-        A deferred exception is raised in case of an invalid sequence.
-        """
         # ISSUE: Componlit/RecordFlux#569
         return IfStatement(
             [
@@ -2193,12 +2187,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        """
-        Ensure that message is structurally valid.
-
-        An exception is raised in case of an invalid message. A deferred exceptions is assumed
-        if state and finalization are not provided.
-        """
         # ISSUE: Componlit/RecordFlux#569
         return IfStatement(
             [
@@ -2225,11 +2213,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        """
-        Ensure that message field is structurally valid.
-
-        A deferred exception is raised in case of an invalid message field.
-        """
         # ISSUE: Componlit/RecordFlux#569
         return IfStatement(
             [
@@ -2259,12 +2242,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
-        """
-        Ensure that all referenced fields in the expression are valid.
-
-        An exception is raised in case of an invalid field. A deferred exception is raised
-        if state and finalization are not provided.
-        """
+        """Ensure that all referenced fields in the expression are valid."""
         # ISSUE: Componlit/RecordFlux#569
 
         selected = expression.findall(lambda x: isinstance(x, expr.Selected))
@@ -2572,7 +2550,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        """A deferred exception might be raised."""
         # ISSUE: Componolit/RecordFlux#577
         with exception_handler.local() as local_exception_handler:
             return self._if_valid_sequence(
@@ -2675,7 +2652,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         condition: expr.Expr,
         exception_handler: ExceptionHandler,
     ) -> While:
-        """A deferred exception might be raised."""
         assert not isinstance(selector, expr.MessageAggregate)
 
         assert isinstance(target_type.element, (rty.Integer, rty.Enumeration, rty.Message))
@@ -2939,7 +2915,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _copy_to_buffer(
         self, type_: ID, source_context: ID, target_buffer: ID, exception_handler: ExceptionHandler
     ) -> IfStatement:
-        """A deferred exception might be raised."""
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
         return IfStatement(
             [
