@@ -1,3 +1,4 @@
+from .basic_declaration import BasicDeclaration  # noqa: F401
 from .message import (  # noqa: F401
     FINAL,
     INITIAL,

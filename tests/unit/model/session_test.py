@@ -97,7 +97,7 @@ def test_str() -> None:
 def test_invalid_name() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:20: model: error: invalid session name "P::S::X"$',
+        match=r'^<stdin>:10:20: model: error: invalid format for identifier "P::S::X"$',
     ):
         Session(
             identifier=ID("P::S::X", location=Location((10, 20))),

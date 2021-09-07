@@ -1533,7 +1533,7 @@ A package is used to structure a specification.
       { xref:syntax-basic_declaration[basic_declaration] }
    *end* xref:syntax-name[name] *;*
 
-[[syntax-basic_declaration]]basic_declaration := ( xref:syntax-modular_type[modular_type] | xref:syntax-range_type[range_type] | xref:syntax-enumeration_type[enumeration_type] | xref:syntax-message_type[message_type] | xref:syntax-type_refinement[type_refinement] | xref:syntax-session[session] ) *;*
+[[syntax-basic_declaration]]basic_declaration ::= ( xref:syntax-modular_type[modular_type] | xref:syntax-range_type[range_type] | xref:syntax-enumeration_type[enumeration_type] | xref:syntax-message_type[message_type] | xref:syntax-type_refinement[type_refinement] | xref:syntax-session[session] ) *;*
 ----
 
 *Static Semantics*

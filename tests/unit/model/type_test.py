@@ -23,12 +23,12 @@ def test_type_name() -> None:
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
     assert_type_error(
-        ModularInteger("X", Number(256), Location((10, 20))),
-        r'^<stdin>:10:20: model: error: invalid format of type identifier "X"$',
+        ModularInteger(ID("X", Location((10, 20))), Number(256)),
+        r'^<stdin>:10:20: model: error: invalid format for identifier "X"$',
     )
     assert_type_error(
-        ModularInteger("X::Y::Z", Number(256), Location((10, 20))),
-        '^<stdin>:10:20: model: error: invalid format of type identifier "X::Y::Z"$',
+        ModularInteger(ID("X::Y::Z", Location((10, 20))), Number(256)),
+        '^<stdin>:10:20: model: error: invalid format for identifier "X::Y::Z"$',
     )
 
 
