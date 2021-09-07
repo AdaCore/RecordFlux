@@ -49,6 +49,7 @@ def main() -> int:
 
     for feature_test in FEATURE_TESTS:
         output_directory = feature_test / "generated"
+        output_directory.mkdir(exist_ok=True)
         parser = Parser()
         parser.parse(feature_test / "test.rflx")
         generator = Generator(

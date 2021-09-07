@@ -1,4 +1,5 @@
 from copy import copy
+from pathlib import Path
 from typing import Sequence
 
 import pytest
@@ -140,3 +141,10 @@ def test_invalid_enumeration_type_identical_literals() -> None:
         r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
         r'<stdin>:3:33: model: info: previous occurrence of "Bar"',
     )
+
+
+def test_write_specification_files(tmp_path: Path) -> None:
+    Model([ModularInteger("P::T", Number(256))]).write_specification_files(tmp_path)
+    expected_path = tmp_path / Path("p.rflx")
+    assert list(tmp_path.glob("*.rflx")) == [expected_path]
+    assert expected_path.read_text() == "package P is\n\n   type T is mod 256;\n\nend P;"

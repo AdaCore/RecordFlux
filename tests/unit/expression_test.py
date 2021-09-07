@@ -31,6 +31,7 @@ from rflx.expression import (
     ForSomeIn,
     Greater,
     GreaterEqual,
+    HasData,
     Head,
     In,
     Indexed,
@@ -889,6 +890,7 @@ def test_attribute_simplified() -> None:
 
 def test_attribute_str() -> None:
     assert str(First("X")) == "X'First"
+    assert str(HasData("X")) == "X'Has_Data"
 
 
 def test_attribute_variables() -> None:
@@ -1850,11 +1852,11 @@ def test_comprehension_variables() -> None:
 
 def test_comprehension_str() -> None:
     assert (
-        str(Comprehension("X", Variable("Y"), Variable("Z"), TRUE)) == "[for X in Y => Z when True]"
+        str(Comprehension("X", Variable("Y"), Variable("Z"), TRUE)) == "[for X in Y if True => Z]"
     )
     assert (
         str(In(Variable("A"), Comprehension("X", Variable("Y"), Variable("Z"), TRUE)))
-        == "A in [for X in Y => Z when True]"
+        == "A in [for X in Y if True => Z]"
     )
 
 
