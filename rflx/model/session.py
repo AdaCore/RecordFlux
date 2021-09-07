@@ -74,10 +74,14 @@ class State(Base):
         declarations = "".join([f"{d};\n" for d in self.declarations.values()])
         actions = "".join([f"{a};\n" for a in self.actions])
         transitions = "\n".join([f"{p}" for p in self.transitions])
+        exception_transition = (
+            f"\nexception\n   {self.exception_transition}" if self.exception_transition else ""
+        )
         return (
             f"state {self.identifier}{with_aspects}is\n{indent(declarations, 3)}begin\n"
             f"{indent(actions, 3)}"
-            f"transition\n{indent(transitions, 3)}\nend {self.identifier}"
+            f"transition\n{indent(transitions, 3)}{indent_next(exception_transition, 0)}\n"
+            f"end {self.identifier}"
         )
 
     @property

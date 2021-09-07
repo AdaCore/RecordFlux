@@ -1,6 +1,7 @@
 import math
 
 from hypothesis import HealthCheck, given, settings, strategies as st
+from pytest import TempPathFactory
 
 import rflx.expression as expr
 from rflx.model import Model
@@ -96,15 +97,11 @@ def test_parsing_expressions(expression: expr.Expr) -> None:
     suppress_health_check=[HealthCheck.too_slow],
     max_examples=math.ceil(settings.default.max_examples / 10),
 )
-def test_parsing_model(model: Model) -> None:
+def test_parsing_model(tmp_path_factory: TempPathFactory, model: Model) -> None:
+    tmp_path = tmp_path_factory.mktemp(test_parsing_model.__name__)
+    model.write_specification_files(tmp_path)
     parser = Parser()
-    parser.parse_string(
-        f"""
-        package Test is
-            {model}
-        end Test;
-        """
-    )
+    parser.parse(tmp_path / "test.rflx")
     parsed_model = parser.create_model()
     assert parsed_model.types == model.types
     assert parsed_model == model

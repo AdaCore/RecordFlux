@@ -184,7 +184,13 @@ class Argument(Base):
         self.type_ = type_
 
     def __str__(self) -> str:
-        return f"{self.__identifier} : {self.__type_identifier}"
+        type_identifier = (
+            self.__type_identifier.name
+            if mty.is_builtin_type(self.__type_identifier)
+            or mty.is_internal_type(self.__type_identifier)
+            else self.__type_identifier
+        )
+        return f"{self.__identifier} : {type_identifier}"
 
     @property
     def identifier(self) -> ID:

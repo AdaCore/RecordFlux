@@ -1,7 +1,9 @@
+from itertools import groupby
+from pathlib import Path
 from typing import Dict, Sequence
 
 from rflx import const
-from rflx.common import Base, verbose_repr
+from rflx.common import Base, indent, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 
@@ -18,14 +20,10 @@ class Model(Base):
         self.__validate()
 
     def __repr__(self) -> str:
-        return verbose_repr(self, ["types"])
+        return verbose_repr(self, ["types", "sessions"])
 
     def __str__(self) -> str:
-        return "\n\n".join(
-            f"{t};"
-            for t in self.__types
-            if not type_.is_builtin_type(t.name) and not type_.is_internal_type(t.name)
-        )
+        return "\n\n".join(self.create_specifications().values())
 
     @property
     def types(self) -> Sequence[type_.Type]:
@@ -42,6 +40,33 @@ class Model(Base):
     @property
     def sessions(self) -> Sequence[session.Session]:
         return self.__sessions
+
+    def create_specifications(self) -> Dict[ID, str]:
+        return {
+            package: f"package {package} is\n\n"
+            + indent("\n\n".join(f"{d};" for d in declarations), 3)
+            + f"\n\nend {package};"
+            for package, declarations in groupby(
+                [
+                    *[
+                        t
+                        for t in self.__types
+                        if not type_.is_builtin_type(t.name) and not type_.is_internal_type(t.name)
+                    ],
+                    *self.__sessions,
+                ],
+                lambda x: x.package,
+            )
+        }
+
+    def write_specification_files(self, output_dir: Path) -> None:
+        """
+        Write corresponding specification files into given directory.
+
+        Limitation: Potentially necessary with-clauses are not generated.
+        """
+        for package, specification in self.create_specifications().items():
+            (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)
 
     def __validate(self) -> None:
         error = self.__check_duplicates()

@@ -1142,7 +1142,11 @@ class Attribute(Name):
 
     @property
     def representation(self) -> str:
-        return f"{self.prefix}'{self.__class__.__name__}"
+        return f"{self.prefix}'{self.symbol}"
+
+    @property
+    def symbol(self) -> str:
+        return self.__class__.__name__
 
     def __neg__(self) -> "Attribute":
         return self.__class__(self.prefix, not self.negative)
@@ -1266,6 +1270,10 @@ class HasData(Attribute):
     def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
         super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    @property
+    def symbol(self) -> str:
+        return "Has_Data"
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type(rty.Channel(readable=True, writable=False))
@@ -2215,7 +2223,7 @@ class Comprehension(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"[for {self.iterator} in {self.sequence} => {self.selector} when {self.condition}]"
+            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]"
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
