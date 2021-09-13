@@ -105,7 +105,7 @@ class State(Base):
         return any(
             isinstance(a, (stmt.Append, stmt.Extend, stmt.Write))
             or (
-                isinstance(a, (stmt.Assignment))
+                isinstance(a, stmt.Assignment)
                 and (
                     a.expression.findall(
                         lambda x: isinstance(
