@@ -79,11 +79,11 @@ from . import const
 
 @dataclass
 class SessionContext:
-    referenced_types: Set[rid.ID] = dataclass_field(default_factory=set)
-    referenced_types_body: Set[rid.ID] = dataclass_field(default_factory=set)
-    referenced_packages_body: Set[rid.ID] = dataclass_field(default_factory=set)
-    referenced_has_data: Set[rid.ID] = dataclass_field(default_factory=set)
-    used_types: Set[rid.ID] = dataclass_field(default_factory=set)
+    referenced_types: List[rid.ID] = dataclass_field(default_factory=list)
+    referenced_types_body: List[rid.ID] = dataclass_field(default_factory=list)
+    referenced_packages_body: List[rid.ID] = dataclass_field(default_factory=list)
+    referenced_has_data: List[rid.ID] = dataclass_field(default_factory=list)
+    used_types: List[rid.ID] = dataclass_field(default_factory=list)
     used_types_body: List[rid.ID] = dataclass_field(default_factory=list)
     state_exception: Set[rid.ID] = dataclass_field(default_factory=set)
 
@@ -347,7 +347,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             )
         )
 
-        self._session_context.referenced_types.add(function.return_type)
+        self._session_context.referenced_types.append(function.return_type)
 
         for a in function.arguments:
             if isinstance(a.type_, rty.Sequence) and not a.type_ == rty.OPAQUE:
@@ -369,7 +369,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
             assert isinstance(a.type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
 
-            self._session_context.referenced_types.add(a.type_.identifier)
+            self._session_context.referenced_types.append(a.type_.identifier)
 
         return [
             FormalSubprogramDeclaration(
@@ -598,7 +598,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             and isinstance(d.type_, (rty.Message, rty.Sequence))
         ]
         if context_declarations:
-            self._session_context.used_types.add(const.TYPES_INDEX)
+            self._session_context.used_types.append(const.TYPES_INDEX)
         return UnitPart(
             [
                 SubprogramDeclaration(specification),
@@ -953,9 +953,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         assert isinstance(type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
 
         if session_global:
-            self._session_context.referenced_types.add(type_.identifier)
+            self._session_context.referenced_types.append(type_.identifier)
         else:
-            self._session_context.referenced_types_body.add(type_.identifier)
+            self._session_context.referenced_types_body.append(type_.identifier)
 
         return result
 
@@ -1384,7 +1384,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         assert isinstance(head.prefix.type_.element, rty.Message)
 
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
-        self._session_context.referenced_types_body.add(target_type)
+        self._session_context.referenced_types_body.append(target_type)
 
         target_context = context_id(target)
         target_buffer = buffer_id(target)
@@ -1706,7 +1706,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         refinement = refinements[0]
         contains_package = refinement.package * "Contains"
 
-        self._session_context.referenced_packages_body.add(contains_package)
+        self._session_context.referenced_packages_body.append(contains_package)
 
         return [
             IfStatement(
@@ -1804,7 +1804,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             element_type = ID(append.type_.element.identifier)
             element_context = context_id("RFLX_Element_" + append.identifier)
 
-            self._session_context.referenced_types_body.add(element_type)
+            self._session_context.referenced_types_body.append(element_type)
 
             if isinstance(append.parameter, expr.MessageAggregate):
                 required_space = (
@@ -2136,7 +2136,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             if isinstance(expression, expr.HasData):
                 assert isinstance(expression.prefix, expr.Variable)
                 assert isinstance(expression.prefix.type_, rty.Channel)
-                self._session_context.referenced_has_data.add(expression.prefix.identifier)
+                self._session_context.referenced_has_data.append(expression.prefix.identifier)
                 return expr.Call(expression.prefix.identifier + "_Has_Data")
 
             if isinstance(expression, expr.Opaque):
@@ -2530,7 +2530,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
     def _declare_context(self, identifier: ID, type_: ID) -> Declaration:
-        self._session_context.referenced_types_body.add(type_)
+        self._session_context.referenced_types_body.append(type_)
         return ObjectDeclaration([context_id(identifier)], type_ * "Context")
 
     @staticmethod
@@ -2966,7 +2966,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
 
-        self._session_context.referenced_types_body.add(ID(target_type.identifier))
+        self._session_context.referenced_types_body.append(ID(target_type.identifier))
         return expr.Conversion(target_type.identifier, expression)
 
     def _debug_output(self, string: str) -> List[CallStatement]:
