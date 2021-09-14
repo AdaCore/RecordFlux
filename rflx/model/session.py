@@ -170,6 +170,8 @@ class AbstractSession(BasicDeclaration):
             **mty.enum_literals(self.types.values(), self.package),
         }
 
+        self._resolve_function_calls()
+
         self.error.propagate()
 
     def __repr__(self) -> str:
@@ -184,6 +186,38 @@ class AbstractSession(BasicDeclaration):
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
             f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
+
+    def _resolve_function_calls(self) -> None:
+        """
+        Replace variables by function calls where necessary.
+
+        The distinction between function calls without arguments and variables is not possible in
+        the parser, as both are syntactically identical.
+        """
+        functions = [
+            p.identifier
+            for p in self.parameters.values()
+            if isinstance(p, decl.FunctionDeclaration)
+        ]
+
+        def substitution(expression: expr.Expr) -> expr.Expr:
+            if isinstance(expression, expr.Variable) and expression.identifier in functions:
+                return expr.Call(expression.identifier, location=expression.location)
+            return expression
+
+        for d in self.declarations.values():
+            if isinstance(d, decl.VariableDeclaration) and d.expression:
+                d.expression = d.expression.substituted(substitution)
+
+        for state in self.states:
+            for d in state.declarations.values():
+                if isinstance(d, decl.VariableDeclaration) and d.expression:
+                    d.expression = d.expression.substituted(substitution)
+            for s in state.actions:
+                if isinstance(s, stmt.Assignment):
+                    s.expression = s.expression.substituted(substitution)
+                if isinstance(s, stmt.AttributeStatement):
+                    s.parameters = [p.substituted(substitution) for p in s.parameters]
 
 
 class Session(AbstractSession):

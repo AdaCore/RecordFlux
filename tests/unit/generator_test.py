@@ -1027,6 +1027,12 @@ def test_session_declare(
     "type_, expression, error_type, error_msg",
     [
         (
+            rty.Integer("T"),
+            expr.Call("F", location=Location((10, 20))),
+            RecordFluxError,
+            r"initialization using function call not yet supported",
+        ),
+        (
             rty.Message("T"),
             expr.BooleanTrue(location=Location((10, 20))),
             RecordFluxError,
