@@ -2102,3 +2102,51 @@ def test_unnecessary_exception_transition() -> None:
         types=[],
         regex=r'^<stdin>:10:20: model: error: unnecessary exception transition in state "Start"$',
     )
+
+
+def test_resolving_of_function_calls() -> None:
+    session = Session(
+        identifier="P::S",
+        initial=ID("Start"),
+        final=ID("End"),
+        states=[
+            State(
+                "Start",
+                declarations=[
+                    decl.VariableDeclaration("Local", "Boolean", expr.Variable("Func")),
+                ],
+                actions=[
+                    stmt.Assignment("Global", expr.Variable("Func")),
+                ],
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.And(expr.Variable("Global"), expr.Variable("Local")),
+                    ),
+                    Transition(
+                        target=ID("End"),
+                    ),
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Global", "Boolean", expr.Variable("Func")),
+        ],
+        parameters=[
+            decl.FunctionDeclaration("Func", [], "Boolean"),
+        ],
+        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+    )
+
+    global_decl = session.declarations[ID("Global")]
+    assert isinstance(global_decl, decl.VariableDeclaration)
+    assert global_decl.expression == expr.Call("Func")
+
+    local_decl = session.states[0].declarations[ID("Local")]
+    assert isinstance(local_decl, decl.VariableDeclaration)
+    assert local_decl.expression == expr.Call("Func")
+
+    local_stmt = session.states[0].actions[0]
+    assert isinstance(local_stmt, stmt.Assignment)
+    assert local_stmt.expression == expr.Call("Func")

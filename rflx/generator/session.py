@@ -847,6 +847,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> EvaluatedDeclaration:
         result = EvaluatedDeclaration()
 
+        if expression:
+            for e in expression.findall(lambda x: isinstance(x, expr.Call)):
+                fail(
+                    "initialization using function call not yet supported",
+                    Subsystem.GENERATOR,
+                    location=e.location,
+                )
+
         if type_ == rty.OPAQUE:
             initialization = expression
             object_type: Expr = Variable(const.TYPES_BYTES)
