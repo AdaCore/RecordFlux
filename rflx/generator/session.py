@@ -2399,7 +2399,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     statements = self._ensure(
                         statements,
                         Call(
-                            target_type * "Valid_Next",
+                            message_type * "Valid_Next",
                             [
                                 Variable(message_context),
                                 Variable(message_type * f"F_{v.selector}"),
@@ -2434,7 +2434,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
 
             if isinstance(v, (expr.Number, expr.Aggregate)) or (
-                isinstance(v, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr))
+                isinstance(v, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr, expr.Size))
                 and isinstance(v.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
             ):
                 field_type = message_aggregate.type_.types[f]

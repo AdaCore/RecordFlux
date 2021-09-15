@@ -520,3 +520,54 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
+    spec = """
+        package Test is
+
+           type Payload_Size is mod 2**16;
+
+           type M1 is
+              message
+                 Size : Payload_Size;
+                 Payload : Opaque
+                    with Size => Size
+                    if Size mod 8 = 0;
+              end message;
+
+           type M2 is
+              message
+                 Size : Payload_Size;
+                 Payload : Opaque
+                    with Size => Size
+                    if Size mod 8 = 0;
+              end message;
+
+           generic
+              Channel : Channel with Readable;
+              Output : Channel with Writable;
+           session Session with
+              Initial => First,
+              Final => Last
+           is
+             Incoming : M1;
+             Outgoing : M2;
+           begin
+              state First is
+              begin
+                Channel'Read (Incoming);
+                Outgoing := M2'(Size => Incoming'Size, Payload => Incoming.Payload);
+                Output'Write(Outgoing);
+              transition
+                 then Last
+              exception
+                 then Last
+              end First;
+
+              state Last is null state;
+           end Session;
+
+        end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)
