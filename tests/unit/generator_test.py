@@ -2016,7 +2016,7 @@ def test_session_state_action_error(
                     "Message_Type": expr.Variable(
                         "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
                     ),
-                    "Length": expr.Size(
+                    "Length": expr.Last(
                         expr.Variable(
                             "Y",
                             type_=rty.Message("Universal::Option"),
@@ -2039,7 +2039,7 @@ def test_session_state_action_error(
                 ),
             ),
             RecordFluxError,
-            r"Size with type universal integer \(undefined\) in message aggregate"
+            r"Last with type universal integer \(undefined\) in message aggregate"
             r" not yet supported",
         ),
         (
