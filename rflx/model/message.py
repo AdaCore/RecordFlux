@@ -849,7 +849,7 @@ class Message(AbstractMessage):
     @property
     def is_definite(self) -> bool:
         """
-        Return true if the message has a bounded size and no optional fields.
+        Return true if the message has a bounded size, no optional fields and no parameters.
 
         Messages with a First or Last attribute in a size aspect are not yet supported and
         therefore considered as not definite.
@@ -862,6 +862,7 @@ class Message(AbstractMessage):
                 for l in self.structure
                 for v in l.size.variables()
             )
+            and not self.parameters
         )
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:

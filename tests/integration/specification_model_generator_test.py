@@ -451,6 +451,25 @@ def test_parameterized_message(tmp_path: Path) -> None:
     utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
 
 
+@pytest.mark.verification
+def test_definite_parameterized_message(tmp_path: Path) -> None:
+    spec = """
+            package Test is
+
+               type Length is range 1 .. 2**14 - 1 with Size => 16;
+
+               type Message (Length : Length) is
+                  message
+                     Data : Opaque
+                        with Size => Length * 8;
+                  end message;
+
+            end Test;
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
+
+
 def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
     spec = """
         package Test is
