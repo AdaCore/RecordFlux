@@ -536,9 +536,8 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
                     if Size mod 8 = 0;
               end message;
 
-           type M2 is
+           type M2 (Size : Payload_Size) is
               message
-                 Size : Payload_Size;
                  Payload : Opaque
                     with Size => Size
                     if Size mod 8 = 0;

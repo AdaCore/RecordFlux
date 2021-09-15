@@ -1053,12 +1053,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             return self._if_valid_fields(
                 expression,
                 [
-                    Assignment(
-                        ID(target),
-                        value.ada_expr()
-                        if target_type.is_compatible_strong(expression.type_)
-                        else expr.Conversion(target_type.identifier, value).ada_expr(),
-                    ),
+                    Assignment(ID(target), self._convert_type(value, target_type).ada_expr()),
                 ],
                 exception_handler,
             )
@@ -1228,11 +1223,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
         target_type = ID(message_aggregate.type_.identifier)
         target_context = context_id(target)
-        parameter_values = {
-            f: v
+        parameter_values = [
+            (f, v, t)
             for f, v in message_aggregate.field_values.items()
             if f in message_aggregate.type_.parameter_types
-        }
+            for t in [message_aggregate.type_.parameter_types[f]]
+            if isinstance(t, (rty.Integer, rty.Enumeration))
+        ]
 
         assign_to_message_aggregate = [
             self._if_sufficient_space(
@@ -1271,8 +1268,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ),
                         ],
                         {
-                            ID(p): v.substituted(self._substitution()).ada_expr()
-                            for p, v in parameter_values.items()
+                            ID(p): self._convert_type(v, t)
+                            .substituted(self._substitution())
+                            .ada_expr()
+                            for p, v, t in parameter_values
                         },
                     ),
                     *self._set_message_fields(
@@ -2443,10 +2442,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         CallStatement(target_type * f"Set_{f}_Empty", [Variable(target_context)])
                     )
                 else:
-                    value = v.substituted(self._substitution())
-                    if not field_type.is_compatible_strong(v.type_):
-                        assert isinstance(field_type, rty.Integer)
-                        value = expr.Conversion(field_type.identifier, value)
+                    value = self._convert_type(v, field_type).substituted(self._substitution())
                     statements.append(
                         CallStatement(
                             target_type * f"Set_{f}",
@@ -2490,14 +2486,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     f'Error: access to invalid message field in "{v}"',
                     exception_handler,
                 )
-                get_field_value = Call(
-                    message_type * f"Get_{v.selector}", [Variable(message_context)]
-                )
-                if not target_field_type.is_compatible_strong(v.type_):
-                    get_field_value = Call(ID(target_field_type.identifier), [get_field_value])
-                    self._session_context.referenced_types_body.add(
-                        ID(target_field_type.identifier)
-                    )
+                get_field_value = self._convert_type(
+                    expr.Call(message_type * f"Get_{v.selector}", [expr.Variable(message_context)]),
+                    target_field_type,
+                    v.type_,
+                ).ada_expr()
                 statements.extend(
                     [
                         CallStatement(
@@ -2960,6 +2953,20 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
             exception_handler.execute(),
         )
+
+    def _convert_type(
+        self, expression: expr.Expr, target_type: rty.Type, expression_type: rty.Type = None
+    ) -> expr.Expr:
+        if not expression_type:
+            expression_type = expression.type_
+
+        if expression_type.is_compatible_strong(target_type):
+            return expression
+
+        assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
+
+        self._session_context.referenced_types_body.add(ID(target_type.identifier))
+        return expr.Conversion(target_type.identifier, expression)
 
     def _debug_output(self, string: str) -> List[CallStatement]:
         return [CallStatement("Ada.Text_IO.Put_Line", [String(string)])] if self._debug else []
