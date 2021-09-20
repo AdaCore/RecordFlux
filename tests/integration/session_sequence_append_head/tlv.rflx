@@ -1,0 +1,24 @@
+package TLV is
+
+   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
+
+   type Length is mod 2**16;
+
+   type Message is
+      message
+         Tag : Tag
+            then null
+               if Tag = TLV::Msg_Error
+            then Length
+               if Tag = TLV::Msg_Data;
+         Length : Length
+            then Value
+               with Size => Length * 8;
+         Value : Opaque;
+      end message;
+
+   type Messages is sequence of Message;
+
+   type Tags is sequence of Tag;
+
+end TLV;

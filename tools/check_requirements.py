@@ -5,6 +5,7 @@ This tool checks that each requirement is referenced at least once in the given 
 """
 
 import argparse
+import itertools
 import re
 import sys
 from pathlib import Path
@@ -136,9 +137,9 @@ def search_references(directories: Sequence[Path]) -> List[str]:
     references: List[str] = []
 
     for d in directories:
-        for f in d.glob("**/*.py"):
-            with open(f) as fd:
-                content = fd.read()
+        for f in itertools.chain(d.rglob("*.py"), d.rglob("*.rflx")):
+            if f.is_file():
+                content = f.read_text()
                 references.extend(r for r in re.findall(ID_REGEX, content))
 
     return references

@@ -1,0 +1,4 @@
+State: Start
+Write: 5 0 10 1 0 1 2 0 1 0 2 3 4
+State: Reply
+Read: 4 0 2 1 1

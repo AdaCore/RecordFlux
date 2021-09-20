@@ -1,0 +1,47 @@
+with TLV;
+
+package Test is
+
+   generic
+      Channel : Channel with Writable;  --  §S-P-C-W
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      Messages : TLV::Messages;  --  §S-D-V-T-MS, §S-D-V-E-N
+      Tags : TLV::Tags;  --  §S-D-V-T-SS, §S-D-V-E-N
+   begin
+      state Start is
+         Message : TLV::Message;  --  §S-S-D-V-T-M, §S-S-D-V-E-N
+         Message_Tag : TLV::Tag;  --  §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Tag : TLV::Tag;  --  §S-S-D-V-T-SC, §S-S-D-V-E-N
+      begin
+         Messages'Append (TLV::Message'(Tag => TLV::Msg_Data, Length => 1, Value => [2]));  --  §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Tags'Append (TLV::Msg_Error);  --  §S-S-A-AP-L
+         Message := Messages'Head;  --  §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-MS
+         Message_Tag := Message.Tag;  --  §S-S-A-A-S, §S-E-S-V
+         Tag := Tags'Head;  --  §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-SS
+      transition
+         then Reply
+            if Message_Tag = TLV::Msg_Data  --  §S-S-T-V, §S-S-T-L
+               and Tag = TLV::Msg_Error  --  §S-S-T-V, §S-S-T-L
+         then Terminated  --  §S-S-T-N
+      exception
+         then Terminated  --  §S-S-E
+      end Start;
+
+      state Reply is
+         Message : TLV::Message;  --  §S-S-D-V-T-M, §S-S-D-V-E-N
+      begin
+         Message := Messages'Head;  --  §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-MS
+         Channel'Write (Message);  --  §S-S-A-WR-V
+      transition
+         then Terminated  --  §S-S-T-N
+      exception
+         then Terminated  --  §S-S-E
+      end Reply;
+
+      state Terminated is null state;  --  §S-S-N
+   end Session;
+
+end Test;

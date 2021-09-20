@@ -1,8 +1,10 @@
+from distutils.dir_util import copy_tree
 from pathlib import Path
 from typing import List, Tuple
 
 import pytest
 
+from rflx import ada
 from rflx.generator import Generator
 from rflx.model import Model
 from rflx.specification import Parser
@@ -13,6 +15,7 @@ from tests.utils import (
     session_main,
 )
 
+MAIN = "main.adb"
 FEATURES = [
     f for f in Path(__file__).parent.glob("*") if f.is_dir() and (f / "test.rflx").is_file()
 ]
@@ -28,6 +31,10 @@ def output_file(feature: str) -> Path:
 
 def prove_file(feature: str) -> Path:
     return Path(__file__).parent / feature / "PROVE"
+
+
+def functions_file(feature: str) -> Path:
+    return Path(__file__).parent / feature / "FUNCTIONS"
 
 
 def read_input(feature: str) -> List[Tuple[int, ...]]:
@@ -50,10 +57,37 @@ def read_prove(feature: str) -> List[str]:
     return [l for l in prove_file(feature).read_text().split("\n") if l]
 
 
+def read_functions(feature: str) -> List[str]:
+    if not functions_file(feature).is_file():
+        return []
+    return [l for l in functions_file(feature).read_text().split("\n") if l]
+
+
 def create_model(feature: str) -> Model:
     parser = Parser()
     parser.parse(Path(__file__).parent / feature / "test.rflx")
     return parser.create_model()
+
+
+def create_complement(feature: str, tmp_path: Path) -> None:
+    functions = read_functions(feature)
+    context = [ada.WithClause(f.split(".")[0]) for f in functions]
+    complement = session_main(
+        read_input(feature),
+        write=bool(read_input(feature)),
+        context=context,
+        session_package="RFLX.Test.Session",
+        session_parameters=functions,
+    )
+
+    assert MAIN in complement
+
+    for filename, content in complement.items():
+        (tmp_path / filename).write_text(content)
+
+    src_dir = Path(__file__).parent / feature / "src"
+    if src_dir.is_dir():
+        copy_tree(str(src_dir), str(tmp_path))
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
@@ -93,12 +127,8 @@ def test_executability(feature: str, tmp_path: Path) -> None:
     if not input_file(feature).is_file() or not output_file(feature).is_file():
         pytest.skip()
     model = create_model(feature)
-    complement = session_main(read_input(feature), session_package="RFLX.Test.Session")
-    main = "main.adb"
-    assert main in complement
-    for filename, content in complement.items():
-        (tmp_path / filename).write_text(content)
-    assert assert_executable_code(model, tmp_path, main=main) == read_output(feature)
+    create_complement(feature, tmp_path)
+    assert assert_executable_code(model, tmp_path, main=MAIN) == read_output(feature)
 
 
 @pytest.mark.verification
@@ -107,9 +137,5 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     if not prove_file(feature).is_file():
         pytest.skip()
     model = create_model(feature)
-    complement = session_main(read_input(feature), session_package="RFLX.Test.Session")
-    main = "main.adb"
-    assert main in complement
-    for filename, content in complement.items():
-        (tmp_path / filename).write_text(content)
-    assert_provable_code(model, tmp_path, main=main, units=["main", "lib", *read_prove(feature)])
+    create_complement(feature, tmp_path)
+    assert_provable_code(model, tmp_path, main=MAIN, units=["main", "lib", *read_prove(feature)])

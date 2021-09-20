@@ -201,18 +201,20 @@ def _create_files(
     generator.write_top_level_package(tmp_path)
 
 
-def session_main(
+def session_main(  # pylint: disable = too-many-arguments
     messages: Sequence[Tuple[int, ...]] = None,
     read: bool = True,
     write: bool = True,
     context: Sequence[ada.ContextItem] = None,
     subprograms: Sequence[ada.SubprogramBody] = None,
     session_package: str = "RFLX.P.S",
+    session_parameters: Sequence[ada.StrID] = None,
 ) -> Mapping[str, str]:
     assert (messages and write) or not (messages and write)
 
     context = context or []
     subprograms = subprograms or []
+    session_parameters = session_parameters or []
     io_functions_decl: List[ada.Declaration] = []
     io_functions_body: List[ada.Declaration] = []
     parameters: List[ada.StrID] = []
@@ -409,6 +411,7 @@ def session_main(
     )
 
     parameters.extend(s.specification.identifier for s in subprograms)
+    parameters.extend(session_parameters)
 
     lib_unit = ada.PackageUnit(
         [
