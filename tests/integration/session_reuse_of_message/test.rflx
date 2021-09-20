@@ -1,0 +1,36 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable;  --  §S-P-C-RW
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      Message : Universal::Message;  --  §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message);  --  §S-S-A-RD-V
+      transition
+         then Reply
+            if Message'Valid = True  --  §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
+         then Terminated  --  §S-S-T-N
+      end Start;
+
+      state Reply is
+      begin
+         Channel'Write (Message);  --  §S-S-A-WR-V
+      transition
+         then Start
+            if Channel'Has_Data  --  §S-S-T-HDAT
+         then Terminated  --  §S-S-T-N
+      exception
+         then Terminated  --  §S-S-E
+      end Reply;
+
+      state Terminated is null state;  --  §S-S-N
+   end Session;
+
+end Test;

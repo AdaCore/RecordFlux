@@ -20,7 +20,7 @@ Subdirectories containing a `test.rflx` file are considered as feature tests. Th
 - Check executability of generated SPARK code (if `INPUT` and `OUTPUT` file exists)
 - Check provabilility of generated SPARK code (if `PROVE` file exists)
 
-The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. Each line of `INPUT` is interpreted as an input message for the defined channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255). Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output can be defined in `OUTPUT`. If `PROVE` exists, the generated SPARK code for `Session` and each unit listed in `PROVE` will be proved.
+The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. Each line of `INPUT` is interpreted as an input message for the defined channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255). Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output can be defined in `OUTPUT`. If `PROVE` exists, the generated SPARK code for `Session` and each unit listed in `PROVE` will be proved. Session parameters (functions) can be defined inside the `src` directory. Their fully-qualified names must be listed in `FUNCTIONS`.
 
 ### Property Tests (`tests/property`)
 

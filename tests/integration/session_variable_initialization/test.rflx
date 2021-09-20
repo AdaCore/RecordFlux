@@ -1,0 +1,42 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable;  --  §S-P-C-RW
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      Global : Universal::Value := 11;  --  §S-D-V-T-SC, §S-D-V-E-L
+   begin
+      state Start is
+         Message : Universal::Message;  --  §S-S-D-V-T-M, §S-S-D-V-E-N
+         Local : Universal::Value := 2;  --  §S-S-D-V-T-SC, §S-S-D-V-E-L
+      begin
+         Channel'Read (Message);  --  §S-S-A-RD-V
+         Local := Local + Message.Value;  --  §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-S, §S-S-A-A-V, §S-E-S-V
+         Global := Local + 20;  --  §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-V
+      transition
+         then Reply
+            if Local < Global  --  §S-S-T-V
+         then Terminated  --  §S-S-T-N
+      exception
+         then Terminated  --  §S-S-E
+      end Start;
+
+      state Reply is
+         Message : Universal::Message;  --  §S-S-D-V-T-M, §S-S-D-V-E-N
+      begin
+         Message := Universal::Message'(Message_Type => Universal::MT_Value, Length => Universal::Value'Size / 8, Value => Global);  --  §S-S-A-A-MA
+         Channel'Write (Message);  --  §S-S-A-WR-V
+      transition
+         then Terminated  --  §S-S-T-N
+      exception
+         then Terminated  --  §S-S-E
+      end Reply;
+
+      state Terminated is null state;  --  §S-S-N
+   end Session;
+
+end Test;
