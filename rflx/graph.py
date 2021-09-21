@@ -9,8 +9,7 @@ from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message, State
-from rflx.statement import Assignment
+from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message, State, statement as stmt
 
 log = logging.getLogger(__name__)
 
@@ -122,7 +121,7 @@ class Graph:
         for index, a in enumerate(state.actions):
             if a.identifier not in state.declarations:
                 variables_write.update([a.identifier])
-            if isinstance(a, Assignment):
+            if isinstance(a, stmt.Assignment):
                 variables_read.update(
                     [
                         v.identifier

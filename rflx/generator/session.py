@@ -5,14 +5,7 @@ from typing import Callable, Generator, Iterable, List, Mapping, NoReturn, Seque
 
 import attr
 
-from rflx import (
-    declaration as decl,
-    expression as expr,
-    identifier as rid,
-    model,
-    statement as stmt,
-    typing_ as rty,
-)
+from rflx import expression as expr, identifier as rid, model, typing_ as rty
 from rflx.ada import (
     FALSE,
     ID,
@@ -79,6 +72,7 @@ from rflx.ada import (
 )
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Subsystem, fail, fatal_fail
+from rflx.model import declaration as decl, statement as stmt
 
 from . import const
 

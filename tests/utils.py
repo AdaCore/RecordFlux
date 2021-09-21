@@ -7,12 +7,12 @@ from typing import Any, Callable, Iterable, List, Mapping, Sequence, Tuple, Unio
 
 import pytest
 
-from rflx import ada, declaration as decl
+from rflx import ada
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Generator, const
 from rflx.identifier import ID
-from rflx.model import Field, Link, Message, Model, Session, State, Type
+from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
 from rflx.specification import Parser
 from rflx.specification.parser import (
     STDIN,

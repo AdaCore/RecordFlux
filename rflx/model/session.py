@@ -3,13 +3,13 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
-from rflx import declaration as decl, expression as expr, statement as stmt, typing_ as rty
+from rflx import expression as expr, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 from rflx.model import Message, Refinement
 
-from . import BasicDeclaration, type_ as mty
+from . import BasicDeclaration, declaration as decl, statement as stmt, type_ as mty
 
 
 class Transition(Base):

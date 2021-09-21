@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Callable, ClassVar, Sequence
+from typing import Callable, ClassVar, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -7,8 +7,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 
-if TYPE_CHECKING:
-    import rflx.model.type_ as mty
+from . import type_ as mty
 
 
 class Declaration(Base):
@@ -270,7 +269,7 @@ class ChannelDeclaration(FormalDeclaration):
 class TypeDeclaration(FormalDeclaration):
     DESCRIPTIVE_NAME: ClassVar[str] = "type"
 
-    def __init__(self, type_: "mty.Type"):
+    def __init__(self, type_: mty.Type):
         super().__init__(type_.identifier, type_.location)
         self.type_definition = type_
 
