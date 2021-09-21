@@ -14,11 +14,17 @@ class Package(Base):
     def name(self) -> str:
         return self.__name
 
-    def __getitem__(self, key: str) -> MessageValue:
+    def new_message(self, key: str) -> MessageValue:
         return self.__messages[key].clone()
 
-    def __setitem__(self, key: str, value: MessageValue) -> None:
+    def set_message(self, key: str, value: MessageValue) -> None:
         self.__messages[key] = value
+
+    def __getitem__(self, key: str) -> MessageValue:
+        return self.new_message(key)
+
+    def __setitem__(self, key: str, value: MessageValue) -> None:
+        self.set_message(key, value)
 
     def __iter__(self) -> Iterator[MessageValue]:
         return self.__messages.values().__iter__()
