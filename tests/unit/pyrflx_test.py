@@ -58,6 +58,11 @@ def test_package_iterator(tlv_package: Package) -> None:
     assert [m.name for m in tlv_package] == ["Message"]
 
 
+def test_package_set_item(tlv_package: Package) -> None:
+    msg = Message("TLV::Msg", [], {})
+    tlv_package["Msg"] = MessageValue(msg)
+
+
 def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
     assert {p.name for p in pyrflx_} == {
         "Ethernet",
@@ -71,6 +76,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "Sequence_Message",
         "Sequence_Type",
         "Null_Message",
+        "Parameterized",
         "TLV_With_Checksum",
         "No_Conditionals",
         "Message_Type_Size_Condition",
@@ -1362,3 +1368,40 @@ def test_get_path(icmp_message_value: MessageValue) -> None:
 
 def test_get_model(icmp_message_value: MessageValue) -> None:
     assert isinstance(icmp_message_value.model, Message)
+
+
+def test_parameterized_message(parameterized_package: Package) -> None:
+    message = parameterized_package.new_message(
+        "Message", {"Length": 8, "Has_Tag": False, "Tag_Value": "Tag_A"}
+    )
+    assert message.fields == ["Payload", "Tag"]
+    assert message.required_fields == ["Payload"]
+    message.set("Payload", bytes(8))
+    assert message.required_fields == []
+    assert message.valid_message
+    assert message.bytestring == bytes(8)
+
+
+def test_parameterized_message_no_verification() -> None:
+    pyrflx_ = PyRFLX.from_specs(
+        [SPEC_DIR / "parameterized.rflx"],
+        skip_model_verification=True,
+        skip_message_verification=True,
+    )
+    message_unv = pyrflx_.package("Parameterized").new_message(
+        "Message", {"Length": 8, "Has_Tag": False, "Tag_Value": "Tag_A"}
+    )
+    assert message_unv.fields == ["Payload", "Tag"]
+    message_unv.set("Payload", bytes(8))
+    assert message_unv.valid_message
+    assert message_unv.bytestring == bytes(8)
+
+
+def test_parameterized_message_invalid_type(parameterized_package: Package) -> None:
+    with pytest.raises(
+        PyRFLXError, match=f"^pyrflx: error: {type(bytes())} is no supported parameter type"
+    ):
+        parameterized_package.new_message(
+            "Message",
+            {"Length": bytes(8)},  # type: ignore[dict-item]
+        )

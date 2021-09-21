@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Iterator
+from typing import Callable, Dict, Iterator, Mapping, Union
 
 from rflx.common import Base
 from rflx.pyrflx import PyRFLXError
@@ -14,8 +14,13 @@ class Package(Base):
     def name(self) -> str:
         return self.__name
 
-    def new_message(self, key: str) -> MessageValue:
-        return self.__messages[key].clone()
+    def new_message(
+        self, key: str, parameters: Mapping[str, Union[bool, int, str]] = None
+    ) -> MessageValue:
+        message = self.__messages[key].clone()
+        if parameters:
+            message.add_parameters(parameters)
+        return message
 
     def set_message(self, key: str, value: MessageValue) -> None:
         self.__messages[key] = value
