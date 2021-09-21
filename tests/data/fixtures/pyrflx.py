@@ -26,6 +26,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/message_size.rflx",
             f"{SPEC_DIR}/message_type_size_condition.rflx",
             f"{SPEC_DIR}/always_valid_aspect.rflx",
+            f"{SPEC_DIR}/parameterized.rflx",
         ],
         skip_model_verification=True,
     )
@@ -223,3 +224,8 @@ def fixture_always_valid_aspect_value(
     always_valid_aspect_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
     return always_valid_aspect_package.new_message("Message")
+
+
+@pytest.fixture(name="parameterized_package", scope="session")
+def fixture_parameterized_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_.package("Parameterized")

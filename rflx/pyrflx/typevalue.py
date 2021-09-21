@@ -518,12 +518,14 @@ class MessageValue(TypeValue):
         model: Message,
         refinements: ty.Sequence["RefinementValue"] = None,
         skip_verification: bool = False,
+        parameters: ty.Mapping[Name, Expr] = None,
         state: "MessageValue.State" = None,
     ) -> None:
         super().__init__(model)
         self._skip_verification = skip_verification
         self._refinements = refinements or []
         self._path: ty.List[Link] = []
+        self.__parameters = parameters or {}
 
         self._fields: ty.Mapping[str, MessageValue.Field] = (
             state.fields
@@ -563,6 +565,7 @@ class MessageValue(TypeValue):
                 for k, v in t.items()
             }
         )
+
         self.__additional_enum_literals: ty.Dict[Name, Expr] = {}
         self.__message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
@@ -583,11 +586,29 @@ class MessageValue(TypeValue):
     def add_refinement(self, refinement: "RefinementValue") -> None:
         self._refinements = [*(self._refinements or []), refinement]
 
+    def add_parameters(self, parameters: ty.Mapping[str, ty.Union[bool, int, str]]) -> None:
+        _parameters: ty.Dict[Name, Expr] = {}
+        expr: Expr
+        for name, value in parameters.items():
+            if isinstance(value, bool):
+                expr = Variable("True") if value else Variable("False")
+            elif isinstance(value, int):
+                expr = Number(value)
+            elif isinstance(value, str):
+                expr = Variable(value)
+            else:
+                raise PyRFLXError(f"{type(value)} is no supported parameter type")
+            _parameters[Variable(name)] = expr
+        self.__parameters = _parameters
+        if not self._skip_verification:
+            self._preset_fields(INITIAL.name)
+
     def clone(self) -> "MessageValue":
         return MessageValue(
             self._type,
             self._refinements,
             self._skip_verification,
+            self.__parameters,
             MessageValue.State(
                 {
                     k: MessageValue.Field(
@@ -919,6 +940,7 @@ class MessageValue(TypeValue):
         assert not self._skip_verification
         nxt = self._next_field(fld)
         fields: ty.List[str] = []
+
         while nxt and nxt != FINAL.name:
             field = self._fields[nxt]
             first = self._get_first(nxt)
@@ -1139,7 +1161,9 @@ class MessageValue(TypeValue):
             return False
 
         return all(
-            (v.name in self._fields and self._fields[v.name].set) or v.name == "Message"
+            (v.name in self._fields and self._fields[v.name].set)
+            or v in self.__parameters
+            or v.name == "Message"
             for v in valid_edge.size.variables()
         )
 
@@ -1236,6 +1260,9 @@ class MessageValue(TypeValue):
             if expression in self.__additional_enum_literals:
                 assert isinstance(expression, Name)
                 return self.__additional_enum_literals[expression]
+            if expression in self.__parameters:
+                assert isinstance(expression, Name)
+                return self.__parameters[expression]
             return expression
 
         return expr.substituted(func=subst).substituted(func=subst).simplified()
