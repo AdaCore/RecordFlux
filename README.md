@@ -244,17 +244,17 @@ import sys
 from rflx.pyrflx import MessageValue, PyRFLX
 
 PYRFLX = PyRFLX.from_specs(["tests/data/specs/tlv.rflx"])
-TLV = PYRFLX["TLV"]
+TLV = PYRFLX.package("TLV")
 
 
 def parse_message(input_bytes: bytes) -> MessageValue:
-    msg = TLV["Message"]
+    msg = TLV.new_message("Message")
     msg.parse(input_bytes)
     return msg
 
 
 def create_message() -> MessageValue:
-    msg = TLV["Message"]
+    msg = TLV.new_message("Message")
     msg.set("Tag", "Msg_Data")
     msg.set("Length", 4)
     msg.set("Value", b"\x01\x02\x03\x04")
