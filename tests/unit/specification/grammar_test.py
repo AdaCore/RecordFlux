@@ -3,9 +3,10 @@ from pathlib import Path
 import pytest
 from librflxlang import AnalysisContext
 
-from rflx import declaration as decl, expression as expr, model, statement as stmt
+from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
+from rflx.model import declaration as decl, statement as stmt
 from rflx.specification.parser import (
     STDIN,
     GrammarRule,

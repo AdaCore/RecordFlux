@@ -3,12 +3,19 @@ import typing as ty
 
 import pytest
 
-import rflx.declaration as decl
 import rflx.expression as expr
-import rflx.statement as stmt
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import BOOLEAN, OPAQUE, Private, Session, State, Transition
+from rflx.model import (
+    BOOLEAN,
+    OPAQUE,
+    Private,
+    Session,
+    State,
+    Transition,
+    declaration as decl,
+    statement as stmt,
+)
 from tests.data.models import (
     NULL_MESSAGE,
     NULL_MESSAGE_IN_TLV_MESSAGE,

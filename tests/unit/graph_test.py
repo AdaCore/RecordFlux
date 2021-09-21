@@ -1,7 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rflx.declaration import VariableDeclaration
 from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Variable
 from rflx.graph import Graph
 from rflx.identifier import ID
@@ -17,8 +16,9 @@ from rflx.model import (
     Session,
     State,
     Transition,
+    declaration as decl,
+    statement as stmt,
 )
-from rflx.statement import Assignment, Reset
 
 
 def assert_graph(graph: Graph, expected: str) -> None:
@@ -195,12 +195,12 @@ def test_session_graph() -> None:
             State(
                 "STATE",
                 transitions=[Transition(target=ID("END"))],
-                actions=[Assignment("Global", FALSE), Reset("Local")],
-                declarations=[VariableDeclaration("Local", "Opaque")],
+                actions=[stmt.Assignment("Global", FALSE), stmt.Reset("Local")],
+                declarations=[decl.VariableDeclaration("Local", "Opaque")],
             ),
             State("END"),
         ],
-        declarations=[VariableDeclaration("Global", "Boolean")],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN, OPAQUE],
     )

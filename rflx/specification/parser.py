@@ -42,12 +42,10 @@ from librflxlang import (
     VariableDecl,
 )
 
-import rflx.declaration as decl
-import rflx.expression as expr
-import rflx.model as model
-import rflx.statement as stmt
+from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
+from rflx.model import declaration as decl, statement as stmt
 from rflx.specification.const import RESERVED_WORDS
 
 from .cache import Cache

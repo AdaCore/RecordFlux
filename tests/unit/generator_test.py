@@ -7,8 +7,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
 import pkg_resources
 import pytest
 
-import rflx.model.type_ as mty
-from rflx import ada, declaration as decl, expression as expr, statement as stmt, typing_ as rty
+from rflx import ada, expression as expr, typing_ as rty
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
 from rflx.generator import Generator, common, const
 from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
@@ -25,6 +24,9 @@ from rflx.model import (
     Session,
     State,
     Transition,
+    declaration as decl,
+    statement as stmt,
+    type_ as mty,
 )
 from tests.const import GENERATED_DIR
 from tests.data import models
