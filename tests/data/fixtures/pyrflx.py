@@ -33,28 +33,28 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
 
 @pytest.fixture(name="ethernet_package", scope="session")
 def fixture_ethernet_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Ethernet"]
+    return pyrflx_.package("Ethernet")
 
 
 @pytest.fixture(name="ethernet_frame_value")
 def fixture_ethernet_frame_value(ethernet_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return ethernet_package["Frame"]
+    return ethernet_package.new_message("Frame")
 
 
 @pytest.fixture(name="icmp_package", scope="session")
 def fixture_icmp_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["ICMP"]
+    return pyrflx_.package("ICMP")
 
 
 @pytest.fixture(name="icmp_message_value")
 def fixture_icmp_message_value(icmp_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return icmp_package["Message"]
+    return icmp_package.new_message("Message")
 
 
 @pytest.fixture(name="icmp_message")
 def fixture_icmp_message(icmp_package: pyrflx.Package) -> model.Message:
     # pylint: disable = protected-access
-    return icmp_package["Message"]._type
+    return icmp_package.new_message("Message")._type
 
 
 @pytest.fixture(name="icmp_checksum_message_value")
@@ -121,105 +121,105 @@ def fixture_icmp_checksum_message_first(icmp_message: model.Message) -> pyrflx.M
 
 @pytest.fixture(name="ipv4_package", scope="session")
 def fixture_ipv4_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["IPv4"]
+    return pyrflx_.package("IPv4")
 
 
 @pytest.fixture(name="ipv4_packet_value")
 def fixture_ipv4_packet_value(ipv4_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return ipv4_package["Packet"]
+    return ipv4_package.new_message("Packet")
 
 
 @pytest.fixture(name="ipv4_option_value")
 def fixture_ipv4_option_value(ipv4_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return ipv4_package["Option"]
+    return ipv4_package.new_message("Option")
 
 
 @pytest.fixture(name="tls_record_package", scope="session")
 def fixture_tls_record_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["TLS_Record"]
+    return pyrflx_.package("TLS_Record")
 
 
 @pytest.fixture(name="tls_record_value")
 def fixture_tls_record_value(tls_record_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return tls_record_package["TLS_Record"]
+    return tls_record_package.new_message("TLS_Record")
 
 
 @pytest.fixture(name="tls_alert_package", scope="session")
 def fixture_tls_alert_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["TLS_Alert"]
+    return pyrflx_.package("TLS_Alert")
 
 
 @pytest.fixture(name="tls_alert_value")
 def fixture_tls_alert_value(tls_alert_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return tls_alert_package["Alert"]
+    return tls_alert_package.new_message("Alert")
 
 
 @pytest.fixture(name="udp_package", scope="session")
 def fixture_udp_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["UDP"]
+    return pyrflx_.package("UDP")
 
 
 @pytest.fixture(name="udp_datagram_value")
 def fixture_udp_datagram_value(udp_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return udp_package["Datagram"]
+    return udp_package.new_message("Datagram")
 
 
 @pytest.fixture(name="tlv_package", scope="session")
 def fixture_tlv_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["TLV"]
+    return pyrflx_.package("TLV")
 
 
 @pytest.fixture(name="tlv_message_value")
 def fixture_tlv_message_value(tlv_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return tlv_package["Message"]
+    return tlv_package.new_message("Message")
 
 
 @pytest.fixture(name="sequence_message_package", scope="session")
 def fixture_sequence_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Sequence_Message"]
+    return pyrflx_.package("Sequence_Message")
 
 
 @pytest.fixture(name="message_sequence_value")
 def fixture_sequence_message_value(sequence_message_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return sequence_message_package["Message_Sequence"]
+    return sequence_message_package.new_message("Message_Sequence")
 
 
 @pytest.fixture(name="message_sequence_refinement_value")
 def fixture_sequence_message_refinement_value(
     sequence_message_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
-    return sequence_message_package["Message_Sequence_And_Refinement"]
+    return sequence_message_package.new_message("Message_Sequence_And_Refinement")
 
 
 @pytest.fixture(name="message_size_package", scope="session")
 def fixture_message_size_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Message_Size"]
+    return pyrflx_.package("Message_Size")
 
 
 @pytest.fixture(name="message_size_value")
 def fixture_message_size_value(message_size_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return message_size_package["Msg"]
+    return message_size_package.new_message("Msg")
 
 
 @pytest.fixture(name="message_type_size_package", scope="session")
 def fixture_message_type_size(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Message_Type_Size_Condition"]
+    return pyrflx_.package("Message_Type_Size_Condition")
 
 
 @pytest.fixture(name="message_type_size_value")
 def fixture_message_type_size_value(
     message_type_size_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
-    return message_type_size_package["Message"]
+    return message_type_size_package.new_message("Message")
 
 
 @pytest.fixture(name="always_valid_aspect_package", scope="session")
 def fixture_always_valid_aspect_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_["Always_Valid_Aspect"]
+    return pyrflx_.package("Always_Valid_Aspect")
 
 
 @pytest.fixture(name="message_always_valid_aspect_value")
 def fixture_always_valid_aspect_value(
     always_valid_aspect_package: pyrflx.Package,
 ) -> pyrflx.MessageValue:
-    return always_valid_aspect_package["Message"]
+    return always_valid_aspect_package.new_message("Message")

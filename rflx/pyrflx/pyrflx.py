@@ -29,7 +29,7 @@ class PyRFLX:
                 self.__packages[p] = Package(p)
             message = MessageValue(m, skip_verification=skip_message_verification)
             messages[m.identifier] = message
-            self.__packages[p][str(m.name)] = message
+            self.__packages[p].set_message(str(m.name), message)
 
         for r in model.refinements:
             messages[r.pdu.identifier].add_refinement(
@@ -63,13 +63,16 @@ class PyRFLX:
                 raise PyRFLXError(f'"{identifier_str}" is not a valid identifier')
 
             if str(message_identifier.parent) in self.__packages.keys():
-                package = self[str(message_identifier.parent)]
+                package = self.package(str(message_identifier.parent))
                 package.set_checksum_functions(
                     {str(message_identifier.name): checksum_field_function}
                 )
 
-    def __getitem__(self, key: str) -> Package:
+    def package(self, key: str) -> Package:
         return self.__packages[key]
+
+    def __getitem__(self, key: str) -> Package:
+        return self.package(key)
 
     def __iter__(self) -> Iterator[Package]:
         return self.__packages.values().__iter__()

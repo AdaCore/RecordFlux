@@ -80,16 +80,16 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
 
 def test_attributes(pyrflx_: PyRFLX) -> None:
     pyrflx_ = PyRFLX.from_specs([SPEC_DIR / "tlv.rflx"])
-    assert isinstance(pyrflx_["TLV"], Package)
-    tlv_package = pyrflx_["TLV"]
-    assert isinstance(tlv_package["Message"], MessageValue)
+    assert isinstance(pyrflx_.package("TLV"), Package)
+    tlv_package = pyrflx_.package("TLV")
+    assert isinstance(tlv_package.new_message("Message"), MessageValue)
 
 
 def test_no_verification(icmp_message_value: MessageValue) -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
-    icmp_message_value_unv = pyrflx_["ICMP"]["Message"]
+    icmp_message_value_unv = pyrflx_.package("ICMP").new_message("Message")
     icmp_message_value.set("Tag", "Echo_Request")
     icmp_message_value.set("Code_Zero", 0)
     icmp_message_value.set("Checksum", 1234)
@@ -113,11 +113,11 @@ def test_message_value_identifier(ethernet_frame_value: MessageValue) -> None:
 
 
 def test_message_value_eq(tlv_package: Package) -> None:
-    m1 = tlv_package["Message"]
-    assert m1 == tlv_package["Message"]
-    assert m1 is not tlv_package["Message"]
-    assert tlv_package["Message"] == tlv_package["Message"]
-    assert tlv_package["Message"] is not tlv_package["Message"]
+    m1 = tlv_package.new_message("Message")
+    assert m1 == tlv_package.new_message("Message")
+    assert m1 is not tlv_package.new_message("Message")
+    assert tlv_package.new_message("Message") == tlv_package.new_message("Message")
+    assert tlv_package.new_message("Message") is not tlv_package.new_message("Message")
     assert m1 is not None
 
 
@@ -697,9 +697,9 @@ def test_invalid_value() -> None:
 def test_sequence_messages(
     message_sequence_value: MessageValue, sequence_message_package: Package
 ) -> None:
-    sequence_element_one = sequence_message_package["Sequence_Element"]
+    sequence_element_one = sequence_message_package.new_message("Sequence_Element")
     sequence_element_one.set("Byte", 5)
-    sequence_element_two = sequence_message_package["Sequence_Element"]
+    sequence_element_two = sequence_message_package.new_message("Sequence_Element")
     sequence_element_two.set("Byte", 6)
     sequence = [sequence_element_one, sequence_element_two]
     message_sequence_value.set("Length", 2)
@@ -710,12 +710,12 @@ def test_sequence_messages(
 
 @pytest.fixture(name="sequence_type_package", scope="session")
 def fixture_sequence_type_package(pyrflx_: PyRFLX) -> Package:
-    return pyrflx_["Sequence_Type"]
+    return pyrflx_.package("Sequence_Type")
 
 
 @pytest.fixture(name="sequence_type_foo_value")
 def fixture_sequence_type_foo_value(sequence_type_package: Package) -> MessageValue:
-    return sequence_type_package["Foo"]
+    return sequence_type_package.new_message("Foo")
 
 
 def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
@@ -1015,7 +1015,7 @@ def test_checksum_parse_invalid(icmp_checksum_message_value: MessageValue) -> No
 
 
 def test_checksum_parse_invalid_tlv(tlv_checksum_package: Package) -> None:
-    tlv_checksum_message = tlv_checksum_package["Message"]
+    tlv_checksum_message = tlv_checksum_package.new_message("Message")
     tlv_checksum_message.set_checksum_function({"Checksum": checksum_function_255})
     tlv_checksum_message.parse(b"\x01\x00\x02\xAB\xCD\x00\x00\x00\xF1")
     assert not tlv_checksum_message.valid_message
@@ -1044,7 +1044,7 @@ def test_checksum_no_verification() -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
-    icmp_message = pyrflx_["ICMP"]["Message"]._type
+    icmp_message = pyrflx_.package("ICMP").new_message("Message")._type
     icmp_msg = MessageValue(
         icmp_message.copy(
             structure=[
@@ -1092,12 +1092,12 @@ def test_checksum_no_verification() -> None:
 
 @pytest.fixture(name="tlv_checksum_package", scope="session")
 def fixture_tlv_checksum_package(pyrflx_: PyRFLX) -> Package:
-    return pyrflx_["TLV_With_Checksum"]
+    return pyrflx_.package("TLV_With_Checksum")
 
 
 @pytest.fixture(name="tlv_checksum_message")
 def fixture_tlv_checksum_message(tlv_checksum_package: Package) -> Message:
-    return tlv_checksum_package["Message"]._type  # pylint: disable=protected-access
+    return tlv_checksum_package.new_message("Message")._type  # pylint: disable=protected-access
 
 
 def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
@@ -1117,13 +1117,13 @@ def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
 
 @pytest.fixture(name="no_conditionals_package", scope="session")
 def fixture_no_conditionals_package(pyrflx_: PyRFLX) -> Package:
-    return pyrflx_["No_Conditionals"]
+    return pyrflx_.package("No_Conditionals")
 
 
 @pytest.fixture(name="no_conditionals_message")
 def fixture_no_conditionals_message(no_conditionals_package: Package) -> Message:
     # pylint: disable = protected-access
-    return no_conditionals_package["Message"]._type
+    return no_conditionals_package.new_message("Message")._type
 
 
 def test_checksum_value_range(no_conditionals_message: Message) -> None:
@@ -1165,12 +1165,12 @@ def fixture_prflx_checksum() -> PyRFLX:
 def test_refinement_with_checksum(
     pyrflx_checksum: PyRFLX,
 ) -> None:
-    refinement_package = pyrflx_checksum["Refinement_With_Checksum"]
-    tlv_package = pyrflx_checksum["TLV_With_Checksum"]
+    refinement_package = pyrflx_checksum.package("Refinement_With_Checksum")
+    tlv_package = pyrflx_checksum.package("TLV_With_Checksum")
     refinement_package.set_checksum_functions({"Message": {"Checksum": checksum_function_255}})
     tlv_package.set_checksum_functions({"Message": {"Checksum": checksum_function_zero}})
     data = b"\x09\xff\x01\x00\x02\x01\x02\x00\x00\x00\x00"
-    message = refinement_package["Message"]
+    message = refinement_package.new_message("Message")
     message.set_checksum_function({"Checksum": checksum_function_255})
     message.parse(data)
     assert message.valid_message
@@ -1189,8 +1189,10 @@ def test_set_checksum_to_pyrflx(
             "TLV_With_Checksum::Message": {"Checksum": checksum_function_zero},
         }
     )
-    refinement_with_checksum_msg = pyrflx_checksum["Refinement_With_Checksum"]["Message"]
-    tlv_with_checksum_msg = pyrflx_checksum["TLV_With_Checksum"]["Message"]
+    refinement_with_checksum_msg = pyrflx_checksum.package("Refinement_With_Checksum").new_message(
+        "Message"
+    )
+    tlv_with_checksum_msg = pyrflx_checksum.package("TLV_With_Checksum").new_message("Message")
     assert callable(refinement_with_checksum_msg._checksums["Checksum"].function)
     assert callable(tlv_with_checksum_msg._checksums["Checksum"].function)
     assert (
@@ -1264,7 +1266,11 @@ def test_set_checksum_to_pyrflx_message_not_found(
     ],
 )
 def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -> None:
-    msg = PyRFLX.from_specs([SPEC_DIR / "unaligned_field.rflx"])["Unaligned_Field"]["M1"]
+    msg = (
+        PyRFLX.from_specs([SPEC_DIR / "unaligned_field.rflx"])
+        .package("Unaligned_Field")
+        .new_message("M1")
+    )
     msg.parse(data)
     assert msg.get("F1") == f1
     assert msg.get("F2") == f2
@@ -1288,7 +1294,7 @@ def test_message_size_unverified() -> None:
         skip_model_verification=True,
         skip_message_verification=True,
     )
-    message = pyrflx_["Message_Size"]["Msg"]
+    message = pyrflx_.package("Message_Size").new_message("Msg")
     message.set("A", 2)
     message.set("B", b"\x01\x02")
     assert message.valid_message
@@ -1314,11 +1320,11 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
 def test_get_inner_messages(  # pylint: disable=invalid-name
     sequence_message_package: Package, message_sequence_refinement_value: MessageValue
 ) -> None:
-    sequence_element_one = sequence_message_package["Sequence_Element"]
+    sequence_element_one = sequence_message_package.new_message("Sequence_Element")
     sequence_element_one.set("Byte", 5)
-    sequence_element_two = sequence_message_package["Sequence_Element"]
+    sequence_element_two = sequence_message_package.new_message("Sequence_Element")
     sequence_element_two.set("Byte", 6)
-    sequence_element_three = sequence_message_package["Sequence_Element"]
+    sequence_element_three = sequence_message_package.new_message("Sequence_Element")
     sequence_element_three.set("Byte", 7)
 
     sequence_contents: ty.Sequence[TypeValue] = [sequence_element_one, sequence_element_two]
