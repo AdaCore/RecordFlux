@@ -16,11 +16,16 @@ Subdirectories containing a `test.rflx` file are considered as feature tests. Th
 
 - Check parsability of specification and creation of model
 - Check for changes in SPARK code generation (if `generated` directory exists)
-- Check compilability of generated SPARK code (if no `INPUT` or `OUTPUT` file exists)
-- Check executability of generated SPARK code (if `INPUT` and `OUTPUT` file exists)
-- Check provabilility of generated SPARK code (if `PROVE` file exists)
+- Check compilability of generated SPARK code (if no `output` key in config is defined)
+- Check executability of generated SPARK code (if `output` key in config is defined)
+- Check provabilility of generated SPARK code (if `prove` key in config is defined)
 
-The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. Each line of `INPUT` is interpreted as an input message for the defined channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255). Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output can be defined in `OUTPUT`. If `PROVE` exists, the generated SPARK code for `Session` and each unit listed in `PROVE` will be proved. Session parameters (functions) can be defined inside the `src` directory. Their fully-qualified names must be listed in `FUNCTIONS`.
+The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. The actions can be configured in an optional `config.yml` file:
+
+- `functions`: All fully-qualified names for the session functions are listed. The functions are defined inside the `src` directory.
+- `input`: Each list element is interpreted as an input message for the session channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
+- `output`: Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output is defined in `output`.
+- `prove`: If the `prove` key exists, the generated SPARK code for `Session` and each unit listed in `prove` will be proved.
 
 ### Property Tests (`tests/property`)
 

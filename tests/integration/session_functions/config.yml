@@ -1,0 +1,11 @@
+functions:
+  - Func.Get_Message_Type
+  - Func.Create_Message
+input:
+  - 1 0 3 0 1 2
+output: |
+  State: Start
+  Write: 1 0 3 0 1 2
+  State: Reply
+  Read: 1 0 1 2
+prove:

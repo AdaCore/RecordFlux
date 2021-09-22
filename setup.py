@@ -61,6 +61,7 @@ setup(
             "pyicontract-lint >=2.1.2, <2.2",
             "pylint >=2.8.3, <2.9",
             "pytest >=6.2.4, <6.3",
+            "ruamel.yaml >=0.17",
             "pytest-cov >=2.12.1, <2.13",
             "pytest-xdist >=2.3.0, <2.4",
             "tqdm >=4.61.1, <4.62",

@@ -1,0 +1,9 @@
+input:
+  - 1 0 1 0
+output: |
+  State: Start
+  State: Reply
+  Write: 1 0 1 0
+  Read: 1 0 1 0
+  State: Start
+prove:
