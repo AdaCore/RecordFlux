@@ -496,9 +496,9 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
               begin
                  Transport'Read (Packet);
               transition
-                 then Send
+                 goto Send
                     if Packet'Valid
-                 then Error
+                 goto Error
               end Receive;
 
               state Send
@@ -509,9 +509,9 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
                  Transport'Write (Packet'(Length => Send_Size,
                                           Payload => Packet'Opaque));
               transition
-                 then Receive
+                 goto Receive
               exception
-                 then Error
+                 goto Error
               end Send;
 
               state Error is null state;
@@ -559,9 +559,9 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
                 Outgoing := M2'(Size => Incoming'Size, Payload => Incoming.Payload);
                 Output'Write(Outgoing);
               transition
-                 then Last
+                 goto Last
               exception
-                 then Last
+                 goto Last
               end First;
 
               state Last is null state;

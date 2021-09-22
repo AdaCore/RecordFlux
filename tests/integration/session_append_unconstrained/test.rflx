@@ -19,9 +19,9 @@ package Test is
          Message := Universal::Message'(Message_Type => Universal::MT_Unconstrained_Options, Options => Options);  --  §S-S-A-A-MA
          Channel'Write (Message);  --  §S-S-A-WR-V
       transition
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       exception
-         then Terminated  --  §S-S-E
+         goto Terminated  --  §S-S-E
       end Start;
 
       state Terminated is null state;  --  §S-S-N

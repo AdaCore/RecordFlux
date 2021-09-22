@@ -658,7 +658,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                end A
          """,
             model.State("A", transitions=[model.Transition("B")]),
@@ -668,9 +668,9 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                      if X = Y
-                  then C
+                  goto C
                end A
          """,
             model.State(
@@ -686,10 +686,10 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                      with Desc => "rfc2549.txt+12:3-45:6"
                      if X = Y
-                  then C
+                  goto C
                      with Desc => "rfc2549.txt+123:45-678:9"
                end A
          """,
@@ -711,7 +711,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                   Z : Boolean := Y;
                begin
                transition
-                  then B
+                  goto B
                end A
          """,
             model.State(
@@ -728,9 +728,9 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                exception
-                  then C
+                  goto C
                end A
          """,
             model.State(
@@ -746,9 +746,9 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                exception
-                  then C
+                  goto C
                      with Desc => "rfc2549.txt+12:3-45:6"
                end A
          """,
@@ -777,7 +777,7 @@ def test_state(string: str, expected: decl.Declaration) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                end C
          """,
             "<stdin>:2:16: parser: error: inconsistent state identifier: A /= C.*",
@@ -810,9 +810,9 @@ def test_state_error(string: str, error: str) -> None:
                   begin
                      Z := False;
                   transition
-                     then B
+                     goto B
                         if Z = False
-                     then A
+                     goto A
                   end A;
 
                   state B is null state;
@@ -898,13 +898,13 @@ def test_session() -> None:
                   state A is
                   begin
                   transition
-                     then B
+                     goto B
                   end A;
 
                   state B is
                   begin
                   transition
-                     then C
+                     goto C
                   end B;
 
                   state C is null state;

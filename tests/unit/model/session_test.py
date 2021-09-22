@@ -88,11 +88,11 @@ def test_str() -> None:
                   begin
                      X'Read (M);
                   transition
-                     then B
+                     goto B
                         with Desc => "rfc1149.txt+45:4-47:8"
                         if Z = True
                            and G (F) = True
-                     then A
+                     goto A
                   end A;
 
                   state B is null state;

@@ -2181,9 +2181,9 @@ def test_create_model_session_locations() -> None:
                   begin
                      Z := False;
                   transition
-                     then B
+                     goto B
                         if Z = False
-                     then A
+                     goto A
                   end A;
 
                   state B is null state;
@@ -2790,8 +2790,8 @@ def test_parse_reserved_word_as_channel_name() -> None:
                  Avail : Boolean := Channel'Has_Data;
               begin
               transition
-                 then A if Avail
-                 then B
+                 goto A if Avail
+                 goto B
               end A;
 
               state B is null state;

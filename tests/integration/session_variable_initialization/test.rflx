@@ -18,11 +18,11 @@ package Test is
          Local := Local + Message.Value;  --  §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-S, §S-S-A-A-V, §S-E-S-V
          Global := Local + 20;  --  §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-V
       transition
-         then Reply
+         goto Reply
             if Local < Global  --  §S-S-T-V
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       exception
-         then Terminated  --  §S-S-E
+         goto Terminated  --  §S-S-E
       end Start;
 
       state Reply is
@@ -31,9 +31,9 @@ package Test is
          Message := Universal::Message'(Message_Type => Universal::MT_Value, Length => Universal::Value'Size / 8, Value => Global);  --  §S-S-A-A-MA
          Channel'Write (Message);  --  §S-S-A-WR-V
       transition
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       exception
-         then Terminated  --  §S-S-E
+         goto Terminated  --  §S-S-E
       end Reply;
 
       state Terminated is null state;  --  §S-S-N
