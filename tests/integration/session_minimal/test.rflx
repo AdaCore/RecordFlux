@@ -14,18 +14,18 @@ package Test is
       begin
          Channel'Read (Message);  --  §S-S-A-RD-V
       transition
-         then Reply
+         goto Reply
             if Message'Valid  --  §S-S-T-VAT, §S-E-AT-V-V
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       end Start;
 
       state Reply is
       begin
          Channel'Write (Message);  --  §S-S-A-WR-V
       transition
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       exception
-         then Terminated  --  §S-S-E
+         goto Terminated  --  §S-S-E
       end Reply;
 
       state Terminated is null state;  --  §S-S-N

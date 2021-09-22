@@ -33,7 +33,7 @@ class Transition(Base):
         if_condition = (
             f"\n   if {indent_next(str(self.condition), 6)}" if self.condition != expr.TRUE else ""
         )
-        return f"then {self.target}{with_aspects}{if_condition}"
+        return f"goto {self.target}{with_aspects}{if_condition}"
 
 
 class State(Base):

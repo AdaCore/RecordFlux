@@ -350,11 +350,11 @@ begin
    begin
       X'Read (M);
    transition
-      then B
+      goto B
          with Desc => "rfc1149.txt+45:4-47:8"
          if Z = True
             and G (F) = True
-      then A
+      goto A
    end A;
 
    state B is null state;
@@ -613,10 +613,10 @@ is
 begin
    X'Read (M);
 transition
-   then B
+   goto B
       with Desc => "rfc1149.txt+45:4-47:8"
       if Z = True and G (F) = True
-   then A
+   goto A
 end A
 ----
 [source,ada,rflx,state]
@@ -685,7 +685,7 @@ State transitions define the conditions for the change to subsequent states. An 
       *if* conditional_xref:syntax-expression[expression]
 
 [[syntax-transition]]transition ::=
-   *then* state_xref:syntax-name[name]
+   *goto* state_xref:syntax-name[name]
     [ *with* xref:syntax-description_aspect[description_aspect] ]
 ----
 
@@ -715,7 +715,7 @@ State transitions define the conditions for the change to subsequent states. An 
 
 [source,ada,rflx,conditional_transition]
 ----
-then B
+goto B
    with Desc => "rfc1149.txt+45:4-47:8"
    if Z = True and G (F) = True
 ----
@@ -1596,9 +1596,9 @@ package Ethernet is
       begin
          Input'Read (Frame);
       transition
-         then Forward
+         goto Forward
             if Frame'Valid
-         then Validate
+         goto Validate
       end Validate;
 
       state Forward
@@ -1606,9 +1606,9 @@ package Ethernet is
       begin
          Output'Write (Frame);
       transition
-         then Validate
+         goto Validate
       exception
-         then Error
+         goto Error
       end Forward;
 
       state Error is null state;

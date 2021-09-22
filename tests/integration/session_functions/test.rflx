@@ -17,11 +17,11 @@ package Test is
       begin
          Channel'Read (Message);  --  §S-S-A-RD-V
       transition
-         then Reply
+         goto Reply
             if Message'Valid  --  §S-S-T-VAT, §S-E-AT-V-V
                and Message.Message_Type = Universal::MT_Data  --  §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3  --  §S-S-T-S, §S-E-S-V, §S-S-T-L
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       end Start;
 
       state Reply is
@@ -32,9 +32,9 @@ package Test is
          Fixed_Size_Message := Create_Message (Message_Type, Message.Data);  --  §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
          Channel'Write (Fixed_Size_Message);  --  §S-S-A-WR-V
       transition
-         then Terminated  --  §S-S-T-N
+         goto Terminated  --  §S-S-T-N
       exception
-         then Terminated  --  §S-S-E
+         goto Terminated  --  §S-S-E
       end Reply;
 
       state Terminated is null state;  --  §S-S-N

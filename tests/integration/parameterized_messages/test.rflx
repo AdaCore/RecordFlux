@@ -28,9 +28,9 @@ package Test is
          M'Reset (Length => 2, Extended => False);
          C'Read (M);
       transition
-         then Reply
+         goto Reply
             if M'Valid
-         then Terminated
+         goto Terminated
       end Receive;
 
       state Reply
@@ -38,16 +38,16 @@ package Test is
       begin
          C'Write (Message'(Length => M.Length, Extended => True, Data => M.Data, Extension => [3, 4]));
       transition
-         then Terminated
+         goto Terminated
       exception
-         then Error
+         goto Error
       end Reply;
 
       state Error
       is
       begin
-         transition
-            then Terminated
+      transition
+         goto Terminated
       end Error;
 
       state Terminated is null state;

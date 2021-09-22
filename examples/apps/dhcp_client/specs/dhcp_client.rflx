@@ -69,9 +69,9 @@ package DHCP_Client is
          );
          Channel'Write (Discover);
       transition
-         then Receive_Offer
+         goto Receive_Offer
       exception
-         then Failure
+         goto Failure
       end Send_Discover;
 
       state Receive_Offer is
@@ -82,11 +82,11 @@ package DHCP_Client is
          Offer_Message_Types := [for O in Offer.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
          Offer_Message_Type := Offer_Message_Types'Head;
       transition
-         then Send_Request
+         goto Send_Request
             if Offer'Valid = True and Offer.Op = DHCP::BOOTREPLY and Offer_Message_Type = DHCP::DHCPOFFER
-         then Receive_Offer
+         goto Receive_Offer
       exception
-         then Failure
+         goto Failure
       end Receive_Offer;
 
       state Send_Request is
@@ -130,9 +130,9 @@ package DHCP_Client is
          );
          Channel'Write (Request);
       transition
-         then Receive_Ack
+         goto Receive_Ack
       exception
-         then Failure
+         goto Failure
       end Send_Request;
 
       state Receive_Ack is
@@ -143,23 +143,23 @@ package DHCP_Client is
          Ack_Message_Types := [for O in Ack.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
          Ack_Message_Type := Ack_Message_Types'Head;
       transition
-         then Success
+         goto Success
             if Ack'Valid = True and Ack.Op = DHCP::BOOTREPLY and Ack_Message_Type = DHCP::DHCPACK
-         then Failure
+         goto Failure
       exception
-         then Failure
+         goto Failure
       end Receive_Ack;
 
       state Success is
       begin
       transition
-         then Terminated
+         goto Terminated
       end Success;
 
       state Failure is
       begin
       transition
-         then Terminated
+         goto Terminated
       end Failure;
 
       state Terminated is null state;
