@@ -1,0 +1,10 @@
+input:
+  - 1 2
+output: |
+  State: Receive
+  Write: 1 2
+  State: Reply
+  Read: 1 2 3 4
+prove:
+  - rflx-test
+  - rflx-test-message

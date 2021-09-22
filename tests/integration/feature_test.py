@@ -1,8 +1,10 @@
+from dataclasses import dataclass, field as dataclass_field
 from distutils.dir_util import copy_tree
 from pathlib import Path
-from typing import List, Tuple
+from typing import Optional, Sequence, Tuple
 
 import pytest
+from ruamel.yaml import YAML
 
 from rflx import ada
 from rflx.generator import Generator
@@ -21,46 +23,30 @@ FEATURES = [
 ]
 
 
-def input_file(feature: str) -> Path:
-    return Path(__file__).parent / feature / "INPUT"
+@dataclass(frozen=True)
+class Config:
+    functions: Sequence[str] = dataclass_field(default_factory=list)
+    inp: Sequence[Tuple[int, ...]] = dataclass_field(default_factory=list)
+    out: str = dataclass_field(default="")
+    prove: Optional[Sequence[str]] = dataclass_field(default=None)
 
 
-def output_file(feature: str) -> Path:
-    return Path(__file__).parent / feature / "OUTPUT"
+def get_config(feature: str) -> Config:
+    config_file = Path(__file__).parent / feature / "config.yml"
 
+    if config_file.is_file():
+        yaml = YAML(typ="safe")
+        cfg = yaml.load(config_file)
+        return Config(
+            cfg["functions"] if "functions" in cfg and cfg["functions"] else [],
+            [tuple(int(e) for e in str(m).split()) for m in cfg["input"]]
+            if "input" in cfg and cfg["input"]
+            else [],
+            cfg["output"] if "output" in cfg else "",
+            (cfg["prove"] if cfg["prove"] else []) if "prove" in cfg else None,
+        )
 
-def prove_file(feature: str) -> Path:
-    return Path(__file__).parent / feature / "PROVE"
-
-
-def functions_file(feature: str) -> Path:
-    return Path(__file__).parent / feature / "FUNCTIONS"
-
-
-def read_input(feature: str) -> List[Tuple[int, ...]]:
-    if not input_file(feature).is_file():
-        return []
-    return [
-        tuple(int(e) for e in l.split()) for l in input_file(feature).read_text().split("\n") if l
-    ]
-
-
-def read_output(feature: str) -> str:
-    if not output_file(feature).is_file():
-        return ""
-    return output_file(feature).read_text()
-
-
-def read_prove(feature: str) -> List[str]:
-    if not prove_file(feature).is_file():
-        return []
-    return [l for l in prove_file(feature).read_text().split("\n") if l]
-
-
-def read_functions(feature: str) -> List[str]:
-    if not functions_file(feature).is_file():
-        return []
-    return [l for l in functions_file(feature).read_text().split("\n") if l]
+    return Config()
 
 
 def create_model(feature: str) -> Model:
@@ -69,15 +55,14 @@ def create_model(feature: str) -> Model:
     return parser.create_model()
 
 
-def create_complement(feature: str, tmp_path: Path) -> None:
-    functions = read_functions(feature)
-    context = [ada.WithClause(f.split(".")[0]) for f in functions]
+def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
+    context = [ada.WithClause(f.split(".")[0]) for f in config.functions]
     complement = session_main(
-        read_input(feature),
-        write=bool(read_input(feature)),
+        config.inp,
+        write=bool(config.inp),
         context=context,
         session_package="RFLX.Test.Session",
-        session_parameters=functions,
+        session_parameters=config.functions,
     )
 
     assert MAIN in complement
@@ -116,7 +101,8 @@ def test_equality(feature: str) -> None:
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
-    if input_file(feature).is_file() and output_file(feature).is_file():
+    config = get_config(feature)
+    if config.out:
         pytest.skip()
     model = create_model(feature)
     assert_compilable_code(model, tmp_path)
@@ -124,18 +110,20 @@ def test_compilability(feature: str, tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_executability(feature: str, tmp_path: Path) -> None:
-    if not input_file(feature).is_file() or not output_file(feature).is_file():
+    config = get_config(feature)
+    if not config.out:
         pytest.skip()
     model = create_model(feature)
-    create_complement(feature, tmp_path)
-    assert assert_executable_code(model, tmp_path, main=MAIN) == read_output(feature)
+    create_complement(config, feature, tmp_path)
+    assert assert_executable_code(model, tmp_path, main=MAIN) == config.out
 
 
 @pytest.mark.verification
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_provability(feature: str, tmp_path: Path) -> None:
-    if not prove_file(feature).is_file():
+    config = get_config(feature)
+    if config.prove is None:
         pytest.skip()
     model = create_model(feature)
-    create_complement(feature, tmp_path)
-    assert_provable_code(model, tmp_path, main=MAIN, units=["main", "lib", *read_prove(feature)])
+    create_complement(config, feature, tmp_path)
+    assert_provable_code(model, tmp_path, main=MAIN, units=["main", "lib", *config.prove])
