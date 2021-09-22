@@ -50,6 +50,10 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -57,7 +61,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
