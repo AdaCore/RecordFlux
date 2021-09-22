@@ -39,6 +39,7 @@ grammar.add_rules(
             lexer.Function,
             lexer.State,
             lexer.Transition,
+            lexer.Goto,
             lexer.Exception,
             lexer.Renames,
             lexer.Channel,
@@ -513,13 +514,15 @@ grammar.add_rules(
     attribute_statement=Or(grammar.list_attribute, grammar.reset),
     action=Or(grammar.assignment_statement, grammar.attribute_statement),
     conditional_transition=ast.ConditionalTransition(
-        "then",
+        "goto",
         grammar.unqualified_identifier,
         Opt("with", grammar.description_aspect),
         grammar.extended_if_condition,
     ),
     transition=ast.Transition(
-        "then", grammar.unqualified_identifier, Opt("with", grammar.description_aspect)
+        "goto",
+        grammar.unqualified_identifier,
+        Opt("with", grammar.description_aspect),
     ),
     state_body=ast.StateBody(
         Opt(List(grammar.declaration, sep=";"), ";"),

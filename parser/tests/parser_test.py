@@ -373,19 +373,19 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.reset_rule,
         ),
         (
-            "then {keyword} if {keyword} = {keyword}",
+            "goto {keyword} if {keyword} = {keyword}",
             librflxlang.GrammarRule.conditional_transition_rule,
         ),
         (
-            'then {keyword} with Desc => "foo"',
+            'goto {keyword} with Desc => "foo"',
             librflxlang.GrammarRule.transition_rule,
         ),
         (
-            'then {keyword} with Desc => "foo"',
+            'goto {keyword} with Desc => "foo"',
             librflxlang.GrammarRule.transition_rule,
         ),
         (
-            "begin transition then {keyword} end {keyword}",
+            "begin transition goto {keyword} end {keyword}",
             librflxlang.GrammarRule.state_body_rule,
         ),
         (
@@ -419,5 +419,11 @@ KEYWORD_TESTS = [
     ids=[f"{k}->{r[:-5]}" for (k, _, r) in KEYWORD_TESTS],
 )
 def test_keyword_identifiers(text: str, rule: str) -> None:
+    """
+    Test that keywords can be used as identifiers.
+
+    New keywords must be added to the unqualified_identifier rule in the parser module to allow the
+    use as identifiers.
+    """
     unit = parse_buffer(text, rule=rule)
     assert len(unit.diagnostics) == 0, text + "\n".join(str(d) for d in unit.diagnostics)

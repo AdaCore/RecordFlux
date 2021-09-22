@@ -2957,7 +2957,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                end A
          """,
             {
@@ -2984,9 +2984,9 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                      if X = Y
-                  then C
+                  goto C
                end A
          """,
             {
@@ -3045,10 +3045,10 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                      with Desc => "rfc2549.txt+12:3-45:6"
                      if X = Y
-                  then C
+                  goto C
                      with Desc => "rfc2549.txt+123:45-678:9"
                end A
          """,
@@ -3121,7 +3121,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                   Z : Boolean := Y;
                begin
                transition
-                  then B
+                  goto B
                end A
          """,
             {
@@ -3166,9 +3166,9 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                exception
-                  then C
+                  goto C
                end A
          """,
             {
@@ -3199,9 +3199,9 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
                state A is
                begin
                transition
-                  then B
+                  goto B
                exception
-                  then C
+                  goto C
                      with Desc => "rfc2549.txt+12:3-45:6"
                end A
          """,
@@ -3262,9 +3262,9 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                   begin
                      Z := False;
                   transition
-                     then B
+                     goto B
                         if Z = False
-                     then A
+                     goto A
                   end A;
 
                   state B is null state;
