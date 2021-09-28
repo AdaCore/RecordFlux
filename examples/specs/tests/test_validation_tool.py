@@ -219,7 +219,7 @@ def test_cli_abort_on_error() -> None:
 
 
 def test_cli_not_regular_file(tmpdir: Path) -> None:
-    subdir = tmpdir / "test"
+    subdir = tmpdir / "test.raw"
     subdir.mkdir()
     assert (
         cli(
@@ -325,8 +325,8 @@ def test_validation_positive_full_output(tmp_path: Path) -> None:
 
 def test_validation_negative() -> None:
     number = len(
-        list(Path("tests/data/ethernet/frame/invalid").glob("*"))
-        + list(Path("tests/data/ethernet/frame/valid").glob("*"))
+        list(Path("tests/data/ethernet/frame/invalid").glob("*.raw"))
+        + list(Path("tests/data/ethernet/frame/valid").glob("*.raw"))
     )
     assert (
         cli(
@@ -351,8 +351,8 @@ def test_validation_negative() -> None:
 
 def test_validation_negative_full_output(tmp_path: Path) -> None:
     number = len(
-        list(Path("tests/validation_tool/ethernet/frame/invalid").glob("*"))
-        + list(Path("tests/validation_tool/ethernet/frame/valid").glob("*"))
+        list(Path("tests/validation_tool/ethernet/frame/invalid").glob("*.raw"))
+        + list(Path("tests/validation_tool/ethernet/frame/valid").glob("*.raw"))
     )
     assert (
         cli(

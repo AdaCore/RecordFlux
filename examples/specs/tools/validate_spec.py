@@ -243,7 +243,7 @@ def validate(
             (directory_valid, True),
             (directory_invalid, False),
         ]:
-            directory = sorted(directory_path.glob("*")) if directory_path is not None else []
+            directory = sorted(directory_path.glob("*.raw")) if directory_path is not None else []
             for path in directory:
                 validation_result = _validate_message(path, is_valid_directory, message_value)
                 coverage_info.update(validation_result.parser_result)
