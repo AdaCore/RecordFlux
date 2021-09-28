@@ -91,7 +91,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
 
     def __str__(self) -> str:
         expression = f" := {self.expression}" if self.expression else ""
-        return f"{self.identifier} : {self.type_identifier}{expression}"
+        return f"{self.identifier} : {ada_type_name(self.type_identifier)}{expression}"
 
     def check_type(
         self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -184,13 +184,7 @@ class Argument(Base):
         self.type_ = type_
 
     def __str__(self) -> str:
-        type_identifier = (
-            self.__type_identifier.name
-            if mty.is_builtin_type(self.__type_identifier)
-            or mty.is_internal_type(self.__type_identifier)
-            else self.__type_identifier
-        )
-        return f"{self.__identifier} : {type_identifier}"
+        return f"{self.__identifier} : {ada_type_name(self.__type_identifier)}"
 
     @property
     def identifier(self) -> ID:
@@ -218,7 +212,9 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
 
     def __str__(self) -> str:
         arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""
-        return f"with function {self.identifier}{arguments} return {self.__return_type}"
+        return (
+            f"with function {self.identifier}{arguments} return {ada_type_name(self.__return_type)}"
+        )
 
     def check_type(
         self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -285,3 +281,9 @@ class TypeDeclaration(FormalDeclaration):
     @property
     def type_(self) -> rty.Type:
         raise NotImplementedError
+
+
+def ada_type_name(identifier: ID) -> StrID:
+    if mty.is_builtin_type(identifier) or mty.is_internal_type(identifier):
+        return identifier.name
+    return identifier

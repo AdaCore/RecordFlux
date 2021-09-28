@@ -1,5 +1,4 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Variable
 from rflx.graph import Graph
@@ -21,12 +20,11 @@ from rflx.model import (
 )
 
 
-def assert_graph(graph: Graph, expected: str) -> None:
-    with TemporaryDirectory() as directory:
-        path = Path(directory) / Path("test.dot")
-        graph.write(path, fmt="raw")
-        with open(path) as f:
-            assert f.read().split() == expected.split()
+def assert_graph(graph: Graph, expected: str, tmp_path: Path) -> None:
+    path = tmp_path / Path("test.dot")
+    graph.write(path, fmt="raw")
+    with open(path) as f:
+        assert f.read().split() == expected.split()
 
 
 def test_graph_object() -> None:
@@ -55,7 +53,7 @@ def test_graph_object() -> None:
     ]
 
 
-def test_empty_message_graph() -> None:
+def test_empty_message_graph(tmp_path: Path) -> None:
     m = Message("P::M", [], {})
     expected = """
         digraph "P::M" {
@@ -73,10 +71,10 @@ def test_empty_message_graph() -> None:
         }
         """
 
-    assert_graph(Graph(m), expected)
+    assert_graph(Graph(m), expected, tmp_path)
 
 
-def test_dot_graph() -> None:
+def test_dot_graph(tmp_path: Path) -> None:
     f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
         "P::M",
@@ -104,10 +102,10 @@ def test_dot_graph() -> None:
         }
         """
 
-    assert_graph(Graph(m), expected)
+    assert_graph(Graph(m), expected, tmp_path)
 
 
-def test_dot_graph_with_condition() -> None:
+def test_dot_graph_with_condition(tmp_path: Path) -> None:
     f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
         "P::M",
@@ -137,10 +135,10 @@ def test_dot_graph_with_condition() -> None:
         }
         """
 
-    assert_graph(Graph(m), expected)
+    assert_graph(Graph(m), expected, tmp_path)
 
 
-def test_dot_graph_with_double_edge() -> None:
+def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
     f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
     m = Message(
         "P::M",
@@ -176,10 +174,10 @@ def test_dot_graph_with_double_edge() -> None:
         }
         """
 
-    assert_graph(Graph(m), expected)
+    assert_graph(Graph(m), expected, tmp_path)
 
 
-def test_session_graph() -> None:
+def test_session_graph(tmp_path: Path) -> None:
     s = Session(
         identifier="P::S",
         initial=ID("START"),
@@ -204,7 +202,7 @@ def test_session_graph() -> None:
         parameters=[],
         types=[BOOLEAN, OPAQUE],
     )
-    expected = """
+    expected = r"""
         digraph "Session" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
@@ -212,15 +210,20 @@ def test_session_graph() -> None:
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
             START [fillcolor="#ffffff", fontcolor=black, height="1.73", width="2.25"];
-            START -> STATE [tooltip="START → STATE\\n\\n[0] Global = True"];
-            START -> END [tooltip=""];
-            Global -> START [tooltip="START: read Global"];
+            START -> STATE  [tooltip="START → STATE\n\n[0] Global = True"];
+            START -> END  [tooltip=""];
+            Global -> START  [tooltip="START: read Global"];
+            True -> START  [tooltip="START: read True"];
             STATE [height="1.73", width="2.25"];
-            STATE -> END [tooltip=""];
-            STATE -> Global [tooltip="STATE: write Global"];
+            STATE -> END  [tooltip=""];
+            True -> STATE  [tooltip="STATE: read True"];
+            False -> STATE  [tooltip="STATE: read False"];
+            STATE -> Global  [tooltip="STATE: write Global"];
             END [fillcolor="#6f6f6f", height="1.73", width="2.25"];
             Global [fillcolor="#7e8ab8", height="1.73", width="2.25"];
+            True [fillcolor="#7e8ab8", height="2.00", width="2.60"];
+            False [fillcolor="#7e8ab8", height="1.41", width="1.84"];
         }
         """
 
-    assert_graph(Graph(s), expected)
+    assert_graph(Graph(s), expected, tmp_path)

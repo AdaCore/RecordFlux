@@ -3,7 +3,26 @@ from typing import Sequence
 
 import pytest
 
+from rflx import expression as expr
 from rflx.error import RecordFluxError
+from rflx.model import (
+    BOOLEAN,
+    FINAL,
+    INITIAL,
+    OPAQUE,
+    Enumeration,
+    Field,
+    Link,
+    Message,
+    Model,
+    ModularInteger,
+    Private,
+    Session,
+    State,
+    Transition,
+    declaration as decl,
+    statement as stmt,
+)
 from rflx.specification import parser
 from tests.const import SPEC_DIR
 
@@ -386,3 +405,77 @@ def test_dependency_order() -> None:
     p = parser.Parser()
     p.parse(Path(f"{SPEC_DIR}/in_p1.rflx"))
     p.create_model()
+
+
+def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
+    tag = Enumeration(
+        "Test::Tag",
+        [("Msg_Data", expr.Number(1)), ("Msg_Error", expr.Number(3))],
+        expr.Number(8),
+        always_valid=False,
+    )
+    length = ModularInteger("Test::Length", expr.Pow(expr.Number(2), expr.Number(16)))
+    message = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("Tag")),
+            Link(
+                Field("Tag"),
+                Field("Length"),
+                expr.Equal(expr.Variable("Tag"), expr.Variable("Msg_Data")),
+            ),
+            Link(Field("Tag"), FINAL, expr.Equal(expr.Variable("Tag"), expr.Variable("Msg_Error"))),
+            Link(
+                Field("Length"),
+                Field("Value"),
+                size=expr.Mul(expr.Variable("Length"), expr.Number(8)),
+            ),
+            Link(Field("Value"), FINAL),
+        ],
+        {Field("Tag"): tag, Field("Length"): length, Field("Value"): OPAQUE},
+        skip_proof=True,
+    )
+    session = Session(
+        "Test::Session",
+        "A",
+        "B",
+        [
+            State(
+                "A",
+                declarations=[
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                    decl.VariableDeclaration("M", "Message"),
+                ],
+                actions=[stmt.Read("X", expr.Variable("M"))],
+                transitions=[
+                    Transition(
+                        "B",
+                        condition=expr.And(
+                            expr.Equal(expr.Variable("Z"), expr.TRUE),
+                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                        ),
+                        description="rfc1149.txt+45:4-47:8",
+                    ),
+                    Transition("A"),
+                ],
+                description="rfc1149.txt+51:4-52:9",
+            ),
+            State("B"),
+        ],
+        [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE)],
+        [
+            decl.ChannelDeclaration("X", readable=True, writable=True),
+            decl.TypeDeclaration(Private("T")),
+            decl.FunctionDeclaration("F", [], "T"),
+            decl.FunctionDeclaration("G", [decl.Argument("P", "T")], BOOLEAN.identifier),
+        ],
+        [BOOLEAN, OPAQUE, tag, length, message],
+    )
+    model = Model(types=[BOOLEAN, OPAQUE, tag, length, message], sessions=[session])
+    model.write_specification_files(tmp_path)
+    p = parser.Parser()
+    p.parse(tmp_path / "test.rflx")
+    parsed_model = p.create_model()
+    assert parsed_model.types == model.types
+    assert parsed_model.sessions == model.sessions
+    assert parsed_model == model

@@ -2183,7 +2183,7 @@ class Refinement(mty.Type):
             )
 
         for variable in condition.variables():
-            literals = mty.enum_literals(pdu.types.values(), self.package)
+            literals = mty.enum_literals([mty.BOOLEAN, *pdu.types.values()], self.package)
             if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
                 self.error.extend(
                     [

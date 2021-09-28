@@ -773,6 +773,10 @@ class MessageValue(TypeValue):
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         while current_field_name != FINAL.name:
+            assert current_field_name, (
+                "end of message is not reached, but next field is undefined"
+                " (possibly caused by incorrect simplificiation of link condition in _next_link)"
+            )
             current_field = self._fields[current_field_name]
             size = self._get_size(current_field_name)
             if isinstance(current_field.typeval, CompositeValue) and size is None:
@@ -1221,6 +1225,8 @@ class MessageValue(TypeValue):
             return expr
 
         def subst(expression: Expr) -> Expr:
+            if expression in {TRUE, FALSE}:
+                return expression
             if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
