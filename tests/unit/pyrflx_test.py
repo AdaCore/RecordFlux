@@ -1394,7 +1394,7 @@ def test_parameterized_message_no_verification() -> None:
 
 def test_parameterized_message_invalid_type(parameterized_package: Package) -> None:
     with pytest.raises(
-        PyRFLXError, match=f"^pyrflx: error: {type(bytes())} is no supported parameter type"
+        PyRFLXError, match=f"^pyrflx: error: {type(bytes())} is no supported parameter type$"
     ):
         parameterized_package.new_message(
             "Message",
