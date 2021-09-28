@@ -58,11 +58,6 @@ def test_package_iterator(tlv_package: Package) -> None:
     assert [m.name for m in tlv_package] == ["Message"]
 
 
-def test_package_set_item(tlv_package: Package) -> None:
-    msg = Message("TLV::Msg", [], {})
-    tlv_package["Msg"] = MessageValue(msg)
-
-
 def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
     assert {p.name for p in pyrflx_} == {
         "Ethernet",
