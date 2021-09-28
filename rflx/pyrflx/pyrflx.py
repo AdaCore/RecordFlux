@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, Iterator, Union
 
 from rflx.error import RecordFluxError
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from rflx.model import Model
 from rflx.pyrflx.typevalue import MessageValue, RefinementValue
 from rflx.specification import Parser
@@ -29,7 +29,7 @@ class PyRFLX:
                 self.__packages[p] = Package(p)
             message = MessageValue(m, skip_verification=skip_message_verification)
             messages[m.identifier] = message
-            self.__packages[p].set_message(str(m.name), message)
+            self.__packages[p].set_message(m.name, message)
 
         for r in model.refinements:
             messages[r.pdu.identifier].add_refinement(
@@ -52,8 +52,9 @@ class PyRFLX:
         model = parser.create_model()
         return cls(model, skip_message_verification)
 
-    def set_checksum_functions(self, functions: Dict[str, Dict[str, Callable]]) -> None:
+    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, Callable]]) -> None:
         for identifier_str, checksum_field_function in functions.items():
+            identifier_str = str(identifier_str)
             try:
                 message_identifier = ID(identifier_str)
             except RecordFluxError as e:
@@ -63,15 +64,13 @@ class PyRFLX:
                 raise PyRFLXError(f'"{identifier_str}" is not a valid identifier')
 
             if str(message_identifier.parent) in self.__packages.keys():
-                package = self.package(str(message_identifier.parent))
-                package.set_checksum_functions(
-                    {str(message_identifier.name): checksum_field_function}
-                )
+                package = self.package(message_identifier.parent)
+                package.set_checksum_functions({message_identifier.name: checksum_field_function})
 
-    def package(self, key: str) -> Package:
-        return self.__packages[key]
+    def package(self, key: StrID) -> Package:
+        return self.__packages[str(key)]
 
-    def __getitem__(self, key: str) -> Package:
+    def __getitem__(self, key: StrID) -> Package:
         return self.package(key)
 
     def __iter__(self) -> Iterator[Package]:
