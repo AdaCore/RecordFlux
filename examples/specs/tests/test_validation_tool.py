@@ -260,9 +260,11 @@ def test_cli_invalid_identifier() -> None:
 
 
 def test_validation_original_and_parsed_not_equal() -> None:
-    ethernet_too_short_value = PyRFLX.from_specs(["ethernet.rflx"], skip_model_verification=True)[
-        "Ethernet"
-    ]["Frame"]
+    ethernet_too_short_value = (
+        PyRFLX.from_specs(["ethernet.rflx"], skip_model_verification=True)
+        .package("Ethernet")
+        .new_message("Frame")
+    )
     validation_result = _validate_message(
         Path("tests/validation_tool/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
         True,
