@@ -228,7 +228,7 @@ def validate(
         raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
 
     try:
-        message_value = pyrflx[str(msg_identifier.parent)][str(msg_identifier.name)]
+        message_value = pyrflx.package(msg_identifier.parent).new_message(msg_identifier.name)
     except KeyError as e:
         raise ValidationError(
             f'message "{msg_identifier.name}" could not be found '
