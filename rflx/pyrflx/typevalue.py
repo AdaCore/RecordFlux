@@ -525,7 +525,7 @@ class MessageValue(TypeValue):
         self._skip_verification = skip_verification
         self._refinements = refinements or []
         self._path: ty.List[Link] = []
-        self.__parameters = parameters or {}
+        self._parameters = parameters or {}
 
         self._fields: ty.Mapping[str, MessageValue.Field] = (
             state.fields
@@ -587,7 +587,7 @@ class MessageValue(TypeValue):
         self._refinements = [*(self._refinements or []), refinement]
 
     def add_parameters(self, parameters: ty.Mapping[str, ty.Union[bool, int, str]]) -> None:
-        _parameters: ty.Dict[Name, Expr] = {}
+        params: ty.Dict[Name, Expr] = {}
         expr: Expr
         for name, value in parameters.items():
             if isinstance(value, bool):
@@ -598,8 +598,8 @@ class MessageValue(TypeValue):
                 expr = Variable(value)
             else:
                 raise PyRFLXError(f"{type(value)} is no supported parameter type")
-            _parameters[Variable(name)] = expr
-        self.__parameters = _parameters
+            params[Variable(name)] = expr
+        self._parameters = params
         if not self._skip_verification:
             self._preset_fields(INITIAL.name)
 
@@ -608,7 +608,7 @@ class MessageValue(TypeValue):
             self._type,
             self._refinements,
             self._skip_verification,
-            self.__parameters,
+            self._parameters,
             MessageValue.State(
                 {
                     k: MessageValue.Field(
@@ -1162,7 +1162,7 @@ class MessageValue(TypeValue):
 
         return all(
             (v.name in self._fields and self._fields[v.name].set)
-            or v in self.__parameters
+            or v in self._parameters
             or v.name == "Message"
             for v in valid_edge.size.variables()
         )
@@ -1260,9 +1260,9 @@ class MessageValue(TypeValue):
             if expression in self.__additional_enum_literals:
                 assert isinstance(expression, Name)
                 return self.__additional_enum_literals[expression]
-            if expression in self.__parameters:
+            if expression in self._parameters:
                 assert isinstance(expression, Name)
-                return self.__parameters[expression]
+                return self._parameters[expression]
             return expression
 
         return expr.substituted(func=subst).substituted(func=subst).simplified()
