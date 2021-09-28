@@ -7,4 +7,5 @@ pylint >=2.8.3, <2.9
 pytest >=6.2.4, <6.3
 pytest-cov >=2.12.1, <2.13
 pytest-xdist >=2.3.0, <2.4
+ruamel.yaml >=0.17
 scapy >=2.4, <3

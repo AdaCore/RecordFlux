@@ -16,6 +16,7 @@ from rflx.identifier import ID
 from rflx.model import Link
 from rflx.pyrflx import Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
+from ruamel.yaml import YAML
 
 
 def cli(argv: List[str]) -> Union[int, str]:
@@ -273,11 +274,17 @@ def validate(
 def _validate_message(
     message_path: Path, valid_original_message: bool, message_value: MessageValue
 ) -> "ValidationResult":
+    message_parameters = message_path.with_suffix(".yaml")
+    params: Dict[str, Union[bool, int, str]] = {}
     if not message_path.is_file():
         raise ValidationError(f"{message_path} is not a regular file")
+    if message_parameters.is_file():
+        yaml = YAML()
+        params = yaml.load(message_parameters)
     original_message = message_path.read_bytes()
     parser_error: Optional[str] = None
     parser_result: MessageValue = message_value.clone()
+    parser_result.add_parameters(params)
     try:
         parser_result.parse(original_message)
         valid_parser_result = parser_result.bytestring == original_message
