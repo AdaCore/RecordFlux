@@ -21,16 +21,16 @@ class Benchmark:
             skip_model_verification=True,
             skip_message_verification=True,
         )
-        self.__ipv4 = self.__pyrflx["IPv4"]
-        self.__icmp = self.__pyrflx["ICMP"]
+        self.__ipv4 = self.__pyrflx.package("IPv4")
+        self.__icmp = self.__pyrflx.package("ICMP")
         print(f"Loaded in {perf_counter() - start} seconds")
 
     def generate(self, count: int = 2 ** 16) -> Generator[bytes, None, None]:
         if count > 2 ** 16:
             raise ValueError
         for ident in range(0, count):
-            msg = self.__icmp["Message"]
-            pkt = self.__ipv4["Packet"]
+            msg = self.__icmp.new_message("Message")
+            pkt = self.__ipv4.new_message("Packet")
             msg.set("Tag", "Echo_Request")
             msg.set("Code_Zero", 0)
             msg.set("Checksum", 0)

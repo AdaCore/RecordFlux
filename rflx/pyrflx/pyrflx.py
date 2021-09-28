@@ -70,8 +70,5 @@ class PyRFLX:
     def package(self, key: StrID) -> Package:
         return self.__packages[str(key)]
 
-    def __getitem__(self, key: StrID) -> Package:
-        return self.package(key)
-
     def __iter__(self) -> Iterator[Package]:
         return self.__packages.values().__iter__()
