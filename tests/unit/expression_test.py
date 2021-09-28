@@ -18,7 +18,6 @@ from rflx.expression import (
     AndThen,
     Attribute,
     Binding,
-    BooleanTrue,
     Call,
     Comprehension,
     Conversion,
@@ -88,8 +87,10 @@ def test_true_type() -> None:
     )
 
 
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_true_neg() -> None:
-    assert -TRUE == FALSE
+    with pytest.raises(AssertionError):
+        -TRUE  # pylint: disable = pointless-statement
 
 
 def test_true_simplified() -> None:
@@ -97,7 +98,7 @@ def test_true_simplified() -> None:
 
 
 def test_true_variables() -> None:
-    assert TRUE.variables() == []
+    assert TRUE.variables() == [TRUE]
 
 
 def test_true_z3expr() -> None:
@@ -111,8 +112,10 @@ def test_false_type() -> None:
     )
 
 
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_false_neg() -> None:
-    assert -FALSE == TRUE
+    with pytest.raises(AssertionError):
+        -FALSE  # pylint: disable = pointless-statement
 
 
 def test_false_simplified() -> None:
@@ -120,7 +123,7 @@ def test_false_simplified() -> None:
 
 
 def test_false_variables() -> None:
-    assert FALSE.variables() == []
+    assert FALSE.variables() == [FALSE]
 
 
 def test_false_z3expr() -> None:
@@ -507,7 +510,7 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         operation(
             Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))),
-            BooleanTrue(location=Location((10, 30))),
+            Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:20: model: error: expected integer type\n"
         r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
@@ -997,7 +1000,10 @@ def test_relation_integer_type(relation: Callable[[Expr, Expr], Expr]) -> None:
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
 def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
-        relation(Variable("X", type_=rty.AnyInteger()), BooleanTrue(location=Location((10, 30)))),
+        relation(
+            Variable("X", type_=rty.AnyInteger()),
+            Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
+        ),
         r"^<stdin>:10:30: model: error: expected integer type\n"
         r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
@@ -1019,7 +1025,7 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
     assert_type_error(
         relation(
             Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
-            BooleanTrue(location=Location((10, 30))),
+            Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: model: error: expected aggregate"
         r" with element integer type\n"
@@ -1405,25 +1411,25 @@ def test_expr_variables() -> None:
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), Variable("X")],
+        [Variable("Y"), TRUE, Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), Variable("X")],
+        [Variable("Y"), TRUE, Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), Variable("X")],
+        [Variable("Y"), TRUE, Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
         ).variables(),
-        [Variable("Y"), Variable("X")],
+        [Variable("Y"), TRUE, Variable("X")],
     )
 
 
@@ -1450,7 +1456,7 @@ def test_expr_variables_duplicates() -> None:
         Or(
             Greater(Variable("X"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
         ).variables(),
-        [Variable("X")],
+        [Variable("X"), TRUE],
     )
 
 
@@ -1822,7 +1828,7 @@ def test_comprehension_substituted() -> None:
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
             lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
         ),
-        Comprehension("X", Variable("P_Y"), Variable("P_Z"), TRUE),
+        Comprehension("X", Variable("P_Y"), Variable("P_Z"), Variable("P_True")),
     )
     assert_equal(
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(

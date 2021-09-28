@@ -217,6 +217,36 @@ def test_substitution_relation_aggregate(
 
 
 @pytest.mark.parametrize(
+    "left,right,expected_left,expected_right",
+    [
+        (
+            expr.Variable("Value"),
+            expr.TRUE,
+            expr.Call("RFLX_Types::U64", [expr.Variable("Value")]),
+            expr.Call("RFLX_Types::U64", [expr.Call("To_Base", [expr.TRUE])]),
+        ),
+        (
+            expr.FALSE,
+            expr.Variable("Value"),
+            expr.Call("RFLX_Types::U64", [expr.Variable("Value")]),
+            expr.Call("RFLX_Types::U64", [expr.Call("To_Base", [expr.FALSE])]),
+        ),
+    ],
+)
+@pytest.mark.parametrize("relation", [expr.Equal, expr.NotEqual])
+def test_substitution_relation_boolean_literal(
+    relation: Callable[[expr.Expr, expr.Expr], expr.Relation],
+    left: expr.Expr,
+    right: expr.Expr,
+    expected_left: expr.Expr,
+    expected_right: expr.Expr,
+) -> None:
+    assert relation(left, right).substituted(
+        common.substitution(models.TLV_MESSAGE, "")
+    ) == relation(expected_left, expected_right)
+
+
+@pytest.mark.parametrize(
     "expressions,expected",
     [
         (
@@ -1032,7 +1062,7 @@ def test_session_declare(
         ),
         (
             rty.Message("T"),
-            expr.BooleanTrue(location=Location((10, 20))),
+            expr.Variable("True", location=Location((10, 20))),
             RecordFluxError,
             r'initialization for message type "T" not yet supported',
         ),

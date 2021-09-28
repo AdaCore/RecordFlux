@@ -15,7 +15,10 @@ def substitution(
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
-    def func(expression: expr.Expr) -> expr.Expr:
+    def type_conversion(expression: expr.Expr) -> expr.Expr:
+        return expr.Call(target_type, [expression]) if target_type else expression
+
+    def func(expression: expr.Expr) -> expr.Expr:  # pylint: disable = too-many-branches
         def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
             return expr.Aggregate(*[expr.Val(const.TYPES_BYTE, e) for e in aggregate.elements])
 
@@ -78,6 +81,25 @@ def substitution(
                     [expr.Variable("Ctx"), expr.Variable(field.affixed_name), aggregate],
                 )
                 return equal_call if isinstance(expression, expr.Equal) else expr.Not(equal_call)
+
+            boolean_literal = None
+            other = None
+            if (
+                isinstance(expression.left, expr.Variable)
+                and expression.left.identifier in model.BOOLEAN.literals
+            ):
+                boolean_literal = expression.left
+                other = expression.right
+            if (
+                isinstance(expression.right, expr.Variable)
+                and expression.right.identifier in model.BOOLEAN.literals
+            ):
+                boolean_literal = expression.right
+                other = expression.left
+            if boolean_literal and other:
+                return expression.__class__(
+                    other, type_conversion(expr.Call("To_Base", [boolean_literal]))
+                )
 
         def field_value(field: model.Field) -> expr.Expr:
             if public:
@@ -209,7 +231,7 @@ def substitution_facts(
         **{
             expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
             for t in message.types.values()
-            if isinstance(t, model.Enumeration)
+            if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         **{
@@ -217,7 +239,7 @@ def substitution_facts(
                 expr.Call("To_Base", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
-            if isinstance(t, model.Enumeration)
+            if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         # ISSUE: Componolit/RecordFlux#276

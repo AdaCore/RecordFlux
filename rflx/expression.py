@@ -261,70 +261,6 @@ class Expr(DBC, Base):
         return Proof(self, facts)
 
 
-class BooleanLiteral(Expr):
-    _str: str
-
-    def __init__(self, location: Location = None) -> None:
-        super().__init__(rty.BOOLEAN, location)
-        self._update_str()
-
-    @abstractmethod
-    def __neg__(self) -> "Expr":
-        raise NotImplementedError
-
-    def _check_type_subexpr(self) -> RecordFluxError:
-        return RecordFluxError()
-
-    @property
-    def precedence(self) -> Precedence:
-        return Precedence.LITERAL
-
-    def simplified(self) -> Expr:
-        return self
-
-
-class BooleanTrue(BooleanLiteral):
-    def _update_str(self) -> None:
-        self._str = intern("True")
-
-    def __repr__(self) -> str:
-        return "TRUE"
-
-    def __neg__(self) -> Expr:
-        return FALSE
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.TRUE
-
-    @lru_cache(maxsize=None)
-    def z3expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
-
-
-TRUE = BooleanTrue()
-
-
-class BooleanFalse(BooleanLiteral):
-    def _update_str(self) -> None:
-        self._str = intern("False")
-
-    def __repr__(self) -> str:
-        return "FALSE"
-
-    def __neg__(self) -> Expr:
-        return TRUE
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.FALSE
-
-    @lru_cache(maxsize=None)
-    def z3expr(self) -> z3.BoolRef:
-        return z3.BoolVal(False)
-
-
-FALSE = BooleanFalse()
-
-
 class Not(Expr):
     def __init__(self, expr: Expr) -> None:
         super().__init__(rty.BOOLEAN)
@@ -524,9 +460,9 @@ class AssExpr(Expr):
             t = term.simplified()
             if isinstance(t, Number):
                 total = self.operation(total, t.value)
-            elif isinstance(t, BooleanTrue):
+            elif t == TRUE:
                 total = self.operation(total, 1)
-            elif isinstance(t, BooleanFalse):
+            elif t == FALSE:
                 total = self.operation(total, 0)
             elif isinstance(t, type(self)):
                 all_terms += t.terms
@@ -1090,6 +1026,7 @@ class Variable(Name):
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
+        assert type_ != rty.BOOLEAN if negative else True, "boolean variable must not be negative"
         self.identifier = ID(identifier)
         super().__init__(negative, immutable, type_, location)
 
@@ -1124,10 +1061,18 @@ class Variable(Name):
         return ada.Variable(ada.ID(self.identifier), self.negative)
 
     @lru_cache(maxsize=None)
-    def z3expr(self) -> z3.ArithRef:
+    def z3expr(self) -> z3.ExprRef:
+        if self.identifier == ID("True"):
+            return z3.BoolVal(True)
+        if self.identifier == ID("False"):
+            return z3.BoolVal(False)
         if self.negative:
             return -z3.Int(self.name)
         return z3.Int(self.name)
+
+
+TRUE = Variable("True", type_=rty.BOOLEAN)
+FALSE = Variable("False", type_=rty.BOOLEAN)
 
 
 class Attribute(Name):

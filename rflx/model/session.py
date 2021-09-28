@@ -174,6 +174,19 @@ class AbstractSession(BasicDeclaration):
 
         self.error.propagate()
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return (
+                self.identifier == other.identifier
+                and self.initial == other.initial
+                and self.final == other.final
+                and self.states == other.states
+                and self.declarations == other.declarations
+                and self.parameters == other.parameters
+                and self.types == other.types
+            )
+        return NotImplemented
+
     def __repr__(self) -> str:
         return verbose_repr(self, ["identifier", "initial", "states", "declarations", "parameters"])
 

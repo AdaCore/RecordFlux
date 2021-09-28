@@ -39,7 +39,7 @@ def test_str() -> None:
                     State(
                         "A",
                         declarations=[
-                            decl.VariableDeclaration("Z", "Boolean", expr.Variable("Y")),
+                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
                             decl.VariableDeclaration("M", "TLV::Message"),
                         ],
                         actions=[stmt.Read("X", expr.Variable("M"))],
@@ -58,12 +58,12 @@ def test_str() -> None:
                     ),
                     State("B"),
                 ],
-                [decl.VariableDeclaration("Y", "Boolean", expr.FALSE)],
+                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE)],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.TypeDeclaration(Private("T")),
                     decl.FunctionDeclaration("F", [], "T"),
-                    decl.FunctionDeclaration("G", [decl.Argument("P", "T")], "Boolean"),
+                    decl.FunctionDeclaration("G", [decl.Argument("P", "T")], BOOLEAN.identifier),
                 ],
                 [BOOLEAN, TLV_MESSAGE],
             )
