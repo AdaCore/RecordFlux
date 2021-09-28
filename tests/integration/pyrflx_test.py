@@ -196,7 +196,7 @@ def test_imported_literals(tmp_path: Path) -> None:
         )
 
     pyrflx_ = PyRFLX.from_specs([str(tmp_path / "test.rflx")])
-    m = pyrflx_["Test"]["Message"]
+    m = pyrflx_.package("Test").new_message("Message")
 
     m.set("A", "E1")
     assert m.valid_message
@@ -251,7 +251,7 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
         skip_model_verification=True,
         skip_message_verification=True,
     )
-    frame_unv = pyrflx_["Ethernet"]["Frame"]
+    frame_unv = pyrflx_.package("Ethernet").new_message("Frame")
     frame_unv.set("Destination", int("FFFFFFFFFFFF", 16))
     frame_unv.set("Source", int("0", 16))
     frame_unv.set("Type_Length_TPID", int("0800", 16))
@@ -264,9 +264,9 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
 def test_no_verification_sequence_nested_messages(
     sequence_message_package: Package, message_sequence_value: MessageValue
 ) -> None:
-    sequence_message_one = sequence_message_package["Sequence_Element"]
+    sequence_message_one = sequence_message_package.new_message("Sequence_Element")
     sequence_message_one.set("Byte", 5)
-    sequence_message_two = sequence_message_package["Sequence_Element"]
+    sequence_message_two = sequence_message_package.new_message("Sequence_Element")
     sequence_message_two.set("Byte", 6)
     sequence: List[TypeValue] = [sequence_message_one, sequence_message_two]
     message_sequence_value.set("Length", 2)
@@ -278,11 +278,11 @@ def test_no_verification_sequence_nested_messages(
         skip_model_verification=True,
         skip_message_verification=True,
     )
-    sequence_message_package_unv = pyrflx_["Sequence_Message"]
-    sequence_message_unv = sequence_message_package_unv["Message_Sequence"]
-    sequence_element_one_unv = sequence_message_package_unv["Sequence_Element"]
+    sequence_message_package_unv = pyrflx_.package("Sequence_Message")
+    sequence_message_unv = sequence_message_package_unv.new_message("Message_Sequence")
+    sequence_element_one_unv = sequence_message_package_unv.new_message("Sequence_Element")
     sequence_element_one_unv.set("Byte", 5)
-    sequence_element_two_unv = sequence_message_package_unv["Sequence_Element"]
+    sequence_element_two_unv = sequence_message_package_unv.new_message("Sequence_Element")
     sequence_element_two_unv.set("Byte", 6)
     sequence_unv: List[TypeValue] = [sequence_element_one_unv, sequence_element_two_unv]
     sequence_message_unv.set("Length", 2)

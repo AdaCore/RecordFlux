@@ -32,9 +32,9 @@ def icmp_checksum(message: bytes, **kwargs: object) -> int:
 
 
 PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], skip_model_verification=True)
-ICMP = PYRFLX["ICMP"]
+ICMP = PYRFLX.package("ICMP")
 ICMP.set_checksum_functions({"Message": {"Checksum": icmp_checksum}})
-IP = PYRFLX["IPv4"]
+IP = PYRFLX.package("IPv4")
 
 ICMP_DATA = bytes(list(range(0, 56)))
 
@@ -97,7 +97,7 @@ def ping(target: str) -> None:
 
 
 def create_request(src: int, dst: int, seq: int) -> bytes:
-    msg = ICMP["Message"]
+    msg = ICMP.new_message("Message")
     msg.set("Tag", "Echo_Request")
     msg.set("Code_Zero", 0)
     msg.set("Checksum", 0)
@@ -106,7 +106,7 @@ def create_request(src: int, dst: int, seq: int) -> bytes:
     msg.set("Data", ICMP_DATA)
     msg.update_checksums()
 
-    pkt = IP["Packet"]
+    pkt = IP.new_message("Packet")
     pkt.set("Version", 4)
     pkt.set("IHL", 5)
     pkt.set("DSCP", 0)
@@ -129,7 +129,7 @@ def create_request(src: int, dst: int, seq: int) -> bytes:
 
 
 def parse_reply(message: bytes) -> MessageValue:
-    pkt = IP["Packet"]
+    pkt = IP.new_message("Packet")
     pkt.parse(message)
     return pkt
 

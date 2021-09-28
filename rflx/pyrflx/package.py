@@ -26,9 +26,6 @@ class Package(Base):
     def set_message(self, key: StrID, value: MessageValue) -> None:
         self.__messages[str(key)] = value
 
-    def __getitem__(self, key: StrID) -> MessageValue:
-        return self.new_message(key)
-
     def __iter__(self) -> Iterator[MessageValue]:
         return self.__messages.values().__iter__()
 
