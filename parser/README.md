@@ -12,16 +12,10 @@ As a prerequisite to build the parser, the following dependencies need to be ins
 **Note**: GNAT must be added to the PATH environment variable after installation: `export PATH=<GNAT-directory>/bin:$PATH`.
 
 
-To run the tests, the RecordFlux language package and its dependencies must also be installed. Either use the respective make target:
+To run the tests, the RecordFlux language package and its dependencies must also be installed. Use the respective make target:
 
 ```Console
 $ make install_parser
-```
-
-or install the development version manually using `pip`:
-
-```Console
-$ pip3 install ".[devel]"
 ```
 
 **Note:** Develop mode of setuptools (`pip -e`) is unsupported. The parser must be reinstalled before changes to the code take effect.

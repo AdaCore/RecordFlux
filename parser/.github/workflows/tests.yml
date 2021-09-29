@@ -41,8 +41,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
-        python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_parser
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -82,8 +81,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
-        python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_parser
     - name: Test
       run: |
         make test
