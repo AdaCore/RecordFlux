@@ -84,7 +84,9 @@ package TCP is
 
    type Options is sequence of Option;
 
-   type Segment is
+   type Segment_Length is range 20 .. 2 ** 32 - 1 with Size => 32;
+
+   type Segment (Segment_Length : Segment_Length) is
       message
          Source_Port : Port;
          Destination_Port : Port;
@@ -109,7 +111,8 @@ package TCP is
             with Size => (Data_Offset * 32) - (Urgent_Pointer'Last - Source_Port'First + 1)
             if (Options'Last - Source_Port'First + 1) mod 32 = 0;
          Data : Opaque
-            with Size => Message'Size - (Data_Offset * 32);
+            with Size => (Segment_Length * 8) - (Data_Offset * 32)
+            if Segment_Length >= Data_Offset * 4;
       end message;
 
 end TCP;
