@@ -1,6 +1,6 @@
 from langkit.parsers import Grammar, List, NoBacktrack, Opt, Or, Pick
 
-from language import ast
+from language import rflx_ast as ast
 from language.lexer import rflx_lexer as lexer
 
 grammar = Grammar("main_rule")
