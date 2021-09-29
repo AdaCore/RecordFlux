@@ -2,12 +2,23 @@
 
 ## Installation
 
-The required dependencies are listed in the [README](../README.md#installation). After cloning the repository, `pip` can be used to install the project in editable mode. The use of a [virtual environment](https://docs.python.org/3/tutorial/venv.html) is recommended.
+Additionally to the dependencies listed in the [README](../README.md#installation) the following libraries are required:
+
+- [AUnit](https://github.com/AdaCore/aunit) [![AUnit Alire Crate](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/aunit.json)](https://alire.ada.dev/crates/aunit.html) (if FSF GNAT is used)
+
+The FSF GNAT and all Ada dependencies can be installed using Alire.
+
+```Console
+$ make install_gnat
+$ eval `make printenv_gnat`
+```
+
+`pip` can be used to install the Python project in editable mode. The use of a [virtual environment](https://docs.python.org/3/tutorial/venv.html) is recommended.
 
 ```Console
 $ virtualenv -p python3 venv
 $ source venv/bin/activate
-$ pip3 install -e ".[devel]"
+$ make install_devel  # alternatively: pip3 install -e ".[devel]"
 ```
 
 ## Tools

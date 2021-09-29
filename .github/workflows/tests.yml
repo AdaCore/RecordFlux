@@ -49,13 +49,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -114,15 +114,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["python_coverage"]
-        python-version: [3.7, 3.8, 3.9]
+        target:
+          - "python_coverage"
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+        gnat-distrib:
+          - "community"
         include:
           - target: "python_unit"
             python-version: 3.7
+            gnat-distrib: "community"
           - target: "python_property"
             python-version: 3.7
+            gnat-distrib: "community"
           - target: "python_optimized"
             python-version: 3.7
+            gnat-distrib: "community"
+          - target: "python_optimized"
+            python-version: 3.7
+            gnat-distrib: "fsf"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
@@ -146,13 +158,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -168,6 +180,13 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         pip install .[devel]
+    - name: Install Alire
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Configure kernel parameters
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
@@ -175,6 +194,8 @@ jobs:
     - name: Test
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
+        eval `make printenv_gnat`
+        gnat --version
         make test_${{ matrix.target }}
 
   verification_python_scheduled:
@@ -205,12 +226,12 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
@@ -251,49 +272,74 @@ jobs:
           - "spark"
           - "spark NOPREFIX=1"
           - "spark_optimized"
+        gnat-distrib:
+          - "community"
+          - "fsf"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         submodules: true
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install Alire
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Test
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
+        eval `make printenv_gnat`
+        gnat --version
         make test_${{ matrix.target }}
 
   runtime_compatibility:
     name: Runtime compatibility
-    needs: skip_check_spark
-    if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gnat-distrib:
+          - "community"
+          - "fsf"
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install Alire
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Build
       run: |
+        eval `make printenv_gnat`
+        gnat --version
         make test_runtime
 
   verification_spark:
@@ -338,13 +384,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -392,12 +438,12 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
@@ -426,7 +472,7 @@ jobs:
           paths: '["defaults.gpr", "examples/apps/**", "rflx/**"]'
 
   tests_apps:
-    name: Tests (apps)
+    name: App Tests
     needs: skip_check_apps
     runs-on: ubuntu-20.04
     strategy:
@@ -436,6 +482,11 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
+        gnat-distrib:
+          - "community"
+        include:
+          - python-version: 3.7
+            gnat-distrib: "fsf"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
@@ -459,13 +510,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -481,6 +532,13 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         pip install .[devel]
+    - name: Install Alire
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Configure kernel parameters
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
@@ -488,10 +546,12 @@ jobs:
     - name: Test
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
+        eval `make printenv_gnat`
+        gnat --version
         make test_apps
 
   verification_apps:
-    name: Verification (apps)
+    name: App Verification
     needs: skip_check_apps
     runs-on: ubuntu-20.04
     strategy:
@@ -523,13 +583,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -561,9 +621,15 @@ jobs:
           paths: '["defaults.gpr", "examples/specs/**", "rflx/**"]'
 
   tests_specs:
-    name: Tests (specs)
+    name: Specification Tests
     needs: skip_check_specs
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gnat-distrib:
+          - "community"
+          - "fsf"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
@@ -587,13 +653,13 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache Ada toolchain
+    - name: Cache GNAT Community
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
+    - name: Install GNAT Community
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
@@ -609,7 +675,16 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         pip install .[devel]
+    - name: Install Alire
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Test
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       run: |
+        eval `make printenv_gnat`
+        gnat --version
         make test_specs

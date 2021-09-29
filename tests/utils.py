@@ -180,9 +180,12 @@ def _create_files(
                   for Main use ({main});
 
                   package Builder is
-                     for Default_Switches ("Ada") use
-                        Defaults.Builder_Switches & Defaults.Compiler_Switches;
+                     for Default_Switches ("Ada") use Defaults.Builder_Switches;
                   end Builder;
+
+                  package Compiler is
+                     for Default_Switches ("Ada") use Defaults.Compiler_Switches;
+                  end Compiler;
 
                   package Prove is
                      for Proof_Dir use "proof";
