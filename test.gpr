@@ -3,9 +3,8 @@ with "defaults";
 
 project Test is
 
-   type Flag_Type is ("yes", "no");
-   AUnit : Flag_Type := external ("aunit", "yes");
-   Optimization : Flag_Type := external ("optimization", "no");
+   type Build_Type is ("default", "optimized", "unchecked");
+   Build_Type : Build_Type := external ("type", "default");
    Test := external ("test", "");
 
    Spec_Dir := "examples/specs";
@@ -15,10 +14,6 @@ project Test is
 
    for Languages use ("Ada", "RecordFlux");
 
-   package Compiler is
-      for Driver ("RecordFlux") use "";
-   end Compiler;
-
    package Naming is
       for Spec_Suffix ("RecordFlux") use ".rflx";
    end Naming;
@@ -27,8 +22,8 @@ project Test is
       for Output_Dir use Generated_Dir;
    end RecordFlux;
 
-   case AUnit is
-      when "yes" =>
+   case Build_Type is
+      when "default" | "optimized" =>
          for Source_Dirs use (Test_Dir, Generated_Dir, Spec_Dir);
          case Test is
             when "" =>
@@ -36,25 +31,35 @@ project Test is
             when others =>
                for Main use ("test_" & Test & ".adb");
          end case;
-      when "no" =>
+      when "unchecked" =>
          for Source_Dirs use (Generated_Dir, Spec_Dir);
    end case;
 
-   for Object_Dir use "build";
+   for Object_Dir use "build/test";
    for Create_Missing_Dirs use "True";
-
-   package Builder is
-      case Optimization is
-         when "yes" =>
-            for Default_Switches ("Ada") use Defaults.Builder_Switches & ("-O3");
-         when "no" =>
-            for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;
-      end case;
-   end Builder;
 
    package Binder is
       for Default_Switches ("Ada") use Defaults.Binder_Switches;
    end Binder;
+
+   package Builder is
+      case Build_Type is
+         when "default" | "unchecked" =>
+            for Default_Switches ("Ada") use Defaults.Builder_Switches;
+         when "optimized" =>
+            for Default_Switches ("Ada") use Defaults.Builder_Switches & ("-O3");
+      end case;
+   end Builder;
+
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+      case Build_Type is
+         when "default" | "optimized" =>
+            for Default_Switches ("Ada") use Defaults.Compiler_Switches;
+         when "unchecked" =>
+            null;
+      end case;
+   end Compiler;
 
    package Prove is
       for Proof_Dir use Proof_Dir;
