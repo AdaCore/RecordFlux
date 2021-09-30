@@ -38,7 +38,7 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Install toolchain
+    - name: Install GNAT Community
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
@@ -58,7 +58,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+        gnat-distrib:
+          - community
+          - fsf
     steps:
     - uses: actions/checkout@v2
       with:
@@ -78,10 +84,18 @@ jobs:
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Install toolchain
+    - name: Install GNAT Community
+      if: ${{ matrix.gnat-distrib == 'community' }}
       uses: ada-actions/toolchain@ce2020
       with:
         distrib: community
+    - name: Install Alire
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
+      uses: alire-project/setup-alire@v1
+    - name: Install FSF GNAT
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
+      run: |
+        make install_gnat
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -90,4 +104,5 @@ jobs:
         make install_devel
     - name: Test
       run: |
+        eval `make printenv_gnat`
         make test

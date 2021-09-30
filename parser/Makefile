@@ -86,5 +86,18 @@ $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	$(VERBOSE)sed -i -e 's/##VERSION##/$(VERSION)/g' $(DISTDIR)/setup.py
 	$(VERBOSE)cp README.md $(DISTDIR)/README.md
 
+install_gnat:
+	alr toolchain --install gnat_native=11.2.1 && \
+	mkdir -p build && \
+	cd build && \
+	alr init --lib -n alire && \
+	cd alire && \
+	alr with -n gnatcoll_iconv
+
+printenv_gnat:
+	@test -d build/alire && \
+	cd build/alire && \
+	alr printenv
+
 clean:
 	rm -rf .mypy_cache .pytest_cache .egg build
