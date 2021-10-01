@@ -94,6 +94,7 @@ with open(base_dir / "README.md") as f:
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "Topic :: Communications",
             "Topic :: Security",
             "Topic :: Software Development :: Build Tools",
