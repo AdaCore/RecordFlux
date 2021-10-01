@@ -398,7 +398,7 @@
   <proof prover="0"><result status="valid" steps="99566"/></proof>
   </goal>
   <goal name="def&#39;vc.117" proved="true">
-  <proof prover="0"><result status="valid" steps="87547166"/></proof>
+  <proof prover="0"><result status="valid" steps="167484324"/></proof>
   </goal>
   <goal name="def&#39;vc.118" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -439,7 +439,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.129" proved="true">
-  <proof prover="0"><result status="valid" steps="103034"/></proof>
+  <proof prover="0"><result status="valid" steps="103042"/></proof>
   </goal>
   <goal name="def&#39;vc.130" proved="true">
   <proof prover="0"><result status="valid" steps="105529"/></proof>
@@ -453,7 +453,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.133" proved="true">
-  <proof prover="0"><result status="valid" steps="1087963"/></proof>
+  <proof prover="0"><result status="valid" steps="953268"/></proof>
   </goal>
   <goal name="def&#39;vc.134" proved="true">
   <proof prover="0"><result status="valid" steps="68776"/></proof>
@@ -491,10 +491,10 @@
   <proof prover="0"><result status="valid" steps="69741"/></proof>
   </goal>
   <goal name="def&#39;vc.145" proved="true">
-  <proof prover="0"><result status="valid" steps="959931"/></proof>
+  <proof prover="0"><result status="valid" steps="959813"/></proof>
   </goal>
   <goal name="def&#39;vc.146" proved="true">
-  <proof prover="0"><result status="valid" steps="959892"/></proof>
+  <proof prover="0"><result status="valid" steps="959774"/></proof>
   </goal>
   <goal name="def&#39;vc.147" proved="true">
   <proof prover="0"><result status="valid" steps="797961"/></proof>
@@ -621,7 +621,7 @@
   <proof prover="0"><result status="valid" steps="111851"/></proof>
   </goal>
   <goal name="def&#39;vc.182" proved="true">
-  <proof prover="0"><result status="valid" steps="1012042"/></proof>
+  <proof prover="0"><result status="valid" steps="1012041"/></proof>
   </goal>
   <goal name="def&#39;vc.183" proved="true">
   <proof prover="0"><result status="valid" steps="111655"/></proof>
