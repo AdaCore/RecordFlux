@@ -387,10 +387,12 @@ class AbstractMessage(mty.Type):
 
     def replaced_message_attributes(self) -> Tuple["AbstractMessage", List[Optional[Location]]]:
         """
-        Replace all occurences of the message attribute Message'Size by the equivalent term
-        Message'Last - Message'First + 1. Then replace all occurences of the message attribute
-        Message'First by a reference to the first field of a message. Return the new message and
-        a list of locations where Message'Last or Message'Size have been used.
+        Replace all occurences of the message attribute Message'Size.
+
+        Replace Message'Size by the equivalent term Message'Last - Message'First + 1. Then replace
+        all occurences of the message attribute Message'First by a reference to the first field of a
+        message. Return the new message and a list of locations where Message'Last or Message'Size
+        have been used.
         """
         first_field = self.outgoing(INITIAL)[0].target
         locations = []
@@ -1453,8 +1455,9 @@ class Message(AbstractMessage):
 
     def __prove_coverage(self) -> None:
         """
-        Prove that the fields of a message cover all message bits, i.e. there are no holes in the
-        message definition.
+        Prove that the fields of a message cover all message bits.
+
+        This ensures that there are no holes in the message definition.
 
         Idea: Let f be the bits covered by the message. By definition
             (1) f >= Message'First and f <= Message'Last
@@ -1673,9 +1676,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def __prove_message_size(self) -> None:
-        """
-        Prove that all message paths lead to a message with a size that is a multiple of 8 bit.
-        """
+        """Prove that all paths lead to a message with a size that is a multiple of 8 bit."""
         proofs = expr.ParallelProofs(self.__workers)
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [

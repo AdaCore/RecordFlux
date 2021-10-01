@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-This tool checks that each requirement is referenced at least once in the given directories.
-"""
+"""Check that each requirement is referenced at least once in the given directories."""
 
 import argparse
 import itertools

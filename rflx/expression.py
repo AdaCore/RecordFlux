@@ -1260,7 +1260,7 @@ class Opaque(Attribute):
 
 
 class Val(Attribute):
-    """Only used by code generator and therefore provides minimum functionality"""
+    """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(
         self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
@@ -1306,7 +1306,7 @@ class Val(Attribute):
 
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
-    """Only used by code generator and therefore provides minimum functionality"""
+    """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
         self.prefix = prefix
@@ -1609,7 +1609,7 @@ class String(Aggregate):
 
 
 class NamedAggregate(Expr):
-    """Only used by code generator and therefore provides minimum functionality"""
+    """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(self, *elements: Tuple[Union[StrID, "ValueRange"], Expr]) -> None:
         super().__init__()

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Upgrade all development dependencies of RecordFlux."""
+
 from subprocess import call
 
 from pkg_resources import get_distribution

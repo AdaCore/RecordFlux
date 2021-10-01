@@ -578,6 +578,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
     @staticmethod
     def __create_context_type(message: Message) -> UnitPart:
         """
+        Create a context type.
+
         Components of a context type:
 
             Buffer_First, Buffer_Last:

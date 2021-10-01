@@ -1,5 +1,7 @@
 #!/usr/bin/env -S python3 -O
 
+"""Generate the SPARK code for the test project and all feature tests."""
+
 import logging
 import sys
 from pathlib import Path

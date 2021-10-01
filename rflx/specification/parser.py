@@ -66,7 +66,9 @@ def node_location(node: RFLXNode, filename: Path) -> Location:
 
 def type_location(identifier: ID, node: RFLXNode) -> Location:
     """
-    Create a location object covering the area from the start of an identifier to the end of a node.
+    Create a location object.
+
+    The location object covers the area from the start of an identifier to the end of a node.
     """
     assert identifier.location is not None
     assert identifier.location.source is not None
@@ -80,9 +82,7 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
 def diagnostics_to_error(
     diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path
 ) -> bool:
-    """
-    Append langkit diagnostics to RecordFlux error. Return True if error occured.
-    """
+    """Append langkit diagnostics to RecordFlux error. Return True if error occured."""
 
     if len(diagnostics) == 0:
         return False
@@ -1492,9 +1492,7 @@ class Parser:
         return error
 
     def __sort_specs_topologically(self) -> None:
-        """
-        (Reverse) Topologically sort specifications using Kahn's algorithm.
-        """
+        """(Reverse) Topologically sort specifications using Kahn's algorithm."""
 
         result: List[str] = []
         incoming: Dict[str, Set[str]] = {f: set() for f in self.__specifications.keys()}

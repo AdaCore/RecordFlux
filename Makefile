@@ -19,7 +19,7 @@ test-bin := $(noprefix-dir)/$(build-dir)/test/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
-.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc \
+.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_verification test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
@@ -28,7 +28,7 @@ endif
 
 all: check test prove
 
-check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_doc
+check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
 check_packages:
 	tools/check_packages.py $(python-packages)
@@ -53,6 +53,9 @@ check_mypy:
 
 check_contracts:
 	pyicontract-lint $(python-packages)
+
+check_pydocstyle:
+	pydocstyle $(python-packages)
 
 check_doc:
 	tools/check_doc.py

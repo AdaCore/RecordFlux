@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-This tool checks the correctness of code examples in the documentation.
-"""
+"""Check the correctness of code examples in the documentation."""
 
 import enum
 import os
