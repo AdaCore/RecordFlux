@@ -3,6 +3,8 @@ import typing as ty
 from abc import abstractmethod
 from dataclasses import dataclass
 
+from typing_extensions import Protocol
+
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
 from rflx.expression import (
@@ -43,9 +45,25 @@ from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
 
 
+class ChecksumFunction(Protocol):
+    def __call__(self, message: bytes, **kwargs: object) -> int:
+        ...  # pragma: no cover
+
+
+ValueType = ty.Union[
+    "MessageValue",
+    ty.List["TypeValue"],
+    ty.Sequence["TypeValue"],
+    ty.Tuple[str, Number],
+    int,
+    str,
+    bytes,
+]
+
+
 class TypeValue(Base):
 
-    _value: ty.Any = None
+    _value: ty.Optional[ValueType] = None
 
     def __init__(self, vtype: Type) -> None:
         self._type = vtype
@@ -82,7 +100,7 @@ class TypeValue(Base):
         self._value = None
 
     @abstractmethod
-    def assign(self, value: ty.Any, check: bool = True) -> None:
+    def assign(self, value: ty.Any, check: bool = True) -> None:  # type: ignore[misc]
         raise NotImplementedError
 
     @abstractmethod
@@ -101,7 +119,7 @@ class TypeValue(Base):
 
     @property
     @abstractmethod
-    def value(self) -> ty.Any:
+    def value(self) -> ValueType:
         raise NotImplementedError
 
     @property
@@ -329,7 +347,7 @@ class CompositeValue(TypeValue):
 
     @property
     @abstractmethod
-    def value(self) -> ty.Any:
+    def value(self) -> ValueType:
         raise NotImplementedError
 
 
@@ -976,7 +994,7 @@ class MessageValue(TypeValue):
         except ValueError:
             self.accessible_fields = fields
 
-    def set_checksum_function(self, checksums: ty.Dict[str, ty.Callable]) -> None:
+    def set_checksum_function(self, checksums: ty.Dict[str, ChecksumFunction]) -> None:
         for checksum_field_name, checksum_function in checksums.items():
             if checksum_field_name not in self.fields:
                 raise PyRFLXError(
@@ -1059,16 +1077,14 @@ class MessageValue(TypeValue):
             checksum_value = self._calculate_checksum(checksum)
             self._fields[checksum.field_name].typeval.assign(checksum_value)
 
-    def _calculate_checksum(
-        self, checksum: "MessageValue.Checksum"
-    ) -> ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring]:
+    def _calculate_checksum(self, checksum: "MessageValue.Checksum") -> int:
         if not checksum.function:
             raise PyRFLXError(
                 f"cannot calculate checksum for {checksum.field_name}: "
                 f"no callable checksum function provided"
             )
 
-        arguments: ty.Dict[str, ty.Union[int, ty.Tuple[int, int]]] = {}
+        arguments: ty.Dict[str, ty.Union[int, bytes, ty.Tuple[int, int]]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
                 assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
@@ -1083,17 +1099,15 @@ class MessageValue(TypeValue):
                     expr_tuple.evaluated_expression.name in self.fields
                     and self._fields[expr_tuple.evaluated_expression.name].set
                 )
-                arguments[str(expr_tuple.expression)] = self._fields[
-                    expr_tuple.evaluated_expression.name
-                ].typeval.value
+                val = self._fields[expr_tuple.evaluated_expression.name].typeval.value
+                assert isinstance(val, bytes)
+                arguments[str(expr_tuple.expression)] = val
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
         return checksum.function(self._unchecked_bytestring(), **arguments)
 
-    def get(
-        self, field_name: str
-    ) -> ty.Union["MessageValue", ty.Sequence[TypeValue], int, str, bytes]:
+    def get(self, field_name: str) -> ValueType:
         if field_name not in self.valid_fields:
             if field_name not in self.fields:
                 raise PyRFLXError(f'"{field_name}" is not a field of this message')
@@ -1126,7 +1140,7 @@ class MessageValue(TypeValue):
         return Bitstring(bits)
 
     @property
-    def value(self) -> ty.Any:
+    def value(self) -> ValueType:
         raise NotImplementedError
 
     def _unchecked_bytestring(self) -> bytes:
@@ -1271,7 +1285,7 @@ class MessageValue(TypeValue):
     class Checksum:
         def __init__(self, field_name: str, parameters: ty.Sequence[Expr]):
             self.field_name = field_name
-            self.function: ty.Optional[ty.Callable] = None
+            self.function: ty.Optional[ChecksumFunction] = None
             self.calculated = False
 
             @dataclass

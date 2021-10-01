@@ -46,7 +46,7 @@ def substitution(
                 if embedded:
                     return expression.__class__(
                         expr.Indexed(
-                            expr.Variable(expr.ID("Buffer") * "all"),
+                            expr.Variable(rid.ID("Buffer") * "all"),
                             expr.ValueRange(
                                 expr.Call(
                                     const.TYPES_TO_INDEX,
@@ -106,10 +106,10 @@ def substitution(
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(
-                    expr.Variable(expr.ID("Ctx") * "Cursors" if not embedded else "Cursors"),
+                    expr.Variable(rid.ID("Ctx") * "Cursors" if not embedded else "Cursors"),
                     expr.Variable(field.affixed_name),
                 ),
-                expr.ID("Value") * f"{field.name}_Value",
+                rid.ID("Value") * f"{field.name}_Value",
             )
 
         if isinstance(expression, expr.Relation):
@@ -143,7 +143,7 @@ def substitution_facts(
     target_type: Optional[ada.ID] = const.TYPES_U64,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
-        return expr.Variable(expr.ID("Ctx") * name) if not embedded else expr.Variable(name)
+        return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
     last = prefixed("Last")
@@ -196,14 +196,14 @@ def substitution_facts(
                 )
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                expr.ID("Value") * f"{field.name}_Value",
+                rid.ID("Value") * f"{field.name}_Value",
             )
         if isinstance(field_type, model.Scalar):
             if public:
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                expr.ID("Value") * f"{field.name}_Value",
+                rid.ID("Value") * f"{field.name}_Value",
             )
         if isinstance(field_type, model.Composite):
             return expr.Variable(field.name)

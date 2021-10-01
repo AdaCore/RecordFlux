@@ -50,7 +50,7 @@ def file_name(name: str) -> str:
     return re.sub(r"(?:\.|::)", "-", name.lower())
 
 
-T = TypeVar("T")  # pylint: disable=invalid-name
+T = TypeVar("T")
 
 
 def unique(iterable: Iterable[T]) -> Iterator[T]:

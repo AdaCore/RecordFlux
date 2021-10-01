@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Callable, Dict, Sequence
+from typing import Callable, Dict, List, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -60,7 +60,7 @@ class AttributeStatement(Statement):
         self,
         identifier: StrID,
         attribute: str,
-        parameters: Sequence[Expr],
+        parameters: List[Expr],
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
@@ -139,7 +139,6 @@ class Extend(ListAttributeStatement):
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
         self.type_ = statement_type
-        assert isinstance(self.parameters, list)
         self.parameters[0] = self.parameters[0].substituted(typify_variable)
         return rty.check_type_instance(
             statement_type, rty.Sequence, self.location, f'variable "{self.identifier}"'

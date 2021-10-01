@@ -1,9 +1,10 @@
 import glob
 import os
 import re
-from typing import Any, Sequence
+from typing import Sequence
 
 import hypothesis
+from _pytest.config import Config
 
 from rflx import expression as expr
 from tests.const import FIXTURE_DIR
@@ -18,7 +19,7 @@ hypothesis.settings.register_profile(
 hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
 
 
-def pytest_configure(config: Any) -> None:
+def pytest_configure(config: Config) -> None:
     config.addinivalue_line(
         "markers", "verification: Tests which use GNATprove to formally verify SPARK code."
     )

@@ -2,10 +2,12 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
+from typing import Callable, Mapping, Optional, Sequence, Tuple, Type
 
 import pkg_resources
 import pytest
+from _pytest.capture import CaptureFixture
+from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import ada, expression as expr, typing_ as rty
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
@@ -80,7 +82,7 @@ def test_unsupported_checksum() -> None:
         Generator(models.TLV_WITH_CHECKSUM_MODEL)
 
 
-def test_ignore_unsupported_checksum(capsys: Any) -> None:
+def test_ignore_unsupported_checksum(capsys: CaptureFixture[str]) -> None:
     Generator(models.TLV_WITH_CHECKSUM_MODEL, ignore_unsupported_checksum=True)
     captured = capsys.readouterr()
     assert "generator: warning: unsupported checksum ignored" in captured.out
@@ -112,7 +114,7 @@ def test_library_files_no_prefix(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_missing_template_directory(monkeypatch: Any, tmp_path: Path) -> None:
+def test_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
         generator = Generator(Model())
@@ -120,7 +122,7 @@ def test_missing_template_directory(monkeypatch: Any, tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_missing_template_files(monkeypatch: Any, tmp_path: Path) -> None:
+def test_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
     with pytest.raises(AssertionError, match="^template file not found"):
         generator = Generator(Model())
@@ -169,7 +171,7 @@ def test_substitution_relation_aggregate(
     if embedded:
         expected = relation(
             expr.Indexed(
-                expr.Variable(expr.ID("Buffer") * "all"),
+                expr.Variable(ID("Buffer") * "all"),
                 expr.ValueRange(
                     expr.Call(
                         const.TYPES_TO_INDEX,

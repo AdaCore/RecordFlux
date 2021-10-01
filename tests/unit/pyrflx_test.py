@@ -1104,7 +1104,7 @@ def fixture_tlv_checksum_message(tlv_checksum_package: Package) -> Message:
 def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
     # pylint: disable=protected-access
     tlv_msg = MessageValue(tlv_checksum_message)
-    tlv_msg.set_checksum_function({"Checksum": lambda x, **y: 0})
+    tlv_msg.set_checksum_function({"Checksum": lambda message, **kwargs: 0})
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Tag", "Msg_Data")
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
@@ -1148,11 +1148,13 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
 
 
-def checksum_function_zero(_: bytes, **__: object) -> int:
+def checksum_function_zero(message: bytes, **_kwargs: object) -> int:
+    # pylint: disable=unused-argument
     return 0
 
 
-def checksum_function_255(_: bytes, **__: object) -> int:
+def checksum_function_255(message: bytes, **_kwargs: object) -> int:
+    # pylint: disable=unused-argument
     return 0xFF
 
 
@@ -1194,14 +1196,17 @@ def test_set_checksum_to_pyrflx(
         "Message"
     )
     tlv_with_checksum_msg = pyrflx_checksum.package("TLV_With_Checksum").new_message("Message")
-    assert callable(refinement_with_checksum_msg._checksums["Checksum"].function)
-    assert callable(tlv_with_checksum_msg._checksums["Checksum"].function)
+    refinement_checksum_function = refinement_with_checksum_msg._checksums["Checksum"].function
+    tlv_checksum_function = tlv_with_checksum_msg._checksums["Checksum"].function
+    assert callable(refinement_checksum_function)
+    assert callable(tlv_checksum_function)
+    # ISSUE: python/mypy#10976
     assert (
-        refinement_with_checksum_msg._checksums["Checksum"].function.__name__
+        refinement_checksum_function.__name__  # type: ignore[attr-defined]
         == checksum_function_255.__name__
     )
     assert (
-        tlv_with_checksum_msg._checksums["Checksum"].function.__name__
+        tlv_checksum_function.__name__  # type: ignore[attr-defined]
         == checksum_function_zero.__name__
     )
 

@@ -4,7 +4,7 @@ import pylint.testutils
 import tools.rflx_pylint_checker
 
 
-class TestNamedBooleanArgumentsChecker(pylint.testutils.CheckerTestCase):
+class TestNamedBooleanArgumentsChecker(pylint.testutils.CheckerTestCase):  # type: ignore[misc]
     CHECKER_CLASS = tools.rflx_pylint_checker.NamedBooleanArgumentsChecker
 
     def test_valid_calls(self) -> None:

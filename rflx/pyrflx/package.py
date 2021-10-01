@@ -1,9 +1,9 @@
-from typing import Callable, Dict, Iterator, Mapping, Union
+from typing import Dict, Iterator, Mapping, Union
 
 from rflx.common import Base
 from rflx.identifier import StrID
 from rflx.pyrflx import PyRFLXError
-from rflx.pyrflx.typevalue import MessageValue
+from rflx.pyrflx.typevalue import ChecksumFunction, MessageValue
 
 
 class Package(Base):
@@ -29,7 +29,7 @@ class Package(Base):
     def __iter__(self) -> Iterator[MessageValue]:
         return self.__messages.values().__iter__()
 
-    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, Callable]]) -> None:
+    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, ChecksumFunction]]) -> None:
         for message_name, field_name_to_function_mapping in functions.items():
             message_name = str(message_name)
             if message_name not in self.__messages:

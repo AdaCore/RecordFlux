@@ -1,15 +1,14 @@
 from pathlib import Path
 
 import pytest
-from librflxlang import AnalysisContext
+from librflxlang import AnalysisContext, GrammarRule
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
-from rflx.model import declaration as decl, statement as stmt
+from rflx.model import State, declaration as decl, statement as stmt
 from rflx.specification.parser import (
     STDIN,
-    GrammarRule,
     Parser,
     create_declaration,
     create_formal_declaration,
@@ -24,19 +23,27 @@ from tests.utils import parse, parse_bool_expression, parse_expression, parse_ma
 
 
 def parse_statement(data: str) -> stmt.Statement:
-    return parse(data, GrammarRule.action_rule, create_statement)
+    statement = parse(data, GrammarRule.action_rule, create_statement)
+    assert isinstance(statement, stmt.Statement)
+    return statement
 
 
 def parse_declaration(data: str) -> decl.Declaration:
-    return parse(data, GrammarRule.declaration_rule, create_declaration)
+    declaration = parse(data, GrammarRule.declaration_rule, create_declaration)
+    assert isinstance(declaration, decl.Declaration)
+    return declaration
 
 
 def parse_formal_declaration(data: str) -> decl.Declaration:
-    return parse(data, GrammarRule.session_parameter_rule, create_formal_declaration)
+    declaration = parse(data, GrammarRule.session_parameter_rule, create_formal_declaration)
+    assert isinstance(declaration, decl.Declaration)
+    return declaration
 
 
-def parse_state(data: str) -> decl.Declaration:
-    return parse(data, GrammarRule.state_rule, create_state)
+def parse_state(data: str) -> State:
+    state = parse(data, GrammarRule.state_rule, create_state)
+    assert isinstance(state, State)
+    return state
 
 
 def parse_session(string: str) -> model.Session:

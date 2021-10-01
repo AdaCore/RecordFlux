@@ -6,6 +6,7 @@ from distutils.dir_util import copy_tree
 from typing import Any, Callable, Iterable, List, Mapping, Sequence, Tuple, Union
 
 import pytest
+from librflxlang import AnalysisContext, GrammarRule
 
 from rflx import ada
 from rflx.error import Location, RecordFluxError
@@ -16,8 +17,6 @@ from rflx.model import Field, Link, Message, Model, Session, State, Type, declar
 from rflx.specification import Parser
 from rflx.specification.parser import (
     STDIN,
-    AnalysisContext,
-    GrammarRule,
     create_bool_expression,
     create_expression,
     create_math_expression,
@@ -25,7 +24,7 @@ from rflx.specification.parser import (
 )
 
 
-def assert_equal(left: Any, right: Any) -> None:
+def assert_equal(left: Any, right: Any) -> None:  # type: ignore[misc]
     assert left == right
 
 
@@ -483,7 +482,11 @@ def multilinestr(string: str) -> str:
     return string.replace(15 * " ", "")
 
 
-def parse(data: str, rule: GrammarRule, convert: Callable[..., Any]) -> Any:
+def parse(  # type: ignore[misc]
+    data: str,
+    rule: GrammarRule,
+    convert: Callable[[object, pathlib.Path], Any],
+) -> Any:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
@@ -493,13 +496,19 @@ def parse(data: str, rule: GrammarRule, convert: Callable[..., Any]) -> Any:
 
 def parse_math_expression(data: str, extended: bool) -> Expr:
     rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
-    return parse(data, rule, create_math_expression)
+    expression = parse(data, rule, create_math_expression)
+    assert isinstance(expression, Expr)
+    return expression
 
 
 def parse_bool_expression(data: str, extended: bool) -> Expr:
     rule = GrammarRule.extended_expression_rule if extended else GrammarRule.expression_rule
-    return parse(data, rule, create_bool_expression)
+    expression = parse(data, rule, create_bool_expression)
+    assert isinstance(expression, Expr)
+    return expression
 
 
 def parse_expression(data: str, rule: GrammarRule = GrammarRule.extended_expression_rule) -> Expr:
-    return parse(data, rule, create_expression)
+    expression = parse(data, rule, create_expression)
+    assert isinstance(expression, Expr)
+    return expression

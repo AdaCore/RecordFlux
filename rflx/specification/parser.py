@@ -108,6 +108,7 @@ def diagnostics_to_error(
 
 def create_description(description: Description = None) -> Optional[str]:
     if description:
+        assert isinstance(description.text, str)
         return description.text.split('"')[1]
     return None
 
@@ -342,7 +343,7 @@ def create_binop(expression: Expr, filename: Path) -> expr.Expr:
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
-MATH_OPERATIONS = {
+MATH_OPERATIONS: Dict[str, Union[Type[expr.BinExpr], Type[expr.AssExpr]]] = {
     "OpPow": expr.Pow,
     "OpAdd": expr.Add,
     "OpSub": expr.Sub,

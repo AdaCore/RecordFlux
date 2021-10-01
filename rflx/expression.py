@@ -1116,7 +1116,9 @@ class Attribute(Name):
         return self.prefix.variables()
 
     def ada_expr(self) -> ada.Expr:
-        return getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
+        result = getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
+        assert isinstance(result, ada.Expr)
+        return result
 
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, (Variable, Selected)):
@@ -1292,9 +1294,11 @@ class Val(Attribute):
         return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
 
     def ada_expr(self) -> ada.Expr:
-        return getattr(ada, self.__class__.__name__)(
+        result = getattr(ada, self.__class__.__name__)(
             self.prefix.ada_expr(), self.expression.ada_expr(), self.negative
         )
+        assert isinstance(result, ada.Expr)
+        return result
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1948,9 +1952,11 @@ class QuantifiedExpression(Expr):
         )
 
     def ada_expr(self) -> ada.Expr:
-        return getattr(ada, self.__class__.__name__)(
+        result = getattr(ada, self.__class__.__name__)(
             self.parameter_identifier, self.iterable.ada_expr(), self.predicate.ada_expr()
         )
+        assert isinstance(result, ada.Expr)
+        return result
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:

@@ -30,6 +30,9 @@ from rflx.model import (
 )
 from rflx.specification import const
 
+T = ty.TypeVar("T")
+Draw = ty.TypeVar("Draw", bound=ty.Callable[[st.SearchStrategy[T]], T])
+
 
 def unique_qualified_identifiers() -> ty.Generator[ID, None, None]:
     prefix = ""
@@ -46,7 +49,7 @@ def unique_qualified_identifiers() -> ty.Generator[ID, None, None]:
 
 
 @st.composite
-def identifiers(draw: ty.Callable) -> ID:
+def identifiers(draw: Draw) -> ID:
     name = draw(st.text(string.ascii_uppercase, min_size=1))
     assume(name.lower() not in const.RESERVED_WORDS)
     return ID(name)
@@ -54,7 +57,7 @@ def identifiers(draw: ty.Callable) -> ID:
 
 @st.composite
 def sizes(
-    draw: ty.Callable,
+    draw: Draw,
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> int:
@@ -69,7 +72,7 @@ def sizes(
 
 @st.composite
 def modular_integers(
-    draw: ty.Callable,
+    draw: Draw,
     unique_identifiers: ty.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
@@ -82,7 +85,7 @@ def modular_integers(
 
 @st.composite
 def range_integers(
-    draw: ty.Callable,
+    draw: Draw,
     unique_identifiers: ty.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
@@ -98,13 +101,13 @@ def range_integers(
 
 @st.composite
 def enumerations(
-    draw: ty.Callable,
+    draw: Draw,
     unique_identifiers: ty.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> Enumeration:
     @st.composite
-    def literal_identifiers(_: ty.Callable) -> str:
+    def literal_identifiers(_: ty.Callable[[], object]) -> str:
         assert unique_identifiers
         return str(next(unique_identifiers).name)
 
@@ -117,7 +120,7 @@ def enumerations(
                     expr.Number, st.integers(min_value=0, max_value=min(2 ** size - 1, 2 ** 63 - 1))
                 ),
             ),
-            unique_by=(lambda x: x[0], lambda x: x[1]),
+            unique_by=(lambda x: x[0], lambda x: x[1]),  # type: ignore[no-any-return]
             min_size=1,
             max_size=2 ** size,
         )
@@ -133,7 +136,7 @@ def enumerations(
 
 @st.composite
 def scalars(
-    draw: ty.Callable,
+    draw: Draw,
     unique_identifiers: ty.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
@@ -149,7 +152,7 @@ def scalars(
 
 @st.composite
 def sequences(
-    draw: ty.Callable,
+    draw: Draw,
     element_types: st.SearchStrategy[Type],
     unique_identifiers: ty.Generator[ID, None, None],
 ) -> Sequence:
@@ -157,12 +160,12 @@ def sequences(
 
 
 @st.composite
-def opaque(draw: ty.Callable) -> Opaque:
+def opaque(draw: Draw) -> Opaque:
     return draw(st.just(Opaque()))
 
 
 @st.composite
-def composites(draw: ty.Callable, unique_identifiers: ty.Generator[ID, None, None]) -> Composite:
+def composites(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) -> Composite:
     return draw(
         st.one_of(
             opaque(),
@@ -179,7 +182,7 @@ def composites(draw: ty.Callable, unique_identifiers: ty.Generator[ID, None, Non
 
 @st.composite
 def messages(
-    draw: ty.Callable,
+    draw: Draw,
     unique_identifiers: ty.Generator[ID, None, None],
     not_null: bool = False,
 ) -> Message:
@@ -189,8 +192,8 @@ def messages(
     class FieldPair:
         source: Field
         target: Field
-        source_type: Type
-        target_type: Type
+        source_type: ty.Optional[Type]
+        target_type: ty.Optional[Type]
 
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2 ** 29 - 1
@@ -224,7 +227,7 @@ def messages(
         return expr.TRUE
 
     @st.composite
-    def fields(_: ty.Callable) -> Field:
+    def fields(_: ty.Callable[[], object]) -> Field:
         return Field(next(unique_identifiers).name)
 
     structure: ty.List[Link] = []
@@ -263,7 +266,8 @@ def messages(
         for i, source in enumerate(fields_):
             out = outgoing(source)
             if fields_[i + 1 :] and len(out) == 1 and out[0].condition != expr.TRUE:
-                field_size = int(types_[source].size) if isinstance(types_[source], Scalar) else 0
+                source_type = types_[source]
+                field_size = int(source_type.size) if isinstance(source_type, Scalar) else 0
                 target_alignment = (alignments[source] + field_size) % 8
                 potential_targets = [
                     f for f in fields_[i + 1 :] if alignments[f] == target_alignment
@@ -285,7 +289,8 @@ def messages(
 
         loose_ends = [f for f in fields_ if all(l.source != f for l in structure)]
         for field in loose_ends:
-            field_size = int(types_[f].size) if isinstance(types_[f], Scalar) else 0
+            field_type = types_[f]
+            field_size = int(field_type.size) if isinstance(field_type, Scalar) else 0
             padding = (alignments[field] + field_size) % 8
             if padding == 0:
                 structure.append(Link(field, FINAL))
@@ -321,7 +326,7 @@ def non_null_messages(
 
 
 @st.composite
-def refinements(draw: ty.Callable, unique_identifiers: ty.Generator[ID, None, None]) -> Refinement:
+def refinements(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) -> Refinement:
     pdu = draw(messages(unique_identifiers))
     opaque_fields = [f for f, t in pdu.types.items() if isinstance(t, Opaque)]
     assume(opaque_fields)
@@ -331,7 +336,7 @@ def refinements(draw: ty.Callable, unique_identifiers: ty.Generator[ID, None, No
 
 
 @st.composite
-def models(draw: ty.Callable) -> Model:
+def models(draw: Draw) -> Model:
     types_: ty.List[Type] = []
 
     def append_types(message: Message) -> None:
@@ -358,52 +363,52 @@ def models(draw: ty.Callable) -> Model:
 
 
 @st.composite
-def numbers(draw: ty.Callable, min_value: int = 0, max_value: int = None) -> expr.Number:
+def numbers(draw: Draw, min_value: int = 0, max_value: int = None) -> expr.Number:
     return expr.Number(draw(st.integers(min_value=min_value, max_value=max_value)))
 
 
 @st.composite
-def variables(draw: ty.Callable, elements: st.SearchStrategy[str]) -> expr.Variable:
+def variables(draw: Draw, elements: st.SearchStrategy[str]) -> expr.Variable:
     return expr.Variable(draw(elements))
 
 
 @st.composite
-def attributes(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+def attributes(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     attribute = draw(st.sampled_from([expr.Size, expr.First, expr.Last]))
-    return attribute(draw(elements))
+    return attribute(draw(elements))  # type: ignore[abstract]
 
 
 @st.composite
-def calls(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
+def calls(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
     return draw(st.builds(expr.Call, identifiers(), st.lists(elements, min_size=1)))
 
 
 @st.composite
-def aggregates(draw: ty.Callable, elements: st.SearchStrategy[str]) -> expr.Aggregate:
+def aggregates(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Aggregate:
     return expr.Aggregate(*draw(st.lists(elements, min_size=1)))
 
 
 @st.composite
-def strings(draw: ty.Callable) -> expr.String:
+def strings(draw: Draw) -> expr.String:
     return expr.String(draw(st.text(string.ascii_letters + string.digits, min_size=1)))
 
 
 @st.composite
-def quantified_expressions(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+def quantified_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.ForAllIn, expr.ForSomeIn]))
     return draw(st.builds(operation, identifiers(), elements, elements))
 
 
 @st.composite
-def mathematical_expressions(
-    draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]
-) -> expr.Expr:
+def mathematical_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.Add, expr.Mul, expr.Sub, expr.Div, expr.Pow]))
-    return draw(st.one_of(elements, st.builds(operation, elements, elements)))
+    expression = draw(st.one_of(elements, st.builds(operation, elements, elements)))
+    assert isinstance(expression, expr.Expr)
+    return expression
 
 
 @st.composite
-def relations(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
+def relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
     relation = draw(
         st.sampled_from(
             [
@@ -418,11 +423,11 @@ def relations(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr
             ]
         )
     )
-    return relation(*draw(st.lists(elements, min_size=2, max_size=2)))
+    return relation(draw(elements), draw(elements))  # type: ignore[abstract]
 
 
 @st.composite
-def boolean_relations(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+def boolean_relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     relation = draw(
         st.sampled_from(
             [
@@ -431,11 +436,11 @@ def boolean_relations(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr])
             ]
         )
     )
-    return relation(*draw(st.lists(elements, min_size=2, max_size=2)))
+    return relation(draw(elements), draw(elements))
 
 
 @st.composite
-def boolean_expressions(draw: ty.Callable, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
+def boolean_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.And, expr.Or]))
     expression = draw(
         st.one_of(
