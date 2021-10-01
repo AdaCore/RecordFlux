@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Check that all development dependencies of RecordFlux are installed."""
+
 import sys
 
 from pkg_resources import DistributionNotFound, get_distribution

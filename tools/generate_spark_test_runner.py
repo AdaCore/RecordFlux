@@ -1,5 +1,7 @@
 #!/usr/bin/env -S python3 -O
 
+"""Generate separate test runners for the test project."""
+
 import argparse
 import logging
 import pathlib

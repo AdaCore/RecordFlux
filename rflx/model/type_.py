@@ -19,8 +19,9 @@ class Type(BasicDeclaration):
     @property
     def dependencies(self) -> ty.List["Type"]:
         """
-        Return a list consisting of the type and all types on which the type depends. The
-        dependencies are determined recursively.
+        Return a list consisting of the type and all types on which the type depends.
+
+        The dependencies are determined recursively.
         """
         return [self]
 

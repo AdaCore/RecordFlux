@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 """
-This tool checks recursively that each directory containing a Python module is a correct Python
-package. A Python package requires an  __init__.py. Some tools (e.g., mypy) ignore all directories
+Check recursively that each directory containing a Python module is a correct Python package.
+
+A Python package requires an  __init__.py. Some tools (e.g., mypy) ignore all directories
 which are not a correct Python package.
 """
 
