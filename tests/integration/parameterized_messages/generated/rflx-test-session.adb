@@ -108,14 +108,6 @@ is
    procedure Initialize is
       M_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      if Test.Message.Has_Buffer (M_Ctx) then
-         pragma Warnings (Off, "unused assignment to ""M_Ctx""");
-         pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Test.Message.Take_Buffer (M_Ctx, M_Buffer);
-         pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""M_Ctx""");
-         RFLX_Types.Free (M_Buffer);
-      end if;
       M_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Test.Message.Initialize (M_Ctx, M_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       State := S_Receive;

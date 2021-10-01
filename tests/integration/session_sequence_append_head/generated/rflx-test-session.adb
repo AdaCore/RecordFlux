@@ -324,24 +324,8 @@ is
       Messages_Buffer : RFLX_Types.Bytes_Ptr;
       Tags_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      if TLV.Messages.Has_Buffer (Messages_Ctx) then
-         pragma Warnings (Off, "unused assignment to ""Messages_Ctx""");
-         pragma Warnings (Off, """Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         TLV.Messages.Take_Buffer (Messages_Ctx, Messages_Buffer);
-         pragma Warnings (On, """Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Messages_Ctx""");
-         RFLX_Types.Free (Messages_Buffer);
-      end if;
       Messages_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       TLV.Messages.Initialize (Messages_Ctx, Messages_Buffer);
-      if TLV.Tags.Has_Buffer (Tags_Ctx) then
-         pragma Warnings (Off, "unused assignment to ""Tags_Ctx""");
-         pragma Warnings (Off, """Tags_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         TLV.Tags.Take_Buffer (Tags_Ctx, Tags_Buffer);
-         pragma Warnings (On, """Tags_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Tags_Ctx""");
-         RFLX_Types.Free (Tags_Buffer);
-      end if;
       Tags_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       TLV.Tags.Initialize (Tags_Ctx, Tags_Buffer);
       State := S_Start;

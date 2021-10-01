@@ -655,7 +655,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    specification, [Postcondition(And(Call("Initialized"), Call("Active")))]
+                    specification,
+                    [
+                        Precondition(Call("Uninitialized")),
+                        Postcondition(And(Call("Initialized"), Call("Active"))),
+                    ],
                 ),
             ],
             [
@@ -747,6 +751,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 SubprogramDeclaration(
                     specification,
                     [
+                        Precondition(Call("Uninitialized")),
                         Postcondition(Call("Uninitialized")),
                     ],
                 ),
@@ -907,24 +912,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             result.global_declarations.append(
                 self._declare_context(ID(identifier), type_identifier)
             )
-            reset_message_contexts = IfStatement(
-                [
-                    (
-                        Call(
-                            ID(type_identifier) * "Has_Buffer",
-                            [Variable(context_id(identifier))],
-                        ),
-                        self._free_context_buffer(
-                            ID(identifier),
-                            type_identifier,
-                        ),
-                    )
-                ]
-            )
             result.initialization_declarations.append(self._declare_buffer(ID(identifier)))
             result.initialization.extend(
                 [
-                    *([reset_message_contexts] if session_global else []),
                     self._allocate_buffer(identifier),
                     self._initialize_context(
                         identifier,

@@ -27,6 +27,8 @@ is
    function Active return Boolean;
 
    procedure Initialize with
+     Pre =>
+       Uninitialized,
      Post =>
        Initialized
        and Active;
@@ -51,6 +53,8 @@ is
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
    procedure Run with
+     Pre =>
+       Uninitialized,
      Post =>
        Uninitialized;
 
