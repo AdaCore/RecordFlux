@@ -43,14 +43,14 @@ class Cache:
 
     def _load_cache(self) -> None:
         try:
-            with open(CACHE_DIR / VERIFICATION_FILE) as f:
+            with open(CACHE_DIR / VERIFICATION_FILE, encoding="utf-8") as f:
                 self._verification = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
     def _write_cache(self) -> None:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with open(CACHE_DIR / VERIFICATION_FILE, "w") as f:
+        with open(CACHE_DIR / VERIFICATION_FILE, "w", encoding="utf-8") as f:
             json.dump(self._verification, f)
 
     @staticmethod

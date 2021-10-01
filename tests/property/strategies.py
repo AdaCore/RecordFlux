@@ -4,8 +4,7 @@ from dataclasses import dataclass
 
 from hypothesis import assume, strategies as st
 
-import rflx.error as error
-import rflx.expression as expr
+from rflx import error, expression as expr
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,

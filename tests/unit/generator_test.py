@@ -50,14 +50,13 @@ def units(generator: Generator) -> Mapping[str, str]:
 
 def assert_specification(generator: Generator) -> None:
     for unit in generator._units.values():  # pylint: disable=protected-access
-        with open(f"{GENERATED_DIR}/{unit.name}.ads", "r") as f:
-            assert unit.ads == f.read(), unit.name
+        assert unit.ads == (GENERATED_DIR / f"{unit.name}.ads").read_text(), unit.name
 
 
 def assert_body(generator: Generator) -> None:
     for unit in generator._units.values():  # pylint: disable=protected-access
         if unit.adb:
-            with open(f"{GENERATED_DIR}/{unit.name}.adb", "r") as f:
+            with open(f"{GENERATED_DIR}/{unit.name}.adb", "r", encoding="utf-8") as f:
                 assert unit.adb == f.read(), unit.name
 
 
@@ -101,9 +100,7 @@ def test_library_files(tmp_path: Path) -> None:
     generator = Generator(Model(), "RFLX", reproducible=True)
     generator.write_library_files(tmp_path)
     for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
-        with open(tmp_path / filename) as library_file:
-            with open(GENERATED_DIR / filename) as expected_file:
-                assert library_file.read() == expected_file.read(), filename
+        assert (tmp_path / filename).read_text() == (GENERATED_DIR / filename).read_text(), filename
 
 
 def test_library_files_no_prefix(tmp_path: Path) -> None:
@@ -137,9 +134,9 @@ def test_top_level_package(tmp_path: Path) -> None:
     assert created_files == [tmp_path / Path("rflx.ads")]
 
     for created_file in created_files:
-        with open(created_file) as library_file:
-            with open(GENERATED_DIR / created_file.name) as expected_file:
-                assert library_file.read() == expected_file.read(), created_file.name
+        assert (
+            created_file.read_text() == (GENERATED_DIR / created_file.name).read_text()
+        ), created_file.name
 
 
 def test_top_level_package_no_prefix(tmp_path: Path) -> None:
@@ -2632,8 +2629,7 @@ def test_executability(test_case: str, tmp_path: Path) -> None:
     main = "main.adb"
     assert main in complement
     for filename, content in complement.items():
-        with open(tmp_path / filename, "x") as f:
-            f.write(content)
+        (tmp_path / filename).write_text(content)
     output = assert_executable_code(TEST_CASES[test_case].model, tmp_path, main=main)
     assert output == TEST_CASES[test_case].expected_output
 
@@ -2649,8 +2645,7 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
     if main and complement:
         assert main in complement
         for filename, content in complement.items():
-            with open(tmp_path / filename, "x") as f:
-                f.write(content)
+            (tmp_path / filename).write_text(content)
     assert_provable_code(
         TEST_CASES[test_case].model,
         tmp_path,

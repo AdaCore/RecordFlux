@@ -54,9 +54,8 @@ def create_test_runner(tests: Sequence[str], directory: pathlib.Path) -> None:
 
     print(f"Create {filename}")
 
-    with open(filename, "w") as f:
-        f.write(
-            f"""
+    filename.write_text(
+        f"""
 with AUnit.Reporter.Text;
 with AUnit.Run;
 with AUnit.Test_Suites;
@@ -89,9 +88,9 @@ begin
      (if Status = AUnit.Success then Ada.Command_Line.Success else Ada.Command_Line.Failure);
 end {procedure_name};
 """[
-                1:
-            ]
-        )
+            1:
+        ]
+    )
 
 
 if __name__ == "__main__":

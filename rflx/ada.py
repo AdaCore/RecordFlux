@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
+
 import itertools
+import os
 from abc import abstractmethod
 from collections import OrderedDict
 from dataclasses import dataclass, field as dataclass_field
@@ -202,15 +204,15 @@ class Number(Expr):
     def _update_str(self) -> None:
         value = self.value if self.value >= 0 else -self.value
         if self.base == 0:
-            self._str = "{}".format(value)
+            self._str = f"{value}"
         elif self.base == 2:
-            self._str = "2#{:b}#".format(value)
+            self._str = f"2#{value:b}#"
         elif self.base == 8:
-            self._str = "8#{:o}#".format(value)
+            self._str = f"8#{value:o}#"
         elif self.base == 10:
-            self._str = "10#{}#".format(value)
+            self._str = f"10#{value}#"
         elif self.base == 16:
-            self._str = "16#{:X}#".format(value)
+            self._str = f"16#{value:X}#"
         else:
             raise NotImplementedError(f"unsupported base {self.base}")
         self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
@@ -1544,7 +1546,7 @@ class CaseStatement(Statement):
         )
         cases = "".join(
             [
-                "\nwhen {} =>\n{}".format(choice, indent("\n".join(str(s) for s in statements), 3))
+                f"\nwhen {choice} =>\n{indent(os.linesep.join(str(s) for s in statements), 3)}"
                 for choice, statements in grouped_cases
             ]
         )

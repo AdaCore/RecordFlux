@@ -13,15 +13,13 @@ def test_init(tmp_path: Path) -> None:
 
 def test_init_valid(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
-    with open(tmp_path / cache.VERIFICATION_FILE, "x") as f:
-        f.write("{}")
+    (tmp_path / cache.VERIFICATION_FILE).write_text("{}")
     cache.Cache()
 
 
 def test_init_invalid(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
-    with open(tmp_path / cache.VERIFICATION_FILE, "x") as f:
-        f.write("invalid")
+    (tmp_path / cache.VERIFICATION_FILE).write_text("invalid")
     cache.Cache()
 
 

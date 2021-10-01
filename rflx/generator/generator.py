@@ -168,20 +168,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             self.__check_template_file(template_filename)
 
             prefix = f"{self.__prefix}." if self.__prefix else ""
-            filename = f"{file_name(prefix)}{template_filename}"
+            filename = Path(f"{file_name(prefix)}{template_filename}")
 
-            with open(self.__template_dir / Path(template_filename)) as template_file:
-                create_file(
-                    Path(directory) / Path(filename),
-                    self.__license_header()
-                    + "".join(
-                        [
-                            l.format(prefix=prefix)
-                            for l in template_file
-                            if "  --  WORKAROUND" not in l
-                        ]
-                    ),
-                )
+            template_file = (self.__template_dir / template_filename).read_text()
+            create_file(
+                directory / filename,
+                self.__license_header()
+                + "\n".join(
+                    [
+                        l.format(prefix=prefix)
+                        for l in template_file.split("\n")
+                        if "  --  WORKAROUND" not in l
+                    ]
+                ),
+            )
 
     def write_top_level_package(self, directory: Path) -> None:
         if self.__prefix:
@@ -3893,13 +3893,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
         filename = "license_header"
         self.__check_template_file(filename)
-        with open(self.__template_dir.joinpath(filename)) as license_file:
-            today = date.today()
-            return license_file.read().format(
+        today = date.today()
+        return (
+            self.__template_dir.joinpath(filename)
+            .read_text(encoding="utf-8")
+            .format(
                 version=__version__,
                 date=today,
                 year=today.year,
             )
+        )
 
     def __type_validation_function(
         self, scalar_type: Scalar, validation_expression: Expr
@@ -3999,8 +4002,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 def create_file(filename: Path, content: str) -> None:
     log.info("Creating %s", filename)
 
-    with open(filename, "w") as f:
-        f.write(content)
+    filename.write_text(content)
 
 
 def message_parameters(message: Message) -> ty.List[Parameter]:

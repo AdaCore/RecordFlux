@@ -1964,8 +1964,7 @@ def test_parse_error_reserved_word_in_message_component() -> None:
 def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
     test_file = tmp_path / "test.rflx"
 
-    with open(test_file, "x") as f:
-        f.write("with invalid")
+    test_file.write_text("with invalid", encoding="utf-8")
 
     p = parser.Parser()
 

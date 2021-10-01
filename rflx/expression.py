@@ -13,8 +13,7 @@ from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple,
 
 import z3
 
-import rflx.ada as ada
-import rflx.typing_ as rty
+from rflx import ada, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
@@ -637,15 +636,15 @@ class Number(Expr):
     def _update_str(self) -> None:
         value = self.value if self.value >= 0 else -self.value
         if self.base == 0:
-            self._str = "{}".format(value)
+            self._str = f"{value}"
         elif self.base == 2:
-            self._str = "2#{:b}#".format(value)
+            self._str = f"2#{value:b}#"
         elif self.base == 8:
-            self._str = "8#{:o}#".format(value)
+            self._str = f"8#{value:o}#"
         elif self.base == 10:
-            self._str = "10#{}#".format(value)
+            self._str = f"10#{value}#"
         elif self.base == 16:
-            self._str = "16#{:X}#".format(value)
+            self._str = f"16#{value:X}#"
         else:
             raise NotImplementedError(f"unsupported base {self.base}")
         self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
@@ -2404,7 +2403,7 @@ class Binding(Expr):
         self.data = {ID(k): v for k, v in data.items()}
 
     def _update_str(self) -> None:
-        data = ",\n".join(["{k} = {v}".format(k=k, v=self.data[k]) for k in self.data])
+        data = ",\n".join([f"{k} = {self.data[k]}" for k in self.data])
         self._str = intern(f"{self.expr}\n   where {indent_next(data, 9)}")
 
     def _check_type_subexpr(self) -> RecordFluxError:

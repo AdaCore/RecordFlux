@@ -142,8 +142,6 @@ class BaseError(Exception, Base):
         self,
         entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
     ) -> None:
-        # pylint: disable = global-statement
-        global ERROR_CONFIG
         if isinstance(entries, BaseError):
             self.__errors.extend(entries.errors)
         else:
