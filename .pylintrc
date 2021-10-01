@@ -25,6 +25,7 @@ disable=missing-docstring,
         inconsistent-return-statements,
         unsubscriptable-object,  # ISSUE: PyCQA/pylint#3045
         duplicate-code,  # ISSUE: PyCQA/pylint#4118
+        useless-import-alias,
 
 [BASIC]
 
@@ -34,6 +35,7 @@ good-names=i,
            k,
            ex,
            log,
+           T,
            _
 
 # Regular expression matching correct argument names. Overrides argument-

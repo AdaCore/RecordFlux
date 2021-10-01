@@ -1,1 +1,1 @@
-from .generator import Generator  # noqa: F401
+from .generator import Generator as Generator  # noqa: F401

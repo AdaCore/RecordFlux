@@ -1,7 +1,15 @@
 if __debug__:
 
     # pylint: disable=unused-import
-    from icontract import DBC, DBCMeta, ViolationError, ensure, invariant, require, snapshot
+    from icontract import (
+        DBC as DBC,
+        DBCMeta as DBCMeta,
+        ViolationError as ViolationError,
+        ensure as ensure,
+        invariant as invariant,
+        require as require,
+        snapshot as snapshot,
+    )
 
 else:
 
@@ -20,34 +28,34 @@ else:
 
     # pylint: disable=unused-argument
 
-    def require(  # type: ignore
+    def require(  # type: ignore[no-redef,misc]
         condition: Callable[..., Any],
         description: Optional[str] = None,
         a_repr: reprlib.Repr = None,
         enabled: bool = __debug__,
         error: Optional[Union[Callable[..., Exception], type]] = None,
-    ) -> Callable:
+    ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
-    def snapshot(  # type: ignore
+    def snapshot(  # type: ignore[no-redef,misc]
         capture: Callable[..., Any], name: Optional[str] = None, enabled: bool = __debug__
-    ) -> Callable:
+    ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
-    def ensure(  # type: ignore
+    def ensure(  # type: ignore[no-redef,misc]
         condition: Callable[..., Any],
         description: Optional[str] = None,
         a_repr: reprlib.Repr = None,
         enabled: bool = __debug__,
         error: Optional[Union[Callable[..., Exception], type]] = None,
-    ) -> Callable:
+    ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
-    def invariant(  # type: ignore
+    def invariant(  # type: ignore[no-redef,misc]
         condition: Callable[..., Any],
         description: Optional[str] = None,
         a_repr: reprlib.Repr = None,
         enabled: bool = __debug__,
         error: Optional[Union[Callable[..., Exception], type]] = None,
-    ) -> Callable:
+    ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x

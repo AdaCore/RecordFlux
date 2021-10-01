@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pkg_resources
 
-from rflx import __version__, expression as expr
+from rflx import __version__, expression as expr, identifier as rid
 from rflx.ada import (
     FALSE,
     ID,
@@ -1567,10 +1567,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             contiguous_first = expr.Add(
                 expr.Selected(
                     expr.Indexed(
-                        expr.Variable(expr.ID("Ctx") * "Cursors"),
+                        expr.Variable(rid.ID("Ctx") * "Cursors"),
                         expr.Selected(
                             expr.Indexed(
-                                expr.Variable(expr.ID("Ctx") * "Cursors"), expr.Variable("Fld")
+                                expr.Variable(rid.ID("Ctx") * "Cursors"), expr.Variable("Fld")
                             ),
                             "Predecessor",
                         ),
@@ -1700,7 +1700,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 if isinstance(message.field_types[field], Scalar):
                     c = c.substituted(
                         lambda x: expr.Call(
-                            const.TYPES_U64, [expr.Variable(expr.ID("Val") * f"{field.name}_Value")]
+                            const.TYPES_U64, [expr.Variable(rid.ID("Val") * f"{field.name}_Value")]
                         )
                         if x == expr.Variable(field.name)
                         else x
@@ -1709,7 +1709,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                     message.field_types[field], Composite
                 ) and common.is_compared_to_aggregate(field, message):
                     c = c.substituted(
-                        lambda x: expr.Variable(expr.ID("Val") * f"{field.name}_Value")
+                        lambda x: expr.Variable(rid.ID("Val") * f"{field.name}_Value")
                         if x == expr.Variable(field.name)
                         else x
                     )
@@ -2097,7 +2097,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                                 else "Valid",
                                                 [
                                                     expr.Indexed(
-                                                        expr.Variable(expr.ID("Ctx") * "Cursors"),
+                                                        expr.Variable(rid.ID("Ctx") * "Cursors"),
                                                         expr.Variable(p.affixed_name),
                                                     )
                                                 ],
@@ -2107,7 +2107,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                             expr.Equal(
                                                 expr.Selected(
                                                     expr.Indexed(
-                                                        expr.Variable(expr.ID("Ctx") * "Cursors"),
+                                                        expr.Variable(rid.ID("Ctx") * "Cursors"),
                                                         expr.Variable("Fld"),
                                                     ),
                                                     "Predecessor",

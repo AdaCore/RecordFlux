@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Sequence
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
@@ -17,7 +18,7 @@ from tests.data import models
 T = ModularInteger("Test::T", expr.Number(256))
 
 
-def to_dict(node: Any) -> Any:
+def to_dict(node: Any) -> Any:  # type: ignore[misc]
     if node is None:
         return None
     if node.is_list_type:
@@ -29,7 +30,10 @@ def to_dict(node: Any) -> Any:
     return {"_kind": node.kind_name, "_value": node.text}
 
 
-def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None:
+def assert_ast_files(  # type: ignore[misc]
+    filenames: Sequence[str],
+    expected: Dict[str, Any],
+) -> None:
     p = parser.Parser()
     for filename in filenames:
         p.parse(Path(filename))
@@ -37,7 +41,7 @@ def assert_ast_files(filenames: Sequence[str], expected: Dict[str, Any]) -> None
     assert result == expected, filenames
 
 
-def assert_ast_string(string: str, expected: Dict[str, Any]) -> None:
+def assert_ast_string(string: str, expected: Dict[str, Any]) -> None:  # type: ignore[misc]
     p = parser.Parser()
     p.parse_string(string)
     assert to_dict(list(p.specifications.items())[0][1]) == expected
@@ -1769,7 +1773,7 @@ def test_parse_error_incorrect_specification() -> None:
     )
 
 
-def test_parse_error_unexpected_exception_in_parser(monkeypatch: Any) -> None:
+def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) -> None:
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
         monkeypatch.setattr(parser, "check_naming", lambda x, e, o: raise_parser_error())

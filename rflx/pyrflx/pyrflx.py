@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Iterator, Union
+from typing import Dict, Iterable, Iterator, Union
 
 from rflx.error import RecordFluxError
 from rflx.identifier import ID, StrID
@@ -10,6 +10,7 @@ from rflx.specification import Parser
 
 from . import PyRFLXError
 from .package import Package
+from .typevalue import ChecksumFunction
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class PyRFLX:
         model = parser.create_model()
         return cls(model, skip_message_verification)
 
-    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, Callable]]) -> None:
+    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, ChecksumFunction]]) -> None:
         for identifier_str, checksum_field_function in functions.items():
             identifier_str = str(identifier_str)
             try:

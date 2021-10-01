@@ -3,7 +3,7 @@ from pylint.checkers import BaseChecker
 from pylint.interfaces import IAstroidChecker
 
 
-class NamedBooleanArgumentsChecker(BaseChecker):
+class NamedBooleanArgumentsChecker(BaseChecker):  # type: ignore[misc]
     __implements__ = IAstroidChecker
 
     name = "named-boolean-arguments"

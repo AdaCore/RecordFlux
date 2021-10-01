@@ -3,6 +3,7 @@ import typing as ty
 from copy import deepcopy
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import typing_ as rty
 from rflx.error import FatalError, Location, RecordFluxError
@@ -1323,7 +1324,7 @@ def test_no_valid_path() -> None:
     )
 
 
-def test_invalid_path_1(monkeypatch: ty.Any) -> None:
+def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
     f1 = Field(ID("F1", Location((20, 10))))
     structure = [
         Link(INITIAL, f1),
@@ -1343,7 +1344,7 @@ def test_invalid_path_1(monkeypatch: ty.Any) -> None:
     )
 
 
-def test_invalid_path_2(monkeypatch: ty.Any) -> None:
+def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Equal(Number(1), Number(2))),
@@ -1746,7 +1747,7 @@ def test_incongruent_overlay() -> None:
     )
 
 
-def test_field_coverage_1(monkeypatch: ty.Any) -> None:
+def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
@@ -1766,7 +1767,7 @@ def test_field_coverage_1(monkeypatch: ty.Any) -> None:
     )
 
 
-def test_field_coverage_2(monkeypatch: ty.Any) -> None:
+def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -1801,7 +1802,7 @@ def test_field_coverage_2(monkeypatch: ty.Any) -> None:
     )
 
 
-def test_field_after_message_start(monkeypatch: ty.Any) -> None:
+def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),

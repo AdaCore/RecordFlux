@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
-from typing import Any
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 import rflx.specification
 from rflx import cli
@@ -46,17 +46,17 @@ def test_main_check_quiet() -> None:
     assert cli.main(["rflx", "--quiet", "check", SPEC_FILE]) == 0
 
 
-def test_main_check_parser_error(monkeypatch: Any) -> None:
+def test_main_check_parser_error(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_parser_error())
     assert "<stdin>:8:22: parser: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 
-def test_main_check_model_error_parse(monkeypatch: Any) -> None:
+def test_main_check_model_error_parse(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
 
-def test_main_check_model_error_create_model(monkeypatch: Any) -> None:
+def test_main_check_model_error_create_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda x: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
 
@@ -153,7 +153,7 @@ def test_main_graph_no_output_files(tmp_path: Path) -> None:
     )
 
 
-def test_main_unexpected_exception(monkeypatch: Any, tmp_path: Path) -> None:
+def test_main_unexpected_exception(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(cli, "generate", lambda x: raise_fatal_error())
     assert re.fullmatch(
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Tuple
 
 import pytest
-from ruamel.yaml import YAML
+from ruamel.yaml.main import YAML
 
 from rflx import ada
 from rflx.generator import Generator
