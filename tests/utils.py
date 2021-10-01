@@ -433,7 +433,7 @@ def session_main(  # pylint: disable = too-many-arguments
                 ],
                 ada.GenericPackageInstantiation("Session", session_package, parameters),
             ],
-            aspects=[ada.SparkMode()],
+            aspects=[ada.SparkMode(), ada.InitialCondition(ada.Call("Session.Uninitialized"))],
         ),
         [
             *const.CONFIGURATION_PRAGMAS,
@@ -462,9 +462,11 @@ def session_main(  # pylint: disable = too-many-arguments
         f"{lib_unit.name}.ads": lib_unit.ads,
         f"{lib_unit.name}.adb": lib_unit.adb,
         "main.adb": """with Lib;
+pragma Elaborate (Lib);
 
 procedure Main with
-  SPARK_Mode
+   SPARK_Mode,
+   Pre => Lib.Session.Uninitialized
 is
 begin
    Lib.Session.Run;

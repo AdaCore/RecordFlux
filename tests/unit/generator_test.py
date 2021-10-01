@@ -629,59 +629,6 @@ def test_session_create_formal_parameters_error(
                     ada.ObjectDeclaration(["X_Buffer"], const.TYPES_BYTES_PTR),
                 ],
                 initialization=[
-                    ada.IfStatement(
-                        [
-                            (
-                                ada.Call("P.T.Has_Buffer", [ada.Variable("X_Ctx")]),
-                                [
-                                    ada.PragmaStatement(
-                                        "Warnings",
-                                        [
-                                            ada.Variable("Off"),
-                                            ada.String('unused assignment to "X_Ctx"'),
-                                        ],
-                                    ),
-                                    ada.PragmaStatement(
-                                        "Warnings",
-                                        [
-                                            ada.Variable("Off"),
-                                            ada.String(
-                                                '"X_Ctx" is set by "Take_Buffer"'
-                                                " but not used after the call"
-                                            ),
-                                        ],
-                                    ),
-                                    ada.CallStatement(
-                                        "P.T.Take_Buffer",
-                                        [
-                                            ada.Variable("X_Ctx"),
-                                            ada.Variable("X_Buffer"),
-                                        ],
-                                    ),
-                                    ada.PragmaStatement(
-                                        "Warnings",
-                                        [
-                                            ada.Variable("On"),
-                                            ada.String(
-                                                '"X_Ctx" is set by "Take_Buffer"'
-                                                " but not used after the call"
-                                            ),
-                                        ],
-                                    ),
-                                    ada.PragmaStatement(
-                                        "Warnings",
-                                        [
-                                            ada.Variable("On"),
-                                            ada.String('unused assignment to "X_Ctx"'),
-                                        ],
-                                    ),
-                                    ada.CallStatement(
-                                        const.TYPES * "Free", [ada.Variable("X_Buffer")]
-                                    ),
-                                ],
-                            )
-                        ]
-                    ),
                     ada.Assignment(
                         "X_Buffer",
                         ada.New(
@@ -893,16 +840,6 @@ class EvaluatedDeclarationStr:
                 global_declarations=("X_Ctx : P.T.Context;"),
                 initialization_declarations=("X_Buffer : RFLX_Types.Bytes_Ptr;"),
                 initialization=(
-                    "if P.T.Has_Buffer (X_Ctx) then\n"
-                    '   pragma Warnings (Off, "unused assignment to ""X_Ctx""");\n'
-                    '   pragma Warnings (Off, """X_Ctx"" is set by ""Take_Buffer"" but not used'
-                    ' after the call");\n'
-                    "   P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
-                    '   pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used'
-                    ' after the call");\n'
-                    '   pragma Warnings (On, "unused assignment to ""X_Ctx""");\n'
-                    "   RFLX_Types.Free (X_Buffer);\n"
-                    "end if;\n"
                     "X_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .."
                     " RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);\n"
                     "P.T.Initialize (X_Ctx, X_Buffer);"

@@ -48,14 +48,6 @@ is
    procedure Initialize is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      if Universal.Message.Has_Buffer (Message_Ctx) then
-         pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
-         pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
-         pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
-      end if;
       Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       State := S_Start;

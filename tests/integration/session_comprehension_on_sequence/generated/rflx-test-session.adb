@@ -314,14 +314,6 @@ is
    procedure Initialize is
       Options_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      if Universal.Options.Has_Buffer (Options_Ctx) then
-         pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Options_Ctx""");
-         RFLX_Types.Free (Options_Buffer);
-      end if;
       Options_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       State := S_Start;
