@@ -31,7 +31,7 @@ Make targets for common development tasks are:
 - `prove` Run GNATprove on SPARK tests and example apps
 - `format` Perform automatic code formatting on Python code
 - `install_devel` Install project in editable mode
-- `upgrade_devel` Upgrade all development dependencies
+- `upgrade_devel` Upgrade all development dependencies (note: `install_devel` must be executed before changes in `setup.py` take effect)
 
 Additional tools can be found in `tools/`.
 

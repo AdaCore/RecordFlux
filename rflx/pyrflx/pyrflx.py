@@ -64,7 +64,7 @@ class PyRFLX:
             if len(message_identifier.parts) < 2:
                 raise PyRFLXError(f'"{identifier_str}" is not a valid identifier')
 
-            if str(message_identifier.parent) in self.__packages.keys():
+            if str(message_identifier.parent) in self.__packages:
                 package = self.package(message_identifier.parent)
                 package.set_checksum_functions({message_identifier.name: checksum_field_function})
 

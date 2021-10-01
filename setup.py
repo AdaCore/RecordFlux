@@ -2,12 +2,12 @@ import re
 
 from setuptools import find_packages, setup  # type: ignore
 
-with open("rflx/__init__.py") as f:
+with open("rflx/__init__.py", encoding="utf-8") as f:
     match = re.search(r'__version__ = "(.*?)"', f.read())
     assert match
     version = match.group(1)
 
-with open("README.md") as f:
+with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
 setup(
@@ -59,7 +59,7 @@ setup(
             "isort >=5.9.1, <5.10",
             "mypy ==0.910",
             "pyicontract-lint >=2.1.2, <2.2",
-            "pylint >=2.8.3, <2.9",
+            "pylint >=2.8.3, <2.12",
             "pytest >=6.2.4, <6.3",
             "ruamel.yaml >=0.17",
             "pytest-cov >=2.12.1, <2.13",

@@ -6,9 +6,9 @@ This tool checks the correctness of code examples in the documentation.
 
 import enum
 import os
-import pathlib
 import subprocess
 import sys
+from pathlib import Path
 
 from librflxlang import AnalysisContext, GrammarRule
 
@@ -37,44 +37,43 @@ def check_code_blocks() -> bool:  # pylint: disable=too-many-branches
     code_blocks = []
     state = State.OUTSIDE
 
-    for p in [pathlib.Path("README.md")] + list(pathlib.Path("doc").rglob("*.adoc")):
+    for p in [Path("README.md")] + list(Path("doc").rglob("*.adoc")):
         is_markdown = p.suffix == ".md"
-        with open(p) as f:
-            if is_markdown:
-                prefix = "```"
-                separator = "```"
-            else:
-                prefix = "[source,"
-                separator = "----"
-            for l in f:
-                if state == State.OUTSIDE and l.startswith(prefix):
-                    if is_markdown:
-                        state = State.INSIDE
-                    else:
-                        state = State.HEADER
-                    block = ""
-                    if l.startswith(f"{prefix}ada,rflx"):
-                        block_type = CodeBlockType.RFLX
-                        subtype = l[len(prefix) + 9 : -2]
-                    elif l.startswith(f"{prefix}ada"):
-                        block_type = CodeBlockType.ADA
-                    elif l.startswith(f"{prefix}python"):
-                        block_type = CodeBlockType.PYTHON
-                    else:
-                        block_type = CodeBlockType.UNKNOWN
-                    continue
-
-                if state == State.HEADER and l == f"{separator}\n":
+        if is_markdown:
+            prefix = "```"
+            separator = "```"
+        else:
+            prefix = "[source,"
+            separator = "----"
+        for l in p.read_text():
+            if state == State.OUTSIDE and l.startswith(prefix):
+                if is_markdown:
                     state = State.INSIDE
-                    continue
+                else:
+                    state = State.HEADER
+                block = ""
+                if l.startswith(f"{prefix}ada,rflx"):
+                    block_type = CodeBlockType.RFLX
+                    subtype = l[len(prefix) + 9 : -2]
+                elif l.startswith(f"{prefix}ada"):
+                    block_type = CodeBlockType.ADA
+                elif l.startswith(f"{prefix}python"):
+                    block_type = CodeBlockType.PYTHON
+                else:
+                    block_type = CodeBlockType.UNKNOWN
+                continue
 
-                if state == State.INSIDE and l == f"{separator}\n":
-                    state = State.OUTSIDE
-                    code_blocks.append((block_type, subtype, block))
-                    continue
+            if state == State.HEADER and l == f"{separator}\n":
+                state = State.INSIDE
+                continue
 
-                if state == State.INSIDE:
-                    block += l
+            if state == State.INSIDE and l == f"{separator}\n":
+                state = State.OUTSIDE
+                code_blocks.append((block_type, subtype, block))
+                continue
+
+            if state == State.INSIDE:
+                block += l
 
     ("build" / SPEC_DIR.parent).mkdir(parents=True, exist_ok=True)
     os.symlink(os.getcwd() / SPEC_DIR, "build" / SPEC_DIR)
@@ -127,8 +126,7 @@ def check_ada_code(block: str) -> bool:
     valid = True
     unit = "main"
 
-    with open(f"{unit}.adb", "w") as f:
-        f.write(block)
+    Path(f"{unit}.adb").write_text(block, encoding="utf-8")
 
     try:
         subprocess.run(
@@ -147,10 +145,9 @@ def check_ada_code(block: str) -> bool:
 
 def check_python_code(block: str) -> bool:
     valid = True
-    filename = "test.py"
+    filename = Path("test.py")
 
-    with open(filename, "w") as f:
-        f.write(block)
+    filename.write_text(block, encoding="utf-8")
 
     try:
         subprocess.run(["python3", filename], check=True)

@@ -1,6 +1,6 @@
 import pytest
 
-import rflx.ada as ada
+from rflx import ada
 from tests.utils import assert_equal, multilinestr
 
 

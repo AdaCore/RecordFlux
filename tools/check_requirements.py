@@ -104,31 +104,30 @@ def parse_requirements(requirements_file: Path) -> Tuple[List[Requirement], bool
     requirements: Dict[str, Requirement] = {}
     error = False
 
-    with open(requirements_file) as f:
-        for l in f:
-            if "§" not in l:
-                continue
+    for l in requirements_file.read_text():
+        if "§" not in l:
+            continue
 
-            match = re.search(r"(?:^|[-#.!?§/*] )([^-#.!?§/*]*)? \[(§[^\]]+)\]", l)
-            if match:
-                for identifier in re.findall(ID_REGEX, match.group(2)):
-                    req = Requirement(identifier, match.group(1))
-                    if req.identifier in requirements or any(
-                        identifier == req.identifier for identifier in requirements
-                    ):
-                        print(f'duplicate requirement "{req.identifier}"')
+        match = re.search(r"(?:^|[-#.!?§/*] )([^-#.!?§/*]*)? \[(§[^\]]+)\]", l)
+        if match:
+            for identifier in re.findall(ID_REGEX, match.group(2)):
+                req = Requirement(identifier, match.group(1))
+                if req.identifier in requirements or any(
+                    identifier == req.identifier for identifier in requirements
+                ):
+                    print(f'duplicate requirement "{req.identifier}"')
+                    error = True
+                requirements[req.identifier] = req
+
+                if ID_SEPARATOR in req.identifier:
+                    parent = req.identifier.rsplit(ID_SEPARATOR, 1)[0]
+                    if parent in requirements:
+                        requirements[parent].requirements.append(req)
+                    else:
+                        print(f'missing requirement "{parent}" for "{req.identifier}"')
                         error = True
-                    requirements[req.identifier] = req
-
-                    if ID_SEPARATOR in req.identifier:
-                        parent = req.identifier.rsplit(ID_SEPARATOR, 1)[0]
-                        if parent in requirements:
-                            requirements[parent].requirements.append(req)
-                        else:
-                            print(f'missing requirement "{parent}" for "{req.identifier}"')
-                            error = True
-            else:
-                print(f'ignored "{l}"')
+        else:
+            print(f'ignored "{l}"')
 
     return (list(requirements.values()), error)
 

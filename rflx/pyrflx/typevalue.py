@@ -475,7 +475,8 @@ class SequenceValue(CompositeValue):
                     )
                     new_exception.extend(e)
                     raise new_exception from e
-                assert nested_message.valid_message
+                # ISSUE: PyCQA/pylint#4693
+                assert nested_message.valid_message  # pylint: disable=no-member
                 self._value.append(nested_message)
                 value = value[len(nested_message.bitstring) :]
 

@@ -664,7 +664,7 @@ def enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumerat
     for t in types:
         if isinstance(t, Enumeration):
             for l in t.literals:
-                if t.package == const.BUILTINS_PACKAGE or t.package == package:
+                if t.package in [const.BUILTINS_PACKAGE, package]:
                     literals[l] = t
                 if t.package != const.BUILTINS_PACKAGE:
                     literals[t.package * l] = t

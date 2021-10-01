@@ -23,8 +23,7 @@ from rflx.model import (
 def assert_graph(graph: Graph, expected: str, tmp_path: Path) -> None:
     path = tmp_path / Path("test.dot")
     graph.write(path, fmt="raw")
-    with open(path) as f:
-        assert f.read().split() == expected.split()
+    assert path.read_text().split() == expected.split()
 
 
 def test_graph_object() -> None:

@@ -5,8 +5,7 @@ from typing import Callable, Mapping
 import pytest
 import z3
 
-import rflx.ada as ada
-import rflx.typing_ as rty
+from rflx import ada, typing_ as rty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import (
     FALSE,

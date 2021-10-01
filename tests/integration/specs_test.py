@@ -24,13 +24,11 @@ def assert_equal_code(spec_files: Sequence[Path]) -> None:
     generator = Generator(model, "RFLX", reproducible=True)
 
     for unit in generator._units.values():  # pylint: disable=protected-access
-        filename = f"{GENERATED_DIR}/{unit.name}.ads"
-        with open(filename, "r") as f:
-            assert unit.ads == f.read(), filename
+        filename = GENERATED_DIR / f"{unit.name}.ads"
+        assert unit.ads == filename.read_text(encoding="utf-8"), filename
         if unit.adb:
-            filename = f"{GENERATED_DIR}/{unit.name}.adb"
-            with open(filename, "r") as f:
-                assert unit.adb == f.read(), filename
+            filename = GENERATED_DIR / f"{unit.name}.adb"
+            assert unit.adb == filename.read_text(encoding="utf-8"), filename
 
 
 def test_ethernet() -> None:
