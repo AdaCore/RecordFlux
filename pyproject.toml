@@ -1,0 +1,159 @@
+[build-system]
+requires = ['setuptools', 'wheel']
+build-backend = 'setuptools.build_meta'
+
+[tool.black]
+line-length = 100
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = 'black'
+line_length = 100
+combine_as_imports = true
+known_third_party = [
+    'gi',
+    'icontract',
+    'pydotplus',
+    'pytest',
+    'z3',
+]
+
+[tool.pylint.master]
+jobs = 0
+init-hook = '''
+from pylint.config import find_default_config_files
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(next(f for f in find_default_config_files() if f.endswith('pyproject.toml'))), 'tools'))
+'''
+load-plugins = 'rflx_pylint_checker'
+
+[tool.pylint.messages_control]
+enable = [
+    'useless-suppression'
+]
+disable = [
+    'bad-continuation',
+    'duplicate-code',  # ISSUE: PyCQA/pylint#4118
+    'inconsistent-return-statements',
+    'missing-docstring',
+    'unnecessary-lambda',
+    'unsubscriptable-object',  # ISSUE: PyCQA/pylint#3045
+    'useless-import-alias',
+]
+
+[tool.pylint.basic]
+good-names = [
+    '_',
+    'ex',
+    'i',
+    'j',
+    'k',
+    'log',
+    'T',
+]
+
+argument-rgx = '[a-z_][a-z0-9_]{1,30}$'
+variable-rgx = '[a-z0-9_]{1,30}$'
+
+[tool.pylint.design]
+max-args = 6
+max-attributes = 7
+max-bool-expr = 5
+max-branches = 12
+max-locals = 15
+max-parents = 7
+max-public-methods = 20
+max-returns = 10
+max-statements = 50
+min-public-methods = 0
+
+[tool.pylint.similarities]
+min-similarity-lines = 12
+ignore-imports = true
+
+[tool.pylint.typecheck]
+signature-mutators = 'hypothesis.strategies._internal.core.composite'
+
+[tool.mypy]
+mypy_path = 'stubs'
+check_untyped_defs = true
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+no_implicit_reexport = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+    'librflxlang',
+    'astroid',
+    'pylint.*',
+    'ruamel',
+]
+ignore_missing_imports = true
+
+[tool.pydocstyle]
+ignore = [
+    'D100',
+    'D101',
+    'D102',
+    'D103',
+    'D104',
+    'D105',
+    'D106',
+    'D107',
+    'D202',
+    'D203',
+    'D212',
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    'ignore:visit_NameConstant is deprecated; add visit_Constant:PendingDeprecationWarning',
+    'ignore:visit_Str is deprecated; add visit_Constant:PendingDeprecationWarning',
+]
+
+[tool.coverage.paths]
+source = ['rflx']
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
+exclude_lines = [
+    'pragma: no cover',
+    'assert False',
+    'def __repr__',
+    'def __str__',
+    'if TYPE_CHECKING:',
+    'raise NotImplementedError',
+    'return NotImplemented',
+]
