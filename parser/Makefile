@@ -48,10 +48,10 @@ test_python:
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered tests
 
-install_parser: $(BUILDDIR)/RecordFlux-language-$(VERSION).tar.gz
+install_parser: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
 
-dist: $(BUILDDIR)/RecordFlux-language-$(VERSION).tar.gz
+dist: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	@echo "============================================================================================================"
 	@echo "Source distribution generated at $<."
 	@echo "To upload to PyPI use"
@@ -60,7 +60,7 @@ dist: $(BUILDDIR)/RecordFlux-language-$(VERSION).tar.gz
 	@echo "  $$ twine upload -r testpypi $<"
 	@echo "============================================================================================================"
 
-$(BUILDDIR)/RecordFlux-language-$(VERSION).tar.gz: $(DISTDIR)/gdbinit.py disttools/setup.py
+$(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz: $(DISTDIR)/gdbinit.py disttools/setup.py
 	$(VERBOSE)(cd $(DISTDIR) && python3 setup.py sdist --formats=gztar --quiet --dist-dir=$(BUILDDIR))
 	$(VERBOSE)rm -rf $(DISTDIR)
 	$(VERBOSE)ls -l $@

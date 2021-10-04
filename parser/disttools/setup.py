@@ -75,14 +75,14 @@ class BuildParser(bdist_wheel):
 with open(base_dir / "README.md") as f:
     readme = f.read()
     setup(
-        name="RecordFlux-language",
+        name="RecordFlux-parser",
         version="##VERSION##",
         description=("RecordFlux language"),
         long_description=readme,
         long_description_content_type="text/markdown",
         author="Alexander Senier",
         author_email="senier@componolit.com",
-        url="https://github.com/Componolit/RecordFlux-language",
+        url="https://github.com/Componolit/RecordFlux-parser",
         license="AGPL-3.0",
         classifiers=[
             "Development Status :: 5 - Production/Stable",
