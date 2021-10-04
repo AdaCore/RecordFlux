@@ -1656,11 +1656,21 @@ class Relation(BinExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def _simplified(self, relation_operator: Callable[[Number, Number], bool]) -> Expr:
+    def _simplified(self, relation_operator: Callable[[Expr, Expr], bool]) -> Expr:
         left = self.left.simplified()
         right = self.right.simplified()
         if relation_operator in [operator.eq, operator.le, operator.ge] and left == right:
             return TRUE
+        mapping: Mapping[Tuple[Callable[[Expr, Expr], bool], Expr, Expr], Expr] = {
+            (operator.ne, TRUE, TRUE): FALSE,
+            (operator.ne, FALSE, FALSE): FALSE,
+            (operator.eq, TRUE, FALSE): FALSE,
+            (operator.eq, FALSE, TRUE): FALSE,
+            (operator.ne, TRUE, FALSE): TRUE,
+            (operator.ne, FALSE, TRUE): TRUE,
+        }
+        if (relation_operator, left, right) in mapping:
+            return mapping[(relation_operator, left, right)]
         if isinstance(left, Number) and isinstance(right, Number):
             return TRUE if relation_operator(left, right) else FALSE
         return self.__class__(left, right)
