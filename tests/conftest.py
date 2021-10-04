@@ -12,7 +12,7 @@ hypothesis.settings.register_profile(
     "default", max_examples=100, verbosity=hypothesis.Verbosity.verbose
 )
 hypothesis.settings.register_profile(
-    "ci", deadline=None, max_examples=1000, verbosity=hypothesis.Verbosity.verbose
+    "ci", deadline=None, max_examples=200, verbosity=hypothesis.Verbosity.verbose
 )
 
 hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
