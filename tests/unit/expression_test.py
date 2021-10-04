@@ -1082,6 +1082,10 @@ def test_relation_simplified() -> None:
         Equal(Add(Number(1), Number(1)), Add(Number(1), Number(1))).simplified(),
         TRUE,
     )
+    assert Equal(TRUE, TRUE).simplified() == TRUE
+    assert Equal(TRUE, FALSE).simplified() == FALSE
+    assert NotEqual(TRUE, TRUE).simplified() == FALSE
+    assert NotEqual(TRUE, FALSE).simplified() == TRUE
 
 
 def test_relation_contains() -> None:

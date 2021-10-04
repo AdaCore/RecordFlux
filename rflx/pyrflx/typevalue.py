@@ -796,7 +796,8 @@ class MessageValue(TypeValue):
         while current_field_name != FINAL.name:
             assert current_field_name, (
                 "end of message is not reached, but next field is undefined"
-                " (possibly caused by incorrect simplificiation of link condition in _next_link)"
+                " (possibly caused by incorrect simplificiation of link condition in _next_link or"
+                " check_outgoing_condition_satisfied)"
             )
             current_field = self._fields[current_field_name]
             size = self._get_size(current_field_name)
