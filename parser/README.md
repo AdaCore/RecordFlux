@@ -15,7 +15,7 @@ As a prerequisite to build the parser, the following dependencies need to be ins
 To run the tests, the RecordFlux language package and its dependencies must also be installed. Use the respective make target:
 
 ```Console
-$ make install_parser
+$ make install
 ```
 
 **Note:** Develop mode of setuptools (`pip -e`) is unsupported. The parser must be reinstalled before changes to the code take effect.

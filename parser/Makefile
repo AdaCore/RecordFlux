@@ -15,7 +15,7 @@ export MYPYPATH = $(PWD)/stubs
 python-packages := language tests disttools/setup.py
 
 .PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_python_coverage install_parser clean
+	test test_python test_python_coverage install clean
 
 all: check test
 
@@ -48,7 +48,7 @@ test_python:
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered tests
 
-install_parser: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
+install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
 
 dist: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
