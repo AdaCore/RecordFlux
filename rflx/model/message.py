@@ -743,6 +743,7 @@ class Message(AbstractMessage):
         super().__init__(identifier, structure, types, aspects, location, error, state)
 
         self._refinements: List["Refinement"] = []
+        self._skip_proof = skip_proof
         self.__workers = workers
 
         if not self.error.check() and not skip_proof:
@@ -784,6 +785,7 @@ class Message(AbstractMessage):
             aspects if aspects else copy(self.aspects),
             location if location else self.location,
             error if error else self.error,
+            skip_proof=self._skip_proof,
         )
 
     def proven(self, skip_proof: bool = False, workers: int = 1) -> "Message":
