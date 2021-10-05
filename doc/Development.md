@@ -18,7 +18,7 @@ $ eval `make printenv_gnat`
 ```Console
 $ virtualenv -p python3 venv
 $ source venv/bin/activate
-$ make install_devel  # alternatively: pip3 install -e ".[devel]"
+$ make install_devel
 ```
 
 ## Tools

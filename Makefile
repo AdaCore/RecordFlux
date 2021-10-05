@@ -136,10 +136,14 @@ install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 install_devel:
+	$(MAKE) -C .config/python-style install_devel
 	pip3 install -e ".[devel]"
 
 upgrade_devel:
 	tools/upgrade_dependencies.py
+
+install_devel_edge: install_devel
+	pip3 install --upgrade `python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux') if 'devel' in r))"`
 
 install_gnat:
 	alr toolchain --install gnat_native=11.2.1 && \

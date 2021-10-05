@@ -1,3 +1,6 @@
 [submodule "examples/specs"]
 	path = examples/specs
 	url = https://github.com/Componolit/RecordFlux-specifications.git
+[submodule ".config/python-style"]
+	path = .config/python-style
+	url = https://github.com/Componolit/python-style.git

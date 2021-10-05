@@ -68,7 +68,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Check
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
@@ -179,7 +179,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Install Alire
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
@@ -244,7 +244,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -403,7 +403,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
@@ -454,7 +454,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Verify
       run: |
         make prove_tests TEST=${{ matrix.test }}
@@ -531,7 +531,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Install Alire
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
@@ -602,7 +602,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
@@ -674,7 +674,7 @@ jobs:
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
+        make install_devel
     - name: Install Alire
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
