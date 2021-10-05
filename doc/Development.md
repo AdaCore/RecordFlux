@@ -65,7 +65,7 @@ Your code will be reviewed by at least one core developer before inclusion into 
     - `twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz`
 - [ ] Check project on TestPyPI
 - [ ] Test installation from TestPyPI
-    - `pip3 install --index-url https://test.pypi.org/simple/ --no-deps RecordFlux`
+    - `pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux`
 - [ ] Upload to PyPI
     - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
 - [ ] Test installation from PyPI
