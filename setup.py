@@ -48,8 +48,7 @@ setup(
         "icontract >=2.3.4, <3",
         "pydotplus >=2, <3",
         "z3-solver >=4, <5",
-        "RecordFlux-language@git+https://github.com/Componolit/RecordFlux-language.git"
-        "@v0.8.0#egg=RecordFlux-language",
+        "RecordFlux-parser ==0.8.1",
     ],
     extras_require={
         "devel": [
