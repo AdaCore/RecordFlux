@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 """
-This tool extracts all packets of a specified protocol layer from a PCAP file and writes the byte
-representation of each packet into a separate file.
+Extract all packets of a specified protocol layer from a PCAP file.
+
+The byte representation of each packet is written into a separate file.
 """
 
 import argparse

@@ -267,8 +267,8 @@ def test_validation_original_and_parsed_not_equal() -> None:
     )
     validation_result = _validate_message(
         Path("tests/validation_tool/ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
-        True,
-        ethernet_too_short_value,
+        valid_original_message=True,
+        message_value=ethernet_too_short_value,
     )
     assert (
         validation_result.parser_error

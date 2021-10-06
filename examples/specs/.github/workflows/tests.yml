@@ -14,7 +14,13 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        target: [black, isort, flake8, pylint, mypy]
+        target:
+          - black
+          - isort
+          - flake8
+          - pylint
+          - mypy
+          - pydocstyle
     steps:
     - uses: actions/checkout@v2
       with:
@@ -46,7 +52,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         python -m pip install --upgrade pip wheel
-        pip install -r requirements.txt
+        make install_devel
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -60,6 +66,8 @@ jobs:
         python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -88,7 +96,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         python -m pip install --upgrade pip wheel
-        pip install -r requirements.txt
+        make install_devel
     - name: Test
       run: |
         make test
