@@ -16,6 +16,8 @@ is
 
    pragma Unreferenced (C_Has_Data);
 
+   type Session_State is (S_Receive, S_Reply, S_Error, S_Terminated);
+
    function Uninitialized return Boolean;
 
    function Initialized return Boolean;
@@ -56,13 +58,13 @@ is
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
+   function State return Session_State;
+
 private
 
    use type RFLX.RFLX_Types.Index;
 
-   type Session_State is (S_Receive, S_Reply, S_Error, S_Terminated);
-
-   State : Session_State := S_Receive;
+   Next_State : Session_State := S_Receive;
 
    M_Ctx : Test.Message.Context;
 
@@ -75,6 +77,9 @@ private
       and then M_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Active return Boolean is
-     (State /= S_Terminated);
+     (Next_State /= S_Terminated);
+
+   function State return Session_State is
+     (Next_State);
 
 end RFLX.Test.Session;

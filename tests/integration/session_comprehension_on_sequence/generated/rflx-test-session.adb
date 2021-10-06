@@ -14,7 +14,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (State : out Session_State) with
+   procedure Start (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -26,7 +26,7 @@ is
         not Universal.Options.Has_Element (Options_Ctx)
         or Universal.Options.Available_Space (Options_Ctx) < 32
       then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
       declare
@@ -47,14 +47,14 @@ is
          pragma Warnings (On, "unused assignment to ""RFLX_Element_Options_Ctx""");
       end;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
       if
         not Universal.Options.Has_Element (Options_Ctx)
         or Universal.Options.Available_Space (Options_Ctx) < 8
       then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
       declare
@@ -72,7 +72,7 @@ is
         not Universal.Options.Has_Element (Options_Ctx)
         or Universal.Options.Available_Space (Options_Ctx) < 40
       then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
       declare
@@ -93,13 +93,13 @@ is
          pragma Warnings (On, "unused assignment to ""RFLX_Element_Options_Ctx""");
       end;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
-      State := S_Reply;
+      Next_State := S_Reply;
    end Start;
 
-   procedure Reply (State : out Session_State) with
+   procedure Reply (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -169,7 +169,7 @@ is
             RFLX_Types.Free (RFLX_Copy_Options_Buffer);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -185,7 +185,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -201,7 +201,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -227,7 +227,7 @@ is
             if Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Option_Types) = Universal.Option_Types.Size (Option_Types_Ctx) then
                Universal.Message.Set_Option_Types (Message_Ctx, Option_Types_Ctx);
             else
-               State := S_Terminated;
+               Next_State := S_Terminated;
                pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
                pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
                Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -243,7 +243,7 @@ is
                return;
             end if;
          else
-            State := S_Terminated;
+            Next_State := S_Terminated;
             pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
             pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -259,7 +259,7 @@ is
             return;
          end if;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -281,7 +281,7 @@ is
             Universal_Message_Read (Message_Ctx);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -296,7 +296,7 @@ is
          RFLX_Types.Free (Message_Buffer);
          return;
       end if;
-      State := S_Terminated;
+      Next_State := S_Terminated;
       pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
       pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -316,7 +316,7 @@ is
    begin
       Options_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
-      State := S_Start;
+      Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -328,16 +328,16 @@ is
       pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Options_Ctx""");
       RFLX_Types.Free (Options_Buffer);
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case State is
+      case Next_State is
          when S_Start =>
-            Start (State);
+            Start (Next_State);
          when S_Reply =>
-            Reply (State);
+            Reply (Next_State);
          when S_Terminated =>
             null;
       end case;

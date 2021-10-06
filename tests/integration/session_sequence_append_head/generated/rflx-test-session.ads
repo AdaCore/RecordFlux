@@ -13,6 +13,8 @@ package RFLX.Test.Session with
     Uninitialized
 is
 
+   type Session_State is (S_Start, S_Reply, S_Terminated);
+
    function Uninitialized return Boolean;
 
    function Initialized return Boolean;
@@ -53,13 +55,13 @@ is
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
+   function State return Session_State;
+
 private
 
    use type RFLX.RFLX_Types.Index;
 
-   type Session_State is (S_Start, S_Reply, S_Terminated);
-
-   State : Session_State := S_Start;
+   Next_State : Session_State := S_Start;
 
    Messages_Ctx : TLV.Messages.Context;
 
@@ -78,6 +80,9 @@ private
       and then Tags_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Active return Boolean is
-     (State /= S_Terminated);
+     (Next_State /= S_Terminated);
+
+   function State return Session_State is
+     (Next_State);
 
 end RFLX.Test.Session;

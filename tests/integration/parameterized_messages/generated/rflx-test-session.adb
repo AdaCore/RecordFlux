@@ -7,7 +7,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Receive (State : out Session_State) with
+   procedure Receive (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -22,13 +22,13 @@ is
       end;
       Test.Message.Verify_Message (M_Ctx);
       if Test.Message.Structural_Valid_Message (M_Ctx) then
-         State := S_Reply;
+         Next_State := S_Reply;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
       end if;
    end Receive;
 
-   procedure Reply (State : out Session_State) with
+   procedure Reply (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -89,20 +89,20 @@ is
          RFLX_Types.Free (RFLX_Message_Buffer);
       end;
       if RFLX_Exception then
-         State := S_Error;
+         Next_State := S_Error;
          return;
       end if;
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Reply;
 
-   procedure Error (State : out Session_State) with
+   procedure Error (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
        Initialized
    is
    begin
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Error;
 
    procedure Initialize is
@@ -110,7 +110,7 @@ is
    begin
       M_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Test.Message.Initialize (M_Ctx, M_Buffer, Length => Test.Length'First, Extended => Boolean'First);
-      State := S_Receive;
+      Next_State := S_Receive;
    end Initialize;
 
    procedure Finalize is
@@ -122,18 +122,18 @@ is
       pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""M_Ctx""");
       RFLX_Types.Free (M_Buffer);
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case State is
+      case Next_State is
          when S_Receive =>
-            Receive (State);
+            Receive (Next_State);
          when S_Reply =>
-            Reply (State);
+            Reply (Next_State);
          when S_Error =>
-            Error (State);
+            Error (Next_State);
          when S_Terminated =>
             null;
       end case;

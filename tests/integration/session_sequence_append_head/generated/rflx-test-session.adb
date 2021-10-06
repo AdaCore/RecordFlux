@@ -11,7 +11,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (State : out Session_State) with
+   procedure Start (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -29,7 +29,7 @@ is
         not TLV.Messages.Has_Element (Messages_Ctx)
         or TLV.Messages.Available_Space (Messages_Ctx) < 32
       then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -56,7 +56,7 @@ is
          pragma Warnings (On, "unused assignment to ""RFLX_Element_Messages_Ctx""");
       end;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -69,7 +69,7 @@ is
         not TLV.Tags.Has_Element (Tags_Ctx)
         or TLV.Tags.Available_Space (Tags_Ctx) < TLV.Tag'Size
       then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -130,7 +130,7 @@ is
             RFLX_Types.Free (RFLX_Copy_Messages_Buffer);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -140,7 +140,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -150,7 +150,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -162,7 +162,7 @@ is
       if TLV.Message.Valid (Message_Ctx, TLV.Message.F_Tag) then
          Message_Tag := TLV.Message.Get_Tag (Message_Ctx);
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -178,7 +178,7 @@ is
       then
          Tag := TLV.Tags.Head (Tags_Ctx);
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -191,9 +191,9 @@ is
         Message_Tag = TLV.Msg_Data
         and then Tag = TLV.Msg_Error
       then
-         State := S_Reply;
+         Next_State := S_Reply;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
       end if;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -203,7 +203,7 @@ is
       RFLX_Types.Free (Message_Buffer);
    end Start;
 
-   procedure Reply (State : out Session_State) with
+   procedure Reply (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -266,7 +266,7 @@ is
             RFLX_Types.Free (RFLX_Copy_Messages_Buffer);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -276,7 +276,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -286,7 +286,7 @@ is
          return;
       end if;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -302,7 +302,7 @@ is
             TLV_Message_Read (Message_Ctx);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -311,7 +311,7 @@ is
          RFLX_Types.Free (Message_Buffer);
          return;
       end if;
-      State := S_Terminated;
+      Next_State := S_Terminated;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -328,7 +328,7 @@ is
       TLV.Messages.Initialize (Messages_Ctx, Messages_Buffer);
       Tags_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       TLV.Tags.Initialize (Tags_Ctx, Tags_Buffer);
-      State := S_Start;
+      Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -347,16 +347,16 @@ is
       pragma Warnings (On, """Tags_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Tags_Ctx""");
       RFLX_Types.Free (Tags_Buffer);
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case State is
+      case Next_State is
          when S_Start =>
-            Start (State);
+            Start (Next_State);
          when S_Reply =>
-            Reply (State);
+            Reply (Next_State);
          when S_Terminated =>
             null;
       end case;

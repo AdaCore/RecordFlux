@@ -11,7 +11,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (State : out Session_State) with
+   procedure Start (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -32,7 +32,7 @@ is
       if Universal.Message.Valid (Message_Ctx, Universal.Message.F_Value) then
          Local := Local + Universal.Message.Get_Value (Message_Ctx);
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -43,9 +43,9 @@ is
       end if;
       Global := Local + 20;
       if Local < Global then
-         State := S_Reply;
+         Next_State := S_Reply;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
       end if;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -55,7 +55,7 @@ is
       RFLX_Types.Free (Message_Buffer);
    end Start;
 
-   procedure Reply (State : out Session_State) with
+   procedure Reply (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -72,7 +72,7 @@ is
          Universal.Message.Set_Length (Message_Ctx, Universal.Length (Universal.Value'Size / 8));
          Universal.Message.Set_Value (Message_Ctx, Global);
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -88,7 +88,7 @@ is
             Universal_Message_Read (Message_Ctx);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -97,7 +97,7 @@ is
          RFLX_Types.Free (Message_Buffer);
          return;
       end if;
-      State := S_Terminated;
+      Next_State := S_Terminated;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -108,21 +108,21 @@ is
 
    procedure Initialize is
    begin
-      State := S_Start;
+      Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
    begin
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case State is
+      case Next_State is
          when S_Start =>
-            Start (State);
+            Start (Next_State);
          when S_Reply =>
-            Reply (State);
+            Reply (Next_State);
          when S_Terminated =>
             null;
       end case;
