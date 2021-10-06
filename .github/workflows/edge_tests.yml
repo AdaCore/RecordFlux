@@ -13,7 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [black, isort, flake8, pylint, mypy, contracts]
+        target:
+          - black
+          - isort
+          - flake8
+          - pylint
+          - mypy
+          - pydocstyle
+          - contracts
     steps:
     - uses: actions/checkout@v2
       with:

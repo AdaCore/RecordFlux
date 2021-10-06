@@ -23,7 +23,7 @@ endif
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_verification test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
-	install_gnatstudio install_devel upgrade_devel install_gnat printenv_gnat \
+	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	clean clean_proof
 
 all: check test prove
@@ -143,7 +143,7 @@ upgrade_devel:
 	tools/upgrade_dependencies.py
 
 install_devel_edge: install_devel
-	pip3 install --upgrade `python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux') if 'devel' in r))"`
+	$(MAKE) -C .config/python-style install_devel_edge
 
 install_gnat:
 	alr toolchain --install gnat_native=11.2.1 && \
