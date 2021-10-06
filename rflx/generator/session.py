@@ -127,7 +127,7 @@ class ExceptionHandler:
         ), f'missing exception transition for state "{self.state.identifier}"'
         return [
             Assignment(
-                "State",
+                "Next_State",
                 Variable(f"S_{self.state.exception_transition.target}"),
             ),
             *self.finalization,
@@ -470,6 +470,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
         unit += self._create_tick_procedure(self._session)
         unit += self._create_run_procedure()
+        unit += self._create_state_function()
         return (
             self._create_declarations(self._session, evaluated_declarations.global_declarations)
             + unit
@@ -479,16 +480,20 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self, session: model.Session, declarations: Sequence[Declaration]
     ) -> UnitPart:
         return UnitPart(
+            [
+                EnumerationType(
+                    "Session_State", {ID(f"S_{s.identifier}"): None for s in session.states}
+                ),
+            ],
             private=[
                 *[
                     UseTypeClause(self._prefix * ID(t))
                     for t in self._session_context.used_types
                     if not model.is_builtin_type(t) and not model.is_internal_type(t)
                 ],
-                EnumerationType(
-                    "Session_State", {ID(f"S_{s.identifier}"): None for s in session.states}
+                ObjectDeclaration(
+                    ["Next_State"], "Session_State", Variable(f"S_{session.initial}")
                 ),
-                ObjectDeclaration(["State"], "Session_State", Variable(f"S_{session.initial}")),
                 *declarations,
             ],
         )
@@ -546,7 +551,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 unit_body += [
                     SubprogramBody(
                         ProcedureSpecification(
-                            ID(state.identifier), [OutParameter(["State"], "Session_State")]
+                            ID(state.identifier), [OutParameter(["Next_State"], "Session_State")]
                         ),
                         [
                             *evaluated_declarations.global_declarations,
@@ -563,13 +568,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 t.condition.substituted(
                                                     self._substitution()
                                                 ).ada_expr(),
-                                                [Assignment("State", Variable(f"S_{t.target}"))],
+                                                [
+                                                    Assignment(
+                                                        "Next_State", Variable(f"S_{t.target}")
+                                                    )
+                                                ],
                                             )
                                             for t in state.transitions[:-1]
                                         ],
                                         [
                                             Assignment(
-                                                "State",
+                                                "Next_State",
                                                 Variable(f"S_{state.transitions[-1].target}"),
                                             )
                                         ],
@@ -640,7 +649,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    NotEqual(Variable("State"), Variable(f"S_{session.final}")),
+                    NotEqual(Variable("Next_State"), Variable(f"S_{session.final}")),
                 ),
             ],
         )
@@ -668,7 +677,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     declarations,
                     [
                         *initialization,
-                        Assignment("State", Variable(f"S_{session.initial}")),
+                        Assignment("Next_State", Variable(f"S_{session.initial}")),
                     ],
                 ),
             ],
@@ -697,7 +706,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     declarations,
                     [
                         *finalization,
-                        Assignment("State", Variable(f"S_{session.final}")),
+                        Assignment("Next_State", Variable(f"S_{session.final}")),
                     ],
                 ),
             ],
@@ -723,13 +732,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [],
                     [
                         CaseStatement(
-                            Variable("State"),
+                            Variable("Next_State"),
                             [
                                 (
                                     Variable(f"S_{s.identifier}"),
                                     [
                                         *self._debug_output(f"State: {s.identifier}"),
-                                        CallStatement(ID(s.identifier), [Variable("State")])
+                                        CallStatement(ID(s.identifier), [Variable("Next_State")])
                                         if s.identifier != session.final
                                         else NullStatement(),
                                     ],
@@ -772,6 +781,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         ),
                         CallStatement("Finalize"),
                     ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def _create_state_function() -> UnitPart:
+        specification = FunctionSpecification("State", "Session_State")
+        return UnitPart(
+            [
+                SubprogramDeclaration(specification),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Variable("Next_State"),
                 )
             ],
         )

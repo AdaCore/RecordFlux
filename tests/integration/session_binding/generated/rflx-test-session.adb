@@ -10,7 +10,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (State : out Session_State) with
+   procedure Start (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -28,13 +28,13 @@ is
          and then Universal.Message.Get_Message_Type (Message_Ctx) = Universal.MT_Data)
         and then Universal.Message.Get_Length (Message_Ctx) = 1
       then
-         State := S_Reply;
+         Next_State := S_Reply;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
       end if;
    end Start;
 
-   procedure Reply (State : out Session_State) with
+   procedure Reply (Next_State : out Session_State) with
      Pre =>
        Initialized,
      Post =>
@@ -71,7 +71,7 @@ is
          end;
       end;
       if RFLX_Exception then
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
       if Universal.Message.Structural_Valid_Message (Message_Ctx) then
@@ -81,10 +81,10 @@ is
             Universal_Message_Read (Message_Ctx);
          end;
       else
-         State := S_Terminated;
+         Next_State := S_Terminated;
          return;
       end if;
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Reply;
 
    procedure Initialize is
@@ -92,7 +92,7 @@ is
    begin
       Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
-      State := S_Start;
+      Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -104,16 +104,16 @@ is
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
       RFLX_Types.Free (Message_Buffer);
-      State := S_Terminated;
+      Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case State is
+      case Next_State is
          when S_Start =>
-            Start (State);
+            Start (Next_State);
          when S_Reply =>
-            Reply (State);
+            Reply (Next_State);
          when S_Terminated =>
             null;
       end case;
