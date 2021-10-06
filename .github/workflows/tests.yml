@@ -25,7 +25,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [packages, dependencies, black, isort, flake8, pylint, mypy, contracts, doc]
+        target:
+          - packages
+          - dependencies
+          - black
+          - isort
+          - flake8
+          - pylint
+          - mypy
+          - pydocstyle
+          - contracts
+          - doc
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
