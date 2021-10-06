@@ -2,37 +2,27 @@ from langkit.dsl import ASTNode, Field, abstract
 
 
 @abstract
-class RFLXNode(ASTNode):
-    """
-    Root node class for the RecordFlux language
-    """
+class RFLXNode(ASTNode):  # type: ignore[misc]
+    """Root node class for the RecordFlux language."""
 
 
 @abstract
 class AbstractID(RFLXNode):
-    """
-    Base class for identifiers
-    """
+    """Base class for identifiers."""
 
 
 class NullID(AbstractID):
-    """
-    "null" identifier
-    """
+    """'null' identifier."""
 
 
 class UnqualifiedID(AbstractID):
-    """
-    Simple, unqualified identifiers, i.e. identifiers without a package part (e.g. "Foo")
-    """
+    """Simple, unqualified identifiers, i.e. identifiers without a package part (e.g. "Foo")."""
 
     token_node = True
 
 
 class ID(AbstractID):
-    """
-    Qualified identifiers which may optionally have a package part (e.g. "Pkg::Foo", "Foo")
-    """
+    """Qualified identifiers which may optionally have a package part (e.g. "Pkg::Foo", "Foo")."""
 
     package = Field(type=UnqualifiedID)
     name = Field(type=UnqualifiedID)
@@ -51,22 +41,16 @@ class Parameters(RFLXNode):
 
 @abstract
 class Declaration(RFLXNode):
-    """
-    Base class for declarations (types, refinements, sessions)
-    """
+    """Base class for declarations (types, refinements, sessions)."""
 
 
 @abstract
 class TypeDef(RFLXNode):
-    """
-    Base class for type definitions (integers, messages, type derivations, sequences, enumerations)
-    """
+    """Base class for type definitions (integers, messages, type derivations, sequences, enums)."""
 
 
 class TypeDecl(Declaration):
-    """
-    Type declaration (type Foo is ...)
-    """
+    """Type declaration (type Foo is ...)."""
 
     identifier = Field(type=UnqualifiedID)
     parameters = Field(type=Parameters)
@@ -75,15 +59,11 @@ class TypeDecl(Declaration):
 
 @abstract
 class Expr(RFLXNode):
-    """
-    Base class for expressions
-    """
+    """Base class for expressions."""
 
 
 class Op(RFLXNode):
-    """
-    Operators for binary expressions
-    """
+    """Operators for binary expressions."""
 
     enum_node = True
     alternatives = [
@@ -112,9 +92,7 @@ class Negation(Expr):
 
 
 class BinOp(Expr):
-    """
-    Binary operation
-    """
+    """Binary operation."""
 
     left = Field(type=Expr)
     op = Field(type=Op)
@@ -122,9 +100,7 @@ class BinOp(Expr):
 
 
 class ParenExpression(Expr):
-    """
-    Parenthesized expression
-    """
+    """Parenthesized expression."""
 
     data = Field(type=Expr)
 
@@ -137,9 +113,7 @@ class MessageAggregateAssociation(RFLXNode):
 
 @abstract
 class BaseAggregate(RFLXNode):
-    """
-    Base class for message aggregates
-    """
+    """Base class for message aggregates."""
 
 
 class NullMessageAggregate(BaseAggregate):
@@ -158,9 +132,7 @@ class MessageAggregate(Expr):
 
 
 class RefinementDecl(Declaration):
-    """
-    Refinement declaration (for Message use (Field => Inner_Type))
-    """
+    """Refinement declaration (for Message use (Field => Inner_Type))."""
 
     pdu = Field(type=ID)
     field = Field(type=UnqualifiedID)
@@ -170,23 +142,17 @@ class RefinementDecl(Declaration):
 
 @abstract
 class FormalDecl(RFLXNode):
-    """
-    Base class for generic formal session declarations
-    """
+    """Base class for generic formal session declarations."""
 
 
 class FormalPrivateTypeDecl(FormalDecl):
-    """
-    Formal private session type declaration
-    """
+    """Formal private session type declaration."""
 
     identifier = Field(type=UnqualifiedID)
 
 
 class SessionAspects(RFLXNode):
-    """
-    Session aspects (Initial, Final)
-    """
+    """Session aspects (Initial, Final)."""
 
     initial = Field(type=UnqualifiedID)
     final = Field(type=UnqualifiedID)
@@ -194,15 +160,11 @@ class SessionAspects(RFLXNode):
 
 @abstract
 class LocalDecl(RFLXNode):
-    """
-    Base class for session or state local declarations
-    """
+    """Base class for session or state local declarations."""
 
 
 class VariableDecl(LocalDecl):
-    """
-    Session variable declaration
-    """
+    """Session variable declaration."""
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
@@ -210,9 +172,7 @@ class VariableDecl(LocalDecl):
 
 
 class RenamingDecl(LocalDecl):
-    """
-    Session renaming declaration
-    """
+    """Session renaming declaration."""
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
@@ -221,9 +181,7 @@ class RenamingDecl(LocalDecl):
 
 @abstract
 class BaseStateBody(RFLXNode):
-    """
-    Base class for session state body
-    """
+    """Base class for session state body."""
 
 
 class NullStateBody(BaseStateBody):
@@ -232,24 +190,18 @@ class NullStateBody(BaseStateBody):
 
 @abstract
 class Statement(RFLXNode):
-    """
-    Base class for statements
-    """
+    """Base class for statements."""
 
 
 class Assignment(Statement):
-    """
-    Assignment of expression to unqualified identifier
-    """
+    """Assignment of expression to unqualified identifier."""
 
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
 
 class AttrStmt(RFLXNode):
-    """
-    Attribute statement kind
-    """
+    """Attribute statement kind."""
 
     enum_node = True
     alternatives = [
@@ -261,9 +213,7 @@ class AttrStmt(RFLXNode):
 
 
 class AttributeStatement(Statement):
-    """
-    Attribute statement
-    """
+    """Attribute statement."""
 
     identifier = Field(type=UnqualifiedID)
     attr = Field(type=AttrStmt)
@@ -271,9 +221,7 @@ class AttributeStatement(Statement):
 
 
 class Reset(Statement):
-    """
-    Reset statement
-    """
+    """Reset statement."""
 
     identifier = Field(type=UnqualifiedID)
     associations = Field(type=MessageAggregateAssociation.list)
@@ -281,15 +229,11 @@ class Reset(Statement):
 
 @abstract
 class SequenceLiteral(Expr):
-    """
-    Base class for sequence literals (strings, sequence aggregates)
-    """
+    """Base class for sequence literals (strings, sequence aggregates)."""
 
 
 class StringLiteral(SequenceLiteral):
-    """
-    Double-quoted string literal
-    """
+    """Double-quoted string literal."""
 
     token_node = True
 
@@ -300,51 +244,39 @@ class NumericLiteral(Expr):
 
 
 class SequenceAggregate(SequenceLiteral):
-    """
-    List of literal sequence values
-    """
+    """List of literal sequence values."""
 
     values = Field(type=NumericLiteral.list)
 
 
 class Concatenation(SequenceLiteral):
-    """
-    Concatenation of aggregates or string literals
-    """
+    """Concatenation of aggregates or string literals."""
 
     left = Field(type=SequenceLiteral)
     right = Field(type=SequenceLiteral)
 
 
 class Description(RFLXNode):
-    """
-    String description of an entity
-    """
+    """String description of an entity."""
 
     content = Field(type=StringLiteral)
 
 
 class Transition(RFLXNode):
-    """
-    Unconditional session state transition
-    """
+    """Unconditional session state transition."""
 
     target = Field(type=UnqualifiedID)
     description = Field(type=Description)
 
 
 class ConditionalTransition(Transition):
-    """
-    Conditional session state transition
-    """
+    """Conditional session state transition."""
 
     condition = Field(type=Expr)
 
 
 class StateBody(BaseStateBody):
-    """
-    Body of a session state
-    """
+    """Body of a session state."""
 
     declarations = Field(type=LocalDecl.list)
     actions = Field(type=Statement.list)
@@ -355,9 +287,7 @@ class StateBody(BaseStateBody):
 
 
 class State(RFLXNode):
-    """
-    Session state
-    """
+    """Session state."""
 
     identifier = Field(type=UnqualifiedID)
     description = Field(type=Description)
@@ -383,9 +313,7 @@ class Package(RFLXNode):
 
 @abstract
 class IntegerTypeDef(TypeDef):
-    """
-    Base class for all integer type definitions
-    """
+    """Base class for all integer type definitions."""
 
 
 class Aspect(RFLXNode):
@@ -408,9 +336,7 @@ class ModularTypeDef(IntegerTypeDef):
 
 @abstract
 class AbstractMessageTypeDef(TypeDef):
-    """
-    Base class for message type definitions
-    """
+    """Base class for message type definitions."""
 
 
 class NullMessageTypeDef(AbstractMessageTypeDef):
@@ -429,9 +355,7 @@ class SequenceTypeDef(TypeDef):
 
 @abstract
 class EnumerationDef(TypeDef):
-    """
-    Base class for enumeration definitions
-    """
+    """Base class for enumeration definitions."""
 
 
 class PositionalEnumerationDef(EnumerationDef):
@@ -440,9 +364,7 @@ class PositionalEnumerationDef(EnumerationDef):
 
 
 class ElementValueAssoc(RFLXNode):
-    """
-    Element/value association
-    """
+    """Element/value association."""
 
     identifier = Field(type=UnqualifiedID)
     literal = Field(type=NumericLiteral)
@@ -460,9 +382,7 @@ class EnumerationTypeDef(TypeDef):
 
 
 class Then(RFLXNode):
-    """
-    Link to field
-    """
+    """Link to field."""
 
     target = Field(type=AbstractID)
     aspects = Field(type=Aspect.list)
@@ -481,9 +401,7 @@ class NullComponent(RFLXNode):
 
 
 class Component(RFLXNode):
-    """
-    Message component
-    """
+    """Message component."""
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
@@ -494,9 +412,7 @@ class Component(RFLXNode):
 
 
 class Components(RFLXNode):
-    """
-    Message components
-    """
+    """Message components."""
 
     initial_component = Field(type=NullComponent)
     components = Field(type=Component.list)
@@ -504,32 +420,24 @@ class Components(RFLXNode):
 
 @abstract
 class BaseChecksumVal(RFLXNode):
-    """
-    Base class for checksum values
-    """
+    """Base class for checksum values."""
 
 
 class ChecksumVal(BaseChecksumVal):
-    """
-    Single checksum value
-    """
+    """Single checksum value."""
 
     data = Field(type=Expr)
 
 
 class ChecksumValueRange(BaseChecksumVal):
-    """
-    Checksum value range
-    """
+    """Checksum value range."""
 
     first = Field(type=Expr)
     last = Field(type=Expr)
 
 
 class ChecksumAssoc(RFLXNode):
-    """
-    Association between checksum field and list of covered fields
-    """
+    """Association between checksum field and list of covered fields."""
 
     identifier = Field(type=UnqualifiedID)
     covered_fields = Field(type=BaseChecksumVal.list)
@@ -552,9 +460,7 @@ class Variable(Expr):
 
 
 class Attr(RFLXNode):
-    """
-    Attribute kind
-    """
+    """Attribute kind."""
 
     enum_node = True
     alternatives = [
@@ -577,17 +483,13 @@ class Attribute(Expr):
 
 
 class ContextItem(Expr):
-    """
-    Import statement (with Package)
-    """
+    """Import statement (with Package)."""
 
     item = Field(type=UnqualifiedID)
 
 
 class Specification(RFLXNode):
-    """
-    RecordFlux specification
-    """
+    """RecordFlux specification."""
 
     context_clause = Field(type=ContextItem.list)
     package_declaration = Field(type=Package)
@@ -602,21 +504,15 @@ class FormalFunctionDecl(FormalDecl):
 
 @abstract
 class ChannelAttribute(RFLXNode):
-    """
-    Base class for channel attributes
-    """
+    """Base class for channel attributes."""
 
 
 class Readable(ChannelAttribute):
-    """
-    Channel attribute (channel can be read)
-    """
+    """Channel attribute (channel can be read)."""
 
 
 class Writable(ChannelAttribute):
-    """
-    Channel attribute (channel can be written)
-    """
+    """Channel attribute (channel can be written)."""
 
 
 class FormalChannelDecl(FormalDecl):
@@ -626,9 +522,7 @@ class FormalChannelDecl(FormalDecl):
 
 
 class Quantifier(RFLXNode):
-    """
-    Quantifier kind
-    """
+    """Quantifier kind."""
 
     enum_node = True
     alternatives = [

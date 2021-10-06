@@ -14,12 +14,12 @@ export MYPYPATH = $(PWD)/stubs
 
 python-packages := language tests disttools/setup.py
 
-.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy format \
-	test test_python test_python_coverage install clean
+.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
+	test test_python test_python_coverage install install_devel install_devel_edge clean
 
 all: check test
 
-check: check_black check_isort check_flake8 check_pylint check_mypy
+check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
 check_black:
 	black --check --diff --line-length 100 $(python-packages)
@@ -36,6 +36,9 @@ check_pylint:
 check_mypy:
 	mypy --pretty $(python-packages)
 
+check_pydocstyle:
+	pydocstyle $(python-packages)
+
 format:
 	black -l 100 $(python-packages)
 	isort $(python-packages)
@@ -46,10 +49,16 @@ test_python:
 	python3 -m pytest -n$(shell nproc) -vv tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=71 --cov-report=term-missing:skip-covered tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=72 --cov-report=term-missing:skip-covered tests
 
 install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
+
+install_devel: install
+	$(MAKE) -C .config/python-style install_devel
+
+install_devel_edge: install
+	$(MAKE) -C .config/python-style install_devel_edge
 
 dist: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	@echo "============================================================================================================"

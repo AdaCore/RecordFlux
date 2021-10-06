@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def to_dict(node: Any) -> Any:
+def to_dict(node: Any) -> Any:  # type: ignore[misc]
     if node is None:
         return None
     if node.is_list_type:

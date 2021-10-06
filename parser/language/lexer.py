@@ -12,7 +12,7 @@ from langkit.lexer import (
 )
 
 
-class Token(LexerToken):
+class Token(LexerToken):  # type: ignore[misc]
     # Identifiers
     UnqualifiedIdentifier = WithSymbol()
 

@@ -12,7 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [black, isort, flake8, pylint, mypy]
+        target:
+          - black
+          - isort
+          - flake8
+          - pylint
+          - mypy
+          - pydocstyle
     steps:
     - uses: actions/checkout@v2
       with:
@@ -41,7 +47,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
-        make install
+        make install_devel
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -81,7 +87,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
-        make install
+        make install_devel
     - name: Test
       run: |
         make test

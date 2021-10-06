@@ -13,7 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [black, isort, flake8, pylint, mypy]
+        target:
+          - black
+          - isort
+          - flake8
+          - pylint
+          - mypy
+          - pydocstyle
     steps:
     - uses: actions/checkout@v2
       with:
@@ -32,8 +38,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
-        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux-language') if 'devel' in r))")
+        make install_devel_edge
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -59,8 +64,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        pip install .[devel]
-        pip install --upgrade $(python -c "from importlib.metadata import requires; print(' '.join(r.split(' ')[0] for r in requires('RecordFlux-language') if 'devel' in r))")
+        make install_devel_edge
     - name: Test
       run: |
         make test

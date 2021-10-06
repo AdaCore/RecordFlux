@@ -1,2 +1,1 @@
-[flake8]
-ignore = E203, E501, E741, W503
+.config/python-style/.flake8
