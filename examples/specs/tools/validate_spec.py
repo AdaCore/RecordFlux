@@ -16,7 +16,7 @@ from rflx.identifier import ID
 from rflx.model import Link
 from rflx.pyrflx import Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
-from ruamel.yaml import YAML
+from ruamel.yaml.main import YAML
 
 
 def cli(argv: List[str]) -> Union[int, str]:
@@ -466,7 +466,7 @@ class OutputWriter:
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
             try:
-                self.file = open(file, "w")  # pylint: disable=consider-using-with
+                self.file = open(file, "w", encoding="utf-8")  # pylint: disable=consider-using-with
             except OSError as e:
                 raise ValidationError(f"cannot open output file {file}: {e}") from e
             self.file.write("[\n")

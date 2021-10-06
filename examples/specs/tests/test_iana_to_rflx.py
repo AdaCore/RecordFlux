@@ -16,6 +16,9 @@ from tools.iana_to_rflx import (
     iana_to_rflx,
 )
 
+TEST_DIR = Path("tests/iana_to_rflx")
+TEST_REGISTRIES_DIR = Path("tests/iana_to_rflx/test_registries")
+
 
 @pytest.mark.parametrize(
     "registry",
@@ -40,31 +43,32 @@ from tools.iana_to_rflx import (
     ],
 )
 def test_registry_output(registry: Path, tmp_path: Path) -> None:
-    registry_xml_file = f"tests/iana_to_rflx/test_registries/{registry}.xml"
-    generated_spec_file = Path(f"{tmp_path / registry}.rflx")
-    with open(registry_xml_file, "r") as f:
-        iana_to_rflx(f, True, generated_spec_file)
+    registry_xml_file = TEST_REGISTRIES_DIR / f"{registry}.xml"
+    generated_spec_file = tmp_path / f"{registry}.rflx"
+    with open(registry_xml_file, "r", encoding="utf-8") as f:
+        iana_to_rflx(f, always_valid=True, output_file=generated_spec_file)
 
-    with open(generated_spec_file, "r") as generated_file, open(
-        Path(f"tests/iana_to_rflx/generated_valid_specs/{registry}.rflx"), "r"
-    ) as known_valid_file:
-        generated = generated_file.read()
-        known_valid = known_valid_file.read()
-        assert re.sub(
-            r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
-            "Generation date: .",
-            generated,
-        ) == re.sub(
-            r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
-            "Generation date: .",
-            known_valid,
-        )
+    generated = generated_spec_file.read_text(encoding="utf-8")
+    known_valid = Path(TEST_DIR / f"generated_valid_specs/{registry}.rflx").read_text(
+        encoding="utf-8"
+    )
+    assert re.sub(
+        r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
+        "Generation date: .",
+        generated,
+    ) == re.sub(
+        r"Generation date: [0-9]{4}-[0-9]{2}-[0-9]{2}",
+        "Generation date: .",
+        known_valid,
+    )
 
 
 def test_no_package_name() -> None:
     with pytest.raises(IANAError, match=r"^no registry ID found$"):
-        with open("tests/iana_to_rflx/test_registries/test_registry_no_package_name.xml", "r") as f:
-            iana_to_rflx(f, True)
+        with open(
+            TEST_REGISTRIES_DIR / "test_registry_no_package_name.xml", "r", encoding="utf-8"
+        ) as f:
+            iana_to_rflx(f, always_valid=True)
 
 
 def test_normalize_hex_value() -> None:
@@ -102,28 +106,26 @@ def test_normalize_name() -> None:
 
 
 def test_get_name_tag() -> None:
-    with open("tests/iana_to_rflx/test_registries/test_all_name_tags.xml", "r") as f:
-        registry = ElementTree.fromstring(f.read())
-        sub_registry = registry.find("iana:registry", tools.iana_to_rflx.NAMESPACE)
-        assert isinstance(sub_registry, Element)
-        record = sub_registry.find("iana:record", tools.iana_to_rflx.NAMESPACE)
-        assert isinstance(record, Element)
-        assert _get_name_tag(record) == "name"
+    registry = ElementTree.fromstring(
+        (TEST_REGISTRIES_DIR / "test_all_name_tags.xml").read_text(encoding="utf-8")
+    )
+    sub_registry = registry.find("iana:registry", tools.iana_to_rflx.NAMESPACE)
+    assert isinstance(sub_registry, Element)
+    record = sub_registry.find("iana:record", tools.iana_to_rflx.NAMESPACE)
+    assert isinstance(record, Element)
+    assert _get_name_tag(record) == "name"
 
 
 def test_cli(tmp_path: Path) -> None:
     out = tmp_path / "test_all_name_tags.rflx"
-    assert (
-        cli(["-a", "-o", str(out), "tests/iana_to_rflx/test_registries/test_all_name_tags.xml"])
-        == 0
-    )
+    assert cli(["-a", "-o", str(out), str(TEST_REGISTRIES_DIR / "test_all_name_tags.xml")]) == 0
     assert (
         cli(
             [
                 "-a",
                 "-o",
                 str(out),
-                "tests/iana_to_rflx/test_registries/test_registry_invalid_hex_value.xml",
+                str(TEST_REGISTRIES_DIR / "test_registry_invalid_hex_value.xml"),
             ]
         )
         == 'cannot normalize hex value "0xXX,0xZZ"'

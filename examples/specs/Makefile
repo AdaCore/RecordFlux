@@ -4,11 +4,11 @@ python-packages := tests tools
 
 IANA_REGISTRIES_DIR := tests/iana_registries
 
-.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy format test test_python
+.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format test test_python install_devel
 
 all: check test
 
-check: check_black check_isort check_flake8 check_pylint check_mypy
+check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
 check_black:
 	black --check --diff --line-length 100 $(python-packages)
@@ -24,6 +24,9 @@ check_pylint:
 
 check_mypy:
 	mypy --pretty $(python-packages)
+
+check_pydocstyle:
+	pydocstyle $(python-packages)
 
 format:
 	black -l 100 $(python-packages)
@@ -57,3 +60,6 @@ generate_iana_bootp_dhcp_parameters:
 generate_iana_arp_parameters:
 	python3 ./tools/iana_to_rflx.py ./iana_registries/arp-parameters.xml
 
+install_devel:
+	$(MAKE) -C .config/python-style install_devel
+	pip3 install -r requirements.txt
