@@ -1,6 +1,6 @@
 VERBOSE ?= @
 
-VERSION = 0.8.1
+VERSION = 0.8.2
 BUILDDIR = $(PWD)/build
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -83,6 +83,7 @@ $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	$(VERBOSE)cp -a $(PWD)/contrib/gnatcoll-bindings $(DISTDIR)/
 	$(VERBOSE)ln -sf $(PWD)/disttools/MANIFEST.in $(DISTDIR)/MANIFEST.in
 	$(VERBOSE)cp disttools/setup.py $(DISTDIR)/setup.py
+	$(VERBOSE)cp disttools/librflxlang.gpr $(DISTDIR)/librflxlang.gpr
 	$(VERBOSE)sed -i -e 's/##VERSION##/$(VERSION)/g' $(DISTDIR)/setup.py
 	$(VERBOSE)cp README.md $(DISTDIR)/README.md
 
@@ -92,7 +93,7 @@ install_gnat:
 	cd build && \
 	alr init --lib -n alire && \
 	cd alire && \
-	alr with -n gnatcoll_iconv
+	alr with -n gnatcoll_iconv gnatcoll_gmp
 
 printenv_gnat:
 	@test -d build/alire && \
