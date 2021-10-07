@@ -53,7 +53,7 @@ setup(
         "icontract >=2.3.4, <3",
         "pydotplus >=2, <3",
         "z3-solver >=4, <5",
-        "RecordFlux-parser ==0.8.1",
+        "RecordFlux-parser ==0.9.0",
     ],
     extras_require={
         "devel": [
