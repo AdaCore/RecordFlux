@@ -49,7 +49,7 @@ test_python:
 	python3 -m pytest -n$(shell nproc) -vv tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=72 --cov-report=term-missing:skip-covered tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=73 --cov-report=term-missing:skip-covered tests
 
 install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
