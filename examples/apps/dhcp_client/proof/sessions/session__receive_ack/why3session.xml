@@ -398,7 +398,7 @@
   <proof prover="0"><result status="valid" steps="99566"/></proof>
   </goal>
   <goal name="def&#39;vc.117" proved="true">
-  <proof prover="0"><result status="valid" steps="167484324"/></proof>
+  <proof prover="0"><result status="valid" steps="142479040"/></proof>
   </goal>
   <goal name="def&#39;vc.118" proved="true">
   <transf name="trivial_true" proved="true" >
@@ -702,7 +702,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.205" proved="true">
-  <proof prover="0"><result status="valid" steps="951366"/></proof>
+  <proof prover="0"><result status="valid" steps="951370"/></proof>
   </goal>
  </transf>
  </goal>
