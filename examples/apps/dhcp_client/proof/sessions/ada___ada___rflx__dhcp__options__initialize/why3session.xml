@@ -179,16 +179,16 @@
   <goal name="def&#39;vc.29">
   <proof prover="0" timelimit="90"><result status="valid" steps="8202"/></proof>
   </goal>
-  <goal name="def&#39;vc.1">
-  <proof prover="0" timelimit="90"><result status="valid" steps="7856"/></proof>
-  </goal>
   <goal name="def&#39;vc.3">
   <proof prover="0" timelimit="90"><result status="valid" steps="7856"/></proof>
   </goal>
-  <goal name="def&#39;vc.30">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8315"/></proof>
+  <goal name="def&#39;vc.1">
+  <proof prover="0" timelimit="90"><result status="valid" steps="7856"/></proof>
   </goal>
   <goal name="def&#39;vc.32">
+  <proof prover="0" timelimit="90"><result status="valid" steps="8315"/></proof>
+  </goal>
+  <goal name="def&#39;vc.30">
   <proof prover="0" timelimit="90"><result status="valid" steps="8315"/></proof>
   </goal>
   <goal name="def&#39;vc.37">
