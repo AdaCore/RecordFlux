@@ -1,6 +1,11 @@
 import re
+import site
 
 from setuptools import find_packages, setup  # type: ignore
+
+# ISSUE: pypa/pip#7953
+# PEP517 workaround
+site.ENABLE_USER_SITE = True
 
 with open("rflx/__init__.py", encoding="utf-8") as f:
     match = re.search(r'__version__ = "(.*?)"', f.read())
