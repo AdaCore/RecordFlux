@@ -16,7 +16,7 @@ setup(
     name="RecordFlux-parser",
     version="##VERSION##",
     description="RecordFlux parser",
-    long_description=(base_dir / "README.md").read_text(),
+    long_description=(base_dir / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     author="Alexander Senier",
     author_email="senier@componolit.com",
