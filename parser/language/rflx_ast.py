@@ -389,33 +389,31 @@ class Then(RFLXNode):
     condition = Field(type=Expr)
 
 
-class ComponentTypeArgument(RFLXNode):
+class TypeArgument(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
 
-class NullComponent(RFLXNode):
+class NullMessageField(RFLXNode):
 
     then = Field(type=Then)
 
 
-class Component(RFLXNode):
-    """Message component."""
+class MessageField(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
-    type_arguments = Field(type=ComponentTypeArgument.list)
+    type_arguments = Field(type=TypeArgument.list)
     aspects = Field(type=Aspect.list)
     condition = Field(type=Expr)
     thens = Field(type=Then.list)
 
 
-class Components(RFLXNode):
-    """Message components."""
+class MessageFields(RFLXNode):
 
-    initial_component = Field(type=NullComponent)
-    components = Field(type=Component.list)
+    initial_field = Field(type=NullMessageField)
+    fields = Field(type=MessageField.list)
 
 
 @abstract
@@ -450,7 +448,7 @@ class ChecksumAspect(RFLXNode):
 
 class MessageTypeDef(AbstractMessageTypeDef):
 
-    components = Field(type=Components)
+    message_fields = Field(type=MessageFields)
     checksums = Field(type=ChecksumAspect)
 
 

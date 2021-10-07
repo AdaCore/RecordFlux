@@ -353,21 +353,21 @@ grammar.add_rules(
         Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
     ),
-    component_type_argument=ast.ComponentTypeArgument(
-        grammar.unqualified_identifier, "=>", grammar.expression
-    ),
-    null_component_item=ast.NullComponent("null", grammar.then, ";"),
-    component_item=ast.Component(
+    type_argument=ast.TypeArgument(grammar.unqualified_identifier, "=>", grammar.expression),
+    null_message_field=ast.NullMessageField("null", grammar.then, ";"),
+    message_field=ast.MessageField(
         grammar.unqualified_identifier,
         ":",
         grammar.qualified_identifier,
-        Opt("(", List(grammar.component_type_argument, sep=","), ")"),
+        Opt("(", List(grammar.type_argument, sep=","), ")"),
         Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
         List(grammar.then, empty_valid=True),
         ";",
     ),
-    component_list=ast.Components(Opt(grammar.null_component_item), List(grammar.component_item)),
+    message_field_list=ast.MessageFields(
+        Opt(grammar.null_message_field), List(grammar.message_field)
+    ),
     value_range=ast.ChecksumValueRange(grammar.expression, "..", grammar.expression),
     checksum_association=ast.ChecksumAssoc(
         grammar.unqualified_identifier,
@@ -382,7 +382,7 @@ grammar.add_rules(
     message_type_definition=Or(
         ast.MessageTypeDef(
             "message",
-            grammar.component_list,
+            grammar.message_field_list,
             "end",
             "message",
             Opt("with", grammar.checksum_aspect),

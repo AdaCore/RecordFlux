@@ -310,7 +310,7 @@ KEYWORD_TESTS = [
         ),
         (
             "{keyword} : {keyword};",
-            librflxlang.GrammarRule.component_item_rule,
+            librflxlang.GrammarRule.message_field_rule,
         ),
         (
             "{keyword} => (1, 30..34)",

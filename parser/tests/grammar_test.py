@@ -3474,11 +3474,11 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 "definition": {
                     "_kind": "MessageTypeDef",
                     "checksums": None,
-                    "components": {
-                        "_kind": "Components",
-                        "components": [
+                    "message_fields": {
+                        "_kind": "MessageFields",
+                        "fields": [
                             {
-                                "_kind": "Component",
+                                "_kind": "MessageField",
                                 "aspects": [],
                                 "condition": None,
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
@@ -3493,7 +3493,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                                 },
                                 "type_arguments": [
                                     {
-                                        "_kind": "ComponentTypeArgument",
+                                        "_kind": "TypeArgument",
                                         "expression": {
                                             "_kind": "Variable",
                                             "identifier": {
@@ -3513,7 +3513,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                                 ],
                             }
                         ],
-                        "initial_component": None,
+                        "initial_field": None,
                     },
                 },
                 "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
@@ -3527,11 +3527,11 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 "definition": {
                     "_kind": "MessageTypeDef",
                     "checksums": None,
-                    "components": {
-                        "_kind": "Components",
-                        "components": [
+                    "message_fields": {
+                        "_kind": "MessageFields",
+                        "fields": [
                             {
-                                "_kind": "Component",
+                                "_kind": "MessageField",
                                 "aspects": [],
                                 "condition": None,
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
@@ -3547,7 +3547,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                                 "type_arguments": [],
                             }
                         ],
-                        "initial_component": None,
+                        "initial_field": None,
                     },
                 },
                 "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
