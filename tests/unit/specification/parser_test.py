@@ -542,11 +542,11 @@ def test_parse_sequence_type_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -602,7 +602,7 @@ def test_parse_sequence_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -621,7 +621,7 @@ def test_parse_sequence_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
@@ -671,11 +671,11 @@ def test_parse_message_type_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -746,7 +746,7 @@ def test_parse_message_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -762,7 +762,7 @@ def test_parse_message_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -778,7 +778,7 @@ def test_parse_message_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
@@ -789,11 +789,11 @@ def test_parse_message_type_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -809,7 +809,7 @@ def test_parse_message_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -825,7 +825,7 @@ def test_parse_message_type_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
@@ -871,11 +871,11 @@ def test_parse_type_refinement_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -946,7 +946,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -962,7 +962,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -978,7 +978,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "PDU"},
@@ -989,11 +989,11 @@ def test_parse_type_refinement_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1009,7 +1009,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1025,7 +1025,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
@@ -1136,11 +1136,11 @@ def test_parse_type_derivation_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {"_kind": "UnqualifiedID", "_value": "N"},
@@ -1153,7 +1153,7 @@ def test_parse_type_derivation_spec() -> None:
                                         "type_arguments": [],
                                     }
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
@@ -1263,11 +1263,11 @@ def test_parse_ethernet_spec() -> None:
                         "definition": {
                             "_kind": "MessageTypeDef",
                             "checksums": None,
-                            "components": {
-                                "_kind": "Components",
-                                "components": [
+                            "message_fields": {
+                                "_kind": "MessageFields",
+                                "fields": [
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1286,7 +1286,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1305,7 +1305,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1431,7 +1431,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1447,7 +1447,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1463,7 +1463,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1618,7 +1618,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                     {
-                                        "_kind": "Component",
+                                        "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
                                         "identifier": {
@@ -1721,7 +1721,7 @@ def test_parse_ethernet_spec() -> None:
                                         "type_arguments": [],
                                     },
                                 ],
-                                "initial_component": None,
+                                "initial_field": None,
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Frame"},
@@ -1799,7 +1799,7 @@ def test_parse_error_context_dependency_cycle() -> None:
     )
 
 
-def test_parse_error_message_undefined_component() -> None:
+def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
         """
             package Test is
@@ -1946,7 +1946,7 @@ def test_parse_error_reserved_word_in_type_name() -> None:
     )
 
 
-def test_parse_error_reserved_word_in_message_component() -> None:
+def test_parse_error_reserved_word_in_message_field() -> None:
     assert_error_string(
         """
             package Test is

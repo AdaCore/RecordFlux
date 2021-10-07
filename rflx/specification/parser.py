@@ -11,8 +11,6 @@ from librflxlang import (
     AnalysisContext,
     Aspect,
     ChecksumAspect,
-    Components,
-    ComponentTypeArgument,
     Description,
     Diagnostic,
     EnumerationTypeDef,
@@ -21,6 +19,7 @@ from librflxlang import (
     FormalFunctionDecl,
     FormalPrivateTypeDecl,
     GrammarRule,
+    MessageFields,
     MessageTypeDef,
     ModularTypeDef,
     NullID,
@@ -37,6 +36,7 @@ from librflxlang import (
     Statement,
     ThenNode,
     Transition,
+    TypeArgument,
     TypeDecl,
     TypeDerivationDef,
     VariableDecl,
@@ -641,7 +641,7 @@ def create_message_aggregate(expression: Expr, filename: Path) -> expr.Expr:
             for c in expression.f_values.f_associations
         }
     else:
-        raise NotImplementedError(f"invalid message component: {expression.f_values.kind_name}")
+        raise NotImplementedError(f"invalid message field: {expression.f_values.kind_name}")
 
     return expr.MessageAggregate(
         create_id(expression.f_identifier, filename),
@@ -791,12 +791,12 @@ def create_message(
     # pylint: disable = too-many-arguments, too-many-locals
 
     error = RecordFluxError()
-    components = message.f_components
+    fields = message.f_message_fields
 
     field_types, message_arguments = create_message_types(
-        error, identifier, parameters, components, types, filename
+        error, identifier, parameters, fields, types, filename
     )
-    structure = create_message_structure(error, components, filename)
+    structure = create_message_structure(error, fields, filename)
     aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
 
     try:
@@ -818,7 +818,7 @@ def create_message_types(
     error: RecordFluxError,
     identifier: ID,
     parameters: Parameters,
-    components: Components,
+    fields: MessageFields,
     types: Sequence[model.Type],
     filename: Path,
 ) -> Tuple[Mapping[model.Field, model.Type], Dict[ID, Dict[ID, expr.Expr]]]:
@@ -832,8 +832,8 @@ def create_message_types(
             for parameter in (parameters.f_parameters if parameters else ())
         ),
         (
-            (component.f_identifier, component.f_type_identifier, component.f_type_arguments)
-            for component in components.f_components
+            (field.f_identifier, field.f_type_identifier, field.f_type_arguments)
+            for field in fields.f_fields
         ),
     ):
         qualified_type_identifier = model.qualified_type_identifier(
@@ -887,7 +887,7 @@ def create_message_types(
 def create_message_arguments(
     error: RecordFluxError,
     message: model.Message,
-    type_arguments: Sequence[ComponentTypeArgument],
+    type_arguments: Sequence[TypeArgument],
     field_type_location: Optional[Location],
     filename: Path,
 ) -> Dict[ID, expr.Expr]:
@@ -945,7 +945,7 @@ def create_message_arguments(
 
 
 def create_message_structure(
-    error: RecordFluxError, components: Components, filename: Path
+    error: RecordFluxError, fields: MessageFields, filename: Path
 ) -> List[model.Link]:
     def extract_aspect(aspects: List[Aspect]) -> Tuple[expr.Expr, expr.Expr]:
         size: expr.Expr = expr.UNDEFINED
@@ -984,50 +984,48 @@ def create_message_structure(
 
     structure: List[model.Link] = []
 
-    if components.f_initial_component:
-        structure.append(
-            model.Link(model.INITIAL, *extract_then(components.f_initial_component.f_then))
-        )
+    if fields.f_initial_field:
+        structure.append(model.Link(model.INITIAL, *extract_then(fields.f_initial_field.f_then)))
     else:
         structure.append(
             model.Link(
                 model.INITIAL,
-                model.Field(create_id(components.f_components[0].f_identifier, filename)),
+                model.Field(create_id(fields.f_fields[0].f_identifier, filename)),
             )
         )
 
-    for i, component in enumerate(components.f_components):
+    for i, field in enumerate(fields.f_fields):
         source_node = (
-            model.Field(create_id(component.f_identifier, filename))
-            if component.f_identifier
+            model.Field(create_id(field.f_identifier, filename))
+            if field.f_identifier
             else model.INITIAL
         )
-        component_identifier = create_id(component.f_identifier, filename)
-        if component.f_identifier.text.lower() == "message":
+        field_identifier = create_id(field.f_identifier, filename)
+        if field.f_identifier.text.lower() == "message":
             error.extend(
                 [
                     (
                         'reserved word "Message" used as identifier',
                         Subsystem.PARSER,
                         Severity.ERROR,
-                        component_identifier.location,
+                        field_identifier.location,
                     )
                 ],
             )
             continue
 
-        if len(component.f_thens) == 0:
+        if len(field.f_thens) == 0:
             target_id = (
-                create_id(components.f_components[i + 1].f_identifier, filename)
-                if i + 1 < len(components.f_components)
+                create_id(fields.f_fields[i + 1].f_identifier, filename)
+                if i + 1 < len(fields.f_fields)
                 else None
             )
             target_node = model.Field(target_id) if target_id else model.FINAL
             structure.append(model.Link(source_node, target_node))
 
-        for then in component.f_thens:
+        for then in field.f_thens:
             if then.f_target.kind_name != "NullID" and not any(
-                then.f_target.text == c.f_identifier.text for c in components.f_components
+                then.f_target.text == c.f_identifier.text for c in fields.f_fields
             ):
                 error.extend(
                     [
@@ -1042,29 +1040,25 @@ def create_message_structure(
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
 
-        merge_component_aspects(
-            error, component_identifier, structure, *extract_aspect(component.f_aspects)
-        )
-        merge_component_condition(
-            component_identifier,
+        merge_field_aspects(error, field_identifier, structure, *extract_aspect(field.f_aspects))
+        merge_field_condition(
+            field_identifier,
             structure,
-            create_bool_expression(component.f_condition, filename)
-            if component.f_condition
-            else expr.TRUE,
+            create_bool_expression(field.f_condition, filename) if field.f_condition else expr.TRUE,
         )
 
     return structure
 
 
-def merge_component_aspects(
+def merge_field_aspects(
     error: RecordFluxError,
-    component_identifier: ID,
+    field_identifier: ID,
     structure: Sequence[model.Link],
     size: Expr,
     first: Expr,
 ) -> None:
     if first != expr.UNDEFINED or size != expr.UNDEFINED:
-        for l in (l for l in structure if l.target.identifier == component_identifier):
+        for l in (l for l in structure if l.target.identifier == field_identifier):
             if first != expr.UNDEFINED:
                 if l.first == expr.UNDEFINED:
                     l.first = first
@@ -1072,7 +1066,7 @@ def merge_component_aspects(
                     error.extend(
                         [
                             (
-                                f'first aspect of field "{component_identifier}"'
+                                f'first aspect of field "{field_identifier}"'
                                 " conflicts with previous"
                                 " specification",
                                 Subsystem.MODEL,
@@ -1095,7 +1089,7 @@ def merge_component_aspects(
                     error.extend(
                         [
                             (
-                                f'size aspect of field "{component_identifier}" conflicts with'
+                                f'size aspect of field "{field_identifier}" conflicts with'
                                 " previous specification",
                                 Subsystem.MODEL,
                                 Severity.ERROR,
@@ -1111,13 +1105,13 @@ def merge_component_aspects(
                     )
 
 
-def merge_component_condition(
-    component_identifier: ID,
+def merge_field_condition(
+    field_identifier: ID,
     structure: Sequence[model.Link],
     condition: Expr,
 ) -> None:
     if condition != expr.TRUE:
-        for l in (l for l in structure if l.source.identifier == component_identifier):
+        for l in (l for l in structure if l.source.identifier == field_identifier):
             l.condition = (
                 expr.And(condition, l.condition, location=l.condition.location)
                 if l.condition != expr.TRUE

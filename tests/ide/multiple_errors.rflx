@@ -75,9 +75,9 @@ package RFLX_Invalid is
 
    type M2 is
       message
-         -- error: Undefined component type
+         -- error: Undefined field type
          Z : Undef_Type
-            -- error: Undefined component
+            -- error: Undefined field
             then X;
       end message;
 
