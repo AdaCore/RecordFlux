@@ -46,7 +46,7 @@ jobs:
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-        sudo apt install libgmp-dev patchelf
+        sudo apt install libgmp-dev
         make install_devel
     - name: Check
       run: |
@@ -100,7 +100,8 @@ jobs:
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-        sudo apt install libgmp-dev patchelf
+        sudo apt install libgmp-dev
+        eval `make printenv_gnat`
         make install_devel
     - name: Test
       run: |
