@@ -11,10 +11,11 @@ from typing import Dict, List, Sequence, Union
 import librflxlang
 from pkg_resources import get_distribution
 
-from rflx import __version__
-from rflx.error import ERROR_CONFIG, RecordFluxError, Severity, Subsystem, fail
+from rflx import __version__, validator
+from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
+from rflx.identifier import ID
 from rflx.model import Message, Model, Session
 from rflx.specification import Parser
 
@@ -100,6 +101,71 @@ def main(argv: List[str]) -> Union[int, str]:
     )
     parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=Path)
     parser_graph.set_defaults(func=graph)
+
+    parser_validate = subparsers.add_parser(
+        "validate", help="validate specification against a set of known valid or invalid messages"
+    )
+    parser_validate.add_argument(
+        "-s", "--specification", type=Path, help="specification file", required=True
+    )
+    parser_validate.add_argument(
+        "-m",
+        "--message-identifier",
+        type=str,
+        help="identifier of the top-level message: <PackageName>::<MessageName>",
+        required=True,
+    )
+    parser_validate.add_argument(
+        "-v",
+        "--directory-valid",
+        type=Path,
+        help="path to directory with known valid examples",
+        default=None,
+    )
+    parser_validate.add_argument(
+        "-i",
+        "--directory-invalid",
+        type=Path,
+        help="path to directory with known valid examples",
+        default=None,
+    )
+    parser_validate.add_argument(
+        "-f",
+        "--checksum-functions",
+        type=Path,
+        help="path to the module containing the checksum functions",
+        default=None,
+    )
+    parser_validate.add_argument(
+        "-o",
+        "--json-output",
+        type=Path,
+        help="path to output file - file must not exist",
+        default=None,
+    )
+    parser_validate.add_argument(
+        "--abort-on-error",
+        action="store_true",
+        help=(
+            "abort with exitcode 1 if a message is classified "
+            "as a false positive or false negative"
+        ),
+    )
+    parser_validate.add_argument(
+        "-c",
+        "--coverage",
+        action="store_true",
+        help="enable coverage calculation and print the "
+        "combined link-coverage of all provided messages",
+    )
+    parser_validate.add_argument(
+        "--target-coverage",
+        type=float,
+        default=0,
+        help="abort with exitcode 1 if the coverage threshold is not reached; "
+        "target coverage is expected in percentage",
+    )
+    parser_validate.set_defaults(func=validate)
 
     args = parser.parse_args(argv[1:])
 
@@ -241,3 +307,41 @@ def graph(args: argparse.Namespace) -> None:
     filename = args.directory.joinpath("locations.json")
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(locations, f)
+
+
+def validate(args: argparse.Namespace) -> None:
+    if args.directory_valid is None and args.directory_invalid is None:
+        fail("must provide directory with valid and/or invalid messages", Subsystem.CLI)
+
+    for path in [args.directory_valid, args.directory_invalid]:
+        if path is not None and not path.is_dir():
+            fail(f"{path} does not exist or is not a directory", Subsystem.CLI)
+
+    if args.json_output is not None and args.json_output.exists():
+        fail(f"output file already exists: {args.json_output}", Subsystem.CLI)
+
+    try:
+        identifier = ID(args.message_identifier)
+    except RecordFluxError as e:
+        fail(f"invalid identifier: {e}", Subsystem.CLI)
+
+    try:
+        pyrflx = validator.initialize_pyrflx(
+            [str(args.specification)], args.checksum_functions, args.no_verification
+        )
+        validator.validate(
+            identifier,
+            pyrflx,
+            args.directory_invalid,
+            args.directory_valid,
+            args.json_output,
+            args.abort_on_error,
+            args.coverage,
+            args.target_coverage,
+        )
+    except validator.ValidationError as e:
+        fail(str(e), Subsystem.VALIDATOR)
+    except RecordFluxError as e:
+        fatal_error = FatalError()
+        fatal_error.extend(e)
+        raise fatal_error from e
