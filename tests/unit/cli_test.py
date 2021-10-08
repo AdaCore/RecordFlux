@@ -5,7 +5,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
 import rflx.specification
-from rflx import cli
+from rflx import cli, validator
 from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
 from tests.const import SPEC_DIR
 
@@ -18,6 +18,10 @@ def raise_parser_error() -> None:
 
 def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
+
+
+def raise_validation_error() -> None:
+    raise validator.ValidationError("TEST")
 
 
 def raise_fatal_error() -> None:
@@ -150,6 +154,178 @@ def test_main_graph_non_existent_directory() -> None:
 def test_main_graph_no_output_files(tmp_path: Path) -> None:
     assert (
         cli.main(["rflx", "graph", "-d", str(tmp_path), str(SPEC_DIR / "empty_package.rflx")]) == 0
+    )
+
+
+def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit, match="2"):
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-m",
+                "Test::Message",
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+            ]
+        )
+
+    with pytest.raises(SystemExit, match="2"):
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+            ]
+        )
+
+
+def test_main_validate_no_test_data_provided(tmp_path: Path) -> None:
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Test::Message",
+            ]
+        )
+        == "cli: error: must provide directory with valid and/or invalid messages"
+    )
+
+
+def test_main_validate_output_file_exists(tmp_path: Path) -> None:
+    tmp_file = tmp_path / "test.json"
+    tmp_file.write_text("")
+    assert tmp_file.is_file()
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Test::Message",
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+                "-o",
+                str(tmp_file),
+                "-f",
+                "checksum",
+            ]
+        )
+    ) == f"cli: error: output file already exists: {tmp_file}"
+
+
+def test_main_validate_path_does_not_exist(tmp_path: Path) -> None:
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Test::Message",
+                "-i",
+                str(tmp_path / "non_existent_dir"),
+                "-f",
+                "checksum",
+            ]
+        )
+    ) == f"cli: error: {tmp_path}/non_existent_dir does not exist or is not a directory"
+
+
+def test_main_validate_path_is_not_directory(tmp_path: Path) -> None:
+    tmp_file = tmp_path / "test.txt"
+    tmp_file.write_text("")
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_file),
+                "-m",
+                "Test::Message",
+                "-i",
+                str(tmp_file),
+                "-f",
+                "checksum",
+            ]
+        )
+    ) == f"cli: error: {tmp_file} does not exist or is not a directory"
+
+
+def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Ethernet Frame",
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+            ]
+        )
+        == 'cli: error: invalid identifier: id: error: " " in identifier parts of "Ethernet Frame"'
+    )
+
+
+def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(validator, "initialize_pyrflx", lambda a, b, c: None)
+    monkeypatch.setattr(
+        validator, "validate", lambda a, b, c, d, e, f, g, h: raise_validation_error()
+    )
+    assert "validator: error: TEST" in str(
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Test::Message",
+                "-v",
+                str(tmp_path),
+            ]
+        )
+    )
+
+
+def test_main_validate_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(validator, "initialize_pyrflx", lambda a, b, c: None)
+    monkeypatch.setattr(validator, "validate", lambda a, b, c, d, e, f, g, h: raise_model_error())
+    assert "RecordFlux Bug" in str(
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                "-s",
+                str(tmp_path / "test.rflx"),
+                "-m",
+                "Test::Message",
+                "-v",
+                str(tmp_path),
+            ]
+        )
     )
 
 

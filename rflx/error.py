@@ -58,6 +58,7 @@ class Subsystem(Enum):
     GRAPH = auto()
     PYRFLX = auto()
     ID = auto()
+    VALIDATOR = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)
