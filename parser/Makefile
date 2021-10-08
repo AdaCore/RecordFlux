@@ -87,6 +87,7 @@ $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	$(VERBOSE)cp disttools/librflxlang.gpr $(DISTDIR)/librflxlang.gpr
 	$(VERBOSE)sed -i -e 's/##VERSION##/$(VERSION)/g' $(DISTDIR)/setup.py
 	$(VERBOSE)cp README.md $(DISTDIR)/README.md
+	$(VERBOSE)touch $(DISTDIR)/python/librflxlang/py.typed
 
 install_gnat:
 	alr toolchain --install gnat_native=11.2.1 && \

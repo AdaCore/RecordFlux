@@ -45,5 +45,5 @@ setup(
         "librflxlang",
     ],
     package_dir={"librflxlang": "python/librflxlang"},
-    package_data={"librflxlang": ["librflxlang.so"]},
+    package_data={"librflxlang": ["librflxlang.so", "py.typed", "*.pyi"]},
 )

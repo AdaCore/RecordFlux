@@ -8,7 +8,7 @@ from librflxlang import AnalysisContext, GrammarRule
 from tests.utils import to_dict
 
 
-def parse(string: str, rule: GrammarRule) -> object:
+def parse(string: str, rule: str) -> object:
     unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
     assert len(unit.diagnostics) == 0, str(unit.diagnostics)
     return to_dict(unit.root)

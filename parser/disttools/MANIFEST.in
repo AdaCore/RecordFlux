@@ -2,5 +2,5 @@ include librflxlang.gpr
 recursive-include src *.ad?
 recursive-include gnatcoll-bindings/iconv *.ad? *.gpr *.c
 recursive-include gnatcoll-bindings/gmp *.ad? *.gpr *.c
-recursive-include python *.py
+recursive-include python *.py *.pyi
 recursive-include langkit/support *.gpr *.ad?

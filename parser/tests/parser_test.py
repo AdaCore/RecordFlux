@@ -8,7 +8,7 @@ from tests.utils import to_dict
 
 
 def parse_buffer(
-    data: str, rule: librflxlang.GrammarRule = librflxlang.GrammarRule.main_rule_rule
+    data: str, rule: str = librflxlang.GrammarRule.main_rule_rule
 ) -> librflxlang.AnalysisUnit:
     ctx = librflxlang.AnalysisContext()
     unit = ctx.get_from_buffer("text.rflx", data, rule=rule)
