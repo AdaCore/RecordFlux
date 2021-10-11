@@ -5,42 +5,9 @@ import logging
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
-from librflxlang import (
-    AnalysisContext,
-    Aspect,
-    ChecksumAspect,
-    Description,
-    Diagnostic,
-    EnumerationTypeDef,
-    Expr,
-    FormalChannelDecl,
-    FormalFunctionDecl,
-    FormalPrivateTypeDecl,
-    GrammarRule,
-    MessageFields,
-    MessageTypeDef,
-    ModularTypeDef,
-    NullID,
-    PackageNode,
-    Parameters,
-    RangeTypeDef,
-    RefinementDecl,
-    RenamingDecl,
-    RFLXNode,
-    SequenceTypeDef,
-    SessionDecl,
-    Specification,
-    State,
-    Statement,
-    ThenNode,
-    Transition,
-    TypeArgument,
-    TypeDecl,
-    TypeDerivationDef,
-    VariableDecl,
-)
+import librflxlang as lang
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
@@ -54,7 +21,7 @@ log = logging.getLogger(__name__)
 STDIN = Path("<stdin>")
 
 
-def node_location(node: RFLXNode, filename: Path) -> Location:
+def node_location(node: lang.RFLXNode, filename: Path) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
@@ -64,7 +31,7 @@ def node_location(node: RFLXNode, filename: Path) -> Location:
     )
 
 
-def type_location(identifier: ID, node: RFLXNode) -> Location:
+def type_location(identifier: ID, node: lang.RFLXNode) -> Location:
     """
     Create a location object.
 
@@ -80,7 +47,7 @@ def type_location(identifier: ID, node: RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: List[Diagnostic], error: RecordFluxError, filename: Path
+    diagnostics: List[lang.Diagnostic], error: RecordFluxError, filename: Path
 ) -> bool:
     """Append langkit diagnostics to RecordFlux error. Return True if error occured."""
 
@@ -106,25 +73,26 @@ def diagnostics_to_error(
     return True
 
 
-def create_description(description: Description = None) -> Optional[str]:
+def create_description(description: lang.Description = None) -> Optional[str]:
     if description:
         assert isinstance(description.text, str)
         return description.text.split('"')[1]
     return None
 
 
-def create_transition(transition: Transition, filename: Path) -> model.Transition:
+def create_transition(transition: lang.Transition, filename: Path) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
     target = create_id(transition.f_target, filename)
     condition: expr.Expr = expr.TRUE
     description = create_description(transition.f_description)
-    if transition.kind_name == "ConditionalTransition":
+    if isinstance(transition, lang.ConditionalTransition):
         condition = create_bool_expression(transition.f_condition, filename)
     return model.Transition(target, condition, description, node_location(transition, filename))
 
 
-def create_reset(reset: Statement, filename: Path) -> stmt.Statement:
+def create_reset(reset: lang.Statement, filename: Path) -> stmt.Statement:
+    assert isinstance(reset, lang.Reset)
     return stmt.Reset(
         create_id(reset.f_identifier, filename),
         {
@@ -135,7 +103,8 @@ def create_reset(reset: Statement, filename: Path) -> stmt.Statement:
     )
 
 
-def create_assignment(assignment: Statement, filename: Path) -> stmt.Statement:
+def create_assignment(assignment: lang.Statement, filename: Path) -> stmt.Statement:
+    assert isinstance(assignment, lang.Assignment)
     return stmt.Assignment(
         create_id(assignment.f_identifier, filename),
         create_expression(assignment.f_expression, filename),
@@ -143,7 +112,8 @@ def create_assignment(assignment: Statement, filename: Path) -> stmt.Statement:
     )
 
 
-def create_attribute_statement(expression: Statement, filename: Path) -> stmt.Statement:
+def create_attribute_statement(expression: lang.Statement, filename: Path) -> stmt.Statement:
+    assert isinstance(expression, lang.AttributeStatement)
     attrs = {
         "Append": stmt.Append,
         "Extend": stmt.Extend,
@@ -159,7 +129,7 @@ def create_attribute_statement(expression: Statement, filename: Path) -> stmt.St
     )
 
 
-def create_statement(statement: Statement, filename: Path) -> stmt.Statement:
+def create_statement(statement: lang.Statement, filename: Path) -> stmt.Statement:
     handlers = {
         "Reset": create_reset,
         "Assignment": create_assignment,
@@ -168,11 +138,12 @@ def create_statement(statement: Statement, filename: Path) -> stmt.Statement:
     return handlers[statement.kind_name](statement, filename)
 
 
-def create_state(state: State, filename: Path) -> model.State:
+def create_state(state: lang.State, filename: Path) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(state.f_identifier, filename)
-    if state.f_body.kind_name == "NullStateBody":
+    if isinstance(state.f_body, lang.NullStateBody):
         return model.State(identifier)
+    assert isinstance(state.f_body, lang.StateBody)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
         fail(
             "inconsistent state identifier: "
@@ -208,7 +179,7 @@ def create_state(state: State, filename: Path) -> model.State:
     )
 
 
-def __check_session_identifier(session: SessionDecl, filename: Path) -> None:
+def __check_session_identifier(session: lang.SessionDecl, filename: Path) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
         fail(
             "inconsistent session identifier: "
@@ -220,7 +191,7 @@ def __check_session_identifier(session: SessionDecl, filename: Path) -> None:
 
 
 def create_unproven_session(
-    session: SessionDecl,
+    session: lang.SessionDecl,
     package: ID,
     filename: Path,
     types: Sequence[model.Type] = None,
@@ -239,7 +210,7 @@ def create_unproven_session(
 
 
 def create_session(
-    session: SessionDecl,
+    session: lang.SessionDecl,
     package: ID,
     filename: Path,
     types: Sequence[model.Type] = None,
@@ -247,8 +218,8 @@ def create_session(
     return create_unproven_session(session, package, filename, types).proven()
 
 
-def create_id(identifier: NullID, filename: Path) -> ID:
-    if identifier.kind_name == "UnqualifiedID":
+def create_id(identifier: lang.AbstractID, filename: Path) -> ID:
+    if isinstance(identifier, lang.UnqualifiedID):
         if identifier.text.lower() in RESERVED_WORDS:
             fail(
                 f'reserved word "{identifier.text}" used as identifier',
@@ -257,7 +228,7 @@ def create_id(identifier: NullID, filename: Path) -> ID:
                 node_location(identifier, filename),
             )
         return ID(identifier.text, location=node_location(identifier, filename))
-    if identifier.kind_name == "ID":
+    if isinstance(identifier, lang.ID):
         name = ID(identifier.f_name.text, location=node_location(identifier.f_name, filename))
         if identifier.f_package:
             return (
@@ -274,14 +245,15 @@ def create_id(identifier: NullID, filename: Path) -> ID:
 
 def create_sequence(
     identifier: ID,
-    _parameters: Parameters,
-    sequence: SequenceTypeDef,
+    _parameters: lang.Parameters,
+    sequence: lang.TypeDef,
     types: Sequence[model.Type],
     _skip_verification: bool,
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Sequence:
+) -> model.Type:
+    assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.qualified_type_identifier(
         create_id(sequence.f_element_type, filename), identifier.parent
     )
@@ -299,7 +271,7 @@ def create_sequence(
     return model.Sequence(identifier, element_type, type_location(identifier, sequence))
 
 
-def create_numeric_literal(expression: Expr, filename: Path) -> expr.Expr:
+def create_numeric_literal(expression: lang.Expr, filename: Path) -> expr.Expr:
     location = node_location(expression, filename)
     num = expression.text.split("#")
     if len(num) == 1:
@@ -318,7 +290,8 @@ OPERATIONS: Dict[str, Type[expr.BinExpr]] = {
 }
 
 
-def create_binop(expression: Expr, filename: Path) -> expr.Expr:
+def create_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.BinOp)
     loc = node_location(expression, filename)
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
@@ -353,7 +326,8 @@ MATH_OPERATIONS: Dict[str, Union[Type[expr.BinExpr], Type[expr.AssExpr]]] = {
 }
 
 
-def create_math_binop(expression: Expr, filename: Path) -> expr.Expr:
+def create_math_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.BinOp)
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename),
@@ -378,7 +352,8 @@ BOOLEAN_OPERATIONS = {
 }
 
 
-def create_bool_binop(expression: Expr, filename: Path) -> expr.Expr:
+def create_bool_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.BinOp)
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
             create_math_expression(expression.f_left, filename),
@@ -402,26 +377,31 @@ def create_bool_binop(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_paren_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_paren_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.ParenExpression)
     return create_bool_expression(expression.f_data, filename)
 
 
-def create_paren_math_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_paren_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.ParenExpression)
     return create_math_expression(expression.f_data, filename)
 
 
-def create_paren_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_paren_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.ParenExpression)
     return create_expression(expression.f_data, filename)
 
 
-def create_variable(expression: Expr, filename: Path) -> expr.Expr:
+def create_variable(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Variable)
     location = node_location(expression, filename)
     if expression.f_identifier.text.lower() in ("true", "false"):
         return expr.Variable(create_id(expression.f_identifier, filename), location=location)
     return expr.Variable(create_id(expression.f_identifier, filename), location=location)
 
 
-def create_math_attribute(expression: Expr, filename: Path) -> expr.Expr:
+def create_math_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Attribute)
     inner = create_expression(expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
@@ -434,7 +414,8 @@ def create_math_attribute(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_attribute(expression: Expr, filename: Path) -> expr.Expr:
+def create_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Attribute)
     inner = create_expression(expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
@@ -459,21 +440,23 @@ def create_attribute(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_sequence_aggregate(expression: Expr, filename: Path) -> expr.Expr:
+def create_sequence_aggregate(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.SequenceAggregate)
     return expr.Aggregate(
         *[create_math_expression(v, filename) for v in expression.f_values],
         location=node_location(expression, filename),
     )
 
 
-def create_string_literal(expression: Expr, filename: Path) -> expr.Expr:
+def create_string_literal(expression: lang.Expr, filename: Path) -> expr.Expr:
     return expr.String(
         expression.text.split('"')[1],
         location=node_location(expression, filename),
     )
 
 
-def create_call(expression: Expr, filename: Path) -> expr.Expr:
+def create_call(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Call)
     return expr.Call(
         create_id(expression.f_identifier, filename),
         [create_expression(a, filename) for a in expression.f_arguments],
@@ -481,7 +464,8 @@ def create_call(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_quantified_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_quantified_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.QuantifiedExpression)
     param_id = create_id(expression.f_parameter_identifier, filename)
     iterable = create_expression(expression.f_iterable, filename)
     predicate = create_expression(expression.f_predicate, filename)
@@ -494,7 +478,8 @@ def create_quantified_expression(expression: Expr, filename: Path) -> expr.Expr:
     raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
 
 
-def create_binding(expression: Expr, filename: Path) -> expr.Expr:
+def create_binding(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Binding)
     bindings: Mapping[Union[str, ID], expr.Expr] = {
         create_id(b.f_identifier, filename): create_expression(b.f_expression, filename)
         for b in expression.f_bindings
@@ -506,7 +491,8 @@ def create_binding(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_variable_decl(declaration: VariableDecl, filename: Path) -> decl.BasicDeclaration:
+def create_variable_decl(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
+    assert isinstance(declaration, lang.VariableDecl)
     initializer = (
         create_expression(declaration.f_initializer, filename)
         if declaration.f_initializer
@@ -521,8 +507,9 @@ def create_variable_decl(declaration: VariableDecl, filename: Path) -> decl.Basi
 
 
 def create_private_type_decl(
-    declaration: FormalPrivateTypeDecl, filename: Path
+    declaration: lang.FormalDecl, filename: Path
 ) -> decl.FormalDeclaration:
+    assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
         model.Private(
             create_id(declaration.f_identifier, filename),
@@ -532,9 +519,10 @@ def create_private_type_decl(
 
 
 def create_channel_decl(
-    declaration: FormalChannelDecl,
+    declaration: lang.FormalDecl,
     filename: Path,
 ) -> decl.FormalDeclaration:
+    assert isinstance(declaration, lang.FormalChannelDecl)
     readable = False
     writable = False
     for p in declaration.f_parameters:
@@ -552,7 +540,8 @@ def create_channel_decl(
     )
 
 
-def create_renaming_decl(declaration: RenamingDecl, filename: Path) -> decl.BasicDeclaration:
+def create_renaming_decl(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
+    assert isinstance(declaration, lang.RenamingDecl)
     selected = create_expression(declaration.f_expression, filename)
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
@@ -564,9 +553,10 @@ def create_renaming_decl(declaration: RenamingDecl, filename: Path) -> decl.Basi
 
 
 def create_function_decl(
-    declaration: FormalFunctionDecl,
+    declaration: lang.FormalDecl,
     filename: Path,
 ) -> decl.FormalDeclaration:
+    assert isinstance(declaration, lang.FormalFunctionDecl)
     arguments = []
     if declaration.f_parameters:
         for p in declaration.f_parameters.f_parameters:
@@ -584,13 +574,15 @@ def create_function_decl(
     )
 
 
-def create_negation(expression: Expr, filename: Path) -> expr.Expr:
+def create_negation(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Negation)
     math_expr = create_math_expression(expression.f_data, filename)
     assert isinstance(math_expr, expr.Number)
     return expr.Number(-math_expr.value, math_expr.base, node_location(expression, filename))
 
 
-def create_concatenation(expression: Expr, filename: Path) -> expr.Expr:
+def create_concatenation(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Concatenation)
     left = create_expression(expression.f_left, filename)
     right = create_expression(expression.f_right, filename)
     assert isinstance(left, expr.Aggregate)
@@ -600,7 +592,8 @@ def create_concatenation(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_comprehension(expression: Expr, filename: Path) -> expr.Expr:
+def create_comprehension(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Comprehension)
     condition = (
         create_bool_expression(expression.f_condition, filename)
         if expression.f_condition
@@ -615,7 +608,8 @@ def create_comprehension(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_selected(expression: Expr, filename: Path) -> expr.Expr:
+def create_selected(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.SelectNode)
     return expr.Selected(
         create_expression(expression.f_expression, filename),
         create_id(expression.f_selector, filename),
@@ -623,7 +617,8 @@ def create_selected(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_conversion(expression: Expr, filename: Path) -> expr.Expr:
+def create_conversion(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.Conversion)
     return expr.Conversion(
         create_id(expression.f_target_identifier, filename),
         create_expression(expression.f_argument, filename),
@@ -631,17 +626,18 @@ def create_conversion(expression: Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_message_aggregate(expression: Expr, filename: Path) -> expr.Expr:
+def create_message_aggregate(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.MessageAggregate)
     values: Mapping[StrID, expr.Expr] = {}
-    if expression.f_values.kind_name == "NullMessageAggregate":
+    if isinstance(expression.f_values, lang.NullMessageAggregate):
         values = {}
-    elif expression.f_values.kind_name == "MessageAggregateAssociations":
+    elif isinstance(expression.f_values, lang.MessageAggregateAssociations):
         values = {
             create_id(c.f_identifier, filename): create_expression(c.f_expression, filename)
             for c in expression.f_values.f_associations
         }
     else:
-        raise NotImplementedError(f"invalid message field: {expression.f_values.kind_name}")
+        raise NotImplementedError(f"invalid message field: {type(expression.f_values)}")
 
     return expr.MessageAggregate(
         create_id(expression.f_identifier, filename),
@@ -670,11 +666,11 @@ EXPRESSION_MAP = {
 }
 
 
-def create_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
     return EXPRESSION_MAP[expression.kind_name](expression, filename)
 
 
-def create_declaration(declaration: Expr, filename: Path) -> decl.BasicDeclaration:
+def create_declaration(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
     handlers = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
@@ -682,7 +678,9 @@ def create_declaration(declaration: Expr, filename: Path) -> decl.BasicDeclarati
     return handlers[declaration.kind_name](declaration, filename)
 
 
-def create_formal_declaration(declaration: Expr, filename: Path) -> decl.FormalDeclaration:
+def create_formal_declaration(
+    declaration: lang.FormalDecl, filename: Path
+) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
@@ -691,7 +689,7 @@ def create_formal_declaration(declaration: Expr, filename: Path) -> decl.FormalD
     return handlers[declaration.kind_name](declaration, filename)
 
 
-def create_math_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
     handlers = {
         "NumericLiteral": create_numeric_literal,
         "BinOp": create_math_binop,
@@ -707,7 +705,7 @@ def create_math_expression(expression: Expr, filename: Path) -> expr.Expr:
     return handlers[expression.kind_name](expression, filename)
 
 
-def create_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
+def create_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
     handlers = {
         "BinOp": create_bool_binop,
         "ParenExpression": create_paren_bool_expression,
@@ -723,14 +721,15 @@ def create_bool_expression(expression: Expr, filename: Path) -> expr.Expr:
 
 def create_modular(
     identifier: ID,
-    _parameters: Parameters,
-    modular: ModularTypeDef,
+    _parameters: lang.Parameters,
+    modular: lang.TypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.ModularInteger:
+) -> model.Type:
+    assert isinstance(modular, lang.ModularTypeDef)
     return model.ModularInteger(
         identifier,
         create_math_expression(modular.f_mod, filename),
@@ -740,14 +739,15 @@ def create_modular(
 
 def create_range(
     identifier: ID,
-    _parameters: Parameters,
-    rangetype: RangeTypeDef,
+    _parameters: lang.Parameters,
+    rangetype: lang.TypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.RangeInteger:
+) -> model.Type:
+    assert isinstance(rangetype, lang.RangeTypeDef)
     if rangetype.f_size.f_identifier.text != "Size":
         fail(
             f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
@@ -767,29 +767,31 @@ def create_range(
 
 def create_null_message(
     identifier: ID,
-    _parameters: Parameters,
-    message: MessageTypeDef,
+    _parameters: lang.Parameters,
+    message: lang.TypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
     _workers: int,
     _cache: Cache,
     _filename: Path,
-) -> model.Message:
+) -> model.Type:
+    assert isinstance(message, lang.NullMessageTypeDef)
     return model.Message(identifier, [], {}, location=type_location(identifier, message))
 
 
 def create_message(
     identifier: ID,
-    parameters: Parameters,
-    message: MessageTypeDef,
+    parameters: lang.Parameters,
+    message: lang.TypeDef,
     types: Sequence[model.Type],
     skip_verification: bool,
     workers: int,
     cache: Cache,
     filename: Path,
-) -> model.Message:
+) -> model.Type:
     # pylint: disable = too-many-arguments, too-many-locals
 
+    assert isinstance(message, lang.MessageTypeDef)
     error = RecordFluxError()
     fields = message.f_message_fields
 
@@ -817,11 +819,16 @@ def create_message(
 def create_message_types(
     error: RecordFluxError,
     identifier: ID,
-    parameters: Parameters,
-    fields: MessageFields,
+    parameters: lang.Parameters,
+    fields: lang.MessageFields,
     types: Sequence[model.Type],
     filename: Path,
 ) -> Tuple[Mapping[model.Field, model.Type], Dict[ID, Dict[ID, expr.Expr]]]:
+    def get_parameters(param: lang.Parameters) -> Optional[lang.ParameterList]:
+        if not param:
+            return None
+        assert isinstance(param.f_parameters, lang.ParameterList)
+        return param.f_parameters
 
     field_types: Dict[model.Field, model.Type] = {}
     message_arguments: Dict[ID, Dict[ID, expr.Expr]] = defaultdict(dict)
@@ -829,7 +836,7 @@ def create_message_types(
     for field_identifier, type_identifier, type_arguments in itertools.chain(
         (
             (parameter.f_identifier, parameter.f_type_identifier, [])
-            for parameter in (parameters.f_parameters if parameters else ())
+            for parameter in get_parameters(parameters) or []
         ),
         (
             (field.f_identifier, field.f_type_identifier, field.f_type_arguments)
@@ -844,6 +851,7 @@ def create_message_types(
             field = model.Field(create_id(field_identifier, filename))
             if field not in field_types:
                 if isinstance(field_type, model.Message):
+                    assert isinstance(type_arguments, lang.TypeArgumentList)
                     message_arguments[qualified_type_identifier] = create_message_arguments(
                         error,
                         field_type,
@@ -887,7 +895,7 @@ def create_message_types(
 def create_message_arguments(
     error: RecordFluxError,
     message: model.Message,
-    type_arguments: Sequence[TypeArgument],
+    type_arguments: lang.TypeArgumentList,
     field_type_location: Optional[Location],
     filename: Path,
 ) -> Dict[ID, expr.Expr]:
@@ -945,9 +953,9 @@ def create_message_arguments(
 
 
 def create_message_structure(
-    error: RecordFluxError, fields: MessageFields, filename: Path
+    error: RecordFluxError, fields: lang.MessageFields, filename: Path
 ) -> List[model.Link]:
-    def extract_aspect(aspects: List[Aspect]) -> Tuple[expr.Expr, expr.Expr]:
+    def extract_aspect(aspects: lang.AspectList) -> Tuple[expr.Expr, expr.Expr]:
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
         for aspect in aspects:
@@ -969,7 +977,7 @@ def create_message_structure(
         return size, first
 
     def extract_then(
-        then: ThenNode,
+        then: lang.ThenNode,
     ) -> Tuple[model.Field, expr.Expr, expr.Expr, expr.Expr, Location]:
         target = (
             model.FINAL
@@ -1054,8 +1062,8 @@ def merge_field_aspects(
     error: RecordFluxError,
     field_identifier: ID,
     structure: Sequence[model.Link],
-    size: Expr,
-    first: Expr,
+    size: expr.Expr,
+    first: expr.Expr,
 ) -> None:
     if first != expr.UNDEFINED or size != expr.UNDEFINED:
         for l in (l for l in structure if l.target.identifier == field_identifier):
@@ -1108,7 +1116,7 @@ def merge_field_aspects(
 def merge_field_condition(
     field_identifier: ID,
     structure: Sequence[model.Link],
-    condition: Expr,
+    condition: expr.Expr,
 ) -> None:
     if condition != expr.TRUE:
         for l in (l for l in structure if l.source.identifier == field_identifier):
@@ -1120,16 +1128,16 @@ def merge_field_condition(
 
 
 def create_message_aspects(
-    checksum: ChecksumAspect, filename: Path
+    checksum: lang.ChecksumAspect, filename: Path
 ) -> Mapping[ID, Sequence[expr.Expr]]:
     result = {}
     if checksum:
         for assoc in checksum.f_associations:
             exprs = []
             for value in assoc.f_covered_fields:
-                if value.kind_name == "ChecksumVal":
+                if isinstance(value, lang.ChecksumVal):
                     exprs.append(create_math_expression(value.f_data, filename))
-                elif value.kind_name == "ChecksumValueRange":
+                elif isinstance(value, lang.ChecksumValueRange):
                     exprs.append(
                         expr.ValueRange(
                             create_math_expression(value.f_first, filename),
@@ -1144,15 +1152,16 @@ def create_message_aspects(
 
 def create_derived_message(
     identifier: ID,
-    _parameters: Parameters,
-    derivation: TypeDerivationDef,
+    _parameters: lang.Parameters,
+    derivation: lang.TypeDef,
     types: Sequence[model.Type],
     skip_verification: bool,
     workers: int,
     cache: Cache,
     filename: Path,
-) -> model.Message:
+) -> model.Type:
     # pylint: disable=too-many-arguments
+    assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(derivation.f_base, filename)
     base_name = model.qualified_type_identifier(base_id, identifier.parent)
 
@@ -1200,18 +1209,19 @@ def create_derived_message(
 
 def create_enumeration(
     identifier: ID,
-    _parameters: Parameters,
-    enumeration: EnumerationTypeDef,
+    _parameters: lang.Parameters,
+    enumeration: lang.TypeDef,
     _types: Sequence[model.Type],
     _skip_verification: bool,
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Enumeration:
+) -> model.Type:
+    assert isinstance(enumeration, lang.EnumerationTypeDef)
     literals: List[Tuple[StrID, expr.Number]] = []
     error = RecordFluxError()
 
-    def create_aspects(aspects: List[Aspect]) -> Tuple[expr.Expr, bool]:
+    def create_aspects(aspects: lang.AspectList) -> Tuple[expr.Expr, bool]:
         always_valid = False
         size = None
         for a in aspects:
@@ -1252,13 +1262,13 @@ def create_enumeration(
         assert size
         return size, always_valid
 
-    if enumeration.f_elements.kind_name == "NamedEnumerationDef":
+    if isinstance(enumeration.f_elements, lang.NamedEnumerationDef):
         for e in enumeration.f_elements.f_elements:
             element_identifier = create_id(e.f_identifier, filename)
             value = create_math_expression(e.f_literal, filename)
             assert isinstance(value, expr.Number)
             literals.append((element_identifier, value))
-    elif enumeration.f_elements.kind_name == "PositionalEnumerationDef":
+    elif isinstance(enumeration.f_elements, lang.PositionalEnumerationDef):
         literals = [
             (create_id(e, filename), expr.Number(i))
             for i, e in enumerate(enumeration.f_elements.f_elements)
@@ -1288,7 +1298,7 @@ def create_proven_message(
 
 
 def create_refinement(
-    refinement: RefinementDecl, package: ID, types: Sequence[model.Type], filename: Path
+    refinement: lang.RefinementDecl, package: ID, types: Sequence[model.Type], filename: Path
 ) -> model.Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, model.Message)}
 
@@ -1325,7 +1335,7 @@ def create_refinement(
     )
 
 
-def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> None:
+def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) -> None:
     identifier = package.f_identifier.text
     if identifier.startswith("RFLX"):
         error.extend(
@@ -1370,7 +1380,9 @@ def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> No
                 ],
             )
     for t in package.f_declarations:
-        if isinstance(t, TypeDecl) and model.is_builtin_type(create_id(t.f_identifier, name).name):
+        if isinstance(t, lang.TypeDecl) and model.is_builtin_type(
+            create_id(t.f_identifier, name).name
+        ):
             error.extend(
                 [
                     (
@@ -1386,7 +1398,7 @@ def check_naming(error: RecordFluxError, package: PackageNode, name: Path) -> No
 @dataclass(frozen=True)
 class SpecificationNode:
     filename: Path
-    spec: Specification
+    spec: lang.Specification
     withed_files: List[str]
 
 
@@ -1409,80 +1421,81 @@ class Parser:
     def __convert_unit(
         self,
         error: RecordFluxError,
-        spec: Specification,
+        spec: lang.Specification,
         filename: Path,
         transitions: List[ID] = None,
     ) -> None:
         transitions = transitions or []
         withed_files = []
 
-        if spec:
-            check_naming(error, spec.f_package_declaration, filename)
-            packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
-            for context in spec.f_context_clause:
-                item = create_id(context.f_item, filename)
-                if item in transitions:
-                    error.extend(
-                        [
-                            (
-                                f'dependency cycle when including "{transitions[0]}"',
-                                Subsystem.PARSER,
-                                Severity.ERROR,
-                                transitions[0].location,
-                            ),
-                            *[
-                                (
-                                    f'when including "{i}"',
-                                    Subsystem.PARSER,
-                                    Severity.INFO,
-                                    i.location,
-                                )
-                                for i in transitions[1:] + [item]
-                            ],
-                        ],
-                    )
-                    continue
-                withed_file = filename.parent / f"{str(item).lower()}.rflx"
-                withed_files.append(withed_file.name)
-                if withed_file.name not in self.__specifications:
-                    error.extend(self.__parse_specfile(withed_file, transitions + [item]))
-
-            if (
-                packagefile in self.__specifications
-                and filename != self.__specifications[packagefile].filename
-            ):
+        check_naming(error, spec.f_package_declaration, filename)
+        packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
+        for context in spec.f_context_clause:
+            item = create_id(context.f_item, filename)
+            if item in transitions:
                 error.extend(
                     [
                         (
-                            "duplicate specification",
+                            f'dependency cycle when including "{transitions[0]}"',
                             Subsystem.PARSER,
                             Severity.ERROR,
-                            node_location(spec.f_package_declaration.f_identifier, filename),
+                            transitions[0].location,
                         ),
-                        (
-                            "previous specification",
-                            Subsystem.PARSER,
-                            Severity.INFO,
-                            node_location(
-                                self.__specifications[
-                                    packagefile
-                                ].spec.f_package_declaration.f_identifier,
-                                self.__specifications[packagefile].filename,
-                            ),
-                        ),
+                        *[
+                            (
+                                f'when including "{i}"',
+                                Subsystem.PARSER,
+                                Severity.INFO,
+                                i.location,
+                            )
+                            for i in transitions[1:] + [item]
+                        ],
                     ],
                 )
-            self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
+                continue
+            withed_file = filename.parent / f"{str(item).lower()}.rflx"
+            withed_files.append(withed_file.name)
+            if withed_file.name not in self.__specifications:
+                error.extend(self.__parse_specfile(withed_file, transitions + [item]))
+
+        if (
+            packagefile in self.__specifications
+            and filename != self.__specifications[packagefile].filename
+        ):
+            error.extend(
+                [
+                    (
+                        "duplicate specification",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(spec.f_package_declaration.f_identifier, filename),
+                    ),
+                    (
+                        "previous specification",
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        node_location(
+                            self.__specifications[
+                                packagefile
+                            ].spec.f_package_declaration.f_identifier,
+                            self.__specifications[packagefile].filename,
+                        ),
+                    ),
+                ],
+            )
+        self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 
     def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
         transitions = transitions or []
 
         log.info("Parsing %s", filename)
-        unit = AnalysisContext().get_from_file(str(filename))
+        unit = lang.AnalysisContext().get_from_file(str(filename))
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
-        self.__convert_unit(error, unit.root, filename, transitions)
+        if unit.root:
+            assert isinstance(unit.root, lang.Specification)
+            self.__convert_unit(error, unit.root, filename, transitions)
         return error
 
     def __sort_specs_topologically(self) -> None:
@@ -1519,11 +1532,12 @@ class Parser:
     def parse_string(
         self,
         string: str,
-        rule: GrammarRule = GrammarRule.main_rule_rule,
+        rule: str = lang.GrammarRule.main_rule_rule,
     ) -> None:
         error = RecordFluxError()
-        unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
+        unit = lang.AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
+            assert isinstance(unit.root, lang.Specification)
             self.__convert_unit(error, unit.root, STDIN)
             self.__sort_specs_topologically()
         error.propagate()
@@ -1541,16 +1555,22 @@ class Parser:
         return result
 
     @property
-    def specifications(self) -> Dict[str, Specification]:
+    def specifications(self) -> Dict[str, lang.Specification]:
         return {
             spec_node.spec.f_package_declaration.f_identifier.text: spec_node.spec
             for spec_node in self.__specifications.values()
         }
 
     def __evaluate_specification(
-        self, error: RecordFluxError, spec: Specification, filename: Path
+        self, error: RecordFluxError, spec: lang.Specification, filename: Path
     ) -> None:
-        handlers = {
+        handlers: Dict[
+            str,
+            Callable[
+                [ID, lang.Parameters, lang.TypeDef, Sequence[model.Type], bool, int, Cache, Path],
+                model.Type,
+            ],
+        ] = {
             "SequenceTypeDef": create_sequence,
             "ModularTypeDef": create_modular,
             "RangeTypeDef": create_range,
@@ -1563,7 +1583,7 @@ class Parser:
         package_id = create_id(spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
-            if isinstance(t, TypeDecl):
+            if isinstance(t, lang.TypeDecl):
                 identifier = model.qualified_type_identifier(
                     create_id(t.f_identifier, filename), package_id
                 )
@@ -1593,14 +1613,14 @@ class Parser:
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
-            elif isinstance(t, RefinementDecl):
+            elif isinstance(t, lang.RefinementDecl):
                 try:
                     new_type = create_refinement(t, package_id, self.__types, filename)
                     self.__types.append(new_type)
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
-            elif isinstance(t, SessionDecl):
+            elif isinstance(t, lang.SessionDecl):
                 try:
                     new_session = create_session(t, package_id, filename, self.__types)
                     self.__sessions.append(new_session)

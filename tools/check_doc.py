@@ -96,7 +96,7 @@ def check_code(block: str, block_type: CodeBlockType, subtype: str = None) -> bo
     return True
 
 
-def parse(data: str, rule: GrammarRule) -> None:
+def parse(data: str, rule: str) -> None:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
