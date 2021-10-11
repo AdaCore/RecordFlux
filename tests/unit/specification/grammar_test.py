@@ -1,7 +1,7 @@
 from pathlib import Path
 
+import librflxlang as lang
 import pytest
-from librflxlang import AnalysisContext, GrammarRule
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError
@@ -23,52 +23,63 @@ from tests.utils import parse, parse_bool_expression, parse_expression, parse_ma
 
 
 def parse_statement(data: str) -> stmt.Statement:
-    statement = parse(data, GrammarRule.action_rule, create_statement)
+    parser_statement, filename = parse(data, lang.GrammarRule.action_rule)
+    assert isinstance(parser_statement, lang.Statement)
+    statement = create_statement(parser_statement, filename)
     assert isinstance(statement, stmt.Statement)
     return statement
 
 
 def parse_declaration(data: str) -> decl.Declaration:
-    declaration = parse(data, GrammarRule.declaration_rule, create_declaration)
+    parser_declaration, filename = parse(data, lang.GrammarRule.declaration_rule)
+    assert isinstance(parser_declaration, lang.LocalDecl)
+    declaration = create_declaration(parser_declaration, filename)
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
 
 def parse_formal_declaration(data: str) -> decl.Declaration:
-    declaration = parse(data, GrammarRule.session_parameter_rule, create_formal_declaration)
+    parser_declaration, filename = parse(data, lang.GrammarRule.session_parameter_rule)
+    assert isinstance(parser_declaration, lang.FormalDecl)
+    declaration = create_formal_declaration(parser_declaration, filename)
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
 
 def parse_state(data: str) -> State:
-    state = parse(data, GrammarRule.state_rule, create_state)
+    parser_state, source = parse(data, lang.GrammarRule.state_rule)
+    assert isinstance(parser_state, lang.State)
+    state = create_state(parser_state, source)
     assert isinstance(state, State)
     return state
 
 
 def parse_session(string: str) -> model.Session:
-    unit = AnalysisContext().get_from_buffer(
-        "<stdin>", string, rule=GrammarRule.session_declaration_rule
+    unit = lang.AnalysisContext().get_from_buffer(
+        "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
+    assert isinstance(unit.root, lang.SessionDecl)
     return create_session(unit.root, ID("Package"), Path("<stdin>"))
 
 
 def parse_unproven_session(string: str) -> model.UnprovenSession:
-    unit = AnalysisContext().get_from_buffer(
-        "<stdin>", string, rule=GrammarRule.session_declaration_rule
+    unit = lang.AnalysisContext().get_from_buffer(
+        "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
+    assert isinstance(unit.root, lang.SessionDecl)
     return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"))
 
 
-def parse_id(data: str, rule: GrammarRule) -> ID:
-    unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
+def parse_id(data: str, rule: str) -> ID:
+    unit = lang.AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
+    assert isinstance(unit.root, lang.AbstractID)
     return create_id(unit.root, Path("<stdin>"))
 
 
@@ -77,7 +88,7 @@ def parse_id(data: str, rule: GrammarRule) -> ID:
     [("X", ID("X")), ("X2", ID("X2")), ("X_Y", ID("X_Y")), ("X_Y_3", ID("X_Y_3"))],
 )
 def test_unqualified_identifier(string: str, expected: ID) -> None:
-    actual = parse_id(string, GrammarRule.unqualified_identifier_rule)
+    actual = parse_id(string, lang.GrammarRule.unqualified_identifier_rule)
     assert actual == expected
     assert actual.location
 
@@ -96,7 +107,7 @@ def test_unqualified_identifier(string: str, expected: ID) -> None:
     ],
 )
 def test_qualified_identifier(string: str, expected: ID) -> None:
-    actual = parse_id(string, GrammarRule.qualified_identifier_rule)
+    actual = parse_id(string, lang.GrammarRule.qualified_identifier_rule)
     assert actual == expected
     assert actual.location
 
@@ -124,7 +135,7 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
     "string,expected", [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
 )
 def test_variable(string: str, expected: decl.Declaration) -> None:
-    actual = parse_expression(string, GrammarRule.variable_rule)
+    actual = parse_expression(string, lang.GrammarRule.variable_rule)
     assert actual == expected
     assert actual.location
 
@@ -146,7 +157,7 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_expression_suffix(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_expression(string, lang.GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -373,7 +384,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
     ],
 )
 def test_expression_base(string: str, expected: expr.Expr) -> None:
-    actual = parse_expression(string, GrammarRule.extended_expression_rule)
+    actual = parse_expression(string, lang.GrammarRule.extended_expression_rule)
     assert actual == expected
     assert actual.location
 
@@ -925,4 +936,4 @@ def test_session() -> None:
 
 def test_expression_aggregate_no_number() -> None:
     with pytest.raises(RecordFluxError, match=r"^<stdin>:1:5: parser: error: Expected Numeral"):
-        parse_expression("[1, Foo]", GrammarRule.expression_rule)
+        parse_expression("[1, Foo]", lang.GrammarRule.expression_rule)
