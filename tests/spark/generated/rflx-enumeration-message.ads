@@ -317,7 +317,9 @@ is
        and then Valid_Next (Ctx, F_Priority)
        and then Available_Space (Ctx, F_Priority) >= 8,
      Post =>
-       Has_Buffer (Ctx);
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
 private
 

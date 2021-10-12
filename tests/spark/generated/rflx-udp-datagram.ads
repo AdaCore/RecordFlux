@@ -558,7 +558,9 @@ is
        and then Valid_Next (Ctx, F_Source_Port)
        and then Available_Space (Ctx, F_Source_Port) >= 524280,
      Post =>
-       Has_Buffer (Ctx);
+       Has_Buffer (Ctx)
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
 private
 
