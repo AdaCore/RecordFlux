@@ -3225,7 +3225,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                             )
                         ),
                         Postcondition(
-                            Call("Has_Buffer", [Variable("Ctx")]),
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Selected(Variable("Ctx"), "Buffer_First"),
+                                        Selected(Variable("Ctx"), "Buffer_Last"),
+                                    ]
+                                ]
+                            )
                         ),
                     ],
                 )
