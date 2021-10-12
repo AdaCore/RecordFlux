@@ -56,6 +56,12 @@
   <goal name="def&#39;vc.12" proved="true">
   <proof prover="0"><result status="valid" steps="105746"/></proof>
   </goal>
+  <goal name="def&#39;vc.5">
+  <proof prover="0"><result status="valid" steps="113978"/></proof>
+  </goal>
+  <goal name="def&#39;vc.2">
+  <proof prover="0"><result status="valid" steps="9349"/></proof>
+  </goal>
  </transf>
  </goal>
 </theory>

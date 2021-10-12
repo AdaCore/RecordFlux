@@ -77,6 +77,18 @@
   <goal name="def&#39;vc.18" proved="true">
   <proof prover="0"><result status="valid" steps="98959"/></proof>
   </goal>
+  <goal name="def&#39;vc.11">
+  <proof prover="0"><result status="valid" steps="130725"/></proof>
+  </goal>
+  <goal name="def&#39;vc.5">
+  <proof prover="0"><result status="valid" steps="119374"/></proof>
+  </goal>
+  <goal name="def&#39;vc.16">
+  <proof prover="0"><result status="valid" steps="12484"/></proof>
+  </goal>
+  <goal name="def&#39;vc.14">
+  <proof prover="0"><result status="valid" steps="12484"/></proof>
+  </goal>
  </transf>
  </goal>
 </theory>

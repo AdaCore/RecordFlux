@@ -37,6 +37,7 @@ from rflx.ada import (
     Length,
     Less,
     LessEqual,
+    LoopEntry,
     Mod,
     Mul,
     NamedAggregate,
@@ -56,6 +57,7 @@ from rflx.ada import (
     ProcedureSpecification,
     QualifiedExpr,
     ReturnStatement,
+    Selected,
     Size,
     SizeAspect,
     Slice,
@@ -2691,6 +2693,31 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             )
                         ],
                     ),
+                    *[
+                        PragmaStatement(
+                            "Loop_Invariant",
+                            [
+                                Equal(
+                                    Selected(Variable(context_id(x)), "Buffer_First"),
+                                    LoopEntry(Selected(Variable(context_id(x)), "Buffer_First")),
+                                ),
+                            ],
+                        )
+                        for x in [sequence_identifier, target_identifier]
+                    ],
+                    *[
+                        PragmaStatement(
+                            "Loop_Invariant",
+                            [
+                                Equal(
+                                    Selected(Variable(context_id(x)), "Buffer_Last"),
+                                    LoopEntry(Selected(Variable(context_id(x)), "Buffer_Last")),
+                                ),
+                            ],
+                        )
+                        for x in [sequence_identifier, target_identifier]
+                    ],
+
                     PragmaStatement(
                         "Loop_Invariant",
                         [

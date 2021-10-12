@@ -66,6 +66,10 @@ is
                while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
                   pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Message_Options_Ctx));
                   pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
+                  pragma Loop_Invariant (RFLX_Message_Options_Ctx.Buffer_First = RFLX_Message_Options_Ctx.Buffer_First'Loop_Entry);
+                  pragma Loop_Invariant (Option_Types_Ctx.Buffer_First = Option_Types_Ctx.Buffer_First'Loop_Entry);
+                  pragma Loop_Invariant (RFLX_Message_Options_Ctx.Buffer_Last = RFLX_Message_Options_Ctx.Buffer_Last'Loop_Entry);
+                  pragma Loop_Invariant (Option_Types_Ctx.Buffer_Last = Option_Types_Ctx.Buffer_Last'Loop_Entry);
                   pragma Loop_Invariant (Universal.Option_Types.Valid (Option_Types_Ctx));
                   declare
                      E_Ctx : Universal.Option.Context;

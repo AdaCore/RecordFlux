@@ -35,6 +35,10 @@
   <goal name="def&#39;vc.6" proved="true">
   <proof prover="0"><result status="valid" steps="1131"/></proof>
   </goal>
+  <goal name="def&#39;vc.2">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
  </transf>
  </goal>
 </theory>

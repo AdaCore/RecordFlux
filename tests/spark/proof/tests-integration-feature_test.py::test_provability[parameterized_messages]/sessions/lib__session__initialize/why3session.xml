@@ -78,10 +78,12 @@
   <goal name="def&#39;vc.3">
   <proof prover="0"><result status="valid" steps="14934"/></proof>
   </goal>
-  <goal name="def&#39;vc.15">
-  <proof prover="0"><result status="valid" steps="18508"/></proof>
-  </goal>
   <goal name="def&#39;vc.5">
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+  <goal name="def&#39;vc.8">
+  <proof prover="0" obsolete="true"><result status="valid" steps="18508"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>

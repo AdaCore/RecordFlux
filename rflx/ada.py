@@ -375,6 +375,12 @@ class Last(Attribute):
     pass
 
 
+class LoopEntry(Attribute):
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}'Loop_Entry"
+
+
 class Range(Attribute):
     pass
 
