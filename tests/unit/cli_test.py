@@ -163,7 +163,6 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-m",
                 "Test::Message",
                 "-v",
                 str(tmp_path),
@@ -177,7 +176,6 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
                 "-v",
                 str(tmp_path),
@@ -193,9 +191,7 @@ def test_main_validate_no_test_data_provided(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Test::Message",
             ]
         )
@@ -212,9 +208,7 @@ def test_main_validate_output_file_exists(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Test::Message",
                 "-v",
                 str(tmp_path),
@@ -222,7 +216,7 @@ def test_main_validate_output_file_exists(tmp_path: Path) -> None:
                 str(tmp_path),
                 "-o",
                 str(tmp_file),
-                "-f",
+                "-c",
                 "checksum",
             ]
         )
@@ -235,13 +229,11 @@ def test_main_validate_path_does_not_exist(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Test::Message",
                 "-i",
                 str(tmp_path / "non_existent_dir"),
-                "-f",
+                "-c",
                 "checksum",
             ]
         )
@@ -256,13 +248,11 @@ def test_main_validate_path_is_not_directory(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_file),
-                "-m",
                 "Test::Message",
                 "-i",
                 str(tmp_file),
-                "-f",
+                "-c",
                 "checksum",
             ]
         )
@@ -275,9 +265,7 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Ethernet Frame",
                 "-v",
                 str(tmp_path),
@@ -299,9 +287,7 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Test::Message",
                 "-v",
                 str(tmp_path),
@@ -318,9 +304,7 @@ def test_main_validate_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> 
             [
                 "rflx",
                 "validate",
-                "-s",
                 str(tmp_path / "test.rflx"),
-                "-m",
                 "Test::Message",
                 "-v",
                 str(tmp_path),

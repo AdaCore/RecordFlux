@@ -106,64 +106,66 @@ def main(argv: List[str]) -> Union[int, str]:
         "validate", help="validate specification against a set of known valid or invalid messages"
     )
     parser_validate.add_argument(
-        "-s", "--specification", type=Path, help="specification file", required=True
+        "specification",
+        metavar="SPECIFICATION_FILE",
+        type=Path,
+        help="specification file",
     )
     parser_validate.add_argument(
-        "-m",
-        "--message-identifier",
+        "message_identifier",
+        metavar="MESSAGE_IDENTIFIER",
         type=str,
-        help="identifier of the top-level message: <PackageName>::<MessageName>",
-        required=True,
+        help="identifier of the top-level message (e.g., Package::Message)",
     )
     parser_validate.add_argument(
         "-v",
-        "--directory-valid",
+        dest="valid_samples_directory",
         type=Path,
-        help="path to directory with known valid examples",
+        help="path to the directory containing known valid samples",
         default=None,
     )
     parser_validate.add_argument(
         "-i",
-        "--directory-invalid",
+        dest="invalid_samples_directory",
         type=Path,
-        help="path to directory with known valid examples",
+        help="path to the directory containing known valid samples",
         default=None,
     )
     parser_validate.add_argument(
-        "-f",
-        "--checksum-functions",
+        "-c",
+        dest="checksum_module",
         type=Path,
-        help="path to the module containing the checksum functions",
+        help="name of the module containing the checksum functions",
         default=None,
     )
     parser_validate.add_argument(
         "-o",
-        "--json-output",
+        dest="output_file",
         type=Path,
-        help="path to output file - file must not exist",
+        help="path to output file (file must not exist)",
         default=None,
     )
     parser_validate.add_argument(
         "--abort-on-error",
         action="store_true",
         help=(
-            "abort with exitcode 1 if a message is classified "
-            "as a false positive or false negative"
+            "abort with exitcode 1 if a message is classified as a false positive or false negative"
         ),
     )
     parser_validate.add_argument(
-        "-c",
         "--coverage",
         action="store_true",
-        help="enable coverage calculation and print the "
-        "combined link-coverage of all provided messages",
+        help=(
+            "enable coverage calculation and print the combined link coverage"
+            " of all provided messages"
+        ),
     )
     parser_validate.add_argument(
         "--target-coverage",
+        metavar="PERCENTAGE",
         type=float,
         default=0,
-        help="abort with exitcode 1 if the coverage threshold is not reached; "
-        "target coverage is expected in percentage",
+        help="abort with exitcode 1 if the coverage threshold is not reached",
     )
     parser_validate.set_defaults(func=validate)
 
@@ -310,15 +312,16 @@ def graph(args: argparse.Namespace) -> None:
 
 
 def validate(args: argparse.Namespace) -> None:
-    if args.directory_valid is None and args.directory_invalid is None:
+    print(args)
+    if args.valid_samples_directory is None and args.invalid_samples_directory is None:
         fail("must provide directory with valid and/or invalid messages", Subsystem.CLI)
 
-    for path in [args.directory_valid, args.directory_invalid]:
+    for path in [args.valid_samples_directory, args.invalid_samples_directory]:
         if path is not None and not path.is_dir():
             fail(f"{path} does not exist or is not a directory", Subsystem.CLI)
 
-    if args.json_output is not None and args.json_output.exists():
-        fail(f"output file already exists: {args.json_output}", Subsystem.CLI)
+    if args.output_file is not None and args.output_file.exists():
+        fail(f"output file already exists: {args.output_file}", Subsystem.CLI)
 
     try:
         identifier = ID(args.message_identifier)
@@ -327,14 +330,14 @@ def validate(args: argparse.Namespace) -> None:
 
     try:
         pyrflx = validator.initialize_pyrflx(
-            [str(args.specification)], args.checksum_functions, args.no_verification
+            [str(args.specification)], args.checksum_module, args.no_verification
         )
         validator.validate(
             identifier,
             pyrflx,
-            args.directory_invalid,
-            args.directory_valid,
-            args.json_output,
+            args.invalid_samples_directory,
+            args.valid_samples_directory,
+            args.output_file,
             args.abort_on_error,
             args.coverage,
             args.target_coverage,

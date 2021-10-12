@@ -1,0 +1,16 @@
+package Checksum_Message is
+
+   type A is mod 2**8;
+   type B is mod 2**8;
+   type C is mod 2**8;
+
+   type Message is
+      message
+         A : A;
+         B : B;
+         C : C
+            if C'Valid_Checksum;
+      end message with
+         Checksum => (C => (A, B));
+
+end Checksum_Message;
