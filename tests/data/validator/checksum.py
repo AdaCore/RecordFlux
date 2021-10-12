@@ -48,7 +48,18 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     return intermediary_result ^ 0xFFFF
 
 
+def checksum_message_checksum(
+    message: bytes, **kwargs: object  # pylint: disable = unused-argument
+) -> int:
+    a = kwargs.get("A")
+    b = kwargs.get("B")
+    assert isinstance(a, int)
+    assert isinstance(b, int)
+    return a + b % 0xFF
+
+
 checksum_functions = {
+    "Checksum_Message::Message": {"C": checksum_message_checksum},
     "ICMP::Message": {"Checksum": icmp_checksum},
     "IPv4::Packet": {"Header_Checksum": ip_header_checksum},
 }

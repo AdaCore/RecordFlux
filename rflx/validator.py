@@ -9,15 +9,15 @@ from typing import Dict, Iterable, List, Optional, TextIO, Type, Union
 
 from ruamel.yaml.main import YAML
 
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from rflx.model import Link
-from rflx.pyrflx import Package, PyRFLX, PyRFLXError
+from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 
 
 def initialize_pyrflx(
     files: Iterable[Union[str, Path]],
-    checksum_module_name: str = None,
+    checksum_module: str = None,
     skip_model_verification: bool = False,
     skip_message_verification: bool = False,
 ) -> PyRFLX:
@@ -26,75 +26,40 @@ def initialize_pyrflx(
     except FileNotFoundError as e:
         raise ValidationError(f"specification {e}") from e
 
-    defined_checksum_fields = set(
-        (str(message.identifier), str(checksum_field_name))
+    checksum_functions = _parse_checksum_module(checksum_module)
+
+    missing_checksum_definitions = {
+        (str(message.identifier), str(field_identifier))
         for package in pyrflx
         for message in package
-        for checksum_field_name in message.model.checksums.keys()
-    )
-    provided_checksum_fields = set()
+        for field_identifier in message.model.checksums
+    } - {
+        (str(message_name), field_name)
+        for message_name, checksum_mapping in checksum_functions.items()
+        for field_name in checksum_mapping
+    }
 
-    if checksum_module_name is not None:
-        try:
-            checksum_module = importlib.import_module(checksum_module_name)
-        except ImportError as e:
-            raise ValidationError(
-                f"The provided module {checksum_module_name} cannot be "
-                f"imported. Make sure the module name is provided as "
-                f"package.module and not as a file system path. {e}"
-            ) from e
-
-        try:
-            checksum_functions = checksum_module.checksum_functions  # type: ignore[attr-defined]
-        except AttributeError as e:
-            raise ValidationError(
-                f"The checksum module at {checksum_module_name} "
-                f'does not contain an attribute with the name "checksum_function".'
-            ) from e
-
-        if not isinstance(checksum_functions, dict):
-            raise ValidationError(
-                f"The attribute checksum_function of {checksum_module_name} is not a dict."
-            )
-
-        for message_id, checksum_field_mapping in checksum_functions.items():
-            if not isinstance(checksum_field_mapping, dict):
-                raise ValidationError(f"The value at key {message_id} is not a dict.")
-            for field_name, checksum_func_callable in checksum_field_mapping.items():
-                if not callable(checksum_func_callable):
-                    raise ValidationError(
-                        f'The value at key "{field_name}" is not a callable checksum function.'
-                    )
-
-        provided_checksum_fields = set(
-            (message_name, f_name)
-            for message_name, checksum_mapping in checksum_functions.items()
-            for f_name in checksum_mapping.keys()
-        )
-
-        try:
-            pyrflx.set_checksum_functions(checksum_functions)
-        except PyRFLXError as e:
-            raise ValidationError(f"Could not set checksum function to pyrflx: {e}") from e
-
-    checksum_diff = defined_checksum_fields.difference(provided_checksum_fields)
-    if len(checksum_diff) != 0:
+    if len(missing_checksum_definitions) != 0:
         raise ValidationError(
-            "The following messages define checksum fields, but no checksum function has been "
-            "provided: "
-            + ",".join(
+            "missing checksum definition for "
+            + ", ".join(
                 [
-                    f'{message_name} at field "{field_name}"'
-                    for message_name, field_name in checksum_diff
+                    f'field "{field_name}" of "{message_name}"'
+                    for message_name, field_name in missing_checksum_definitions
                 ]
             )
-            + "."
         )
+
+    try:
+        pyrflx.set_checksum_functions(checksum_functions)
+    except PyRFLXError as e:
+        raise ValidationError(f"invalid checksum definition: {e}") from e
+
     return pyrflx
 
 
 def validate(
-    msg_identifier: ID,
+    message_identifier: ID,
     pyrflx: PyRFLX,
     directory_invalid: Path = None,
     directory_valid: Path = None,
@@ -109,11 +74,13 @@ def validate(
         raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
 
     try:
-        message_value = pyrflx.package(msg_identifier.parent).new_message(msg_identifier.name)
+        message_value = pyrflx.package(message_identifier.parent).new_message(
+            message_identifier.name
+        )
     except KeyError as e:
         raise ValidationError(
-            f'message "{msg_identifier.name}" could not be found '
-            f'in package "{msg_identifier.parent}"'
+            f'message "{message_identifier.name}" could not be found '
+            f'in package "{message_identifier.parent}"'
         ) from e
 
     incorrectly_classified = 0
@@ -127,7 +94,7 @@ def validate(
             directory = sorted(directory_path.glob("*.raw")) if directory_path is not None else []
             for path in directory:
                 validation_result = _validate_message(path, is_valid_directory, message_value)
-                coverage_info.update(validation_result.parser_result)
+                coverage_info.update(validation_result.parsed_message)
                 validation_result.print_console_output()
                 output_writer.write_result(validation_result)
                 if not validation_result.validation_success:
@@ -151,31 +118,66 @@ def validate(
         raise ValidationError("\n".join(e for e in error_msgs))
 
 
+def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
+    checksum_functions = {}
+
+    if name is not None:
+        try:
+            checksum_module = importlib.import_module(name)
+        except ImportError as e:
+            raise ValidationError(
+                f'provided module "{name}" cannot be '
+                f"imported, make sure module name is provided as "
+                f'"package.module" and not as file system path: {e}'
+            ) from e
+
+        try:
+            checksum_functions = checksum_module.checksum_functions  # type: ignore[attr-defined]
+        except AttributeError as e:
+            raise ValidationError(
+                f'missing attribute "checksum_function" in checksum module "{name}"'
+            ) from e
+
+        if not isinstance(checksum_functions, dict):
+            raise ValidationError(f'attribute "checksum_function" of "{name}" is not a dict')
+
+        for message_id, checksum_field_mapping in checksum_functions.items():
+            if not isinstance(checksum_field_mapping, dict):
+                raise ValidationError(f'value at key "{message_id}" is not a dict')
+            for field_name, checksum_func_callable in checksum_field_mapping.items():
+                if not callable(checksum_func_callable):
+                    raise ValidationError(
+                        f'value at key "{field_name}" is not a callable checksum function'
+                    )
+
+    return checksum_functions
+
+
 def _validate_message(
     message_path: Path, valid_original_message: bool, message_value: MessageValue
 ) -> "ValidationResult":
-    message_parameters = message_path.with_suffix(".yaml")
-    params: Dict[str, Union[bool, int, str]] = {}
-
     if not message_path.is_file():
         raise ValidationError(f"{message_path} is not a regular file")
 
-    if message_parameters.is_file():
+    parameters_path = message_path.with_suffix(".yaml")
+    message_parameters: Dict[str, Union[bool, int, str]] = {}
+
+    if parameters_path.is_file():
         yaml = YAML()
-        params = yaml.load(message_parameters)
+        message_parameters = yaml.load(parameters_path)
 
     original_message = message_path.read_bytes()
-    parser_error: Optional[str] = None
-    parser_result: MessageValue = message_value.clone()
-    parser_result.add_parameters(params)
+    parsed_message = message_value.clone()
+    parsed_message.add_parameters(message_parameters)
+    parser_error = None
 
     try:
-        parser_result.parse(original_message)
-        valid_parser_result = parser_result.bytestring == original_message
+        parsed_message.parse(original_message)
+        valid_parser_result = parsed_message.bytestring == original_message
         if not valid_parser_result:
-            assert parser_result.valid_message
-            assert len(parser_result.bytestring) <= len(original_message)
-            assert original_message.startswith(parser_result.bytestring)
+            assert parsed_message.valid_message
+            assert len(parsed_message.bytestring) <= len(original_message)
+            assert original_message.startswith(parsed_message.bytestring)
             parser_error = "message parsed by PyRFLX is shorter than the original message"
     except PyRFLXError as e:
         parser_error = str(e)
@@ -183,7 +185,7 @@ def _validate_message(
 
     return ValidationResult(
         valid_original_message == valid_parser_result,
-        parser_result,
+        parsed_message,
         parser_error,
         message_path,
         original_message,
@@ -297,17 +299,17 @@ class CoverageInformation:
 @dataclass
 class ValidationResult:
     validation_success: bool
-    parser_result: MessageValue
+    parsed_message: MessageValue
     parser_error: Optional[str]
-    message_file_path: Path
+    message_path: Path
     original_message: bytes
     valid_original_message: bool
     valid_parser_result: bool
 
     def __get_field_values(self) -> Dict[str, object]:
         parsed_field_values: Dict[str, object] = {}
-        for field_name in self.parser_result.valid_fields:
-            field_value = self.parser_result.get(field_name)
+        for field_name in self.parsed_message.valid_fields:
+            field_value = self.parsed_message.get(field_name)
             if isinstance(field_value, MessageValue):
                 field_value = field_value.bytestring.hex()
             if isinstance(field_value, bytes):
@@ -317,13 +319,13 @@ class ValidationResult:
 
     def as_json(self) -> Dict[str, object]:
         output = {
-            "file name": str(self.message_file_path),
+            "file name": str(self.message_path),
             "provided as": self.valid_original_message,
             "recognized as": self.valid_parser_result,
             "original": self.original_message.hex(),
         }
-        if self.parser_result.valid_message:
-            output["parsed"] = self.parser_result.bytestring.hex()
+        if self.parsed_message.valid_message:
+            output["parsed"] = self.parsed_message.bytestring.hex()
         output["parsed field values"] = self.__get_field_values()
         if self.parser_error is not None:
             output["error"] = self.parser_error
@@ -332,10 +334,10 @@ class ValidationResult:
 
     def print_console_output(self) -> None:
         if self.validation_success:
-            print(f"{str(self.message_file_path):<80} PASSED")
+            print(f"{str(self.message_path):<80} PASSED")
         else:
-            print(f"{str(self.message_file_path):<80} FAILED")
             print(
+                f"{str(self.message_path):<80} FAILED\n"
                 f"provided as: {self.valid_original_message}\t "
                 f"recognized as: {self.valid_parser_result}"
             )
@@ -378,7 +380,7 @@ class OutputWriter:
             json.dump(
                 validation_result.as_json(),
                 self.file,
-                indent="\t",
+                indent="    ",
             )
             self.count += 1
 

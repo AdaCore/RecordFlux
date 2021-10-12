@@ -8,6 +8,7 @@ from _pytest.capture import CaptureFixture
 from rflx.identifier import ID
 from rflx.pyrflx import PyRFLX
 from rflx.validator import ValidationError, _validate_message, initialize_pyrflx, validate
+from tests.const import SPEC_DIR
 
 TEST_DIR = Path("tests/data/validator")
 CHECKSUM_MODULE = "tests.data.validator.checksum"
@@ -25,131 +26,133 @@ def test_initialize_pyrflx_checksum_import_error() -> None:
         ValidationError,
         match=(
             r"^"
-            r"The provided module tests/checksum cannot be imported. Make sure the module name is"
-            r" provided as package.module and not as a file system path."
+            r'provided module "tests/checksum" cannot be imported, make sure module name is'
+            r' provided as "package.module" and not as file system path:'
             r" No module named 'tests/checksum'"
             r"$"
         ),
     ):
         initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
+            [SPEC_DIR / "checksum_message.rflx"],
             "tests/checksum",
             skip_model_verification=True,
         )
 
 
+def test_initialize_pyrflx_checksum_no_checksum_provided() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r'^missing checksum definition for field "C" of "Checksum_Message::Message"$',
+    ):
+        initialize_pyrflx(
+            [SPEC_DIR / "checksum_message.rflx"],
+            skip_model_verification=True,
+        )
+
+
 def test_initialize_pyrflx_checksum_missing_attribute() -> None:
-    checksum_module = "tests.data.validator.missing_checksum_functions_attrib"
+    checksum_module = "tests.data.validator.checksum_missing_attribute"
     with pytest.raises(
         ValidationError,
         match=(
             r"^"
-            rf"The checksum module at {checksum_module}"
-            r' does not contain an attribute with the name "checksum_function".'
+            rf'missing attribute "checksum_function" in checksum module "{checksum_module}"'
             r"$"
         ),
     ):
         initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
+            [SPEC_DIR / "checksum_message.rflx"],
             checksum_module,
             skip_model_verification=True,
         )
 
 
-def test_initialize_pyrflx_checksum_functions_no_checksum_provided() -> None:
+def test_initialize_pyrflx_checksum_missing_field() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r'^missing checksum definition for field "C" of "Checksum_Message::Message"$',
+    ):
+        initialize_pyrflx(
+            [SPEC_DIR / "checksum_message.rflx"],
+            "tests.data.validator.checksum_missing_field",
+            skip_model_verification=True,
+        )
+
+
+def test_initialize_pyrflx_checksum_invalid_function_type() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r'^value at key "Checksum" is not a callable checksum function$',
+    ):
+        initialize_pyrflx(
+            [SPEC_DIR / "checksum_message.rflx"],
+            "tests.data.validator.checksum_invalid_function_type",
+            skip_model_verification=True,
+        )
+
+
+def test_initialize_pyrflx_checksum_invalid_field_dict_type() -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r'^value at key "Checksum_Message::Message" is not a dict$',
+    ):
+        initialize_pyrflx(
+            [SPEC_DIR / "checksum_message.rflx"],
+            "tests.data.validator.checksum_invalid_field_dict_type",
+            skip_model_verification=True,
+        )
+
+
+def test_initialize_pyrflx_checksum_invalid_message() -> None:
     with pytest.raises(
         ValidationError,
         match=(
             r"^"
-            r"The following messages define checksum fields, but no checksum function has been"
-            r' provided: Checksum_Message::Message at field "Checksum".'
+            r"invalid checksum definition: "
+            r'pyrflx: error: "Invalid_Message" is not a message in Checksum_Message'
             r"$"
         ),
     ):
         initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
+            [SPEC_DIR / "checksum_message.rflx"],
+            "tests.data.validator.checksum_invalid_message",
             skip_model_verification=True,
         )
 
 
-def test_initialize_pyrflx_checksum_functions_missing_key() -> None:
+def test_initialize_pyrflx_checksum_invalid_field() -> None:
     with pytest.raises(
         ValidationError,
         match=(
             r"^"
-            r"The following messages define checksum fields, but no checksum function has been"
-            r' provided: Checksum_Message::Message at field "Checksum".'
+            r"invalid checksum definition: "
+            r"pyrflx: error: cannot set checksum function: field Invalid_Field is not defined"
             r"$"
         ),
     ):
         initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
-            "tests.data.validator.missing_key",
+            [SPEC_DIR / "checksum_message.rflx"],
+            "tests.data.validator.checksum_invalid_field",
             skip_model_verification=True,
         )
 
 
-def test_initialize_pyrflx_no_callable_checksum() -> None:
+def test_initialize_pyrflx_checksum_invalid_attribute_type() -> None:
+    checksum_module = "tests.data.validator.checksum_invalid_attribute_type"
     with pytest.raises(
         ValidationError,
-        match=(r"^" r'The value at key "Checksum" is not a callable checksum function.' r"$"),
+        match=rf'^attribute "checksum_function" of "{checksum_module}" is not a dict$',
     ):
         initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
-            "tests.data.validator.missing_checksum_callable",
-            skip_model_verification=True,
-        )
-
-
-def test_initialize_pyrflx_no_checksum_func_dict() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=(r"^" r"The value at key Checksum_Message::Message is not a dict." r"$"),
-    ):
-        initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
-            "tests.data.validator.missing_checksum_func_dict",
-            skip_model_verification=True,
-        )
-
-
-def test_initialize_pyrflx_no_cannot_set_checksum_to_pyrflx() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=(
-            r"^"
-            r"Could not set checksum function to pyrflx: "
-            r'pyrflx: error: "Package" is not a message in Checksum_Message'
-            r"$"
-        ),
-    ):
-        initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
-            "tests.data.validator.message_not_in_package",
-            skip_model_verification=True,
-        )
-
-
-def test_initialize_pyrflx_checksum_function_attribute_not_dict() -> None:
-    with pytest.raises(
-        ValidationError,
-        match=(
-            r"^"
-            r"The attribute checksum_function of tests.data.validator.checksum_attribute_not_dict"
-            r" is not a dict."
-            r"$"
-        ),
-    ):
-        initialize_pyrflx(
-            [TEST_DIR / "checksum_message.rflx"],
-            "tests.data.validator.checksum_attribute_not_dict",
+            [SPEC_DIR / "checksum_message.rflx"],
+            checksum_module,
             skip_model_verification=True,
         )
 
 
 def test_validate_error_msg_not_in_package() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError, match=r'^message "Message" could not be found in package "Ethernet"$'
@@ -166,7 +169,7 @@ def fixture_tmp_path_restricted(tmp_path: Path) -> Iterator[Path]:
 
 def test_validate_cannot_open_output_file(tmp_path_restricted: Path) -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError,
@@ -188,7 +191,7 @@ def test_validate_cannot_open_output_file(tmp_path_restricted: Path) -> None:
 
 def test_validate_abort_on_error() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError,
@@ -212,7 +215,7 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
     subdir = tmp_path / "test.raw"
     subdir.mkdir()
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError,
@@ -223,7 +226,7 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
 
 def test_validate_positive() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     validate(
         ID("Ethernet::Frame"),
@@ -233,9 +236,9 @@ def test_validate_positive() -> None:
     )
 
 
-def test_validate_positive_full_output(tmp_path: Path) -> None:
+def test_validate_positive_output(tmp_path: Path) -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     validate(
         ID("Ethernet::Frame"),
@@ -244,9 +247,9 @@ def test_validate_positive_full_output(tmp_path: Path) -> None:
         TEST_DIR / "ethernet/frame/valid",
         tmp_path / "output.json",
     )
-    assert (tmp_path / "output.json").read_text() == (
-        TEST_DIR / "valid_full_output_positive.json"
-    ).read_text(encoding="utf-8")
+    assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_positive.json").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_validate_negative() -> None:
@@ -255,7 +258,7 @@ def test_validate_negative() -> None:
         + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
     )
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError,
@@ -269,13 +272,13 @@ def test_validate_negative() -> None:
         )
 
 
-def test_validate_negative_full_output(tmp_path: Path) -> None:
+def test_validate_negative_output(tmp_path: Path) -> None:
     number = len(
         list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
         + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
     )
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError,
@@ -288,14 +291,14 @@ def test_validate_negative_full_output(tmp_path: Path) -> None:
             TEST_DIR / "ethernet/frame/invalid",
             tmp_path / "output.json",
         )
-    assert (tmp_path / "output.json").read_text() == (
-        TEST_DIR / "valid_full_output_negative.json"
-    ).read_text(encoding="utf-8")
+    assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_negative.json").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_validate_coverage(capsys: CaptureFixture[str]) -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     validate(
         ID("Ethernet::Frame"),
@@ -326,9 +329,9 @@ def test_validate_coverage(capsys: CaptureFixture[str]) -> None:
 Directory: {os.getcwd()}
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
-ethernet.rflx                                    12         12         100.00%
+ethernet.rflx                                    10         10         100.00%
 --------------------------------------------------------------------------------
-TOTAL                                            12         12         100.00%
+TOTAL                                            10         10         100.00%
 --------------------------------------------------------------------------------
 """
     assert capsys.readouterr().out == expected_output
@@ -336,9 +339,9 @@ TOTAL                                            12         12         100.00%
 
 def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
-    with pytest.raises(ValidationError, match=r"missed target coverage of 90.00%, reached 81.08%"):
+    with pytest.raises(ValidationError, match=r"missed target coverage of 90.00%, reached 80.00%"):
         validate(
             ID("Ethernet::Frame"),
             pyrflx,
@@ -369,9 +372,9 @@ Directory: {os.getcwd()}
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
 ipv4.rflx                                        25         18          72.00%
-ethernet.rflx                                    12         12         100.00%
+ethernet.rflx                                    10         10         100.00%
 --------------------------------------------------------------------------------
-TOTAL                                            37         30          81.08%
+TOTAL                                            35         28          80.00%
 --------------------------------------------------------------------------------
 
 
@@ -387,15 +390,15 @@ None             : missing link          Initial          ->        Copied
 None             : missing link       Option_Class        ->    Option_Number
 None             : missing link        Option_Data        ->        Final
 None             : missing link       Option_Length       ->     Option_Data
-{TEST_DIR}/ipv4.rflx:25:13: missing link       Option_Number       ->        Final
-{TEST_DIR}/ipv4.rflx:27:13: missing link       Option_Number       ->    Option_Length
+{SPEC_DIR}/ipv4.rflx:24:13: missing link       Option_Number       ->        Final
+{SPEC_DIR}/ipv4.rflx:26:13: missing link       Option_Number       ->    Option_Length
 """
     assert capsys.readouterr().out == expected_output
 
 
 def test_validate_coverage_threshold_invalid() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
     with pytest.raises(
         ValidationError, match=r"^target coverage must be between 0 and 100, got 110$"
@@ -412,8 +415,8 @@ def test_validate_coverage_threshold_invalid() -> None:
 
 def test_validate_checksum_positive() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "checksum_message.rflx"],
-        "tests.data.validator.checksum_message_checksum_function",
+        [SPEC_DIR / "checksum_message.rflx"],
+        CHECKSUM_MODULE,
         skip_model_verification=True,
     )
     validate(
@@ -426,8 +429,8 @@ def test_validate_checksum_positive() -> None:
 
 def test_validate_pyrflx_checksum_negative() -> None:
     pyrflx = initialize_pyrflx(
-        [TEST_DIR / "checksum_message.rflx"],
-        "tests.data.validator.checksum_message_checksum_function",
+        [SPEC_DIR / "checksum_message.rflx"],
+        CHECKSUM_MODULE,
         skip_model_verification=True,
     )
     with pytest.raises(ValidationError, match=r"^3 messages were classified incorrectly$"):
@@ -441,7 +444,7 @@ def test_validate_pyrflx_checksum_negative() -> None:
 
 def test_validate_message_original_and_parsed_not_equal() -> None:
     ethernet_too_short_value = (
-        PyRFLX.from_specs([TEST_DIR / "ethernet.rflx"], skip_model_verification=True)
+        PyRFLX.from_specs([SPEC_DIR / "ethernet.rflx"], skip_model_verification=True)
         .package("Ethernet")
         .new_message("Frame")
     )
