@@ -21,11 +21,13 @@ log = logging.getLogger(__name__)
 STDIN = Path("<stdin>")
 
 
-def node_location(node: lang.RFLXNode, filename: Path) -> Location:
+def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = False) -> Location:
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
-        start=(start.start.line, start.start.column),
+        start=(start.start.line, start.start.column)
+        if not end_location
+        else (end.end.line, end.end.column),
         source=filename,
         end=(end.end.line, end.end.column),
     )
@@ -994,12 +996,18 @@ def create_message_structure(
     structure: List[model.Link] = []
 
     if fields.f_initial_field:
-        structure.append(model.Link(model.INITIAL, *extract_then(fields.f_initial_field.f_then)))
+        structure.append(
+            model.Link(
+                model.INITIAL,
+                *extract_then(fields.f_initial_field.f_then),
+            )
+        )
     else:
         structure.append(
             model.Link(
                 model.INITIAL,
                 model.Field(create_id(fields.f_fields[0].f_identifier, filename)),
+                location=node_location(fields.f_fields[0].f_identifier, filename),
             )
         )
 
@@ -1030,7 +1038,13 @@ def create_message_structure(
                 else None
             )
             target_node = model.Field(target_id) if target_id else model.FINAL
-            structure.append(model.Link(source_node, target_node))
+            structure.append(
+                model.Link(
+                    source_node,
+                    target_node,
+                    location=node_location(field, filename, end_location=True),
+                )
+            )
 
         for then in field.f_thens:
             if then.f_target.kind_name != "NullID" and not any(

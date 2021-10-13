@@ -392,16 +392,16 @@ TOTAL                                            38         28          73.68%
 
                                    ipv4.rflx
 --------------------------------------------------------------------------------
-None             : missing link          Copied           ->     Option_Class
-None             : missing link          Initial          ->        Copied
-None             : missing link       Option_Class        ->    Option_Number
-None             : missing link        Option_Data        ->        Final
-{SPEC_DIR}/ipv4.rflx:32:20: missing link       Option_Length       ->     Option_Data
-{SPEC_DIR}/ipv4.rflx:31:20: missing link       Option_Length       ->     Option_Data
-{SPEC_DIR}/ipv4.rflx:29:17: missing link       Option_Length       ->     Option_Data
-{SPEC_DIR}/ipv4.rflx:30:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:21:10: missing link          Initial          ->        Copied
+{SPEC_DIR}/ipv4.rflx:21:27: missing link          Copied           ->     Option_Class
+{SPEC_DIR}/ipv4.rflx:22:38: missing link       Option_Class        ->    Option_Number
 {SPEC_DIR}/ipv4.rflx:24:13: missing link       Option_Number       ->        Final
 {SPEC_DIR}/ipv4.rflx:26:13: missing link       Option_Number       ->    Option_Length
+{SPEC_DIR}/ipv4.rflx:29:17: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:30:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:31:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:32:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:34:50: missing link        Option_Data        ->        Final
 """
     assert capsys.readouterr().out == expected_output
 
