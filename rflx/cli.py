@@ -54,7 +54,7 @@ def main(argv: List[str]) -> Union[int, str]:
 
     parser_check = subparsers.add_parser("check", help="check specification")
     parser_check.add_argument(
-        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
+        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="+", help="specification file"
     )
     parser_check.set_defaults(func=check)
 
@@ -70,7 +70,7 @@ def main(argv: List[str]) -> Union[int, str]:
         "-n", "--no-library", help="omit generating library files", action="store_true"
     )
     parser_generate.add_argument(
-        "-d", "--directory", help="output directory", default=".", type=Path
+        "-d", dest="output_directory", type=Path, default=".", help="output directory"
     )
     parser_generate.add_argument(
         "--debug",
@@ -83,7 +83,7 @@ def main(argv: List[str]) -> Union[int, str]:
         action="store_true",
     )
     parser_generate.add_argument(
-        "files", metavar="FILE", type=Path, nargs="*", help="specification file"
+        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="*", help="specification file"
     )
     parser_generate.set_defaults(func=generate)
 
@@ -94,12 +94,14 @@ def main(argv: List[str]) -> Union[int, str]:
         type=str,
         default="svg",
         choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
-        help=("output format (default: svg)"),
+        help="output format (default: %(default)s)",
     )
     parser_graph.add_argument(
-        "files", metavar="FILE", type=Path, nargs="+", help="specification file"
+        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="+", help="specification file"
     )
-    parser_graph.add_argument("-d", "--directory", help="output directory", default=".", type=Path)
+    parser_graph.add_argument(
+        "-d", dest="output_directory", type=Path, default=".", help="output directory"
+    )
     parser_graph.set_defaults(func=graph)
 
     parser_validate = subparsers.add_parser(
@@ -236,8 +238,8 @@ def generate(args: argparse.Namespace) -> None:
     if args.prefix and "" in args.prefix.split("."):
         fail(f'invalid prefix: "{args.prefix}"', Subsystem.CLI)
 
-    if not args.directory.is_dir():
-        fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
+    if not args.output_directory.is_dir():
+        fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
     model = parse(args.files, args.no_verification, args.workers)
 
@@ -248,11 +250,11 @@ def generate(args: argparse.Namespace) -> None:
         debug=args.debug,
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
     )
-    generator.write_units(args.directory)
+    generator.write_units(args.output_directory)
     if not args.no_library:
-        generator.write_library_files(args.directory)
+        generator.write_library_files(args.output_directory)
     if args.prefix == DEFAULT_PREFIX:
-        generator.write_top_level_package(args.directory)
+        generator.write_top_level_package(args.output_directory)
 
 
 def parse(files: Sequence[Path], skip_verification: bool = False, workers: int = 1) -> Model:
@@ -282,8 +284,8 @@ def parse(files: Sequence[Path], skip_verification: bool = False, workers: int =
 
 
 def graph(args: argparse.Namespace) -> None:
-    if not args.directory.is_dir():
-        fail(f'directory not found: "{args.directory}"', Subsystem.GRAPH)
+    if not args.output_directory.is_dir():
+        fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
     model = parse(args.files, args.no_verification)
     locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
@@ -291,7 +293,7 @@ def graph(args: argparse.Namespace) -> None:
     for m in [*model.messages, *model.sessions]:
         assert isinstance(m, (Message, Session))
         name = m.identifier.flat
-        filename = args.directory.joinpath(name).with_suffix(f".{args.format}")
+        filename = args.output_directory.joinpath(name).with_suffix(f".{args.format}")
         Graph(m).write(filename, fmt=args.format)
 
         assert m.location
@@ -306,7 +308,7 @@ def graph(args: argparse.Namespace) -> None:
             "end": {"line": m.location.end[0], "column": m.location.end[1]},
         }
 
-    filename = args.directory.joinpath("locations.json")
+    filename = args.output_directory.joinpath("locations.json")
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(locations, f)
 
