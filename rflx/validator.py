@@ -3,16 +3,19 @@ import json
 import os
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import product
 from pathlib import Path
 from types import TracebackType
 from typing import Dict, Iterable, List, Optional, TextIO, Type, Union
 
 from ruamel.yaml.main import YAML
 
+from rflx import expression as expr
 from rflx.identifier import ID, StrID
-from rflx.model import Link
+from rflx.model import Link, Message, Model
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
+from rflx.specification import Parser
 
 
 def initialize_pyrflx(
@@ -21,10 +24,9 @@ def initialize_pyrflx(
     skip_model_verification: bool = False,
     skip_message_verification: bool = False,
 ) -> PyRFLX:
-    try:
-        pyrflx = PyRFLX.from_specs(files, skip_model_verification, skip_message_verification)
-    except FileNotFoundError as e:
-        raise ValidationError(f"specification {e}") from e
+    pyrflx = PyRFLX(
+        _create_model([Path(f) for f in files], skip_model_verification), skip_message_verification
+    )
 
     checksum_functions = _parse_checksum_module(checksum_module)
 
@@ -116,6 +118,59 @@ def validate(
         )
     if len(error_msgs) > 0:
         raise ValidationError("\n".join(e for e in error_msgs))
+
+
+def _create_model(files: List[Path], skip_model_verification: bool) -> Model:
+    for f in files:
+        if not f.is_file():
+            raise ValidationError(f'specification file not found: "{f}"')
+    parser = Parser(skip_model_verification)
+    parser.parse(*files)
+    model = parser.create_model()
+    model = Model(
+        [_expand_message_links(t) if isinstance(t, Message) else t for t in model.types],
+    )
+    return model
+
+
+def _expand_message_links(message: Message) -> Message:
+    """Split disjunctions in link conditions."""
+    structure = []
+    for link in message.structure:
+        conditions = _expand_expression(link.condition.simplified())
+
+        if len(conditions) == 1:
+            structure.append(link)
+            continue
+
+        for condition in conditions:
+            structure.append(
+                Link(link.source, link.target, condition, link.size, link.first, condition.location)
+            )
+
+    return message.copy(structure=structure)
+
+
+def _expand_expression(expression: expr.Expr) -> List[expr.Expr]:
+    """Create disjunction by expanding the expression and return it as a list."""
+    if isinstance(expression, expr.Or):
+        return expression.terms
+
+    if not isinstance(expression, expr.And):
+        return [expression]
+
+    atoms = []
+    disjunctions = []
+
+    for e in expression.terms:
+        if isinstance(e, expr.Or):
+            disjunctions.append(e.terms)
+        else:
+            atoms.append(e)
+
+    disjunctions.append([expr.And(*atoms)])
+
+    return [expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)]
 
 
 def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
