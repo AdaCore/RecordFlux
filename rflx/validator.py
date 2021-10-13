@@ -344,7 +344,7 @@ class CoverageInformation:
                 print("\n")
                 print(f"{file : ^80}".rstrip())
                 print("-" * 80)
-                for link in uncovered_links:
+                for link in sorted(uncovered_links, key=lambda x: str(x.location)):
                     print(
                         f"{str(link.location):<17}"
                         f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip()
