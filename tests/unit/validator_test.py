@@ -1,13 +1,20 @@
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Sequence
 
 import pytest
 from _pytest.capture import CaptureFixture
 
+from rflx import expression as expr
 from rflx.identifier import ID
 from rflx.pyrflx import PyRFLX
-from rflx.validator import ValidationError, _validate_message, initialize_pyrflx, validate
+from rflx.validator import (
+    ValidationError,
+    _expand_expression,
+    _validate_message,
+    initialize_pyrflx,
+    validate,
+)
 from tests.const import SPEC_DIR
 
 TEST_DIR = Path("tests/data/validator")
@@ -341,7 +348,7 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     pyrflx = initialize_pyrflx(
         [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
-    with pytest.raises(ValidationError, match=r"missed target coverage of 90.00%, reached 80.00%"):
+    with pytest.raises(ValidationError, match=r"missed target coverage of 90.00%, reached 73.68%"):
         validate(
             ID("Ethernet::Frame"),
             pyrflx,
@@ -371,10 +378,10 @@ def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
 Directory: {os.getcwd()}
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
-ipv4.rflx                                        25         18          72.00%
+ipv4.rflx                                        28         18          64.29%
 ethernet.rflx                                    10         10         100.00%
 --------------------------------------------------------------------------------
-TOTAL                                            35         28          80.00%
+TOTAL                                            38         28          73.68%
 --------------------------------------------------------------------------------
 
 
@@ -389,7 +396,10 @@ None             : missing link          Copied           ->     Option_Class
 None             : missing link          Initial          ->        Copied
 None             : missing link       Option_Class        ->    Option_Number
 None             : missing link        Option_Data        ->        Final
-None             : missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:32:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:31:20: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:29:17: missing link       Option_Length       ->     Option_Data
+{SPEC_DIR}/ipv4.rflx:30:20: missing link       Option_Length       ->     Option_Data
 {SPEC_DIR}/ipv4.rflx:24:13: missing link       Option_Number       ->        Final
 {SPEC_DIR}/ipv4.rflx:26:13: missing link       Option_Number       ->    Option_Length
 """
@@ -471,3 +481,56 @@ def test_validate_message_parameterized_message() -> None:
         message_value=message,
     )
     assert validation_result.validation_success
+
+
+@pytest.mark.parametrize(
+    "expression,expected",
+    [
+        (
+            expr.Or(expr.Variable("A"), expr.Variable("B")),
+            [
+                expr.Variable("A"),
+                expr.Variable("B"),
+            ],
+        ),
+        (
+            expr.And(expr.Variable("A"), expr.Variable("B")),
+            [
+                expr.And(expr.Variable("A"), expr.Variable("B")),
+            ],
+        ),
+        (
+            expr.And(expr.Or(expr.Variable("A"), expr.Variable("B")), expr.Variable("C")),
+            [
+                expr.And(expr.Variable("A"), expr.Variable("C")),
+                expr.And(expr.Variable("B"), expr.Variable("C")),
+            ],
+        ),
+        (
+            expr.And(
+                expr.Or(expr.Variable("A"), expr.Variable("B")),
+                expr.Variable("C"),
+                expr.Variable("D"),
+            ),
+            [
+                expr.And(expr.Variable("A"), expr.Variable("C"), expr.Variable("D")),
+                expr.And(expr.Variable("B"), expr.Variable("C"), expr.Variable("D")),
+            ],
+        ),
+        (
+            expr.And(
+                expr.Or(expr.Variable("A"), expr.Variable("B")),
+                expr.Or(expr.Variable("C"), expr.Variable("D")),
+                expr.Variable("E"),
+            ),
+            [
+                expr.And(expr.Variable("A"), expr.Variable("C"), expr.Variable("E")),
+                expr.And(expr.Variable("A"), expr.Variable("D"), expr.Variable("E")),
+                expr.And(expr.Variable("B"), expr.Variable("C"), expr.Variable("E")),
+                expr.And(expr.Variable("B"), expr.Variable("D"), expr.Variable("E")),
+            ],
+        ),
+    ],
+)
+def test_expand_expression(expression: expr.Expr, expected: Sequence[expr.Expr]) -> None:
+    assert _expand_expression(expression) == expected
