@@ -799,7 +799,8 @@ def create_message(
         error, identifier, parameters, fields, types, filename
     )
     structure = create_message_structure(error, fields, filename)
-    aspects = {ID("Checksum"): create_message_aspects(message.f_checksums, filename)}
+    checksum_aspects = create_checksum_aspects(message.f_checksums, filename)
+    aspects = {ID("Checksum"): checksum_aspects} if checksum_aspects else {}
 
     try:
         result = create_proven_message(
@@ -1127,7 +1128,7 @@ def merge_field_condition(
             )
 
 
-def create_message_aspects(
+def create_checksum_aspects(
     checksum: lang.ChecksumAspect, filename: Path
 ) -> Mapping[ID, Sequence[expr.Expr]]:
     result = {}

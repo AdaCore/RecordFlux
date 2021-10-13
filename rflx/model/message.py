@@ -109,8 +109,6 @@ class AbstractMessage(mty.Type):
         error: RecordFluxError = None,
         state: MessageState = None,
     ) -> None:
-        assert not (state and aspects)
-
         super().__init__(identifier, location, error)
 
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
@@ -161,7 +159,7 @@ class AbstractMessage(mty.Type):
         return NotImplemented
 
     def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "structure", "types"])
+        return verbose_repr(self, ["identifier", "structure", "types", "aspects"])
 
     def __str__(self) -> str:
         if not self.structure or not self.types:
@@ -1848,6 +1846,7 @@ class UnprovenMessage(AbstractMessage):
             identifier=self.identifier,
             structure=self.structure,
             types=self.types,
+            aspects=self.aspects,
             location=self.location,
             error=self.error,
             state=self._state,
