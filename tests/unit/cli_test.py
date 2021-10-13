@@ -146,7 +146,7 @@ def test_main_graph_non_existent_files(tmp_path: Path) -> None:
 
 
 def test_main_graph_non_existent_directory() -> None:
-    assert 'graph: error: directory not found: "non-existent directory"' in str(
+    assert 'cli: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "graph", "-d", "non-existent directory", SPEC_FILE])
     )
 
