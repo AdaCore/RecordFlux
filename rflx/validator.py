@@ -18,165 +18,175 @@ from rflx.pyrflx.typevalue import MessageValue
 from rflx.specification import Parser
 
 
-def initialize_pyrflx(
-    files: Iterable[Union[str, Path]],
-    checksum_module: str = None,
-    skip_model_verification: bool = False,
-    skip_message_verification: bool = False,
-) -> PyRFLX:
-    pyrflx = PyRFLX(
-        _create_model([Path(f) for f in files], skip_model_verification), skip_message_verification
-    )
-
-    checksum_functions = _parse_checksum_module(checksum_module)
-
-    missing_checksum_definitions = {
-        (str(message.identifier), str(field_identifier))
-        for package in pyrflx
-        for message in package
-        for field_identifier in message.model.checksums
-    } - {
-        (str(message_name), field_name)
-        for message_name, checksum_mapping in checksum_functions.items()
-        for field_name in checksum_mapping
-    }
-
-    if len(missing_checksum_definitions) != 0:
-        raise ValidationError(
-            "missing checksum definition for "
-            + ", ".join(
-                [
-                    f'field "{field_name}" of "{message_name}"'
-                    for message_name, field_name in missing_checksum_definitions
-                ]
-            )
-        )
-
-    try:
-        pyrflx.set_checksum_functions(checksum_functions)
-    except PyRFLXError as e:
-        raise ValidationError(f"invalid checksum definition: {e}") from e
-
-    return pyrflx
-
-
-def validate(
-    message_identifier: ID,
-    pyrflx: PyRFLX,
-    directory_invalid: Path = None,
-    directory_valid: Path = None,
-    json_output: Path = None,
-    abort_on_error: bool = False,
-    coverage: bool = False,
-    target_coverage: float = 0.00,
-) -> None:
-    # pylint: disable = too-many-arguments, too-many-locals
-
-    if target_coverage < 0 or target_coverage > 100:
-        raise ValidationError(f"target coverage must be between 0 and 100, got {target_coverage}")
-
-    try:
-        message_value = pyrflx.package(message_identifier.parent).new_message(
-            message_identifier.name
-        )
-    except KeyError as e:
-        raise ValidationError(
-            f'message "{message_identifier.name}" could not be found '
-            f'in package "{message_identifier.parent}"'
-        ) from e
-
-    incorrectly_classified = 0
-    coverage_info = CoverageInformation(list(pyrflx), coverage)
-
-    with OutputWriter(json_output) as output_writer:
-        for directory_path, is_valid_directory in [
-            (directory_valid, True),
-            (directory_invalid, False),
-        ]:
-            directory = sorted(directory_path.glob("*.raw")) if directory_path is not None else []
-            for path in directory:
-                validation_result = _validate_message(path, is_valid_directory, message_value)
-                coverage_info.update(validation_result.parsed_message)
-                validation_result.print_console_output()
-                output_writer.write_result(validation_result)
-                if not validation_result.validation_success:
-                    incorrectly_classified += 1
-                    if abort_on_error:
-                        raise ValidationError(f"aborted: message {path} was classified incorrectly")
-        coverage_info.print_coverage()
-
-    error_msgs = []
-    if incorrectly_classified != 0:
-        error_msgs.append(f"{incorrectly_classified} messages were classified incorrectly")
-    if (
-        coverage
-        and coverage_info.total_covered_links / coverage_info.total_links < target_coverage / 100
+class Validator:
+    def __init__(
+        self,
+        files: Iterable[Union[str, Path]],
+        checksum_module: str = None,
+        skip_model_verification: bool = False,
+        skip_message_verification: bool = False,
     ):
-        error_msgs.append(
-            f"missed target coverage of {target_coverage/100:.2%}, "
-            f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
-        )
-    if len(error_msgs) > 0:
-        raise ValidationError("\n".join(e for e in error_msgs))
+        model = self._create_model([Path(f) for f in files], skip_model_verification)
+        checksum_functions = self._parse_checksum_module(checksum_module)
+        missing_checksum_definitions = {
+            (str(message.identifier), str(field_identifier))
+            for message in model.messages
+            for field_identifier in message.checksums
+        } - {
+            (str(message_name), field_name)
+            for message_name, checksum_mapping in checksum_functions.items()
+            for field_name in checksum_mapping
+        }
 
-
-def _create_model(files: List[Path], skip_model_verification: bool) -> Model:
-    for f in files:
-        if not f.is_file():
-            raise ValidationError(f'specification file not found: "{f}"')
-    parser = Parser(skip_model_verification)
-    parser.parse(*files)
-    model = parser.create_model()
-    model = Model(
-        [_expand_message_links(t) if isinstance(t, Message) else t for t in model.types],
-    )
-    return model
-
-
-def _expand_message_links(message: Message) -> Message:
-    """Split disjunctions in link conditions."""
-    structure = []
-    for link in message.structure:
-        conditions = _expand_expression(link.condition.simplified())
-
-        if len(conditions) == 1:
-            structure.append(link)
-            continue
-
-        for condition in conditions:
-            structure.append(
-                Link(link.source, link.target, condition, link.size, link.first, condition.location)
+        if len(missing_checksum_definitions) != 0:
+            raise ValidationError(
+                "missing checksum definition for "
+                + ", ".join(
+                    [
+                        f'field "{field_name}" of "{message_name}"'
+                        for message_name, field_name in missing_checksum_definitions
+                    ]
+                )
             )
 
-    return message.copy(structure=structure)
+        try:
+            self._pyrflx = PyRFLX(model, checksum_functions, skip_message_verification)
+        except PyRFLXError as e:
+            raise ValidationError(f"invalid checksum definition: {e}") from e
 
+    def validate(
+        self,
+        message_identifier: ID,
+        directory_invalid: Path = None,
+        directory_valid: Path = None,
+        json_output: Path = None,
+        abort_on_error: bool = False,
+        coverage: bool = False,
+        target_coverage: float = 0.00,
+    ) -> None:
+        # pylint: disable = too-many-arguments, too-many-locals
 
-def _expand_expression(expression: expr.Expr) -> List[expr.Expr]:
-    """Create disjunction by expanding the expression and return it as a list."""
-    if isinstance(expression, expr.Or):
-        return expression.terms
+        if target_coverage < 0 or target_coverage > 100:
+            raise ValidationError(
+                f"target coverage must be between 0 and 100, got {target_coverage}"
+            )
 
-    if not isinstance(expression, expr.And):
-        return [expression]
+        try:
+            message_value = self._pyrflx.package(message_identifier.parent).new_message(
+                message_identifier.name
+            )
+        except KeyError as e:
+            raise ValidationError(
+                f'message "{message_identifier.name}" could not be found '
+                f'in package "{message_identifier.parent}"'
+            ) from e
 
-    atoms = []
-    disjunctions = []
+        incorrectly_classified = 0
+        coverage_info = CoverageInformation(list(self._pyrflx), coverage)
 
-    for e in expression.terms:
-        if isinstance(e, expr.Or):
-            disjunctions.append(e.terms)
-        else:
-            atoms.append(e)
+        with OutputWriter(json_output) as output_writer:
+            for directory_path, is_valid_directory in [
+                (directory_valid, True),
+                (directory_invalid, False),
+            ]:
+                directory = (
+                    sorted(directory_path.glob("*.raw")) if directory_path is not None else []
+                )
+                for path in directory:
+                    validation_result = self._validate_message(
+                        path, is_valid_directory, message_value
+                    )
+                    coverage_info.update(validation_result.parsed_message)
+                    validation_result.print_console_output()
+                    output_writer.write_result(validation_result)
+                    if not validation_result.validation_success:
+                        incorrectly_classified += 1
+                        if abort_on_error:
+                            raise ValidationError(
+                                f"aborted: message {path} was classified incorrectly"
+                            )
+            coverage_info.print_coverage()
 
-    disjunctions.append([expr.And(*atoms)])
+        error_msgs = []
+        if incorrectly_classified != 0:
+            error_msgs.append(f"{incorrectly_classified} messages were classified incorrectly")
+        if (
+            coverage
+            and coverage_info.total_covered_links / coverage_info.total_links
+            < target_coverage / 100
+        ):
+            error_msgs.append(
+                f"missed target coverage of {target_coverage/100:.2%}, "
+                f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
+            )
+        if len(error_msgs) > 0:
+            raise ValidationError("\n".join(e for e in error_msgs))
 
-    return [expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)]
+    def _create_model(self, files: List[Path], skip_model_verification: bool) -> Model:
+        for f in files:
+            if not f.is_file():
+                raise ValidationError(f'specification file not found: "{f}"')
+        parser = Parser(skip_model_verification)
+        parser.parse(*files)
+        model = parser.create_model()
+        model = Model(
+            [self._expand_message_links(t) if isinstance(t, Message) else t for t in model.types],
+        )
+        return model
 
+    def _expand_message_links(self, message: Message) -> Message:
+        """Split disjunctions in link conditions."""
+        structure = []
+        for link in message.structure:
+            conditions = self._expand_expression(link.condition.simplified())
 
-def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
-    checksum_functions = {}
+            if len(conditions) == 1:
+                structure.append(link)
+                continue
 
-    if name is not None:
+            for condition in conditions:
+                structure.append(
+                    Link(
+                        link.source,
+                        link.target,
+                        condition,
+                        link.size,
+                        link.first,
+                        condition.location,
+                    )
+                )
+
+        return message.copy(structure=structure)
+
+    @staticmethod
+    def _expand_expression(expression: expr.Expr) -> List[expr.Expr]:
+        """Create disjunction by expanding the expression and return it as a list."""
+        if isinstance(expression, expr.Or):
+            return expression.terms
+
+        if not isinstance(expression, expr.And):
+            return [expression]
+
+        atoms = []
+        disjunctions = []
+
+        for e in expression.terms:
+            if isinstance(e, expr.Or):
+                disjunctions.append(e.terms)
+            else:
+                atoms.append(e)
+
+        disjunctions.append([expr.And(*atoms)])
+
+        return [expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)]
+
+    @staticmethod
+    def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
+        if name is None:
+            return {}
+
+        checksum_functions = {}
+
         try:
             checksum_module = importlib.import_module(name)
         except ImportError as e:
@@ -205,48 +215,48 @@ def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, Checksu
                         f'value at key "{field_name}" is not a callable checksum function'
                     )
 
-    return checksum_functions
+        return checksum_functions
 
+    @staticmethod
+    def _validate_message(
+        message_path: Path, valid_original_message: bool, message_value: MessageValue
+    ) -> "ValidationResult":
+        if not message_path.is_file():
+            raise ValidationError(f"{message_path} is not a regular file")
 
-def _validate_message(
-    message_path: Path, valid_original_message: bool, message_value: MessageValue
-) -> "ValidationResult":
-    if not message_path.is_file():
-        raise ValidationError(f"{message_path} is not a regular file")
+        parameters_path = message_path.with_suffix(".yaml")
+        message_parameters: Dict[str, Union[bool, int, str]] = {}
 
-    parameters_path = message_path.with_suffix(".yaml")
-    message_parameters: Dict[str, Union[bool, int, str]] = {}
+        if parameters_path.is_file():
+            yaml = YAML()
+            message_parameters = yaml.load(parameters_path)
 
-    if parameters_path.is_file():
-        yaml = YAML()
-        message_parameters = yaml.load(parameters_path)
+        original_message = message_path.read_bytes()
+        parsed_message = message_value.clone()
+        parsed_message.add_parameters(message_parameters)
+        parser_error = None
 
-    original_message = message_path.read_bytes()
-    parsed_message = message_value.clone()
-    parsed_message.add_parameters(message_parameters)
-    parser_error = None
+        try:
+            parsed_message.parse(original_message)
+            valid_parser_result = parsed_message.bytestring == original_message
+            if not valid_parser_result:
+                assert parsed_message.valid_message
+                assert len(parsed_message.bytestring) <= len(original_message)
+                assert original_message.startswith(parsed_message.bytestring)
+                parser_error = "message parsed by PyRFLX is shorter than the original message"
+        except PyRFLXError as e:
+            parser_error = str(e)
+            valid_parser_result = False
 
-    try:
-        parsed_message.parse(original_message)
-        valid_parser_result = parsed_message.bytestring == original_message
-        if not valid_parser_result:
-            assert parsed_message.valid_message
-            assert len(parsed_message.bytestring) <= len(original_message)
-            assert original_message.startswith(parsed_message.bytestring)
-            parser_error = "message parsed by PyRFLX is shorter than the original message"
-    except PyRFLXError as e:
-        parser_error = str(e)
-        valid_parser_result = False
-
-    return ValidationResult(
-        valid_original_message == valid_parser_result,
-        parsed_message,
-        parser_error,
-        message_path,
-        original_message,
-        valid_original_message,
-        valid_parser_result,
-    )
+        return ValidationResult(
+            valid_original_message == valid_parser_result,
+            parsed_message,
+            parser_error,
+            message_path,
+            original_message,
+            valid_original_message,
+            valid_parser_result,
+        )
 
 
 class CoverageInformation:
