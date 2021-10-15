@@ -2,7 +2,7 @@
 name: Design Decision
 about: Discuss a problem and considered options
 title: ''
-labels: ''
+labels: design
 assignees: ''
 
 ---
