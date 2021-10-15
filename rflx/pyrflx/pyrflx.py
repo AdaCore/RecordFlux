@@ -19,6 +19,7 @@ class PyRFLX:
     def __init__(
         self,
         model: Model,
+        checksum_functions: Dict[StrID, Dict[str, ChecksumFunction]] = None,
         skip_message_verification: bool = False,
     ) -> None:
         self.__packages: Dict[str, Package] = {}
@@ -37,6 +38,8 @@ class PyRFLX:
                 RefinementValue(r, messages[r.sdu.identifier])
             )
 
+        self.set_checksum_functions(checksum_functions or {})
+
     @classmethod
     def from_specs(
         cls,
@@ -51,7 +54,7 @@ class PyRFLX:
         parser = Parser(skip_model_verification)
         parser.parse(*paths)
         model = parser.create_model()
-        return cls(model, skip_message_verification)
+        return cls(model, None, skip_message_verification)
 
     def set_checksum_functions(self, functions: Dict[StrID, Dict[str, ChecksumFunction]]) -> None:
         for identifier_str, checksum_field_function in functions.items():

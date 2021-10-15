@@ -278,9 +278,9 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
 
 
 def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator, "initialize_pyrflx", lambda a, b, c: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
     monkeypatch.setattr(
-        validator, "validate", lambda a, b, c, d, e, f, g, h: raise_validation_error()
+        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_validation_error()
     )
     assert "validator: error: TEST" in str(
         cli.main(
@@ -297,8 +297,10 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
 
 
 def test_main_validate_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator, "initialize_pyrflx", lambda a, b, c: None)
-    monkeypatch.setattr(validator, "validate", lambda a, b, c, d, e, f, g, h: raise_model_error())
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
+    monkeypatch.setattr(
+        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_model_error()
+    )
     assert "RecordFlux Bug" in str(
         cli.main(
             [

@@ -11,13 +11,14 @@ from typing import Dict, List, Sequence, Union
 import librflxlang
 from pkg_resources import get_distribution
 
-from rflx import __version__, validator
+from rflx import __version__
 from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.identifier import ID
 from rflx.model import Message, Model, Session
 from rflx.specification import Parser
+from rflx.validator import ValidationError, Validator
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -144,7 +145,7 @@ def main(argv: List[str]) -> Union[int, str]:
         "-o",
         dest="output_file",
         type=Path,
-        help="path to output file (file must not exist)",
+        help="path to output file for validation report in JSON format (file must not exist)",
         default=None,
     )
     parser_validate.add_argument(
@@ -314,7 +315,6 @@ def graph(args: argparse.Namespace) -> None:
 
 
 def validate(args: argparse.Namespace) -> None:
-    print(args)
     if args.valid_samples_directory is None and args.invalid_samples_directory is None:
         fail("must provide directory with valid and/or invalid messages", Subsystem.CLI)
 
@@ -331,12 +331,8 @@ def validate(args: argparse.Namespace) -> None:
         fail(f"invalid identifier: {e}", Subsystem.CLI)
 
     try:
-        pyrflx = validator.initialize_pyrflx(
-            [str(args.specification)], args.checksum_module, args.no_verification
-        )
-        validator.validate(
+        Validator([args.specification], args.checksum_module, args.no_verification).validate(
             identifier,
-            pyrflx,
             args.invalid_samples_directory,
             args.valid_samples_directory,
             args.output_file,
@@ -344,7 +340,7 @@ def validate(args: argparse.Namespace) -> None:
             args.coverage,
             args.target_coverage,
         )
-    except validator.ValidationError as e:
+    except ValidationError as e:
         fail(str(e), Subsystem.VALIDATOR)
     except RecordFluxError as e:
         fatal_error = FatalError()
