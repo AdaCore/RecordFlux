@@ -518,3 +518,7 @@ def test_call_statement_str() -> None:
         )
         == "A (B, C, D => 1, E => 2);"
     )
+
+
+def test_qualified_expr() -> None:
+    assert str(ada.QualifiedExpr("T", ada.Variable("A"))) == "T'(A)"

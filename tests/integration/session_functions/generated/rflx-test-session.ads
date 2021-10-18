@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.Test.Session_Allocator;
 with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Universal.Message;
@@ -78,7 +79,8 @@ private
    function Initialized return Boolean is
      (Universal.Message.Has_Buffer (Message_Ctx)
       and then Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
+      and then Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is
      (Next_State /= S_Terminated);

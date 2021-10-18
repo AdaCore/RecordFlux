@@ -133,6 +133,7 @@ from rflx.model import (
 )
 
 from . import common, const
+from .allocator import AllocatorGenerator
 from .parser import ParserGenerator
 from .serializer import SerializerGenerator
 from .session import SessionGenerator
@@ -241,7 +242,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             self.__create_session(s)
 
     def __create_session(self, session: Session) -> None:
-        session_generator = SessionGenerator(session, self.__prefix, debug=self.__debug)
+        allocator_generator = AllocatorGenerator(session, self.__prefix)
+        unit = self.__create_unit(
+            allocator_generator.unit_identifier,
+            allocator_generator.declaration_context,
+            allocator_generator.body_context,
+        )
+        unit += allocator_generator.unit_part
+        session_generator = SessionGenerator(
+            session, allocator_generator, self.__prefix, debug=self.__debug
+        )
         unit = self.__create_unit(
             session_generator.unit_identifier,
             session_generator.declaration_context,
@@ -3233,7 +3243,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         Selected(Variable("Ctx"), "Buffer_First"),
                                         Selected(Variable("Ctx"), "Buffer_Last"),
                                     ]
-                                ]
+                                ],
                             )
                         ),
                     ],

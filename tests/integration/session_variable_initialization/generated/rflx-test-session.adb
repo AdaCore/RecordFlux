@@ -21,7 +21,10 @@ is
       Local : Universal.Value := 2;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := null;
+      pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       declare
          procedure Universal_Message_Write is new Universal.Message.Write (Channel_Read);
@@ -38,7 +41,9 @@ is
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       Global := Local + 20;
@@ -52,7 +57,9 @@ is
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-      RFLX_Types.Free (Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
+      pragma Warnings (On, "unused assignment");
    end Start;
 
    procedure Reply (Next_State : out Session_State) with
@@ -64,7 +71,10 @@ is
       Message_Ctx : Universal.Message.Context;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := null;
+      pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       if Message_Ctx.Last - Message_Ctx.First + 1 >= RFLX_Types.Bit_Length (32) then
          Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
@@ -78,7 +88,9 @@ is
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if Universal.Message.Structural_Valid_Message (Message_Ctx) then
@@ -94,7 +106,9 @@ is
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       Next_State := S_Terminated;
@@ -103,11 +117,14 @@ is
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-      RFLX_Types.Free (Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+      pragma Warnings (On, "unused assignment");
    end Reply;
 
    procedure Initialize is
    begin
+      Test.Session_Allocator.Initialize;
       Next_State := S_Start;
    end Initialize;
 

@@ -40,7 +40,10 @@ is
          RFLX_Message_Ctx : Test.Message.Context;
          RFLX_Message_Buffer : RFLX_Types.Bytes_Ptr;
       begin
-         RFLX_Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+         RFLX_Message_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := null;
+         pragma Warnings (On, "unused assignment");
          Test.Message.Initialize (RFLX_Message_Ctx, RFLX_Message_Buffer, Length => Test.Length'First, Extended => Boolean'First);
          if
            Test.Message.Size (M_Ctx) <= 32768
@@ -86,7 +89,9 @@ is
          Test.Message.Take_Buffer (RFLX_Message_Ctx, RFLX_Message_Buffer);
          pragma Warnings (On, """RFLX_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""RFLX_Message_Ctx""");
-         RFLX_Types.Free (RFLX_Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := RFLX_Message_Buffer;
+         pragma Warnings (On, "unused assignment");
       end;
       if RFLX_Exception then
          Next_State := S_Error;
@@ -108,7 +113,11 @@ is
    procedure Initialize is
       M_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      M_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Test.Session_Allocator.Initialize;
+      M_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := null;
+      pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (M_Ctx, M_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       Next_State := S_Receive;
    end Initialize;
@@ -121,7 +130,9 @@ is
       Test.Message.Take_Buffer (M_Ctx, M_Buffer);
       pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""M_Ctx""");
-      RFLX_Types.Free (M_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := M_Buffer;
+      pragma Warnings (On, "unused assignment");
       Next_State := S_Terminated;
    end Finalize;
 

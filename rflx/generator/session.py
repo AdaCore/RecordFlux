@@ -1,7 +1,18 @@
 # pylint: disable = too-many-lines
 from contextlib import contextmanager
 from dataclasses import dataclass, field as dataclass_field
-from typing import Callable, Generator, Iterable, List, Mapping, NoReturn, Sequence, Set, Tuple
+from typing import (
+    Callable,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    NoReturn,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 import attr
 
@@ -40,8 +51,6 @@ from rflx.ada import (
     LoopEntry,
     Mod,
     Mul,
-    NamedAggregate,
-    New,
     Not,
     NotEqual,
     NullStatement,
@@ -55,7 +64,6 @@ from rflx.ada import (
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
-    QualifiedExpr,
     ReturnStatement,
     Selected,
     Size,
@@ -73,10 +81,11 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
-from rflx.error import Subsystem, fail, fatal_fail
+from rflx.error import Location, Subsystem, fail, fatal_fail
 from rflx.model import declaration as decl, statement as stmt
 
 from . import const
+from .allocator import AllocatorGenerator
 
 
 @dataclass
@@ -171,10 +180,17 @@ class ExceptionHandler:
 
 
 class SessionGenerator:  # pylint: disable = too-many-instance-attributes
-    def __init__(self, session: model.Session, prefix: str = "", debug: bool = False) -> None:
+    def __init__(
+        self,
+        session: model.Session,
+        allocator: AllocatorGenerator,
+        prefix: str = "",
+        debug: bool = False,
+    ) -> None:
         self._session = session
         self._prefix = prefix
         self._debug = debug
+        self._allocator = allocator
 
         self._session_context = SessionContext()
         self._declaration_context: List[ContextItem] = []
@@ -385,6 +401,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _create_context(self) -> Tuple[List[ContextItem], List[ContextItem]]:
         declaration_context: List[ContextItem] = []
 
+        declaration_context.append(WithClause(self._prefix * self._allocator.unit_identifier))
         if self._session_context.used_types or self._session_context.used_types_body:
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
@@ -453,6 +470,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         evaluated_declarations = self._evaluate_declarations(
             self._session.declarations.values(),
             session_global=True,
+        )
+
+        evaluated_declarations.initialization.insert(
+            0, CallStatement(ID(self._allocator.unit_identifier * "Initialize"))
         )
 
         unit = UnitPart()
@@ -635,7 +656,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     Add(First(const.TYPES_INDEX), Number(4095)),
                                 ),
                             ]
-                        ]
+                        ],
+                        Call(ID(self._allocator.unit_identifier * "Global_Allocated")),
                     ),
                 ),
             ],
@@ -814,6 +836,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 result += self._declare(
                     declaration.identifier,
                     declaration.type_,
+                    declaration.location,
                     declaration.expression,
                     session_global=session_global,
                 )
@@ -837,7 +860,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> Sequence[Statement]:
         if isinstance(action, stmt.Assignment):
             result = self._assign(
-                action.identifier, action.type_, action.expression, exception_handler
+                action.identifier,
+                action.type_,
+                action.expression,
+                exception_handler,
+                action.location,
             )
 
         elif isinstance(action, stmt.Append):
@@ -868,10 +895,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return [*result, *exception_handler.execute_deferred()]
 
-    def _declare(
+    def _declare(  # pylint: disable = too-many-arguments
         self,
         identifier: rid.ID,
         type_: rty.Type,
+        alloc_id: Optional[Location],
         expression: expr.Expr = None,
         constant: bool = False,
         session_global: bool = False,
@@ -911,8 +939,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     initialization.substituted(self._substitution()).ada_expr()
                     if initialization
                     else None,
-                    constant if initialization else False,
-                    aspects,
+                    constant=constant if initialization else False,
+                    aliased=False,
+                    aspects=aspects,
                 )
             )
 
@@ -941,7 +970,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             result.initialization_declarations.append(self._declare_buffer(ID(identifier)))
             result.initialization.extend(
                 [
-                    self._allocate_buffer(identifier),
+                    *self._allocate_buffer(identifier, alloc_id),
                     self._initialize_context(
                         identifier,
                         type_identifier,
@@ -957,7 +986,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ),
                 ]
             )
-            result.finalization.extend(self._free_context_buffer(ID(identifier), type_identifier))
+            result.finalization.extend(
+                self._free_context_buffer(ID(identifier), type_identifier, alloc_id)
+            )
 
         else:
             fatal_fail(
@@ -980,6 +1011,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         variables: Sequence[Tuple[rid.ID, rty.Type, expr.Expr]],
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
         constant: bool = False,
     ) -> Sequence[Statement]:
         if not variables:
@@ -990,6 +1022,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         evaluated_declaration = self._declare(
             k,
             type_,
+            alloc_id,
             v if initialized_in_declaration else None,
             constant=constant,
         )
@@ -1005,13 +1038,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         *[
                             *evaluated_declaration.initialization,
                             *(
-                                self._assign(k, type_, v, local_exception_handler)
+                                self._assign(k, type_, v, local_exception_handler, alloc_id)
                                 if not initialized_in_declaration
                                 else []
                             ),
                         ],
                         *self._declare_and_assign(
-                            variables[1:], statements, exception_handler, constant
+                            variables[1:], statements, exception_handler, alloc_id, constant
                         ),
                         *evaluated_declaration.finalization,
                     ],
@@ -1025,9 +1058,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target_type: rty.Type,
         expression: expr.Expr,
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         if isinstance(expression, expr.Binding):
-            return self._assign_to_binding(target, expression, exception_handler)
+            return self._assign_to_binding(target, expression, exception_handler, alloc_id)
 
         if isinstance(expression, expr.Selected):
             return self._assign_to_selected(target, expression, exception_handler)
@@ -1036,11 +1070,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             return self._assign_to_message_aggregate(target, expression, exception_handler)
 
         if isinstance(expression, expr.Head):
-            return self._assign_to_head(target, expression, exception_handler)
+            return self._assign_to_head(target, expression, exception_handler, alloc_id)
 
         if isinstance(expression, expr.Comprehension):
             assert isinstance(target_type, rty.Sequence)
-            return self._assign_to_comprehension(target, target_type, expression, exception_handler)
+            return self._assign_to_comprehension(
+                target, target_type, expression, exception_handler, alloc_id
+            )
 
         if isinstance(expression, expr.Call):
             return self._assign_to_call(target, expression, exception_handler)
@@ -1087,6 +1123,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target: rid.ID,
         binding: expr.Binding,
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         variables = []
 
@@ -1137,8 +1174,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         with exception_handler.local() as local_exception_handler:
             return self._declare_and_assign(
                 variables,
-                self._assign(target, type_, binding.expr, local_exception_handler),
+                self._assign(
+                    target, type_, binding.expr, local_exception_handler, alloc_id=alloc_id
+                ),
                 exception_handler,
+                alloc_id=alloc_id,
                 constant=True,
             )
 
@@ -1334,7 +1374,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return assign_to_message_aggregate
 
     def _assign_to_head(
-        self, target: rid.ID, head: expr.Head, exception_handler: ExceptionHandler
+        self,
+        target: rid.ID,
+        head: expr.Head,
+        exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix.type_, rty.Sequence)
 
@@ -1482,6 +1526,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         )
                     ],
                     exception_handler,
+                    alloc_id,
                 ),
                 *exception_handler.execute_deferred(),
             ]
@@ -1492,6 +1537,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target_type: rty.Sequence,
         comprehension: expr.Comprehension,
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         # pylint: disable = too-many-locals
 
@@ -1537,6 +1583,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 )
                             ],
                             exception_handler,
+                            alloc_id,
                         ),
                         *exception_handler.execute_deferred(),
                     ]
@@ -1587,6 +1634,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                         )
                                     ],
                                     exception_handler,
+                                    alloc_id,
                                 ),
                             ],
                             exception_handler,
@@ -1939,6 +1987,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 [(ID("RFLX_Message"), write.parameter.type_, write.parameter)],
                 write_statements(local_exception_handler),
                 exception_handler,
+                write.location,
             )
 
     @staticmethod
@@ -2559,6 +2608,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_type: ID,
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> IfStatement:
         # ISSUE: Componolit/RecordFlux#577
         with exception_handler.local() as local_exception_handler:
@@ -2569,7 +2619,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     Declare(
                         self._declare_context_buffer(copy_id(sequence_identifier), sequence_type),
                         [
-                            self._allocate_buffer(copy_id(sequence_identifier)),
+                            *self._allocate_buffer(copy_id(sequence_identifier), alloc_id),
                             self._copy_to_buffer(
                                 sequence_type,
                                 context_id(sequence_identifier),
@@ -2585,7 +2635,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 ),
                             ),
                             *statements,
-                            *self._free_context_buffer(copy_id(sequence_identifier), sequence_type),
+                            *self._free_context_buffer(
+                                copy_id(sequence_identifier), sequence_type, alloc_id
+                            ),
                         ],
                     )
                 ],
@@ -2601,13 +2653,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_type: ID,
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
+        alloc_id: Optional[Location],
     ) -> Declare:
         # ISSUE: Componolit/RecordFlux#577
         with exception_handler.local() as local_exception_handler:
             return Declare(
                 self._declare_context_buffer(sequence_identifier, sequence_type),
                 [
-                    self._allocate_buffer(sequence_identifier),
+                    *self._allocate_buffer(sequence_identifier, alloc_id),
                     self._copy_to_buffer(
                         message_type,
                         context_id(message_identifier),
@@ -2646,7 +2699,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         ],
                         local_exception_handler,
                     ),
-                    self._free_buffer(sequence_identifier),
+                    *self._free_buffer(sequence_identifier, alloc_id),
                 ],
             )
 
@@ -2717,7 +2770,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         )
                         for x in [sequence_identifier, target_identifier]
                     ],
-
                     PragmaStatement(
                         "Loop_Invariant",
                         [
@@ -2801,18 +2853,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ],
             )
 
-    def _free_context_buffer(self, identifier: ID, type_: ID) -> Sequence[Statement]:
+    def _free_context_buffer(
+        self, identifier: ID, type_: ID, alloc_id: Optional[Location]
+    ) -> Sequence[Statement]:
         return [
             *self._take_buffer(identifier, type_),
-            self._free_buffer(identifier),
+            *self._free_buffer(identifier, alloc_id),
         ]
 
-    @staticmethod
-    def _free_buffer(identifier: ID) -> Statement:
-        return CallStatement(
-            const.TYPES * "Free",
-            [Variable(buffer_id(identifier))],
-        )
+    def _free_buffer(self, identifier: ID, alloc_id: Optional[Location]) -> Sequence[Statement]:
+        return self._allocator.free_buffer(buffer_id(identifier), alloc_id)
 
     @staticmethod
     def _take_buffer(identifier: ID, type_: ID) -> Sequence[Statement]:
@@ -2899,27 +2949,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ),
         ]
 
-    def _allocate_buffer(self, identifier: rid.ID, initialization: Expr = None) -> Assignment:
+    def _allocate_buffer(
+        self, identifier: rid.ID, alloc_id: Optional[Location]
+    ) -> Sequence[Statement]:
         self._session_context.used_types_body.append(const.TYPES_INDEX)
-        return Assignment(
-            buffer_id(identifier),
-            New(
-                QualifiedExpr(
-                    const.TYPES_BYTES,
-                    initialization
-                    if initialization
-                    else NamedAggregate(
-                        (  # ISSUE: Componolit/RecordFlux#713
-                            ValueRange(
-                                First(const.TYPES_INDEX),
-                                Add(First(const.TYPES_INDEX), Number(4095)),
-                            ),
-                            First(const.TYPES_BYTE),
-                        )
-                    ),
-                )
-            ),
-        )
+        slot_id = self._allocator.get_slot_ptr(alloc_id)
+        return [
+            Assignment(buffer_id(identifier), slot_id),
+            PragmaStatement("Warnings", [Variable("Off"), String("unused assignment")]),
+            Assignment(slot_id, Variable("null")),
+            PragmaStatement("Warnings", [Variable("On"), String("unused assignment")]),
+        ]
 
     @staticmethod
     def _initialize_context(

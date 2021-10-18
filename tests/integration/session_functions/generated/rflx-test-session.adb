@@ -42,7 +42,10 @@ is
       Fixed_Size_Message_Ctx : Fixed_Size.Simple_Message.Context;
       Fixed_Size_Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Fixed_Size_Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Fixed_Size_Message_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := null;
+      pragma Warnings (On, "unused assignment");
       Fixed_Size.Simple_Message.Initialize (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
       Get_Message_Type (Message_Type);
       if Universal.Message.Structural_Valid (Message_Ctx, Universal.Message.F_Data) then
@@ -59,7 +62,9 @@ is
          Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
          pragma Warnings (On, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Fixed_Size_Message_Ctx""");
-         RFLX_Types.Free (Fixed_Size_Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := Fixed_Size_Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if Fixed_Size.Simple_Message.Structural_Valid_Message (Fixed_Size_Message_Ctx) then
@@ -75,7 +80,9 @@ is
          Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
          pragma Warnings (On, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Fixed_Size_Message_Ctx""");
-         RFLX_Types.Free (Fixed_Size_Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_2 := Fixed_Size_Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       Next_State := S_Terminated;
@@ -84,13 +91,19 @@ is
       Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
       pragma Warnings (On, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Fixed_Size_Message_Ctx""");
-      RFLX_Types.Free (Fixed_Size_Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := Fixed_Size_Message_Buffer;
+      pragma Warnings (On, "unused assignment");
    end Reply;
 
    procedure Initialize is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Test.Session_Allocator.Initialize;
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := null;
+      pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       Next_State := S_Start;
    end Initialize;
@@ -103,7 +116,9 @@ is
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-      RFLX_Types.Free (Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
+      pragma Warnings (On, "unused assignment");
       Next_State := S_Terminated;
    end Finalize;
 

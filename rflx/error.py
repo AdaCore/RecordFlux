@@ -49,6 +49,9 @@ class Location(Base):
     def end(self) -> Optional[Tuple[int, int]]:
         return self.__end
 
+    def __hash__(self) -> int:
+        return hash(self.__start)
+
 
 class Subsystem(Enum):
     PARSER = auto()
@@ -59,6 +62,7 @@ class Subsystem(Enum):
     PYRFLX = auto()
     ID = auto()
     VALIDATOR = auto()
+    ALLOCATOR = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)
