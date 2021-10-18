@@ -36,7 +36,9 @@ SPECIFICATION_FILES = [
     SPEC_DIR / "udp.rflx",
 ]
 
-FEATURE_TESTS = [p for p in Path("tests/integration").iterdir() if p.is_dir()]
+FEATURE_TESTS = [
+    p for p in Path("tests/integration").iterdir() if p.is_dir() and not p.match("__pycache__")
+]
 
 
 def main() -> int:
