@@ -5,7 +5,7 @@
 <prover id="0" name="Z3" version="4.5.1-gnatprove" timelimit="90" steplimit="0" memlimit="1000"/>
 <file format="gnat-json" proved="true">
 <path name=".."/><path name=".."/><path name=".."/><path name=".."/><path name=".."/>
-<path name="build"/><path name="gnatprove"/><path name="ada___ada___rflx__enumeration__message__to_context.gnat-json"/>
+<path name="build"/><path name="test"/><path name="gnatprove"/><path name="ada___ada___rflx__enumeration__message__to_context.gnat-json"/>
 <theory name="Ada___ada___rflx__enumeration__message__to_context__subprogram_def" proved="true">
  <goal name="def&#39;vc" proved="true">
  <transf name="split_goal_wp_conj" proved="true" >
@@ -22,47 +22,56 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.3" proved="true">
-  <proof prover="0"><result status="valid" steps="14459"/></proof>
+  <proof prover="0"><result status="valid" steps="14851"/></proof>
   </goal>
   <goal name="def&#39;vc.4" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.5" proved="true">
-  <proof prover="0"><result status="valid" steps="14341"/></proof>
+  <proof prover="0"><result status="valid" steps="14765"/></proof>
   </goal>
   <goal name="def&#39;vc.6" proved="true">
-  <proof prover="0"><result status="valid" steps="23178"/></proof>
+  <proof prover="0"><result status="valid" steps="14763"/></proof>
   </goal>
   <goal name="def&#39;vc.7" proved="true">
-  <proof prover="0"><result status="valid" steps="14902"/></proof>
+  <proof prover="0"><result status="valid" steps="23772"/></proof>
   </goal>
   <goal name="def&#39;vc.8" proved="true">
-  <proof prover="0"><result status="valid" steps="14904"/></proof>
+  <proof prover="0"><result status="valid" steps="15308"/></proof>
   </goal>
   <goal name="def&#39;vc.9" proved="true">
-  <proof prover="0"><result status="valid" steps="173528"/></proof>
+  <proof prover="0"><result status="valid" steps="15310"/></proof>
   </goal>
   <goal name="def&#39;vc.10" proved="true">
-  <proof prover="0"><result status="valid" steps="167268"/></proof>
+  <proof prover="0"><result status="valid" steps="177225"/></proof>
   </goal>
   <goal name="def&#39;vc.11" proved="true">
-  <transf name="trivial_true" proved="true" >
-  </transf>
+  <proof prover="0"><result status="valid" steps="170931"/></proof>
   </goal>
   <goal name="def&#39;vc.12" proved="true">
-  <proof prover="0"><result status="valid" steps="183073"/></proof>
-  </goal>
-  <goal name="def&#39;vc.13" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
+  </goal>
+  <goal name="def&#39;vc.13" proved="true">
+  <proof prover="0"><result status="valid" steps="190729"/></proof>
   </goal>
   <goal name="def&#39;vc.14" proved="true">
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
   <goal name="def&#39;vc.15" proved="true">
-  <proof prover="0"><result status="valid" steps="93848"/></proof>
+  <transf name="trivial_true" proved="true" >
+  </transf>
+  </goal>
+  <goal name="def&#39;vc.16" proved="true">
+  <proof prover="0"><result status="valid" steps="95922"/></proof>
+  </goal>
+  <goal name="def&#39;vc.17" proved="true">
+  <proof prover="0"><result status="valid" steps="192436"/></proof>
+  </goal>
+  <goal name="def&#39;vc.18" proved="true">
+  <proof prover="0"><result status="valid" steps="191324"/></proof>
   </goal>
  </transf>
  </goal>
