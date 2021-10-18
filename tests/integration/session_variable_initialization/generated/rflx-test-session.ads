@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.Test.Session_Allocator;
 with RFLX.RFLX_Types;
 with RFLX.Universal;
 
@@ -69,7 +70,7 @@ private
      (True);
 
    function Initialized return Boolean is
-     (True);
+     (Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is
      (Next_State /= S_Terminated);

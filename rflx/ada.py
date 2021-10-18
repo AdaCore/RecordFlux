@@ -401,6 +401,16 @@ class Valid(Attribute):
     pass
 
 
+class Access(Attribute):
+    pass
+
+
+class UnrestrictedAccess(Attribute):
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}'Unrestricted_Access"
+
+
 class AttributeExpr(Attribute):
     def __init__(
         self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
@@ -780,19 +790,6 @@ class QualifiedExpr(Expr):
         raise NotImplementedError
 
 
-class New(Expr):
-    def __init__(self, expression: Expr) -> None:
-        super().__init__()
-        self.expression = expression
-
-    def _update_str(self) -> None:
-        self._str = intern(f"new {self.expression}")
-
-    @property
-    def precedence(self) -> Precedence:
-        raise NotImplementedError
-
-
 class Raise(Expr):
     def __init__(self, identifier: StrID, string: Expr = None) -> None:
         super().__init__()
@@ -974,13 +971,16 @@ class DefaultInitialCondition(Aspect):
 
 
 class SparkMode(Aspect):
+    def __init__(self, arg: bool = True) -> None:
+        self.arg = arg
+
     @property
     def mark(self) -> str:
         return "SPARK_Mode"
 
     @property
     def definition(self) -> str:
-        return ""
+        return "" if self.arg else "Off"
 
 
 class Ghost(Aspect):
@@ -1129,12 +1129,13 @@ class PackageRenamingDeclaration(Declaration):
 
 
 class ObjectDeclaration(Declaration):
-    def __init__(
+    def __init__(  # pylint: disable = too-many-arguments
         self,
         identifiers: Sequence[StrID],
         type_identifier: Union[StrID, Expr],
         expression: Expr = None,
         constant: bool = False,
+        aliased: bool = False,
         aspects: Sequence[Aspect] = None,
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
@@ -1143,6 +1144,7 @@ class ObjectDeclaration(Declaration):
         )
         self.expression = expression
         self.constant = constant
+        self.aliased = aliased
         self.aspects = aspects or []
 
     def __hash__(self) -> int:
@@ -1151,9 +1153,10 @@ class ObjectDeclaration(Declaration):
     def __str__(self) -> str:
         identifiers = ", ".join(map(str, self.identifiers))
         constant = "constant " if self.constant else ""
+        aliased = "aliased " if self.aliased else ""
         expression = f" := {self.expression}" if self.expression else ""
         return (
-            f"{identifiers} : {constant}{self.type_identifier}{expression}"
+            f"{identifiers} : {constant}{aliased}{self.type_identifier}{expression}"
             f"{aspect_specification(self.aspects)};"
         )
 
@@ -1270,8 +1273,10 @@ class EnumerationType(TypeDeclaration):
 
 
 class Subtype(TypeDeclaration):
-    def __init__(self, identifier: StrID, base_identifier: StrID) -> None:
-        super().__init__(identifier)
+    def __init__(
+        self, identifier: StrID, base_identifier: StrID, aspects: Sequence[Aspect] = None
+    ) -> None:
+        super().__init__(identifier, aspects=aspects)
         self.base_identifier = ID(base_identifier)
 
     def __str__(self) -> str:

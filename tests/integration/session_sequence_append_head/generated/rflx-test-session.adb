@@ -23,7 +23,10 @@ is
       RFLX_Exception : Boolean := False;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_3;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_3 := null;
+      pragma Warnings (On, "unused assignment");
       TLV.Message.Initialize (Message_Ctx, Message_Buffer);
       if
         not TLV.Messages.Has_Element (Messages_Ctx)
@@ -35,7 +38,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       declare
@@ -62,7 +67,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if
@@ -75,7 +82,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       TLV.Tags.Append_Element (Tags_Ctx, TLV.Msg_Error);
@@ -84,7 +93,10 @@ is
             RFLX_Copy_Messages_Ctx : TLV.Messages.Context;
             RFLX_Copy_Messages_Buffer : RFLX_Types.Bytes_Ptr;
          begin
-            RFLX_Copy_Messages_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+            RFLX_Copy_Messages_Buffer := Test.Session_Allocator.Slot_Ptr_4;
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_4 := null;
+            pragma Warnings (On, "unused assignment");
             if TLV.Messages.Byte_Size (Messages_Ctx) <= RFLX_Copy_Messages_Buffer'Length then
                TLV.Messages.Copy (Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Messages_Ctx) + 1) - 2));
             else
@@ -127,7 +139,9 @@ is
             TLV.Messages.Take_Buffer (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer);
             pragma Warnings (On, """RFLX_Copy_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""RFLX_Copy_Messages_Ctx""");
-            RFLX_Types.Free (RFLX_Copy_Messages_Buffer);
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_4 := RFLX_Copy_Messages_Buffer;
+            pragma Warnings (On, "unused assignment");
          end;
       else
          Next_State := S_Terminated;
@@ -136,7 +150,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if RFLX_Exception then
@@ -146,7 +162,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if RFLX_Exception then
@@ -156,7 +174,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if TLV.Message.Valid (Message_Ctx, TLV.Message.F_Tag) then
@@ -168,7 +188,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if
@@ -184,7 +206,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if
@@ -200,7 +224,9 @@ is
       TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-      RFLX_Types.Free (Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
+      pragma Warnings (On, "unused assignment");
    end Start;
 
    procedure Reply (Next_State : out Session_State) with
@@ -213,14 +239,20 @@ is
       RFLX_Exception : Boolean := False;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_6;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_6 := null;
+      pragma Warnings (On, "unused assignment");
       TLV.Message.Initialize (Message_Ctx, Message_Buffer);
       if TLV.Messages.Valid (Messages_Ctx) then
          declare
             RFLX_Copy_Messages_Ctx : TLV.Messages.Context;
             RFLX_Copy_Messages_Buffer : RFLX_Types.Bytes_Ptr;
          begin
-            RFLX_Copy_Messages_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+            RFLX_Copy_Messages_Buffer := Test.Session_Allocator.Slot_Ptr_7;
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_7 := null;
+            pragma Warnings (On, "unused assignment");
             if TLV.Messages.Byte_Size (Messages_Ctx) <= RFLX_Copy_Messages_Buffer'Length then
                TLV.Messages.Copy (Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Messages_Ctx) + 1) - 2));
             else
@@ -263,7 +295,9 @@ is
             TLV.Messages.Take_Buffer (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer);
             pragma Warnings (On, """RFLX_Copy_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""RFLX_Copy_Messages_Ctx""");
-            RFLX_Types.Free (RFLX_Copy_Messages_Buffer);
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_7 := RFLX_Copy_Messages_Buffer;
+            pragma Warnings (On, "unused assignment");
          end;
       else
          Next_State := S_Terminated;
@@ -272,7 +306,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if RFLX_Exception then
@@ -282,7 +318,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if RFLX_Exception then
@@ -292,7 +330,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       if TLV.Message.Structural_Valid_Message (Message_Ctx) then
@@ -308,7 +348,9 @@ is
          TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-         RFLX_Types.Free (Message_Buffer);
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         pragma Warnings (On, "unused assignment");
          return;
       end if;
       Next_State := S_Terminated;
@@ -317,16 +359,25 @@ is
       TLV.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
-      RFLX_Types.Free (Message_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+      pragma Warnings (On, "unused assignment");
    end Reply;
 
    procedure Initialize is
       Messages_Buffer : RFLX_Types.Bytes_Ptr;
       Tags_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Messages_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Test.Session_Allocator.Initialize;
+      Messages_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := null;
+      pragma Warnings (On, "unused assignment");
       TLV.Messages.Initialize (Messages_Ctx, Messages_Buffer);
-      Tags_Buffer := new RFLX_Types.Bytes'(RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
+      Tags_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := null;
+      pragma Warnings (On, "unused assignment");
       TLV.Tags.Initialize (Tags_Ctx, Tags_Buffer);
       Next_State := S_Start;
    end Initialize;
@@ -340,13 +391,17 @@ is
       TLV.Messages.Take_Buffer (Messages_Ctx, Messages_Buffer);
       pragma Warnings (On, """Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Messages_Ctx""");
-      RFLX_Types.Free (Messages_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_1 := Messages_Buffer;
+      pragma Warnings (On, "unused assignment");
       pragma Warnings (Off, "unused assignment to ""Tags_Ctx""");
       pragma Warnings (Off, """Tags_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       TLV.Tags.Take_Buffer (Tags_Ctx, Tags_Buffer);
       pragma Warnings (On, """Tags_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Tags_Ctx""");
-      RFLX_Types.Free (Tags_Buffer);
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_2 := Tags_Buffer;
+      pragma Warnings (On, "unused assignment");
       Next_State := S_Terminated;
    end Finalize;
 
