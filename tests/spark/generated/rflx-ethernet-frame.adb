@@ -168,63 +168,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and (case Fld is
-               when F_Destination =>
-                  Invalid (Ctx, F_Destination)
-                  and Invalid (Ctx, F_Source)
-                  and Invalid (Ctx, F_Type_Length_TPID)
-                  and Invalid (Ctx, F_TPID)
-                  and Invalid (Ctx, F_TCI)
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_Source =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Invalid (Ctx, F_Source)
-                  and Invalid (Ctx, F_Type_Length_TPID)
-                  and Invalid (Ctx, F_TPID)
-                  and Invalid (Ctx, F_TCI)
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_Type_Length_TPID =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Ctx.Cursors (F_Source) = Ctx.Cursors (F_Source)'Old
-                  and Invalid (Ctx, F_Type_Length_TPID)
-                  and Invalid (Ctx, F_TPID)
-                  and Invalid (Ctx, F_TCI)
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_TPID =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Ctx.Cursors (F_Source) = Ctx.Cursors (F_Source)'Old
-                  and Ctx.Cursors (F_Type_Length_TPID) = Ctx.Cursors (F_Type_Length_TPID)'Old
-                  and Invalid (Ctx, F_TPID)
-                  and Invalid (Ctx, F_TCI)
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_TCI =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Ctx.Cursors (F_Source) = Ctx.Cursors (F_Source)'Old
-                  and Ctx.Cursors (F_Type_Length_TPID) = Ctx.Cursors (F_Type_Length_TPID)'Old
-                  and Ctx.Cursors (F_TPID) = Ctx.Cursors (F_TPID)'Old
-                  and Invalid (Ctx, F_TCI)
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_Type_Length =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Ctx.Cursors (F_Source) = Ctx.Cursors (F_Source)'Old
-                  and Ctx.Cursors (F_Type_Length_TPID) = Ctx.Cursors (F_Type_Length_TPID)'Old
-                  and Ctx.Cursors (F_TPID) = Ctx.Cursors (F_TPID)'Old
-                  and Ctx.Cursors (F_TCI) = Ctx.Cursors (F_TCI)'Old
-                  and Invalid (Ctx, F_Type_Length)
-                  and Invalid (Ctx, F_Payload),
-               when F_Payload =>
-                  Ctx.Cursors (F_Destination) = Ctx.Cursors (F_Destination)'Old
-                  and Ctx.Cursors (F_Source) = Ctx.Cursors (F_Source)'Old
-                  and Ctx.Cursors (F_Type_Length_TPID) = Ctx.Cursors (F_Type_Length_TPID)'Old
-                  and Ctx.Cursors (F_TPID) = Ctx.Cursors (F_TPID)'Old
-                  and Ctx.Cursors (F_TCI) = Ctx.Cursors (F_TCI)'Old
-                  and Ctx.Cursors (F_Type_Length) = Ctx.Cursors (F_Type_Length)'Old
-                  and Invalid (Ctx, F_Payload))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
