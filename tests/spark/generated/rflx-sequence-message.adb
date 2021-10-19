@@ -135,37 +135,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and (case Fld is
-               when F_Length =>
-                  Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Modular_Vector)
-                  and Invalid (Ctx, F_Range_Vector)
-                  and Invalid (Ctx, F_Enumeration_Vector)
-                  and Invalid (Ctx, F_AV_Enumeration_Vector),
-               when F_Modular_Vector =>
-                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Invalid (Ctx, F_Modular_Vector)
-                  and Invalid (Ctx, F_Range_Vector)
-                  and Invalid (Ctx, F_Enumeration_Vector)
-                  and Invalid (Ctx, F_AV_Enumeration_Vector),
-               when F_Range_Vector =>
-                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Modular_Vector) = Ctx.Cursors (F_Modular_Vector)'Old
-                  and Invalid (Ctx, F_Range_Vector)
-                  and Invalid (Ctx, F_Enumeration_Vector)
-                  and Invalid (Ctx, F_AV_Enumeration_Vector),
-               when F_Enumeration_Vector =>
-                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Modular_Vector) = Ctx.Cursors (F_Modular_Vector)'Old
-                  and Ctx.Cursors (F_Range_Vector) = Ctx.Cursors (F_Range_Vector)'Old
-                  and Invalid (Ctx, F_Enumeration_Vector)
-                  and Invalid (Ctx, F_AV_Enumeration_Vector),
-               when F_AV_Enumeration_Vector =>
-                  Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Modular_Vector) = Ctx.Cursors (F_Modular_Vector)'Old
-                  and Ctx.Cursors (F_Range_Vector) = Ctx.Cursors (F_Range_Vector)'Old
-                  and Ctx.Cursors (F_Enumeration_Vector) = Ctx.Cursors (F_Enumeration_Vector)'Old
-                  and Invalid (Ctx, F_AV_Enumeration_Vector))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;

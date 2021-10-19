@@ -39,6 +39,7 @@ from rflx.ada import (
     Expr,
     ExpressionFunctionDeclaration,
     First,
+    ForAllIn,
     FormalDeclaration,
     FormalSubprogramDeclaration,
     FunctionSpecification,
@@ -47,6 +48,7 @@ from rflx.ada import (
     Greater,
     GreaterEqual,
     If,
+    IfExpr,
     IfStatement,
     In,
     Indexed,
@@ -2013,41 +2015,41 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                         ),
                                     ]
                                 ],
-                                Case(
-                                    Variable("Fld"),
+                                Call(
+                                    "Invalid",
                                     [
-                                        (
-                                            Variable(f.affixed_name),
-                                            And(
-                                                *[
-                                                    Equal(
-                                                        Indexed(
-                                                            Variable("Ctx.Cursors"),
-                                                            Variable(p.affixed_name),
-                                                        ),
-                                                        Old(
-                                                            Indexed(
-                                                                Variable("Ctx.Cursors"),
-                                                                Variable(p.affixed_name),
-                                                            )
-                                                        ),
-                                                    )
-                                                    for p in message.predecessors(f)
-                                                ],
-                                                *[
-                                                    Call(
-                                                        "Invalid",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(s.affixed_name),
-                                                        ],
-                                                    )
-                                                    for s in [f, *message.successors(f)]
-                                                ],
-                                            ),
-                                        )
-                                        for f in message.fields
+                                        Variable("Ctx"),
+                                        Variable(message.fields[0].affixed_name),
                                     ],
+                                )
+                                if len(message.fields) == 1
+                                else ForAllIn(
+                                    "F",
+                                    Variable("Field"),
+                                    IfExpr(
+                                        [
+                                            (
+                                                Less(Variable("F"), Variable("Fld")),
+                                                Equal(
+                                                    Indexed(
+                                                        Variable("Ctx.Cursors"),
+                                                        Variable("F"),
+                                                    ),
+                                                    Indexed(
+                                                        Old(Variable("Ctx.Cursors")),
+                                                        Variable("F"),
+                                                    ),
+                                                ),
+                                            )
+                                        ],
+                                        Call(
+                                            "Invalid",
+                                            [
+                                                Variable("Ctx"),
+                                                Variable("F"),
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             )
                         ),

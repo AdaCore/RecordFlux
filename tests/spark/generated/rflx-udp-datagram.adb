@@ -135,37 +135,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and (case Fld is
-               when F_Source_Port =>
-                  Invalid (Ctx, F_Source_Port)
-                  and Invalid (Ctx, F_Destination_Port)
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Checksum)
-                  and Invalid (Ctx, F_Payload),
-               when F_Destination_Port =>
-                  Ctx.Cursors (F_Source_Port) = Ctx.Cursors (F_Source_Port)'Old
-                  and Invalid (Ctx, F_Destination_Port)
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Checksum)
-                  and Invalid (Ctx, F_Payload),
-               when F_Length =>
-                  Ctx.Cursors (F_Source_Port) = Ctx.Cursors (F_Source_Port)'Old
-                  and Ctx.Cursors (F_Destination_Port) = Ctx.Cursors (F_Destination_Port)'Old
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Checksum)
-                  and Invalid (Ctx, F_Payload),
-               when F_Checksum =>
-                  Ctx.Cursors (F_Source_Port) = Ctx.Cursors (F_Source_Port)'Old
-                  and Ctx.Cursors (F_Destination_Port) = Ctx.Cursors (F_Destination_Port)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Invalid (Ctx, F_Checksum)
-                  and Invalid (Ctx, F_Payload),
-               when F_Payload =>
-                  Ctx.Cursors (F_Source_Port) = Ctx.Cursors (F_Source_Port)'Old
-                  and Ctx.Cursors (F_Destination_Port) = Ctx.Cursors (F_Destination_Port)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Checksum) = Ctx.Cursors (F_Checksum)'Old
-                  and Invalid (Ctx, F_Payload))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
