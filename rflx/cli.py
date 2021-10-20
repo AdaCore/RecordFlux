@@ -17,6 +17,7 @@ from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.identifier import ID
 from rflx.model import Message, Model, Session
+from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
 
@@ -342,7 +343,7 @@ def validate(args: argparse.Namespace) -> None:
         )
     except ValidationError as e:
         fail(str(e), Subsystem.VALIDATOR)
-    except RecordFluxError as e:
+    except PyRFLXError as e:
         fatal_error = FatalError()
         fatal_error.extend(e)
         raise fatal_error from e

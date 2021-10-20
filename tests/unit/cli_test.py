@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -7,6 +8,7 @@ from _pytest.monkeypatch import MonkeyPatch
 import rflx.specification
 from rflx import cli, validator
 from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
+from rflx.pyrflx import PyRFLXError
 from tests.const import SPEC_DIR
 
 SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
@@ -20,8 +22,16 @@ def raise_model_error() -> None:
     fail("TEST", Subsystem.MODEL, Severity.ERROR, Location((8, 22)))
 
 
+def raise_pyrflx_error() -> None:
+    raise PyRFLXError("TEST")
+
+
 def raise_validation_error() -> None:
     raise validator.ValidationError("TEST")
+
+
+def raise_unexpected_exception() -> None:
+    raise NotImplementedError("Not implemented")
 
 
 def raise_fatal_error() -> None:
@@ -277,6 +287,28 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
     )
 
 
+def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
+    monkeypatch.setattr(
+        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_parser_error()
+    )
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "validate",
+                str(tmp_path / "test.rflx"),
+                "Test::Message",
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+            ]
+        )
+        == "<stdin>:8:22: parser: error: TEST"
+    )
+
+
 def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
     monkeypatch.setattr(
@@ -296,10 +328,13 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
     )
 
 
-def test_main_validate_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+@pytest.mark.parametrize("raise_error", [raise_unexpected_exception, raise_pyrflx_error])
+def test_main_validate_fatal_error(
+    monkeypatch: MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
+) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_model_error()
+        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_error()
     )
     assert "RecordFlux Bug" in str(
         cli.main(
