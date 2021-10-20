@@ -211,7 +211,12 @@ class EnumLiteral:
             str_repr += "\n"
             for comment_line in comment:
                 str_repr += f"{'':<7}-- {comment_line}\n"
-        str_repr += f"{'':<7}{f'{self.name} => {self.value}'}"
+        name = (
+            self.name
+            if len(self.name) <= 100
+            else f"{self.name[:100]}_{self.value.replace('#', '_')}"
+        )
+        str_repr += f"{'':<7}{f'{name} => {self.value}'}"
         return str_repr
 
 
