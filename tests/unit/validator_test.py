@@ -472,47 +472,134 @@ def test_validate_message_parameterized_message() -> None:
     "expression,expected",
     [
         (
-            expr.Or(expr.Variable("A"), expr.Variable("B")),
+            expr.Or(
+                expr.Equal(expr.Variable("A"), expr.TRUE), expr.Equal(expr.Variable("B"), expr.TRUE)
+            ),
             [
-                expr.Variable("A"),
-                expr.Variable("B"),
-            ],
-        ),
-        (
-            expr.And(expr.Variable("A"), expr.Variable("B")),
-            [
-                expr.And(expr.Variable("A"), expr.Variable("B")),
-            ],
-        ),
-        (
-            expr.And(expr.Or(expr.Variable("A"), expr.Variable("B")), expr.Variable("C")),
-            [
-                expr.And(expr.Variable("A"), expr.Variable("C")),
-                expr.And(expr.Variable("B"), expr.Variable("C")),
+                expr.Equal(expr.Variable("A"), expr.TRUE),
+                expr.Equal(expr.Variable("B"), expr.TRUE),
             ],
         ),
         (
             expr.And(
-                expr.Or(expr.Variable("A"), expr.Variable("B")),
-                expr.Variable("C"),
-                expr.Variable("D"),
+                expr.Equal(expr.Variable("A"), expr.TRUE), expr.Equal(expr.Variable("B"), expr.TRUE)
             ),
             [
-                expr.And(expr.Variable("A"), expr.Variable("C"), expr.Variable("D")),
-                expr.And(expr.Variable("B"), expr.Variable("C"), expr.Variable("D")),
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
             ],
         ),
         (
             expr.And(
-                expr.Or(expr.Variable("A"), expr.Variable("B")),
-                expr.Or(expr.Variable("C"), expr.Variable("D")),
-                expr.Variable("E"),
+                expr.Or(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
+                expr.Equal(expr.Variable("C"), expr.TRUE),
             ),
             [
-                expr.And(expr.Variable("A"), expr.Variable("C"), expr.Variable("E")),
-                expr.And(expr.Variable("A"), expr.Variable("D"), expr.Variable("E")),
-                expr.And(expr.Variable("B"), expr.Variable("C"), expr.Variable("E")),
-                expr.And(expr.Variable("B"), expr.Variable("D"), expr.Variable("E")),
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+            ],
+        ),
+        (
+            expr.And(
+                expr.Or(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
+                expr.Equal(expr.Variable("C"), expr.TRUE),
+                expr.Equal(expr.Variable("D"), expr.TRUE),
+            ),
+            [
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("D"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("D"), expr.TRUE),
+                ),
+            ],
+        ),
+        (
+            expr.And(
+                expr.Or(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
+                expr.Or(
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("D"), expr.TRUE),
+                ),
+                expr.Equal(expr.Variable("E"), expr.TRUE),
+            ),
+            [
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("E"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("D"), expr.TRUE),
+                    expr.Equal(expr.Variable("E"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("E"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("D"), expr.TRUE),
+                    expr.Equal(expr.Variable("E"), expr.TRUE),
+                ),
+            ],
+        ),
+        (
+            expr.And(
+                expr.Or(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+                expr.Or(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
+                expr.Or(
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+            ),
+            [
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("A"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                ),
+                expr.And(
+                    expr.Equal(expr.Variable("C"), expr.TRUE),
+                    expr.Equal(expr.Variable("B"), expr.TRUE),
+                ),
             ],
         ),
     ],

@@ -178,7 +178,14 @@ class Validator:
 
         disjunctions.append([expr.And(*atoms)])
 
-        return [expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)]
+        result: List[expr.Expr] = []
+        for value in (expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)):
+            for seen in result:
+                if expr.Not(expr.Equal(value, seen)).check().result == expr.ProofResult.UNSAT:
+                    break
+            else:
+                result.append(value)
+        return result
 
     @staticmethod
     def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
