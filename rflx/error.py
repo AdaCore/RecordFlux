@@ -151,9 +151,7 @@ class BaseError(Exception, Base):
         else:
             for message, subsystem, severity, location in entries:
                 self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
-        num_errors = len(
-            list(e for e in self.__errors if e.severity in (Severity.WARNING, Severity.ERROR))
-        )
+        num_errors = len(list(e for e in self.__errors if e.severity == Severity.ERROR))
         if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
             raise self
 
