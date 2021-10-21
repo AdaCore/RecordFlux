@@ -333,7 +333,10 @@ TOTAL                                            10         10         100.00%
 
 def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+        split_disjunctions=True,
     )
     with pytest.raises(ValidationError, match=r"missed target coverage of 90.00%, reached 73.68%"):
         validator.validate(
