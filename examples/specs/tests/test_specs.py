@@ -6,10 +6,9 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
-from rflx.pyrflx import PyRFLX
+from rflx.validator import Validator
 
 import tools.iana_to_rflx
-from tools.validate_spec import set_checksum_to_pyrflx, validate
 
 DATA_PATH = Path("tests/data")
 
@@ -38,10 +37,10 @@ def test_iana_specs_synchronized(registry_file: Path) -> None:
 
 @pytest.mark.parametrize("spec", glob.glob("*.rflx"))
 def test_validate_spec(spec: str) -> None:
-    pyrflx = PyRFLX.from_specs([spec], skip_model_verification=True)
-    set_checksum_to_pyrflx(pyrflx, Path("checksum"))
+    validator = Validator([spec], "checksum", skip_model_verification=True)
 
-    for package in pyrflx:
+    # ISSUE: Componolit/RecordFlux#833
+    for package in validator._pyrflx:  # pylint: disable = protected-access
         for message_value in package:
             test_data_dir = (
                 DATA_PATH
@@ -56,12 +55,9 @@ def test_validate_spec(spec: str) -> None:
             directory_invalid = test_data_dir / "invalid"
             directory_valid = test_data_dir / "valid"
 
-            validate(
+            validator.validate(
                 message_value.identifier,
-                pyrflx,
                 directory_invalid,
                 directory_valid,
-                json_output=None,
-                abort_on_error=False,
                 coverage=True,
             )
