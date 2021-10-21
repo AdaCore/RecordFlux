@@ -110,6 +110,11 @@ def main(argv: List[str]) -> Union[int, str]:
         "validate", help="validate specification against a set of known valid or invalid messages"
     )
     parser_validate.add_argument(
+        "--split-disjunctions",
+        action="store_true",
+        help=("split disjunctions before model validation (may have severe performance impact)"),
+    )
+    parser_validate.add_argument(
         "specification",
         metavar="SPECIFICATION_FILE",
         type=Path,
@@ -332,7 +337,12 @@ def validate(args: argparse.Namespace) -> None:
         fail(f"invalid identifier: {e}", Subsystem.CLI)
 
     try:
-        Validator([args.specification], args.checksum_module, args.no_verification).validate(
+        Validator(
+            [args.specification],
+            args.checksum_module,
+            args.no_verification,
+            args.split_disjunctions,
+        ).validate(
             identifier,
             args.invalid_samples_directory,
             args.valid_samples_directory,
