@@ -486,11 +486,11 @@ TOTAL                                            37         30          81.08%
 
                                    ipv4.rflx
 --------------------------------------------------------------------------------
-None             : missing link          Copied           ->     Option_Class
-None             : missing link          Initial          ->        Copied
-None             : missing link       Option_Class        ->    Option_Number
-None             : missing link        Option_Data        ->        Final
-None             : missing link       Option_Length       ->     Option_Data
+tests/validation_tool/ipv4.rflx:22:27: missing link          Copied           ->     Option_Class
+tests/validation_tool/ipv4.rflx:22:10: missing link          Initial          ->        Copied
+tests/validation_tool/ipv4.rflx:23:38: missing link       Option_Class        ->    Option_Number
+tests/validation_tool/ipv4.rflx:35:84: missing link        Option_Data        ->        Final
+tests/validation_tool/ipv4.rflx:29:40: missing link       Option_Length       ->     Option_Data
 tests/validation_tool/ipv4.rflx:25:13: missing link       Option_Number       ->        Final
 tests/validation_tool/ipv4.rflx:27:13: missing link       Option_Number       ->    Option_Length
 """
