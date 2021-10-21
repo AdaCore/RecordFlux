@@ -2770,13 +2770,13 @@ def test_allocator_init_errors() -> None:
     mysession = deepcopy(DUMMY_SESSION)
     my_id = ID("my_msg")
     mysession.declarations[my_id] = decl.VariableDeclaration(my_id, "T", type_=rty.Message("T"))
-    with pytest.raises(RecordFluxError, match=r".*no location provided for allocation point"):
+    with pytest.raises(AssertionError):
         AllocatorGenerator(mysession)
 
 
 def test_allocator_interface_errors() -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION)
-    with pytest.raises(RecordFluxError, match=r".*cannot find slot for allocation without sloc"):
+    with pytest.raises(AssertionError):
         allocator.get_slot_ptr(location=None)
-    with pytest.raises(RecordFluxError, match=r".*cannot find slot to free without sloc"):
+    with pytest.raises(AssertionError):
         allocator.free_buffer(ada.ID("my_msg"), location=None)

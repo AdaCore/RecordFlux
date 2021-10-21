@@ -38,7 +38,7 @@ from rflx.ada import (
     Variable,
     WithClause,
 )
-from rflx.error import Location, Subsystem, fail
+from rflx.error import Location
 from rflx.model import Session, declaration as decl, statement as stmt
 
 from . import const
@@ -77,14 +77,12 @@ class AllocatorGenerator:
         return ID(self.unit_identifier * base) if qualified else ID(base)
 
     def get_slot_ptr(self, location: Optional[Location]) -> Variable:
-        if location is None:
-            fail("cannot find slot for allocation without sloc", Subsystem.ALLOCATOR)
+        assert location is not None
         slot_id: int = self._allocation_map[location]
         return Variable(self._slot_id(slot_id, qualified=True))
 
     def free_buffer(self, identifier: ID, location: Optional[Location]) -> Sequence[Statement]:
-        if location is None:
-            fail("cannot find slot to free without sloc", Subsystem.ALLOCATOR)
+        assert location is not None
         slot_id = self._allocation_map[location]
         return [
             PragmaStatement("Warnings", [Variable("Off"), String("unused assignment")]),
@@ -208,7 +206,7 @@ class AllocatorGenerator:
             [SubprogramDeclaration(proc, [Postcondition(Call("Initialized"))])],
             [
                 SubprogramBody(
-                    proc, declarations=[], statements=assignments, aspects=[SparkMode(False)]
+                    proc, declarations=[], statements=assignments, aspects=[SparkMode(off=True)]
                 )
             ],
         )
@@ -228,8 +226,7 @@ class AllocatorGenerator:
         def insert(loc: Optional[Location]) -> None:
             nonlocal count
             count += 1
-            if loc is None:
-                fail("no location provided for allocation point", subsystem=Subsystem.ALLOCATOR)
+            assert loc is not None
             self._allocation_map[loc] = count
 
         for d in self._session.declarations.values():
