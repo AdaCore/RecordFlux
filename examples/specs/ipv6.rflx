@@ -2,17 +2,17 @@ with Protocol_Numbers;
 
 package IPv6 is
 
-   --  Types
+   -- Types
 
-   --  The value [...] MUST be ignored by the receiver
-   --  ISSUE: Componolit/RecordFlux#601
-   type Reserved_2  is range 0 .. 0 with Size => 2;
-   type Reserved_8  is range 0 .. 0 with Size => 8;
+   -- The value [...] MUST be ignored by the receiver
+   -- ISSUE: Componolit/RecordFlux#601
+   type Reserved_2 is range 0 .. 0 with Size => 2;
+   type Reserved_8 is range 0 .. 0 with Size => 8;
    type Reserved_15 is range 0 .. 0 with Size => 15;
    type Reserved_20 is range 0 .. 0 with Size => 20;
    type Reserved_32 is range 0 .. 0 with Size => 32;
 
-   --  IPv6 address (RFC 4291, 2.5)
+   -- IPv6 address (RFC 4291, 2.5)
 
    type Address is
       message
@@ -24,7 +24,7 @@ package IPv6 is
 
    type Addresses is sequence of Address;
 
-   --  Options (RFC 8200, 4.2)
+   -- Options (RFC 8200, 4.2)
 
    type Option_Action is
       (Skip                                        => 0,
@@ -46,7 +46,7 @@ package IPv6 is
          Value : Option_Value;
       end message;
 
-   type Data_Len is range 0 .. 2**8 - 1 with Size => 8;
+   type Data_Len is range 0 .. 2 ** 8 - 1 with Size => 8;
 
    type Option is
       message
@@ -72,25 +72,25 @@ package IPv6 is
          Next_Header : Protocol_Numbers::Assigned_Internet_Protocol_Numbers;
          Hdr_Ext_Len : Data_Len;
          Options : Options
-            --  RFC 8200, 4.3:
-            --  Hdr Ext Len: Length of the [...] Options header in 8-octet units not including
-            --  the first 8 octets.
-            --  As the length field contains the *total* length of the options header minus 8
-            --  octets, we need to add 8 octets (64 bit) to the length, but subtract Hdr_Ext_Len
-            --  and Next_Header to get the size of the Options.
+            -- RFC 8200, 4.3:
+            -- Hdr Ext Len: Length of the [...] Options header in 8-octet units not including
+            -- the first 8 octets.
+            -- As the length field contains the *total* length of the options header minus 8
+            -- octets, we need to add 8 octets (64 bit) to the length, but subtract Hdr_Ext_Len
+            -- and Next_Header to get the size of the Options.
             with Size => 64 - Hdr_Ext_Len'Size - Next_Header'Size + 64 * Hdr_Ext_Len;
          Data : Opaque
             with Size => Message'Last - Options'Last;
       end message;
 
-   --  Hop-by-Hop Options Header (RFC 8200, 4.3)
+   -- Hop-by-Hop Options Header (RFC 8200, 4.3)
 
    type Hop_By_Hop_Options_Header is new Options_Base_Header;
 
-   --  Routing Header (RFC 8200, 4.4)
+   -- Routing Header (RFC 8200, 4.4)
 
-   --  Routing types
-   --  https://www.iana.org/assignments/ipv6-parameters/ipv6-parameters-3.csv
+   -- Routing types
+   -- https://www.iana.org/assignments/ipv6-parameters/ipv6-parameters-3.csv
    type Routing_Type is
       (RT_Type_2           => 2,
        RT_RPL_Source_Route => 3,
@@ -100,22 +100,22 @@ package IPv6 is
        RT_Reserved         => 255)
    with Size => 8, Always_Valid;
 
-   type Segments_Count is range 0 .. 2**8 - 1 with Size => 8;
+   type Segments_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
 
    type Routing_Base_Header is
       message
          Hdr_Ext_Len : Data_Len;
          Routing_Type : Routing_Type;
          Data : Opaque
-            --  RFC 8200, 4.4: 8-bit unsigned integer. Length of the Routing header in 8-octet
-            --  units, not including the first 8 octets.
-            --  We need to add 8 octets (64 bit) to the length, but subtract Routing_Type,
-            --  Hdr_Ext_Len and also Next_Header_Field (8 bits) which is contained in the outer
-            --  Routing_Header.
+            -- RFC 8200, 4.4: 8-bit unsigned integer. Length of the Routing header in 8-octet
+            -- units, not including the first 8 octets.
+            -- We need to add 8 octets (64 bit) to the length, but subtract Routing_Type,
+            -- Hdr_Ext_Len and also Next_Header_Field (8 bits) which is contained in the outer
+            -- Routing_Header.
             with Size => 64 - Routing_Type'Size - Hdr_Ext_Len'Size - 8 + 64 * Hdr_Ext_Len;
       end message;
 
-   --  Type 2 routing header (RFC 6275, 6.4)
+   -- Type 2 routing header (RFC 6275, 6.4)
    type Routing_Header_Type_2 is
       message
          Segments_Left : Segments_Count
@@ -127,16 +127,16 @@ package IPv6 is
    for Routing_Base_Header use (Data => Routing_Header_Type_2)
       if Hdr_Ext_Len = 2 and Routing_Type = RT_Type_2;
 
-   --  RPL Routing Header (RFC 6554, 3)
+   -- RPL Routing Header (RFC 6554, 3)
 
    type Cmpr_Length is range 0 .. 15 with Size => 4;
    type Pad_Length is range 0 .. 15 with Size => 4;
 
-   --  ISSUE: Componolit/RecordFlux#608
-   --  As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
-   --  vector of addresses. However, these are not fixed-size IPv6 addresses, but they are
-   --  truncated depending on the values of CmprI and CmprE. We cannot specify this as a normal
-   --  sequence because those require a static element type.
+   -- ISSUE: Componolit/RecordFlux#608
+   -- As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
+   -- vector of addresses. However, these are not fixed-size IPv6 addresses, but they are
+   -- truncated depending on the values of CmprI and CmprE. We cannot specify this as a normal
+   -- sequence because those require a static element type.
    type RPL_Routing_Header is
       message
          Segments_Left : Segments_Count;
@@ -146,13 +146,13 @@ package IPv6 is
          Reserved : Reserved_20
             then Padding
                with Size => 8 * Pad
-                  if Segments_Left = 0
+               if Segments_Left = 0
             then Last_Segment
                with Size => 8 * (16 - CmprE)
-                  if Segments_Left = 1
+               if Segments_Left = 1
             then Segments
                with Size => Segments_Left * 8 * (16 - CmprI)
-                  if Segments_Left > 1;
+               if Segments_Left > 1;
          Segments : Opaque
             then Last_Segment
                with Size => 8 * (16 - CmprE);
@@ -165,10 +165,10 @@ package IPv6 is
    for Routing_Base_Header use (Data => RPL_Routing_Header)
       if Routing_Type = RT_RPL_Source_Route;
 
-   --  Segment Routing Header, SRH (RFC 8754, 2)
+   -- Segment Routing Header, SRH (RFC 8754, 2)
 
-   type SRH_Last_Entry_Index is range 0 .. 2**8 - 1 with Size => 8;
-   type SRH_Tag is range 0 .. 2**16 - 1 with Size => 16;
+   type SRH_Last_Entry_Index is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type SRH_Tag is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type SRH_TLV_Kind is
       (SRH_TK_Pad1         =>   0,
@@ -199,7 +199,7 @@ package IPv6 is
             with Size => 8 * Length;
       end message;
 
-   type SRH_HMAC_Key_ID is mod 2**32;
+   type SRH_HMAC_Key_ID is mod 2 ** 32;
 
    type SRH_HMAC_TLV is
       message
@@ -220,10 +220,10 @@ package IPv6 is
          Flags : Reserved_8;
          Tag : SRH_Tag;
          Segments : Addresses
-            --  Last Entry contains the index (zero based), in the Segment List, of the last
-            --  element of the Segment List.
-            --  ISSUE: Componolit/RecordFlux#404
-            --  with Size => Address'Size * (Last_Entry + 1);
+            -- Last Entry contains the index (zero based), in the Segment List, of the last
+            -- element of the Segment List.
+            -- ISSUE: Componolit/RecordFlux#404
+            -- with Size => Address'Size * (Last_Entry + 1);
             with Size => 128 * (Last_Entry + 1);
       end message;
 
@@ -238,10 +238,10 @@ package IPv6 is
             with Size => Message'Last - RH_Data'Last;
       end message;
 
-   --  Fragment Header (RFC 8200, 4.5)
+   -- Fragment Header (RFC 8200, 4.5)
 
-   type FH_Offset is range 0 .. 2**13 - 1 with Size => 13;
-   type FH_Identification is mod 2**32;
+   type FH_Offset is range 0 .. 2 ** 13 - 1 with Size => 13;
+   type FH_Identification is mod 2 ** 32;
 
    type Fragment_Header is
       message
@@ -255,17 +255,17 @@ package IPv6 is
             with Size => Message'Last - Identification'Last;
       end message;
 
-   --  Destination Options Header (RFC 8200, 4.6)
+   -- Destination Options Header (RFC 8200, 4.6)
 
    type Destination_Options_Header is new Options_Base_Header;
 
-   --  Packet (RFC 8200, 3)
+   -- Packet (RFC 8200, 3)
 
    type Version is range 6 .. 6 with Size => 4;
-   type Traffic_Class is mod 2**8;
-   type Flow_Label is mod 2**20;
-   type Payload_Length is range 0 .. 2**16 - 1 with Size => 16;
-   type Hop_Limit is range 0 .. 2**8 - 1 with Size => 8;
+   type Traffic_Class is mod 2 ** 8;
+   type Flow_Label is mod 2 ** 20;
+   type Payload_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Hop_Limit is range 0 .. 2 ** 8 - 1 with Size => 8;
 
    type Packet is
       message
@@ -277,12 +277,12 @@ package IPv6 is
          Hop_Limit : Hop_Limit;
          Source : Address;
          Destination : Address
-            then Payload 
+            then Payload
                with Size => 8 * Payload_Length;
          Payload : Opaque;
       end message;
 
-   --  Router Alert Option (RFC 2711, 2.1)
+   -- Router Alert Option (RFC 2711, 2.1)
 
    type Router_Alert_Option_Value is
       (RAO_Multicast_Listener_Discover => 0,
@@ -303,11 +303,11 @@ package IPv6 is
    -- Null Header (RFC 8200, 4.7)
    type Null_Header is null message;
 
-   ------------------------------
-   --  Next header refinements --
-   ------------------------------
+   -----------------------------
+   -- Next header refinements --
+   -----------------------------
 
-   --  Hop-by-Hop Options Header
+   -- Hop-by-Hop Options Header
    for Hop_By_Hop_Options_Header use (Data => Hop_By_Hop_Options_Header)
       if Next_Header = Protocol_Numbers::HOPOPT;
 
@@ -326,7 +326,7 @@ package IPv6 is
    for Hop_By_Hop_Options_Header use (Data => Packet)
       if Next_Header = Protocol_Numbers::IPv6;
 
-   --  Routing header
+   -- Routing header
    for Routing_Header use (Data => Hop_By_Hop_Options_Header)
       if Next_Header = Protocol_Numbers::HOPOPT;
 
@@ -345,7 +345,7 @@ package IPv6 is
    for Routing_Header use (Data => Packet)
       if Next_Header = Protocol_Numbers::IPv6;
 
-   --  Fragment Header
+   -- Fragment Header
    for Fragment_Header use (Data => Hop_By_Hop_Options_Header)
       if Next_Header = Protocol_Numbers::HOPOPT;
 
@@ -364,7 +364,7 @@ package IPv6 is
    for Fragment_Header use (Data => Packet)
       if Next_Header = Protocol_Numbers::IPv6;
 
-   --  Destination Options Header
+   -- Destination Options Header
    for Destination_Options_Header use (Data => Hop_By_Hop_Options_Header)
       if Next_Header = Protocol_Numbers::HOPOPT;
 
@@ -383,7 +383,7 @@ package IPv6 is
    for Destination_Options_Header use (Data => Packet)
       if Next_Header = Protocol_Numbers::IPv6;
 
-   --  Packet
+   -- Packet
    for Packet use (Payload => Hop_By_Hop_Options_Header)
       if Next_Header = Protocol_Numbers::HOPOPT;
 
