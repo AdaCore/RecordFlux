@@ -1,6 +1,5 @@
 # pylint: disable = too-many-lines
 
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence, Tuple, Type
@@ -2764,19 +2763,3 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
         main=main,
         units=spark_units,
     )
-
-
-def test_allocator_init_errors() -> None:
-    mysession = deepcopy(DUMMY_SESSION)
-    my_id = ID("my_msg")
-    mysession.declarations[my_id] = decl.VariableDeclaration(my_id, "T", type_=rty.Message("T"))
-    with pytest.raises(AssertionError):
-        AllocatorGenerator(mysession)
-
-
-def test_allocator_interface_errors() -> None:
-    allocator = AllocatorGenerator(DUMMY_SESSION)
-    with pytest.raises(AssertionError):
-        allocator.get_slot_ptr(location=None)
-    with pytest.raises(AssertionError):
-        allocator.free_buffer(ada.ID("my_msg"), location=None)
