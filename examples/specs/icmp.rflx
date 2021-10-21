@@ -36,12 +36,12 @@ package ICMP is
    with Size => 8;
 
    type Code_Zero is range 0 .. 0 with Size => 8;
-   type Checksum is mod 2**16;
-   type Identifier is mod 2**16;
-   type Sequence_Number is mod 2**16;
-   type Pointer is mod 2**8;
-   type Timestamp is mod 2**32;
-   type Gateway_Internet_Address is mod 2**32;
+   type Checksum is mod 2 ** 16;
+   type Identifier is mod 2 ** 16;
+   type Sequence_Number is mod 2 ** 16;
+   type Pointer is mod 2 ** 8;
+   type Timestamp is mod 2 ** 32;
+   type Gateway_Internet_Address is mod 2 ** 32;
    type Unused_32 is range 0 .. 0 with Size => 32;
    type Unused_24 is range 0 .. 0 with Size => 24;
 
@@ -55,14 +55,14 @@ package ICMP is
             then Code_Redirect
                if Tag = Redirect
             then Code_Zero
-               if (Tag = Echo_Reply
-                   or Tag = Echo_Request
-                   or Tag = Source_Quench
-                   or Tag = Parameter_Problem
-                   or Tag = Timestamp_Msg
-                   or Tag = Timestamp_Reply
-                   or Tag = Information_Request
-                   or Tag = Information_Reply);
+               if Tag = Echo_Reply
+                  or Tag = Echo_Request
+                  or Tag = Source_Quench
+                  or Tag = Parameter_Problem
+                  or Tag = Timestamp_Msg
+                  or Tag = Timestamp_Reply
+                  or Tag = Information_Request
+                  or Tag = Information_Reply;
          Code_Destination_Unreachable : Code_Destination_Unreachable
             then Checksum;
          Code_Time_Exceeded : Code_Time_Exceeded
@@ -72,16 +72,16 @@ package ICMP is
          Code_Zero : Code_Zero;
          Checksum : Checksum
             then Unused_32
-               if (Tag = Destination_Unreachable
-                   or Tag = Source_Quench
-                   or Tag = Time_Exceeded)
+               if Tag = Destination_Unreachable
+                  or Tag = Source_Quench
+                  or Tag = Time_Exceeded
             then Identifier
-               if (Tag = Echo_Request
-                   or Tag = Echo_Reply
-                   or Tag = Timestamp_Msg
-                   or Tag = Timestamp_Reply
-                   or Tag = Information_Request
-                   or Tag = Information_Reply)
+               if Tag = Echo_Request
+                  or Tag = Echo_Reply
+                  or Tag = Timestamp_Msg
+                  or Tag = Timestamp_Reply
+                  or Tag = Information_Request
+                  or Tag = Information_Reply
             then Pointer
                if Tag = Parameter_Problem
             then Gateway_Internet_Address

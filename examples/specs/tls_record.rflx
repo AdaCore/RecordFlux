@@ -16,7 +16,7 @@ package TLS_Record is
        TLS_1_3 => 16#0304#)
    with Size => 16;
 
-   type Length is range 0 .. 2**14 + 256 with Size => 16;
+   type Length is range 0 .. 2 ** 14 + 256 with Size => 16;
 
    type TLS_Record is
       message
@@ -25,7 +25,7 @@ package TLS_Record is
          Length : Length
             then Fragment
                with Size => Length * 8
-               if Tag /= APPLICATION_DATA and Length <= 2**14
+               if Tag /= APPLICATION_DATA and Length <= 2 ** 14
             then Encrypted_Record
                with Size => Length * 8
                if Tag = APPLICATION_DATA and Legacy_Record_Version = TLS_1_2;

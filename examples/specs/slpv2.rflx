@@ -1,10 +1,10 @@
 package SLPv2 is
    -- RFC 2608
-   
-   type U8  is mod 2**8;
-   type U16 is mod 2**16;
-   type U24 is mod 2**24;
-   type U32 is mod 2**32;
+
+   type U8 is mod 2 ** 8;
+   type U16 is mod 2 ** 16;
+   type U24 is mod 2 ** 24;
+   type U32 is mod 2 ** 32;
 
    -- 7. Errors
    type Error is (
@@ -40,7 +40,7 @@ package SLPv2 is
 
    -- 8. Required SLP Messages
    type SLPv2_Version is range 2 .. 2 with Size => 8;
-   type SLPv2_Length is range 15 .. 2**24 - 1 with Size => 24;
+   type SLPv2_Length is range 15 .. 2 ** 24 - 1 with Size => 24;
    type SLPv2_Flag_Reserved is range 0 .. 0 with Size => 13;
    type SLPv2 is
       message
@@ -99,7 +99,7 @@ package SLPv2 is
       if Function_ID = FI_SERVICE_REQUEST;
 
    -- 9.2. Authentication Blocks
-   type Authentication_Block_Authentication_Block_Length is range 10 .. 2**16-1 with Size => 16;
+   type Authentication_Block_Authentication_Block_Length is range 10 .. 2 ** 16 - 1 with Size => 16;
    type Authentication_Block is
       message
          Block_Structure_Descriptor : U16;

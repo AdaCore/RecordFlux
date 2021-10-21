@@ -1,9 +1,9 @@
 package Ethernet is
 
-   type Address is mod 2**48;
-   type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+   type Address is mod 2 ** 48;
+   type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16;
    type TPID is range 16#8100# .. 16#8100# with Size => 16;
-   type TCI is mod 2**16;
+   type TCI is mod 2 ** 16;
    type Ether_Type is
       (ET_IPV4               => 16#0800#,
        ET_ARP                => 16#0806#,

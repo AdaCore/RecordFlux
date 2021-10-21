@@ -15,7 +15,7 @@ package TLS_Handshake is
        HT_MESSAGE_HASH           => 254)
    with Size => 8;
 
-   type Length is mod 2**24;
+   type Length is mod 2 ** 24;
 
    type Handshake is
       message
@@ -52,7 +52,7 @@ package TLS_Handshake is
        ET_KEY_SHARE                              => 51)
    with Size => 16, Always_Valid;
 
-   type Data_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Data_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Extension is
       message
@@ -96,7 +96,7 @@ package TLS_Handshake is
 
    type Legacy_Session_ID_Length is range 0 .. 32 with Size => 8;
 
-   type Cipher_Suites_Length is range 2 .. 2**16 - 2 with Size => 16;
+   type Cipher_Suites_Length is range 2 .. 2 ** 16 - 2 with Size => 16;
 
    type Cipher_Suite is
       (TLS_AES_128_GCM_SHA256       => 16#1301#,
@@ -110,7 +110,7 @@ package TLS_Handshake is
 
    type Legacy_Compression_Methods_Length is range 1 .. 1 with Size => 8;
 
-   type Client_Hello_Extensions_Length is range 8 .. 2**16 - 1 with Size => 16;
+   type Client_Hello_Extensions_Length is range 8 .. 2 ** 16 - 1 with Size => 16;
 
    type Client_Hello is
       message
@@ -140,7 +140,7 @@ package TLS_Handshake is
       if Tag = HT_CLIENT_HELLO;
 
    type Legacy_Compression_Method is range 0 .. 0 with Size => 8;
-   type Server_Hello_Extensions_Length is range 6 .. 2**16 - 1 with Size => 16;
+   type Server_Hello_Extensions_Length is range 6 .. 2 ** 16 - 1 with Size => 16;
 
    type Server_Hello is
       message
@@ -156,10 +156,16 @@ package TLS_Handshake is
          Extensions_Length : Server_Hello_Extensions_Length
             then Extensions
                with Size => Extensions_Length * 8
-               if Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#]
+               if Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+                             16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
+                             16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
+                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#]
             then HRR_Extensions
                with Size => Extensions_Length * 8
-               if Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#, 16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#, 16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#, 16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#];
+               if Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+                            16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
+                            16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
+                            16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#];
          Extensions : SH_Extensions
             then null;
          HRR_Extensions : HRR_Extensions;
@@ -170,7 +176,7 @@ package TLS_Handshake is
 
    -- Server Parameters
 
-   type Encrypted_Extensions_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Encrypted_Extensions_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Encrypted_Extensions is
       message
@@ -182,8 +188,8 @@ package TLS_Handshake is
    for Handshake use (Payload => Encrypted_Extensions)
       if Tag = HT_ENCRYPTED_EXTENSIONS;
 
-   type Certificate_Request_Context_Length is range 0 .. 2**8 - 1 with Size => 8;
-   type Certificate_Request_Extensions_Length is range 2 .. 2**16 - 1 with Size => 16;
+   type Certificate_Request_Context_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Certificate_Request_Extensions_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
 
    type Certificate_Request is
       message
@@ -201,9 +207,9 @@ package TLS_Handshake is
    -- Authentication Messages
 
    type Certificate_Type is (X509 => 0, RAW_PUBLIC_KEY => 2) with Size => 8;
-   type ASN1_Subject_Public_Key_Info_Length is range 1 .. 2**24 - 1 with Size => 24;
-   type Cert_Data_Length is range 1 .. 2**24 - 1 with Size => 24;
-   type Certificate_Extensions_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type ASN1_Subject_Public_Key_Info_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
+   type Cert_Data_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
+   type Certificate_Extensions_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Certificate_Entry is
       message
@@ -215,7 +221,7 @@ package TLS_Handshake is
             with Size => Extensions_Length * 8;
       end message;
 
-   type Certificate_List_Length is range 0 .. 2**24 - 1 with Size => 24;
+   type Certificate_List_Length is range 0 .. 2 ** 24 - 1 with Size => 24;
    type Certificate_Entries is sequence of Certificate_Entry;
 
    type Certificate is
@@ -256,7 +262,7 @@ package TLS_Handshake is
        ECDSA_SHA1             => 16#0203#)
    with Size => 16, Always_Valid;
 
-   type Signature_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Signature_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Certificate_Verify is
       message
@@ -287,11 +293,11 @@ package TLS_Handshake is
 
    -- Post-Handshake Messages
 
-   type Ticket_Lifetime is mod 2**32;
-   type Ticket_Age_Add is mod 2**32;
+   type Ticket_Lifetime is mod 2 ** 32;
+   type Ticket_Age_Add is mod 2 ** 32;
    type Ticket_Nonce_Length is range 0 .. 255 with Size => 8;
-   type Ticket_Length is range 1 .. 2**16 - 1 with Size => 16;
-   type New_Session_Ticket_Extensions_Length is range 0 .. 2**16 - 2 with Size => 16;
+   type Ticket_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
+   type New_Session_Ticket_Extensions_Length is range 0 .. 2 ** 16 - 2 with Size => 16;
 
    type New_Session_Ticket is
       message
@@ -324,7 +330,7 @@ package TLS_Handshake is
    -- Server Name Indication Extension
 
    type Name_Type is (HOST_NAME => 0) with Size => 8;
-   type Name_Length is range 1 .. 2**16 - 1 with Size => 16;
+   type Name_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
 
    type Server_Name is
       message
@@ -334,7 +340,7 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   type Server_Name_List_Length is range 1 .. 2**16 - 1 with Size => 16;
+   type Server_Name_List_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
    type Server_Names is sequence of Server_Name;
 
    type Server_Name_List is
@@ -394,7 +400,7 @@ package TLS_Handshake is
 
    -- Cookie Extension
 
-   type Cookie_Length is range 1 .. 2**16 - 1 with Size => 16;
+   type Cookie_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
 
    type Cookie is
       message
@@ -410,7 +416,7 @@ package TLS_Handshake is
 
    -- Signature Algorithms Extension
 
-   type Signature_Algorithms_Length is range 2 .. 2**16 - 2 with Size => 16;
+   type Signature_Algorithms_Length is range 2 .. 2 ** 16 - 2 with Size => 16;
    type Signature_Schemes is sequence of Signature_Scheme;
 
    type Signature_Algorithms is
@@ -448,8 +454,8 @@ package TLS_Handshake is
 
    -- Certificate Authorities Extension
 
-   type Certificate_Authorities_Length is range 3 .. 2**16 - 1 with Size => 16;
-   type Distinguished_Name_Length is range 1 .. 2**16 - 1 with Size => 16;
+   type Certificate_Authorities_Length is range 3 .. 2 ** 16 - 1 with Size => 16;
+   type Distinguished_Name_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
 
    type Distinguished_Name is
       message
@@ -474,9 +480,9 @@ package TLS_Handshake is
 
    -- OID Filters Extension
 
-   type Filters_Length is range 0 .. 2**16 - 1 with Size => 16;
-   type OID_Length is range 1 .. 2**8 - 1 with Size => 8;
-   type Values_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Filters_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type OID_Length is range 1 .. 2 ** 8 - 1 with Size => 8;
+   type Values_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Filter is
       message
@@ -509,7 +515,7 @@ package TLS_Handshake is
 
    -- Supported Groups Extension
 
-   type Supported_Groups_Length is range 2 .. 2**16 - 1 with Size => 16;
+   type Supported_Groups_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
 
    type Named_Group is
       (-- Elliptic Curve Groups (ECDHE)
@@ -542,7 +548,7 @@ package TLS_Handshake is
 
    -- Key Share Extension
 
-   type Key_Exchange_Length is range 1 .. 2**16 - 1 with Size => 16;
+   type Key_Exchange_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
 
    type Key_Share_Entry is
       message
@@ -554,7 +560,7 @@ package TLS_Handshake is
 
    type Key_Share_Entries is sequence of Key_Share_Entry;
 
-   type Key_Shares_Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Key_Shares_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Key_Share_CH is
       message
@@ -600,7 +606,7 @@ package TLS_Handshake is
 
    -- Early Data Indication Extension
 
-   type Max_Early_Data_Size is mod 2**32;
+   type Max_Early_Data_Size is mod 2 ** 32;
 
    type Early_Data_Indication is
       message
@@ -618,8 +624,8 @@ package TLS_Handshake is
 
    -- Pre-Shared Key Extension
 
-   type Identity_Length is range 1 .. 2**16 - 1 with Size => 16;
-   type Obfuscated_Ticket_Age is mod 2**32;
+   type Identity_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
+   type Obfuscated_Ticket_Age is mod 2 ** 32;
 
    type PSK_Identity is
       message
@@ -642,8 +648,8 @@ package TLS_Handshake is
 
    type PSK_Binder_Entries is sequence of PSK_Binder_Entry;
 
-   type Identities_Length is range 7 .. 2**16 - 1 with Size => 16;
-   type Binders_Length is range 33 .. 2**16 - 1 with Size => 16;
+   type Identities_Length is range 7 .. 2 ** 16 - 1 with Size => 16;
+   type Binders_Length is range 33 .. 2 ** 16 - 1 with Size => 16;
 
    type Pre_Shared_Key_CH is
       message
@@ -655,7 +661,7 @@ package TLS_Handshake is
             with Size => 8 * Binders_Length;
       end message;
 
-   type Identity_Index is mod 2**16;
+   type Identity_Index is mod 2 ** 16;
 
    type Pre_Shared_Key_SH is
       message
@@ -669,7 +675,7 @@ package TLS_Handshake is
 
    -- Application-Layer Protocol Negotiation Extension
 
-   type Protocol_Name_Length is range 1 .. 2**8 - 1 with Size => 8;
+   type Protocol_Name_Length is range 1 .. 2 ** 8 - 1 with Size => 8;
 
    type Protocol_Name is
       message
@@ -679,7 +685,7 @@ package TLS_Handshake is
       end message;
 
    type Protocol_Names is sequence of Protocol_Name;
-   type Protocol_Name_List_Length is range 2 .. 2**16 - 1 with Size => 16;
+   type Protocol_Name_List_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
 
    type Protocol_Name_List is
       message
