@@ -21,7 +21,7 @@ endif
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_verification test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
+	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	clean clean_proof
@@ -82,10 +82,7 @@ test_python_property_verification:
 	python3 -m pytest -vv -m "verification" -s tests/property
 
 test_python_optimized:
-	python3 -O -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
-
-test_python_verification:
-	python3 -O -m pytest -n$(shell nproc) -vv -m "verification and not hypothesis" tests
+	PYTHONOPTIMIZE=1 python3 -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
 
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
