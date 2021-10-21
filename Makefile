@@ -115,10 +115,10 @@ test_runtime:
 	gprbuild -Ptest --RTS=build/ada-runtime/build/posix/obj -Xtype=unchecked -aP build/aunit
 
 test_installation:
-	rm -rf $(build-dir)/pip
-	python3 setup.py sdist
-	pip3 wheel setuptools wheel -w $(build-dir)/wheels
-	pip3 install RecordFlux --no-deps --no-index --find-links dist/ --find-links $(build-dir)/wheels --target $(build-dir)/pip
+	rm -rf $(build-dir)/venv
+	virtualenv -p python3 $(build-dir)/venv
+	$(build-dir)/venv/bin/pip install .
+	$(build-dir)/venv/bin/rflx --version
 
 prove: prove_tests prove_apps
 
