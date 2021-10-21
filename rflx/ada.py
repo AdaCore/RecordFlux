@@ -971,8 +971,8 @@ class DefaultInitialCondition(Aspect):
 
 
 class SparkMode(Aspect):
-    def __init__(self, arg: bool = True) -> None:
-        self.arg = arg
+    def __init__(self, off: bool = False) -> None:
+        self.off = off
 
     @property
     def mark(self) -> str:
@@ -980,7 +980,7 @@ class SparkMode(Aspect):
 
     @property
     def definition(self) -> str:
-        return "" if self.arg else "Off"
+        return "" if not self.off else "Off"
 
 
 class Ghost(Aspect):
