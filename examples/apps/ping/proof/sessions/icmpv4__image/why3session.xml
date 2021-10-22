@@ -48,11 +48,11 @@
   <proof prover="0"><result status="valid" steps="3348"/></proof>
   </goal>
   <goal name="def&#39;vc.11" proved="true">
-  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="0"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="3365"/></proof>
   </goal>
   <goal name="def&#39;vc.12" proved="true">
-  <proof prover="0" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="0"><result status="timeout"/></proof>
   <proof prover="1"><result status="valid" steps="3381"/></proof>
   </goal>
   <goal name="def&#39;vc.13" proved="true">

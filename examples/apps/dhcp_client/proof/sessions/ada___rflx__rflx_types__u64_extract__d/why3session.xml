@@ -41,7 +41,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.9" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="12683"/></proof>
   </goal>
   <goal name="def&#39;vc.10" proved="true">
@@ -49,7 +49,7 @@
   </transf>
   </goal>
   <goal name="def&#39;vc.11" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="26405"/></proof>
   </goal>
   <goal name="def&#39;vc.12" proved="true">
@@ -63,7 +63,7 @@
   <proof prover="0"><result status="valid" steps="5325"/></proof>
   </goal>
   <goal name="def&#39;vc.15" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="969"/></proof>
   </goal>
   <goal name="def&#39;vc.16" proved="true">
@@ -73,11 +73,11 @@
   <proof prover="0"><result status="valid" steps="58371"/></proof>
   </goal>
   <goal name="def&#39;vc.18" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="116"/></proof>
   </goal>
   <goal name="def&#39;vc.19" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="116"/></proof>
   </goal>
   <goal name="def&#39;vc.20" proved="true">
@@ -87,14 +87,14 @@
   <proof prover="0"><result status="valid" steps="3465"/></proof>
   </goal>
   <goal name="def&#39;vc.22" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="873"/></proof>
   </goal>
   <goal name="def&#39;vc.23" proved="true">
   <proof prover="0"><result status="valid" steps="34716"/></proof>
   </goal>
   <goal name="def&#39;vc.24" proved="true">
-  <proof prover="0" timelimit="90" obsolete="true"><result status="outofmemory"/></proof>
+  <proof prover="0"><result status="outofmemory"/></proof>
   <proof prover="1"><result status="valid" steps="1097"/></proof>
   </goal>
  </transf>

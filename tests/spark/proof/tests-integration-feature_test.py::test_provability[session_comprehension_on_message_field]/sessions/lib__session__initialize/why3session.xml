@@ -39,7 +39,6 @@
   <proof prover="0"><result status="valid" steps="156396"/></proof>
   </goal>
   <goal name="def&#39;vc.8" proved="true">
-  <proof prover="0" obsolete="true"><result status="valid" steps="23371"/></proof>
   <transf name="trivial_true" proved="true" >
   </transf>
   </goal>
@@ -79,13 +78,6 @@
   </goal>
   <goal name="def&#39;vc.19" proved="true">
   <proof prover="0"><result status="valid" steps="167702"/></proof>
-  </goal>
-  <goal name="def&#39;vc.3">
-  <proof prover="0"><result status="valid" steps="19701"/></proof>
-  </goal>
-  <goal name="def&#39;vc.5">
-  <transf name="trivial_true" proved="true" >
-  </transf>
   </goal>
  </transf>
  </goal>

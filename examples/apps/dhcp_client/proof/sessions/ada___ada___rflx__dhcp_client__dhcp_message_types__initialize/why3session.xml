@@ -173,32 +173,6 @@
   <goal name="def&#39;vc.48" proved="true">
   <proof prover="0"><result status="valid" steps="68907"/></proof>
   </goal>
-  <goal name="def&#39;vc.32">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8601"/></proof>
-  </goal>
-  <goal name="def&#39;vc.30">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8601"/></proof>
-  </goal>
-  <goal name="def&#39;vc.22">
-  <transf name="trivial_true" proved="true" >
-  </transf>
-  </goal>
-  <goal name="def&#39;vc.25">
-  <transf name="trivial_true" proved="true" >
-  </transf>
-  </goal>
-  <goal name="def&#39;vc.37">
-  <proof prover="0" timelimit="90"><result status="valid" steps="5902"/></proof>
-  </goal>
-  <goal name="def&#39;vc.3">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8142"/></proof>
-  </goal>
-  <goal name="def&#39;vc.1">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8142"/></proof>
-  </goal>
-  <goal name="def&#39;vc.29">
-  <proof prover="0" timelimit="90"><result status="valid" steps="8472"/></proof>
-  </goal>
  </transf>
  </goal>
 </theory>
