@@ -81,22 +81,25 @@ def test_parsability_and_model_creation(feature: str) -> None:
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
-def test_equality(feature: str) -> None:
+def test_equality(feature: str, tmp_path: Path) -> None:
     generated_dir = Path(__file__).parent / feature / "generated"
+
     if not generated_dir.is_dir():
         pytest.skip()
+
     model = create_model(feature)
-    expected_files = list(generated_dir.glob("rflx-test*"))
     generator = Generator(model, "RFLX", reproducible=True, ignore_unsupported_checksum=True)
-    result = {}
-    for unit in generator._units.values():  # pylint: disable=protected-access
-        if unit.name.startswith("rflx-test"):
-            result[f"{unit.name}.ads"] = unit.ads
-            if unit.adb:
-                result[f"{unit.name}.adb"] = unit.adb
-    assert set(result) == set(f.name for f in expected_files), "unexpected or missing units"
-    for f in expected_files:
-        assert result[f.name] == f.read_text(), f"mismatch in {f}"
+    generator.write_top_level_package(tmp_path)
+    generator.write_library_files(tmp_path)
+    generator.write_units(tmp_path)
+    generated_files = list(tmp_path.glob("*"))
+    expected_files = list(generated_dir.glob("*"))
+
+    assert [f.name for f in generated_files] == [
+        f.name for f in expected_files
+    ], "unexpected or missing units"
+    for generated, expected in zip(generated_files, expected_files):
+        assert generated.read_text() == expected.read_text(), f"mismatch in {generated.name}"
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
