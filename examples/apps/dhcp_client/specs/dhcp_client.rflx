@@ -79,7 +79,9 @@ package DHCP_Client is
          Offer_Message_Type : DHCP::DHCP_Message_Type;
       begin
          Channel'Read (Offer);
-         Offer_Message_Types := [for O in Offer.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
+         Offer_Message_Types := [for O in Offer.Options
+                                 if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option
+                                 => O.DHCP_Message_Type];
          Offer_Message_Type := Offer_Message_Types'Head;
       transition
          goto Send_Request
@@ -97,13 +99,19 @@ package DHCP_Client is
          Offer_Yiaddr := Offer.Yiaddr;
          Offer_Siaddr := Offer.Siaddr;
          Options'Append (
-            DHCP::Option'(Code => DHCP::DHCP_Message_Type_Option, Len => DHCP::DHCP_Message_Type'Size / 8, DHCP_Message_Type => DHCP::DHCPREQUEST)
+            DHCP::Option'(Code => DHCP::DHCP_Message_Type_Option,
+                          Len => DHCP::DHCP_Message_Type'Size / 8,
+                          DHCP_Message_Type => DHCP::DHCPREQUEST)
          );
          Options'Append (
-            DHCP::Option'(Code => DHCP::Requested_IP_Address_Option, Len => IPv4::Address'Size / 8, Requested_IP_Address => Offer_Yiaddr)
+            DHCP::Option'(Code => DHCP::Requested_IP_Address_Option,
+                          Len => IPv4::Address'Size / 8,
+                          Requested_IP_Address => Offer_Yiaddr)
          );
          Options'Append (
-            DHCP::Option'(Code => DHCP::Server_Identifier_Option, Len => IPv4::Address'Size / 8, Server_Identifier => Offer_Siaddr)
+            DHCP::Option'(Code => DHCP::Server_Identifier_Option,
+                          Len => IPv4::Address'Size / 8,
+                          Server_Identifier => Offer_Siaddr)
          );
          Request := DHCP::Message'(
             Op => DHCP::BOOTREQUEST,
@@ -140,7 +148,9 @@ package DHCP_Client is
          Ack_Message_Type : DHCP::DHCP_Message_Type;
       begin
          Channel'Read (Ack);
-         Ack_Message_Types := [for O in Ack.Options if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type];
+         Ack_Message_Types := [for O in Ack.Options
+                               if O'Valid and O.Code = DHCP::DHCP_Message_Type_Option
+                               => O.DHCP_Message_Type];
          Ack_Message_Type := Ack_Message_Types'Head;
       transition
          goto Success

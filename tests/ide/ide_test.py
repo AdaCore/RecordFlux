@@ -136,9 +136,9 @@ def test_multiple_errors() -> None:
             f'"F2" not multiple of 8 bit (F1 -> F2)',
             f'{path}:254:9: model: error: negative start for field "Final" (F1 -> F2 -> Final)',
             f"{path}:257:18: model: info: unsatisfied \"F2'Last ="
-            " (F1'Last + 1 + (F1 - 2**33)) - 1\"",
+            " (F1'Last + 1 + (F1 - 2 ** 33)) - 1\"",
             f"{path}:256:10: model: info: unsatisfied \"F1'Last = (Message'First + 32) - 1\"",
-            f'{path}:199:9: model: info: unsatisfied "F1 < 2**32"',
+            f'{path}:199:9: model: info: unsatisfied "F1 < 2 ** 32"',
             f"{path}:260:10: model: info: unsatisfied \"F2'Last + 1 >= Message'First\"",
             f'{path}:266:10: model: error: unconstrained field "F1" without size aspect',
             f'{path}:271:9: model: error: field "F3" not congruent with overlaid field "F1"',

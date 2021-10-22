@@ -1,6 +1,6 @@
 package P1 is
 
-   type Kind is mod 2**16;
+   type Kind is mod 2 ** 16;
 
    type Frame is
       message

@@ -221,18 +221,14 @@ message_re = re.compile(
     r"(?P<filename>[^:]+):"
     r"(?P<line>\d+):"
     r"(?P<column>\d+): "
-    r"(?P<subsystem>core|parser|model|cli|internal|graph): "
+    r"(?P<subsystem>\w+): "
     r"(?P<severity>info|warning|error): "
     r"(?P<message>.*)"
     r"$"
 )
 
 generic_message_re = re.compile(
-    r"^"
-    r"(?P<subsystem>core|parser|model|cli|internal|graph): "
-    r"(?P<severity>info|warning|error): "
-    r"(?P<message>.*)"
-    r"$"
+    r"^(?P<subsystem>\w+): (?P<severity>info|warning|error): (?P<message>.*)$"
 )
 
 
