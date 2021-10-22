@@ -7,6 +7,7 @@ import pytest
 
 import tools
 from tools.iana_to_rflx import (
+    EnumLiteral,
     IANAError,
     _get_name_tag,
     _normalize_hex_value,
@@ -130,3 +131,10 @@ def test_cli(tmp_path: Path) -> None:
         )
         == 'cannot normalize hex value "0xXX,0xZZ"'
     )
+
+
+def test_enum_literal() -> None:
+    assert str(EnumLiteral("X", "42", 8)) == "       X => 42"
+    assert str(EnumLiteral(f"{'X' * 99}_Y", "42", 8)) == f"       {'X' * 99}_42 => 42"
+    assert str(EnumLiteral(f"{'X' * 100}_Y", "42", 8)) == f"       {'X' * 100}_42 => 42"
+    assert str(EnumLiteral(f"{'X' * 101}_Y", "42", 8)) == f"       {'X' * 100}_42 => 42"

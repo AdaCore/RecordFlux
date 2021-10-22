@@ -214,7 +214,9 @@ class EnumLiteral:
         name = (
             self.name
             if len(self.name) <= 100
-            else f"{self.name[:100]}_{self.value.replace('#', '_')}"
+            else self.name[:100]
+            + ("_" if self.name[99] != "_" else "")
+            + self.value.replace("#", "_")
         )
         str_repr += f"{'':<7}{f'{name} => {self.value}'}"
         return str_repr
