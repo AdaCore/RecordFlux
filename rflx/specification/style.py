@@ -39,13 +39,11 @@ def check(spec_file: Path) -> RecordFluxError:
     lines = specification.split("\n")
 
     for i, l in enumerate(lines, start=1):
-        strings = [range(m.start(), m.end()) for m in re.finditer(r'"[^"]*"', l.split("--")[0])]
-
         blank_lines = _check_blank_lines(error, l, i, spec_file, blank_lines, len(lines))
-        _check_characters(error, l, i, spec_file, strings)
+        _check_characters(error, l, i, spec_file)
         _check_indentation(error, l, i, spec_file)
         _check_line_length(error, l, i, spec_file)
-        _check_token_spacing(error, l, i, spec_file, strings)
+        _check_token_spacing(error, l, i, spec_file)
         _check_trailing_spaces(error, l, i, spec_file)
 
     return error
@@ -81,9 +79,7 @@ def _check_blank_lines(
     return blank_lines
 
 
-def _check_characters(
-    error: RecordFluxError, line: str, row: int, spec_file: Path, strings: list[range]
-) -> None:
+def _check_characters(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
     for j, c in enumerate(line, start=1):
         if c == INCORRECT_LINE_TERMINATORS:
             s = repr(c).replace("'", '"')
@@ -91,10 +87,6 @@ def _check_characters(
         if c in ILLEGAL_WHITESPACE_CHARACTERS:
             s = repr(c).replace("'", '"')
             _append(error, f"illegal whitespace character {s}", row, j, spec_file)
-
-    for j, c in enumerate(line.split("--")[0], start=1):
-        if any(j in r for r in strings):
-            continue
 
 
 def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
@@ -118,9 +110,9 @@ def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: P
             )
 
 
-def _check_token_spacing(
-    error: RecordFluxError, line: str, row: int, spec_file: Path, strings: list[range]
-) -> None:
+def _check_token_spacing(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
+    strings = [range(m.start(), m.end()) for m in re.finditer(r'"[^"]*"', line.split("--")[0])]
+
     for match in re.finditer(
         r"--+|/?=(?!>)|<=?|>=?|=>|:=|\+|[(]+\-\d+[)]+|\-|/|\*\*?|::?|'|;|,",
         line,
