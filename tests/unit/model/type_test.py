@@ -335,6 +335,44 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
     )
 
 
+def test_enumeration_str() -> None:
+    assert (
+        str(
+            Enumeration(
+                "P::T",
+                [("A", Number(1))],
+                Pow(Number(2), Number(5)),
+                always_valid=False,
+            )
+        )
+        == "type T is (A => 1) with Size => 2 ** 5"
+    )
+    assert str(
+        Enumeration(
+            "P::T",
+            [
+                ("A", Number(2 ** 2)),
+                ("B", Number(2 ** 3)),
+                ("C", Number(2 ** 4)),
+                ("D", Number(2 ** 5)),
+                ("E", Number(2 ** 6)),
+                ("F", Number(2 ** 7)),
+            ],
+            Pow(Number(2), Number(8)),
+            always_valid=True,
+        )
+    ) == (
+        "type T is\n"
+        "   (A => 4,\n"
+        "    B => 8,\n"
+        "    C => 16,\n"
+        "    D => 32,\n"
+        "    E => 64,\n"
+        "    F => 128)\n"
+        "with Size => 2 ** 8, Always_Valid => True"
+    )
+
+
 def test_sequence_dependencies() -> None:
     assert models.SEQUENCE_MODULAR_VECTOR.dependencies == [
         models.SEQUENCE_MODULAR_VECTOR,

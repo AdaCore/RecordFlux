@@ -4,7 +4,7 @@ from pathlib import Path
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
-from rflx.common import verbose_repr
+from rflx.common import indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
@@ -462,7 +462,14 @@ class Enumeration(Scalar):
     def __str__(self) -> str:
         literals = ", ".join(f"{l} => {v}" for l, v in self.literals.items())
         always_valid = f", Always_Valid => {self.always_valid}" if self.always_valid else ""
-        return f"type {self.name} is ({literals}) with Size => {self.size_expr}{always_valid}"
+        aspects = f"with Size => {self.size_expr}{always_valid}"
+        result = f"type {self.name} is ({literals}) {aspects}"
+
+        if len(result) > 100:
+            literals = ",\n".join(f"{l} => {v}" for l, v in self.literals.items())
+            result = f"type {self.name} is\n   ({indent_next(literals, 4)})\n{aspects}"
+
+        return result
 
     @property
     def type_(self) -> rty.Type:
