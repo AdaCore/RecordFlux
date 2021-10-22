@@ -71,9 +71,9 @@ is
       Message_Ctx : Universal.Message.Context;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_1;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_2 := null;
+      Test.Session_Allocator.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       if Message_Ctx.Last - Message_Ctx.First + 1 >= RFLX_Types.Bit_Length (32) then
@@ -89,7 +89,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -107,7 +107,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -118,7 +118,7 @@ is
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+      Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
       pragma Warnings (On, "unused assignment");
    end Reply;
 

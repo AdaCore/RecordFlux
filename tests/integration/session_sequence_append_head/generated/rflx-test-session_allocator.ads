@@ -28,21 +28,12 @@ is
 
    Slot_Ptr_5 : Slot_Ptr_Type;
 
-   Slot_Ptr_6 : Slot_Ptr_Type;
-
-   Slot_Ptr_7 : Slot_Ptr_Type;
-
-   Slot_Ptr_8 : Slot_Ptr_Type;
-
    function Initialized return Boolean is
      (Slot_Ptr_1 /= null
       and Slot_Ptr_2 /= null
       and Slot_Ptr_3 /= null
       and Slot_Ptr_4 /= null
-      and Slot_Ptr_5 /= null
-      and Slot_Ptr_6 /= null
-      and Slot_Ptr_7 /= null
-      and Slot_Ptr_8 /= null);
+      and Slot_Ptr_5 /= null);
 
    procedure Initialize with
      Post =>
@@ -53,9 +44,6 @@ is
       and Slot_Ptr_2 = null
       and Slot_Ptr_3 /= null
       and Slot_Ptr_4 /= null
-      and Slot_Ptr_5 /= null
-      and Slot_Ptr_6 /= null
-      and Slot_Ptr_7 /= null
-      and Slot_Ptr_8 /= null);
+      and Slot_Ptr_5 /= null);
 
 end RFLX.Test.Session_Allocator;

@@ -44,7 +44,7 @@ from rflx.model import Session, declaration as decl, statement as stmt
 from . import const
 
 
-class AllocatorGenerator:
+class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def __init__(self, session: Session, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
@@ -52,6 +52,7 @@ class AllocatorGenerator:
         self._body_context: List[ContextItem] = []
         self._allocation_map: Dict[Location, int] = {}
         self._unit_part = UnitPart(specification=[Pragma("Elaborate_Body")])
+        self._all_slots: Set[int] = set()
         self._global_slots: Set[int] = set()
         self._allocate_slots()
         self._create()
@@ -137,7 +138,7 @@ class AllocatorGenerator:
                     )
                 ),
             )
-            for i in self._allocation_map.values()
+            for i in self._all_slots
         ]
 
         pointer_decls: List[Declaration] = [
@@ -145,7 +146,7 @@ class AllocatorGenerator:
                 [self._slot_id(i)],
                 self._ptr_type(),
             )
-            for i in self._allocation_map.values()
+            for i in self._all_slots
         ]
         self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
         unit = UnitPart(specification=pointer_decls, body=array_decls)
@@ -162,7 +163,7 @@ class AllocatorGenerator:
                                 Variable(self._slot_id(i)),
                                 Variable("null"),
                             )
-                            for i in self._allocation_map.values()
+                            for i in self._all_slots
                         ]
                     ),
                 )
@@ -180,7 +181,7 @@ class AllocatorGenerator:
                                 Variable(self._slot_id(i)),
                                 Variable("null"),
                             )
-                            for i in self._allocation_map.values()
+                            for i in self._all_slots
                             if i in self._global_slots
                         ],
                         *[
@@ -188,7 +189,7 @@ class AllocatorGenerator:
                                 Variable(self._slot_id(i)),
                                 Variable("null"),
                             )
-                            for i in self._allocation_map.values()
+                            for i in self._all_slots
                             if i not in self._global_slots
                         ],
                     ),
@@ -199,7 +200,7 @@ class AllocatorGenerator:
     def _create_init_proc(self) -> UnitPart:
         assignments = [
             Assignment(self._slot_id(i), UnrestrictedAccess(Variable(ID(f"Slot_{i}"))))
-            for i in self._allocation_map.values()
+            for i in self._all_slots
         ]
         proc = ProcedureSpecification(ID("Initialize"))
         return UnitPart(
@@ -216,11 +217,7 @@ class AllocatorGenerator:
         return isinstance(type_, (rty.Message, rty.Sequence))
 
     def _allocate_slots(self) -> None:
-        """
-        Create memory slots for each construct in the session that requires memory.
-
-        This is currently done naively, one slot for each such program point.
-        """
+        """Create memory slots for each construct in the session that requires memory."""
         count: int = 0
 
         def insert(loc: Optional[Location]) -> None:
@@ -228,12 +225,17 @@ class AllocatorGenerator:
             count += 1
             assert loc is not None
             self._allocation_map[loc] = count
+            self._all_slots.add(count)
 
         for d in self._session.declarations.values():
             if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
                 insert(d.location)
                 self._global_slots.add(count)
+
+        global_count = count
+
         for s in self._session.states:
+            count = global_count
             for d in s.declarations.values():
                 if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
                     insert(d.location)
