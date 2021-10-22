@@ -98,8 +98,8 @@
   </goal>
   <goal name="def&#39;vc.25" proved="true">
   <proof prover="0"><result status="valid" steps="148025"/></proof>
-  <proof prover="1" obsolete="true"><result status="timeout"/></proof>
-  <proof prover="2" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="1"><result status="timeout"/></proof>
+  <proof prover="2"><result status="timeout"/></proof>
   </goal>
   <goal name="def&#39;vc.26" proved="true">
   <proof prover="1"><result status="valid" steps="63809"/></proof>
