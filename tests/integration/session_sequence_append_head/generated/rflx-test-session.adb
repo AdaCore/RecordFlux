@@ -239,9 +239,9 @@ is
       RFLX_Exception : Boolean := False;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Message_Buffer := Test.Session_Allocator.Slot_Ptr_6;
+      Message_Buffer := Test.Session_Allocator.Slot_Ptr_3;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_6 := null;
+      Test.Session_Allocator.Slot_Ptr_3 := null;
       pragma Warnings (On, "unused assignment");
       TLV.Message.Initialize (Message_Ctx, Message_Buffer);
       if TLV.Messages.Valid (Messages_Ctx) then
@@ -249,9 +249,9 @@ is
             RFLX_Copy_Messages_Ctx : TLV.Messages.Context;
             RFLX_Copy_Messages_Buffer : RFLX_Types.Bytes_Ptr;
          begin
-            RFLX_Copy_Messages_Buffer := Test.Session_Allocator.Slot_Ptr_7;
+            RFLX_Copy_Messages_Buffer := Test.Session_Allocator.Slot_Ptr_4;
             pragma Warnings (Off, "unused assignment");
-            Test.Session_Allocator.Slot_Ptr_7 := null;
+            Test.Session_Allocator.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
             if TLV.Messages.Byte_Size (Messages_Ctx) <= RFLX_Copy_Messages_Buffer'Length then
                TLV.Messages.Copy (Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Messages_Ctx) + 1) - 2));
@@ -296,7 +296,7 @@ is
             pragma Warnings (On, """RFLX_Copy_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""RFLX_Copy_Messages_Ctx""");
             pragma Warnings (Off, "unused assignment");
-            Test.Session_Allocator.Slot_Ptr_7 := RFLX_Copy_Messages_Buffer;
+            Test.Session_Allocator.Slot_Ptr_4 := RFLX_Copy_Messages_Buffer;
             pragma Warnings (On, "unused assignment");
          end;
       else
@@ -307,7 +307,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -319,7 +319,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -331,7 +331,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -349,7 +349,7 @@ is
          pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+         Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -360,7 +360,7 @@ is
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_6 := Message_Buffer;
+      Test.Session_Allocator.Slot_Ptr_3 := Message_Buffer;
       pragma Warnings (On, "unused assignment");
    end Reply;
 

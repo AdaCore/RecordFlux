@@ -15,12 +15,6 @@ is
 
    Slot_5 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
 
-   Slot_6 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
-
-   Slot_7 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
-
-   Slot_8 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
-
    procedure Initialize with
      SPARK_Mode =>
        Off
@@ -31,9 +25,6 @@ is
       Slot_Ptr_3 := Slot_3'Unrestricted_Access;
       Slot_Ptr_4 := Slot_4'Unrestricted_Access;
       Slot_Ptr_5 := Slot_5'Unrestricted_Access;
-      Slot_Ptr_6 := Slot_6'Unrestricted_Access;
-      Slot_Ptr_7 := Slot_7'Unrestricted_Access;
-      Slot_Ptr_8 := Slot_8'Unrestricted_Access;
    end Initialize;
 
 end RFLX.Test.Session_Allocator;
