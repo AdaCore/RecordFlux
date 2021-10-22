@@ -36,12 +36,12 @@ package ICMP is
    with Size => 8;
 
    type Code_Zero is range 0 .. 0 with Size => 8;
-   type Checksum is mod 2**16;
-   type Identifier is mod 2**16;
-   type Sequence_Number is mod 2**16;
-   type Pointer is mod 2**8;
-   type Timestamp is mod 2**32;
-   type Gateway_Internet_Address is mod 2**32;
+   type Checksum is mod 2 ** 16;
+   type Identifier is mod 2 ** 16;
+   type Sequence_Number is mod 2 ** 16;
+   type Pointer is mod 2 ** 8;
+   type Timestamp is mod 2 ** 32;
+   type Gateway_Internet_Address is mod 2 ** 32;
    type Unused_32 is range 0 .. 0 with Size => 32;
    type Unused_24 is range 0 .. 0 with Size => 24;
 

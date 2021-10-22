@@ -3,34 +3,34 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable;  --  §S-P-C-RW
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
    session Session with
       Initial => Start,
       Final => Terminated
    is
-      Message : Universal::Message;  --  §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
       begin
-         Channel'Read (Message);  --  §S-S-A-RD-V
+         Channel'Read (Message); -- §S-S-A-RD-V
       transition
          goto Reply
-            if Message'Valid = True  --  §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
-         goto Terminated  --  §S-S-T-N
+            if Message'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
+         goto Terminated -- §S-S-T-N
       end Start;
 
       state Reply is
       begin
-         Channel'Write (Message);  --  §S-S-A-WR-V
+         Channel'Write (Message); -- §S-S-A-WR-V
       transition
          goto Start
-            if Channel'Has_Data  --  §S-S-T-HDAT
-         goto Terminated  --  §S-S-T-N
+            if Channel'Has_Data -- §S-S-T-HDAT
+         goto Terminated -- §S-S-T-N
       exception
-         goto Terminated  --  §S-S-E
+         goto Terminated -- §S-S-E
       end Reply;
 
-      state Terminated is null state;  --  §S-S-N
+      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

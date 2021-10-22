@@ -165,32 +165,30 @@ def test_icmp_parse_binary(icmp_message_value: MessageValue) -> None:
 
 def test_imported_literals(tmp_path: Path) -> None:
     (tmp_path / "test.rflx").write_text(
-        """
-            with Foo;
+        """--
+with Foo;
 
-            package Test is
+package Test is
 
-               type T is (E1 => 1, E2 => 2) with Size => 8;
+   type T is (E1 => 1, E2 => 2) with Size => 8;
 
-               type Message is
-                  message
-                     A : Foo::T
-                        then null
-                           if A = Foo::E1;
-                  end message;
+   type Message is
+      message
+         A : Foo::T
+            then null
+               if A = Foo::E1;
+      end message;
 
-            end Test;
-            """
+end Test;"""
     )
 
     (tmp_path / "foo.rflx").write_text(
-        """
-            package Foo is
+        """--
+package Foo is
 
-               type T is (E1 => 11, E2 => 12) with Size => 8;
+   type T is (E1 => 11, E2 => 12) with Size => 8;
 
-            end Foo;
-            """
+end Foo;"""
     )
 
     pyrflx_ = PyRFLX.from_specs([str(tmp_path / "test.rflx")])

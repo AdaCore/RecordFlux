@@ -1,6 +1,6 @@
 package No_Conditionals is
 
-   type Tag is mod 2**16;
+   type Tag is mod 2 ** 16;
 
    type Message is
       message

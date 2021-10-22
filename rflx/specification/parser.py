@@ -15,6 +15,7 @@ from rflx.identifier import ID, StrID
 from rflx.model import declaration as decl, statement as stmt
 from rflx.specification.const import RESERVED_WORDS
 
+from . import style
 from .cache import Cache
 
 log = logging.getLogger(__name__)
@@ -1541,6 +1542,7 @@ class Parser:
 
         for f in specfiles:
             error.extend(self.__parse_specfile(f))
+            error.extend(style.check(f))
         self.__sort_specs_topologically()
         error.propagate()
 
