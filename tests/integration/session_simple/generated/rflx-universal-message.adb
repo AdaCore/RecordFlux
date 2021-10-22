@@ -174,63 +174,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and (case Fld is
-               when F_Message_Type =>
-                  Invalid (Ctx, F_Message_Type)
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Data)
-                  and Invalid (Ctx, F_Option_Types)
-                  and Invalid (Ctx, F_Options)
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Length =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Data)
-                  and Invalid (Ctx, F_Option_Types)
-                  and Invalid (Ctx, F_Options)
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Data =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Invalid (Ctx, F_Data)
-                  and Invalid (Ctx, F_Option_Types)
-                  and Invalid (Ctx, F_Options)
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Option_Types =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Data) = Ctx.Cursors (F_Data)'Old
-                  and Invalid (Ctx, F_Option_Types)
-                  and Invalid (Ctx, F_Options)
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Options =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Data) = Ctx.Cursors (F_Data)'Old
-                  and Ctx.Cursors (F_Option_Types) = Ctx.Cursors (F_Option_Types)'Old
-                  and Invalid (Ctx, F_Options)
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Value =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Data) = Ctx.Cursors (F_Data)'Old
-                  and Ctx.Cursors (F_Option_Types) = Ctx.Cursors (F_Option_Types)'Old
-                  and Ctx.Cursors (F_Options) = Ctx.Cursors (F_Options)'Old
-                  and Invalid (Ctx, F_Value)
-                  and Invalid (Ctx, F_Values),
-               when F_Values =>
-                  Ctx.Cursors (F_Message_Type) = Ctx.Cursors (F_Message_Type)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Ctx.Cursors (F_Data) = Ctx.Cursors (F_Data)'Old
-                  and Ctx.Cursors (F_Option_Types) = Ctx.Cursors (F_Option_Types)'Old
-                  and Ctx.Cursors (F_Options) = Ctx.Cursors (F_Options)'Old
-                  and Ctx.Cursors (F_Value) = Ctx.Cursors (F_Value)'Old
-                  and Invalid (Ctx, F_Values))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;

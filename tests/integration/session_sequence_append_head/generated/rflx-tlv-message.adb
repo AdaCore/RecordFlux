@@ -136,19 +136,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and (case Fld is
-               when F_Tag =>
-                  Invalid (Ctx, F_Tag)
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Value),
-               when F_Length =>
-                  Ctx.Cursors (F_Tag) = Ctx.Cursors (F_Tag)'Old
-                  and Invalid (Ctx, F_Length)
-                  and Invalid (Ctx, F_Value),
-               when F_Value =>
-                  Ctx.Cursors (F_Tag) = Ctx.Cursors (F_Tag)'Old
-                  and Ctx.Cursors (F_Length) = Ctx.Cursors (F_Length)'Old
-                  and Invalid (Ctx, F_Value))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
