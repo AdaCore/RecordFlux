@@ -1,15 +1,15 @@
 package Test is
 
-   type Length is range 1 .. 2**14 - 1 with Size => 16;
+   type Length is range 1 .. 2 ** 14 - 1 with Size => 16;
 
    type Message (Length : Length; Extended : Boolean) is
       message
          Data : Opaque
             with Size => Length * 8
             then Extension
-                if Extended = True
+               if Extended = True
             then null
-                if Extended = False;
+               if Extended = False;
          Extension : Opaque
             with Size => Length * 8;
       end message;

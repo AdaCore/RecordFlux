@@ -217,16 +217,6 @@
   <goal name="def&#39;vc.62" proved="true">
   <proof prover="0"><result status="valid" steps="145273"/></proof>
   </goal>
-  <goal name="def&#39;vc.39">
-  <transf name="trivial_true" proved="true" >
-  </transf>
-  </goal>
-  <goal name="def&#39;vc.63">
-  <proof prover="0"><result status="valid" steps="114174"/></proof>
-  </goal>
-  <goal name="def&#39;vc.65">
-  <proof prover="0"><result status="valid" steps="114133"/></proof>
-  </goal>
  </transf>
  </goal>
 </theory>

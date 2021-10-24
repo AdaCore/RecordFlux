@@ -288,7 +288,7 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
 
 
 def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
     monkeypatch.setattr(
         validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_parser_error()
     )
@@ -310,7 +310,7 @@ def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path)
 
 
 def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
     monkeypatch.setattr(
         validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_validation_error()
     )
@@ -332,7 +332,7 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
 def test_main_validate_fatal_error(
     monkeypatch: MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
 ) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
     monkeypatch.setattr(
         validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_error()
     )

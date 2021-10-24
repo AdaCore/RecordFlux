@@ -25,13 +25,13 @@ package RFLX_Invalid is
    type A2 is sequence of Undef;
 
    --  error: Modular type exceeds limit
-   type S is mod 2**128;
+   type S is mod 2 ** 128;
 
    --  error: Modular type is not base 2
    type T is mod 1023;
 
    --  error: Modulus contains variable
-   type Mod3 is mod 2**Value;
+   type Mod3 is mod 2 ** Value;
 
    --  error: Duplicate type
    type R is (R_E1, R_E2) with Size => 8;
@@ -82,7 +82,7 @@ package RFLX_Invalid is
       end message;
 
    -- error: unsupported element type size
-   type E6 is mod 2**4;
+   type E6 is mod 2 ** 4;
    type A3 is sequence of E6;
 
    type SDU1 is
@@ -196,7 +196,7 @@ package RFLX_Invalid is
                if Data = [1, 7, 1000];
       end message;
 
-   type Modular_32 is mod 2**32;
+   type Modular_32 is mod 2 ** 32;
 
    -- error: conflicting condition
    type M8 is
@@ -256,7 +256,7 @@ package RFLX_Invalid is
          F1 : Modular_32
             then F2
                -- error: negative size
-               with Size => F1 - 2**33;
+               with Size => F1 - 2 ** 33;
          F2 : Opaque;
       end message;
 
@@ -266,8 +266,8 @@ package RFLX_Invalid is
          F1 : Opaque;
       end message;
 
-   type U8 is mod 2**8;
-   type U16 is mod 2**16;
+   type U8 is mod 2 ** 8;
+   type U16 is mod 2 ** 16;
    type M16 is
       message
          F1 : U8;

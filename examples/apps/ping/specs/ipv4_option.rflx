@@ -1,8 +1,8 @@
 package IPv4_Option is
 
    type Option_Class is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
-   type Option_Number is mod 2**5;
-   type Option_Length is range 2 .. 2**8 - 1 with Size => 8;
+   type Option_Number is mod 2 ** 5;
+   type Option_Length is range 2 .. 2 ** 8 - 1 with Size => 8;
 
    type Option is
       message

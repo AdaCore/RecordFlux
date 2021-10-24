@@ -4,40 +4,45 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable;  --  §S-P-C-RW
-      with function Get_Message_Type return Universal::Option_Type;  --  §S-P-F-R-S
-      with function Create_Message (Message_Type : Universal::Option_Type; Data : Opaque) return Fixed_Size::Simple_Message;  --  §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-M
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      -- §S-P-F-R-S
+      with function Get_Message_Type return Universal::Option_Type;
+      -- §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-M
+      with function Create_Message
+         (Message_Type : Universal::Option_Type;
+          Data : Opaque)
+      return Fixed_Size::Simple_Message;
    session Session with
       Initial => Start,
       Final => Terminated
    is
-      Message : Universal::Message;  --  §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
       begin
-         Channel'Read (Message);  --  §S-S-A-RD-V
+         Channel'Read (Message); -- §S-S-A-RD-V
       transition
          goto Reply
-            if Message'Valid  --  §S-S-T-VAT, §S-E-AT-V-V
-               and Message.Message_Type = Universal::MT_Data  --  §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and Message.Length = 3  --  §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto Terminated  --  §S-S-T-N
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+         goto Terminated -- §S-S-T-N
       end Start;
 
       state Reply is
-         Message_Type : Universal::Option_Type;  --  §S-S-D-V-T-SC, §S-S-D-V-E-N
-         Fixed_Size_Message : Fixed_Size::Simple_Message;  --  §S-S-D-V-T-M, §S-S-D-V-E-N
+         Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Fixed_Size_Message : Fixed_Size::Simple_Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
       begin
-         Message_Type := Get_Message_Type;  --  §S-S-A-A-CL, §S-E-CL-N
-         Fixed_Size_Message := Create_Message (Message_Type, Message.Data);  --  §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
-         Channel'Write (Fixed_Size_Message);  --  §S-S-A-WR-V
+         Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
+         Fixed_Size_Message := Create_Message (Message_Type, Message.Data); -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
+         Channel'Write (Fixed_Size_Message); -- §S-S-A-WR-V
       transition
-         goto Terminated  --  §S-S-T-N
+         goto Terminated -- §S-S-T-N
       exception
-         goto Terminated  --  §S-S-E
+         goto Terminated -- §S-S-E
       end Reply;
 
-      state Terminated is null state;  --  §S-S-N
+      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

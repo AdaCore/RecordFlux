@@ -25,8 +25,11 @@ class Validator:
         checksum_module: str = None,
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
+        split_disjunctions: bool = False,
     ):
-        model = self._create_model([Path(f) for f in files], skip_model_verification)
+        model = self._create_model(
+            [Path(f) for f in files], skip_model_verification, split_disjunctions
+        )
         checksum_functions = self._parse_checksum_module(checksum_module)
         missing_checksum_definitions = {
             (str(message.identifier), str(field_identifier))
@@ -122,16 +125,22 @@ class Validator:
         if len(error_msgs) > 0:
             raise ValidationError("\n".join(e for e in error_msgs))
 
-    def _create_model(self, files: List[Path], skip_model_verification: bool) -> Model:
+    def _create_model(
+        self, files: List[Path], skip_model_verification: bool, split_disjunctions: bool
+    ) -> Model:
         for f in files:
             if not f.is_file():
                 raise ValidationError(f'specification file not found: "{f}"')
         parser = Parser(skip_model_verification)
         parser.parse(*files)
         model = parser.create_model()
-        model = Model(
-            [self._expand_message_links(t) if isinstance(t, Message) else t for t in model.types],
-        )
+        if split_disjunctions:
+            model = Model(
+                [
+                    self._expand_message_links(t) if isinstance(t, Message) else t
+                    for t in model.types
+                ],
+            )
         return model
 
     def _expand_message_links(self, message: Message) -> Message:

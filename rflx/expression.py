@@ -928,7 +928,7 @@ class Pow(MathBinExpr):
 
     @property
     def symbol(self) -> str:
-        return "**"
+        return " ** "
 
     def ada_expr(self) -> ada.Expr:
         return ada.Pow(self.left.ada_expr(), self.right.ada_expr())

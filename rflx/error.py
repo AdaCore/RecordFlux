@@ -62,6 +62,7 @@ class Subsystem(Enum):
     PYRFLX = auto()
     ID = auto()
     VALIDATOR = auto()
+    STYLE = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)
