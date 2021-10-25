@@ -1,9 +1,12 @@
 input:
-  - 1 0 1 0
-output: |
+  I:
+    - 1 0 1 0
+output:
+  - O
+sequence: |
   State: Start
   State: Reply
-  Write: 1 0 1 0
-  Read: 1 0 1 0
+  Write I: 1 0 1 0
+  Read O: 1 0 1 0
   State: Start
 prove:

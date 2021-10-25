@@ -1,5 +1,7 @@
-output: |
+output:
+  - Channel
+sequence: |
   State: Start
   State: Reply
-  Read: 4 0 2 1 1
+  Read Channel: 4 0 2 1 1
 prove:

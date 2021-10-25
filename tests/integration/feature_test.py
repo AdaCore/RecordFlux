@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field as dataclass_field
 from distutils.dir_util import copy_tree
 from pathlib import Path
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence
 
 import pytest
 from ruamel.yaml.main import YAML
@@ -26,8 +28,9 @@ FEATURES = [
 @dataclass(frozen=True)
 class Config:
     functions: Sequence[str] = dataclass_field(default_factory=list)
-    inp: Sequence[Tuple[int, ...]] = dataclass_field(default_factory=list)
-    out: str = dataclass_field(default="")
+    inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
+    out: Sequence[str] = dataclass_field(default_factory=list)
+    sequence: str = dataclass_field(default="")
     prove: Optional[Sequence[str]] = dataclass_field(default=None)
 
 
@@ -39,10 +42,14 @@ def get_config(feature: str) -> Config:
         cfg = yaml.load(config_file)
         return Config(
             cfg["functions"] if "functions" in cfg and cfg["functions"] else [],
-            [tuple(int(e) for e in str(m).split()) for m in cfg["input"]]
-            if "input" in cfg and cfg["input"]
-            else [],
-            cfg["output"] if "output" in cfg else "",
+            {
+                str(c): [tuple(int(e) for e in str(m).split()) for m in i]
+                for c, i in cfg["input"].items()
+            }
+            if "input" in cfg and isinstance(cfg["input"], dict)
+            else {},
+            cfg["output"] if "output" in cfg and cfg["output"] else [],
+            cfg["sequence"] if "sequence" in cfg else "",
             (cfg["prove"] if cfg["prove"] else []) if "prove" in cfg else None,
         )
 
@@ -59,7 +66,7 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
     context = [ada.WithClause(f.split(".")[0]) for f in config.functions]
     complement = session_main(
         config.inp,
-        write=bool(config.inp),
+        config.out,
         context=context,
         session_package="RFLX.Test.Session",
         session_parameters=config.functions,
@@ -108,7 +115,7 @@ def test_equality(feature: str, tmp_path: Path) -> None:
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
-    if config.out:
+    if config.sequence:
         pytest.skip()
     model = create_model(feature)
     assert_compilable_code(model, tmp_path)
@@ -117,11 +124,11 @@ def test_compilability(feature: str, tmp_path: Path) -> None:
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_executability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
-    if not config.out:
+    if not config.sequence:
         pytest.skip()
     model = create_model(feature)
     create_complement(config, feature, tmp_path)
-    assert assert_executable_code(model, tmp_path, main=MAIN) == config.out
+    assert assert_executable_code(model, tmp_path, main=MAIN) == config.sequence
 
 
 @pytest.mark.verification

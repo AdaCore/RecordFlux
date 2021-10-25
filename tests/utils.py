@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pathlib
 import shutil
 import subprocess
@@ -189,17 +191,16 @@ def _create_files(
     generator.write_top_level_package(tmp_path)
 
 
-def session_main(  # pylint: disable = too-many-arguments
-    messages: Sequence[Tuple[int, ...]] = None,
-    read: bool = True,
-    write: bool = True,
+def session_main(  # pylint: disable=too-many-locals
+    input_channels: dict[str, Sequence[tuple[int, ...]]] = None,
+    output_channels: Sequence[str] = None,
     context: Sequence[ada.ContextItem] = None,
     subprograms: Sequence[ada.SubprogramBody] = None,
     session_package: str = "RFLX.P.S",
     session_parameters: Sequence[ada.StrID] = None,
 ) -> Mapping[str, str]:
-    assert (messages and write) or not (messages and write)
-
+    input_channels = input_channels or {}
+    output_channels = output_channels or []
     context = context or []
     subprograms = subprograms or []
     session_parameters = session_parameters or []
@@ -207,21 +208,19 @@ def session_main(  # pylint: disable = too-many-arguments
     io_functions_body: List[ada.Declaration] = []
     parameters: List[ada.StrID] = []
 
-    if write and messages:
-        has_data_func_spec = ada.FunctionSpecification("Has_Data", "Boolean")
+    for channel, messages in input_channels.items():
+        has_data_func_spec = ada.FunctionSpecification(f"Has_Data_{channel}", "Boolean")
         io_functions_decl.append(ada.SubprogramDeclaration(has_data_func_spec))
         io_functions_body.append(
             ada.ExpressionFunctionDeclaration(
                 has_data_func_spec,
-                ada.Less(ada.Variable("Written_Messages"), ada.Number(len(messages)))
-                if write
-                else ada.FALSE,
+                ada.Less(ada.Variable(f"Written_Messages_{channel}"), ada.Number(len(messages))),
             )
         )
-        parameters.append("Lib.Has_Data")
+        parameters.append(f"Lib.{has_data_func_spec.identifier}")
 
         write_proc_spec = ada.ProcedureSpecification(
-            "Write",
+            f"Write_{channel}",
             [
                 ada.OutParameter(["Buffer"], "RFLX" * const.TYPES_BYTES),
                 ada.OutParameter(["Length"], "RFLX" * const.TYPES_LENGTH),
@@ -262,7 +261,9 @@ def session_main(  # pylint: disable = too-many-arguments
                         ada.If(
                             [
                                 (
-                                    ada.Equal(ada.Variable("Written_Messages"), ada.Number(i)),
+                                    ada.Equal(
+                                        ada.Variable(f"Written_Messages_{channel}"), ada.Number(i)
+                                    ),
                                     ada.Aggregate(*[ada.Number(b) for b in message])
                                     if len(message) > 1
                                     else ada.NamedAggregate(
@@ -298,7 +299,7 @@ def session_main(  # pylint: disable = too-many-arguments
                                 ),
                                 [
                                     ada.CallStatement(
-                                        "Print", [ada.String("Write"), ada.Variable("M")]
+                                        "Print", [ada.String(f"Write {channel}"), ada.Variable("M")]
                                     ),
                                     ada.Assignment(
                                         ada.Indexed(
@@ -329,14 +330,16 @@ def session_main(  # pylint: disable = too-many-arguments
                                         [
                                             (
                                                 ada.Less(
-                                                    ada.Variable("Written_Messages"),
+                                                    ada.Variable(f"Written_Messages_{channel}"),
                                                     ada.Last("Natural"),
                                                 ),
                                                 [
                                                     ada.Assignment(
-                                                        "Written_Messages",
+                                                        f"Written_Messages_{channel}",
                                                         ada.Add(
-                                                            ada.Variable("Written_Messages"),
+                                                            ada.Variable(
+                                                                f"Written_Messages_{channel}"
+                                                            ),
                                                             ada.Number(1),
                                                         ),
                                                     )
@@ -357,11 +360,11 @@ def session_main(  # pylint: disable = too-many-arguments
                 ],
             )
         )
-        parameters.append("Lib.Write")
+        parameters.append(f"Lib.{write_proc_spec.identifier}")
 
-    if read:
+    for channel in output_channels:
         read_proc_spec = ada.ProcedureSpecification(
-            "Read", [ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES)]
+            f"Read_{channel}", [ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES)]
         )
 
         io_functions_decl.append(ada.SubprogramDeclaration(read_proc_spec))
@@ -369,10 +372,14 @@ def session_main(  # pylint: disable = too-many-arguments
             ada.SubprogramBody(
                 read_proc_spec,
                 [],
-                [ada.CallStatement("Print", [ada.String("Read"), ada.Variable("Buffer")])],
+                [
+                    ada.CallStatement(
+                        "Print", [ada.String(f"Read {channel}"), ada.Variable("Buffer")]
+                    )
+                ],
             )
         )
-        parameters.append("Lib.Read")
+        parameters.append(f"Lib.{read_proc_spec.identifier}")
 
     print_procedure = ada.SubprogramBody(
         ada.ProcedureSpecification(
@@ -427,11 +434,10 @@ def session_main(  # pylint: disable = too-many-arguments
         ada.PackageBody(
             "Lib",
             [
-                *(
-                    [ada.ObjectDeclaration(["Written_Messages"], "Natural", ada.Number(0))]
-                    if write
-                    else []
-                ),
+                *[
+                    ada.ObjectDeclaration([f"Written_Messages_{channel}"], "Natural", ada.Number(0))
+                    for channel in input_channels
+                ],
                 print_procedure,
                 *io_functions_body,
                 *[

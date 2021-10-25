@@ -1,18 +1,21 @@
 input:
-  - 0
-  - 1 0 1 0
-  - 1 0 2 0 3
-output: |
+  Channel:
+    - 0
+    - 1 0 1 0
+    - 1 0 2 0 3
+output:
+  - Channel
+sequence: |
   State: Start
-  Write: 0
+  Write Channel: 0
   State: Reply
-  Read: 0
+  Read Channel: 0
   State: Start
-  Write: 1 0 1 0
+  Write Channel: 1 0 1 0
   State: Reply
-  Read: 1 0 1 0
+  Read Channel: 1 0 1 0
   State: Start
-  Write: 1 0 2 0 3
+  Write Channel: 1 0 2 0 3
   State: Reply
-  Read: 1 0 2 0 3
+  Read Channel: 1 0 2 0 3
 prove:
