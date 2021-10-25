@@ -1,4 +1,6 @@
-output: |
+output:
+  - Channel
+sequence: |
   State: Start
-  Read: 7 1 0 1 1 1 0 2 2 3 0
+  Read Channel: 7 1 0 1 1 1 0 2 2 3 0
 prove:

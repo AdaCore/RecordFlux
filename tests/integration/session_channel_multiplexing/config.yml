@@ -1,0 +1,28 @@
+input:
+  I_1:
+    - 1 0 1 0
+    - 1 0 1 1
+  I_2:
+    - 1 0 1 2
+    - 1 0 1 3
+output:
+  - O
+sequence: |
+  State: Start
+  State: Reply_1
+  Write I_1: 1 0 1 0
+  Read O: 1 0 1 0
+  State: Start
+  State: Reply_1
+  Write I_1: 1 0 1 1
+  Read O: 1 0 1 1
+  State: Start
+  State: Reply_2
+  Write I_2: 1 0 1 2
+  Read O: 1 0 1 2
+  State: Start
+  State: Reply_2
+  Write I_2: 1 0 1 3
+  Read O: 1 0 1 3
+  State: Start
+prove:

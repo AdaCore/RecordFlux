@@ -1,6 +1,9 @@
 input:
-output: |
+  - Channel
+output:
+  - Channel
+sequence: |
   State: Start
   State: Reply
-  Read: 1 0 1 2
+  Read Channel: 1 0 1 2
 prove:

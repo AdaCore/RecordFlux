@@ -12,7 +12,7 @@ is
        Initialized
    is
    begin
-      if Channel_Has_Data then
+      if I_Has_Data then
          Next_State := S_Reply;
       else
          Next_State := S_Terminated;
@@ -27,14 +27,14 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (Channel_Read);
+         procedure Universal_Message_Write is new Universal.Message.Write (I_Read);
       begin
          Universal_Message_Write (Message_Ctx);
       end;
       Universal.Message.Verify_Message (Message_Ctx);
       if Universal.Message.Structural_Valid_Message (Message_Ctx) then
          declare
-            procedure Universal_Message_Read is new Universal.Message.Read (Channel_Write);
+            procedure Universal_Message_Read is new Universal.Message.Read (O_Write);
          begin
             Universal_Message_Read (Message_Ctx);
          end;
