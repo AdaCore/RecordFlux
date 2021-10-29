@@ -7,7 +7,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Receive (Next_State : out Session_State) with
+   procedure Receive (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -22,13 +22,13 @@ is
       end;
       Test.Message.Verify_Message (M_Ctx);
       if Test.Message.Structural_Valid_Message (M_Ctx) then
-         Next_State := S_Reply;
+         P_Next_State := S_Reply;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
       end if;
    end Receive;
 
-   procedure Reply (Next_State : out Session_State) with
+   procedure Reply (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -94,20 +94,20 @@ is
          pragma Warnings (On, "unused assignment");
       end;
       if RFLX_Exception then
-         Next_State := S_Error;
+         P_Next_State := S_Error;
          return;
       end if;
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Reply;
 
-   procedure Error (Next_State : out Session_State) with
+   procedure Error (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
        Initialized
    is
    begin
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Error;
 
    procedure Initialize is
@@ -119,7 +119,7 @@ is
       Test.Session_Allocator.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (M_Ctx, M_Buffer, Length => Test.Length'First, Extended => Boolean'First);
-      Next_State := S_Receive;
+      P_Next_State := S_Receive;
    end Initialize;
 
    procedure Finalize is
@@ -133,18 +133,18 @@ is
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_1 := M_Buffer;
       pragma Warnings (On, "unused assignment");
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case Next_State is
+      case P_Next_State is
          when S_Receive =>
-            Receive (Next_State);
+            Receive (P_Next_State);
          when S_Reply =>
-            Reply (Next_State);
+            Reply (P_Next_State);
          when S_Error =>
-            Error (Next_State);
+            Error (P_Next_State);
          when S_Terminated =>
             null;
       end case;

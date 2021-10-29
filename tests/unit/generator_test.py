@@ -1214,13 +1214,13 @@ class UnknownStatement(stmt.Statement):
             "      end;\n"
             "   end;\n"
             "   if RFLX_Exception then\n"
-            "      Next_State := S_E;\n"
+            "      P_Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "end;\n"
             "if RFLX_Exception then\n"
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1372,7 +1372,7 @@ class UnknownStatement(stmt.Statement):
             '   pragma Warnings (On, "unused assignment");\n'
             "end;\n"
             "if RFLX_Exception then\n"
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1447,7 +1447,7 @@ class UnknownStatement(stmt.Statement):
             '   pragma Warnings (On, "unused assignment");\n'
             "end;\n"
             "if RFLX_Exception then\n"
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1554,13 +1554,13 @@ class UnknownStatement(stmt.Statement):
             "      Universal.Message.Set_Data_Empty (X_Ctx);\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""");\n'
-            "      Next_State := S_E;\n"
+            "      P_Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1612,19 +1612,19 @@ class UnknownStatement(stmt.Statement):
             "      else\n"
             '         Ada.Text_IO.Put_Line ("Error: invalid message field size'
             ' for ""Y\'Opaque""");\n'
-            "         Next_State := S_E;\n"
+            "         P_Next_State := S_E;\n"
             "         pragma Finalization;\n"
             "         return;\n"
             "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "      Next_State := S_E;\n"
+            "      P_Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""");\n'
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1725,47 +1725,47 @@ class UnknownStatement(stmt.Statement):
             "                  else\n"
             '                     Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Data""");\n'
-            "                     Next_State := S_E;\n"
+            "                     P_Next_State := S_E;\n"
             "                     pragma Finalization;\n"
             "                     return;\n"
             "                  end if;\n"
             "               else\n"
             '                  Ada.Text_IO.Put_Line ("Error: invalid message field size'
             ' for ""Y.Data""");\n'
-            "                  Next_State := S_E;\n"
+            "                  P_Next_State := S_E;\n"
             "                  pragma Finalization;\n"
             "                  return;\n"
             "               end if;\n"
             "            else\n"
             '               Ada.Text_IO.Put_Line ("Error: access to invalid next message field'
             ' for ""Y.Data""");\n'
-            "               Next_State := S_E;\n"
+            "               P_Next_State := S_E;\n"
             "               pragma Finalization;\n"
             "               return;\n"
             "            end if;\n"
             "         else\n"
             '            Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Length""");\n'
-            "            Next_State := S_E;\n"
+            "            P_Next_State := S_E;\n"
             "            pragma Finalization;\n"
             "            return;\n"
             "         end if;\n"
             "      else\n"
             '         Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Message_Type""");\n'
-            "         Next_State := S_E;\n"
+            "         P_Next_State := S_E;\n"
             "         pragma Finalization;\n"
             "         return;\n"
             "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "      Next_State := S_E;\n"
+            "      P_Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""");\n'
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1837,7 +1837,7 @@ class UnknownStatement(stmt.Statement):
             "   end;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: invalid message ""Y_Ctx""");\n'
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1918,7 +1918,7 @@ class UnknownStatement(stmt.Statement):
             '   pragma Warnings (On, "unused assignment");\n'
             "end;\n"
             "if RFLX_Exception then\n"
-            "   Next_State := S_E;\n"
+            "   P_Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",

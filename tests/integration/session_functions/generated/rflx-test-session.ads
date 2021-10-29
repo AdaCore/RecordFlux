@@ -21,7 +21,7 @@ is
 
    pragma Unreferenced (Channel_Has_Data);
 
-   type Session_State is (S_Start, S_Reply, S_Terminated);
+   type State is (S_Start, S_Reply, S_Terminated);
 
    function Uninitialized return Boolean;
 
@@ -63,13 +63,13 @@ is
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
-   function State return Session_State;
+   function Next_State return State;
 
 private
 
    use type RFLX.RFLX_Types.Index;
 
-   Next_State : Session_State := S_Start;
+   P_Next_State : State := S_Start;
 
    Message_Ctx : Universal.Message.Context;
 
@@ -83,9 +83,9 @@ private
       and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is
-     (Next_State /= S_Terminated);
+     (P_Next_State /= S_Terminated);
 
-   function State return Session_State is
-     (Next_State);
+   function Next_State return State is
+     (P_Next_State);
 
 end RFLX.Test.Session;

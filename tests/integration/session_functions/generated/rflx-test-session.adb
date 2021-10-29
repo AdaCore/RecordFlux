@@ -8,7 +8,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (Next_State : out Session_State) with
+   procedure Start (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -26,13 +26,13 @@ is
          and then Universal.Message.Get_Message_Type (Message_Ctx) = Universal.MT_Data)
         and then Universal.Message.Get_Length (Message_Ctx) = 3
       then
-         Next_State := S_Reply;
+         P_Next_State := S_Reply;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
       end if;
    end Start;
 
-   procedure Reply (Next_State : out Session_State) with
+   procedure Reply (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -56,7 +56,7 @@ is
             Fixed_Size.Simple_Message.To_Context (Fixed_Size_Message, Fixed_Size_Message_Ctx);
          end;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Fixed_Size_Message_Ctx""");
          pragma Warnings (Off, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
@@ -74,7 +74,7 @@ is
             Fixed_Size_Simple_Message_Read (Fixed_Size_Message_Ctx);
          end;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Fixed_Size_Message_Ctx""");
          pragma Warnings (Off, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
@@ -85,7 +85,7 @@ is
          pragma Warnings (On, "unused assignment");
          return;
       end if;
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
       pragma Warnings (Off, "unused assignment to ""Fixed_Size_Message_Ctx""");
       pragma Warnings (Off, """Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Fixed_Size.Simple_Message.Take_Buffer (Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
@@ -105,7 +105,7 @@ is
       Test.Session_Allocator.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -119,16 +119,16 @@ is
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
       pragma Warnings (On, "unused assignment");
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case Next_State is
+      case P_Next_State is
          when S_Start =>
-            Start (Next_State);
+            Start (P_Next_State);
          when S_Reply =>
-            Reply (Next_State);
+            Reply (P_Next_State);
          when S_Terminated =>
             null;
       end case;

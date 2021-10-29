@@ -10,7 +10,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (Next_State : out Session_State) with
+   procedure Start (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -28,13 +28,13 @@ is
          and then Universal.Message.Get_Message_Type (Message_Ctx) = Universal.MT_Data)
         and then Universal.Message.Get_Length (Message_Ctx) = 1
       then
-         Next_State := S_Reply;
+         P_Next_State := S_Reply;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
       end if;
    end Start;
 
-   procedure Reply (Next_State : out Session_State) with
+   procedure Reply (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -71,7 +71,7 @@ is
          end;
       end;
       if RFLX_Exception then
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          return;
       end if;
       if Universal.Message.Structural_Valid_Message (Message_Ctx) then
@@ -81,10 +81,10 @@ is
             Universal_Message_Read (Message_Ctx);
          end;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          return;
       end if;
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Reply;
 
    procedure Initialize is
@@ -96,7 +96,7 @@ is
       Test.Session_Allocator.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -110,16 +110,16 @@ is
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_1 := Message_Buffer;
       pragma Warnings (On, "unused assignment");
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case Next_State is
+      case P_Next_State is
          when S_Start =>
-            Start (Next_State);
+            Start (P_Next_State);
          when S_Reply =>
-            Reply (Next_State);
+            Reply (P_Next_State);
          when S_Terminated =>
             null;
       end case;
