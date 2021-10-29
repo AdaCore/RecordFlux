@@ -293,7 +293,7 @@ package body RFLX.TLV_Tests is
          end Read;
          pragma Warnings (On, "subprogram ""Read"" has no effect");
          pragma Warnings (Off, "subprogram ""Message_Read"" has no effect");
-         procedure Message_Read is new TLV.Message.Read (Read);
+         procedure Message_Read is new TLV.Message.Generic_Read (Read);
          pragma Warnings (On, "subprogram ""Message_Read"" has no effect");
       begin
          Message_Read (Context);
@@ -308,15 +308,69 @@ package body RFLX.TLV_Tests is
       Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
 
       declare
-         procedure Write (Buffer : out RFLX_Builtin_Types.Bytes; Length : out RFLX_Builtin_Types.Length) is
+         procedure Write
+            (Buffer                       : out RFLX_Builtin_Types.Bytes;
+             Length                       : out RFLX_Builtin_Types.Length;
+             Unused_Context_Buffer_Length :     RFLX_Builtin_Types.Length;
+             Unused_Offset                :     RFLX_Builtin_Types.Length)
+         is
          begin
             Assert (Buffer'Length = 7, "Invalid buffer length");
             Buffer := (1, 0, 2, 0, 0, 0, 0);
             Length := Buffer'Length;
          end Write;
-         procedure Message_Write is new TLV.Message.Write (Write);
+         procedure Message_Write is new TLV.Message.Generic_Write (Write);
       begin
          Message_Write (Context);
+      end;
+
+      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after writing");
+
+      TLV.Message.Verify_Message (Context);
+
+      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after verification");
+      Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
+      Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (2)'Image, "Invalid length after writing");
+
+      TLV.Message.Reset (Context);
+
+      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
+
+      declare
+         function Write_Pre
+            (Unused_Context_Buffer_Length : RFLX_Builtin_Types.Length;
+             Offset                       : RFLX_Builtin_Types.Length)
+             return Boolean
+         is
+            (Offset <= 3);
+         procedure Write_4
+            (Buffer                : out RFLX_Builtin_Types.Bytes;
+             Length                : out RFLX_Builtin_Types.Length;
+             Context_Buffer_Length :     RFLX_Builtin_Types.Length;
+             Offset                :     RFLX_Builtin_Types.Length)
+         with
+            Pre =>
+               Write_Pre (Context_Buffer_Length, Offset),
+            Post =>
+               Length <= Buffer'Length
+               and Buffer'Initialized,
+            Relaxed_Initialization =>
+               Buffer
+         is
+            Target : constant RFLX_Types.Bytes := (1, 0, 2, 0, 0, 0, 0);
+         begin
+            Assert (Context_Buffer_Length = 7, "Invalid context buffer length");
+            Assert (Buffer'Length = 7 - Offset, "Invalid buffer length");
+            Buffer (Buffer'First .. Buffer'First + 3) :=
+               Target (Target'First + RFLX_Types.Index (Offset + 1) - 1
+                       .. Target'First + RFLX_Types.Index (Offset + 1) + 2);
+            Buffer (Buffer'First + 4 .. Buffer'Last) := (others => 0);
+            Length := 4;
+         end Write_4;
+         procedure Message_Write is new TLV.Message.Generic_Write (Write_4, Write_Pre);
+      begin
+         Message_Write (Context, 0);
+         Message_Write (Context, 3);
       end;
 
       Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after writing");

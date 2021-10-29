@@ -16,7 +16,7 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (Channel_Read);
+         procedure Universal_Message_Write is new Universal.Message.Generic_Write (Channel_Read);
       begin
          Universal_Message_Write (Message_Ctx);
       end;
@@ -69,7 +69,7 @@ is
       end if;
       if Fixed_Size.Simple_Message.Structural_Valid_Message (Fixed_Size_Message_Ctx) then
          declare
-            procedure Fixed_Size_Simple_Message_Read is new Fixed_Size.Simple_Message.Read (Channel_Write);
+            procedure Fixed_Size_Simple_Message_Read is new Fixed_Size.Simple_Message.Generic_Read (Channel_Write);
          begin
             Fixed_Size_Simple_Message_Read (Fixed_Size_Message_Ctx);
          end;

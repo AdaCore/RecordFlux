@@ -435,6 +435,27 @@ class Succ(AttributeExpr):
     pass
 
 
+class BinAttributeExpr(Attribute):
+    def __init__(
+        self, prefix: Union[StrID, Expr], left: Expr, right: Expr, negative: bool = False
+    ) -> None:
+        self.left = left
+        self.right = right
+        super().__init__(prefix)
+
+    @property
+    def _representation(self) -> str:
+        return f"{self.prefix}'{self.__class__.__name__} ({self.left}, {self.right})"
+
+
+class Min(BinAttributeExpr):
+    pass
+
+
+class Max(BinAttributeExpr):
+    pass
+
+
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
@@ -1028,14 +1049,16 @@ class FormalDeclaration(Base):
 
 
 class FormalSubprogramDeclaration(FormalDeclaration):
-    def __init__(self, specification: "SubprogramSpecification") -> None:
+    def __init__(self, specification: "SubprogramSpecification", default: StrID = None) -> None:
         self.specification = specification
+        self.default = ID(default) if default else None
 
     def __hash__(self) -> int:
         return hash(self.specification)
 
     def __str__(self) -> str:
-        return f"with {self.specification};"
+        default = f" is {self.default}" if self.default else ""
+        return f"with {self.specification}{default};"
 
 
 class FormalPackageDeclaration(FormalDeclaration):

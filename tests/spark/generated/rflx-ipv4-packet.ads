@@ -187,19 +187,47 @@ is
        and then Structural_Valid_Message (Ctx)
        and then Byte_Size (Ctx) = Buffer'Length;
 
-   generic
-      with procedure Read (Buffer : RFLX_Types.Bytes);
-   procedure Read (Ctx : Context) with
+   function Read (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Always_Valid (Buffer : RFLX_Types.Bytes) return Boolean is
+     (True)
+    with
+     Ghost;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
    generic
-      with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length);
-   procedure Write (Ctx : in out Context) with
+      with procedure Read (Buffer : RFLX_Types.Bytes);
+      with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
+   procedure Generic_Read (Ctx : Context) with
+     Pre =>
+       Has_Buffer (Ctx)
+       and then Structural_Valid_Message (Ctx)
+       and then Pre (Read (Ctx));
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Always_Valid (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
+     (True)
+    with
+     Ghost;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   generic
+      with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length);
+      with function Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is Always_Valid;
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx),
+       and then Has_Buffer (Ctx)
+       and then Offset < Buffer_Length (Ctx)
+       and then Pre (Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -208,6 +236,10 @@ is
        and Initialized (Ctx);
 
    function Has_Buffer (Ctx : Context) return Boolean;
+
+   function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
+     Pre =>
+       Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length;
 
@@ -1697,6 +1729,9 @@ private
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
+
+   function Buffer_Length (Ctx : Context) return RFLX_Types.Length is
+     (Ctx.Buffer'Length);
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Message_Last);

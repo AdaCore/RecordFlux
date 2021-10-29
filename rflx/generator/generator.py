@@ -60,6 +60,7 @@ from rflx.ada import (
     Less,
     LessEqual,
     LoopEntry,
+    Max,
     Mod,
     ModularType,
     NamedAggregate,
@@ -375,9 +376,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         unit += self.__create_restricted_reset_procedure(message)
         unit += self.__create_take_buffer_procedure(message)
         unit += self.__create_copy_procedure()
-        unit += self.__create_read_procedure()
-        unit += self.__create_write_procedure(message)
+        unit += self.__create_read_function()
+        unit += self.__create_generic_read_procedure()
+        unit += self.__create_generic_write_procedure(message)
         unit += self.__create_has_buffer_function()
+        unit += self.__create_buffer_length_function()
         unit += self.__create_size_function()
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
@@ -1262,9 +1265,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def __create_read_procedure() -> UnitPart:
-        specification = ProcedureSpecification(
+    def __create_read_function() -> UnitPart:
+        specification = FunctionSpecification(
             "Read",
+            const.TYPES_BYTES,
             [Parameter(["Ctx"], "Context")],
         )
 
@@ -1280,6 +1284,59 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                             )
                         ),
                     ],
+                )
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Indexed(
+                        Variable("Ctx.Buffer.all"),
+                        ValueRange(
+                            Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                            Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_generic_read_procedure() -> UnitPart:
+        specification = ProcedureSpecification(
+            "Generic_Read",
+            [Parameter(["Ctx"], "Context")],
+        )
+
+        return UnitPart(
+            [
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String('formal parameter "*" is not referenced')],
+                ),
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        "Always_Valid",
+                        "Boolean",
+                        [Parameter(["Buffer"], const.TYPES_BYTES)],
+                    ),
+                    TRUE,
+                    aspects=[Ghost()],
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String('formal parameter "*" is not referenced')],
+                ),
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                                Call("Pre", [Call("Read", [Variable("Ctx")])]),
+                            )
+                        ),
+                    ],
                     [
                         FormalSubprogramDeclaration(
                             ProcedureSpecification(
@@ -1287,33 +1344,30 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 [Parameter(["Buffer"], const.TYPES_BYTES)],
                             )
                         ),
+                        FormalSubprogramDeclaration(
+                            FunctionSpecification(
+                                "Pre",
+                                "Boolean",
+                                [Parameter(["Buffer"], const.TYPES_BYTES)],
+                            ),
+                            "Always_Valid",
+                        ),
                     ],
-                )
+                ),
             ],
             [
                 SubprogramBody(
                     specification,
                     [],
                     [
-                        CallStatement(
-                            "Read",
-                            [
-                                Indexed(
-                                    Variable("Ctx.Buffer.all"),
-                                    ValueRange(
-                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
-                                    ),
-                                )
-                            ],
-                        )
+                        CallStatement("Read", [Call("Read", [Variable("Ctx")])]),
                     ],
                 )
             ],
         )
 
     @staticmethod
-    def __create_write_procedure(message: Message) -> UnitPart:
+    def __create_generic_write_procedure(message: Message) -> UnitPart:
         """
         Write data into the buffer of the context using an externally provided subprogram.
 
@@ -1321,19 +1375,47 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         the initialization of the context will not be considered or preserved.
         """
         specification = ProcedureSpecification(
-            "Write",
-            [InOutParameter(["Ctx"], "Context")],
+            "Generic_Write",
+            [
+                InOutParameter(["Ctx"], "Context"),
+                Parameter(["Offset"], const.TYPES_LENGTH, Number(0)),
+            ],
         )
 
         return UnitPart(
             [
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String('formal parameter "*" is not referenced')],
+                ),
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        "Always_Valid",
+                        "Boolean",
+                        [
+                            Parameter(["Context_Buffer_Length"], const.TYPES_LENGTH),
+                            Parameter(["Offset"], const.TYPES_LENGTH),
+                        ],
+                    ),
+                    TRUE,
+                    aspects=[Ghost()],
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String('formal parameter "*" is not referenced')],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
                         Precondition(
-                            And(
+                            AndThen(
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
+                                Less(Variable("Offset"), Call("Buffer_Length", [Variable("Ctx")])),
+                                Call(
+                                    "Pre",
+                                    [Call("Buffer_Length", [Variable("Ctx")]), Variable("Offset")],
+                                ),
                             )
                         ),
                         Postcondition(
@@ -1364,11 +1446,24 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 [
                                     OutParameter(["Buffer"], const.TYPES_BYTES),
                                     OutParameter(["Length"], const.TYPES_LENGTH),
+                                    Parameter(["Context_Buffer_Length"], const.TYPES_LENGTH),
+                                    Parameter(["Offset"], const.TYPES_LENGTH),
                                 ],
                             )
                         ),
+                        FormalSubprogramDeclaration(
+                            FunctionSpecification(
+                                "Pre",
+                                "Boolean",
+                                [
+                                    Parameter(["Context_Buffer_Length"], const.TYPES_LENGTH),
+                                    Parameter(["Offset"], const.TYPES_LENGTH),
+                                ],
+                            ),
+                            "Always_Valid",
+                        ),
                     ],
-                )
+                ),
             ],
             [
                 SubprogramBody(
@@ -1378,8 +1473,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                         CallStatement(
                             "Write",
                             [
-                                Variable("Ctx.Buffer.all"),
+                                Slice(
+                                    Variable("Ctx.Buffer.all"),
+                                    Add(
+                                        First("Ctx.Buffer"),
+                                        Call(
+                                            const.TYPES_INDEX, [Add(Variable("Offset"), Number(1))]
+                                        ),
+                                        -Number(1),
+                                    ),
+                                    Last("Ctx.Buffer"),
+                                ),
                                 Variable("Length"),
+                                Length("Ctx.Buffer"),
+                                Variable("Offset"),
                             ],
                         ),
                         # ISSUE: Componolit/Workarounds#39
@@ -1406,18 +1513,23 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Call(
                                     const.TYPES_TO_FIRST_BIT_INDEX, [Variable("Ctx.Buffer_First")]
                                 ),
-                                Call(
-                                    const.TYPES_TO_LAST_BIT_INDEX,
-                                    [
-                                        Add(
-                                            Call(
-                                                const.TYPES_LENGTH,
-                                                [Variable("Ctx.Buffer_First")],
+                                Max(
+                                    const.TYPES_BIT_INDEX,
+                                    Variable("Ctx.Last"),
+                                    Call(
+                                        const.TYPES_TO_LAST_BIT_INDEX,
+                                        [
+                                            Add(
+                                                Call(
+                                                    const.TYPES_LENGTH,
+                                                    [Variable("Ctx.Buffer_First")],
+                                                ),
+                                                Variable("Offset"),
+                                                Variable("Length"),
+                                                -Number(1),
                                             ),
-                                            Variable("Length"),
-                                            -Number(1),
-                                        ),
-                                    ],
+                                        ],
+                                    ),
                                 ),
                                 *[
                                     Variable(ID("Ctx" * p.identifier))
@@ -2089,6 +2201,22 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             private=[
                 ExpressionFunctionDeclaration(specification, NotEqual(Variable("Ctx.Buffer"), NULL))
             ],
+        )
+
+    @staticmethod
+    def __create_buffer_length_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Buffer_Length", const.TYPES_LENGTH, [Parameter(["Ctx"], "Context")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
+                )
+            ],
+            private=[ExpressionFunctionDeclaration(specification, Length("Ctx.Buffer"))],
         )
 
     @staticmethod

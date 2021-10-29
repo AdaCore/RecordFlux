@@ -1926,7 +1926,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 [
                     GenericProcedureInstantiation(
                         identifier,
-                        ProcedureSpecification(target_type * "Write"),
+                        ProcedureSpecification(target_type * "Generic_Write"),
                         [f"{read.identifier}_Read"],
                     )
                 ],
@@ -1966,7 +1966,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             [
                                 GenericProcedureInstantiation(
                                     identifier,
-                                    ProcedureSpecification(target_type * "Read"),
+                                    ProcedureSpecification(target_type * "Generic_Read"),
                                     [f"{write.identifier}_Write"],
                                 )
                             ],

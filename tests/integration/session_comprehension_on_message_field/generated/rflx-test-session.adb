@@ -23,7 +23,7 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (Channel_Read);
+         procedure Universal_Message_Write is new Universal.Message.Generic_Write (Channel_Read);
       begin
          Universal_Message_Write (Message_Ctx);
       end;
@@ -203,7 +203,7 @@ is
       end if;
       if Universal.Message.Structural_Valid_Message (Message_Ctx) then
          declare
-            procedure Universal_Message_Read is new Universal.Message.Read (Channel_Write);
+            procedure Universal_Message_Read is new Universal.Message.Generic_Read (Channel_Write);
          begin
             Universal_Message_Read (Message_Ctx);
          end;

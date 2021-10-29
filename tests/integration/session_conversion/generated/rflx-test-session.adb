@@ -17,7 +17,7 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (Channel_Read);
+         procedure Universal_Message_Write is new Universal.Message.Generic_Write (Channel_Read);
       begin
          Universal_Message_Write (Message_Ctx);
       end;
@@ -63,7 +63,7 @@ is
       end if;
       if Universal.Option.Structural_Valid_Message (Inner_Message_Ctx) then
          declare
-            procedure Universal_Option_Read is new Universal.Option.Read (Channel_Write);
+            procedure Universal_Option_Read is new Universal.Option.Generic_Read (Channel_Write);
          begin
             Universal_Option_Read (Inner_Message_Ctx);
          end;
