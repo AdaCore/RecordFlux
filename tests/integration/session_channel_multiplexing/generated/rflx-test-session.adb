@@ -5,7 +5,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (Next_State : out Session_State) with
+   procedure Start (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -13,15 +13,15 @@ is
    is
    begin
       if I_1_Has_Data then
-         Next_State := S_Reply_1;
+         P_Next_State := S_Reply_1;
       elsif I_2_Has_Data then
-         Next_State := S_Reply_2;
+         P_Next_State := S_Reply_2;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
       end if;
    end Start;
 
-   procedure Reply_1 (Next_State : out Session_State) with
+   procedure Reply_1 (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -41,13 +41,13 @@ is
             Universal_Message_Read (Message_1_Ctx);
          end;
       else
-         Next_State := S_Error;
+         P_Next_State := S_Error;
          return;
       end if;
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Reply_1;
 
-   procedure Reply_2 (Next_State : out Session_State) with
+   procedure Reply_2 (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -67,20 +67,20 @@ is
             Universal_Message_Read (Message_2_Ctx);
          end;
       else
-         Next_State := S_Error;
+         P_Next_State := S_Error;
          return;
       end if;
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Reply_2;
 
-   procedure Error (Next_State : out Session_State) with
+   procedure Error (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
        Initialized
    is
    begin
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Error;
 
    procedure Initialize is
@@ -98,7 +98,7 @@ is
       Test.Session_Allocator.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_2_Ctx, Message_2_Buffer);
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
@@ -121,20 +121,20 @@ is
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_2 := Message_2_Buffer;
       pragma Warnings (On, "unused assignment");
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case Next_State is
+      case P_Next_State is
          when S_Start =>
-            Start (Next_State);
+            Start (P_Next_State);
          when S_Reply_1 =>
-            Reply_1 (Next_State);
+            Reply_1 (P_Next_State);
          when S_Reply_2 =>
-            Reply_2 (Next_State);
+            Reply_2 (P_Next_State);
          when S_Error =>
-            Error (Next_State);
+            Error (P_Next_State);
          when S_Terminated =>
             null;
       end case;

@@ -11,7 +11,7 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (Next_State : out Session_State) with
+   procedure Start (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -35,7 +35,7 @@ is
       if Universal.Message.Valid (Message_Ctx, Universal.Message.F_Value) then
          Local := Local + Universal.Message.Get_Value (Message_Ctx);
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -48,9 +48,9 @@ is
       end if;
       Global := Local + 20;
       if Local < Global then
-         Next_State := S_Reply;
+         P_Next_State := S_Reply;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
       end if;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -62,7 +62,7 @@ is
       pragma Warnings (On, "unused assignment");
    end Start;
 
-   procedure Reply (Next_State : out Session_State) with
+   procedure Reply (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -82,7 +82,7 @@ is
          Universal.Message.Set_Length (Message_Ctx, Universal.Length (Universal.Value'Size / 8));
          Universal.Message.Set_Value (Message_Ctx, Global);
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -100,7 +100,7 @@ is
             Universal_Message_Read (Message_Ctx);
          end;
       else
-         Next_State := S_Terminated;
+         P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
          pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -111,7 +111,7 @@ is
          pragma Warnings (On, "unused assignment");
          return;
       end if;
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
       pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
@@ -125,21 +125,21 @@ is
    procedure Initialize is
    begin
       Test.Session_Allocator.Initialize;
-      Next_State := S_Start;
+      P_Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
    begin
-      Next_State := S_Terminated;
+      P_Next_State := S_Terminated;
    end Finalize;
 
    procedure Tick is
    begin
-      case Next_State is
+      case P_Next_State is
          when S_Start =>
-            Start (Next_State);
+            Start (P_Next_State);
          when S_Reply =>
-            Reply (Next_State);
+            Reply (P_Next_State);
          when S_Terminated =>
             null;
       end case;
