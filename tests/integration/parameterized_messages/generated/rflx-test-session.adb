@@ -16,7 +16,7 @@ is
    begin
       Test.Message.Reset (M_Ctx, Length => 2, Extended => False);
       declare
-         procedure Test_Message_Write is new Test.Message.Write (C_Read);
+         procedure Test_Message_Write is new Test.Message.Generic_Write (C_Read);
       begin
          Test_Message_Write (M_Ctx);
       end;
@@ -77,7 +77,7 @@ is
          end if;
          if Test.Message.Structural_Valid_Message (RFLX_Message_Ctx) then
             declare
-               procedure Test_Message_Read is new Test.Message.Read (C_Write);
+               procedure Test_Message_Read is new Test.Message.Generic_Read (C_Write);
             begin
                Test_Message_Read (RFLX_Message_Ctx);
             end;

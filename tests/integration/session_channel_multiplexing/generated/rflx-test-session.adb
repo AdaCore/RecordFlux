@@ -29,14 +29,14 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (I_1_Read);
+         procedure Universal_Message_Write is new Universal.Message.Generic_Write (I_1_Read);
       begin
          Universal_Message_Write (Message_1_Ctx);
       end;
       Universal.Message.Verify_Message (Message_1_Ctx);
       if Universal.Message.Structural_Valid_Message (Message_1_Ctx) then
          declare
-            procedure Universal_Message_Read is new Universal.Message.Read (O_Write);
+            procedure Universal_Message_Read is new Universal.Message.Generic_Read (O_Write);
          begin
             Universal_Message_Read (Message_1_Ctx);
          end;
@@ -55,14 +55,14 @@ is
    is
    begin
       declare
-         procedure Universal_Message_Write is new Universal.Message.Write (I_2_Read);
+         procedure Universal_Message_Write is new Universal.Message.Generic_Write (I_2_Read);
       begin
          Universal_Message_Write (Message_2_Ctx);
       end;
       Universal.Message.Verify_Message (Message_2_Ctx);
       if Universal.Message.Structural_Valid_Message (Message_2_Ctx) then
          declare
-            procedure Universal_Message_Read is new Universal.Message.Read (O_Write);
+            procedure Universal_Message_Read is new Universal.Message.Generic_Read (O_Write);
          begin
             Universal_Message_Read (Message_2_Ctx);
          end;

@@ -43,18 +43,21 @@ is
       end if;
    end Copy;
 
-   procedure Read (Ctx : Context) is
-   begin
-      Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Message_Last)));
-   end Read;
+   function Read (Ctx : Context) return RFLX_Types.Bytes is
+     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Message_Last)));
 
-   procedure Write (Ctx : in out Context) is
+   procedure Generic_Read (Ctx : Context) is
+   begin
+      Read (Read (Ctx));
+   end Generic_Read;
+
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
       Length : RFLX_Types.Length;
    begin
-      Write (Ctx.Buffer.all, Length);
+      Write (Ctx.Buffer.all (Ctx.Buffer'First + RFLX_Types.Index (Offset + 1) - 1 .. Ctx.Buffer'Last), Length, Ctx.Buffer'Length, Offset);
       pragma Assert (Length <= Ctx.Buffer.all'Length, "Length <= Buffer'Length is not ensured by postcondition of ""Write""");
-      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Length - 1));
-   end Write;
+      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.Bit_Index'Max (Ctx.Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1)));
+   end Generic_Write;
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
      ((if Ctx.Message_Last = Ctx.First - 1 then 0 else Ctx.Message_Last - Ctx.First + 1));

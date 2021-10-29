@@ -1821,7 +1821,7 @@ class UnknownStatement(stmt.Statement):
         (
             stmt.Read("X", expr.Variable("Y", type_=rty.Message("P::M"))),
             "declare\n"
-            "   procedure P_M_Write is new P.M.Write (X_Read);\n"
+            "   procedure P_M_Write is new P.M.Generic_Write (X_Read);\n"
             "begin\n"
             "   P_M_Write (Y_Ctx);\n"
             "end;\n"
@@ -1831,7 +1831,7 @@ class UnknownStatement(stmt.Statement):
             stmt.Write("X", expr.Variable("Y", type_=rty.Message("P::M"))),
             "if P.M.Structural_Valid_Message (Y_Ctx) then\n"
             "   declare\n"
-            "      procedure P_M_Read is new P.M.Read (X_Write);\n"
+            "      procedure P_M_Read is new P.M.Generic_Read (X_Write);\n"
             "   begin\n"
             "      P_M_Read (Y_Ctx);\n"
             "   end;\n"
@@ -1897,7 +1897,8 @@ class UnknownStatement(stmt.Statement):
             "   end if;\n"
             "   if Universal.Message.Structural_Valid_Message (RFLX_Message_Ctx) then\n"
             "      declare\n"
-            "         procedure Universal_Message_Read is new Universal.Message.Read (X_Write);\n"
+            "         procedure Universal_Message_Read"
+            " is new Universal.Message.Generic_Read (X_Write);\n"
             "      begin\n"
             "         Universal_Message_Read (RFLX_Message_Ctx);\n"
             "      end;\n"

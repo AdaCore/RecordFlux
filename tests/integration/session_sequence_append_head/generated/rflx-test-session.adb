@@ -337,7 +337,7 @@ is
       end if;
       if TLV.Message.Structural_Valid_Message (Message_Ctx) then
          declare
-            procedure TLV_Message_Read is new TLV.Message.Read (Channel_Write);
+            procedure TLV_Message_Read is new TLV.Message.Generic_Read (Channel_Write);
          begin
             TLV_Message_Read (Message_Ctx);
          end;
