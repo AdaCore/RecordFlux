@@ -20,18 +20,14 @@ is
 
    Slot_Ptr_1 : Slot_Ptr_Type;
 
-   Slot_Ptr_2 : Slot_Ptr_Type;
-
    function Initialized return Boolean is
-     (Slot_Ptr_1 /= null
-      and Slot_Ptr_2 /= null);
+     (Slot_Ptr_1 /= null);
 
    procedure Initialize with
      Post =>
        Initialized;
 
    function Global_Allocated return Boolean is
-     (Slot_Ptr_1 /= null
-      and Slot_Ptr_2 /= null);
+     (Slot_Ptr_1 /= null);
 
 end RFLX.Test.Session_Allocator;
