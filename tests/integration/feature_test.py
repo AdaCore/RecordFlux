@@ -95,6 +95,9 @@ def test_equality(feature: str, tmp_path: Path) -> None:
     generated_files = list(tmp_path.glob("*"))
     expected_files = list(generated_dir.glob("*"))
 
+    generated_files.sort(key=lambda x: x.name)
+    expected_files.sort(key=lambda x: x.name)
+
     assert [f.name for f in generated_files] == [
         f.name for f in expected_files
     ], "unexpected or missing units"
