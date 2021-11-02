@@ -1,8 +1,15 @@
 package Universal is
 
-   type Message_Type is (MT_Null => 0, MT_Data => 1, MT_Value => 2, MT_Values => 3, MT_Option_Types => 4, MT_Options => 5, MT_Unconstrained_Data => 6, MT_Unconstrained_Options => 7) with Size => 8;
+   type Message_Type is (MT_Null => 0,
+                         MT_Data => 1,
+                         MT_Value => 2,
+                         MT_Values => 3,
+                         MT_Option_Types => 4,
+                         MT_Options => 5,
+                         MT_Unconstrained_Data => 6,
+                         MT_Unconstrained_Options => 7) with Size => 8;
 
-   type Length is range 0 .. 2**16 - 1 with Size => 16;
+   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Value is mod 256;
 

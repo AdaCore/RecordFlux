@@ -115,6 +115,7 @@ from rflx.ada import (
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Subsystem, fail, warn
+from rflx.integration import Integration
 from rflx.model import (
     FINAL,
     INITIAL,
@@ -146,10 +147,11 @@ log = logging.getLogger(__name__)
 NULL = Variable("null")
 
 
-class Generator:  # pylint: disable = too-many-instance-attributes
+class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arguments
     def __init__(
         self,
         model: Model,
+        integration: Integration,
         prefix: str = "",
         reproducible: bool = False,
         debug: bool = False,
@@ -167,7 +169,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         self.__template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
         assert self.__template_dir.is_dir(), "template directory not found"
 
-        self.__generate(model)
+        self.__generate(model, integration)
 
     def write_library_files(self, directory: Path) -> None:
         for template_filename in const.LIBRARY_FILES:
@@ -205,7 +207,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                     directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
                 )
 
-    def __generate(self, model: Model) -> None:
+    def __generate(self, model: Model, integration: Integration) -> None:
         for t in model.types:
             if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
@@ -242,10 +244,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             if s.package not in self._units:
                 self.__create_unit(ID(s.package), terminating=False)
 
-            self.__create_session(s)
+            self.__create_session(s, integration)
 
-    def __create_session(self, session: Session) -> None:
-        allocator_generator = AllocatorGenerator(session, self.__prefix)
+    def __create_session(self, session: Session, integration: Integration) -> None:
+        allocator_generator = AllocatorGenerator(session, integration, self.__prefix)
         unit = self.__create_unit(
             allocator_generator.unit_identifier,
             allocator_generator.declaration_context,

@@ -21,7 +21,7 @@ def assert_equal_code(spec_files: Sequence[Path]) -> None:
 
     model = parser.create_model()
 
-    generator = Generator(model, "RFLX", reproducible=True)
+    generator = Generator(model, parser.get_integration(), "RFLX", reproducible=True)
 
     for unit in generator._units.values():  # pylint: disable=protected-access
         filename = GENERATED_DIR / f"{unit.name}.ads"

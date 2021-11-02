@@ -6,7 +6,7 @@ import traceback
 from collections import defaultdict
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Dict, List, Sequence, Union
+from typing import Dict, List, Sequence, Tuple, Union
 
 import librflxlang
 from pkg_resources import get_distribution
@@ -16,6 +16,7 @@ from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subs
 from rflx.generator import Generator
 from rflx.graph import Graph
 from rflx.identifier import ID
+from rflx.integration import Integration
 from rflx.model import Message, Model, Session
 from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
@@ -248,10 +249,11 @@ def generate(args: argparse.Namespace) -> None:
     if not args.output_directory.is_dir():
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
-    model = parse(args.files, args.no_verification, args.workers)
+    model, integration = parse(args.files, args.no_verification, args.workers)
 
     generator = Generator(
         model,
+        integration,
         args.prefix,
         reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
         debug=args.debug,
@@ -264,7 +266,9 @@ def generate(args: argparse.Namespace) -> None:
         generator.write_top_level_package(args.output_directory)
 
 
-def parse(files: Sequence[Path], skip_verification: bool = False, workers: int = 1) -> Model:
+def parse(
+    files: Sequence[Path], skip_verification: bool = False, workers: int = 1
+) -> Tuple[Model, Integration]:
     parser = Parser(skip_verification, cached=True, workers=workers)
     error = RecordFluxError()
     present_files = []
@@ -287,14 +291,14 @@ def parse(files: Sequence[Path], skip_verification: bool = False, workers: int =
         error.extend(e)
 
     error.propagate()
-    return model
+    return model, parser.get_integration()
 
 
 def graph(args: argparse.Namespace) -> None:
     if not args.output_directory.is_dir():
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
-    model = parse(args.files, args.no_verification)
+    model, _ = parse(args.files, args.no_verification)
     locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
 
     for m in [*model.messages, *model.sessions]:

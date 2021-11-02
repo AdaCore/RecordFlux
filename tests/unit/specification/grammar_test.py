@@ -866,7 +866,7 @@ def test_state_error(string: str, error: str) -> None:
                     decl.FunctionDeclaration("F", [], "T"),
                 ],
                 [],
-                Location((2, 16), None, (23, 27)),
+                location=Location((2, 16), None, (23, 27)),
             ),
         ),
     ],

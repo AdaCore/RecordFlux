@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Sequence
 
@@ -489,3 +490,169 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
     assert parsed_model.types == model.types
     assert parsed_model.sessions == model.sessions
     assert parsed_model == model
+
+
+@pytest.mark.parametrize(
+    "rfi_content,match_error",
+    [
+        (
+            """Session:
+                No_Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Message: 2048
+          """,
+            'unknown session "No_Session"',
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Message: 2048
+          """,
+            'unknown global variable "Message" in session "Session"',
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Msg: 2048
+                        Local:
+                            Unknown: {}
+          """,
+            'unknown state "Unknown" in session "Session"',
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Msg: 2048
+                        Local:
+                            Start:
+                                X : 12
+          """,
+            'unknown variable "X" in state "Start" of session "Session"',
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Msg: 2048
+                        Local:
+                            Start: {}
+          """,
+            "",
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Global:
+                            Msg: 2048
+                        Local:
+                            Next:
+                                Msg2: 2048
+          """,
+            "",
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+                        Local:
+                           Start: {}
+          """,
+            "",
+        ),
+        (
+            """Session:
+                Session:
+                    Buffer_Size:
+                        Default: 1024
+          """,
+            "",
+        ),
+    ],
+)
+def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
+    p = parser.Parser()
+    content = """package Test is
+   type Message_Type is (MT_Null => 0, MT_Data => 1) with Size => 8;
+
+   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   type ValueT is mod 256;
+
+   type Message is
+      message
+         Message_Type : Message_Type;
+         Length : Length;
+         Value : ValueT;
+      end message;
+
+   generic
+       Channel : Channel with Readable, Writable;
+   session Session with
+       Initial => Start,
+       Final => Terminated
+   is
+       Msg : Message;
+   begin
+      state Start is
+      begin
+         Channel'Read (Msg);
+      transition
+         goto Reply
+            if Msg'Valid = True
+            and Msg.Message_Type = MT_Data
+            and Msg.Length = 1
+         goto Terminated
+      end Start;
+      state Reply is
+      begin
+         Msg := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
+      transition
+         goto Msg_Write
+      exception
+         goto Terminated
+      end Reply;
+      state Msg_Write is
+      begin
+         Channel'Write (Msg);
+      transition
+         goto Next
+      end Msg_Write;
+      state Next is
+         Msg2 : Message;
+      begin
+         Channel'Read(Msg2);
+      transition
+         goto Terminated
+      end Next;
+      state Terminated is null state;
+   end Session;
+   end Test;
+"""
+    test_spec = tmp_path / "test.rflx"
+    test_rfi = tmp_path / "test.rfi"
+    test_spec.write_text(content, encoding="utf-8")
+    test_rfi.write_text(rfi_content)
+    if not match_error:
+        p.parse(test_spec)
+        p.create_model()
+    else:
+        regex = re.compile(fr"^test.rfi:0:0: parser: error: {match_error}$", re.DOTALL)
+        with pytest.raises(RecordFluxError, match=regex):
+            p.parse(test_spec)
+            p.create_model()

@@ -1,6 +1,8 @@
-from typing import Dict, List, Optional, Sequence, Set
+from dataclasses import dataclass
+from itertools import zip_longest
+from typing import Dict, List, Optional, Sequence
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expression as expr, identifier as rid, typing_ as rty
 from rflx.ada import (
     ID,
     Add,
@@ -39,23 +41,47 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.error import Location
+from rflx.integration import Integration
 from rflx.model import Session, declaration as decl, statement as stmt
 
 from . import const
 
 
-class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
-    def __init__(self, session: Session, prefix: str = "") -> None:
+@dataclass
+class SlotInfo:
+    size: int
+    locations: List[Location]
+
+
+@dataclass
+class NumberedSlotInfo(SlotInfo):
+    slot_id: int
+    global_: bool
+
+
+class AllocatorGenerator:
+    def __init__(self, session: Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
         self._declaration_context: List[ContextItem] = []
         self._body_context: List[ContextItem] = []
-        self._allocation_map: Dict[Location, int] = {}
+        self._allocation_slots: Dict[Location, int] = {}
         self._unit_part = UnitPart(specification=[Pragma("Elaborate_Body")])
-        self._all_slots: Set[int] = set()
-        self._global_slots: Set[int] = set()
-        self._allocate_slots()
-        self._create()
+        self._integration = integration
+        global_slots: List[SlotInfo] = self._allocate_global_slots()
+        local_slots: List[SlotInfo] = self._allocate_local_slots()
+        numbered_slots: List[NumberedSlotInfo] = []
+        count = 1
+        for slot in global_slots:
+            numbered_slots.append(NumberedSlotInfo(slot.size, slot.locations, count, global_=True))
+            count += 1
+        for slot in local_slots:
+            numbered_slots.append(NumberedSlotInfo(slot.size, slot.locations, count, global_=False))
+            count += 1
+        for slot in numbered_slots:
+            for location in slot.locations:
+                self._allocation_slots[location] = slot.slot_id
+        self._create(numbered_slots)
 
     @property
     def unit_identifier(self) -> ID:
@@ -73,86 +99,101 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def unit_part(self) -> UnitPart:
         return self._unit_part
 
-    def _slot_id(self, slot_id: int, qualified: bool = False) -> ID:
+    def _slot_name(self, slot_id: int, qualified: bool = False) -> ID:
         base = f"Slot_Ptr_{slot_id}"
         return ID(self.unit_identifier * base) if qualified else ID(base)
 
     def get_slot_ptr(self, location: Optional[Location]) -> Variable:
         assert location is not None
-        slot_id: int = self._allocation_map[location]
-        return Variable(self._slot_id(slot_id, qualified=True))
+        slot_id: int = self._allocation_slots[location]
+        return Variable(self._slot_name(slot_id, qualified=True))
 
     def free_buffer(self, identifier: ID, location: Optional[Location]) -> Sequence[Statement]:
         assert location is not None
-        slot_id = self._allocation_map[location]
+        slot_id = self._allocation_slots[location]
         return [
             PragmaStatement("Warnings", [Variable("Off"), String("unused assignment")]),
             Assignment(
-                self._slot_id(slot_id, qualified=True),
+                self._slot_name(slot_id, qualified=True),
                 Variable(identifier),
             ),
             PragmaStatement("Warnings", [Variable("On"), String("unused assignment")]),
         ]
 
+    def get_size(self, variable: rid.ID, state: Optional[rid.ID] = None) -> int:
+        return self._integration.get_size(self._session.identifier, variable, state)
+
     @staticmethod
-    def _ptr_type() -> ID:
-        return ID("Slot_Ptr_Type")
+    def _ptr_type(size: int) -> ID:
+        return ID(f"Slot_Ptr_Type_{size}")
 
-    def _create(self) -> None:
-        self._unit_part += self._create_ptr_subtype()
-        self._unit_part += self._create_slots()
-        self._unit_part += self._create_init_pred()
-        self._unit_part += self._create_init_proc()
-        self._unit_part += self._create_global_allocated_pred()
+    def _create(self, slots: List[NumberedSlotInfo]) -> None:
+        self._unit_part += self._create_ptr_subtypes(slots)
+        self._unit_part += self._create_slots(slots)
+        self._unit_part += self._create_init_pred(slots)
+        self._unit_part += self._create_init_proc(slots)
+        self._unit_part += self._create_global_allocated_pred(slots)
 
-    def _create_ptr_subtype(self) -> UnitPart:
-        pred = OrElse(
-            Equal(Variable(self._ptr_type()), Variable("null")),
-            AndThen(
-                Equal(First(self._ptr_type()), First(const.TYPES_INDEX)),
-                Equal(Last(self._ptr_type()), Add(First(const.TYPES_INDEX), Number(4095))),
-            ),
+    def _create_ptr_subtypes(self, slots: List[NumberedSlotInfo]) -> UnitPart:
+        unit = UnitPart(
+            specification=[
+                Subtype(
+                    self._ptr_type(size),
+                    const.TYPES_BYTES_PTR,
+                    aspects=[
+                        DynamicPredicate(
+                            OrElse(
+                                Equal(Variable(self._ptr_type(size)), Variable("null")),
+                                AndThen(
+                                    Equal(First(self._ptr_type(size)), First(const.TYPES_INDEX)),
+                                    Equal(
+                                        Last(self._ptr_type(size)),
+                                        Add(First(const.TYPES_INDEX), Number(size - 1)),
+                                    ),
+                                ),
+                            )
+                        )
+                    ],
+                )
+                for size in sorted({slot.size for slot in slots})
+            ]
         )
         self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
         self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_INDEX))
         self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_BYTES_PTR))
-        unit = UnitPart(
-            specification=[
-                Subtype(self._ptr_type(), const.TYPES_BYTES_PTR, aspects=[DynamicPredicate(pred)]),
-            ]
-        )
         return unit
 
-    def _create_slots(self) -> UnitPart:
+    def _create_slots(self, slots: List[NumberedSlotInfo]) -> UnitPart:
         array_decls: List[Declaration] = [
             ObjectDeclaration(
-                [ID(f"Slot_{i}")],
+                [ID(f"Slot_{slot.slot_id}")],
                 const.TYPES_BYTES,
                 aliased=True,
                 expression=NamedAggregate(
                     (
                         ValueRange(
-                            First(const.TYPES_INDEX), Add(First(const.TYPES_INDEX), Number(4095))
+                            First(const.TYPES_INDEX),
+                            Add(First(const.TYPES_INDEX), Number(slot.size - 1)),
                         ),
                         First(const.TYPES_BYTE),
                     )
                 ),
             )
-            for i in self._all_slots
+            for slot in slots
         ]
 
         pointer_decls: List[Declaration] = [
             ObjectDeclaration(
-                [self._slot_id(i)],
-                self._ptr_type(),
+                [self._slot_name(slot.slot_id)],
+                self._ptr_type(slot.size),
             )
-            for i in self._all_slots
+            for slot in slots
         ]
         self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
         unit = UnitPart(specification=pointer_decls, body=array_decls)
         return unit
 
-    def _create_init_pred(self) -> UnitPart:
+    def _create_init_pred(self, slots: List[NumberedSlotInfo]) -> UnitPart:
         return UnitPart(
             [
                 ExpressionFunctionDeclaration(
@@ -160,17 +201,17 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     And(
                         *[
                             NotEqual(
-                                Variable(self._slot_id(i)),
+                                Variable(self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
-                            for i in self._all_slots
+                            for slot in slots
                         ]
                     ),
                 )
             ]
         )
 
-    def _create_global_allocated_pred(self) -> UnitPart:
+    def _create_global_allocated_pred(self, slots: List[NumberedSlotInfo]) -> UnitPart:
         return UnitPart(
             [
                 ExpressionFunctionDeclaration(
@@ -178,29 +219,32 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     And(
                         *[
                             Equal(
-                                Variable(self._slot_id(i)),
+                                Variable(self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
-                            for i in self._all_slots
-                            if i in self._global_slots
+                            for slot in slots
+                            if slot.global_
                         ],
                         *[
                             NotEqual(
-                                Variable(self._slot_id(i)),
+                                Variable(self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
-                            for i in self._all_slots
-                            if i not in self._global_slots
+                            for slot in slots
+                            if not slot.global_
                         ],
                     ),
                 )
             ]
         )
 
-    def _create_init_proc(self) -> UnitPart:
+    def _create_init_proc(self, slots: List[NumberedSlotInfo]) -> UnitPart:
         assignments = [
-            Assignment(self._slot_id(i), UnrestrictedAccess(Variable(ID(f"Slot_{i}"))))
-            for i in self._all_slots
+            Assignment(
+                self._slot_name(slot.slot_id),
+                UnrestrictedAccess(Variable(ID(f"Slot_{slot.slot_id}"))),
+            )
+            for slot in slots
         ]
         proc = ProcedureSpecification(ID("Initialize"))
         return UnitPart(
@@ -216,29 +260,41 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def _needs_allocation(type_: rty.Type) -> bool:
         return isinstance(type_, (rty.Message, rty.Sequence))
 
-    def _allocate_slots(self) -> None:
-        """Create memory slots for each construct in the session that requires memory."""
-        count: int = 0
-
-        def insert(loc: Optional[Location]) -> None:
-            nonlocal count
-            count += 1
-            assert loc is not None
-            self._allocation_map[loc] = count
-            self._all_slots.add(count)
-
+    def _allocate_global_slots(self) -> List[SlotInfo]:
+        slots = []
         for d in self._session.declarations.values():
             if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
-                insert(d.location)
-                self._global_slots.add(count)
+                assert d.location is not None
+                slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
+        return slots
 
-        global_count = count
+    def _allocate_local_slots(self) -> List[SlotInfo]:
+        """
+        Allocate slots for state variables and state actions.
 
+        We collect the allocation requirements (pairs of locations and sizes) for each
+        state in a list, then sort these lists in descending order of sizes.
+        Then, we imagine a matrix where each line is one of these lists (filling
+        up with zero sizes to make the lists the same length). For each column of
+        that matrix, we create a SlotInfo object whose size is the maximal size for
+        that column, and the locations are all locations in that column.
+        """
+
+        @dataclass
+        class AllocationRequirement:
+            location: Optional[Location]
+            size: int
+
+        alloc_requirements_per_state: List[List[AllocationRequirement]] = []
         for s in self._session.states:
-            count = global_count
+            state_requirements = []
             for d in s.declarations.values():
                 if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
-                    insert(d.location)
+                    state_requirements.append(
+                        AllocationRequirement(
+                            d.location, self.get_size(d.identifier, s.identifier.name)
+                        )
+                    )
             for a in s.actions:
                 if (
                     isinstance(a, stmt.Assignment)
@@ -247,6 +303,24 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     and isinstance(a.expression.sequence.type_.element, rty.Message)
                     and isinstance(a.expression.sequence, (expr.Selected, expr.Variable))
                 ):
-                    insert(a.location)
+                    state_requirements.append(
+                        AllocationRequirement(a.location, self._integration.defaultsize)
+                    )
                 if isinstance(a, stmt.Assignment) and isinstance(a.expression, expr.Head):
-                    insert(a.location)
+                    state_requirements.append(
+                        AllocationRequirement(a.location, self._integration.defaultsize)
+                    )
+
+            alloc_requirements_per_state.append(state_requirements)
+
+        for state_requirements in alloc_requirements_per_state:
+            state_requirements.sort(key=lambda x: x.size, reverse=True)
+
+        slots = []
+        for requirements_per_slot in zip_longest(
+            *alloc_requirements_per_state, fillvalue=AllocationRequirement(None, 0)
+        ):
+            size = max(x.size for x in requirements_per_slot)
+            locations = [x.location for x in requirements_per_slot if x.location is not None]
+            slots.append(SlotInfo(size, locations))
+        return slots

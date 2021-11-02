@@ -12,13 +12,13 @@ is
 
    pragma Elaborate_Body;
 
-   subtype Slot_Ptr_Type is RFLX_Types.Bytes_Ptr with
+   subtype Slot_Ptr_Type_4096 is RFLX_Types.Bytes_Ptr with
      Dynamic_Predicate =>
-       Slot_Ptr_Type = null
-       or else (Slot_Ptr_Type'First = RFLX_Types.Index'First
-                and then Slot_Ptr_Type'Last = RFLX_Types.Index'First + 4095);
+       Slot_Ptr_Type_4096 = null
+       or else (Slot_Ptr_Type_4096'First = RFLX_Types.Index'First
+                and then Slot_Ptr_Type_4096'Last = RFLX_Types.Index'First + 4095);
 
-   Slot_Ptr_1 : Slot_Ptr_Type;
+   Slot_Ptr_1 : Slot_Ptr_Type_4096;
 
    function Initialized return Boolean is
      (Slot_Ptr_1 /= null);

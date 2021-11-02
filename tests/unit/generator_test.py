@@ -15,6 +15,7 @@ from rflx.generator import Generator, common, const
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
 from rflx.identifier import ID
+from rflx.integration import Integration
 from rflx.model import (
     BUILTIN_TYPES,
     FINAL,
@@ -62,13 +63,13 @@ def assert_body(generator: Generator) -> None:
 
 
 def generate(model: Model) -> Generator:
-    generator = Generator(model, "RFLX", reproducible=True)
+    generator = Generator(model, Integration(), "RFLX", reproducible=True)
     return generator
 
 
 def test_invalid_prefix() -> None:
     with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "A..B"$'):
-        Generator(Model(), "A..B")
+        Generator(Model(), Integration(), "A..B")
 
 
 def test_unsupported_checksum() -> None:
@@ -79,11 +80,11 @@ def test_unsupported_checksum() -> None:
             r" \(consider --ignore-unsupported-checksum option\)$"
         ),
     ):
-        Generator(models.TLV_WITH_CHECKSUM_MODEL)
+        Generator(models.TLV_WITH_CHECKSUM_MODEL, Integration())
 
 
 def test_ignore_unsupported_checksum(capsys: CaptureFixture[str]) -> None:
-    Generator(models.TLV_WITH_CHECKSUM_MODEL, ignore_unsupported_checksum=True)
+    Generator(models.TLV_WITH_CHECKSUM_MODEL, Integration(), ignore_unsupported_checksum=True)
     captured = capsys.readouterr()
     assert "generator: warning: unsupported checksum ignored" in captured.out
 
@@ -94,18 +95,18 @@ def test_unexpected_type() -> None:
         pass
 
     with pytest.raises(AssertionError, match='unexpected type "TestType"'):
-        Generator(Model([TestType("P::T")]))
+        Generator(Model([TestType("P::T")]), Integration())
 
 
 def test_library_files(tmp_path: Path) -> None:
-    generator = Generator(Model(), "RFLX", reproducible=True)
+    generator = Generator(Model(), Integration(), "RFLX", reproducible=True)
     generator.write_library_files(tmp_path)
     for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
         assert (tmp_path / filename).read_text() == (GENERATED_DIR / filename).read_text(), filename
 
 
 def test_library_files_no_prefix(tmp_path: Path) -> None:
-    generator = Generator(Model(), "", reproducible=True)
+    generator = Generator(Model(), Integration(), "", reproducible=True)
     generator.write_library_files(tmp_path)
     for filename in const.LIBRARY_FILES:
         assert (tmp_path / filename).exists()
@@ -115,7 +116,7 @@ def test_library_files_no_prefix(tmp_path: Path) -> None:
 def test_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
-        generator = Generator(Model())
+        generator = Generator(Model(), Integration())
         generator.write_library_files(tmp_path)
 
 
@@ -123,12 +124,12 @@ def test_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) ->
 def test_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
     with pytest.raises(AssertionError, match="^template file not found"):
-        generator = Generator(Model())
+        generator = Generator(Model(), Integration())
         generator.write_library_files(tmp_path)
 
 
 def test_top_level_package(tmp_path: Path) -> None:
-    generator = Generator(Model(), "RFLX", reproducible=True)
+    generator = Generator(Model(), Integration(), "RFLX", reproducible=True)
     generator.write_top_level_package(tmp_path)
 
     created_files = list(tmp_path.glob("*"))
@@ -141,7 +142,7 @@ def test_top_level_package(tmp_path: Path) -> None:
 
 
 def test_top_level_package_no_prefix(tmp_path: Path) -> None:
-    generator = Generator(Model(), "", reproducible=True)
+    generator = Generator(Model(), Integration(), "", reproducible=True)
     generator.write_top_level_package(tmp_path)
     assert list(tmp_path.glob("*")) == []
 
@@ -367,7 +368,7 @@ def test_session_create_formal_parameters(
     parameter: decl.FormalDeclaration, expected: Sequence[ada.FormalDeclaration]
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
     # pylint: disable = protected-access
     assert session_generator._create_formal_parameters([parameter]) == expected
@@ -451,7 +452,7 @@ def test_session_create_formal_parameters_error(
     parameter: decl.FormalDeclaration, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -678,9 +679,9 @@ def test_session_create_formal_parameters_error(
 def test_session_evaluate_declarations(
     declaration: decl.BasicDeclaration, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
-    allocator = AllocatorGenerator(DUMMY_SESSION)
+    allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     # pylint: disable=protected-access
-    allocator._allocation_map[Location(start=(1, 1))] = 1
+    allocator._allocation_slots[Location(start=(1, 1))] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
     # pylint: disable = protected-access
     assert session_generator._evaluate_declarations([declaration], session_global) == expected
@@ -710,7 +711,7 @@ def test_session_evaluate_declarations_error(
     declaration: decl.BasicDeclaration, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -973,9 +974,9 @@ def test_session_declare(
     expected: EvaluatedDeclarationStr,
 ) -> None:
     loc: Location = Location(start=(1, 1))
-    allocator = AllocatorGenerator(DUMMY_SESSION)
+    allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     # pylint: disable=protected-access
-    allocator._allocation_map[loc] = 1
+    allocator._allocation_slots[loc] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
     # pylint: disable = protected-access
     result = session_generator._declare(ID("X"), type_, loc, expression, constant, session_global)
@@ -1015,7 +1016,7 @@ def test_session_declare_error(
     type_: rty.Type, expression: expr.Expr, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1777,15 +1778,16 @@ class UnknownStatement(stmt.Statement):
     ],
 )
 def test_session_state_action(action: stmt.Statement, expected: str) -> None:
-    allocator = AllocatorGenerator(DUMMY_SESSION)
+    allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
     # pylint: disable=protected-access
-    allocator._allocation_map[Location(start=(1, 1))] = 1
+    allocator._allocation_slots[Location(start=(1, 1))] = 1
     # pylint: disable = protected-access
     assert (
         "\n".join(
             str(s)
             for s in session_generator._state_action(
+                ID("S"),
                 action,
                 ExceptionHandler(
                     set(),
@@ -1844,12 +1846,12 @@ def test_session_state_action_error(
     action: stmt.Statement, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._state_action(action, ExceptionHandler(set(), State("S"), []))
+        session_generator._state_action(ID("S"), action, ExceptionHandler(set(), State("S"), []))
 
 
 @pytest.mark.parametrize(
@@ -2181,7 +2183,7 @@ def test_session_assign_error(
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -2191,6 +2193,7 @@ def test_session_assign_error(
             type_,
             expression,
             ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
+            ID("State"),
             alloc_id=None,
         )
 
@@ -2222,7 +2225,7 @@ def test_session_append_error(
     append: stmt.Append, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -2248,7 +2251,7 @@ def test_session_append_error(
 )
 def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -2274,7 +2277,7 @@ def test_session_write_error(
     write: stmt.Write, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -2395,7 +2398,7 @@ def test_session_write_error(
 )
 def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
     # pylint: disable = protected-access
     assert expression.substituted(session_generator._substitution()) == expected
@@ -2425,7 +2428,7 @@ def test_session_substitution_error(
     expression: expr.Expr, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2480,7 +2483,7 @@ def test_session_substitution_equality(
     expected: expr.Expr,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION), debug=True
+        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
 
     # pylint: disable = protected-access
@@ -2616,7 +2619,7 @@ def test_equality(test_case: str) -> None:
 def test_compilability(test_case: str, tmp_path: Path) -> None:
     if TEST_CASES[test_case].complement:
         pytest.skip()
-    assert_compilable_code(TEST_CASES[test_case].model, tmp_path)
+    assert_compilable_code(TEST_CASES[test_case].model, Integration(), tmp_path)
 
 
 @pytest.mark.parametrize("test_case", TEST_CASES)
@@ -2628,7 +2631,7 @@ def test_executability(test_case: str, tmp_path: Path) -> None:
     assert main in complement
     for filename, content in complement.items():
         (tmp_path / filename).write_text(content)
-    output = assert_executable_code(TEST_CASES[test_case].model, tmp_path, main=main)
+    output = assert_executable_code(TEST_CASES[test_case].model, Integration(), tmp_path, main=main)
     assert output == TEST_CASES[test_case].expected_output
 
 
@@ -2646,6 +2649,7 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
             (tmp_path / filename).write_text(content)
     assert_provable_code(
         TEST_CASES[test_case].model,
+        Integration(),
         tmp_path,
         main=main,
         units=spark_units,
