@@ -3,13 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field as dataclass_field
 from distutils.dir_util import copy_tree
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 import pytest
 from ruamel.yaml.main import YAML
 
 from rflx import ada
 from rflx.generator import Generator
+from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.utils import (
@@ -56,10 +57,10 @@ def get_config(feature: str) -> Config:
     return Config()
 
 
-def create_model(feature: str) -> Model:
+def create_model(feature: str) -> Tuple[Model, Integration]:
     parser = Parser()
     parser.parse(Path(__file__).parent / feature / "test.rflx")
-    return parser.create_model()
+    return parser.create_model(), parser.get_integration()
 
 
 def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
@@ -94,8 +95,10 @@ def test_equality(feature: str, tmp_path: Path) -> None:
     if not generated_dir.is_dir():
         pytest.skip()
 
-    model = create_model(feature)
-    generator = Generator(model, "RFLX", reproducible=True, ignore_unsupported_checksum=True)
+    model, integration = create_model(feature)
+    generator = Generator(
+        model, integration, "RFLX", reproducible=True, ignore_unsupported_checksum=True
+    )
     generator.write_top_level_package(tmp_path)
     generator.write_library_files(tmp_path)
     generator.write_units(tmp_path)
@@ -117,8 +120,8 @@ def test_compilability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
     if config.sequence:
         pytest.skip()
-    model = create_model(feature)
-    assert_compilable_code(model, tmp_path)
+    model, integration = create_model(feature)
+    assert_compilable_code(model, integration, tmp_path)
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
@@ -126,9 +129,9 @@ def test_executability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
     if not config.sequence:
         pytest.skip()
-    model = create_model(feature)
+    model, integration = create_model(feature)
     create_complement(config, feature, tmp_path)
-    assert assert_executable_code(model, tmp_path, main=MAIN) == config.sequence
+    assert assert_executable_code(model, integration, tmp_path, main=MAIN) == config.sequence
 
 
 @pytest.mark.verification
@@ -137,6 +140,8 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
     if config.prove is None:
         pytest.skip()
-    model = create_model(feature)
+    model, integration = create_model(feature)
     create_complement(config, feature, tmp_path)
-    assert_provable_code(model, tmp_path, main=MAIN, units=["main", "lib", *config.prove])
+    assert_provable_code(
+        model, integration, tmp_path, main=MAIN, units=["main", "lib", *config.prove]
+    )

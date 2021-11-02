@@ -51,6 +51,7 @@ setup(
     install_requires=[
         "attrs >=20, <22",
         "icontract >=2.3.4, <3",
+        "pydantic >=1, <2",
         "pydotplus >=2, <3",
         "ruamel.yaml >=0.17, <0.18",
         "z3-solver >=4, <5",

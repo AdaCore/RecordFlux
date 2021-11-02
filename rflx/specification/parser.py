@@ -8,10 +8,13 @@ from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import librflxlang as lang
+from ruamel.yaml.error import MarkedYAMLError
+from ruamel.yaml.main import YAML
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
+from rflx.integration import Integration
 from rflx.model import declaration as decl, statement as stmt
 from rflx.specification.const import RESERVED_WORDS
 
@@ -200,6 +203,7 @@ def create_unproven_session(
     types: Sequence[model.Type] = None,
 ) -> model.UnprovenSession:
     __check_session_identifier(session, filename)
+
     return model.UnprovenSession(
         package * create_id(session.f_identifier, filename),
         create_id(session.f_aspects.f_initial, filename),
@@ -1432,6 +1436,7 @@ class Parser:
             *model.INTERNAL_TYPES.values(),
         ]
         self.__sessions: List[model.Session] = []
+        self.__integration: Integration = Integration()
         self.__cache = Cache(not skip_verification and cached)
 
     def __convert_unit(
@@ -1509,6 +1514,8 @@ class Parser:
         unit = lang.AnalysisContext().get_from_file(str(filename))
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
+        integration_file = filename.with_suffix(".rfi")
+        self._load_integration_file(integration_file, error)
         if unit.root:
             assert isinstance(unit.root, lang.Specification)
             self.__convert_unit(error, unit.root, filename, transitions)
@@ -1565,11 +1572,33 @@ class Parser:
             self.__evaluate_specification(error, spec_node.spec, spec_node.filename)
         try:
             result = model.Model(self.__types, self.__sessions)
+            self.__integration.validate(result, error)
         except RecordFluxError as e:
             error.extend(e)
 
         error.propagate()
         return result
+
+    def get_integration(self) -> Integration:
+        return self.__integration
+
+    def _load_integration_file(self, integration_file: Path, error: RecordFluxError) -> None:
+        if integration_file.exists():
+            yaml = YAML()
+            try:
+                content = yaml.load(integration_file)
+            except MarkedYAMLError as e:
+                location = Location(
+                    start=(
+                        (0, 0)
+                        if e.problem_mark is None
+                        else (e.problem_mark.line + 1, e.problem_mark.column + 1)
+                    ),
+                    source=integration_file,
+                )
+                error.extend([(str(e), Subsystem.PARSER, Severity.ERROR, location)])
+                return
+            self.__integration.add_integration_file(integration_file, content, error)
 
     @property
     def specifications(self) -> Dict[str, lang.Specification]:

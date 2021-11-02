@@ -1,0 +1,23 @@
+with Universal;
+with B;
+package Test is
+
+   generic
+      Channel : Channel with Readable;
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      M : Universal::Message;
+   begin
+      state Start is
+      begin
+         Channel'Read (M);
+      transition
+         goto Terminated
+      end Start;
+
+      state Terminated is null state;
+   end Session;
+
+end Test;

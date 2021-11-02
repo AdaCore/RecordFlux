@@ -247,7 +247,14 @@ class Session(AbstractSession):
         location: Location = None,
     ):
         super().__init__(
-            identifier, initial, final, states, declarations, parameters, types, location
+            identifier,
+            initial,
+            final,
+            states,
+            declarations,
+            parameters,
+            types,
+            location,
         )
         self.__validate()
         self.error.propagate()
@@ -677,7 +684,14 @@ class UnprovenSession(AbstractSession):
     ):
         # pylint: disable=useless-super-delegation
         super().__init__(
-            identifier, initial, final, states, declarations, parameters, types, location
+            identifier,
+            initial,
+            final,
+            states,
+            declarations,
+            parameters,
+            types,
+            location,
         )
 
     def proven(self) -> Session:

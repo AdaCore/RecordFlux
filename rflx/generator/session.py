@@ -579,6 +579,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     s
                     for a in state.actions
                     for s in self._state_action(
+                        state.identifier,
                         a,
                         ExceptionHandler(
                             self._session_context.state_exception,
@@ -672,9 +673,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     Variable(context_id(d.identifier) * "Buffer_First"),
                                     First(const.TYPES_INDEX),
                                 ),
-                                Equal(  # ISSUE: Componolit/RecordFlux#713
+                                Equal(
                                     Variable(context_id(d.identifier) * "Buffer_Last"),
-                                    Add(First(const.TYPES_INDEX), Number(4095)),
+                                    Add(
+                                        First(const.TYPES_INDEX),
+                                        Number(self._allocator.get_size(d.identifier) - 1),
+                                    ),
                                 ),
                             ]
                         ],
@@ -1521,7 +1525,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return result
 
     def _state_action(
-        self, action: stmt.Statement, exception_handler: ExceptionHandler
+        self, state: rid.ID, action: stmt.Statement, exception_handler: ExceptionHandler
     ) -> Sequence[Statement]:
         if isinstance(action, stmt.Assignment):
             result = self._assign(
@@ -1529,6 +1533,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 action.type_,
                 action.expression,
                 exception_handler,
+                state,
                 action.location,
             )
 
@@ -1671,11 +1676,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return result
 
-    def _declare_and_assign(
+    def _declare_and_assign(  # pylint: disable = too-many-arguments
         self,
         variables: Sequence[Tuple[rid.ID, rty.Type, expr.Expr]],
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
+        state: rid.ID,
         alloc_id: Optional[Location],
         constant: bool = False,
     ) -> Sequence[Statement]:
@@ -1703,13 +1709,18 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         *[
                             *evaluated_declaration.initialization,
                             *(
-                                self._assign(k, type_, v, local_exception_handler, alloc_id)
+                                self._assign(k, type_, v, local_exception_handler, state, alloc_id)
                                 if not initialized_in_declaration
                                 else []
                             ),
                         ],
                         *self._declare_and_assign(
-                            variables[1:], statements, exception_handler, alloc_id, constant
+                            variables[1:],
+                            statements,
+                            exception_handler,
+                            state,
+                            alloc_id,
+                            constant,
                         ),
                         *evaluated_declaration.finalization,
                     ],
@@ -1717,16 +1728,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 *exception_handler.execute_deferred(),
             ]
 
-    def _assign(
+    def _assign(  # pylint: disable = too-many-arguments
         self,
         target: rid.ID,
         target_type: rty.Type,
         expression: expr.Expr,
         exception_handler: ExceptionHandler,
+        state: rid.ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         if isinstance(expression, expr.MessageAggregate):
-            return self._assign_to_message_aggregate(target, expression, exception_handler)
+            return self._assign_to_message_aggregate(target, expression, exception_handler, state)
 
         if isinstance(target_type, rty.Message):
             for v in expression.findall(
@@ -1740,7 +1752,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
 
         if isinstance(expression, expr.Binding):
-            return self._assign_to_binding(target, expression, exception_handler, alloc_id)
+            return self._assign_to_binding(target, expression, exception_handler, state, alloc_id)
 
         if isinstance(expression, expr.Selected):
             return self._assign_to_selected(target, expression, exception_handler)
@@ -1799,6 +1811,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target: rid.ID,
         binding: expr.Binding,
         exception_handler: ExceptionHandler,
+        state: rid.ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         variables = []
@@ -1851,9 +1864,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             return self._declare_and_assign(
                 variables,
                 self._assign(
-                    target, type_, binding.expr, local_exception_handler, alloc_id=alloc_id
+                    target,
+                    type_,
+                    binding.expr,
+                    local_exception_handler,
+                    state,
+                    alloc_id=alloc_id,
                 ),
                 exception_handler,
+                state,
                 alloc_id=alloc_id,
                 constant=True,
             )
@@ -1936,6 +1955,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target: rid.ID,
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
+        state: rid.ID,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
@@ -2030,8 +2050,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     for s in [
                                         expr.Size(v).substituted(self._substitution()).ada_expr()
                                     ]
-                                    for e in [  # ISSUE: Componolit/RecordFlux#713
-                                        LessEqual(s, Number(4096 * 8)),
+                                    for e in [
+                                        LessEqual(
+                                            s,
+                                            Number(
+                                                self._allocator.get_size(v.identifier, state) * 8
+                                            ),
+                                        ),
                                         Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
                                     ]
                                 ]

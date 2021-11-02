@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import re
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, Dict, Sequence
@@ -2802,3 +2803,35 @@ def test_parse_reserved_word_as_channel_name() -> None:
         end Test;
         """
     )
+
+
+@pytest.mark.parametrize(
+    "content, error_msg, line, column",
+    [
+        ('"', ["while scanning a quoted scalar", "unexpected end of stream"], 1, 2),
+        ("Session: 1, Session : 1", ["mapping values are not allowed here"], 1, 21),
+        (
+            "Session: 1\nSession : 1",
+            ["while constructing a mapping", 'found duplicate key "Session" with value "1"'],
+            2,
+            1,
+        ),
+    ],
+)
+def test_load_integration_file(
+    tmp_path: Path, content: str, error_msg: Sequence[str], line: int, column: int
+) -> None:
+    test_rfi = tmp_path / "test.rfi"
+    test_rfi.write_text(content)
+    p = parser.Parser()
+    error = RecordFluxError()
+    regex = fr"^{test_rfi}:{line}:{column}: parser: error: "
+    for elt in error_msg:
+        regex += elt
+        regex += fr'.*in "{test_rfi}", line [0-9]+, column [0-9]+.*'
+    regex += "$"
+    compiled_regex = re.compile(regex, re.DOTALL)
+    with pytest.raises(RecordFluxError, match=compiled_regex):
+        # pylint: disable = protected-access
+        p._load_integration_file(test_rfi, error)
+        error.propagate()

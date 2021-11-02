@@ -8,6 +8,7 @@ from pathlib import Path
 
 import tests.data.models
 from rflx.generator import Generator
+from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import SPEC_DIR
@@ -46,7 +47,9 @@ def main() -> int:
     parser.parse(*SPECIFICATION_FILES)
 
     for model in [parser.create_model(), *MODELS]:
-        generator = Generator(model, "RFLX", reproducible=True, ignore_unsupported_checksum=True)
+        generator = Generator(
+            model, Integration(), "RFLX", reproducible=True, ignore_unsupported_checksum=True
+        )
         generator.write_units(OUTPUT_DIRECTORY)
         generator.write_library_files(OUTPUT_DIRECTORY)
         generator.write_top_level_package(OUTPUT_DIRECTORY)
@@ -57,7 +60,11 @@ def main() -> int:
         parser = Parser()
         parser.parse(feature_test / "test.rflx")
         generator = Generator(
-            parser.create_model(), "RFLX", reproducible=True, ignore_unsupported_checksum=True
+            parser.create_model(),
+            parser.get_integration(),
+            "RFLX",
+            reproducible=True,
+            ignore_unsupported_checksum=True,
         )
         generator.write_units(output_directory)
         generator.write_library_files(output_directory)

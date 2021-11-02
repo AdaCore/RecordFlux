@@ -2,7 +2,7 @@ package TLV is
 
    type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
 
-   type Length is mod 2**16;
+   type Length is mod 2 ** 16;
 
    type Message is
       message

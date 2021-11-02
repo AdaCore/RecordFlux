@@ -13,6 +13,7 @@ from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Generator, const
 from rflx.identifier import ID
+from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
 from rflx.specification import Parser
 from rflx.specification.parser import (
@@ -73,7 +74,7 @@ def assert_compilable_code_specs(
     for spec_file in spec_files:
         parser.parse(pathlib.Path(spec_file))
 
-    assert_compilable_code(parser.create_model(), tmp_path, prefix)
+    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix)
 
 
 def assert_compilable_code_string(
@@ -82,13 +83,17 @@ def assert_compilable_code_string(
     parser = Parser()
     parser.parse_string(specification)
 
-    assert_compilable_code(parser.create_model(), tmp_path, prefix)
+    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix)
 
 
 def assert_compilable_code(
-    model: Model, tmp_path: pathlib.Path, main: str = None, prefix: str = None
+    model: Model,
+    integration: Integration,
+    tmp_path: pathlib.Path,
+    main: str = None,
+    prefix: str = None,
 ) -> None:
-    _create_files(tmp_path, model, main, prefix)
+    _create_files(tmp_path, model, integration, main, prefix)
 
     p = subprocess.run(["gprbuild", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
     if p.returncode:
@@ -98,9 +103,9 @@ def assert_compilable_code(
 
 
 def assert_executable_code(
-    model: Model, tmp_path: pathlib.Path, main: str, prefix: str = None
+    model: Model, integration: Integration, tmp_path: pathlib.Path, main: str, prefix: str = None
 ) -> str:
-    assert_compilable_code(model, tmp_path, main, prefix)
+    assert_compilable_code(model, integration, tmp_path, main, prefix)
 
     p = subprocess.run(
         ["./" + main.split(".")[0]],
@@ -123,17 +128,18 @@ def assert_provable_code_string(
     parser = Parser()
     parser.parse_string(specification)
 
-    assert_provable_code(parser.create_model(), tmp_path, prefix=prefix, units=units)
+    assert_provable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix, units=units)
 
 
 def assert_provable_code(
     model: Model,
+    integration: Integration,
     tmp_path: pathlib.Path,
     main: str = None,
     prefix: str = None,
     units: Sequence[str] = None,
 ) -> None:
-    _create_files(tmp_path, model, main, prefix)
+    _create_files(tmp_path, model, integration, main, prefix)
 
     def run(command: Sequence[str]) -> None:
         p = subprocess.run(command, cwd=tmp_path, check=False, stderr=subprocess.PIPE)
@@ -154,6 +160,7 @@ def assert_provable_code(
 def _create_files(
     tmp_path: pathlib.Path,
     model: Model,
+    integration: Integration,
     main: str = None,
     prefix: str = None,
 ) -> None:
@@ -184,7 +191,11 @@ def _create_files(
     )
 
     generator = Generator(
-        model, prefix if prefix else "RFLX", debug=True, ignore_unsupported_checksum=True
+        model,
+        integration,
+        prefix if prefix else "RFLX",
+        debug=True,
+        ignore_unsupported_checksum=True,
     )
     generator.write_units(tmp_path)
     generator.write_library_files(tmp_path)

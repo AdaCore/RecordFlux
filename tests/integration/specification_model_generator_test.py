@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from rflx.integration import Integration
 from rflx.specification import Parser
 from tests import utils
 from tests.const import SPEC_DIR
@@ -170,7 +171,7 @@ def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
            end Sequence_Test;
         """
     )
-    utils.assert_compilable_code(p.create_model(), tmp_path)
+    utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
 
 def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
@@ -196,7 +197,7 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
            end Sequence_Test;
         """
     )
-    utils.assert_compilable_code(p.create_model(), tmp_path)
+    utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
 
 def test_message_fixed_size_sequence(tmp_path: Path) -> None:
@@ -357,7 +358,7 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
            end In_Proto;
         """
     )
-    utils.assert_compilable_code(p.create_model(), tmp_path)
+    utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
 
 def test_refinement_with_self(tmp_path: Path) -> None:
