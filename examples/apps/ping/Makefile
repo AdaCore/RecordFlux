@@ -1,8 +1,10 @@
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
 bin = obj/ping
+proof_archive = proof.tar.zst
+proof_sessions = $(shell find proof -type f -name why3session.xml -o -name why3shapes.gz)
 
-.PHONY: test test_python test_spark build prove generate clean clean_proof
+.PHONY: test test_python test_spark build prove generate clean init_proof update_proof reset_proof clean_proof
 
 test: test_python test_spark
 
@@ -22,11 +24,22 @@ generate: $(src)
 clean:
 	rm -rf generated/* obj python
 
+$(proof_archive): $(proof_sessions)
+	tar -c --zstd -f $@ $^
+
+update_proof: $(proof_archive)
+
+init_proof:
+	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
+	tar -x -f $(proof_archive)
+
+reset_proof: clean_proof init_proof
+
 clean_proof:
 	rm -rf proof/*
 
 $(src): $(specs)
 	rflx generate -d generated --ignore-unsupported-checksum $^
 
-$(bin): $(src)
+$(bin): $(src) $(wildcard src/*)
 	gprbuild -Pping

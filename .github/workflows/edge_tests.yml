@@ -24,6 +24,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+        lfs: true
         submodules: true
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -64,6 +65,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+        lfs: true
         submodules: true
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -93,4 +95,4 @@ jobs:
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
     - name: Test
       run: |
-        make test_${{ matrix.target }}
+        make init_proof test_${{ matrix.target }}

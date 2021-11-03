@@ -1,3 +1,2 @@
 *.rflx linguist-language=Ada
-
-why3session.xml linguist-generated
+proof.tar.zst filter=lfs diff=lfs merge=lfs -text

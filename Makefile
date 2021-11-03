@@ -19,12 +19,15 @@ test-bin := $(noprefix-dir)/$(build-dir)/test/test
 test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
+proof_archive = tests/spark/proof.tar.zst
+proof_sessions = $(subst :,\:,$(shell find tests/spark/proof -type f -name why3session.xml -o -name why3shapes.gz))
+
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
-	clean clean_proof
+	clean init_proof update_proof reset_proof clean_proof
 
 all: check test prove
 
@@ -164,6 +167,23 @@ remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
 	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
 	mv $@.tmp $@
+
+$(proof_archive): $(proof_sessions)
+	$(eval tmp := $(shell mktemp))
+	$(file >$(tmp))
+	$(foreach f,$^,$(file >>$(tmp),$f))
+	tar -c --zstd -f $@ -T $(tmp)
+	rm $(tmp)
+
+update_proof: $(proof_archive)
+
+init_proof:
+	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
+	tar -x -f $(proof_archive)
+	$(MAKE) -C examples/apps/ping init_proof
+	$(MAKE) -C examples/apps/dhcp_client init_proof
+
+reset_proof: clean_proof init_proof
 
 clean_proof:
 	rm -rf tests/spark/proof/*
