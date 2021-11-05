@@ -219,7 +219,7 @@ jobs:
       run: |
         eval `make printenv_gnat`
         gnat --version
-        make init_proof test_${{ matrix.target }}
+        make test_${{ matrix.target }}
 
   verification_python_scheduled:
     name: Verification
@@ -271,7 +271,7 @@ jobs:
         make install_devel
     - name: Test
       run: |
-        make init_proof test_${{ matrix.target }}
+        make test_${{ matrix.target }}
 
   skip_check_spark:
     name: Skip Check SPARK
@@ -329,7 +329,7 @@ jobs:
       run: |
         eval `make printenv_gnat`
         gnat --version
-        make init_proof test_${{ matrix.target }}
+        make test_${{ matrix.target }}
 
   runtime_compatibility:
     name: Runtime compatibility
@@ -434,7 +434,7 @@ jobs:
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
-        make init_proof prove_tests TEST=${{ matrix.test }}
+        make prove_tests TEST=${{ matrix.test }}
 
   verification_spark_scheduled:
     name: Verification
@@ -485,7 +485,7 @@ jobs:
         make install_devel
     - name: Verify
       run: |
-        make init_proof prove_tests TEST=${{ matrix.test }}
+        make prove_tests TEST=${{ matrix.test }}
 
   skip_check_apps:
     name: Skip Check Apps
@@ -636,7 +636,7 @@ jobs:
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
-        make -C examples/apps/${{ matrix.app }} init_proof prove
+        make -C examples/apps/${{ matrix.app }} prove
 
   skip_check_specs:
     name: Skip Check Specs

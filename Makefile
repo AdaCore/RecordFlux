@@ -20,14 +20,16 @@ test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
 endif
 
 proof_archive = tests/spark/proof.tar.zst
-proof_sessions = $(subst :,\:,$(shell find tests/spark/proof -type f -name why3session.xml -o -name why3shapes.gz))
+proof_archive_type = $(shell file -bi $(proof_archive))
+proof_sessions = tests/spark/proof/sessions
+proof_session_files = $(subst :,\:,$(shell find tests/spark/proof -type f -name why3session.xml -o -name why3shapes.gz))
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
-	clean init_proof update_proof reset_proof clean_proof
+	clean update_proof reset_proof clean_proof
 
 all: check test prove
 
@@ -69,13 +71,13 @@ format:
 
 test: test_python_coverage test_python_property test_spark test_apps test_specs test_runtime test_installation
 
-test_python:
+test_python: $(proof_sessions)
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
 
-test_python_unit:
+test_python_unit: $(proof_sessions)
 	python3 -m pytest -n$(shell nproc) -vv tests/unit
 
-test_python_integration:
+test_python_integration: $(proof_sessions)
 	python3 -m pytest -n$(shell nproc) -vv tests/integration
 
 test_python_property:
@@ -84,10 +86,10 @@ test_python_property:
 test_python_property_verification:
 	python3 -m pytest -vv -m "verification" -s tests/property
 
-test_python_optimized:
+test_python_optimized: $(proof_sessions)
 	PYTHONOPTIMIZE=1 python3 -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
 
-test_python_coverage:
+test_python_coverage: $(proof_sessions)
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_spark: $(test-files)
@@ -122,7 +124,7 @@ test_installation:
 
 prove: prove_tests prove_apps
 
-prove_tests: $(test-files)
+prove_tests: $(proof_sessions) $(test-files)
 	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
 
 prove_tests_cvc4: $(test-files)
@@ -163,32 +165,25 @@ clean:
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 
+update_proof: $(proof_archive)
+	$(MAKE) -C examples/apps/ping update_proof
+	$(MAKE) -C examples/apps/dhcp_client update_proof
+
+reset_proof:
+	rm -rf tests/spark/proof/*
+	$(MAKE) -C examples/apps/ping reset_proof
+	$(MAKE) -C examples/apps/dhcp_client reset_proof
+
+clean_proof:
+	rm -rf tests/spark/proof/*
+	mkdir $(proof_sessions)
+	$(MAKE) -C examples/apps/ping clean_proof
+	$(MAKE) -C examples/apps/dhcp_client clean_proof
+
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \
 	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
 	mv $@.tmp $@
-
-$(proof_archive): $(proof_sessions)
-	$(eval tmp := $(shell mktemp))
-	$(file >$(tmp))
-	$(foreach f,$^,$(file >>$(tmp),$f))
-	tar -c --zstd -f $@ -T $(tmp)
-	rm $(tmp)
-
-update_proof: $(proof_archive)
-
-init_proof:
-	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
-	tar -x -f $(proof_archive)
-	$(MAKE) -C examples/apps/ping init_proof
-	$(MAKE) -C examples/apps/dhcp_client init_proof
-
-reset_proof: clean_proof init_proof
-
-clean_proof:
-	rm -rf tests/spark/proof/*
-	$(MAKE) -C examples/apps/ping clean_proof
-	$(MAKE) -C examples/apps/dhcp_client clean_proof
 
 $(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
 	$(remove-prefix)
@@ -202,3 +197,19 @@ $(noprefix-dir)/examples/specs/%: examples/specs/%
 
 $(noprefix-dir)/%: %
 	$(remove-prefix)
+
+ifneq (,$(findstring zstd; charset=binary,$(proof_archive_type)))
+$(proof_sessions):
+	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
+	tar -x -f $(proof_archive)
+else
+$(proof_sessions):
+	$(warning skipping extraction of '$(proof_archive)' with unexpected format '$(proof_archive_type)')
+endif
+
+$(proof_archive): $(proof_session_files)
+	$(eval tmp := $(shell mktemp))
+	$(file >$(tmp))
+	$(foreach f,$^,$(file >>$(tmp),$f))
+	tar -c --zstd -f $@ -T $(tmp)
+	rm $(tmp)

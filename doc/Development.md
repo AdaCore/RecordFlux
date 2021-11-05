@@ -2,8 +2,10 @@
 
 ## Installation
 
-Additionally to the dependencies listed in the [README](../README.md#installation) the following libraries are required:
+Additionally to the dependencies listed in the [README](../README.md#installation) the following tools and libraries are required:
 
+- [Git Large File Storage (LFS)](https://git-lfs.github.com/)
+- [Zstandard](https://github.com/facebook/zstd)
 - [AUnit](https://github.com/AdaCore/aunit) [![AUnit Alire Crate](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/aunit.json)](https://alire.ada.dev/crates/aunit.html) (if FSF GNAT is used)
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
@@ -21,8 +23,6 @@ $ source venv/bin/activate
 $ make install_devel
 ```
 
-[Git Large File Storage (LFS)](https://git-lfs.github.com/) must be installed to use the caching of proof sessions.
-
 ## Tools
 
 Make targets for common development tasks are:
@@ -34,10 +34,9 @@ Make targets for common development tasks are:
 - `format` Perform automatic code formatting on Python code
 - `install_devel` Install project in editable mode
 - `upgrade_devel` Upgrade all development dependencies (note: `install_devel` must be executed before changes in `setup.py` take effect)
-- `init_proof` Extract cached proof sessions (stored as `proof.tar.zst`)
-- `update_proof` Update cached proof sessions
-- `reset_proof` Replace existing proof sessions by cached ones
-- `clean_proof` Remove proof sessions
+- `update_proof` Update proof sessions archive (`proof.tar.zst`)
+- `reset_proof` Reset proof session files to state in proof sessions archive
+- `clean_proof` Remove proof session files (which enables running `prove` from scratch)
 
 Additional tools can be found in `tools/`.
 
