@@ -1,0 +1,32 @@
+proof_archive = $(proof_parent_dir)/proof.tar.zst
+proof_archive_type = $(shell file -bi $(proof_archive))
+proof_dir = $(proof_parent_dir)/proof
+proof_sessions = $(proof_dir)/sessions
+proof_session_files = $(subst :,\:,$(shell find $(proof_dir) -type f -name why3session.xml -o -name why3shapes.gz))
+
+.PHONY: update_proof reset_proof clean_proof
+
+update_proof: $(proof_archive)
+
+reset_proof:
+	rm -rf $(proof_dir)/*
+
+clean_proof:
+	rm -rf $(proof_dir)/*
+	mkdir $(proof_sessions)
+
+ifneq (,$(findstring zstd; charset=binary,$(proof_archive_type)))
+$(proof_sessions):
+	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
+	tar -x -f $(proof_archive)
+else
+$(proof_sessions):
+	$(warning warning: skipping extraction of '$(proof_archive)' with unexpected format '$(proof_archive_type)')
+endif
+
+$(proof_archive): $(proof_session_files)
+	$(eval tmp := $(shell mktemp))
+	$(file >$(tmp))
+	$(foreach f,$^,$(file >>$(tmp),$f))
+	tar -c --zstd -f $@ -T $(tmp)
+	rm $(tmp)

@@ -3,26 +3,6 @@ VERBOSE ?= @
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
-noprefix-dir := build/noprefix
-
-project := test
-ifdef TEST
-	test-bin := $(build-dir)/test/test_$(TEST)
-else
-	test-bin := $(build-dir)/test/test
-endif
-test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? examples/specs/*.rflx test.gpr)
-
-ifneq ($(NOPREFIX),)
-project := $(noprefix-dir)/test
-test-bin := $(noprefix-dir)/$(build-dir)/test/test
-test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
-endif
-
-proof_archive = tests/spark/proof.tar.zst
-proof_archive_type = $(shell file -bi $(proof_archive))
-proof_sessions = tests/spark/proof/sessions
-proof_session_files = $(subst :,\:,$(shell find tests/spark/proof -type f -name why3session.xml -o -name why3shapes.gz))
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
@@ -92,13 +72,11 @@ test_python_optimized: $(proof_sessions)
 test_python_coverage: $(proof_sessions)
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
-test_spark: $(test-files)
-	gprbuild -P$(project) -Xtest=$(TEST)
-	$(test-bin)
+test_spark:
+	$(MAKE) -C tests/spark test
 
-test_spark_optimized: $(test-files)
-	gprbuild -P$(project) -Xtype=optimized
-	$(test-bin)
+test_spark_optimized:
+	$(MAKE) -C tests/spark test_optimized
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
@@ -114,7 +92,7 @@ test_runtime:
 	$(MAKE) -C build/ada-runtime
 	mkdir -p build/aunit
 	echo "project AUnit is end AUnit;" > build/aunit/aunit.gpr
-	gprbuild -Ptest --RTS=build/ada-runtime/build/posix/obj -Xtype=unchecked -aP build/aunit
+	cd tests/spark && gprbuild -Ptest --RTS=../../build/ada-runtime/build/posix/obj -Xtype=unchecked -aP ../../build/aunit
 
 test_installation:
 	rm -rf $(build-dir)/venv
@@ -124,11 +102,11 @@ test_installation:
 
 prove: prove_tests prove_apps
 
-prove_tests: $(proof_sessions) $(test-files)
-	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
+prove_tests:
+	$(MAKE) -C tests/spark prove
 
-prove_tests_cvc4: $(test-files)
-	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
+prove_tests_cvc4:
+	$(MAKE) -C tests/spark prove_cvc4
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove
@@ -162,54 +140,21 @@ printenv_gnat:
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
+	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 
-update_proof: $(proof_archive)
+update_proof:
+	$(MAKE) -C tests/spark update_proof
 	$(MAKE) -C examples/apps/ping update_proof
 	$(MAKE) -C examples/apps/dhcp_client update_proof
 
 reset_proof:
-	rm -rf tests/spark/proof/*
+	$(MAKE) -C tests/spark reset_proof
 	$(MAKE) -C examples/apps/ping reset_proof
 	$(MAKE) -C examples/apps/dhcp_client reset_proof
 
 clean_proof:
-	rm -rf tests/spark/proof/*
-	mkdir $(proof_sessions)
+	$(MAKE) -C tests/spark clean_proof
 	$(MAKE) -C examples/apps/ping clean_proof
 	$(MAKE) -C examples/apps/dhcp_client clean_proof
-
-remove-prefix = $(VERBOSE) \
-	mkdir -p $(dir $@) && \
-	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
-	mv $@.tmp $@
-
-$(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
-	$(remove-prefix)
-
-$(noprefix-dir)/tests/spark/%: tests/spark/rflx-%
-	$(remove-prefix)
-
-$(noprefix-dir)/examples/specs/%: examples/specs/%
-	$(VERBOSE)mkdir -p $(dir $@)
-	$(VERBOSE)cp $< $@
-
-$(noprefix-dir)/%: %
-	$(remove-prefix)
-
-ifneq (,$(findstring zstd; charset=binary,$(proof_archive_type)))
-$(proof_sessions):
-	$(if $(shell tar -tlf $(proof_archive) | egrep -v 'why3session.xml|why3shapes.gz'),$(error unexpected files in ${proof_archive}))
-	tar -x -f $(proof_archive)
-else
-$(proof_sessions):
-	$(warning skipping extraction of '$(proof_archive)' with unexpected format '$(proof_archive_type)')
-endif
-
-$(proof_archive): $(proof_session_files)
-	$(eval tmp := $(shell mktemp))
-	$(file >$(tmp))
-	$(foreach f,$^,$(file >>$(tmp),$f))
-	tar -c --zstd -f $@ -T $(tmp)
-	rm $(tmp)
