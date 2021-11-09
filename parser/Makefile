@@ -1,6 +1,6 @@
 VERBOSE ?= @
 
-VERSION = 0.9.0
+VERSION = 0.9.1
 BUILDDIR = $(PWD)/build
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -12,7 +12,7 @@ endif
 
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := language tests disttools/setup.py
+python-packages := language tests disttools/setup.py disttools/gprgen.py
 
 .PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
 	test test_python test_python_coverage install install_devel install_devel_edge clean
@@ -83,8 +83,8 @@ $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	$(VERBOSE)cp -a $(PWD)/contrib/gnatcoll-bindings $(DISTDIR)/
 	$(VERBOSE)ln -sf $(PWD)/disttools/MANIFEST.in $(DISTDIR)/MANIFEST.in
 	$(VERBOSE)cp disttools/setup.py $(DISTDIR)/setup.py
-	$(VERBOSE)cp $(DISTDIR)/librflxlang.gpr $(BUILDDIR)/librflxlang.gpr.bak
-	$(VERBOSE)cp disttools/librflxlang.gpr $(DISTDIR)/librflxlang.gpr
+	$(VERBOSE)mv $(DISTDIR)/librflxlang.gpr $(BUILDDIR)/librflxlang.gpr.bak
+	$(VERBOSE)./disttools/gprgen.py rflxlang $(DISTDIR) $(BUILDDIR)/librflxlang.gpr.bak
 	$(VERBOSE)sed -i -e 's/##VERSION##/$(VERSION)/g' $(DISTDIR)/setup.py
 	$(VERBOSE)cp README.md $(DISTDIR)/README.md
 	$(VERBOSE)touch $(DISTDIR)/python/librflxlang/py.typed
