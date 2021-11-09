@@ -771,6 +771,20 @@ class Conversion(Expr):
         return Precedence.LITERAL
 
 
+class Succ(Expr):
+    def __init__(self, type_identifier: StrID, expression: Expr) -> None:
+        super().__init__()
+        self.type_identifier = ID(type_identifier)
+        self.expression = expression
+
+    def _update_str(self) -> None:
+        self._str = intern(f"{self.type_identifier}'Succ ({self.expression})")
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+
 class QualifiedExpr(Expr):
     def __init__(self, type_identifier: StrID, expression: Expr) -> None:
         super().__init__()
@@ -1594,6 +1608,26 @@ class ForOf(Statement):
         statements = indent("\n".join(str(s) for s in self.statements), 3)
         reverse = "reverse " if self.reverse else ""
         return f"for {self.identifier} of {reverse}{self.iterator} loop\n{statements}\nend loop;"
+
+
+class ForIn(Statement):
+    def __init__(
+        self,
+        identifier: StrID,
+        iterator: Expr,
+        statements: Sequence[Statement],
+        reverse: bool = False,
+    ) -> None:
+        assert len(statements) > 0
+        self.identifier = identifier
+        self.iterator = iterator
+        self.statements = statements
+        self.reverse = reverse
+
+    def __str__(self) -> str:
+        statements = indent("\n".join(str(s) for s in self.statements), 3)
+        reverse = "reverse " if self.reverse else ""
+        return f"for {self.identifier} in {reverse}{self.iterator} loop\n{statements}\nend loop;"
 
 
 class Declare(Statement):

@@ -125,12 +125,9 @@ is
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
-      case Fld is
-         when F_Payload =>
-            Ctx.Cursors (F_Payload) := (S_Invalid, Ctx.Cursors (F_Payload).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-      end case;
+      Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
+      pragma Assert (Field_First (Ctx, Fld) = First
+                     and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
    function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
