@@ -145,38 +145,16 @@ is
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
-      case Fld is
-         when F_Length =>
-            Ctx.Cursors (F_AV_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Range_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Modular_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Length) := (S_Invalid, Ctx.Cursors (F_Length).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-         when F_Modular_Vector =>
-            Ctx.Cursors (F_AV_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Range_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Modular_Vector) := (S_Invalid, Ctx.Cursors (F_Modular_Vector).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-         when F_Range_Vector =>
-            Ctx.Cursors (F_AV_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Range_Vector) := (S_Invalid, Ctx.Cursors (F_Range_Vector).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-         when F_Enumeration_Vector =>
-            Ctx.Cursors (F_AV_Enumeration_Vector) := (S_Invalid, F_Final);
-            Ctx.Cursors (F_Enumeration_Vector) := (S_Invalid, Ctx.Cursors (F_Enumeration_Vector).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-         when F_AV_Enumeration_Vector =>
-            Ctx.Cursors (F_AV_Enumeration_Vector) := (S_Invalid, Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
-            pragma Assert (Field_First (Ctx, Fld) = First
-                           and Field_Size (Ctx, Fld) = Size);
-      end case;
+      for F_Loop in reverse Field'Succ (Fld) .. Field'Last loop
+         Ctx.Cursors (F_Loop) := (S_Invalid, F_Final);
+         pragma Loop_Invariant (Field_First (Ctx, Fld) = First
+                                and Field_Size (Ctx, Fld) = Size);
+         pragma Loop_Invariant ((for all F in Field =>
+                                    (if F < F_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
+      end loop;
+      Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
+      pragma Assert (Field_First (Ctx, Fld) = First
+                     and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
    function Composite_Field (Fld : Field) return Boolean is

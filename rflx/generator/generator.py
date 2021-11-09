@@ -23,7 +23,6 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
-    CaseStatement,
     Component,
     Constrained,
     ContextItem,
@@ -40,6 +39,7 @@ from rflx.ada import (
     ExpressionFunctionDeclaration,
     First,
     ForAllIn,
+    ForIn,
     FormalDeclaration,
     FormalSubprogramDeclaration,
     FunctionSpecification,
@@ -59,6 +59,7 @@ from rflx.ada import (
     Length,
     Less,
     LessEqual,
+    LoopEntry,
     Mod,
     ModularType,
     NamedAggregate,
@@ -99,6 +100,7 @@ from rflx.ada import (
     SubprogramBody,
     SubprogramDeclaration,
     SubprogramUnitPart,
+    Succ,
     Unit,
     UnitPart,
     UsePackageClause,
@@ -1900,22 +1902,48 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             "Reset_Dependent_Fields",
             [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
-
-        field_location_invariant = PragmaStatement(
-            "Assert",
-            [
-                And(
-                    Equal(
-                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                        Variable("First"),
-                    ),
-                    Equal(
-                        Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                        Variable("Size"),
-                    ),
-                )
-            ],
+        field_location_invariant = And(
+            Equal(
+                Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                Variable("First"),
+            ),
+            Equal(
+                Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                Variable("Size"),
+            ),
         )
+
+        def unchanged_before_or_invalid(limit: Expr, loop_entry: bool) -> Expr:
+            return ForAllIn(
+                "F",
+                Variable("Field"),
+                IfExpr(
+                    [
+                        (
+                            Less(Variable("F"), limit),
+                            Equal(
+                                Indexed(
+                                    Variable("Ctx.Cursors"),
+                                    Variable("F"),
+                                ),
+                                Indexed(
+                                    LoopEntry(Variable("Ctx.Cursors"))
+                                    if loop_entry
+                                    else Old(Variable("Ctx.Cursors")),
+                                    Variable("F"),
+                                ),
+                            ),
+                        )
+                    ],
+                    Call(
+                        "Invalid",
+                        [
+                            Variable("Ctx"),
+                            Variable("F"),
+                        ],
+                    ),
+                ),
+            )
 
         return UnitPart(
             [],
@@ -1939,49 +1967,58 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                         ),
                     ],
                     [
-                        field_location_invariant,
-                        CaseStatement(
-                            Variable("Fld"),
-                            [
-                                (
-                                    Variable(f.affixed_name),
-                                    ty.cast(ty.List[Statement], [])
-                                    + [
+                        PragmaStatement("Assert", [field_location_invariant]),
+                        *(
+                            []
+                            if len(message.fields) == 1
+                            else [
+                                ForIn(
+                                    "F_Loop",
+                                    ValueRange(Succ("Field", Variable("Fld")), Last("Field")),
+                                    [
                                         Assignment(
                                             Indexed(
                                                 Variable("Ctx.Cursors"),
-                                                Variable(s.affixed_name),
+                                                Variable("F_Loop"),
                                             ),
                                             Aggregate(
                                                 Variable("S_Invalid"),
                                                 Variable(FINAL.affixed_name),
                                             ),
-                                        )
-                                        for s in reversed(message.successors(f))
-                                    ]
-                                    + [
-                                        Assignment(
-                                            Indexed(
-                                                Variable("Ctx.Cursors"),
-                                                Variable(f.affixed_name),
-                                            ),
-                                            Aggregate(
-                                                Variable("S_Invalid"),
-                                                Selected(
-                                                    Indexed(
-                                                        Variable("Ctx.Cursors"),
-                                                        Variable(f.affixed_name),
-                                                    ),
-                                                    "Predecessor",
-                                                ),
-                                            ),
-                                        )
-                                    ]
-                                    + [field_location_invariant],
+                                        ),
+                                        PragmaStatement(
+                                            "Loop_Invariant", [field_location_invariant]
+                                        ),
+                                        PragmaStatement(
+                                            "Loop_Invariant",
+                                            [
+                                                unchanged_before_or_invalid(
+                                                    Variable("F_Loop"), loop_entry=True
+                                                )
+                                            ],
+                                        ),
+                                    ],
+                                    reverse=True,
                                 )
-                                for f in message.fields
-                            ],
+                            ]
                         ),
+                        Assignment(
+                            Indexed(
+                                Variable("Ctx.Cursors"),
+                                Variable("Fld"),
+                            ),
+                            Aggregate(
+                                Variable("S_Invalid"),
+                                Selected(
+                                    Indexed(
+                                        Variable("Ctx.Cursors"),
+                                        Variable("Fld"),
+                                    ),
+                                    "Predecessor",
+                                ),
+                            ),
+                        ),
+                        PragmaStatement("Assert", [field_location_invariant]),
                     ],
                     [
                         Precondition(
@@ -2033,34 +2070,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                     ],
                                 )
                                 if len(message.fields) == 1
-                                else ForAllIn(
-                                    "F",
-                                    Variable("Field"),
-                                    IfExpr(
-                                        [
-                                            (
-                                                Less(Variable("F"), Variable("Fld")),
-                                                Equal(
-                                                    Indexed(
-                                                        Variable("Ctx.Cursors"),
-                                                        Variable("F"),
-                                                    ),
-                                                    Indexed(
-                                                        Old(Variable("Ctx.Cursors")),
-                                                        Variable("F"),
-                                                    ),
-                                                ),
-                                            )
-                                        ],
-                                        Call(
-                                            "Invalid",
-                                            [
-                                                Variable("Ctx"),
-                                                Variable("F"),
-                                            ],
-                                        ),
-                                    ),
-                                ),
+                                else unchanged_before_or_invalid(Variable("Fld"), loop_entry=False),
                             )
                         ),
                     ],
