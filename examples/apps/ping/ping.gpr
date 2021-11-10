@@ -29,7 +29,6 @@ project Ping is
    end Binder;
 
    package Prove is
-      for Proof_Dir use "proof";
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
    end Prove;
 

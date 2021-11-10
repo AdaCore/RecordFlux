@@ -10,7 +10,6 @@ project Test is
    Spec_Dir := "examples/specs";
    Test_Dir := "tests/spark";
    Generated_Dir := "tests/spark/generated";
-   Proof_Dir := "tests/spark/proof";
 
    for Languages use ("Ada", "RecordFlux");
 
@@ -62,7 +61,6 @@ project Test is
    end Compiler;
 
    package Prove is
-      for Proof_Dir use Proof_Dir;
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
    end Prove;
 
