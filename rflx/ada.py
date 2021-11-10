@@ -431,6 +431,10 @@ class Pos(AttributeExpr):
     pass
 
 
+class Succ(AttributeExpr):
+    pass
+
+
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
@@ -769,20 +773,6 @@ class Conversion(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
-
-
-class Succ(Expr):
-    def __init__(self, type_identifier: StrID, expression: Expr) -> None:
-        super().__init__()
-        self.type_identifier = ID(type_identifier)
-        self.expression = expression
-
-    def _update_str(self) -> None:
-        self._str = intern(f"{self.type_identifier}'Succ ({self.expression})")
-
-    @property
-    def precedence(self) -> Precedence:
-        raise NotImplementedError
 
 
 class QualifiedExpr(Expr):
@@ -1590,7 +1580,7 @@ class While(Statement):
         return f"while {self.condition} loop\n{statements}\nend loop;"
 
 
-class ForOf(Statement):
+class ForLoop(Statement):
     def __init__(
         self,
         identifier: StrID,
@@ -1607,27 +1597,27 @@ class ForOf(Statement):
     def __str__(self) -> str:
         statements = indent("\n".join(str(s) for s in self.statements), 3)
         reverse = "reverse " if self.reverse else ""
-        return f"for {self.identifier} of {reverse}{self.iterator} loop\n{statements}\nend loop;"
+        return (
+            f"for {self.identifier} {self.iterator_spec} "
+            f"{reverse}{self.iterator} loop\n{statements}\nend loop;"
+        )
+
+    @property
+    @abstractmethod
+    def iterator_spec(self) -> str:
+        raise NotImplementedError
 
 
-class ForIn(Statement):
-    def __init__(
-        self,
-        identifier: StrID,
-        iterator: Expr,
-        statements: Sequence[Statement],
-        reverse: bool = False,
-    ) -> None:
-        assert len(statements) > 0
-        self.identifier = identifier
-        self.iterator = iterator
-        self.statements = statements
-        self.reverse = reverse
+class ForOf(ForLoop):
+    @property
+    def iterator_spec(self) -> str:
+        return "of"
 
-    def __str__(self) -> str:
-        statements = indent("\n".join(str(s) for s in self.statements), 3)
-        reverse = "reverse " if self.reverse else ""
-        return f"for {self.identifier} in {reverse}{self.iterator} loop\n{statements}\nend loop;"
+
+class ForIn(ForLoop):
+    @property
+    def iterator_spec(self) -> str:
+        return "in"
 
 
 class Declare(Statement):

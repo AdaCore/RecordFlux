@@ -1973,13 +1973,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                             if len(message.fields) == 1
                             else [
                                 ForIn(
-                                    "F_Loop",
+                                    "Fld_Loop",
                                     ValueRange(Succ("Field", Variable("Fld")), Last("Field")),
                                     [
                                         Assignment(
                                             Indexed(
                                                 Variable("Ctx.Cursors"),
-                                                Variable("F_Loop"),
+                                                Variable("Fld_Loop"),
                                             ),
                                             Aggregate(
                                                 Variable("S_Invalid"),
@@ -1993,7 +1993,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                             "Loop_Invariant",
                                             [
                                                 unchanged_before_or_invalid(
-                                                    Variable("F_Loop"), loop_entry=True
+                                                    Variable("Fld_Loop"), loop_entry=True
                                                 )
                                             ],
                                         ),
