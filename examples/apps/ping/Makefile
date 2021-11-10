@@ -15,7 +15,7 @@ test_spark: $(bin)
 build: $(bin)
 
 prove: $(src)
-	gnatprove -Pping
+	gnatprove -Pping --memcached-server=localhost:11211
 
 generate: $(src)
 

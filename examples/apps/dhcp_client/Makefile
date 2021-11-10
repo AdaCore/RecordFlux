@@ -10,7 +10,7 @@ test: $(bin)
 build: $(bin)
 
 prove: $(src)
-	gnatprove -Pdhcp_client
+	gnatprove -Pdhcp_client --memcached-server=localhost:11211
 
 generate: $(src)
 

@@ -120,10 +120,10 @@ test_installation:
 prove: prove_tests prove_apps
 
 prove_tests: $(test-files)
-	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
+	gnatprove -P$(project) -Xtest=$(TEST) --memcached-server=localhost:11211 $(GNATPROVE_ARGS)
 
 prove_tests_cvc4: $(test-files)
-	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
+	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests --memcached-server=localhost:11211 $(GNATPROVE_ARGS)
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove

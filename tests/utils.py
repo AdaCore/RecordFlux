@@ -1,8 +1,6 @@
-import os
 import pathlib
 import shutil
 import subprocess
-from distutils.dir_util import copy_tree
 from typing import Iterable, List, Mapping, Sequence, Tuple, Union
 
 import librflxlang as lang
@@ -132,17 +130,7 @@ def assert_provable_code(
     main: str = None,
     prefix: str = None,
     units: Sequence[str] = None,
-    cache_proof_results: bool = True,
 ) -> None:
-    proof_dir = (
-        pathlib.Path.cwd()
-        / pathlib.Path("tests/spark/proof")
-        / os.environ.get("PYTEST_CURRENT_TEST", ".").split()[0].replace("/", "-")
-    )
-
-    if cache_proof_results and proof_dir.exists():
-        copy_tree(str(proof_dir), str(tmp_path / "proof"))
-
     _create_files(tmp_path, model, main, prefix)
 
     def run(command: Sequence[str]) -> None:
@@ -152,14 +140,13 @@ def assert_provable_code(
                 f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
             )
 
+    gnatprove = ["gnatprove", "-Ptest", "--memcached-server=localhost:11211"]
+
     if units:
         for unit in units:
-            run(["gnatprove", "-Ptest", "-u", unit])
+            run([*gnatprove, "-u", unit])
     else:
-        run(["gnatprove", "-Ptest"])
-
-    if cache_proof_results:
-        copy_tree(str(tmp_path / "proof"), str(proof_dir))
+        run(gnatprove)
 
 
 def _create_files(
@@ -187,7 +174,6 @@ def _create_files(
                   end Compiler;
 
                   package Prove is
-                     for Proof_Dir use "proof";
                      for Proof_Switches ("Ada") use
                         Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
                   end Prove;
