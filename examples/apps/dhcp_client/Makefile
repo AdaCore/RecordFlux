@@ -2,7 +2,7 @@ specs = $(wildcard specs/*.rflx)
 src = generated/rflx-dhcp_client.ads
 bin = obj/dhcp_client
 
-.PHONY: test build prove generate clean clean_proof
+.PHONY: test build prove generate clean
 
 test: $(bin)
 	sudo tests/run
@@ -17,11 +17,8 @@ generate: $(src)
 clean:
 	rm -rf generated/* obj
 
-clean_proof:
-	rm -rf proof/*
-
 $(src): $(specs)
 	rflx generate -d generated --debug $^
 
-$(bin): $(src)  $(wildcard src/*)
+$(bin): $(src) $(wildcard src/*)
 	gprbuild -Pdhcp_client

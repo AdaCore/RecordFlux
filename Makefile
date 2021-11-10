@@ -3,28 +3,13 @@ VERBOSE ?= @
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
-noprefix-dir := build/noprefix
-
-project := test
-ifdef TEST
-	test-bin := $(build-dir)/test/test_$(TEST)
-else
-	test-bin := $(build-dir)/test/test
-endif
-test-files := $(wildcard tests/spark/generated/rflx-*.ad? tests/spark/*.ad? examples/specs/*.rflx test.gpr)
-
-ifneq ($(NOPREFIX),)
-project := $(noprefix-dir)/test
-test-bin := $(noprefix-dir)/$(build-dir)/test/test
-test-files := $(addprefix $(noprefix-dir)/, $(subst /rflx-,/,$(test-files)))
-endif
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_spark test_spark_optimized test_apps test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
-	clean clean_proof
+	clean
 
 all: check test prove
 
@@ -87,13 +72,11 @@ test_python_optimized:
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
-test_spark: $(test-files)
-	gprbuild -P$(project) -Xtest=$(TEST)
-	$(test-bin)
+test_spark:
+	$(MAKE) -C tests/spark test
 
-test_spark_optimized: $(test-files)
-	gprbuild -P$(project) -Xtype=optimized
-	$(test-bin)
+test_spark_optimized:
+	$(MAKE) -C tests/spark test_optimized
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
@@ -109,7 +92,7 @@ test_runtime:
 	$(MAKE) -C build/ada-runtime
 	mkdir -p build/aunit
 	echo "project AUnit is end AUnit;" > build/aunit/aunit.gpr
-	gprbuild -Ptest --RTS=build/ada-runtime/build/posix/obj -Xtype=unchecked -aP build/aunit
+	cd tests/spark && gprbuild -Ptest --RTS=../../build/ada-runtime/build/posix/obj -Xtype=unchecked -aP ../../build/aunit
 
 test_installation:
 	rm -rf $(build-dir)/venv
@@ -119,11 +102,11 @@ test_installation:
 
 prove: prove_tests prove_apps
 
-prove_tests: $(test-files)
-	gnatprove -P$(project) -Xtest=$(TEST) --memcached-server=localhost:11211 $(GNATPROVE_ARGS)
+prove_tests:
+	$(MAKE) -C tests/spark prove
 
-prove_tests_cvc4: $(test-files)
-	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests --memcached-server=localhost:11211 $(GNATPROVE_ARGS)
+prove_tests_cvc4:
+	$(MAKE) -C tests/spark prove_cvc4
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove
@@ -157,28 +140,6 @@ printenv_gnat:
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
+	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
-
-remove-prefix = $(VERBOSE) \
-	mkdir -p $(dir $@) && \
-	sed 's/\(RFLX\.\|rflx-\)//g' $< > $@.tmp && \
-	mv $@.tmp $@
-
-clean_proof:
-	rm -rf tests/spark/proof/*
-	$(MAKE) -C examples/apps/ping clean_proof
-	$(MAKE) -C examples/apps/dhcp_client clean_proof
-
-$(noprefix-dir)/tests/spark/generated/%: tests/spark/generated/rflx-%
-	$(remove-prefix)
-
-$(noprefix-dir)/tests/spark/%: tests/spark/rflx-%
-	$(remove-prefix)
-
-$(noprefix-dir)/examples/specs/%: examples/specs/%
-	$(VERBOSE)mkdir -p $(dir $@)
-	$(VERBOSE)cp $< $@
-
-$(noprefix-dir)/%: %
-	$(remove-prefix)

@@ -2,7 +2,7 @@ specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
 bin = obj/ping
 
-.PHONY: test test_python test_spark build prove generate clean clean_proof
+.PHONY: test test_python test_spark build prove generate clean
 
 test: test_python test_spark
 
@@ -21,9 +21,6 @@ generate: $(src)
 
 clean:
 	rm -rf generated/* obj python
-
-clean_proof:
-	rm -rf proof/*
 
 $(src): $(specs)
 	rflx generate -d generated --ignore-unsupported-checksum $^
