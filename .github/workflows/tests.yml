@@ -207,6 +207,21 @@ jobs:
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       run: |
         make install_gnat
+    - name: Connect to Memcached server
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
+      shell: bash
+      env:
+        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+        SERVER: ${{ secrets.MEMCACHED_SERVER }}
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
+        echo "stats" | nc -q 1 localhost 11211
     - name: Configure kernel parameters
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
@@ -265,6 +280,20 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
+    - name: Connect to Memcached server
+      shell: bash
+      env:
+        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+        SERVER: ${{ secrets.MEMCACHED_SERVER }}
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
+        echo "stats" | nc -q 1 localhost 11211
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -424,6 +453,21 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
+    - name: Connect to Memcached server
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
+      shell: bash
+      env:
+        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+        SERVER: ${{ secrets.MEMCACHED_SERVER }}
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
+        echo "stats" | nc -q 1 localhost 11211
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
@@ -475,6 +519,20 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
+    - name: Connect to Memcached server
+      shell: bash
+      env:
+        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+        SERVER: ${{ secrets.MEMCACHED_SERVER }}
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
+        echo "stats" | nc -q 1 localhost 11211
     - name: Verify
       run: |
         make prove_tests TEST=${{ matrix.test }}
@@ -623,6 +681,21 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
+    - name: Connect to Memcached server
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+      shell: bash
+      env:
+        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+        SERVER: ${{ secrets.MEMCACHED_SERVER }}
+      run: |
+        eval $(ssh-agent -s)
+        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
+        echo "stats" | nc -q 1 localhost 11211
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
