@@ -1056,6 +1056,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
+        if isinstance(target_type, rty.Message):
+            for v in expression.findall(
+                lambda x: isinstance(x, expr.Variable) and x.identifier == target
+            ):
+                fail(
+                    f'referencing assignment target "{target}" of type message in expression'
+                    " not yet supported",
+                    Subsystem.GENERATOR,
+                    location=v.location,
+                )
+
         if isinstance(expression, expr.Binding):
             return self._assign_to_binding(target, expression, exception_handler, alloc_id)
 
@@ -1443,7 +1454,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.referenced_types_body.append(target_type)
 
         target_context = context_id(target)
-        target_buffer = buffer_id(target)
+        target_buffer = buffer_id("RFLX_Target_" + target)
         element_context = ID("RFLX_Head_Ctx")
         with exception_handler.local() as local_exception_handler:
             return [
@@ -1465,6 +1476,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                     [element_context],
                                                     target_type * "Context",
                                                 ),
+                                                ObjectDeclaration(
+                                                    [target_buffer],
+                                                    self._prefix * const.TYPES_BYTES_PTR,
+                                                ),
                                             ],
                                             [
                                                 CallStatement(
@@ -1485,6 +1500,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                         *self._take_buffer(
                                                             ID(target),
                                                             target_type,
+                                                            target_buffer,
                                                         ),
                                                         self._copy_to_buffer(
                                                             target_type,
@@ -2861,8 +2877,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return self._allocator.free_buffer(buffer_id(identifier), alloc_id)
 
     @staticmethod
-    def _take_buffer(identifier: ID, type_: ID) -> Sequence[Statement]:
+    def _take_buffer(identifier: ID, type_: ID, buf: ID = None) -> Sequence[Statement]:
         context = context_id(identifier)
+        buf = buf or buffer_id(identifier)
         return [
             # WORKAROUND: Componolit/Workarounds#32
             PragmaStatement(
@@ -2883,7 +2900,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 type_ * "Take_Buffer",
                 [
                     Variable(context),
-                    Variable(buffer_id(identifier)),
+                    Variable(buf),
                 ],
             ),
             PragmaStatement(
