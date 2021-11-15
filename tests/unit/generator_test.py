@@ -2276,7 +2276,7 @@ def test_session_state_action_error(
                 location=Location((10, 20)),
             ),
             RecordFluxError,
-            r'Variable with message type "A" in assignment not yet supported',
+            r'referencing assignment target "X" of type message in expression not yet supported',
         ),
         (
             rty.Undefined(),
