@@ -520,5 +520,40 @@ def test_call_statement_str() -> None:
     )
 
 
+def test_while_str() -> None:
+    assert_equal(
+        str(
+            ada.While(
+                ada.Variable("X"),
+                [ada.NullStatement()],
+            )
+        ),
+        multilinestr(
+            """while X loop
+                  null;
+               end loop;"""
+        ),
+    )
+    assert_equal(
+        str(
+            ada.While(
+                ada.And(
+                    ada.Variable("X"),
+                    ada.Variable("Y"),
+                ),
+                [ada.NullStatement()],
+            )
+        ),
+        multilinestr(
+            """while
+                  X
+                  and Y
+               loop
+                  null;
+               end loop;"""
+        ),
+    )
+
+
 def test_qualified_expr() -> None:
     assert str(ada.QualifiedExpr("T", ada.Variable("A"))) == "T'(A)"

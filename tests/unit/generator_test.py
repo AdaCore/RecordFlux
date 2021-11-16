@@ -309,80 +309,15 @@ DUMMY_SESSION = Session(
     [
         (
             decl.ChannelDeclaration("Channel", readable=True, writable=False),  # §S-P-C-R
-            [
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.FunctionSpecification(
-                        identifier="Channel_Has_Data", parameters=[], return_type="Boolean"
-                    )
-                ),
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.ProcedureSpecification(
-                        identifier="Channel_Read",
-                        parameters=[
-                            ada.OutParameter(
-                                identifiers=["Buffer"],
-                                type_identifier=const.TYPES_BYTES,
-                            ),
-                            ada.OutParameter(
-                                identifiers=["Length"],
-                                type_identifier=const.TYPES_LENGTH,
-                            ),
-                        ],
-                    )
-                ),
-            ],
+            [],
         ),
         (
             decl.ChannelDeclaration("Channel", readable=False, writable=True),  # §S-P-C-W
-            [
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.ProcedureSpecification(
-                        identifier="Channel_Write",
-                        parameters=[
-                            ada.Parameter(
-                                identifiers=["Buffer"],
-                                type_identifier=const.TYPES_BYTES,
-                            )
-                        ],
-                    )
-                ),
-            ],
+            [],
         ),
         (
             decl.ChannelDeclaration("Channel", readable=True, writable=True),  # §S-P-C-RW
-            [
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.FunctionSpecification(
-                        identifier="Channel_Has_Data", parameters=[], return_type="Boolean"
-                    )
-                ),
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.ProcedureSpecification(
-                        identifier="Channel_Read",
-                        parameters=[
-                            ada.OutParameter(
-                                identifiers=["Buffer"],
-                                type_identifier=const.TYPES_BYTES,
-                            ),
-                            ada.OutParameter(
-                                identifiers=["Length"],
-                                type_identifier=const.TYPES_LENGTH,
-                            ),
-                        ],
-                    )
-                ),
-                ada.FormalSubprogramDeclaration(
-                    specification=ada.ProcedureSpecification(
-                        identifier="Channel_Write",
-                        parameters=[
-                            ada.Parameter(
-                                identifiers=["Buffer"],
-                                type_identifier=const.TYPES_BYTES,
-                            )
-                        ],
-                    )
-                ),
-            ],
+            [],
         ),
         (
             decl.FunctionDeclaration("F", [], "T", type_=rty.BOOLEAN),
@@ -1171,7 +1106,9 @@ class UnknownStatement(stmt.Statement):
             "         P.S_Allocator.Slot_Ptr_1 := null;\n"
             '         pragma Warnings (On, "unused assignment");\n'
             "         Universal.Option.Initialize (C_Ctx, C_Buffer);\n"
-            "         if C_Ctx.Last - C_Ctx.First + 1 >= RFLX_Types.Bit_Length (8) then\n"
+            "         if RFLX_Types.To_First_Bit_Index (C_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (C_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length (8) then\n"
             "            Universal.Option.Reset (C_Ctx,"
             " RFLX_Types.To_First_Bit_Index (C_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (C_Ctx.Buffer_First)"
@@ -1181,7 +1118,9 @@ class UnknownStatement(stmt.Statement):
             '            Ada.Text_IO.Put_Line ("Error: insufficient space in message ""C_Ctx""");\n'
             "            RFLX_Exception := True;\n"
             "         end if;\n"
-            "         if X_Ctx.Last - X_Ctx.First + 1 >= RFLX_Types.Bit_Length (B * 8 + 24) then\n"
+            "         if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length (B * 8 + 24) then\n"
             "            Universal.Message.Reset (X_Ctx,"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First)"
@@ -1333,7 +1272,9 @@ class UnknownStatement(stmt.Statement):
             "   P.S_Allocator.Slot_Ptr_1 := null;\n"
             '   pragma Warnings (On, "unused assignment");\n'
             "   Universal.Message.Initialize (A_Ctx, A_Buffer);\n"
-            "   if A_Ctx.Last - A_Ctx.First + 1 >= RFLX_Types.Bit_Length (40) then\n"
+            "   if RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length (40) then\n"
             "      Universal.Message.Reset (A_Ctx,"
             " RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First) + RFLX_Types.Bit_Length (40)"
@@ -1418,7 +1359,9 @@ class UnknownStatement(stmt.Statement):
             "   P.S_Allocator.Slot_Ptr_1 := null;\n"
             '   pragma Warnings (On, "unused assignment");\n'
             "   Universal.Message.Initialize (A_Ctx, A_Buffer);\n"
-            "   if A_Ctx.Last - A_Ctx.First + 1 >= RFLX_Types.Bit_Length (8) then\n"
+            "   if RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length (8) then\n"
             "      Universal.Message.Reset (A_Ctx,"
             " RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_First) + RFLX_Types.Bit_Length (8)"
@@ -1543,7 +1486,9 @@ class UnknownStatement(stmt.Statement):
                 ),
                 location=Location(start=(1, 1)),
             ),
-            "if X_Ctx.Last - X_Ctx.First + 1 >= RFLX_Types.Bit_Length (24) then\n"
+            "if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length (24) then\n"
             "   Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First),"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + RFLX_Types.Bit_Length (24)"
             " - 1);\n"
@@ -1595,10 +1540,11 @@ class UnknownStatement(stmt.Statement):
                 location=Location(start=(1, 1)),
             ),
             "if\n"
-            "  Universal.Option.Size (Y_Ctx) <= 32768\n"
-            "  and then Universal.Option.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0\n"
+            "   Universal.Option.Size (Y_Ctx) <= 32768\n"
+            "   and then Universal.Option.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0\n"
             "then\n"
-            "   if X_Ctx.Last - X_Ctx.First + 1"
+            "   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1"
             " >= RFLX_Types.Bit_Length ((Universal.Option.Size (Y_Ctx) / 8) * 8 + 24) then\n"
             "      Universal.Message.Reset (X_Ctx,"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First),"
@@ -1698,10 +1644,12 @@ class UnknownStatement(stmt.Statement):
                 location=Location(start=(1, 1)),
             ),
             "if\n"
-            "  Universal.Message.Size (Y_Ctx) <= 32768\n"
-            "  and then Universal.Message.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0\n"
+            "   Universal.Message.Size (Y_Ctx) <= 32768\n"
+            "   and then Universal.Message.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0\n"
             "then\n"
-            "   if X_Ctx.Last - X_Ctx.First + 1 >= RFLX_Types.Bit_Length"
+            "   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last)"
+            " - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1"
+            " >= RFLX_Types.Bit_Length"
             " (RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx)) * 8 + 24) then\n"
             "      Universal.Message.Reset (X_Ctx,"
             " RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First),"
@@ -1820,108 +1768,11 @@ class UnknownStatement(stmt.Statement):
         ),
         (
             stmt.Read("X", expr.Variable("Y", type_=rty.Message("P::M"))),
-            "declare\n"
-            "   procedure P_M_Write is new P.M.Generic_Write (X_Read);\n"
-            "begin\n"
-            "   P_M_Write (Y_Ctx);\n"
-            "end;\n"
             "P.M.Verify_Message (Y_Ctx);",
         ),
         (
             stmt.Write("X", expr.Variable("Y", type_=rty.Message("P::M"))),
-            "if P.M.Structural_Valid_Message (Y_Ctx) then\n"
-            "   declare\n"
-            "      procedure P_M_Read is new P.M.Generic_Read (X_Write);\n"
-            "   begin\n"
-            "      P_M_Read (Y_Ctx);\n"
-            "   end;\n"
-            "else\n"
-            '   Ada.Text_IO.Put_Line ("Error: invalid message ""Y_Ctx""");\n'
-            "   P_Next_State := S_E;\n"
-            "   pragma Finalization;\n"
-            "   return;\n"
-            "end if;",
-        ),
-        (
-            stmt.Write(
-                "X",
-                expr.MessageAggregate(
-                    "Universal::Message",
-                    {
-                        "Message_Type": expr.Variable(
-                            "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
-                        ),
-                        "Length": expr.Number(1),
-                        "Data": expr.Aggregate(expr.Number(2)),
-                    },
-                    type_=rty.Message(
-                        "Universal::Message",
-                        field_types={
-                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
-                            ID("Length"): rty.Integer("Universal::Length"),
-                            ID("Data"): rty.OPAQUE,
-                        },
-                    ),
-                ),
-                location=Location(start=(1, 1)),
-            ),
-            "declare\n"
-            "   RFLX_Message_Ctx : Universal.Message.Context;\n"
-            "   RFLX_Message_Buffer : RFLX_Types.Bytes_Ptr;\n"
-            "begin\n"
-            "   RFLX_Message_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
-            '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := null;\n"
-            '   pragma Warnings (On, "unused assignment");\n'
-            "   Universal.Message.Initialize (RFLX_Message_Ctx, RFLX_Message_Buffer);\n"
-            "   if RFLX_Message_Ctx.Last - RFLX_Message_Ctx.First + 1 >= RFLX_Types.Bit_Length (32)"
-            " then\n"
-            "      Universal.Message.Reset (RFLX_Message_Ctx,"
-            " RFLX_Types.To_First_Bit_Index (RFLX_Message_Ctx.Buffer_First),"
-            " RFLX_Types.To_First_Bit_Index (RFLX_Message_Ctx.Buffer_First)"
-            " + RFLX_Types.Bit_Length (32) - 1);\n"
-            "      Universal.Message.Set_Message_Type (RFLX_Message_Ctx, Universal.MT_Data);\n"
-            "      Universal.Message.Set_Length (RFLX_Message_Ctx, Universal.Length (1));\n"
-            "      if Universal.Message.Field_Size (RFLX_Message_Ctx, Universal.Message.F_Data)"
-            " = 1 * RFLX_Types.Byte'Size then\n"
-            "         Universal.Message.Set_Data (RFLX_Message_Ctx,"
-            " (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));\n"
-            "      else\n"
-            '         Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[2]""");\n'
-            "         RFLX_Exception := True;\n"
-            "      end if;\n"
-            "   else\n"
-            '      Ada.Text_IO.Put_Line ("Error: insufficient space in message'
-            ' ""RFLX_Message_Ctx""");\n'
-            "      RFLX_Exception := True;\n"
-            "   end if;\n"
-            "   if Universal.Message.Structural_Valid_Message (RFLX_Message_Ctx) then\n"
-            "      declare\n"
-            "         procedure Universal_Message_Read"
-            " is new Universal.Message.Generic_Read (X_Write);\n"
-            "      begin\n"
-            "         Universal_Message_Read (RFLX_Message_Ctx);\n"
-            "      end;\n"
-            "   else\n"
-            '      Ada.Text_IO.Put_Line ("Error: invalid message ""RFLX_Message_Ctx""");\n'
-            "      RFLX_Exception := True;\n"
-            "   end if;\n"
-            '   pragma Warnings (Off, "unused assignment to ""RFLX_Message_Ctx""");\n'
-            '   pragma Warnings (Off, """RFLX_Message_Ctx"" is set by ""Take_Buffer"" but not used'
-            ' after the call");\n'
-            "   Universal.Message.Take_Buffer (RFLX_Message_Ctx, RFLX_Message_Buffer);\n"
-            '   pragma Warnings (On, """RFLX_Message_Ctx"" is set by ""Take_Buffer"" but not used'
-            ' after the call");\n'
-            '   pragma Warnings (On, "unused assignment to ""RFLX_Message_Ctx""");\n'
-            '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := RFLX_Message_Buffer;\n"
-            '   pragma Warnings (On, "unused assignment");\n'
-            "end;\n"
-            "if RFLX_Exception then\n"
-            "   P_Next_State := S_E;\n"
-            "   pragma Finalization;\n"
-            "   return;\n"
-            "end if;",
+            "",
         ),
     ],
 )
@@ -1956,6 +1807,33 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
             r"Extend statement not yet supported",
         ),
         (
+            stmt.Write(
+                "X",
+                expr.MessageAggregate(
+                    "Universal::Message",
+                    {
+                        "Message_Type": expr.Variable(
+                            "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                        ),
+                        "Length": expr.Number(1),
+                        "Data": expr.Aggregate(expr.Number(2)),
+                    },
+                    type_=rty.Message(
+                        "Universal::Message",
+                        field_types={
+                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                            ID("Length"): rty.Integer("Universal::Length"),
+                            ID("Data"): rty.OPAQUE,
+                        },
+                    ),
+                    location=Location(start=(10, 20)),
+                ),
+            ),
+            RecordFluxError,
+            r'MessageAggregate with message type "Universal::Message" in Write statement'
+            " not yet supported",
+        ),
+        (
             UnknownStatement("X", location=Location((10, 20))),
             FatalError,
             r'unexpected statement "UnknownStatement"',
@@ -1982,32 +1860,32 @@ def test_session_state_action_error(
             expr.Binding(
                 expr.MessageAggregate(
                     "P::M",
-                    {"F": expr.Variable("X")},
+                    {"F": expr.Variable("Y")},
                     type_=rty.Message("A"),
                 ),
-                {"Y": expr.Number(1)},
+                {"Z": expr.Number(1)},
                 location=Location((10, 20)),
             ),
             FatalError,
-            r'"Y" must be value of message aggregate',
+            r'"Z" must be value of message aggregate',
         ),
         (
             rty.Integer("A"),
             expr.Binding(
-                expr.Call("F", [expr.Variable("X")]),
-                {"Y": expr.Number(1)},
+                expr.Call("F", [expr.Variable("Y")]),
+                {"Z": expr.Number(1)},
                 location=Location((10, 20)),
             ),
             FatalError,
-            r'"Y" must be argument of call',
+            r'"Z" must be argument of call',
         ),
         (
             rty.Integer("A"),
             expr.Binding(
                 expr.ValueRange(
-                    expr.Variable("X"), expr.Variable("Y"), location=Location((10, 20))
+                    expr.Variable("Y"), expr.Variable("Z"), location=Location((10, 20))
                 ),
-                {"Y": expr.Number(1)},
+                {"Z": expr.Number(1)},
             ),
             RecordFluxError,
             r'binding for expression "ValueRange" not yet supported',
@@ -2015,7 +1893,7 @@ def test_session_state_action_error(
         (
             rty.Sequence("A", rty.Integer("B")),
             expr.Selected(
-                expr.Variable("Y", type_=rty.Message("C")),
+                expr.Variable("Z", type_=rty.Message("C")),
                 "Z",
                 type_=rty.Sequence("A", rty.Integer("B")),
                 location=Location((10, 20)),
@@ -2028,11 +1906,11 @@ def test_session_state_action_error(
             expr.Selected(
                 expr.Call(
                     "F",
-                    [expr.Variable("X")],
+                    [expr.Variable("Y")],
                     type_=rty.Message("C"),
                     location=Location((10, 20)),
                 ),
-                "Y",
+                "Z",
                 type_=rty.Sequence("A", rty.Integer("B")),
             ),
             RecordFluxError,
@@ -2041,13 +1919,13 @@ def test_session_state_action_error(
         (
             rty.Aggregate(rty.Integer("A")),
             expr.Selected(
-                expr.Variable("Y", type_=rty.Message("B")),
+                expr.Variable("Z", type_=rty.Message("B")),
                 "Z",
                 type_=rty.Aggregate(rty.AnyInteger()),
                 location=Location((10, 20)),
             ),
             FatalError,
-            r'unexpected type \(aggregate with element integer type\) for "Y.Z"'
+            r'unexpected type \(aggregate with element integer type\) for "Z.Z"'
             r' in assignment of "X"',
         ),
         (
@@ -2060,7 +1938,7 @@ def test_session_state_action_error(
                     ),
                     "Length": expr.Number(1),
                     "Data": expr.Variable(
-                        "Y", type_=rty.Message("Universal::Option"), location=Location((10, 20))
+                        "Z", type_=rty.Message("Universal::Option"), location=Location((10, 20))
                     ),
                 },
                 type_=rty.Message(
@@ -2086,13 +1964,13 @@ def test_session_state_action_error(
                     ),
                     "Length": expr.Last(
                         expr.Variable(
-                            "Y",
+                            "Z",
                             type_=rty.Message("Universal::Option"),
                             location=Location((10, 20)),
                         )
                     ),
                     "Data": expr.Variable(
-                        "Y",
+                        "Z",
                         type_=rty.Message("Universal::Option"),
                         location=Location((10, 20)),
                     ),
@@ -2121,7 +1999,7 @@ def test_session_state_action_error(
                     "Length": expr.Number(1),
                     "Data": expr.Head(
                         expr.Variable(
-                            "Y",
+                            "Z",
                             type_=rty.Sequence(
                                 "Universal::Options", rty.Message("Universal::Option")
                             ),
@@ -2146,7 +2024,7 @@ def test_session_state_action_error(
             expr.Head(
                 expr.Call(
                     "F",
-                    [expr.Variable("X")],
+                    [expr.Variable("Y")],
                     type_=rty.Sequence("B", rty.Integer("A", rty.Bounds(1, 100))),
                     location=Location((10, 20)),
                 ),
@@ -2160,13 +2038,13 @@ def test_session_state_action_error(
             expr.Head(
                 expr.Call(
                     "F",
-                    [expr.Variable("X")],
+                    [expr.Variable("Y")],
                     type_=rty.Sequence("B", rty.Private("T")),
                     location=Location((10, 20)),
                 ),
             ),
             FatalError,
-            r'unexpected sequence element type \(private type "T"\) for "F \(X\)\'Head"'
+            r'unexpected sequence element type \(private type "T"\) for "F \(Y\)\'Head"'
             r' in assignment of "X"',
         ),
         (
@@ -2174,7 +2052,7 @@ def test_session_state_action_error(
             expr.Comprehension(
                 "E",
                 expr.Variable("L"),
-                expr.Selected(expr.Variable("E"), "Y", type_=rty.Message("B")),
+                expr.Selected(expr.Variable("E"), "Z", type_=rty.Message("B")),
                 expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
                 location=Location((10, 20)),
             ),
@@ -2192,10 +2070,10 @@ def test_session_state_action_error(
                         [expr.Variable("Z")],
                         location=Location((10, 20)),
                     ),
-                    "Y",
+                    "Z",
                     type_=rty.Sequence("A", rty.Message("C")),
                 ),
-                expr.Selected(expr.Variable("E"), "Y", type_=rty.Integer("B")),
+                expr.Selected(expr.Variable("E"), "Z", type_=rty.Integer("B")),
                 expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
             ),
             RecordFluxError,
@@ -2226,9 +2104,9 @@ def test_session_state_action_error(
                     location=Location((10, 20)),
                 ),
                 expr.Selected(
-                    expr.Variable("E", type_=rty.Message("C")), "Y", type_=rty.Integer("B")
+                    expr.Variable("E", type_=rty.Message("C")), "Z", type_=rty.Integer("B")
                 ),
-                expr.Greater(expr.Selected(expr.Variable("E"), "Y"), expr.Number(0)),
+                expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
             ),
             RecordFluxError,
             r'Call with sequence type "A" with element message type "C"'
@@ -2243,7 +2121,7 @@ def test_session_state_action_error(
                         "G",
                         [
                             expr.Variable(
-                                "Y",
+                                "Z",
                             )
                         ],
                         location=Location((10, 20)),
@@ -2258,7 +2136,7 @@ def test_session_state_action_error(
             expr.Conversion(
                 "T",
                 expr.Selected(
-                    expr.Variable("Y", type_=rty.Message("B")),
+                    expr.Variable("Z", type_=rty.Message("B")),
                     "Z",
                     type_=rty.OPAQUE,
                 ),
@@ -2277,6 +2155,16 @@ def test_session_state_action_error(
             ),
             RecordFluxError,
             r'referencing assignment target "X" of type message in expression not yet supported',
+        ),
+        (
+            rty.Message("A"),
+            expr.Variable(
+                "Y",
+                type_=rty.Message("A"),
+                location=Location((10, 20)),
+            ),
+            RecordFluxError,
+            r'Variable with message type "A" in assignment not yet supported',
         ),
         (
             rty.Undefined(),
@@ -2391,9 +2279,7 @@ def test_session_write_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._write(
-            write, ExceptionHandler(set(), State("S", exception_transition=Transition("E")), [])
-        )
+        session_generator._write(write)
 
 
 @pytest.mark.parametrize(
@@ -2498,8 +2384,8 @@ def test_session_write_error(
             expr.Call("P::M::Field_Size", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
         ),
         (
-            expr.HasData(expr.Variable("X", type_=rty.Channel(writable=True, readable=True))),
-            expr.Call("X_Has_Data"),
+            expr.HasData(expr.Variable("X", type_=rty.Message("P::M"))),
+            expr.Greater(expr.Call("P::M::Byte_Size", [expr.Variable("X_Ctx")]), expr.Number(0)),
         ),
         (
             expr.Opaque(expr.Variable("X", type_=rty.Message("P::M"))),

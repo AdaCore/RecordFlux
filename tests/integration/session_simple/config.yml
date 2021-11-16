@@ -4,8 +4,9 @@ input:
 output:
   - Channel
 sequence: |
-  State: Start
   Write Channel: 1 0 1 0
-  State: Reply
+  State: Start
+  State: Process
   Read Channel: 1 0 1 2
+  State: Reply
 prove:

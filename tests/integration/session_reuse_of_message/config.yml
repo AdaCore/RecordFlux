@@ -6,16 +6,17 @@ input:
 output:
   - Channel
 sequence: |
-  State: Start
   Write Channel: 0
-  State: Reply
+  State: Start
   Read Channel: 0
-  State: Start
+  State: Reply
   Write Channel: 1 0 1 0
-  State: Reply
-  Read Channel: 1 0 1 0
   State: Start
-  Write Channel: 1 0 2 0 3
+  Read Channel: 1 0 1 0
   State: Reply
+  Write Channel: 1 0 2 0 3
+  State: Start
   Read Channel: 1 0 2 0 3
+  State: Reply
+  State: Start
 prove:

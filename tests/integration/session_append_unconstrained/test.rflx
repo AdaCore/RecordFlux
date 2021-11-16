@@ -21,12 +21,18 @@ package Test is
          Options'Append (Universal::Option'(Option_Type => Universal::OT_Null));
          -- §S-S-A-A-MA
          Message := Universal::Message'(Message_Type => Universal::MT_Unconstrained_Options, Options => Options);
-         Channel'Write (Message); -- §S-S-A-WR-V
       transition
-         goto Terminated -- §S-S-T-N
+         goto Reply -- §S-S-T-N
       exception
          goto Terminated -- §S-S-E
       end Start;
+
+      state Reply is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto Terminated -- §S-S-T-N
+      end Reply;
 
       state Terminated is null state; -- §S-S-N
    end Session;

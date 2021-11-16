@@ -9,34 +9,37 @@ package Test is
       Final => Terminated
    is
       Global : Universal::Value := 11; -- §S-D-V-T-SC, §S-D-V-E-L
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
-         Message : Universal::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
-         Local : Universal::Value := 2; -- §S-S-D-V-T-SC, §S-S-D-V-E-L
       begin
          Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Process -- §S-S-T-N
+      end Start;
+
+      state Process is
+         Local : Universal::Value := 2; -- §S-S-D-V-T-SC, §S-S-D-V-E-L
+      begin
          Local := Local + Message.Value; -- §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-S, §S-S-A-A-V, §S-E-S-V
          Global := Local + 20; -- §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-V
+         -- §S-S-A-A-MA
+         Message := Universal::Message'(Message_Type => Universal::MT_Value,
+                                        Length => Universal::Value'Size / 8,
+                                        Value => Global);
       transition
          goto Reply
             if Local < Global -- §S-S-T-V
          goto Terminated -- §S-S-T-N
       exception
          goto Terminated -- §S-S-E
-      end Start;
+      end Process;
 
       state Reply is
-         Message : Universal::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
       begin
-         -- §S-S-A-A-MA
-         Message := Universal::Message'(Message_Type => Universal::MT_Value,
-                                        Length => Universal::Value'Size / 8,
-                                        Value => Global);
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
          goto Terminated -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N

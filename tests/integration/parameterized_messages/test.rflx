@@ -17,30 +17,46 @@ package Test is
    generic
       C : Channel with Readable, Writable;
    session Session with
-      Initial => Receive,
+      Initial => Start,
       Final => Terminated
    is
-      M : Message;
+      M_R : Message;
+      M_S : Message;
    begin
+      state Start
+      is
+      begin
+         M_R'Reset (Length => 2, Extended => False);
+      transition
+         goto Receive
+      end Start;
+
       state Receive
       is
       begin
-         M'Reset (Length => 2, Extended => False);
-         C'Read (M);
+         C'Read (M_R);
+      transition
+         goto Process
+            if M_R'Valid
+         goto Error
+      end Receive;
+
+      state Process
+      is
+      begin
+         M_S := Message'(Length => M_R.Length, Extended => True, Data => M_R.Data, Extension => [3, 4]);
       transition
          goto Reply
-            if M'Valid
-         goto Terminated
-      end Receive;
+      exception
+         goto Error
+      end Process;
 
       state Reply
       is
       begin
-         C'Write (Message'(Length => M.Length, Extended => True, Data => M.Data, Extension => [3, 4]));
+         C'Write (M_S);
       transition
          goto Terminated
-      exception
-         goto Error
       end Reply;
 
       state Error

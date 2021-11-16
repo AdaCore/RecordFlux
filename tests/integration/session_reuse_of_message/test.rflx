@@ -15,7 +15,7 @@ package Test is
          Channel'Read (Message); -- §S-S-A-RD-V
       transition
          goto Reply
-            if Message'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
+            if Message'Has_Data -- §S-S-T-HDAT, §S-E-AT-V-HDAT
          goto Terminated -- §S-S-T-N
       end Start;
 
@@ -24,10 +24,6 @@ package Test is
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
          goto Start
-            if Channel'Has_Data -- §S-S-T-HDAT
-         goto Terminated -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N

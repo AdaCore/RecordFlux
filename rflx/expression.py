@@ -1222,7 +1222,7 @@ class HasData(Attribute):
         return "Has_Data"
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type(rty.Channel(readable=True, writable=False))
+        return self.prefix.check_type_instance(rty.Message)
 
 
 class Head(Attribute):
@@ -1349,6 +1349,12 @@ class Selected(Name):
 
     def __neg__(self) -> "Selected":
         return self.__class__(self.prefix, self.selector, not self.negative)
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *self.prefix.findall(match),
+        ]
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
@@ -2355,6 +2361,12 @@ class MessageAggregate(Expr):
 
     def __neg__(self) -> Expr:
         raise NotImplementedError
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *[e for v in self.field_values.values() for e in v.findall(match)],
+        ]
 
     def simplified(self) -> Expr:
         return MessageAggregate(

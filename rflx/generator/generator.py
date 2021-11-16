@@ -3343,7 +3343,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             "To_Context",
             [Parameter(["Struct"], "Structure"), InOutParameter(["Ctx"], "Context")],
         )
-        first_field = message.fields[0]
         message_size = message.max_size()
         assert isinstance(message_size, expr.Number)
 
@@ -3356,17 +3355,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                             AndThen(
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                Call(
-                                    "Valid_Next",
-                                    [Variable("Ctx"), Variable(first_field.affixed_name)],
-                                ),
                                 GreaterEqual(
-                                    Call(
-                                        "Available_Space",
-                                        [
-                                            Variable("Ctx"),
-                                            Variable(first_field.affixed_name),
-                                        ],
+                                    Add(
+                                        Call(
+                                            const.TYPES * "To_Last_Bit_Index",
+                                            [Variable("Ctx.Buffer_Last")],
+                                        ),
+                                        -Call(
+                                            const.TYPES * "To_First_Bit_Index",
+                                            [Variable("Ctx.Buffer_First")],
+                                        ),
+                                        Number(1),
                                     ),
                                     message_size.ada_expr(),
                                 ),

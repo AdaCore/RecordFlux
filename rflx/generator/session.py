@@ -1,4 +1,7 @@
 # pylint: disable = too-many-lines
+
+from __future__ import annotations
+
 from contextlib import contextmanager
 from dataclasses import dataclass, field as dataclass_field
 from typing import (
@@ -27,7 +30,9 @@ from rflx.ada import (
     Assignment,
     Call,
     CallStatement,
+    Case,
     CaseStatement,
+    ChoiceList,
     ContextItem,
     Declaration,
     Declare,
@@ -41,16 +46,21 @@ from rflx.ada import (
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericProcedureInstantiation,
+    Greater,
     GreaterEqual,
     IfStatement,
+    In,
     Indexed,
+    Initialized,
     Last,
     Length,
     Less,
     LessEqual,
     LoopEntry,
+    Min,
     Mod,
     Mul,
+    NamedAggregate,
     Not,
     NotEqual,
     NullStatement,
@@ -64,6 +74,9 @@ from rflx.ada import (
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
+    Raise,
+    RaiseStatement,
+    RelaxedInitialization,
     ReturnStatement,
     Selected,
     Size,
@@ -71,6 +84,7 @@ from rflx.ada import (
     Slice,
     Statement,
     String,
+    Sub,
     SubprogramBody,
     SubprogramDeclaration,
     UnitPart,
@@ -93,7 +107,6 @@ class SessionContext:
     referenced_types: List[rid.ID] = dataclass_field(default_factory=list)
     referenced_types_body: List[rid.ID] = dataclass_field(default_factory=list)
     referenced_packages_body: List[rid.ID] = dataclass_field(default_factory=list)
-    referenced_has_data: List[rid.ID] = dataclass_field(default_factory=list)
     used_types: List[rid.ID] = dataclass_field(default_factory=list)
     used_types_body: List[rid.ID] = dataclass_field(default_factory=list)
     state_exception: Set[rid.ID] = dataclass_field(default_factory=set)
@@ -179,6 +192,13 @@ class ExceptionHandler:
         self.raised_deferred_exception |= local_exception_handler.raised_deferred_exception
 
 
+@dataclass
+class ChannelAccess:
+    state: rid.ID
+    message: ID
+    message_type: ID
+
+
 class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def __init__(
         self,
@@ -233,18 +253,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _create(self) -> None:
         self._unit_part = self._create_state_machine()
-
-        for parameter in self._session.parameters.values():
-            if isinstance(parameter, decl.ChannelDeclaration):
-                if (
-                    parameter.readable
-                    and parameter.identifier not in self._session_context.referenced_has_data
-                ):
-                    self._unit_part.specification.insert(
-                        0,
-                        Pragma("Unreferenced", [Variable(ID(parameter.identifier + "_Has_Data"))]),
-                    )
-
         self._formal_parameters = self._create_formal_parameters(self._session.parameters.values())
         self._declaration_context, self._body_context = self._create_context()
 
@@ -256,7 +264,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         for parameter in parameters:
             if isinstance(parameter, decl.ChannelDeclaration):
-                result.extend(self._create_channel_parameters(parameter))
+                pass
             elif isinstance(parameter, decl.FunctionDeclaration):
                 result.extend(self._create_function_parameters(parameter))
             elif isinstance(parameter, decl.TypeDeclaration):
@@ -273,46 +281,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
 
         return result
-
-    @staticmethod
-    def _create_channel_parameters(channel: decl.ChannelDeclaration) -> List[FormalDeclaration]:
-        return [
-            *(
-                [
-                    FormalSubprogramDeclaration(
-                        FunctionSpecification(
-                            ID(f"{channel.identifier}_Has_Data"),
-                            "Boolean",
-                        )
-                    ),
-                    FormalSubprogramDeclaration(
-                        ProcedureSpecification(
-                            ID(f"{channel.identifier}_Read"),
-                            [
-                                OutParameter(["Buffer"], const.TYPES_BYTES),
-                                OutParameter(["Length"], const.TYPES_LENGTH),
-                            ],
-                        )
-                    ),
-                ]
-                if channel.readable
-                else []
-            ),
-            *(
-                [
-                    FormalSubprogramDeclaration(
-                        ProcedureSpecification(
-                            ID(f"{channel.identifier}_Write"),
-                            [
-                                Parameter(["Buffer"], const.TYPES_BYTES),
-                            ],
-                        )
-                    )
-                ]
-                if channel.writable
-                else []
-            ),
-        ]
 
     def _create_function_parameters(
         self, function: decl.FunctionDeclaration
@@ -491,27 +459,84 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.finalization,
         )
-        unit += self._create_tick_procedure(self._session)
-        unit += self._create_run_procedure()
+
+        channel_reads = self._channel_io(self._session, read=True)
+        channel_writes = self._channel_io(self._session, write=True)
+        has_reads = bool([read for reads in channel_reads.values() for read in reads])
+        has_writes = bool([write for writes in channel_writes.values() for write in writes])
+
+        if has_reads:
+            unit += self._create_reset_messages_before_write_procedure(self._session)
+
+        unit += self._create_tick_procedure(self._session, has_reads)
+        unit += self._create_run_procedure(self._session)
         unit += self._create_state_function()
+
+        if has_writes:
+            unit += self._create_has_data_function(channel_writes)
+            unit += self._create_read_buffer_size_function(channel_writes)
+            unit += self._create_read_procedure(channel_writes)
+
+        if has_reads:
+            unit += self._create_needs_data_function(channel_reads)
+            unit += self._create_write_buffer_size_function(channel_reads)
+            unit += self._create_write_procedure(channel_reads)
+
         return (
             self._create_declarations(self._session, evaluated_declarations.global_declarations)
             + unit
         )
+
+    @staticmethod
+    def _channel_io(
+        session: model.Session, read: bool = False, write: bool = False
+    ) -> dict[rid.ID, list[ChannelAccess]]:
+        assert (read and not write) or (not read and write)
+
+        channels: dict[rid.ID, list[ChannelAccess]] = {
+            parameter.identifier: []
+            for parameter in session.parameters.values()
+            if isinstance(parameter, decl.ChannelDeclaration)
+        }
+        for state in session.states:
+            for action in state.actions:
+                if (
+                    isinstance(action, stmt.ChannelAttributeStatement)
+                    and isinstance(action, stmt.Read if read else stmt.Write)
+                    and isinstance(action.parameter, expr.Variable)
+                    and isinstance(action.parameter.type_, rty.Message)
+                ):
+                    channels[action.identifier].append(
+                        ChannelAccess(
+                            state.identifier,
+                            ID(action.parameter.identifier),
+                            ID(action.parameter.type_.identifier),
+                        )
+                    )
+
+        return channels
 
     def _create_declarations(
         self, session: model.Session, declarations: Sequence[Declaration]
     ) -> UnitPart:
         return UnitPart(
             [
-                EnumerationType("State", {ID(f"S_{s.identifier}"): None for s in session.states}),
-            ],
-            private=[
                 *[
                     UseTypeClause(self._prefix * ID(t))
                     for t in self._session_context.used_types
                     if not model.is_builtin_type(t) and not model.is_internal_type(t)
                 ],
+                EnumerationType(
+                    "Channel",
+                    {
+                        ID(f"C_{parameter.identifier}"): None
+                        for parameter in session.parameters.values()
+                        if isinstance(parameter, decl.ChannelDeclaration)
+                    },
+                ),
+                EnumerationType("State", {ID(f"S_{s.identifier}"): None for s in session.states}),
+            ],
+            private=[
                 ObjectDeclaration(["P_Next_State"], "State", Variable(f"S_{session.initial}")),
                 *declarations,
             ],
@@ -732,10 +757,77 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _create_tick_procedure(
+    def _create_reset_messages_before_write_procedure(
         self,
         session: model.Session,
     ) -> UnitPart:
+        self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
+
+        specification = ProcedureSpecification("Reset_Messages_Before_Write")
+        states = [
+            (
+                state,
+                [
+                    (
+                        ID(action.parameter.identifier),
+                        action.parameter.type_,
+                    )
+                    for action in state.actions
+                    if (
+                        isinstance(action, stmt.Read)
+                        and isinstance(action.parameter, expr.Variable)
+                        and isinstance(action.parameter.type_, rty.Message)
+                    )
+                ],
+            )
+            for state in session.states
+        ]
+
+        return UnitPart(
+            body=[
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        CaseStatement(
+                            Variable("P_Next_State"),
+                            [
+                                (
+                                    Variable(f"S_{state.identifier}"),
+                                    [
+                                        CallStatement(
+                                            ID(message_type.identifier) * "Reset",
+                                            [
+                                                Variable(context_id(message)),
+                                                Variable(context_id(message) * "First"),
+                                                Sub(
+                                                    Variable(context_id(message) * "First"),
+                                                    Number(1),
+                                                ),
+                                                *[
+                                                    Variable(context_id(message) * p)
+                                                    for p in message_type.parameter_types
+                                                ],
+                                            ],
+                                        )
+                                        for message, message_type in reads
+                                    ]
+                                    if reads
+                                    else [NullStatement()],
+                                )
+                                for state, reads in states
+                            ],
+                        ),
+                    ],
+                    aspects=[
+                        Precondition(Call("Initialized")),
+                        Postcondition(Call("Initialized")),
+                    ],
+                )
+            ],
+        )
+
+    def _create_tick_procedure(self, session: model.Session, has_writes: bool) -> UnitPart:
         specification = ProcedureSpecification("Tick")
         return UnitPart(
             [
@@ -766,13 +858,27 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 for s in session.states
                             ],
                         ),
+                        *([CallStatement("Reset_Messages_Before_Write")] if has_writes else []),
                     ],
                 )
             ],
         )
 
     @staticmethod
-    def _create_run_procedure() -> UnitPart:
+    def _create_run_procedure(session: model.Session) -> UnitPart:
+        io_states = [
+            state
+            for state in session.states
+            if any(
+                True
+                for action in state.actions
+                if (
+                    isinstance(action, (stmt.Read, stmt.Write))
+                    and isinstance(action.parameter, expr.Variable)
+                    and isinstance(action.parameter.type_, rty.Message)
+                )
+            )
+        ]
         specification = ProcedureSpecification("Run")
         return UnitPart(
             [
@@ -780,28 +886,34 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(Call("Uninitialized")),
-                        Postcondition(Call("Uninitialized")),
+                        Precondition(Call("Initialized")),
+                        Postcondition(Call("Initialized")),
                     ],
                 ),
                 Pragma("Warnings", [Variable("On"), String('subprogram "Run" has no effect')]),
             ],
             [
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification("In_IO_State", "Boolean"),
+                    In(
+                        Variable("P_Next_State"),
+                        ChoiceList(*[Variable(f"S_{state.identifier}") for state in io_states]),
+                    ),
+                ),
                 SubprogramBody(
                     specification,
                     [],
                     [
-                        CallStatement("Initialize"),
+                        CallStatement("Tick"),
                         While(
-                            Call("Active"),
+                            And(Call("Active"), Not(Call("In_IO_State"))),
                             [
                                 PragmaStatement("Loop_Invariant", [Variable("Initialized")]),
                                 CallStatement("Tick"),
                             ],
                         ),
-                        CallStatement("Finalize"),
                     ],
-                )
+                ),
             ],
         )
 
@@ -816,6 +928,563 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ExpressionFunctionDeclaration(
                     specification,
                     Variable("P_Next_State"),
+                )
+            ],
+        )
+
+    @staticmethod
+    def _create_has_data_function(channel_writes: dict[rid.ID, list[ChannelAccess]]) -> UnitPart:
+        specification = FunctionSpecification(
+            "Has_Data", "Boolean", [Parameter(["Chan"], "Channel")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(specification, [Precondition(Call("Initialized"))]),
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("P_Next_State"),
+                                    [
+                                        *[
+                                            (
+                                                Variable(f"S_{write.state}"),
+                                                And(
+                                                    Call(
+                                                        write.message_type
+                                                        * "Structural_Valid_Message",
+                                                        [Variable(context_id(write.message))],
+                                                    ),
+                                                    Greater(
+                                                        Call(
+                                                            write.message_type * "Byte_Size",
+                                                            [Variable(context_id(write.message))],
+                                                        ),
+                                                        Number(0),
+                                                    ),
+                                                ),
+                                            )
+                                            for write in writes
+                                        ],
+                                        (Variable("others"), FALSE),
+                                    ],
+                                ),
+                            )
+                            for channel, writes in channel_writes.items()
+                        ],
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def _create_needs_data_function(channel_reads: dict[rid.ID, list[ChannelAccess]]) -> UnitPart:
+        specification = FunctionSpecification(
+            "Needs_Data", "Boolean", [Parameter(["Chan"], "Channel")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(specification, [Precondition(Call("Initialized"))]),
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("P_Next_State"),
+                                    [
+                                        *[(Variable(f"S_{read.state}"), TRUE) for read in reads],
+                                        (Variable("others"), FALSE),
+                                    ],
+                                ),
+                            )
+                            for channel, reads in channel_reads.items()
+                        ],
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def _create_read_buffer_size_function(
+        channel_writes: dict[rid.ID, list[ChannelAccess]]
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Read_Buffer_Size", const.TYPES_LENGTH, [Parameter(["Chan"], "Channel")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(Call("Initialized"), Call("Has_Data", [Variable("Chan")]))
+                        ),
+                    ],
+                ),
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("P_Next_State"),
+                                    [
+                                        *[
+                                            (
+                                                Variable(f"S_{write.state}"),
+                                                Call(
+                                                    write.message_type * "Byte_Size",
+                                                    [Variable(context_id(write.message))],
+                                                ),
+                                            )
+                                            for write in writes
+                                        ],
+                                        (Variable("others"), Raise("Program_Error")),
+                                    ],
+                                ),
+                            )
+                            for channel, writes in channel_writes.items()
+                        ],
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def _create_write_buffer_size_function(
+        channel_reads: dict[rid.ID, list[ChannelAccess]]
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Write_Buffer_Size", const.TYPES_LENGTH, [Parameter(["Chan"], "Channel")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(specification),
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (Variable(f"C_{channel}"), Number(4096) if reads else Number(0))
+                            for channel, reads in channel_reads.items()
+                        ],
+                    ),
+                )
+            ],
+        )
+
+    def _create_read_procedure(self, channel_writes: dict[rid.ID, list[ChannelAccess]]) -> UnitPart:
+        self._session_context.used_types.append(const.TYPES_INDEX)
+        self._session_context.used_types.append(const.TYPES_LENGTH)
+
+        specification = ProcedureSpecification(
+            "Read",
+            [
+                Parameter(["Chan"], "Channel"),
+                OutParameter(["Buffer"], const.TYPES_BYTES),
+                Parameter(["Offset"], const.TYPES_LENGTH, Number(0)),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Initialized"),
+                                Call("Has_Data", [Variable("Chan")]),
+                                Greater(Length("Buffer"), Number(0)),
+                                LessEqual(
+                                    Variable("Offset"),
+                                    Sub(Last(const.TYPES_LENGTH), Length("Buffer")),
+                                ),
+                                LessEqual(
+                                    Add(Length("Buffer"), Variable("Offset")),
+                                    Call("Read_Buffer_Size", [Variable("Chan")]),
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            Call("Initialized"),
+                        ),
+                    ],
+                ),
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [
+                        ExpressionFunctionDeclaration(
+                            FunctionSpecification(
+                                "Read_Pre",
+                                "Boolean",
+                                [Parameter(["Message_Buffer"], const.TYPES_BYTES)],
+                            ),
+                            AndThen(
+                                Greater(Length("Buffer"), Number(0)),
+                                Less(Variable("Offset"), Length("Message_Buffer")),
+                            ),
+                        ),
+                        SubprogramBody(
+                            ProcedureSpecification(
+                                "Read", [Parameter(["Message_Buffer"], const.TYPES_BYTES)]
+                            ),
+                            [
+                                ObjectDeclaration(
+                                    ["Length"],
+                                    const.TYPES_INDEX,
+                                    Call(
+                                        const.TYPES_INDEX,
+                                        [
+                                            Min(
+                                                const.TYPES_LENGTH,
+                                                Length("Buffer"),
+                                                Sub(
+                                                    Length("Message_Buffer"),
+                                                    Variable("Offset"),
+                                                ),
+                                            )
+                                        ],
+                                    ),
+                                    constant=True,
+                                ),
+                                ObjectDeclaration(
+                                    ["Buffer_Last"],
+                                    const.TYPES_INDEX,
+                                    Add(First("Buffer"), -Number(1), Variable("Length")),
+                                    constant=True,
+                                ),
+                            ],
+                            [
+                                Assignment(
+                                    Slice(
+                                        Variable("Buffer"),
+                                        First("Buffer"),
+                                        Call(const.TYPES_INDEX, [Variable("Buffer_Last")]),
+                                    ),
+                                    Slice(
+                                        Variable("Message_Buffer"),
+                                        Call(
+                                            const.TYPES_INDEX,
+                                            [
+                                                Add(
+                                                    Call(
+                                                        const.TYPES_LENGTH,
+                                                        [First("Message_Buffer")],
+                                                    ),
+                                                    Variable("Offset"),
+                                                )
+                                            ],
+                                        ),
+                                        Add(
+                                            First("Message_Buffer"),
+                                            -Number(2),
+                                            Call(
+                                                const.TYPES_INDEX,
+                                                [Add(Variable("Offset"), Number(1))],
+                                            ),
+                                            Variable("Length"),
+                                        ),
+                                    ),
+                                )
+                            ],
+                            aspects=[Precondition(Call("Read_Pre", [Variable("Message_Buffer")]))],
+                        ),
+                        *[
+                            GenericProcedureInstantiation(
+                                (type_ * "Read").flat,
+                                ProcedureSpecification(type_ * "Generic_Read"),
+                                ["Read", "Read_Pre"],
+                            )
+                            for type_ in sorted(
+                                {
+                                    write.message_type
+                                    for writes in channel_writes.values()
+                                    for write in writes
+                                }
+                            )
+                        ],
+                    ],
+                    [
+                        Assignment(
+                            Variable("Buffer"),
+                            NamedAggregate(("others", Number(0))),
+                        ),
+                        CaseStatement(
+                            Variable("Chan"),
+                            [
+                                (
+                                    Variable(f"C_{channel}"),
+                                    [
+                                        CaseStatement(
+                                            Variable("P_Next_State"),
+                                            [
+                                                *[
+                                                    (
+                                                        Variable(f"S_{write.state}"),
+                                                        [
+                                                            CallStatement(
+                                                                (write.message_type * "Read").flat,
+                                                                [
+                                                                    Variable(
+                                                                        context_id(write.message)
+                                                                    )
+                                                                ],
+                                                            ),
+                                                        ],
+                                                    )
+                                                    for write in writes
+                                                ],
+                                                (
+                                                    Variable("others"),
+                                                    [
+                                                        RaiseStatement("Program_Error"),
+                                                    ],
+                                                ),
+                                            ],
+                                        )
+                                    ],
+                                )
+                                for channel, writes in channel_writes.items()
+                            ],
+                        ),
+                    ],
+                )
+            ],
+        )
+
+    def _create_write_procedure(self, channel_reads: dict[rid.ID, list[ChannelAccess]]) -> UnitPart:
+        self._session_context.used_types.append(const.TYPES_INDEX)
+        self._session_context.used_types.append(const.TYPES_LENGTH)
+
+        specification = ProcedureSpecification(
+            "Write",
+            [
+                Parameter(["Chan"], "Channel"),
+                Parameter(["Buffer"], const.TYPES_BYTES),
+                Parameter(["Offset"], const.TYPES_LENGTH, Number(0)),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Initialized"),
+                                Call("Needs_Data", [Variable("Chan")]),
+                                Greater(Length("Buffer"), Number(0)),
+                                LessEqual(
+                                    Variable("Offset"),
+                                    Sub(Last(const.TYPES_LENGTH), Length("Buffer")),
+                                ),
+                                LessEqual(
+                                    Add(Length("Buffer"), Variable("Offset")),
+                                    Call("Write_Buffer_Size", [Variable("Chan")]),
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            Call("Initialized"),
+                        ),
+                    ],
+                ),
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [
+                        ExpressionFunctionDeclaration(
+                            FunctionSpecification(
+                                "Write_Pre",
+                                "Boolean",
+                                [
+                                    Parameter(["Context_Buffer_Length"], const.TYPES_LENGTH),
+                                    Parameter(["Offset"], const.TYPES_LENGTH),
+                                ],
+                            ),
+                            AndThen(
+                                Greater(Length("Buffer"), Number(0)),
+                                Equal(
+                                    Variable("Context_Buffer_Length"),
+                                    Call("Write_Buffer_Size", [Variable("Chan")]),
+                                ),
+                                LessEqual(
+                                    Variable("Offset"),
+                                    Sub(Last(const.TYPES_LENGTH), Length("Buffer")),
+                                ),
+                                LessEqual(
+                                    Add(Length("Buffer"), Variable("Offset")),
+                                    Call("Write_Buffer_Size", [Variable("Chan")]),
+                                ),
+                            ),
+                        ),
+                        SubprogramBody(
+                            ProcedureSpecification(
+                                "Write",
+                                [
+                                    OutParameter(["Message_Buffer"], const.TYPES_BYTES),
+                                    OutParameter(["Length"], const.TYPES_LENGTH),
+                                    Parameter(["Context_Buffer_Length"], const.TYPES_LENGTH),
+                                    Parameter(["Offset"], const.TYPES_LENGTH),
+                                ],
+                            ),
+                            [],
+                            [
+                                Assignment(Variable("Length"), Length("Buffer")),
+                                Assignment(
+                                    Slice(
+                                        Variable("Message_Buffer"),
+                                        First("Message_Buffer"),
+                                        Call(
+                                            const.TYPES_INDEX,
+                                            [
+                                                Add(
+                                                    Call(
+                                                        const.TYPES_LENGTH,
+                                                        [First("Message_Buffer")],
+                                                    ),
+                                                    -Number(1),
+                                                    Variable("Length"),
+                                                )
+                                            ],
+                                        ),
+                                    ),
+                                    Variable("Buffer"),
+                                ),
+                                Assignment(
+                                    Slice(
+                                        Variable("Message_Buffer"),
+                                        Call(
+                                            const.TYPES_INDEX,
+                                            [
+                                                Add(
+                                                    Call(
+                                                        const.TYPES_LENGTH,
+                                                        [First("Message_Buffer")],
+                                                    ),
+                                                    Variable("Length"),
+                                                )
+                                            ],
+                                        ),
+                                        Last("Message_Buffer"),
+                                    ),
+                                    NamedAggregate(("others", Number(0))),
+                                ),
+                            ],
+                            aspects=[
+                                Precondition(
+                                    AndThen(
+                                        Call(
+                                            "Write_Pre",
+                                            [
+                                                Variable("Context_Buffer_Length"),
+                                                Variable("Offset"),
+                                            ],
+                                        ),
+                                        LessEqual(
+                                            Variable("Offset"),
+                                            Sub(
+                                                Last(const.TYPES_LENGTH),
+                                                Length("Message_Buffer"),
+                                            ),
+                                        ),
+                                        Equal(
+                                            Add(Length("Message_Buffer"), Variable("Offset")),
+                                            Call("Write_Buffer_Size", [Variable("Chan")]),
+                                        ),
+                                    )
+                                ),
+                                Postcondition(
+                                    And(
+                                        LessEqual(Variable("Length"), Length("Message_Buffer")),
+                                        Initialized("Message_Buffer"),
+                                    )
+                                ),
+                                RelaxedInitialization(Variable("Message_Buffer")),
+                            ],
+                        ),
+                        *[
+                            GenericProcedureInstantiation(
+                                (type_ * "Write").flat,
+                                ProcedureSpecification(type_ * "Generic_Write"),
+                                ["Write", "Write_Pre"],
+                            )
+                            for type_ in sorted(
+                                {
+                                    read.message_type
+                                    for reads in channel_reads.values()
+                                    for read in reads
+                                }
+                            )
+                        ],
+                    ],
+                    [
+                        CaseStatement(
+                            Variable("Chan"),
+                            [
+                                (
+                                    Variable(f"C_{channel}"),
+                                    [
+                                        CaseStatement(
+                                            Variable("P_Next_State"),
+                                            [
+                                                *[
+                                                    (
+                                                        Variable(f"S_{write.state}"),
+                                                        [
+                                                            CallStatement(
+                                                                (write.message_type * "Write").flat,
+                                                                [
+                                                                    Variable(
+                                                                        context_id(write.message)
+                                                                    ),
+                                                                    Variable("Offset"),
+                                                                ],
+                                                            ),
+                                                        ],
+                                                    )
+                                                    for write in reads
+                                                ],
+                                                (
+                                                    Variable("others"),
+                                                    [
+                                                        RaiseStatement("Program_Error"),
+                                                    ],
+                                                ),
+                                            ],
+                                        )
+                                    ],
+                                )
+                                for channel, reads in channel_reads.items()
+                            ],
+                        ),
+                    ],
                 )
             ],
         )
@@ -880,7 +1549,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             result = self._read(action)
 
         elif isinstance(action, stmt.Write):
-            result = self._write(action, exception_handler)
+            result = self._write(action)
 
         else:
             fatal_fail(
@@ -1056,6 +1725,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
+        if isinstance(expression, expr.MessageAggregate):
+            return self._assign_to_message_aggregate(target, expression, exception_handler)
+
         if isinstance(target_type, rty.Message):
             for v in expression.findall(
                 lambda x: isinstance(x, expr.Variable) and x.identifier == target
@@ -1072,9 +1744,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if isinstance(expression, expr.Selected):
             return self._assign_to_selected(target, expression, exception_handler)
-
-        if isinstance(expression, expr.MessageAggregate):
-            return self._assign_to_message_aggregate(target, expression, exception_handler)
 
         if isinstance(expression, expr.Head):
             return self._assign_to_head(target, expression, exception_handler, alloc_id)
@@ -1932,75 +2601,20 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         target_type = ID(read.parameter.type_.identifier)
         target_context = context_id(read.parameter.identifier)
-        identifier = f"{target_type.flat}_Write"
         return [
-            Declare(
-                [
-                    GenericProcedureInstantiation(
-                        identifier,
-                        ProcedureSpecification(target_type * "Generic_Write"),
-                        [f"{read.identifier}_Read"],
-                    )
-                ],
-                [
-                    CallStatement(identifier, [Variable(target_context)]),
-                ],
-            ),
             CallStatement(target_type * "Verify_Message", [Variable(target_context)]),
         ]
 
+    @staticmethod
     def _write(
-        self,
         write: stmt.Write,
-        exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         assert isinstance(write.parameter.type_, rty.Message)
 
-        if not isinstance(write.parameter, (expr.Variable, expr.MessageAggregate, expr.Binding)):
+        if not isinstance(write.parameter, expr.Variable):
             _unsupported_expression(write.parameter, "in Write statement")
 
-        if isinstance(write.parameter, expr.Variable):
-            target_type = ID(write.parameter.type_.identifier)
-            target_context = context_id(write.parameter.identifier)
-        else:
-            target_type = ID(write.parameter.type_.identifier)
-            target_context = context_id(ID("RFLX_Message"))
-
-        identifier = f"{target_type.flat}_Read"
-
-        def write_statements(exception_handler: ExceptionHandler) -> Sequence[Statement]:
-            return [
-                self._if_structural_valid_message(
-                    target_type,
-                    target_context,
-                    [
-                        Declare(
-                            [
-                                GenericProcedureInstantiation(
-                                    identifier,
-                                    ProcedureSpecification(target_type * "Generic_Read"),
-                                    [f"{write.identifier}_Write"],
-                                )
-                            ],
-                            [
-                                CallStatement(identifier, [Variable(target_context)]),
-                            ],
-                        )
-                    ],
-                    exception_handler,
-                )
-            ]
-
-        if isinstance(write.parameter, expr.Variable):
-            return write_statements(exception_handler)
-
-        with exception_handler.local() as local_exception_handler:
-            return self._declare_and_assign(
-                [(ID("RFLX_Message"), write.parameter.type_, write.parameter)],
-                write_statements(local_exception_handler),
-                exception_handler,
-                write.location,
-            )
+        return []
 
     @staticmethod
     def _reset(
@@ -2212,9 +2826,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
             if isinstance(expression, expr.HasData):
                 assert isinstance(expression.prefix, expr.Variable)
-                assert isinstance(expression.prefix.type_, rty.Channel)
-                self._session_context.referenced_has_data.append(expression.prefix.identifier)
-                return expr.Call(expression.prefix.identifier + "_Has_Data")
+                assert isinstance(expression.prefix.type_, rty.Message)
+                type_ = ID(expression.prefix.type_.identifier)
+                context = context_id(expression.prefix.identifier)
+                return expr.Greater(
+                    expr.Call(type_ * "Byte_Size", [expr.Variable(context)]), expr.Number(0)
+                )
 
             if isinstance(expression, expr.Opaque):
                 if isinstance(expression.prefix, expr.Variable):
@@ -2360,8 +2977,18 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 (
                     GreaterEqual(
                         Add(
-                            Variable(f"{target_context}.Last"),
-                            -Variable(f"{target_context}.First"),
+                            Call(
+                                const.TYPES_TO_FIRST_BIT_INDEX,
+                                [
+                                    Variable(f"{target_context}.Buffer_Last"),
+                                ],
+                            ),
+                            -Call(
+                                const.TYPES_TO_FIRST_BIT_INDEX,
+                                [
+                                    Variable(f"{target_context}.Buffer_First"),
+                                ],
+                            ),
                             Number(1),
                         ),
                         required_space,

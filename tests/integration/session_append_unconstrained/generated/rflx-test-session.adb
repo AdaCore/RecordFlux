@@ -25,8 +25,8 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       if
-        not Universal.Options.Has_Element (Options_Ctx)
-        or Universal.Options.Available_Space (Options_Ctx) < 32
+         not Universal.Options.Has_Element (Options_Ctx)
+         or Universal.Options.Available_Space (Options_Ctx) < 32
       then
          P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
@@ -69,8 +69,8 @@ is
          return;
       end if;
       if
-        not Universal.Options.Has_Element (Options_Ctx)
-        or Universal.Options.Available_Space (Options_Ctx) < 40
+         not Universal.Options.Has_Element (Options_Ctx)
+         or Universal.Options.Available_Space (Options_Ctx) < 40
       then
          P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
@@ -113,8 +113,8 @@ is
          return;
       end if;
       if
-        not Universal.Options.Has_Element (Options_Ctx)
-        or Universal.Options.Available_Space (Options_Ctx) < 8
+         not Universal.Options.Has_Element (Options_Ctx)
+         or Universal.Options.Available_Space (Options_Ctx) < 8
       then
          P_Next_State := S_Terminated;
          pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
@@ -139,10 +139,10 @@ is
          pragma Warnings (On, "unused assignment to ""RFLX_Element_Options_Ctx""");
       end;
       if
-        Universal.Options.Size (Options_Ctx) <= 32768
-        and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0
+         Universal.Options.Size (Options_Ctx) <= 32768
+         and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if Message_Ctx.Last - Message_Ctx.First + 1 >= RFLX_Types.Bit_Length (Universal.Options.Size (Options_Ctx) + 8) then
+         if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Options.Size (Options_Ctx) + 8) then
             Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Options.Size (Options_Ctx) + 8) - 1);
             Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Unconstrained_Options);
             if Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Options) = Universal.Options.Size (Options_Ctx) then
@@ -183,25 +183,7 @@ is
          pragma Warnings (On, "unused assignment");
          return;
       end if;
-      if Universal.Message.Structural_Valid_Message (Message_Ctx) then
-         declare
-            procedure Universal_Message_Read is new Universal.Message.Generic_Read (Channel_Write);
-         begin
-            Universal_Message_Read (Message_Ctx);
-         end;
-      else
-         P_Next_State := S_Terminated;
-         pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Options_Ctx""");
-         pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_2 := Options_Buffer;
-         pragma Warnings (On, "unused assignment");
-         return;
-      end if;
-      P_Next_State := S_Terminated;
+      P_Next_State := S_Reply;
       pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
       pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
@@ -211,6 +193,16 @@ is
       Test.Session_Allocator.Slot_Ptr_2 := Options_Buffer;
       pragma Warnings (On, "unused assignment");
    end Start;
+
+   procedure Reply (P_Next_State : out State) with
+     Pre =>
+       Initialized,
+     Post =>
+       Initialized
+   is
+   begin
+      P_Next_State := S_Terminated;
+   end Reply;
 
    procedure Initialize is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
@@ -243,19 +235,72 @@ is
       case P_Next_State is
          when S_Start =>
             Start (P_Next_State);
+         when S_Reply =>
+            Reply (P_Next_State);
          when S_Terminated =>
             null;
       end case;
    end Tick;
 
+   function In_IO_State return Boolean is
+     (P_Next_State in S_Reply);
+
    procedure Run is
    begin
-      Initialize;
-      while Active loop
+      Tick;
+      while
+         Active
+         and not In_IO_State
+      loop
          pragma Loop_Invariant (Initialized);
          Tick;
       end loop;
-      Finalize;
    end Run;
+
+   function Has_Data (Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_Channel =>
+             (case P_Next_State is
+                 when S_Reply =>
+                    Universal.Message.Structural_Valid_Message (Message_Ctx)
+                    and Universal.Message.Byte_Size (Message_Ctx) > 0,
+                 when others =>
+                    False)));
+
+   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_Channel =>
+             (case P_Next_State is
+                 when S_Reply =>
+                    Universal.Message.Byte_Size (Message_Ctx),
+                 when others =>
+                    raise Program_Error)));
+
+   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+      function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
+        (Buffer'Length > 0
+         and then Offset < Message_Buffer'Length);
+      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+        Pre =>
+          Read_Pre (Message_Buffer)
+      is
+         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+      begin
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+      end Read;
+      procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
+   begin
+      Buffer := (others => 0);
+      case Chan is
+         when C_Channel =>
+            case P_Next_State is
+               when S_Reply =>
+                  Universal_Message_Read (Message_Ctx);
+               when others =>
+                  raise Program_Error;
+            end case;
+      end case;
+   end Read;
 
 end RFLX.Test.Session;

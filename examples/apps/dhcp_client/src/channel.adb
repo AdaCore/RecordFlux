@@ -1,6 +1,8 @@
 with Ada.Streams;
 
-package body Channel is
+package body Channel with
+   SPARK_Mode
+is
 
    use type RFLX.RFLX_Builtin_Types.Index;
    use type Ada.Streams.Stream_Element_Offset;
@@ -9,28 +11,56 @@ package body Channel is
    --  Ada.Streams.Stream_Element_Array is not yet supported as buffer type and thus a conversion is needed.
 
    function To_Ada_Stream (Buffer : RFLX.RFLX_Builtin_Types.Bytes) return Ada.Streams.Stream_Element_Array with
-     Pre => Buffer'First = 1
+      Pre =>
+         Buffer'First = 1
+         and then Buffer'Length <= Ada.Streams.Stream_Element_Offset'Last
    is
-      Data : Ada.Streams.Stream_Element_Array (1 .. Buffer'Length);
+      Result : Ada.Streams.Stream_Element_Array (1 .. Buffer'Length) with
+         Relaxed_Initialization;
    begin
-      for I in Buffer'Range loop
-         Data (Ada.Streams.Stream_Element_Offset (I)) := Ada.Streams.Stream_Element (Buffer (I));
+      for I in Result'Range loop
+         Result (I) := Ada.Streams.Stream_Element (Buffer (RFLX.RFLX_Builtin_Types.Index (I)));
+         pragma Loop_Invariant (Result (1 .. I)'Initialized);
       end loop;
-      return Data;
+      pragma Assert (Result'Initialized);
+      return Result;
    end To_Ada_Stream;
 
    function To_RFLX_Bytes (Buffer : Ada.Streams.Stream_Element_Array) return RFLX.RFLX_Builtin_Types.Bytes with
-     Pre => Buffer'First = 1
+      Pre =>
+         Buffer'First = 1
+         and then Buffer'Length <= Ada.Streams.Stream_Element_Offset (RFLX.RFLX_Builtin_Types.Index'Last)
    is
-      Data : RFLX.RFLX_Builtin_Types.Bytes (1 .. Buffer'Length);
+      Result : RFLX.RFLX_Builtin_Types.Bytes (1 .. Buffer'Length) with
+         Relaxed_Initialization;
    begin
-      for I in Buffer'Range loop
-         Data (RFLX.RFLX_Builtin_Types.Index (I)) := RFLX.RFLX_Builtin_Types.Byte (Buffer (I));
+      for I in Result'Range loop
+         Result (I) := RFLX.RFLX_Builtin_Types.Byte (Buffer (Ada.Streams.Stream_Element_Offset (I)));
+         pragma Loop_Invariant (Result (1 .. I)'Initialized);
       end loop;
-      return Data;
+      pragma Assert (Result'Initialized);
+      return Result;
    end To_RFLX_Bytes;
 
-   procedure Send (Buffer : RFLX.RFLX_Builtin_Types.Bytes)
+   procedure Initialize (Socket : out GNAT.Sockets.Socket_Type) with
+      SPARK_Mode => Off
+   is
+   begin
+      GNAT.Sockets.Create_Socket (Socket => Socket,
+                                  Family => GNAT.Sockets.Family_Inet,
+                                  Mode => GNAT.Sockets.Socket_Datagram);
+      GNAT.Sockets.Set_Socket_Option (Socket => Socket,
+                                      Level => GNAT.Sockets.Socket_Level,
+                                      Option => (GNAT.Sockets.Broadcast, True));
+      GNAT.Sockets.Bind_Socket (Socket  => Socket,
+                                Address => (Family => GNAT.Sockets.Family_Inet,
+                                            Addr => GNAT.Sockets.Any_Inet_Addr,
+                                            Port => 68));
+   end Initialize;
+
+   procedure Send (Socket : in out GNAT.Sockets.Socket_Type;
+                   Buffer :        RFLX.RFLX_Builtin_Types.Bytes) with
+      SPARK_Mode => Off
    is
       Data : constant Ada.Streams.Stream_Element_Array (1 .. Buffer'Length) := To_Ada_Stream (Buffer);
       Last : Ada.Streams.Stream_Element_Offset;
@@ -44,7 +74,11 @@ package body Channel is
                                                                    Port => 67));
    end Send;
 
-   procedure Receive (Buffer : out RFLX.RFLX_Builtin_Types.Bytes; Length : out RFLX.RFLX_Builtin_Types.Length) is
+   procedure Receive (Socket : in out GNAT.Sockets.Socket_Type;
+                      Buffer :    out RFLX.RFLX_Builtin_Types.Bytes;
+                      Length :    out RFLX.RFLX_Builtin_Types.Length) with
+      SPARK_Mode => Off
+   is
       Data : Ada.Streams.Stream_Element_Array (1 .. Buffer'Length);
       Last : Ada.Streams.Stream_Element_Offset;
    begin
@@ -54,26 +88,5 @@ package body Channel is
       Buffer := To_RFLX_Bytes (Data);
       Length := RFLX.RFLX_Builtin_Types.Length (Last);
    end Receive;
-
-   function Has_Data return Boolean is
-      Request : GNAT.Sockets.Request_Type := GNAT.Sockets.Request_Type'(Name => GNAT.Sockets.N_Bytes_To_Read,
-                                                                        Size => 0);
-   begin
-      GNAT.Sockets.Control_Socket (Socket => Socket, Request => Request);
-      return Request.Size > 0;
-   end Has_Data;
-
-begin
-
-   GNAT.Sockets.Create_Socket (Socket => Socket,
-                               Family => GNAT.Sockets.Family_Inet,
-                               Mode => GNAT.Sockets.Socket_Datagram);
-   GNAT.Sockets.Set_Socket_Option (Socket => Socket,
-                                   Level => GNAT.Sockets.Socket_Level,
-                                   Option => (GNAT.Sockets.Broadcast, True));
-   GNAT.Sockets.Bind_Socket (Socket  => Socket,
-                             Address => (Family => GNAT.Sockets.Family_Inet,
-                                         Addr => GNAT.Sockets.Any_Inet_Addr,
-                                         Port => 68));
 
 end Channel;

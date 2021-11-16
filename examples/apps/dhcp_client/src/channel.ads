@@ -2,21 +2,26 @@ with GNAT.Sockets;
 with RFLX.RFLX_Builtin_Types;
 
 package Channel with
-  SPARK_Mode
+   SPARK_Mode
 is
 
-   Socket : GNAT.Sockets.Socket_Type;
-
-   procedure Send (Buffer : RFLX.RFLX_Builtin_Types.Bytes) with
+   procedure Initialize (Socket : out GNAT.Sockets.Socket_Type) with
       Global =>
-         (Output => Socket);
+         null;
+
+   procedure Send (Socket : in out GNAT.Sockets.Socket_Type;
+                   Buffer :        RFLX.RFLX_Builtin_Types.Bytes) with
+      Global =>
+         null;
 
    use type RFLX.RFLX_Builtin_Types.Length;
 
-   procedure Receive (Buffer : out RFLX.RFLX_Builtin_Types.Bytes; Length : out RFLX.RFLX_Builtin_Types.Length) with
+   procedure Receive (Socket : in out GNAT.Sockets.Socket_Type;
+                      Buffer :    out RFLX.RFLX_Builtin_Types.Bytes;
+                      Length :    out RFLX.RFLX_Builtin_Types.Length) with
       Post =>
-         Length <= Buffer'Length;
-
-   function Has_Data return Boolean;
+         Length <= Buffer'Length,
+      Global =>
+         null;
 
 end Channel;

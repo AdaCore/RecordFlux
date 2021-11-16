@@ -470,8 +470,7 @@ is
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Length)
-       and then Available_Space (Ctx, F_Length) >= 2048,
+       and then RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1 >= 2048,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

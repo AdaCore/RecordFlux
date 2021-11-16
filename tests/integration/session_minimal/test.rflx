@@ -24,8 +24,6 @@ package Test is
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
          goto Terminated -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N

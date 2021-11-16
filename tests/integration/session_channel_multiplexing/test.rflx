@@ -15,39 +15,29 @@ package Test is
    begin
       state Start is
       begin
+         I_1'Read (Message_1); -- §S-S-A-RD-V
+         I_2'Read (Message_2); -- §S-S-A-RD-V
       transition
          goto Reply_1
-            if I_1'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
+            if Message_1'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto Reply_2
-            if I_2'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
+            if Message_2'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto Terminated -- §S-S-E
       end Start;
 
       state Reply_1 is
       begin
-         I_1'Read (Message_1); -- §S-S-A-RD-V
          O'Write (Message_1); -- §S-S-A-WR-V
       transition
          goto Start -- §S-S-T-N
-      exception
-         goto Error -- §S-S-E
       end Reply_1;
 
       state Reply_2 is
       begin
-         I_2'Read (Message_2); -- §S-S-A-RD-V
          O'Write (Message_2); -- §S-S-A-WR-V
       transition
          goto Start -- §S-S-T-N
-      exception
-         goto Error -- §S-S-E
       end Reply_2;
-
-      state Error is
-      begin
-      transition
-         goto Terminated -- §S-S-T-N
-      end Error;
 
       state Terminated is null state; -- §S-S-N
    end Session;

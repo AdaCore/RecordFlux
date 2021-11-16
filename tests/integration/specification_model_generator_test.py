@@ -496,22 +496,30 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
               begin
                  Transport'Read (Packet);
               transition
-                 goto Send
+                 goto Process
                     if Packet'Valid
                  goto Error
               end Receive;
 
-              state Send
+              state Process
               is
                  Send_Size : Length;
               begin
                  Send_Size := Packet'Size / 8;
-                 Transport'Write (Packet'(Length => Send_Size,
-                                          Payload => Packet'Opaque));
+                 Packet := Packet'(Length => Send_Size,
+                                   Payload => Packet'Opaque);
               transition
-                 goto Receive
+                 goto Send
               exception
                  goto Error
+              end Process;
+
+              state Send
+              is
+              begin
+                 Transport'Write (Packet);
+              transition
+                 goto Receive
               end Send;
 
               state Error is null state;
@@ -547,24 +555,36 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
               Channel : Channel with Readable;
               Output : Channel with Writable;
            session Session with
-              Initial => First,
-              Final => Last
+              Initial => Read,
+              Final => Terminated
            is
              Incoming : M1;
              Outgoing : M2;
            begin
-              state First is
+              state Read is
               begin
                 Channel'Read (Incoming);
-                Outgoing := M2'(Size => Incoming'Size, Payload => Incoming.Payload);
-                Output'Write(Outgoing);
               transition
-                 goto Last
-              exception
-                 goto Last
-              end First;
+                 goto Process
+              end Read;
 
-              state Last is null state;
+              state Process is
+              begin
+                Outgoing := M2'(Size => Incoming'Size, Payload => Incoming.Payload);
+              transition
+                 goto Write
+              exception
+                 goto Terminated
+              end Process;
+
+              state Write is
+              begin
+                Output'Write (Outgoing);
+              transition
+                 goto Terminated
+              end Write;
+
+              state Terminated is null state;
            end Session;
 
         end Test;

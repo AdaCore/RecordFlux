@@ -860,7 +860,6 @@ def test_channel_write() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[stmt.Write("Some_Channel", expr.Variable("M"))],
             ),
@@ -918,6 +917,7 @@ def test_channel_read_invalid_type() -> None:
         types=[TLV_MESSAGE],
         regex=(
             r"^"
+            r"<stdin>:10:20: model: error: channel parameter must be a variable\n"
             r"<stdin>:10:20: model: error: expected readable channel\n"
             r'<stdin>:10:20: model: info: found message type "TLV::Message"\n'
             r"<stdin>:10:30: model: error: expected message type\n"
@@ -962,7 +962,6 @@ def test_channel_write_invalid_mode() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
                     stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
@@ -996,49 +995,16 @@ def test_channel_attribute_has_data() -> None:
                 "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.HasData(expr.Variable("Channel")))],
+                actions=[stmt.Assignment("Result", expr.HasData(expr.Variable("Message")))],
             ),
             State("End"),
         ],
         declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
             decl.VariableDeclaration("Result", "Boolean"),
         ],
-        parameters=[
-            decl.ChannelDeclaration("Channel", readable=True, writable=True),
-        ],
-        types=[BOOLEAN],
-    )
-
-
-def test_channel_attribute_has_data_invalid_mode() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("End"))],
-                declarations=[],
-                actions=[
-                    stmt.Assignment(
-                        "Result",
-                        expr.HasData(expr.Variable("Out_Channel", location=Location((10, 20)))),
-                    ),
-                ],
-            ),
-            State("End"),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-        ],
-        parameters=[
-            decl.ChannelDeclaration("Out_Channel", readable=False, writable=True),
-        ],
-        types=[BOOLEAN],
-        regex=(
-            r"^"
-            r"<stdin>:10:20: model: error: expected readable channel\n"
-            r"<stdin>:10:20: model: info: found writable channel"
-            r"$"
-        ),
+        parameters=[],
+        types=[BOOLEAN, TLV_MESSAGE],
     )
 
 
@@ -2055,6 +2021,106 @@ def test_type_error_in_renaming_declaration() -> None:
             r"<stdin>:10:20: model: info: found type universal integer \(1\)"
             r"$"
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    "actions, errors",
+    [
+        (
+            [
+                stmt.Read(
+                    "C1",
+                    expr.MessageAggregate(
+                        UNIVERSAL_MESSAGE.identifier,
+                        {"Message_Type": expr.Variable("Universal::MT_Null")},
+                    ),
+                    location=Location((1, 2)),
+                ),
+                stmt.Write("C2", expr.Variable("M1")),
+            ],
+            "<stdin>:1:2: model: error: channel parameter must be a variable",
+        ),
+        (
+            [
+                stmt.Read("C1", expr.Variable("M1"), location=Location((1, 2))),
+                stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
+                stmt.Assignment("X", expr.FALSE, location=Location((3, 4))),
+            ],
+            "<stdin>:1:2: model: error: channel IO must not be combined with other actions"
+            " in one state",
+        ),
+        (
+            [
+                stmt.Read(
+                    ID("C1", location=Location((1, 1))),
+                    expr.Variable("M1"),
+                ),
+                stmt.Write(
+                    ID("C1", location=Location((2, 1))),
+                    expr.Variable("M2"),
+                ),
+                stmt.Read(
+                    ID("C2", location=Location((3, 1))),
+                    expr.Variable("M3"),
+                ),
+            ],
+            '<stdin>:1:1: model: error: channel "C1" may be read or written'
+            " at most once per state\n"
+            "<stdin>:2:1: model: info: conflicting read/write",
+        ),
+        (
+            [
+                stmt.Read(
+                    "C1",
+                    expr.Variable("M1", location=Location((1, 1))),
+                ),
+                stmt.Write(
+                    "C2",
+                    expr.Variable("M1", location=Location((2, 1))),
+                ),
+            ],
+            '<stdin>:1:1: model: error: message "M1" may be read or written'
+            " at most once per state\n"
+            "<stdin>:2:1: model: info: conflicting read/write",
+        ),
+    ],
+)
+def test_conflicting_actions(actions: ty.Sequence[stmt.Statement], errors: str) -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[
+                    Transition(
+                        target=ID("End"),
+                        condition=expr.And(
+                            expr.Equal(expr.Variable("X"), expr.TRUE),
+                            expr.Equal(expr.Valid("M1"), expr.TRUE),
+                            expr.Equal(expr.Valid("M2"), expr.TRUE),
+                            expr.Equal(expr.Valid("M3"), expr.TRUE),
+                        ),
+                    ),
+                    Transition(
+                        target=ID("End"),
+                    ),
+                ],
+                actions=actions,
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("M1", UNIVERSAL_MESSAGE.identifier),
+            decl.VariableDeclaration("M2", UNIVERSAL_MESSAGE.identifier),
+            decl.VariableDeclaration("M3", UNIVERSAL_MESSAGE.identifier),
+            decl.VariableDeclaration("X", BOOLEAN.identifier),
+        ],
+        parameters=[
+            decl.ChannelDeclaration("C1", readable=True, writable=True),
+            decl.ChannelDeclaration("C2", readable=True, writable=True),
+        ],
+        types=[BOOLEAN, UNIVERSAL_MESSAGE, *UNIVERSAL_MESSAGE.types.values()],
+        regex=rf"^{errors}$",
     )
 
 
