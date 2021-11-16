@@ -405,6 +405,14 @@ class Access(Attribute):
     pass
 
 
+class Initialized(Attribute):
+    pass
+
+
+class Image(Attribute):
+    pass
+
+
 class UnrestrictedAccess(Attribute):
     @property
     def _representation(self) -> str:
@@ -634,6 +642,8 @@ class NotIn(Relation):
 
 def If(condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None) -> Expr:
     # pylint: disable=invalid-name
+    if len(condition_expressions) == 0 and else_expression is not None:
+        return else_expression
     if len(condition_expressions) == 1 and condition_expressions[0][0] == TRUE:
         return condition_expressions[0][1]
     return IfExpr(condition_expressions, else_expression)
@@ -830,6 +840,19 @@ class Raise(Expr):
         raise NotImplementedError
 
 
+class ChoiceList(Expr):
+    def __init__(self, *expressions: Expr) -> None:
+        super().__init__()
+        self.expressions = list(expressions)
+
+    def _update_str(self) -> None:
+        self._str = intern(" | ".join([str(e) for e in self.expressions]))
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.LITERAL
+
+
 class Declaration(Base):
     @abstractmethod
     def __str__(self) -> str:
@@ -900,6 +923,19 @@ class Postcondition(Aspect):
     @property
     def mark(self) -> str:
         return "Post"
+
+    @property
+    def definition(self) -> str:
+        return str(self.expr)
+
+
+class RelaxedInitialization(Aspect):
+    def __init__(self, expr: Expr) -> None:
+        self.expr = expr
+
+    @property
+    def mark(self) -> str:
+        return "Relaxed_Initialization"
 
     @property
     def definition(self) -> str:
@@ -1540,7 +1576,7 @@ class IfStatement(Statement):
             c = (
                 f" {condition} "
                 if str(condition).count("\n") == 0
-                else f"\n{indent(str(condition), 2)}\n"
+                else f"\n{indent(str(condition), 3)}\n"
             )
             if not result:
                 result = f"if{c}then\n"
@@ -1574,6 +1610,9 @@ class CaseStatement(Statement):
         self.case_grouping = case_grouping
 
     def __str__(self) -> str:
+        if len(self.case_statements) == 1 and self.case_statements[0][0] == Variable("others"):
+            return "\n".join(str(s) for s in self.case_statements[0][1])
+
         grouped_cases = (
             [
                 (" | ".join(str(c) for c, _ in choices), statements)
@@ -1599,7 +1638,10 @@ class While(Statement):
         self.statements = statements
 
     def __str__(self) -> str:
+        condition = str(self.condition)
         statements = indent("\n".join(str(s) for s in self.statements), 3)
+        if "\n" in condition or len(condition) > 100:
+            return f"while\n{indent(condition, 3)}\nloop\n{statements}\nend loop;"
         return f"while {self.condition} loop\n{statements}\nend loop;"
 
 
@@ -1641,6 +1683,17 @@ class ForIn(ForLoop):
     @property
     def iterator_spec(self) -> str:
         return "in"
+
+
+class RaiseStatement(Statement):
+    def __init__(self, identifier: StrID, string: Expr = None) -> None:
+        super().__init__()
+        self.identifier = ID(identifier)
+        self.string = string
+
+    def __str__(self) -> str:
+        string = f" with {self.string}" if self.string else ""
+        return f"raise {self.identifier}{string};"
 
 
 class Declare(Statement):

@@ -17,31 +17,26 @@ is
        Initialized
    is
    begin
-      declare
-         procedure Universal_Message_Write is new Universal.Message.Generic_Write (Channel_Read);
-      begin
-         Universal_Message_Write (Message_Ctx);
-      end;
       Universal.Message.Verify_Message (Message_Ctx);
       if
-        (Universal.Message.Structural_Valid_Message (Message_Ctx) = True
-         and then Universal.Message.Get_Message_Type (Message_Ctx) = Universal.MT_Data)
-        and then Universal.Message.Get_Length (Message_Ctx) = 1
+         (Universal.Message.Structural_Valid_Message (Message_Ctx) = True
+          and then Universal.Message.Get_Message_Type (Message_Ctx) = Universal.MT_Data)
+         and then Universal.Message.Get_Length (Message_Ctx) = 1
       then
-         P_Next_State := S_Reply;
+         P_Next_State := S_Process;
       else
          P_Next_State := S_Terminated;
       end if;
    end Start;
 
-   procedure Reply (P_Next_State : out State) with
+   procedure Process (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
        Initialized
    is
    begin
-      if Message_Ctx.Last - Message_Ctx.First + 1 >= RFLX_Types.Bit_Length (32) then
+      if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (32) then
          Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
          Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
          Universal.Message.Set_Length (Message_Ctx, 1);
@@ -55,16 +50,16 @@ is
          P_Next_State := S_Terminated;
          return;
       end if;
-      if Universal.Message.Structural_Valid_Message (Message_Ctx) then
-         declare
-            procedure Universal_Message_Read is new Universal.Message.Generic_Read (Channel_Write);
-         begin
-            Universal_Message_Read (Message_Ctx);
-         end;
-      else
-         P_Next_State := S_Terminated;
-         return;
-      end if;
+      P_Next_State := S_Reply;
+   end Process;
+
+   procedure Reply (P_Next_State : out State) with
+     Pre =>
+       Initialized,
+     Post =>
+       Initialized
+   is
+   begin
       P_Next_State := S_Terminated;
    end Reply;
 
@@ -94,26 +89,144 @@ is
       P_Next_State := S_Terminated;
    end Finalize;
 
+   procedure Reset_Messages_Before_Write with
+     Pre =>
+       Initialized,
+     Post =>
+       Initialized
+   is
+   begin
+      case P_Next_State is
+         when S_Start =>
+            Universal.Message.Reset (Message_Ctx, Message_Ctx.First, Message_Ctx.First - 1);
+         when S_Process | S_Reply | S_Terminated =>
+            null;
+      end case;
+   end Reset_Messages_Before_Write;
+
    procedure Tick is
    begin
       case P_Next_State is
          when S_Start =>
             Start (P_Next_State);
+         when S_Process =>
+            Process (P_Next_State);
          when S_Reply =>
             Reply (P_Next_State);
          when S_Terminated =>
             null;
       end case;
+      Reset_Messages_Before_Write;
    end Tick;
+
+   function In_IO_State return Boolean is
+     (P_Next_State in S_Start | S_Reply);
 
    procedure Run is
    begin
-      Initialize;
-      while Active loop
+      Tick;
+      while
+         Active
+         and not In_IO_State
+      loop
          pragma Loop_Invariant (Initialized);
          Tick;
       end loop;
-      Finalize;
    end Run;
+
+   function Has_Data (Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_Channel =>
+             (case P_Next_State is
+                 when S_Reply =>
+                    Universal.Message.Structural_Valid_Message (Message_Ctx)
+                    and Universal.Message.Byte_Size (Message_Ctx) > 0,
+                 when others =>
+                    False)));
+
+   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_Channel =>
+             (case P_Next_State is
+                 when S_Reply =>
+                    Universal.Message.Byte_Size (Message_Ctx),
+                 when others =>
+                    raise Program_Error)));
+
+   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+      function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
+        (Buffer'Length > 0
+         and then Offset < Message_Buffer'Length);
+      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+        Pre =>
+          Read_Pre (Message_Buffer)
+      is
+         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+      begin
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+      end Read;
+      procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
+   begin
+      Buffer := (others => 0);
+      case Chan is
+         when C_Channel =>
+            case P_Next_State is
+               when S_Reply =>
+                  Universal_Message_Read (Message_Ctx);
+               when others =>
+                  raise Program_Error;
+            end case;
+      end case;
+   end Read;
+
+   function Needs_Data (Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_Channel =>
+             (case P_Next_State is
+                 when S_Start =>
+                    True,
+                 when others =>
+                    False)));
+
+   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_Channel =>
+             4096));
+
+   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+      function Write_Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
+        (Buffer'Length > 0
+         and then Context_Buffer_Length = Write_Buffer_Size (Chan)
+         and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+         and then Buffer'Length + Offset <= Write_Buffer_Size (Chan));
+      procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) with
+        Pre =>
+          Write_Pre (Context_Buffer_Length, Offset)
+          and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length
+          and then Message_Buffer'Length + Offset = Write_Buffer_Size (Chan),
+        Post =>
+          Length <= Message_Buffer'Length
+          and Message_Buffer'Initialized,
+        Relaxed_Initialization =>
+          Message_Buffer
+      is
+      begin
+         Length := Buffer'Length;
+         Message_Buffer (Message_Buffer'First .. RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) - 1 + Length)) := Buffer;
+         Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Length) .. Message_Buffer'Last) := (others => 0);
+      end Write;
+      procedure Universal_Message_Write is new Universal.Message.Generic_Write (Write, Write_Pre);
+   begin
+      case Chan is
+         when C_Channel =>
+            case P_Next_State is
+               when S_Start =>
+                  Universal_Message_Write (Message_Ctx, Offset);
+               when others =>
+                  raise Program_Error;
+            end case;
+      end case;
+   end Write;
 
 end RFLX.Test.Session;

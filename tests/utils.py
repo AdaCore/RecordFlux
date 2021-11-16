@@ -3,7 +3,7 @@ from __future__ import annotations
 import pathlib
 import shutil
 import subprocess
-from typing import Iterable, List, Mapping, Sequence, Tuple, Union
+from typing import Iterable, Mapping, Sequence, Tuple, Union
 
 import librflxlang as lang
 import pytest
@@ -191,7 +191,7 @@ def _create_files(
     generator.write_top_level_package(tmp_path)
 
 
-def session_main(  # pylint: disable=too-many-locals
+def session_main(
     input_channels: dict[str, Sequence[tuple[int, ...]]] = None,
     output_channels: Sequence[str] = None,
     context: Sequence[ada.ContextItem] = None,
@@ -204,182 +204,82 @@ def session_main(  # pylint: disable=too-many-locals
     context = context or []
     subprograms = subprograms or []
     session_parameters = session_parameters or []
-    io_functions_decl: List[ada.Declaration] = []
-    io_functions_body: List[ada.Declaration] = []
-    parameters: List[ada.StrID] = []
 
-    for channel, messages in input_channels.items():
-        has_data_func_spec = ada.FunctionSpecification(f"Has_Data_{channel}", "Boolean")
-        io_functions_decl.append(ada.SubprogramDeclaration(has_data_func_spec))
-        io_functions_body.append(
-            ada.ExpressionFunctionDeclaration(
-                has_data_func_spec,
-                ada.Less(ada.Variable(f"Written_Messages_{channel}"), ada.Number(len(messages))),
-            )
-        )
-        parameters.append(f"Lib.{has_data_func_spec.identifier}")
-
-        write_proc_spec = ada.ProcedureSpecification(
-            f"Write_{channel}",
-            [
-                ada.OutParameter(["Buffer"], "RFLX" * const.TYPES_BYTES),
-                ada.OutParameter(["Length"], "RFLX" * const.TYPES_LENGTH),
-            ],
-        )
-
-        io_functions_decl.extend(
-            [
-                ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
-                ada.SubprogramDeclaration(
-                    write_proc_spec,
-                    aspects=[
-                        ada.Postcondition(
-                            ada.LessEqual(ada.Variable("Length"), ada.Length("Buffer")),
-                        )
-                    ],
-                ),
-            ]
-        )
-        io_functions_body.append(
-            ada.SubprogramBody(
-                write_proc_spec,
+    run_procedure_spec = ada.ProcedureSpecification("Run")
+    run_procedure_decl = ada.SubprogramDeclaration(
+        run_procedure_spec,
+        aspects=[
+            ada.Precondition(ada.Variable("Session.Uninitialized")),
+            ada.Postcondition(ada.Variable("Session.Uninitialized")),
+        ],
+    )
+    run_procedure_body = ada.SubprogramBody(
+        run_procedure_spec,
+        [],
+        [
+            ada.CallStatement("Session.Initialize"),
+            ada.While(
+                ada.Variable("Session.Active"),
                 [
-                    ada.UseTypeClause("RFLX" * const.TYPES_INDEX),
-                    ada.ObjectDeclaration(
-                        ["None"],
-                        ada.Slice(
-                            ada.Variable("RFLX" * const.TYPES_BYTES),
-                            ada.Last("RFLX" * const.TYPES_INDEX),
-                            ada.First("RFLX" * const.TYPES_INDEX),
-                        ),
-                        ada.NamedAggregate(("others", ada.First("RFLX" * const.TYPES_BYTE))),
-                        constant=True,
-                    ),
-                    ada.ObjectDeclaration(
-                        ["M"],
-                        "RFLX" * const.TYPES_BYTES,
-                        ada.If(
-                            [
-                                (
-                                    ada.Equal(
-                                        ada.Variable(f"Written_Messages_{channel}"), ada.Number(i)
-                                    ),
-                                    ada.Aggregate(*[ada.Number(b) for b in message])
-                                    if len(message) > 1
-                                    else ada.NamedAggregate(
-                                        *[
-                                            (
-                                                ada.First("RFLX" * const.TYPES_INDEX),
-                                                ada.Number(message[0]),
-                                            )
-                                        ]
-                                    ),
-                                )
-                                for i, message in enumerate(messages)
-                            ],
-                            ada.Variable("None"),
-                        ),
-                        constant=True,
-                    ),
-                ],
-                [
-                    ada.Assignment("Buffer", ada.NamedAggregate(("others", ada.Number(0)))),
-                    ada.IfStatement(
+                    ada.PragmaStatement("Loop_Invariant", [ada.Variable("Session.Initialized")]),
+                    ada.ForIn(
+                        "C",
+                        ada.Range("Session.Channel"),
                         [
-                            (
-                                ada.AndThen(
-                                    ada.LessEqual(
-                                        ada.First("Buffer"),
-                                        ada.Sub(
-                                            ada.Last("RFLX" * const.TYPES_INDEX),
-                                            ada.Length("M"),
-                                        ),
-                                    ),
-                                    ada.LessEqual(ada.Length("M"), ada.Length("Buffer")),
-                                ),
+                            ada.PragmaStatement(
+                                "Loop_Invariant", [ada.Variable("Session.Initialized")]
+                            ),
+                            *(
                                 [
-                                    ada.CallStatement(
-                                        "Print", [ada.String(f"Write {channel}"), ada.Variable("M")]
-                                    ),
-                                    ada.Assignment(
-                                        ada.Indexed(
-                                            ada.Variable("Buffer"),
-                                            ada.ValueRange(
-                                                ada.First("Buffer"),
-                                                ada.Add(
-                                                    ada.First("Buffer"),
-                                                    ada.Length("M"),
-                                                    ada.Number(-1),
-                                                ),
-                                            ),
-                                        ),
-                                        ada.Variable("M"),
-                                    ),
-                                    ada.Assignment(
-                                        ada.Indexed(
-                                            ada.Variable("Buffer"),
-                                            ada.ValueRange(
-                                                ada.Add(ada.First("Buffer"), ada.Length("M")),
-                                                ada.Last("Buffer"),
-                                            ),
-                                        ),
-                                        ada.NamedAggregate(("others", ada.Number(0))),
-                                    ),
-                                    ada.Assignment("Length", ada.Length("M")),
                                     ada.IfStatement(
                                         [
                                             (
-                                                ada.Less(
-                                                    ada.Variable(f"Written_Messages_{channel}"),
-                                                    ada.Last("Natural"),
-                                                ),
+                                                ada.Call("Session.Has_Data", [ada.Variable("C")]),
                                                 [
-                                                    ada.Assignment(
-                                                        f"Written_Messages_{channel}",
-                                                        ada.Add(
-                                                            ada.Variable(
-                                                                f"Written_Messages_{channel}"
-                                                            ),
-                                                            ada.Number(1),
-                                                        ),
-                                                    )
+                                                    ada.CallStatement("Read", [ada.Variable("C")]),
                                                 ],
                                             )
                                         ]
-                                    ),
-                                ],
+                                    )
+                                ]
+                                if output_channels
+                                else []
                             ),
-                        ],
-                        [
-                            ada.CallStatement(
-                                "Ada.Text_IO.Put_Line", [ada.String("Target buffer too small")]
+                            *(
+                                [
+                                    ada.IfStatement(
+                                        [
+                                            (
+                                                ada.Call("Session.Needs_Data", [ada.Variable("C")]),
+                                                [
+                                                    ada.CallStatement("Write", [ada.Variable("C")]),
+                                                ],
+                                            )
+                                        ]
+                                    )
+                                ]
+                                if input_channels
+                                else []
                             ),
-                            ada.Assignment("Length", ada.Number(0)),
                         ],
                     ),
+                    ada.CallStatement("Session.Run"),
                 ],
-            )
-        )
-        parameters.append(f"Lib.{write_proc_spec.identifier}")
+            ),
+            ada.CallStatement("Session.Finalize"),
+        ],
+    )
 
-    for channel in output_channels:
-        read_proc_spec = ada.ProcedureSpecification(
-            f"Read_{channel}", [ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES)]
-        )
-
-        io_functions_decl.append(ada.SubprogramDeclaration(read_proc_spec))
-        io_functions_body.append(
-            ada.SubprogramBody(
-                read_proc_spec,
-                [],
-                [
-                    ada.CallStatement(
-                        "Print", [ada.String(f"Read {channel}"), ada.Variable("Buffer")]
-                    )
-                ],
-            )
-        )
-        parameters.append(f"Lib.{read_proc_spec.identifier}")
+    image_function = ada.ExpressionFunctionDeclaration(
+        ada.FunctionSpecification("Image", "String", [ada.Parameter(["Chan"], "Session.Channel")]),
+        ada.Case(
+            ada.Variable("Chan"),
+            [
+                (ada.Variable(f"Session.C_{channel}"), ada.String(channel))
+                for channel in sorted({*input_channels.keys(), *output_channels})
+            ],
+        ),
+    )
 
     print_procedure = ada.SubprogramBody(
         ada.ProcedureSpecification(
@@ -405,41 +305,316 @@ def session_main(  # pylint: disable=too-many-locals
         ],
     )
 
-    parameters.extend(s.specification.identifier for s in subprograms)
-    parameters.extend(session_parameters)
+    next_message_function = ada.SubprogramBody(
+        ada.FunctionSpecification(
+            "Next_Message",
+            "RFLX" * const.TYPES_BYTES,
+            [
+                ada.Parameter(["Chan"], "Session.Channel"),
+            ],
+        ),
+        [
+            *(
+                [ada.Pragma("Unreferenced", [ada.Variable("Chan")])]
+                if sum(len(message) for message in input_channels.values()) == 0
+                else []
+            ),
+            *([ada.UseTypeClause("Session.Channel")] if len(input_channels) > 1 else []),
+            ada.ObjectDeclaration(
+                ["None"],
+                ada.Slice(
+                    ada.Variable("RFLX" * const.TYPES_BYTES),
+                    ada.Number(1),
+                    ada.Number(0),
+                ),
+                ada.NamedAggregate(("others", ada.Number(0))),
+                constant=True,
+            ),
+            ada.ObjectDeclaration(
+                ["Message"],
+                "RFLX" * const.TYPES_BYTES,
+                ada.If(
+                    [
+                        (
+                            ada.And(
+                                *(
+                                    [
+                                        ada.Equal(
+                                            ada.Variable("Chan"),
+                                            ada.Variable(f"Session.C_{channel}"),
+                                        )
+                                    ]
+                                    if len(input_channels) > 1
+                                    else []
+                                ),
+                                ada.Equal(
+                                    ada.Call("Written_Messages", [ada.Variable("Chan")]),
+                                    ada.Number(i),
+                                ),
+                            ),
+                            ada.Aggregate(*[ada.Number(b) for b in message])
+                            if len(message) > 1
+                            else ada.NamedAggregate(
+                                *[
+                                    (
+                                        ada.First("RFLX" * const.TYPES_INDEX),
+                                        ada.Number(message[0]),
+                                    )
+                                ]
+                            ),
+                        )
+                        for channel, messages in input_channels.items()
+                        for i, message in enumerate(messages)
+                    ],
+                    ada.Variable("None"),
+                ),
+                constant=True,
+            ),
+        ],
+        [
+            ada.ReturnStatement(ada.Variable("Message")),
+        ],
+    )
+
+    read_procedure = ada.SubprogramBody(
+        ada.ProcedureSpecification(
+            "Read",
+            [
+                ada.Parameter(["Chan"], "Session.Channel"),
+            ],
+        ),
+        [
+            ada.UseTypeClause("RFLX" * const.TYPES_INDEX),
+            ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
+            ada.ObjectDeclaration(
+                ["Buffer"],
+                ada.Slice(
+                    ada.Variable("RFLX" * const.TYPES_BYTES),
+                    ada.First("RFLX" * const.TYPES_INDEX),
+                    ada.Add(ada.First("RFLX" * const.TYPES_INDEX), ada.Number(4095)),
+                ),
+                ada.NamedAggregate(("others", ada.Number(0))),
+            ),
+        ],
+        [
+            ada.IfStatement(
+                [
+                    (
+                        ada.GreaterEqual(
+                            ada.Length("Buffer"),
+                            ada.Call("Session.Read_Buffer_Size", [ada.Variable("Chan")]),
+                        ),
+                        [
+                            ada.CallStatement(
+                                "Session.Read",
+                                [
+                                    ada.Variable("Chan"),
+                                    ada.Slice(
+                                        ada.Variable("Buffer"),
+                                        ada.First("Buffer"),
+                                        ada.Add(
+                                            ada.First("Buffer"),
+                                            -ada.Number(2),
+                                            ada.Call(
+                                                "RFLX" * const.TYPES_INDEX,
+                                                [
+                                                    ada.Add(
+                                                        ada.Call(
+                                                            "Session.Read_Buffer_Size",
+                                                            [ada.Variable("Chan")],
+                                                        ),
+                                                        ada.Number(1),
+                                                    )
+                                                ],
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            ),
+                            ada.CallStatement(
+                                "Print",
+                                [
+                                    ada.Concatenation(
+                                        ada.String("Read "),
+                                        ada.Call("Image", [ada.Variable("Chan")]),
+                                    ),
+                                    ada.Slice(
+                                        ada.Variable("Buffer"),
+                                        ada.First("Buffer"),
+                                        ada.Add(
+                                            ada.First("Buffer"),
+                                            -ada.Number(2),
+                                            ada.Call(
+                                                "RFLX" * const.TYPES_INDEX,
+                                                [
+                                                    ada.Add(
+                                                        ada.Call(
+                                                            "Session.Read_Buffer_Size",
+                                                            [ada.Variable("Chan")],
+                                                        ),
+                                                        ada.Number(1),
+                                                    )
+                                                ],
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ],
+                    )
+                ],
+                [
+                    ada.CallStatement(
+                        "Ada.Text_IO.Put_Line",
+                        [
+                            ada.Concatenation(
+                                ada.String("Read "),
+                                ada.Image("Chan"),
+                                ada.String(": buffer too small"),
+                            )
+                        ],
+                    ),
+                ],
+            )
+        ],
+        aspects=[
+            ada.Precondition(
+                ada.AndThen(
+                    ada.Variable("Session.Initialized"),
+                    ada.Call("Session.Has_Data", [ada.Variable("Chan")]),
+                ),
+            ),
+            ada.Postcondition(ada.Variable("Session.Initialized")),
+        ],
+    )
+
+    write_procedure = ada.SubprogramBody(
+        ada.ProcedureSpecification(
+            "Write",
+            [
+                ada.Parameter(["Chan"], "Session.Channel"),
+            ],
+        ),
+        [
+            ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
+            ada.ObjectDeclaration(
+                ["Message"],
+                ada.Variable("RFLX" * const.TYPES_BYTES),
+                ada.Call("Next_Message", [ada.Variable("Chan")]),
+                constant=True,
+            ),
+        ],
+        [
+            ada.IfStatement(
+                [
+                    (
+                        ada.And(
+                            ada.Greater(
+                                ada.Length("Message"),
+                                ada.Number(0),
+                            ),
+                            ada.LessEqual(
+                                ada.Length("Message"),
+                                ada.Call("Session.Write_Buffer_Size", [ada.Variable("Chan")]),
+                            ),
+                        ),
+                        [
+                            ada.CallStatement(
+                                "Print",
+                                [
+                                    ada.Concatenation(
+                                        ada.String("Write "),
+                                        ada.Call("Image", [ada.Variable("Chan")]),
+                                    ),
+                                    ada.Variable("Message"),
+                                ],
+                            ),
+                            ada.CallStatement(
+                                "Session.Write",
+                                [
+                                    ada.Variable("Chan"),
+                                    ada.Variable("Message"),
+                                ],
+                            ),
+                            ada.IfStatement(
+                                [
+                                    (
+                                        ada.Less(
+                                            ada.Call("Written_Messages", [ada.Variable("Chan")]),
+                                            ada.Last("Natural"),
+                                        ),
+                                        [
+                                            ada.Assignment(
+                                                ada.Call(
+                                                    "Written_Messages", [ada.Variable("Chan")]
+                                                ),
+                                                ada.Add(
+                                                    ada.Call(
+                                                        "Written_Messages", [ada.Variable("Chan")]
+                                                    ),
+                                                    ada.Number(1),
+                                                ),
+                                            )
+                                        ],
+                                    )
+                                ]
+                            ),
+                        ],
+                    )
+                ],
+            )
+        ],
+        aspects=[
+            ada.Precondition(
+                ada.AndThen(
+                    ada.Variable("Session.Initialized"),
+                    ada.Call("Session.Needs_Data", [ada.Variable("Chan")]),
+                ),
+            ),
+            ada.Postcondition(ada.Variable("Session.Initialized")),
+        ],
+    )
 
     lib_unit = ada.PackageUnit(
         [
             *const.CONFIGURATION_PRAGMAS,
-            ada.WithClause("RFLX" * const.TYPES),
             ada.WithClause(session_package),
             *context,
         ],
         ada.PackageDeclaration(
             "Lib",
             [
-                *io_functions_decl,
-                *[
-                    ada.SubprogramDeclaration(s.specification, aspects=s.aspects)
-                    for s in subprograms
-                ],
-                ada.GenericPackageInstantiation("Session", session_package, parameters),
+                ada.GenericPackageInstantiation("Session", session_package, session_parameters),
+                run_procedure_decl,
             ],
             aspects=[ada.SparkMode(), ada.InitialCondition(ada.Call("Session.Uninitialized"))],
         ),
         [
             *const.CONFIGURATION_PRAGMAS,
             ada.WithClause("Ada.Text_IO"),
+            ada.WithClause("RFLX" * const.TYPES),
         ],
         ada.PackageBody(
             "Lib",
             [
-                *[
-                    ada.ObjectDeclaration([f"Written_Messages_{channel}"], "Natural", ada.Number(0))
-                    for channel in input_channels
-                ],
+                image_function,
                 print_procedure,
-                *io_functions_body,
+                *([read_procedure] if output_channels else []),
+                *(
+                    [
+                        ada.ArrayType("Number_Per_Channel", "Session.Channel", "Natural"),
+                        ada.ObjectDeclaration(
+                            ["Written_Messages"],
+                            "Number_Per_Channel",
+                            ada.NamedAggregate(("others", ada.Number(0))),
+                        ),
+                        next_message_function,
+                        write_procedure,
+                    ]
+                    if input_channels
+                    else []
+                ),
+                run_procedure_body,
                 *[
                     ada.SubprogramBody(s.specification, s.declarations, s.statements)
                     for s in subprograms
@@ -460,7 +635,7 @@ procedure Main with
    Pre => Lib.Session.Uninitialized
 is
 begin
-   Lib.Session.Run;
+   Lib.Run;
 end Main;
 """,
     }

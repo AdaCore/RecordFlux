@@ -250,9 +250,3 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     insert(a.location)
                 if isinstance(a, stmt.Assignment) and isinstance(a.expression, expr.Head):
                     insert(a.location)
-                if (
-                    isinstance(a, stmt.Write)
-                    and isinstance(a.parameter.type_, rty.Message)
-                    and not isinstance(a.parameter, expr.Variable)
-                ):
-                    insert(a.location)

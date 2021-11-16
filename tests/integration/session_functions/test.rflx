@@ -17,29 +17,35 @@ package Test is
       Final => Terminated
    is
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Fixed_Size_Message : Fixed_Size::Simple_Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
       begin
          Channel'Read (Message); -- §S-S-A-RD-V
       transition
-         goto Reply
+         goto Process
             if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto Terminated -- §S-S-T-N
       end Start;
 
-      state Reply is
+      state Process is
          Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
-         Fixed_Size_Message : Fixed_Size::Simple_Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
       begin
          Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
          Fixed_Size_Message := Create_Message (Message_Type, Message.Data); -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto Terminated -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
          Channel'Write (Fixed_Size_Message); -- §S-S-A-WR-V
       transition
          goto Terminated -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N

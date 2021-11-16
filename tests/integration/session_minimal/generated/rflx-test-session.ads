@@ -6,16 +6,17 @@ with RFLX.Universal;
 with RFLX.Universal.Message;
 
 generic
-   with function Channel_Has_Data return Boolean;
-   with procedure Channel_Read (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length);
-   with procedure Channel_Write (Buffer : RFLX_Types.Bytes);
 package RFLX.Test.Session with
   SPARK_Mode,
   Initial_Condition =>
     Uninitialized
 is
 
-   pragma Unreferenced (Channel_Has_Data);
+   use type RFLX.RFLX_Types.Index;
+
+   use type RFLX.RFLX_Types.Length;
+
+   type Channel is (C_Channel);
 
    type State is (S_Start, S_Reply, S_Terminated);
 
@@ -53,17 +54,50 @@ is
 
    procedure Run with
      Pre =>
-       Uninitialized,
+       Initialized,
      Post =>
-       Uninitialized;
+       Initialized;
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
    function Next_State return State;
 
-private
+   function Has_Data (Chan : Channel) return Boolean with
+     Pre =>
+       Initialized;
 
-   use type RFLX.RFLX_Types.Index;
+   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length with
+     Pre =>
+       Initialized
+       and then Has_Data (Chan);
+
+   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+     Pre =>
+       Initialized
+       and then Has_Data (Chan)
+       and then Buffer'Length > 0
+       and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+       and then Buffer'Length + Offset <= Read_Buffer_Size (Chan),
+     Post =>
+       Initialized;
+
+   function Needs_Data (Chan : Channel) return Boolean with
+     Pre =>
+       Initialized;
+
+   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length;
+
+   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+     Pre =>
+       Initialized
+       and then Needs_Data (Chan)
+       and then Buffer'Length > 0
+       and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+       and then Buffer'Length + Offset <= Write_Buffer_Size (Chan),
+     Post =>
+       Initialized;
+
+private
 
    P_Next_State : State := S_Start;
 

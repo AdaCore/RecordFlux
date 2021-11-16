@@ -6,18 +6,19 @@ with RFLX.Test;
 with RFLX.Test.Message;
 
 generic
-   with function C_Has_Data return Boolean;
-   with procedure C_Read (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length);
-   with procedure C_Write (Buffer : RFLX_Types.Bytes);
 package RFLX.Test.Session with
   SPARK_Mode,
   Initial_Condition =>
     Uninitialized
 is
 
-   pragma Unreferenced (C_Has_Data);
+   use type RFLX.RFLX_Types.Index;
 
-   type State is (S_Receive, S_Reply, S_Error, S_Terminated);
+   use type RFLX.RFLX_Types.Length;
+
+   type Channel is (C_C);
+
+   type State is (S_Start, S_Receive, S_Process, S_Reply, S_Error, S_Terminated);
 
    function Uninitialized return Boolean;
 
@@ -53,29 +54,68 @@ is
 
    procedure Run with
      Pre =>
-       Uninitialized,
+       Initialized,
      Post =>
-       Uninitialized;
+       Initialized;
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
    function Next_State return State;
 
+   function Has_Data (Chan : Channel) return Boolean with
+     Pre =>
+       Initialized;
+
+   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length with
+     Pre =>
+       Initialized
+       and then Has_Data (Chan);
+
+   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+     Pre =>
+       Initialized
+       and then Has_Data (Chan)
+       and then Buffer'Length > 0
+       and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+       and then Buffer'Length + Offset <= Read_Buffer_Size (Chan),
+     Post =>
+       Initialized;
+
+   function Needs_Data (Chan : Channel) return Boolean with
+     Pre =>
+       Initialized;
+
+   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length;
+
+   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+     Pre =>
+       Initialized
+       and then Needs_Data (Chan)
+       and then Buffer'Length > 0
+       and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+       and then Buffer'Length + Offset <= Write_Buffer_Size (Chan),
+     Post =>
+       Initialized;
+
 private
 
-   use type RFLX.RFLX_Types.Index;
+   P_Next_State : State := S_Start;
 
-   P_Next_State : State := S_Receive;
+   M_R_Ctx : Test.Message.Context;
 
-   M_Ctx : Test.Message.Context;
+   M_S_Ctx : Test.Message.Context;
 
    function Uninitialized return Boolean is
-     (not Test.Message.Has_Buffer (M_Ctx));
+     (not Test.Message.Has_Buffer (M_R_Ctx)
+      and not Test.Message.Has_Buffer (M_S_Ctx));
 
    function Initialized return Boolean is
-     (Message.Has_Buffer (M_Ctx)
-      and then M_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then M_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+     (Message.Has_Buffer (M_R_Ctx)
+      and then M_R_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then M_R_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Message.Has_Buffer (M_S_Ctx)
+      and then M_S_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then M_S_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is

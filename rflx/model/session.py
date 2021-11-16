@@ -107,7 +107,7 @@ class State(Base):
     @property
     def has_exceptions(self) -> bool:
         return any(
-            isinstance(a, (stmt.Append, stmt.Extend, stmt.Write))
+            isinstance(a, (stmt.Append, stmt.Extend))
             or (
                 isinstance(a, stmt.Assignment)
                 and (
@@ -442,6 +442,87 @@ class Session(AbstractSession):
     def __validate_actions(
         self, actions: Sequence[stmt.Statement], declarations: Mapping[ID, decl.Declaration]
     ) -> None:
+        io_statements = [a for a in actions if isinstance(a, stmt.ChannelAttributeStatement)]
+
+        if io_statements and len(io_statements) != len(actions):
+            self.error.extend(
+                [
+                    (
+                        "channel IO must not be combined with other actions in one state",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        io_statements[0].location,
+                    )
+                ],
+            )
+
+        for i, s1 in enumerate(io_statements):
+            if not isinstance(s1.parameter, expr.Variable):
+                self.error.extend(
+                    [
+                        (
+                            "channel parameter must be a variable",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            s1.location,
+                        )
+                    ],
+                )
+
+            for j, s2 in enumerate(io_statements):
+                if i >= j:
+                    continue
+
+                if s1.identifier == s2.identifier:
+                    self.error.extend(
+                        [
+                            (
+                                f'channel "{s1.identifier}" may be read or written'
+                                " at most once per state",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                s1.identifier.location,
+                            )
+                        ],
+                    )
+                    self.error.extend(
+                        [
+                            (
+                                "conflicting read/write",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                s2.identifier.location,
+                            )
+                        ],
+                    )
+
+                if (
+                    isinstance(s1.parameter, expr.Variable)
+                    and isinstance(s2.parameter, expr.Variable)
+                    and s1.parameter.identifier == s2.parameter.identifier
+                ):
+                    self.error.extend(
+                        [
+                            (
+                                f'message "{s1.parameter.identifier}" may be read or written'
+                                " at most once per state",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                s1.parameter.location,
+                            )
+                        ],
+                    )
+                    self.error.extend(
+                        [
+                            (
+                                "conflicting read/write",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                s2.parameter.location,
+                            )
+                        ],
+                    )
+
         for a in actions:
             try:
                 type_ = declarations[a.identifier].type_

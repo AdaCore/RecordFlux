@@ -231,16 +231,16 @@ is
       Value : Field_Dependent_Value;
    begin
       if
-        Has_Buffer (Ctx)
-        and then Invalid (Ctx.Cursors (Fld))
-        and then Valid_Predecessor (Ctx, Fld)
-        and then Path_Condition (Ctx, Fld)
+         Has_Buffer (Ctx)
+         and then Invalid (Ctx.Cursors (Fld))
+         and then Valid_Predecessor (Ctx, Fld)
+         and then Path_Condition (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
             Value := Get_Field_Value (Ctx, Fld);
             if
-              Valid_Value (Value)
-              and Field_Condition (Ctx, Value)
+               Valid_Value (Value)
+               and Field_Condition (Ctx, Value)
             then
                pragma Assert ((if
                                   Fld = F_Option_Data

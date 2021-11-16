@@ -1,13 +1,15 @@
 input:
-  Channel:
+  C:
     - 1 2
 output:
-  - Channel
+  - C
 sequence: |
+  State: Start
+  Write C: 1 2
   State: Receive
-  Write Channel: 1 2
+  State: Process
+  Read C: 1 2 3 4
   State: Reply
-  Read Channel: 1 2 3 4
 prove:
   - rflx-test
   - rflx-test-message

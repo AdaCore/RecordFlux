@@ -4,9 +4,9 @@ input:
 output:
   - O
 sequence: |
-  State: Start
-  State: Reply
   Write I: 1 0 1 0
+  State: Start
   Read O: 1 0 1 0
+  State: Reply
   State: Start
 prove:

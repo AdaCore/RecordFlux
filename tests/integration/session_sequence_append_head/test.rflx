@@ -10,9 +10,9 @@ package Test is
    is
       Messages : TLV::Messages; -- §S-D-V-T-MS, §S-D-V-E-N
       Tags : TLV::Tags; -- §S-D-V-T-SS, §S-D-V-E-N
+      Message : TLV::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
-         Message : TLV::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
          Message_Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
          Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
       begin
@@ -32,14 +32,10 @@ package Test is
       end Start;
 
       state Reply is
-         Message : TLV::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
       begin
-         Message := Messages'Head; -- §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-MS
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
          goto Terminated -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N

@@ -242,16 +242,16 @@ is
       Value : Field_Dependent_Value;
    begin
       if
-        Has_Buffer (Ctx)
-        and then Invalid (Ctx.Cursors (Fld))
-        and then Valid_Predecessor (Ctx, Fld)
-        and then Path_Condition (Ctx, Fld)
+         Has_Buffer (Ctx)
+         and then Invalid (Ctx.Cursors (Fld))
+         and then Valid_Predecessor (Ctx, Fld)
+         and then Path_Condition (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
             Value := Get_Field_Value (Ctx, Fld);
             if
-              Valid_Value (Value)
-              and Field_Condition (Ctx, Value, Field_Size (Ctx, Fld))
+               Valid_Value (Value)
+               and Field_Condition (Ctx, Value, Field_Size (Ctx, Fld))
             then
                pragma Assert ((if Fld = F_Payload then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                case Fld is

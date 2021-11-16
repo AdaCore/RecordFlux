@@ -28,6 +28,6 @@ is
        Initialized;
 
    function Global_Allocated return Boolean is
-     (Slot_Ptr_1 /= null);
+     (Slot_Ptr_1 = null);
 
 end RFLX.Test.Session_Allocator;

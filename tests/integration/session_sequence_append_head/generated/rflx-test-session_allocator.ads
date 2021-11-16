@@ -42,7 +42,7 @@ is
    function Global_Allocated return Boolean is
      (Slot_Ptr_1 = null
       and Slot_Ptr_2 = null
-      and Slot_Ptr_3 /= null
+      and Slot_Ptr_3 = null
       and Slot_Ptr_4 /= null
       and Slot_Ptr_5 /= null);
 

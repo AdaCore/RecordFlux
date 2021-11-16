@@ -13,20 +13,18 @@ package Test is
    begin
       state Start is
       begin
+         I'Read (Message); -- §S-S-A-RD-V
       transition
          goto Reply
-            if I'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
+            if Message'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto Terminated -- §S-S-T-N
       end Start;
 
       state Reply is
       begin
-         I'Read (Message); -- §S-S-A-RD-V
          O'Write (Message); -- §S-S-A-WR-V
       transition
          goto Start -- §S-S-T-N
-      exception
-         goto Terminated -- §S-S-E
       end Reply;
 
       state Terminated is null state; -- §S-S-N
