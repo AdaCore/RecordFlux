@@ -9,7 +9,9 @@ base_dir = pathlib.Path(__file__).parent.resolve()
 
 class BuildParser(bdist_wheel):  # type: ignore[misc]
     def run(self) -> None:
-        subprocess.run(["gprbuild", "-Plibrflxlang.gpr", "-XLIBRARY_TYPE=relocatable"], check=True)
+        subprocess.run(
+            ["gprbuild", "-j0", "-Plibrflxlang.gpr", "-XLIBRARY_TYPE=relocatable"], check=True
+        )
         super().run()
 
 
