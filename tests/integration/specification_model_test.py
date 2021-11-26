@@ -438,18 +438,25 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
     session = Session(
         "Test::Session",
         "A",
-        "B",
+        "C",
         [
             State(
                 "A",
-                declarations=[
-                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
-                    decl.VariableDeclaration("M", "Message"),
-                ],
+                declarations=[],
                 actions=[stmt.Read("X", expr.Variable("M"))],
                 transitions=[
+                    Transition("B"),
+                ],
+            ),
+            State(
+                "B",
+                declarations=[
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                ],
+                actions=[],
+                transitions=[
                     Transition(
-                        "B",
+                        "C",
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
                             expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
@@ -460,9 +467,12 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                 ],
                 description="rfc1149.txt+51:4-52:9",
             ),
-            State("B"),
+            State("C"),
         ],
-        [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE)],
+        [
+            decl.VariableDeclaration("M", "Message"),
+            decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+        ],
         [
             decl.ChannelDeclaration("X", readable=True, writable=True),
             decl.TypeDeclaration(Private("T")),

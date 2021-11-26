@@ -34,18 +34,25 @@ def test_str() -> None:
             Session(
                 "P::S",
                 "A",
-                "B",
+                "C",
                 [
                     State(
                         "A",
-                        declarations=[
-                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
-                            decl.VariableDeclaration("M", "TLV::Message"),
-                        ],
+                        declarations=[],
                         actions=[stmt.Read("X", expr.Variable("M"))],
                         transitions=[
+                            Transition("B"),
+                        ],
+                    ),
+                    State(
+                        "B",
+                        declarations=[
+                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                        ],
+                        actions=[],
+                        transitions=[
                             Transition(
-                                "B",
+                                "C",
                                 condition=expr.And(
                                     expr.Equal(expr.Variable("Z"), expr.TRUE),
                                     expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
@@ -56,9 +63,12 @@ def test_str() -> None:
                         ],
                         description="rfc1149.txt+51:4-52:9",
                     ),
-                    State("B"),
+                    State("C"),
                 ],
-                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE)],
+                [
+                    decl.VariableDeclaration("M", "TLV::Message"),
+                    decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+                ],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.TypeDeclaration(Private("T")),
@@ -76,26 +86,32 @@ def test_str() -> None:
                   with function G (P : T) return Boolean;
                session S with
                   Initial => A,
-                  Final => B
+                  Final => C
                is
+                  M : TLV::Message;
                   Y : Boolean := False;
                begin
-                  state A
-                     with Desc => "rfc1149.txt+51:4-52:9"
-                  is
-                     Z : Boolean := Y;
-                     M : TLV::Message;
+                  state A is
                   begin
                      X'Read (M);
                   transition
                      goto B
+                  end A;
+
+                  state B
+                     with Desc => "rfc1149.txt+51:4-52:9"
+                  is
+                     Z : Boolean := Y;
+                  begin
+                  transition
+                     goto C
                         with Desc => "rfc1149.txt+45:4-47:8"
                         if Z = True
                            and G (F) = True
                      goto A
-                  end A;
+                  end B;
 
-                  state B is null state;
+                  state C is null state;
                end S"""
         ),
     )
@@ -2025,9 +2041,22 @@ def test_type_error_in_renaming_declaration() -> None:
 
 
 @pytest.mark.parametrize(
-    "actions, errors",
+    "declarations, actions, errors",
     [
         (
+            [
+                decl.VariableDeclaration(
+                    "M", UNIVERSAL_MESSAGE.identifier, location=Location((1, 2))
+                ),
+            ],
+            [
+                stmt.Read("C1", expr.Variable("M"), location=Location((1, 2))),
+                stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
+            ],
+            "<stdin>:1:2: model: error: IO state must not contain declarations",
+        ),
+        (
+            [],
             [
                 stmt.Read(
                     "C1",
@@ -2042,6 +2071,7 @@ def test_type_error_in_renaming_declaration() -> None:
             "<stdin>:1:2: model: error: channel parameter must be a variable",
         ),
         (
+            [],
             [
                 stmt.Read("C1", expr.Variable("M1"), location=Location((1, 2))),
                 stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
@@ -2051,6 +2081,7 @@ def test_type_error_in_renaming_declaration() -> None:
             " in one state",
         ),
         (
+            [],
             [
                 stmt.Read(
                     ID("C1", location=Location((1, 1))),
@@ -2070,6 +2101,7 @@ def test_type_error_in_renaming_declaration() -> None:
             "<stdin>:2:1: model: info: conflicting read/write",
         ),
         (
+            [],
             [
                 stmt.Read(
                     "C1",
@@ -2086,11 +2118,17 @@ def test_type_error_in_renaming_declaration() -> None:
         ),
     ],
 )
-def test_conflicting_actions(actions: ty.Sequence[stmt.Statement], errors: str) -> None:
+def test_conflicting_actions(
+    declarations: ty.Sequence[decl.BasicDeclaration],
+    actions: ty.Sequence[stmt.Statement],
+    errors: str,
+) -> None:
     assert_session_model_error(
         states=[
             State(
                 "Start",
+                declarations=declarations,
+                actions=actions,
                 transitions=[
                     Transition(
                         target=ID("End"),
@@ -2105,7 +2143,6 @@ def test_conflicting_actions(actions: ty.Sequence[stmt.Statement], errors: str) 
                         target=ID("End"),
                     ),
                 ],
-                actions=actions,
             ),
             State("End"),
         ],

@@ -440,21 +440,37 @@ class Session(AbstractSession):
             visible_declarations[k] = d
 
     def __validate_actions(
-        self, actions: Sequence[stmt.Statement], declarations: Mapping[ID, decl.Declaration]
+        self,
+        actions: Sequence[stmt.Statement],
+        declarations: Mapping[ID, decl.Declaration],
+        local_declarations: Mapping[ID, decl.Declaration],
     ) -> None:
         io_statements = [a for a in actions if isinstance(a, stmt.ChannelAttributeStatement)]
 
-        if io_statements and len(io_statements) != len(actions):
-            self.error.extend(
-                [
-                    (
-                        "channel IO must not be combined with other actions in one state",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        io_statements[0].location,
-                    )
-                ],
-            )
+        if io_statements:
+            if local_declarations:
+                self.error.extend(
+                    [
+                        (
+                            "IO state must not contain declarations",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            next(iter(local_declarations.values())).location,
+                        )
+                    ],
+                )
+
+            if len(io_statements) != len(actions):
+                self.error.extend(
+                    [
+                        (
+                            "channel IO must not be combined with other actions in one state",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            io_statements[0].location,
+                        )
+                    ],
+                )
 
         for i, s1 in enumerate(io_statements):
             if not isinstance(s1.parameter, expr.Variable):
@@ -640,7 +656,7 @@ class Session(AbstractSession):
 
             declarations = {**self._global_declarations, **s.declarations}
 
-            self.__validate_actions(s.actions, declarations)
+            self.__validate_actions(s.actions, declarations, s.declarations)
             self.__validate_transitions(s, declarations)
 
         self.__validate_usage()
