@@ -618,6 +618,18 @@ class MessageValue(TypeValue):
             else:
                 raise PyRFLXError(f"{type(value)} is no supported parameter type")
             params[Variable(name)] = expr
+
+        expected = set(p.name for p in self._type.parameter_types.keys())
+        added = set(p.name for p in params if isinstance(p, Variable))
+
+        if expected - added:
+            message = ", ".join(expected - added)
+            raise PyRFLXError(f"missing parameter values: {message}")
+
+        if added - expected:
+            message = ", ".join(added - expected)
+            raise PyRFLXError(f"unexpected parameter values: {message}")
+
         self._parameters = params
         if not self._skip_verification:
             self._preset_fields(INITIAL.name)

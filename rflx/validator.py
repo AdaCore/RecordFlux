@@ -249,8 +249,12 @@ class Validator:
 
         original_message = message_path.read_bytes()
         parsed_message = message_value.clone()
-        parsed_message.add_parameters(message_parameters)
         parser_error = None
+
+        try:
+            parsed_message.add_parameters(message_parameters)
+        except PyRFLXError as e:
+            raise ValidationError(f"{message_path}: {e}") from e
 
         try:
             parsed_message.parse(original_message)
