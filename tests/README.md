@@ -46,3 +46,7 @@ IDE tests allow to verify the functionality of the IDE plugin. These tests are n
 - Test specifications (`tests/data/specs`)
 
 Test data should be kept as local as possible. If test data is required for a single, very specific test case, it should be considered to define the test data locally instead of making the data globally available in one of the directories mentioned above.
+
+## Best Practices
+
+Unnecessary duplication of test code and test data should be avoided for maintainablity reasons. For example, the painful act of adapting all specifications due to a change of the syntax or semantics can be mitigated by keeping the number of specifications low (e.g., `Universal::Message` can be reused in new feature tests by adding a symbolic link to `../messages/universal.rflx`). The use of pytest's [test parameterization](https://docs.pytest.org/en/stable/parametrize.html) is particularly useful in unit tests.
