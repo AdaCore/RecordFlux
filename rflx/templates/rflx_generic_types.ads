@@ -10,7 +10,7 @@ generic
    type Custom_Bytes_Ptr is access Custom_Bytes;
    type Custom_Length is range <>;
    type Custom_Bit_Length is range <>;
-package RFLX.RFLX_Generic_Types with
+package {prefix}RFLX_Generic_Types with
   SPARK_Mode
 is
 
@@ -43,9 +43,8 @@ is
    pragma Compile_Time_Error (Bit_Length'Pos (Bit_Length'Last) /= Length'Pos (Length'Last) * 8,
                               "Bit_Length'Last must be equal to Length'Last * 8");
 
-   subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
-
    subtype U64 is {prefix}RFLX_Arithmetic.U64;
+   subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 
    function To_Index (Bit_Idx : Bit_Length) return Index is
      (Index (Length ((Bit_Idx - 1) / 8) + 1));
@@ -78,9 +77,26 @@ is
 
    generic
       type Value is mod <>;
+   function Extract_LE (Data : Bytes;
+                        Off  : Offset) return Value with
+     Pre =>
+       ((Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length
+        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
+        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
+
+   generic
+      type Value is mod <>;
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
                      Off  :        Offset) with
+     Pre =>
+       (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
+
+   generic
+      type Value is mod <>;
+   procedure Insert_LE (Val  :        Value;
+                        Data : in out Bytes;
+                        Off  :        Offset) with
      Pre =>
        (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
 

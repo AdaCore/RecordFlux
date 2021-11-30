@@ -4,57 +4,52 @@ package body {prefix}RFLX_Arithmetic with
   SPARK_Mode
 is
 
-   function Pow2 (Exp : Natural) return U64 is
-     (2**Exp);
-
-   function Mod_Pow2 (Value : U64; Exp : Natural) return U64 is
-     (Value mod Pow2 (Exp));
-
-   procedure Lemma_Right_Shift_Limit (X : U64; J : Natural; K : Natural) with
-     Pre  =>
-       J <= U64'Size
-       and then K < U64'Size
-       and then J >= K
-       and then J - K in 0 .. U64'Size - 1
-       and then (if J < U64'Size then X < 2**J),
-     Post =>
-       X / Pow2 (K) < Pow2 (J - K),
-     Ghost
+   function Shift_Add (V : U64;
+                       Data : U64;
+                       Amount : Natural;
+                       Bits : Natural) return U64
    is
+      pragma Unreferenced (Bits);
    begin
-      null;
-   end Lemma_Right_Shift_Limit;
+      return Shift_Left (V, Amount) + Data;
+   end Shift_Add;
 
-   procedure Lemma_Left_Shift_Limit (X : U64; J : Natural; K : Natural) with
-     Pre  =>
-       J <= U64'Size
-       and then K < U64'Size
-       and then J + K <= U64'Size
-       and then (if J < U64'Size then X < Pow2 (J)),
-     Post =>
-       (if J + K < U64'Size
-        then X * Pow2 (K) <= Pow2 (J + K) - Pow2 (K) and Pow2 (J + K) >= Pow2 (K)
-        else X * Pow2 (K) <= U64'Last - Pow2 (K) + 1),
-     Ghost
+   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64
    is
+      pragma Unreferenced (Size);
    begin
-      null;
-   end Lemma_Left_Shift_Limit;
-
-   function Right_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64
-   is
-      Result : constant U64 := Value / Pow2 (Length);
-   begin
-      Lemma_Right_Shift_Limit (Value, Value_Size, Length);
-      return Result;
+      return Shift_Right (V, Amount);
    end Right_Shift;
 
-   function Left_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64
+   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64
    is
-      Result : constant U64 := Value * 2**Length;
+      pragma Unreferenced (Size);
+      Result : constant U64 := Shift_Left (V, Amount);
    begin
-      Lemma_Left_Shift_Limit (Value, Value_Size, Length);
       return Result;
    end Left_Shift;
+
+   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64
+   is
+      Result : constant U64 := Shift_Left (Shift_Right (V, Mask), Mask);
+   begin
+      pragma Assert
+        (if Bits < U64'Size then Result <= 2 ** Bits - 2 ** Mask
+         elsif Mask < U64'Size then Result <= U64'Last - 2 ** Mask + 1);
+      return Result;
+   end Mask_Lower;
+
+   function Mask_Upper (V : U64; Mask : Natural) return U64
+   is
+   begin
+      return V and (2 ** Mask - 1);
+   end Mask_Upper;
+
+   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64
+   is
+      pragma Unreferenced (Total_Bits, Lower_Bits);
+   begin
+      return A + B;
+   end Add;
 
 end {prefix}RFLX_Arithmetic;
