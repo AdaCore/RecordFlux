@@ -7,41 +7,85 @@ is
    type U64 is mod 2**64 with
      Annotate => (GNATprove, No_Wrap_Around);
 
-   function Pow2 (Exp : Natural) return U64 with
-     Pre =>
-       Exp < U64'Size,
-     Post =>
-       Pow2'Result = 2**Exp;
+   function Shift_Left (Value : U64; Amount : Natural) return U64 with
+      Import,
+      Convention => Intrinsic,
+      Global => null;
 
-   function Mod_Pow2 (Value : U64; Exp : Natural) return U64 with
-     Pre =>
-       Exp < U64'Size,
-     Post =>
-       Mod_Pow2'Result < 2**Exp;
+   function Shift_Right (Value : U64; Amount : Natural) return U64 with
+      Import,
+      Convention => Intrinsic,
+      Global => null;
 
-   function Right_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64 with
-     Pre =>
-       Value_Size <= U64'Size
-       and then Length < U64'Size
-       and then Value_Size >= Length
-       and then Value_Size - Length in 0 .. U64'Size - 1
-       and then (if Value_Size < U64'Size then Value < 2**Value_Size),
-     Post =>
-       Right_Shift'Result < 2**(Value_Size - Length);
+   --  Express that V contains no more than Bits bits of data (the rest is
+   --  zero).
+   function Has_Bits (V : U64; Bits : Natural) return Boolean
+     is (if Bits < U64'Size then V < 2 ** Bits);
 
-   function Left_Shift (Value : U64; Value_Size : Positive; Length : Natural) return U64 with
+   --  Express that V contains no more than (Bits - Lower) bits of data, that
+   --  are contained in the more significant part of V (the rest is zero):
+   --  |--|- (bits-lower) -|- lower -|
+   --  |00|xxxxxxxxxxxxxxxx|000000000|
+   function Has_Bits_Upper (V : U64; Bits, Lower : Natural) return Boolean
+   is (if Bits < U64'Size then V <= 2 ** Bits - 2 ** Lower
+       elsif Lower > 0 and then Lower < U64'Size then V <= U64'Last - 2 ** Lower + 1)
+     with Pre => Bits <= U64'Size and then Lower <= Bits;
+
+   --  V is assumed to contain Bits bits of data. Add the Amount bits
+   --  contained in Data by shifting Result to the left and adding Data.
+   --  The result contains (Bits + Amount) bits of data.
+   function Shift_Add (V : U64;
+                       Data : U64;
+                       Amount : Natural;
+                       Bits : Natural) return U64
+     with Pre  =>
+       Bits < U64'Size
+       and then Amount < U64'Size
+       and then Has_Bits (V, Bits)
+       and then U64'Size - Amount >= Bits
+       and then Has_Bits (Data, Amount),
+     Post => Has_Bits (Shift_Add'Result, Bits + Amount);
+
+   --  Wrapper of Shift_Right that expresses the operation in terms of
+   --  Has_Bits.
+   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64 with
      Pre =>
-       Value_Size <= U64'Size
-       and then Length < U64'Size
-       and then Value_Size + Length in 1 .. U64'Size
-       and then (if Value_Size < U64'Size then Value < Pow2 (Value_Size)),
-     Post =>
-       (if
-          Value_Size + Length < U64'Size
-        then
-          Left_Shift'Result <= Pow2 (Value_Size + Length) - Pow2 (Length)
-          and Pow2 (Value_Size + Length) >= Pow2 (Length)
-        else
-          Left_Shift'Result <= U64'Last - Pow2 (Length) + 1);
+       Size <= U64'Size
+       and then Has_Bits (V, Size)
+       and then Amount <= Size
+       and then Size - Amount < U64'Size,
+     Post => Has_Bits (Right_Shift'Result, Size - Amount);
+
+   --  Wrapper of Shift_Left that expresses the operation in terms of
+   --  Has_Bits/Has_Bits_Upper.
+   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64 with
+     Pre =>
+       Size < U64'Size
+       and then Amount < U64'Size
+       and then Has_Bits (V, Size)
+       and then Size + Amount < U64'Size,
+       Post => Has_Bits_Upper (Left_Shift'Result, Size + Amount, Amount);
+
+   --  V is assumed to have Bits bits of data. Set the lower bits of V to zero.
+   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64
+     with Pre => Bits <= U64'Size and then Has_Bits (V, Bits) and then Mask <= Bits and then Mask >= 1,
+          Post => Has_Bits_Upper (Mask_Lower'Result, Bits, Mask);
+
+   --  Set the upper bits of V to zero.
+   function Mask_Upper (V : U64; Mask : Natural) return U64
+     with Pre => Mask < U64'Size,
+          Post => Has_Bits (Mask_Upper'Result, Mask);
+
+   --  Add A and B in the special case where A only uses the upper bits and B
+   --  only the lower bits.
+   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64
+     with Pre =>
+       Total_Bits <= U64'Size
+       and then Lower_Bits <= Total_Bits
+       and then (if Total_Bits = U64'Size then Lower_Bits /= U64'Size)
+       and then Has_Bits_Upper (A, Total_Bits, Lower_Bits)
+       and then Has_Bits (B, Lower_Bits),
+     Post => Add'Result = A + B and Has_Bits (Add'Result, Total_Bits),
+     Global => null;
 
 end RFLX.RFLX_Arithmetic;
