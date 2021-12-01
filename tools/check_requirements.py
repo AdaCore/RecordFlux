@@ -102,7 +102,7 @@ def parse_requirements(requirements_file: Path) -> Tuple[List[Requirement], bool
     requirements: Dict[str, Requirement] = {}
     error = False
 
-    for l in requirements_file.read_text():
+    for l in requirements_file.read_text().split("\n"):
         if "§" not in l:
             continue
 
@@ -175,7 +175,7 @@ def print_checkbox_list(requirements: Sequence[Requirement]) -> None:
     for r in sorted(requirements):
         indentation = "    " * r.identifier.count(ID_SEPARATOR)
         status = "x" if r.referenced else " "
-        print(f"{indentation}- [{status}] {r.description}")
+        print(f"{indentation}- [{status}] {r.description} ({r.identifier})")
     print()
 
 

@@ -1174,7 +1174,7 @@ The byte representation of a message can be retrieved using the Opaque attribute
 // * Calls [§S-E-AT-O-CL]
 // * Conversions [§S-E-AT-O-CV]
 
-// Heat attribute [§S-E-AT-H]
+// Head attribute [§S-E-AT-H]
 
 The Head attribute allows to get the first element of a sequence.
 
