@@ -1372,7 +1372,7 @@ def test_get_model(icmp_message_value: MessageValue) -> None:
 
 def test_parameterized_message(parameterized_package: Package) -> None:
     message = parameterized_package.new_message(
-        "Message", {"Length": 8, "Has_Tag": False, "Tag_Value": "Tag_A"}
+        "Message", {"Length": 8, "Tag_Mode": "Without_Tag", "Tag_Value": "Tag_A", "Use_Tag": True}
     )
     assert message.fields == ["Payload", "Tag"]
     assert message.required_fields == ["Payload"]
@@ -1389,7 +1389,7 @@ def test_parameterized_message_no_verification() -> None:
         skip_message_verification=True,
     )
     message_unv = pyrflx_.package("Parameterized").new_message(
-        "Message", {"Length": 8, "Has_Tag": False, "Tag_Value": "Tag_A"}
+        "Message", {"Length": 8, "Tag_Mode": "Without_Tag", "Tag_Value": "Tag_A", "Use_Tag": True}
     )
     assert message_unv.fields == ["Payload", "Tag"]
     message_unv.set("Payload", bytes(8))
