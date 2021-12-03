@@ -41,6 +41,7 @@ from rflx.model import (
     Sequence,
     Type,
 )
+from rflx.model.type_ import enum_literals
 from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
 
@@ -571,19 +572,10 @@ class MessageValue(TypeValue):
             }
         )
 
-        self.__type_literals: ty.Mapping[Name, Expr] = (
-            state.type_literals
-            if state and state.type_literals
-            else {
-                k: v
-                for t in (
-                    f.typeval.literals
-                    for f in self._fields.values()
-                    if isinstance(f.typeval, EnumValue)
-                )
-                for k, v in t.items()
-            }
-        )
+        self.__type_literals: ty.Mapping[Name, Expr] = {
+            Variable(l): e.literals[l.name]
+            for l, e in enum_literals(self._type.types.values(), self._type.package).items()
+        }
 
         self.__additional_enum_literals: ty.Dict[Name, Expr] = {}
         self.__message_first_name = First("Message")
@@ -886,10 +878,15 @@ class MessageValue(TypeValue):
                         fld.typeval.set_refinement(ref.sdu)
 
         def check_outgoing_condition_satisfied() -> None:
-            if all(
-                self.__simplified(o.condition) == FALSE
-                for o in self._type.outgoing(Field(field_name))
-            ):
+            simplified = [
+                self.__simplified(o.condition) for o in self._type.outgoing(Field(field_name))
+            ]
+            unresolved = [o for o in simplified if o not in (FALSE, TRUE)]
+            error_msg = ", ".join([str(o) for o in unresolved])
+            assert (
+                not unresolved
+            ), f"unresolved field conditions in {self.model.name}.{field_name}: {error_msg}"
+            if all(o == FALSE for o in simplified):
                 self._fields[field_name].typeval.clear()
                 raise PyRFLXError(
                     f"none of the field conditions "
