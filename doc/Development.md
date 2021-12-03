@@ -45,7 +45,7 @@ We enforce 100% branch coverage for Python code using [pytest](https://pytest.or
 
 Your code will be reviewed by at least one core developer before inclusion into the project. Don't be discouraged should we have many comments and ask you for a lot of changes to your pull request. This even happens to the most experienced developers in our project and we consider these discussions an essential part of the development process and a necessity to maintain high quality. Don't hesitate to open an issue if you have any question or submit the pull request in draft mode first.
 
-If the code review reveals that changes are required, the necessary changes should be added in a new commit and the corresponding review comment should be answered with a reference to the commit which fixes the issue (e.g., `Fixed by 5f5e100`). This makes it easier for a reviewer to track which issues were addressed and how. Force pushing is required and accepted for rebasing to the base branch.
+If the code review reveals that changes are required, the necessary changes should be added in a new commit and the corresponding review comment should be answered. This makes it easier for a reviewer to track which issues were addressed. All review comments must be set to resolved by a reviewer before a pull request can be merged. Force pushing is required and accepted for rebasing to the base branch. Commits may be squashed before the pull request is merged to prevent a high number of "Fix review comments" commits. Squashing should be avoided before the changes have been accepted by all reviewers.
 
 ## Project management
 
