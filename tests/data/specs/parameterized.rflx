@@ -2,15 +2,16 @@ package Parameterized is
 
    type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
    type Tag is (Tag_A, Tag_B) with Size => 8;
+   type Tag_Mode is (With_Tag, Without_Tag) with Size => 8;
 
-   type Message (Length : Length; Has_Tag : Boolean; Tag_Value : Tag) is
+   type Message (Length : Length; Tag_Mode : Tag_Mode; Tag_Value : Tag) is
       message
          Payload : Opaque
             with Size => Length * 8
             then Tag
-               if Has_Tag = True
+               if Tag_Mode = With_Tag
             then null
-               if Has_Tag = False;
+               if Tag_Mode = Without_Tag;
          Tag : Tag
             then null
                if Tag = Tag_Value;
