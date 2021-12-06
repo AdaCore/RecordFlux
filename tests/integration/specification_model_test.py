@@ -636,8 +636,10 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
       state Next is
          Msg2 : Message;
       begin
-         Channel'Read(Msg2);
+         Msg2 := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
       transition
+         goto Terminated
+      exception
          goto Terminated
       end Next;
       state Terminated is null state;
