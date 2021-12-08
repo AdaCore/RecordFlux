@@ -87,14 +87,6 @@ class Integration:
                 self._validate_globals(package, integration, session, error)
                 self._validate_states(package, integration, session, error)
 
-    def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
-        try:
-            self._packages[filename.stem] = IntegrationFile.parse_obj(file)
-        except ValidationError as e:
-            error.extend(
-                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))]
-            )
-
     def get_size(self, session: ID, variable: ID, state: Optional[ID]) -> int:
         """
         Return the requested buffer size for a variable of a given session and state.
@@ -128,6 +120,14 @@ class Integration:
         ):
             return buffer_size.local_[state_name][variable_name]
         return default_size
+
+    def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
+        try:
+            self._packages[filename.stem] = IntegrationFile.parse_obj(file)
+        except ValidationError as e:
+            error.extend(
+                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))]
+            )
 
     @staticmethod
     def _to_location(package: str) -> Location:
