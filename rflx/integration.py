@@ -3,6 +3,8 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Extra, Field, ValidationError
 from pydantic.types import ConstrainedInt
+from ruamel.yaml.error import MarkedYAMLError
+from ruamel.yaml.main import YAML
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
@@ -33,16 +35,32 @@ class Integration:
     def defaultsize(self) -> int:
         return 4096
 
-    def __init__(self) -> None:
+    def __init__(self, integration_files_dir: Optional[Path] = None) -> None:
         self._packages: Dict[str, IntegrationFile] = {}
+        self._integration_files_dir = integration_files_dir
 
-    def add_integration_file(self, filename: Path, file: object, error: RecordFluxError) -> None:
-        try:
-            self._packages[filename.stem] = IntegrationFile.parse_obj(file)
-        except ValidationError as e:
-            error.extend(
-                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))]
-            )
+    def load_integration_file(self, spec_file: Path, error: RecordFluxError) -> None:
+        integration_file = (
+            spec_file.with_suffix(".rfi")
+            if self._integration_files_dir is None
+            else self._integration_files_dir / (spec_file.stem + ".rfi")
+        )
+        if integration_file.exists():
+            yaml = YAML()
+            try:
+                content = yaml.load(integration_file)
+            except MarkedYAMLError as e:
+                location = Location(
+                    start=(
+                        (0, 0)
+                        if e.problem_mark is None
+                        else (e.problem_mark.line + 1, e.problem_mark.column + 1)
+                    ),
+                    source=integration_file,
+                )
+                error.extend([(str(e), Subsystem.PARSER, Severity.ERROR, location)])
+                return
+            self._add_integration_object(integration_file, content, error)
 
     def validate(self, model: Model, error: RecordFluxError) -> None:
         for package, integration_file in self._packages.items():
@@ -68,6 +86,14 @@ class Integration:
                 session = matching_sessions[0]
                 self._validate_globals(package, integration, session, error)
                 self._validate_states(package, integration, session, error)
+
+    def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
+        try:
+            self._packages[filename.stem] = IntegrationFile.parse_obj(file)
+        except ValidationError as e:
+            error.extend(
+                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))]
+            )
 
     def get_size(self, session: ID, variable: ID, state: Optional[ID]) -> int:
         """

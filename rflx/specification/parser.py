@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import librflxlang as lang
-from ruamel.yaml.error import MarkedYAMLError
-from ruamel.yaml.main import YAML
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
@@ -1424,7 +1422,11 @@ class SpecificationNode:
 
 class Parser:
     def __init__(
-        self, skip_verification: bool = False, cached: bool = False, workers: int = 1
+        self,
+        skip_verification: bool = False,
+        cached: bool = False,
+        workers: int = 1,
+        integration_files_dir: Optional[Path] = None,
     ) -> None:
         if skip_verification:
             warn("model verification skipped", Subsystem.MODEL)
@@ -1436,7 +1438,7 @@ class Parser:
             *model.INTERNAL_TYPES.values(),
         ]
         self.__sessions: List[model.Session] = []
-        self.__integration: Integration = Integration()
+        self.__integration: Integration = Integration(integration_files_dir)
         self.__cache = Cache(not skip_verification and cached)
 
     def __convert_unit(
@@ -1514,8 +1516,7 @@ class Parser:
         unit = lang.AnalysisContext().get_from_file(str(filename))
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
-        integration_file = filename.with_suffix(".rfi")
-        self._load_integration_file(integration_file, error)
+        self.__integration.load_integration_file(filename, error)
         if unit.root:
             assert isinstance(unit.root, lang.Specification)
             self.__convert_unit(error, unit.root, filename, transitions)
@@ -1581,24 +1582,6 @@ class Parser:
 
     def get_integration(self) -> Integration:
         return self.__integration
-
-    def _load_integration_file(self, integration_file: Path, error: RecordFluxError) -> None:
-        if integration_file.exists():
-            yaml = YAML()
-            try:
-                content = yaml.load(integration_file)
-            except MarkedYAMLError as e:
-                location = Location(
-                    start=(
-                        (0, 0)
-                        if e.problem_mark is None
-                        else (e.problem_mark.line + 1, e.problem_mark.column + 1)
-                    ),
-                    source=integration_file,
-                )
-                error.extend([(str(e), Subsystem.PARSER, Severity.ERROR, location)])
-                return
-            self.__integration.add_integration_file(integration_file, content, error)
 
     @property
     def specifications(self) -> Dict[str, lang.Specification]:
