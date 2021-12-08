@@ -6,7 +6,7 @@ import traceback
 from collections import defaultdict
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import librflxlang
 from pkg_resources import get_distribution
@@ -84,6 +84,9 @@ def main(argv: List[str]) -> Union[int, str]:
         "--ignore-unsupported-checksum",
         help="ignore checksum aspects during code generation",
         action="store_true",
+    )
+    parser_generate.add_argument(
+        "--integration-files-dir", help="directory for the .rfi files", type=Path
     )
     parser_generate.add_argument(
         "files", metavar="SPECIFICATION_FILE", type=Path, nargs="*", help="specification file"
@@ -249,7 +252,9 @@ def generate(args: argparse.Namespace) -> None:
     if not args.output_directory.is_dir():
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
-    model, integration = parse(args.files, args.no_verification, args.workers)
+    model, integration = parse(
+        args.files, args.no_verification, args.workers, args.integration_files_dir
+    )
 
     generator = Generator(
         model,
@@ -267,9 +272,14 @@ def generate(args: argparse.Namespace) -> None:
 
 
 def parse(
-    files: Sequence[Path], skip_verification: bool = False, workers: int = 1
+    files: Sequence[Path],
+    skip_verification: bool = False,
+    workers: int = 1,
+    integration_files_dir: Optional[Path] = None,
 ) -> Tuple[Model, Integration]:
-    parser = Parser(skip_verification, cached=True, workers=workers)
+    parser = Parser(
+        skip_verification, cached=True, workers=workers, integration_files_dir=integration_files_dir
+    )
     error = RecordFluxError()
     present_files = []
 
