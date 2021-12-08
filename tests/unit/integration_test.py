@@ -172,8 +172,16 @@ def test_load_integration_path(tmp_path: Path) -> None:
     subfolder = tmp_path / "sub"
     subfolder.mkdir()
     test_rfi = subfolder / "test.rfi"
-    test_rfi.write_text("{ Session: { Session : { Buffer_Size : {} }}}")
+    test_rfi.write_text("{ Session: { Session : { Buffer_Size : 0 }}}")
     integration = Integration(integration_files_dir=subfolder)
     error = RecordFluxError()
-    integration.load_integration_file(tmp_path / "test.rflx", error)
-    error.propagate()
+    regex = re.compile(
+        (
+            r"test.rfi:0:0: parser: error: 1 validation error for IntegrationFile.*"
+            r"value is not a valid dict \(type=type_error.dict\)"
+        ),
+        re.DOTALL,
+    )
+    with pytest.raises(RecordFluxError, match=regex):
+        integration.load_integration_file(tmp_path / "test.rflx", error)
+        error.propagate()
