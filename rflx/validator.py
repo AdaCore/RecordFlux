@@ -391,17 +391,6 @@ class ValidationResult:
     valid_original_message: bool
     valid_parser_result: bool
 
-    def __get_field_values(self) -> Dict[str, object]:
-        parsed_field_values: Dict[str, object] = {}
-        for field_name in self.parsed_message.valid_fields:
-            field_value = self.parsed_message.get(field_name)
-            if isinstance(field_value, MessageValue):
-                field_value = field_value.bytestring.hex()
-            if isinstance(field_value, bytes):
-                field_value = field_value.hex()
-            parsed_field_values[field_name] = field_value
-        return parsed_field_values
-
     def as_json(self) -> Dict[str, object]:
         output = {
             "file name": str(self.message_path),
@@ -411,7 +400,7 @@ class ValidationResult:
         }
         if self.parsed_message.valid_message:
             output["parsed"] = self.parsed_message.bytestring.hex()
-        output["parsed field values"] = self.__get_field_values()
+        output["parsed field values"] = self.parsed_message.as_json()
         if self.parser_error is not None:
             output["error"] = self.parser_error
 

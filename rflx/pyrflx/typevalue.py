@@ -128,6 +128,10 @@ class TypeValue(Base):
     def accepted_type(self) -> type:
         raise NotImplementedError
 
+    @abstractmethod
+    def as_json(self) -> object:
+        raise NotImplementedError
+
     def clone(self) -> "TypeValue":
         return self.__class__(self._type)
 
@@ -216,6 +220,9 @@ class IntegerValue(ScalarValue):
     @property
     def accepted_type(self) -> type:
         return int
+
+    def as_json(self) -> object:
+        return self._value
 
 
 class EnumValue(ScalarValue):
@@ -316,6 +323,9 @@ class EnumValue(ScalarValue):
     def literals(self) -> ty.Mapping[Name, Expr]:
         return self.__literals
 
+    def as_json(self) -> object:
+        return (self._value[0], self._value[1].value)
+
 
 class CompositeValue(TypeValue):
     def __init__(self, vtype: Composite) -> None:
@@ -415,6 +425,9 @@ class OpaqueValue(CompositeValue):
     @property
     def accepted_type(self) -> type:
         return bytes
+
+    def as_json(self) -> ty.Optional[bytes]:
+        return self._value
 
 
 class SequenceValue(CompositeValue):
@@ -525,6 +538,9 @@ class SequenceValue(CompositeValue):
     @property
     def element_type(self) -> Type:
         return self._element_type
+
+    def as_json(self) -> object:
+        return [f.as_json() for f in self._value]
 
 
 class MessageValue(TypeValue):
@@ -682,6 +698,22 @@ class MessageValue(TypeValue):
             if isinstance(typeval, OpaqueValue) and typeval.nested_message is not None:
                 messages.append(typeval.nested_message)
         return messages
+
+    def as_json(self) -> ty.Dict[str, object]:
+        result: ty.Dict[str, object] = {}
+        for field_name in self.valid_fields:
+            field_value = self.get(field_name)
+            if isinstance(field_value, MessageValue):
+                result[field_name] = field_value.bytestring.hex()
+            elif isinstance(field_value, bytes):
+                result[field_name] = field_value.hex()
+            elif isinstance(field_value, (int, str)):
+                result[field_name] = field_value
+            elif isinstance(field_value, list):
+                result[field_name] = [f.as_json() for f in field_value]
+            else:
+                raise NotImplementedError(f"Unsupported: {type(field_value)}")
+        return result
 
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
