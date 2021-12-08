@@ -352,3 +352,28 @@ def test_no_verification_icmp_checksum(
     assert icmp_checksum_unv.valid_message
     assert icmp_checksum_unv.get("Checksum") == icmp_checksum_message_value.get("Checksum")
     assert icmp_checksum_unv.bytestring == icmp_checksum_message_value.bytestring
+
+
+def test_sequence_message_serialization(
+    sequence_message_package: Package, message_sequence_value: MessageValue
+) -> None:
+    sequence_message_one = sequence_message_package.new_message("Sequence_Element")
+    sequence_message_one.set("Byte", 5)
+    sequence_message_two = sequence_message_package.new_message("Sequence_Element")
+    sequence_message_two.set("Byte", 6)
+    sequence: List[TypeValue] = [sequence_message_one, sequence_message_two]
+    message_sequence_value.set("Length", 2)
+    message_sequence_value.set("Sequence_Field", sequence)
+    assert message_sequence_value.valid_message
+    assert message_sequence_value.as_json() == {
+        "Length": 2,
+        "Sequence_Field": [{"Byte": 5}, {"Byte": 6}],
+    }
+
+
+def test_tlv_message_serialization(tlv_message_value: MessageValue) -> None:
+    tlv_message_value.set("Tag", "Msg_Data")
+    tlv_message_value.set("Length", 3)
+    tlv_message_value.set("Value", b"abc")
+    assert tlv_message_value.valid_message
+    assert tlv_message_value.as_json() == {"Length": 3, "Tag": "Msg_Data", "Value": "616263"}

@@ -1405,3 +1405,30 @@ def test_parameterized_message_invalid_type(parameterized_package: Package) -> N
             "Message",
             {"Length": bytes(8)},  # type: ignore[dict-item]
         )
+
+
+def test_json_serialization() -> None:
+    integer_value = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
+    integer_value.assign(128)
+    assert integer_value.as_json() == 128
+
+    enum_value = EnumValue(
+        Enumeration(
+            "Test::Enum",
+            [("One", expr.Number(1)), ("Two", expr.Number(2))],
+            expr.Number(8),
+            always_valid=False,
+        )
+    )
+    enum_value.assign("Two")
+    assert enum_value.as_json() == ("Two", 2)
+
+    sequence_value = SequenceValue(
+        Sequence("Test::ModularSequence", ModularInteger("Test::Int", expr.Number(256)))
+    )
+    sequence_value.assign([integer_value, integer_value, integer_value])
+    assert sequence_value.as_json() == [128, 128, 128]
+
+    opaque_value = OpaqueValue(Opaque())
+    opaque_value.assign(b"RecordFlux")
+    assert opaque_value.as_json() == b"RecordFlux"
