@@ -41,6 +41,7 @@ from rflx.model import (
     Sequence,
     Type,
 )
+from rflx.model.type_ import enum_literals
 from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
 
@@ -125,6 +126,10 @@ class TypeValue(Base):
     @property
     @abstractmethod
     def accepted_type(self) -> type:
+        raise NotImplementedError
+
+    @abstractmethod
+    def as_json(self) -> object:
         raise NotImplementedError
 
     def clone(self) -> "TypeValue":
@@ -215,6 +220,9 @@ class IntegerValue(ScalarValue):
     @property
     def accepted_type(self) -> type:
         return int
+
+    def as_json(self) -> object:
+        return self._value
 
 
 class EnumValue(ScalarValue):
@@ -315,6 +323,9 @@ class EnumValue(ScalarValue):
     def literals(self) -> ty.Mapping[Name, Expr]:
         return self.__literals
 
+    def as_json(self) -> object:
+        return (self._value[0], self._value[1].value)
+
 
 class CompositeValue(TypeValue):
     def __init__(self, vtype: Composite) -> None:
@@ -414,6 +425,9 @@ class OpaqueValue(CompositeValue):
     @property
     def accepted_type(self) -> type:
         return bytes
+
+    def as_json(self) -> ty.Optional[bytes]:
+        return self._value
 
 
 class SequenceValue(CompositeValue):
@@ -525,6 +539,9 @@ class SequenceValue(CompositeValue):
     def element_type(self) -> Type:
         return self._element_type
 
+    def as_json(self) -> object:
+        return [f.as_json() for f in self._value]
+
 
 class MessageValue(TypeValue):
     # pylint: disable=too-many-instance-attributes
@@ -571,19 +588,10 @@ class MessageValue(TypeValue):
             }
         )
 
-        self.__type_literals: ty.Mapping[Name, Expr] = (
-            state.type_literals
-            if state and state.type_literals
-            else {
-                k: v
-                for t in (
-                    f.typeval.literals
-                    for f in self._fields.values()
-                    if isinstance(f.typeval, EnumValue)
-                )
-                for k, v in t.items()
-            }
-        )
+        self.__type_literals: ty.Mapping[Name, Expr] = {
+            Variable(l): e.literals[l.name]
+            for l, e in enum_literals(self._type.types.values(), self._type.package).items()
+        }
 
         self.__additional_enum_literals: ty.Dict[Name, Expr] = {}
         self.__message_first_name = First("Message")
@@ -690,6 +698,22 @@ class MessageValue(TypeValue):
             if isinstance(typeval, OpaqueValue) and typeval.nested_message is not None:
                 messages.append(typeval.nested_message)
         return messages
+
+    def as_json(self) -> ty.Dict[str, object]:
+        result: ty.Dict[str, object] = {}
+        for field_name in self.valid_fields:
+            field_value = self.get(field_name)
+            if isinstance(field_value, MessageValue):
+                result[field_name] = field_value.bytestring.hex()
+            elif isinstance(field_value, bytes):
+                result[field_name] = field_value.hex()
+            elif isinstance(field_value, (int, str)):
+                result[field_name] = field_value
+            elif isinstance(field_value, list):
+                result[field_name] = [f.as_json() for f in field_value]
+            else:
+                raise NotImplementedError(f"Unsupported: {type(field_value)}")
+        return result
 
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
         return self.__simplified(refinement.condition) == TRUE
@@ -886,10 +910,15 @@ class MessageValue(TypeValue):
                         fld.typeval.set_refinement(ref.sdu)
 
         def check_outgoing_condition_satisfied() -> None:
-            if all(
-                self.__simplified(o.condition) == FALSE
-                for o in self._type.outgoing(Field(field_name))
-            ):
+            simplified = [
+                self.__simplified(o.condition) for o in self._type.outgoing(Field(field_name))
+            ]
+            unresolved = [o for o in simplified if o not in (FALSE, TRUE)]
+            error_msg = ", ".join([str(o) for o in unresolved])
+            assert (
+                not unresolved
+            ), f"unresolved field conditions in {self.model.name}.{field_name}: {error_msg}"
+            if all(o == FALSE for o in simplified):
                 self._fields[field_name].typeval.clear()
                 raise PyRFLXError(
                     f"none of the field conditions "

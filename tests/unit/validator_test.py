@@ -624,7 +624,7 @@ def test_parameterized_message_missing_parameter() -> None:
         match=(
             r"^"
             f"{TEST_DIR}/parameterized/message/invalid/parameterized_message_missing_parameter.raw:"
-            r" pyrflx: error: missing parameter values: Has_Tag"
+            r" pyrflx: error: missing parameter values: Tag_Mode"
             r"$"
         ),
     ):
