@@ -200,6 +200,28 @@ PARAMETERIZED_MESSAGE = Message(
 )
 
 
+M_PARAM_NO_REF = UnprovenMessage(
+    "P::Param_No_Ref",
+    [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), condition=Equal(Variable("P1"), Number(1))),
+        Link(Field("F1"), FINAL, condition=Equal(Variable("P1"), Number(2))),
+        Link(Field("F2"), FINAL),
+    ],
+    {Field("P1"): MODULAR_INTEGER, Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER},
+)
+
+
+M_PARAM_PARAM_REF = UnprovenMessage(
+    "P::Param_Param_Ref",
+    [
+        Link(INITIAL, Field("PNR")),
+        Link(Field("PNR"), FINAL),
+    ],
+    {Field("P2"): MODULAR_INTEGER, Field("PNR"): deepcopy(M_PARAM_NO_REF)},
+)
+
+
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
     msg = f"{expected.full_name} - {msg}" if msg else expected.full_name
     assert actual.full_name == expected.full_name, msg
@@ -3154,6 +3176,28 @@ def test_merge_message_error_name_conflict() -> None:
         r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P::M1"\n'
         r'<stdin>:15:3: model: info: when merging message "P::M2"\n'
         r'<stdin>:20:8: model: info: into field "F1"$',
+    )
+
+
+def test_merge_message_parameterized() -> None:
+    assert_equal(
+        deepcopy(M_PARAM_PARAM_REF)
+        .merged({ID("P::Param_No_Ref"): {ID("P1"): Variable("P2")}})
+        .proven(),
+        UnprovenMessage(
+            "P::Param_Param_Ref",
+            [
+                Link(INITIAL, Field("PNR_F1")),
+                Link(Field("PNR_F1"), Field("PNR_F2"), condition=Equal(Variable("P2"), Number(1))),
+                Link(Field("PNR_F1"), FINAL, condition=Equal(Variable("P2"), Number(2))),
+                Link(Field("PNR_F2"), FINAL),
+            ],
+            {
+                Field("P2"): MODULAR_INTEGER,
+                Field("PNR_F1"): MODULAR_INTEGER,
+                Field("PNR_F2"): MODULAR_INTEGER,
+            },
+        ).proven(),
     )
 
 
