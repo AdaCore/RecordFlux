@@ -45,7 +45,7 @@ package body RFLX.In_IPv4_Tests is
       UDP_Datagram_Context : UDP.Datagram.Context;
       Valid                : Boolean;
    begin
-      IPv4.Packet.Initialize (IPv4_Packet_Context, Buffer);
+      IPv4.Packet.Initialize (IPv4_Packet_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       IPv4.Packet.Verify_Message (IPv4_Packet_Context);
       Valid := IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context);
       Assert (Valid, "Structural invalid IPv4 packet");
@@ -80,7 +80,7 @@ package body RFLX.In_IPv4_Tests is
       UDP_Datagram_Context   : UDP.Datagram.Context;
       Valid                  : Boolean;
    begin
-      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
+      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Ethernet.Frame.Verify_Message (Ethernet_Frame_Context);
       Valid := Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context);
       Assert (Valid, "Structural invalid Ethernet frame");
@@ -120,6 +120,7 @@ package body RFLX.In_IPv4_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
+      use type UDP.Length;
       procedure Set_Payload is new UDP.Datagram.Generic_Set_Payload (Write_Data, Valid_Data_Length);
       Expected               : RFLX_Builtin_Types.Bytes_Ptr :=
          Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
@@ -136,8 +137,8 @@ package body RFLX.In_IPv4_Tests is
       Ethernet.Frame.Set_Source (Ethernet_Frame_Context, 16#000000000000#);
       Ethernet.Frame.Set_Type_Length_TPID (Ethernet_Frame_Context, 16#0800#);
       Ethernet.Frame.Set_Type_Length (Ethernet_Frame_Context, 16#0800#);
+      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context, 46);
       pragma Assert (Ethernet.Frame.Field_Size (Ethernet_Frame_Context, Ethernet.Frame.F_Payload) = 368);
-      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context);
 
       Assert (Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context), "Structural invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Ethernet_Frame_Context), "Valid frame");
@@ -179,6 +180,7 @@ package body RFLX.In_IPv4_Tests is
             UDP.Datagram.Set_Length (UDP_Datagram_Context, 26);
             UDP.Datagram.Set_Checksum (UDP_Datagram_Context, 16#014E#);
             Data := (others => 0);
+            pragma Assert (UDP.Datagram.Get_Length (UDP_Datagram_Context) = 26);
             pragma Assert (UDP.Datagram.Field_First (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 337);
             pragma Assert (UDP.Datagram.Field_Size (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 144);
             Set_Payload (UDP_Datagram_Context);

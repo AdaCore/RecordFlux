@@ -33,7 +33,7 @@ package body RFLX.Expression_Tests is
       Buffer : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 2);
       Context : Expression.Message.Context;
    begin
-      Expression.Message.Initialize (Context, Buffer);
+      Expression.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
 
       Expression.Message.Verify_Message (Context);
 
@@ -58,7 +58,7 @@ package body RFLX.Expression_Tests is
       Buffer : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 1);
       Context : Expression.Message.Context;
    begin
-      Expression.Message.Initialize (Context, Buffer);
+      Expression.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
 
       Expression.Message.Verify_Message (Context);
 

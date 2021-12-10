@@ -146,7 +146,7 @@ def substitution_facts(
         return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
-    last = prefixed("Last")
+    last = prefixed("Written_Last")
     cursors = prefixed("Cursors")
 
     def field_first(field: model.Field) -> expr.Expr:
@@ -469,11 +469,16 @@ def context_predicate(
             ]
         ),
         public_context_predicate(),
-        ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Message_Last")),
-        ada.LessEqual(ada.Variable("Message_Last"), ada.Variable("Last")),
+        ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Verified_Last")),
+        ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Written_Last")),
+        ada.LessEqual(ada.Variable("Verified_Last"), ada.Variable("Written_Last")),
+        ada.LessEqual(ada.Variable("Written_Last"), ada.Variable("Last")),
         ada.Equal(ada.Mod(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
         ada.Equal(ada.Mod(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
-        ada.Equal(ada.Mod(ada.Variable("Message_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+        ada.Equal(
+            ada.Mod(ada.Variable("Verified_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)
+        ),
+        ada.Equal(ada.Mod(ada.Variable("Written_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
         ada.ForAllIn(
             "F",
             ada.ValueRange(ada.First("Field"), ada.Last("Field")),
@@ -495,7 +500,7 @@ def context_predicate(
                                 ada.Selected(
                                     ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
                                 ),
-                                ada.Variable("Message_Last"),
+                                ada.Variable("Verified_Last"),
                             ),
                             ada.LessEqual(
                                 ada.Selected(
@@ -592,15 +597,14 @@ def valid_path_to_next_field_condition(
     ]
 
 
-def sufficient_space_for_field_condition(field_name: ada.Name) -> ada.Expr:
-    return ada.GreaterEqual(
-        ada.Call("Available_Space", [ada.Variable("Ctx"), field_name]),
-        ada.Call("Field_Size", [ada.Variable("Ctx"), field_name]),
-    )
+def sufficient_space_for_field_condition(field_name: ada.Name, size: ada.Expr = None) -> ada.Expr:
+    if size is None:
+        size = ada.Call("Field_Size", [ada.Variable("Ctx"), field_name])
+    return ada.GreaterEqual(ada.Call("Available_Space", [ada.Variable("Ctx"), field_name]), size)
 
 
 def initialize_field_statements(
-    message: model.Message, field: model.Field
+    message: model.Message, field: model.Field, reset_written_last: bool = False
 ) -> Sequence[ada.Statement]:
     comparison_to_aggregate = is_compared_to_aggregate(field, message)
 
@@ -614,7 +618,38 @@ def initialize_field_statements(
             "Reset_Dependent_Fields",
             [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
         ),
-        ada.Assignment("Ctx.Message_Last", ada.Variable("Last")),
+        # ISSUE: Componolit/RecordFlux#868
+        ada.PragmaStatement(
+            "Warnings",
+            [
+                ada.Variable("Off"),
+                ada.String("attribute Update is an obsolescent feature"),
+            ],
+        ),
+        ada.Assignment(
+            "Ctx",
+            ada.Update(
+                "Ctx",
+                ("Verified_Last", ada.Variable("Last")),
+                (
+                    "Written_Last",
+                    ada.Variable("Last")
+                    if reset_written_last
+                    else ada.Max(
+                        const.TYPES_BIT_LENGTH,
+                        ada.Variable("Ctx.Written_Last"),
+                        ada.Variable("Last"),
+                    ),
+                ),
+            ),
+        ),
+        ada.PragmaStatement(
+            "Warnings",
+            [
+                ada.Variable("On"),
+                ada.String("attribute Update is an obsolescent feature"),
+            ],
+        ),
         ada.Assignment(
             ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable(field.affixed_name)),
             ada.NamedAggregate(
@@ -713,7 +748,17 @@ def field_byte_location_declarations() -> Sequence[ada.Declaration]:
     ]
 
 
-def field_condition_call(message: model.Message, field: model.Field, value: ada.Expr) -> ada.Expr:
+def field_condition_call(
+    message: model.Message, field: model.Field, value: ada.Expr, size: ada.Expr = None
+) -> ada.Expr:
+    if size is None:
+        size = ada.Call(
+            "Field_Size",
+            [
+                ada.Variable("Ctx"),
+                ada.Variable(field.affixed_name),
+            ],
+        )
     return ada.Call(
         "Field_Condition",
         [
@@ -730,19 +775,7 @@ def field_condition_call(message: model.Message, field: model.Field, value: ada.
                     else []
                 ),
             ),
-            *(
-                [
-                    ada.Call(
-                        "Field_Size",
-                        [
-                            ada.Variable("Ctx"),
-                            ada.Variable(field.affixed_name),
-                        ],
-                    )
-                ]
-                if size_dependent_condition(message)
-                else []
-            ),
+            *([size] if size_dependent_condition(message) else []),
         ],
     )
 

@@ -45,7 +45,7 @@ is
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
-         if Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) = 1 * RFLX_Types.Byte'Size then
+         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1)));
          else
             RFLX_Exception := True;
@@ -89,7 +89,7 @@ is
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
-         if Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) = 2 * RFLX_Types.Byte'Size then
+         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
          else
             RFLX_Exception := True;
@@ -145,7 +145,7 @@ is
          if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Options.Size (Options_Ctx) + 8) then
             Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Options.Size (Options_Ctx) + 8) - 1);
             Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Unconstrained_Options);
-            if Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Options) = Universal.Options.Size (Options_Ctx) then
+            if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
                Universal.Message.Set_Options (Message_Ctx, Options_Ctx);
             else
                P_Next_State := S_Terminated;

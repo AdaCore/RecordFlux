@@ -12,7 +12,6 @@ is
    pragma Unevaluated_Use_Of_Old (Allow);
 
    use type RFLX.RFLX_Builtin_Types.Bytes_Ptr;
-   use type RFLX.RFLX_Builtin_Types.Length;
    use type RFLX.RFLX_Builtin_Types.Index;
 
    procedure Get_Address (Str   : String;

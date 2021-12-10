@@ -3,7 +3,7 @@ with RFLX.RFLX_Types;
 
 generic
    type Element_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is private;
-   with procedure Element_Initialize (Ctx : out Element_Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length);
+   with procedure Element_Initialize (Ctx : out Element_Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0);
    with procedure Element_Take_Buffer (Ctx : in out Element_Context; Buffer : out RFLX_Types.Bytes_Ptr);
    with function Element_Has_Buffer (Ctx : Element_Context) return Boolean;
    with function Element_Last (Ctx : Element_Context) return RFLX_Types.Bit_Index;

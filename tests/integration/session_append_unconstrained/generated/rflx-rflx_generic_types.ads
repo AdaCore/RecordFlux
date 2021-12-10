@@ -53,6 +53,9 @@ is
    function To_Length (Bit_Len : Bit_Length) return Length is
      (Length ((Bit_Len + 7) / 8));
 
+   function To_Bit_Length (Len : Length) return Bit_Length is
+     (Bit_Length (Len) * 8);
+
    function To_First_Bit_Index (Idx : Index) return Bit_Index is
      ((Bit_Length (Idx) - 1) * 8 + 1);
 

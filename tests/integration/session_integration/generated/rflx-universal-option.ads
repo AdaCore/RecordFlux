@@ -239,7 +239,13 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld),
+     Post =>
+       (case Fld is
+           when F_Data =>
+              Field_Size'Result mod RFLX_Types.Byte'Size = 0,
+           when others =>
+              True);
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>

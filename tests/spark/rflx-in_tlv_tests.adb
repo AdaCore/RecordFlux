@@ -24,7 +24,7 @@ package body RFLX.In_TLV_Tests is
       TLV_Message_Context : TLV.Message.Context;
       Valid               : Boolean;
    begin
-      TLV.Message.Initialize (TLV_Message_Context, Buffer);
+      TLV.Message.Initialize (TLV_Message_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (TLV_Message_Context);
       Valid := TLV.Message.Structural_Valid_Message (TLV_Message_Context);
       Assert (Valid, "Structural invalid TLV message");

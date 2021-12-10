@@ -30,6 +30,7 @@ from rflx.ada import (
     InOutParameter,
     Length,
     Less,
+    LessEqual,
     Mod,
     Mul,
     NamedAggregate,
@@ -234,7 +235,7 @@ class ParserGenerator:
         )
 
         set_message_last = Assignment(
-            Variable("Ctx.Message_Last"),
+            Variable("Ctx.Verified_Last"),
             Mul(
                 Div(
                     Add(
@@ -296,6 +297,15 @@ class ParserGenerator:
             )
             if len(message.fields) > 1
             else set_message_last,
+            PragmaStatement(
+                "Assert",
+                [
+                    LessEqual(
+                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                        Variable("Ctx.Verified_Last"),
+                    )
+                ],
+            ),
             IfStatement(
                 [
                     (

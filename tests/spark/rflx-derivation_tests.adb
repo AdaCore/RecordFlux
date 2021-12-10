@@ -50,7 +50,7 @@ package body RFLX.Derivation_Tests is
       Tag     : TLV.Tag;
       Length  : TLV.Length;
    begin
-      Derivation.Message.Initialize (Context, Buffer);
+      Derivation.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Derivation.Message.Verify_Message (Context);
       Assert (Derivation.Message.Valid (Context, Derivation.Message.F_Tag), "Invalid Tag");
       if Derivation.Message.Valid (Context, Derivation.Message.F_Tag) then

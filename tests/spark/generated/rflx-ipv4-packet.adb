@@ -5,16 +5,16 @@ package body RFLX.IPv4.Packet with
   SPARK_Mode
 is
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
-      Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last));
+      Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Written_Last);
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, Buffer, (F_Version => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Version => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
@@ -25,7 +25,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, Ctx.Buffer, (F_Version => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Version => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -37,14 +37,14 @@ is
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
-         Buffer := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Message_Last));
+         Buffer := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
       else
-         Buffer := Ctx.Buffer.all (RFLX_Types.Index'Last .. RFLX_Types.Index'First);
+         Buffer := Ctx.Buffer.all (1 .. 0);
       end if;
    end Copy;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes is
-     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Message_Last)));
+     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
 
    procedure Generic_Read (Ctx : Context) is
    begin
@@ -54,21 +54,22 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
       Length : RFLX_Types.Length;
    begin
+      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last));
       Write (Ctx.Buffer.all (Ctx.Buffer'First + RFLX_Types.Index (Offset + 1) - 1 .. Ctx.Buffer'Last), Length, Ctx.Buffer'Length, Offset);
       pragma Assert (Length <= Ctx.Buffer.all'Length, "Length <= Buffer'Length is not ensured by postcondition of ""Write""");
-      Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.Bit_Index'Max (Ctx.Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1)));
+      Ctx.Written_Last := RFLX_Types.Bit_Index'Max (Ctx.Written_Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1));
    end Generic_Write;
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
-     ((if Ctx.Message_Last = Ctx.First - 1 then 0 else Ctx.Message_Last - Ctx.First + 1));
+     ((if Ctx.Verified_Last = Ctx.First - 1 then 0 else Ctx.Verified_Last - Ctx.First + 1));
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      ((if
-          Ctx.Message_Last = Ctx.First - 1
+          Ctx.Verified_Last = Ctx.First - 1
        then
           0
        else
-          RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Message_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
+          RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Verified_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -167,7 +168,7 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld))
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
        Has_Buffer (Ctx)
@@ -213,6 +214,8 @@ is
          pragma Loop_Invariant ((for all F in Field =>
                                     (if F < Fld_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
       end loop;
+      pragma Assert (Field_First (Ctx, Fld) = First
+                     and Field_Size (Ctx, Fld) = Size);
       Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
@@ -309,40 +312,41 @@ is
                pragma Assert ((if Fld = F_Payload then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                case Fld is
                   when F_Version =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_IHL =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_DSCP =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_ECN =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Total_Length =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Identification =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Flag_R =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Flag_DF =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Flag_MF =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Fragment_Offset =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_TTL =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Protocol =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Header_Checksum =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Source =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Destination =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Options =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                   when F_Payload =>
-                     Ctx.Message_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                end case;
+               pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
@@ -526,7 +530,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Version);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Version) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Version).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Version)) := (State => S_Invalid, Predecessor => F_Version);
    end Set_Version;
@@ -537,7 +543,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_IHL);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_IHL) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_IHL).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_IHL)) := (State => S_Invalid, Predecessor => F_IHL);
    end Set_IHL;
@@ -548,7 +556,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_DSCP);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_DSCP) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_DSCP).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_DSCP)) := (State => S_Invalid, Predecessor => F_DSCP);
    end Set_DSCP;
@@ -559,7 +569,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_ECN);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_ECN) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_ECN).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_ECN)) := (State => S_Invalid, Predecessor => F_ECN);
    end Set_ECN;
@@ -570,7 +582,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Total_Length);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Total_Length) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Total_Length).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Total_Length)) := (State => S_Invalid, Predecessor => F_Total_Length);
    end Set_Total_Length;
@@ -581,7 +595,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Identification);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Identification) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Identification).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Identification)) := (State => S_Invalid, Predecessor => F_Identification);
    end Set_Identification;
@@ -592,7 +608,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Flag_R);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Flag_R) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Flag_R).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Flag_R)) := (State => S_Invalid, Predecessor => F_Flag_R);
    end Set_Flag_R;
@@ -603,7 +621,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Flag_DF);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Flag_DF) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Flag_DF).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Flag_DF)) := (State => S_Invalid, Predecessor => F_Flag_DF);
    end Set_Flag_DF;
@@ -614,7 +634,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Flag_MF);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Flag_MF) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Flag_MF).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Flag_MF)) := (State => S_Invalid, Predecessor => F_Flag_MF);
    end Set_Flag_MF;
@@ -625,7 +647,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Fragment_Offset);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Fragment_Offset) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Fragment_Offset).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Fragment_Offset)) := (State => S_Invalid, Predecessor => F_Fragment_Offset);
    end Set_Fragment_Offset;
@@ -636,7 +660,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_TTL);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_TTL) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_TTL).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_TTL)) := (State => S_Invalid, Predecessor => F_TTL);
    end Set_TTL;
@@ -647,7 +673,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Protocol);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Protocol) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Protocol).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Protocol)) := (State => S_Invalid, Predecessor => F_Protocol);
    end Set_Protocol;
@@ -658,7 +686,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Header_Checksum);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Header_Checksum) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Header_Checksum).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Header_Checksum)) := (State => S_Invalid, Predecessor => F_Header_Checksum);
    end Set_Header_Checksum;
@@ -669,7 +699,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Source) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Source).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Source)) := (State => S_Invalid, Predecessor => F_Source);
    end Set_Source;
@@ -680,7 +712,9 @@ is
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);
       Set_Field_Value (Ctx, Field_Value, First, Last);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Destination) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_Destination).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Destination)) := (State => S_Invalid, Predecessor => F_Destination);
    end Set_Destination;
@@ -690,7 +724,9 @@ is
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Options);
    begin
       Reset_Dependent_Fields (Ctx, F_Options);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Options) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
    end Set_Options_Empty;
@@ -700,39 +736,96 @@ is
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
-      Ctx.Message_Last := Last;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Set_Payload_Empty;
 
    procedure Set_Options (Ctx : in out Context; Seq_Ctx : IPv4.Options.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Options);
+      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options) + RFLX_Types.To_Bit_Length (IPv4.Options.Byte_Size (Seq_Ctx)) - 1;
       function Buffer_First return RFLX_Types.Index is
         (RFLX_Types.To_Index (First));
       function Buffer_Last return RFLX_Types.Index is
         (RFLX_Types.To_Index (Last));
    begin
       Reset_Dependent_Fields (Ctx, F_Options);
-      Ctx.Message_Last := ((Last + 7) / 8) * 8;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Options) := (State => S_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
       IPv4.Options.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Options;
 
-   procedure Initialize_Payload_Private (Ctx : in out Context) with
+   procedure Initialize_Options_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Options)
+       and then Valid_Length (Ctx, F_Options, Length)
+       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Options)) >= Length
+       and then Field_First (Ctx, F_Options) mod RFLX_Types.Byte'Size = 1,
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Options)
+       and Field_Size (Ctx, F_Options) = RFLX_Types.To_Bit_Length (Length)
+       and Ctx.Verified_Last = Field_Last (Ctx, F_Options)
+       and Invalid (Ctx, F_Payload)
+       and (Predecessor (Ctx, F_Payload) = F_Options
+            and Valid_Next (Ctx, F_Payload))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
+       and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
+       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+   is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
+      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
+   begin
+      Reset_Dependent_Fields (Ctx, F_Options);
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
+      Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
+   end Initialize_Options_Private;
+
+   procedure Initialize_Options (Ctx : in out Context) is
+   begin
+      Initialize_Options_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Options)));
+   end Initialize_Options;
+
+   procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0,
+       and then Valid_Length (Ctx, F_Payload, Length)
+       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
+       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
-       and Ctx.Message_Last = Field_Last (Ctx, F_Payload)
+       and Field_Size (Ctx, F_Payload) = RFLX_Types.To_Bit_Length (Length)
+       and Ctx.Verified_Last = Field_Last (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -755,28 +848,27 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
+      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin
       Reset_Dependent_Fields (Ctx, F_Payload);
-      Ctx.Message_Last := Last;
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload_Private;
 
    procedure Initialize_Payload (Ctx : in out Context) is
    begin
-      Initialize_Payload_Private (Ctx);
+      Initialize_Payload_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)));
    end Initialize_Payload;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Payload);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
-      Initialize_Payload_Private (Ctx);
+      Initialize_Payload_Private (Ctx, Data'Length);
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
    end Set_Payload;
 
@@ -788,8 +880,8 @@ is
       function Buffer_Last return RFLX_Types.Index is
         (RFLX_Types.To_Index (Last));
    begin
-      Initialize_Payload_Private (Ctx);
       Process_Payload (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      Initialize_Payload_Private (Ctx, RFLX_Types.Length (Buffer_Last - Buffer_First + 1));
    end Generic_Set_Payload;
 
    procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out IPv4.Options.Context) is
@@ -799,7 +891,9 @@ is
    begin
       if Invalid (Ctx, F_Options) then
          Reset_Dependent_Fields (Ctx, F_Options);
-         Ctx.Message_Last := Last;
+         pragma Warnings (Off, "attribute Update is an obsolescent feature");
+         Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
+         pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Options), Predecessor => Ctx.Cursors (F_Options).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
       end if;

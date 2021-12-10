@@ -431,7 +431,7 @@ Allowed return types:
 // * Scalars [§S-P-F-R-S]
 // * Definite messages [§S-P-F-R-M]
 
-Definite messages are messages with no optional fields and a bounded size (i.e. all size aspects contain no reference to `Message`).
+Definite messages are messages with no optional fields and an explicit size (i.e. all size aspects contain no reference to `Message`).
 
 *SPARK*
 
@@ -1081,6 +1081,7 @@ An aggregate is a collection of elements.
 //
 // * Scalar [§S-E-A-T-SC]
 // * Message [§S-E-A-T-M]
+// * Opaque [§S-E-A-T-O]
 //
 // Expressions [§S-E-A-E]:
 //

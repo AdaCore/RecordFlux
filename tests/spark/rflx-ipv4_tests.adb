@@ -76,7 +76,7 @@ package body RFLX.IPv4_Tests is
       Source          : IPv4.Address;
       Destination     : IPv4.Address;
    begin
-      IPv4.Packet.Initialize (Context, Buffer);
+      IPv4.Packet.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       IPv4.Packet.Verify_Message (Context);
 
       Valid := IPv4.Packet.Valid (Context, IPv4.Packet.F_Version);
@@ -206,7 +206,7 @@ package body RFLX.IPv4_Tests is
       Option_Number : IPv4.Option_Number;
       Option_Length : IPv4.Option_Length;
    begin
-      IPv4.Option.Initialize (Context, Buffer);
+      IPv4.Option.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       IPv4.Option.Verify_Message (Context);
 
       Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Copied);
@@ -265,7 +265,7 @@ package body RFLX.IPv4_Tests is
 --        Element_Context  : IPv4.Option.Context;
 --        I                : Integer := 0;
 --     begin
---        IPv4.Packet.Initialize (Context, Buffer);
+--        IPv4.Packet.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
 --        IPv4.Packet.Verify_Message (Context);
 --
 --        Valid := IPv4.Packet.Present (Context, IPv4.Packet.F_Options);

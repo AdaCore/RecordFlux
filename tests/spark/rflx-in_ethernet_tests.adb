@@ -44,7 +44,7 @@ package body RFLX.In_Ethernet_Tests is
       IPv4_Packet_Context    : IPv4.Packet.Context;
       Valid                  : Boolean;
    begin
-      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
+      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Ethernet.Frame.Verify_Message (Ethernet_Frame_Context);
       Valid := Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context);
       Assert (Valid, "Structural invalid Ethernet frame");
@@ -81,7 +81,7 @@ package body RFLX.In_Ethernet_Tests is
       Valid                  : Boolean;
    begin
       IPv4.Packet.Initialize (IPv4_Packet_Context, IPv4_Packet_Buffer);
-      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer);
+      Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Ethernet.Frame.Verify_Message (Ethernet_Frame_Context);
       Valid := Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context);
       Assert (Valid, "Structural invalid Ethernet frame");
@@ -125,57 +125,57 @@ package body RFLX.In_Ethernet_Tests is
       Ethernet.Frame.Set_Source (Ethernet_Frame_Context, 16#000000000000#);
       Ethernet.Frame.Set_Type_Length_TPID (Ethernet_Frame_Context, 16#0800#);
       Ethernet.Frame.Set_Type_Length (Ethernet_Frame_Context, 16#0800#);
+      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context, 46);
       pragma Assert (Ethernet.Frame.Field_Size (Ethernet_Frame_Context, Ethernet.Frame.F_Payload) = 368);
-      Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context);
 
       Assert (Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context), "Structural invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Ethernet_Frame_Context), "Valid frame");
+      Assert (In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context),
+              "Invalid refinement condition");
 
-      if In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context) then
-         In_Ethernet.Contains.Switch_To_Payload (Ethernet_Frame_Context, IPv4_Packet_Context);
+      In_Ethernet.Contains.Switch_To_Payload (Ethernet_Frame_Context, IPv4_Packet_Context);
 
-         IPv4.Packet.Set_Version (IPv4_Packet_Context, 4);
-         IPv4.Packet.Set_IHL (IPv4_Packet_Context, 5);
-         IPv4.Packet.Set_DSCP (IPv4_Packet_Context, 0);
-         IPv4.Packet.Set_ECN (IPv4_Packet_Context, 0);
-         IPv4.Packet.Set_Total_Length (IPv4_Packet_Context, 46);
-         IPv4.Packet.Set_Identification (IPv4_Packet_Context, 1);
-         IPv4.Packet.Set_Flag_R (IPv4_Packet_Context, False);
-         IPv4.Packet.Set_Flag_DF (IPv4_Packet_Context, False);
-         IPv4.Packet.Set_Flag_MF (IPv4_Packet_Context, False);
-         IPv4.Packet.Set_Fragment_Offset (IPv4_Packet_Context, 0);
-         IPv4.Packet.Set_TTL (IPv4_Packet_Context, 64);
-         IPv4.Packet.Set_Protocol (IPv4_Packet_Context, IPv4.P_UDP);
-         IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
-         IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
-         IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
-         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
-         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Options) = 0);
-         pragma Assert (IPv4.Packet.Field_Last (IPv4_Packet_Context, IPv4.Packet.F_Options) = 272);
-         IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
-         Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
-         pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
-         pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
-         Set_Payload (IPv4_Packet_Context);
+      IPv4.Packet.Set_Version (IPv4_Packet_Context, 4);
+      IPv4.Packet.Set_IHL (IPv4_Packet_Context, 5);
+      IPv4.Packet.Set_DSCP (IPv4_Packet_Context, 0);
+      IPv4.Packet.Set_ECN (IPv4_Packet_Context, 0);
+      IPv4.Packet.Set_Total_Length (IPv4_Packet_Context, 46);
+      IPv4.Packet.Set_Identification (IPv4_Packet_Context, 1);
+      IPv4.Packet.Set_Flag_R (IPv4_Packet_Context, False);
+      IPv4.Packet.Set_Flag_DF (IPv4_Packet_Context, False);
+      IPv4.Packet.Set_Flag_MF (IPv4_Packet_Context, False);
+      IPv4.Packet.Set_Fragment_Offset (IPv4_Packet_Context, 0);
+      IPv4.Packet.Set_TTL (IPv4_Packet_Context, 64);
+      IPv4.Packet.Set_Protocol (IPv4_Packet_Context, IPv4.P_UDP);
+      IPv4.Packet.Set_Header_Checksum (IPv4_Packet_Context, 16#7CBC#);
+      IPv4.Packet.Set_Source (IPv4_Packet_Context, 16#7f000001#);
+      IPv4.Packet.Set_Destination (IPv4_Packet_Context, 16#7f000001#);
+      pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Options) = 273);
+      pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Options) = 0);
+      pragma Assert (IPv4.Packet.Field_Last (IPv4_Packet_Context, IPv4.Packet.F_Options) = 272);
+      IPv4.Packet.Set_Options_Empty (IPv4_Packet_Context);
+      Data := (0, 53, 0, 53, 0, 26, 1, 78, others => 0);
+      pragma Assert (IPv4.Packet.Field_First (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 273);
+      pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
+      Set_Payload (IPv4_Packet_Context);
 
-         Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
-         Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
+      Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
+      Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
 
-         Message_Last := IPv4.Packet.Message_Last (IPv4_Packet_Context);
+      Message_Last := IPv4.Packet.Message_Last (IPv4_Packet_Context);
          --  WORKAROUND: Componolit/Workarounds#32
-         pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
-         pragma Warnings (Off, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
-         IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
-         pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
+      pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
+      pragma Warnings (Off, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
+      IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);
+      pragma Warnings (On, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""IPv4_Packet_Context""");
 
-         Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
-                 - RFLX_Types.To_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
-                 "Invalid buffer length");
-         Assert (Buffer.all (RFLX_Types.To_Index (Ethernet_Frame_Context.First)
-                 .. RFLX_Types.To_Index (Message_Last)), Expected.all,
-                 "Invalid binary representation");
-      end if;
+      Assert (RFLX_Builtin_Types.Index'Image (RFLX_Types.To_Index (Message_Last)
+              - RFLX_Types.To_Index (Ethernet_Frame_Context.First) + 1), Expected'Length'Img,
+              "Invalid buffer length");
+      Assert (Buffer.all (RFLX_Types.To_Index (Ethernet_Frame_Context.First)
+              .. RFLX_Types.To_Index (Message_Last)), Expected.all,
+              "Invalid binary representation");
 
       RFLX_Types.Free (Expected);
       RFLX_Types.Free (Buffer);

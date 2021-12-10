@@ -837,12 +837,12 @@ class Message(AbstractMessage):
         )
 
     @property
-    def has_bounded_size(self) -> bool:
+    def has_implicit_size(self) -> bool:
         """
-        Return true if the message has a bounded size.
+        Return true if the message has a implicit size.
 
-        All messages containing a reference to `Message` in a size aspect are considered unbounded,
-        even if the affected field size is restricted by a condition.
+        All messages containing a reference to `Message` in a size aspect are considered as
+        having a implicit size.
         """
         return all(
             v.identifier != ID("Message") for l in self.structure for v in l.size.variables()
@@ -851,14 +851,14 @@ class Message(AbstractMessage):
     @property
     def is_definite(self) -> bool:
         """
-        Return true if the message has a bounded size, no optional fields and no parameters.
+        Return true if the message has an explicit size, no optional fields and no parameters.
 
         Messages with a First or Last attribute in a size aspect are not yet supported and
         therefore considered as not definite.
         """
         return (
             len(self.paths(FINAL)) <= 1
-            and self.has_bounded_size
+            and self.has_implicit_size
             and all(
                 not l.size.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
                 for l in self.structure
@@ -923,7 +923,11 @@ class Message(AbstractMessage):
                     if link.target != FINAL and link.first == expr.UNDEFINED
                 ]
             )
-            link_expressions = [fact for link in path for fact in self.__link_expression(link)]
+            link_expressions = [
+                fact
+                for link in path
+                for fact in self.__link_expression(link, ignore_implicit_sizes=True)
+            ]
             proof = expr.Equal(expr.Size("Message"), message_size).check(
                 [
                     *aggregate_sizes,
@@ -982,9 +986,9 @@ class Message(AbstractMessage):
         if not self.structure:
             return expr.Number(0)
 
-        if not self.has_bounded_size:
+        if not self.has_implicit_size:
             fail(
-                "unable to calculate maximum size of unbounded message",
+                "unable to calculate maximum size of message with implicit size",
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
@@ -1001,9 +1005,9 @@ class Message(AbstractMessage):
         if not self.structure:
             return {}
 
-        if not self.has_bounded_size:
+        if not self.has_implicit_size:
             fail(
-                "unable to calculate maximum field sizes of unbounded message",
+                "unable to calculate maximum field sizes of message with implicit size",
                 Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
@@ -1749,7 +1753,7 @@ class Message(AbstractMessage):
             link.target.identifier.location,
         )
 
-    def __link_expression(self, link: Link) -> List[expr.Expr]:
+    def __link_expression(self, link: Link, ignore_implicit_sizes: bool = False) -> List[expr.Expr]:
         name = link.target.name
         target_first = self.__target_first(link)
         target_size = self.__target_size(link)
@@ -1761,7 +1765,10 @@ class Message(AbstractMessage):
                     expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
                     expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
                 ]
-                if target_size != expr.UNDEFINED
+                if not (
+                    ignore_implicit_sizes
+                    and (expr.Size("Message") in target_size or expr.Last("Message") in target_size)
+                )
                 else []
             ),
             expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),

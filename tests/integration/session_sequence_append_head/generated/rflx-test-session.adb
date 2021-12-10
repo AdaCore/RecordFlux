@@ -32,7 +32,7 @@ is
          TLV.Messages.Switch (Messages_Ctx, RFLX_Element_Messages_Ctx);
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
          TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
-         if TLV.Message.Field_Size (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) = 1 * RFLX_Types.Byte'Size then
+         if TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          else
             RFLX_Exception := True;
@@ -88,7 +88,7 @@ is
                      else
                         RFLX_Exception := True;
                      end if;
-                     TLV.Message.Initialize (Message_Ctx, RFLX_Target_Message_Buffer);
+                     TLV.Message.Initialize (Message_Ctx, RFLX_Target_Message_Buffer, TLV.Message.Size (RFLX_Head_Ctx));
                      TLV.Message.Verify_Message (Message_Ctx);
                   else
                      RFLX_Exception := True;

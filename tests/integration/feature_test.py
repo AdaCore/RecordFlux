@@ -10,6 +10,7 @@ from ruamel.yaml.main import YAML
 
 from rflx import ada
 from rflx.generator import Generator
+from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
@@ -141,7 +142,10 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     if config.prove is None:
         pytest.skip()
     model, integration = create_model(feature)
-    create_complement(config, feature, tmp_path)
-    assert_provable_code(
-        model, integration, tmp_path, main=MAIN, units=["main", "lib", *config.prove]
-    )
+    units = []
+    if model.sessions:
+        assert len(model.sessions) == 1
+        assert model.sessions[0].identifier == ID("Test::Session")
+        units = ["main", "lib"]
+        create_complement(config, feature, tmp_path)
+    assert_provable_code(model, integration, tmp_path, main=MAIN, units=[*units, *config.prove])
