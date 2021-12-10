@@ -107,7 +107,7 @@ private
       and then Tags_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then TLV.Message.Has_Buffer (Message_Ctx)
       and then Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 8095
       and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is

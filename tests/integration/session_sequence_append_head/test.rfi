@@ -1,0 +1,6 @@
+Session:
+  Session:
+    Buffer_Size:
+      Default: 4096
+      Global:
+        Message: 8096
