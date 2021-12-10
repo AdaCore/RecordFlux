@@ -42,7 +42,7 @@ from rflx.ada import (
 )
 from rflx.error import Location
 from rflx.integration import Integration
-from rflx.model import Session, declaration as decl, statement as stmt
+from rflx.model import Session, State, declaration as decl, statement as stmt
 
 from . import const
 
@@ -268,6 +268,18 @@ class AllocatorGenerator:
                 slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
         return slots
 
+    @staticmethod
+    def _scope(state: State, var_id: rid.ID) -> Optional[rid.ID]:
+        """
+        Return the scope of the variable var_id.
+
+        Return the ID of the state if var_id was defined in that state, otherwise
+        return None to indicate that var_id is a global variable of the session.
+        """
+        if var_id in state.declarations.keys():
+            return state.identifier.name
+        return None
+
     def _allocate_local_slots(self) -> List[SlotInfo]:
         """
         Allocate slots for state variables and state actions.
@@ -304,11 +316,17 @@ class AllocatorGenerator:
                     and isinstance(a.expression.sequence, (expr.Selected, expr.Variable))
                 ):
                     state_requirements.append(
-                        AllocationRequirement(a.location, self._integration.defaultsize)
+                        AllocationRequirement(
+                            a.location,
+                            self.get_size(a.identifier, self._scope(s, a.identifier)),
+                        )
                     )
                 if isinstance(a, stmt.Assignment) and isinstance(a.expression, expr.Head):
                     state_requirements.append(
-                        AllocationRequirement(a.location, self._integration.defaultsize)
+                        AllocationRequirement(
+                            a.location,
+                            self.get_size(a.identifier, self._scope(s, a.identifier)),
+                        )
                     )
 
             alloc_requirements_per_state.append(state_requirements)

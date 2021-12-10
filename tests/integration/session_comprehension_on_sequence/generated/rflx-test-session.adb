@@ -211,7 +211,7 @@ is
          return;
       end if;
       if
-         Universal.Option_Types.Size (Option_Types_Ctx) <= 32768
+         Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
       then
          if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) then
