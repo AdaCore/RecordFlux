@@ -88,12 +88,16 @@ is
          end case;
       end record;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
        and then Buffer'Length > 0
-       and then Buffer'Last < RFLX_Types.Index'Last,
+       and then Buffer'Last < RFLX_Types.Index'Last
+       and then (Written_Last = 0
+                 or (Written_Last >= RFLX_Types.To_First_Bit_Index (Buffer'First) - 1
+                     and Written_Last <= RFLX_Types.To_Last_Bit_Index (Buffer'Last)))
+       and then Written_Last mod RFLX_Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Buffer = null
@@ -103,9 +107,9 @@ is
        and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx),
      Depends =>
-       (Ctx => Buffer, Buffer => null);
+       (Ctx => (Buffer, Written_Last), Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -116,7 +120,11 @@ is
        and then First <= Last + 1
        and then Last < RFLX_Types.Bit_Index'Last
        and then First mod RFLX_Types.Byte'Size = 1
-       and then Last mod RFLX_Types.Byte'Size = 0,
+       and then Last mod RFLX_Types.Byte'Size = 0
+       and then (Written_Last = 0
+                 or (Written_Last >= First - 1
+                     and Written_Last <= Last))
+       and then Written_Last mod RFLX_Types.Byte'Size = 0,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -126,7 +134,7 @@ is
        and Ctx.Last = Last
        and Initialized (Ctx),
      Depends =>
-       (Ctx => (Buffer, First, Last), Buffer => null);
+       (Ctx => (Buffer, First, Last, Written_Last), Buffer => null);
 
    function Initialized (Ctx : Context) return Boolean with
      Ghost;
@@ -265,7 +273,13 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld),
+     Post =>
+       (case Fld is
+           when F_Data =>
+              Field_Size'Result mod RFLX_Types.Byte'Size = 0,
+           when others =>
+              True);
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
@@ -414,6 +428,10 @@ is
      Pre =>
        Has_Buffer (Ctx)
        and Present (Ctx, F_Data);
+
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
+     Pre =>
+       Valid_Next (Ctx, Fld);
 
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) with
      Pre =>
@@ -1072,18 +1090,20 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old;
 
-   procedure Initialize_Data (Ctx : in out Context) with
+   procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
+       and then Valid_Length (Ctx, F_Data, Length)
+       and then Available_Space (Ctx, F_Data) >= RFLX_Types.To_Bit_Length (Length)
        and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
+       and Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
        and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
@@ -1105,36 +1125,8 @@ is
        and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data))
+       and then Valid_Length (Ctx, F_Data, Data'Length)
        and then Field_Condition (Ctx, (Fld => F_Data)),
-     Post =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Data)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
-       and Invalid (Ctx, F_Receive_Timestamp)
-       and Invalid (Ctx, F_Transmit_Timestamp)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old;
-
-   generic
-      with procedure Process_Data (Data : out RFLX_Types.Bytes);
-      with function Valid_Length (Length : RFLX_Types.Length) return Boolean;
-   procedure Generic_Set_Data (Ctx : in out Context) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Valid_Length (RFLX_Types.Length (Field_Size (Ctx, F_Data) / RFLX_Types.Byte'Size)),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -1231,7 +1223,7 @@ private
 
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
-   function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Message_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
+   function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
      ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
@@ -1240,17 +1232,20 @@ private
                 and Last < RFLX_Types.Bit_Index'Last
                 and First mod RFLX_Types.Byte'Size = 1
                 and Last mod RFLX_Types.Byte'Size = 0)
-      and then First - 1 <= Message_Last
-      and then Message_Last <= Last
+      and then First - 1 <= Verified_Last
+      and then First - 1 <= Written_Last
+      and then Verified_Last <= Written_Last
+      and then Written_Last <= Last
       and then First mod RFLX_Types.Byte'Size = 1
       and then Last mod RFLX_Types.Byte'Size = 0
-      and then Message_Last mod RFLX_Types.Byte'Size = 0
+      and then Verified_Last mod RFLX_Types.Byte'Size = 0
+      and then Written_Last mod RFLX_Types.Byte'Size = 0
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
                     then
                        Cursors (F).First >= First
-                       and Cursors (F).Last <= Message_Last
+                       and Cursors (F).Last <= Verified_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
                        and Cursors (F).Value.Fld = F))
       and then ((if
@@ -1448,7 +1443,7 @@ private
                                                                                     and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
                                                                                               or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1554,7 +1549,7 @@ private
                                                                                     and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
                                                                                               or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1660,7 +1655,7 @@ private
                                                                                     and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
                                                                                               or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1773,7 +1768,7 @@ private
                                                                                     and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
                                                                                               or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
                                                                                  then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
+                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
@@ -1835,15 +1830,16 @@ private
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is
       record
-         Message_Last : RFLX_Types.Bit_Length := First - 1;
+         Verified_Last : RFLX_Types.Bit_Length := First - 1;
+         Written_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
       end record with
      Dynamic_Predicate =>
-       Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Message_Last, Context.Buffer, Context.Cursors);
+       Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Verified_Last, Context.Written_Last, Context.Buffer, Context.Cursors);
 
    function Initialized (Ctx : Context) return Boolean is
-     (Ctx.Message_Last = Ctx.First - 1
+     (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Tag)
       and then Field_First (Ctx, F_Tag) mod RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
@@ -1871,10 +1867,10 @@ private
      (Ctx.Buffer'Length);
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length is
-     (Ctx.Message_Last);
+     (Ctx.Verified_Last);
 
    function Message_Data (Ctx : Context) return RFLX_Types.Bytes is
-     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Message_Last)));
+     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
@@ -2094,7 +2090,7 @@ private
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
-                    RFLX_Types.Bit_Length (Ctx.Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last),
+                    RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last),
                  when F_Originate_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
@@ -2717,6 +2713,87 @@ private
 
    function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
      (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value.Transmit_Timestamp_Value));
+
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial =>
+             (case Fld is
+                 when F_Tag =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Tag =>
+             (case Fld is
+                 when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             (case Fld is
+                 when F_Checksum =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Checksum =>
+             (case Fld is
+                 when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Gateway_Internet_Address =>
+             (case Fld is
+                 when F_Data =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Identifier =>
+             (case Fld is
+                 when F_Sequence_Number =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Pointer =>
+             (case Fld is
+                 when F_Unused_24 =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Unused_32 =>
+             (case Fld is
+                 when F_Data =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Sequence_Number =>
+             (case Fld is
+                 when F_Data =>
+                    Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
+                 when F_Originate_Timestamp =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Unused_24 =>
+             (case Fld is
+                 when F_Data =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Originate_Timestamp =>
+             (case Fld is
+                 when F_Receive_Timestamp =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Data =>
+             raise Program_Error,
+          when F_Receive_Timestamp =>
+             (case Fld is
+                 when F_Transmit_Timestamp =>
+                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
+                 when others =>
+                    raise Program_Error),
+          when F_Transmit_Timestamp | F_Final =>
+             raise Program_Error));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

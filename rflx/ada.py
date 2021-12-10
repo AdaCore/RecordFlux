@@ -464,6 +464,22 @@ class Max(BinAttributeExpr):
     pass
 
 
+class NamedAttributeExpr(Attribute):
+    def __init__(self, prefix: Union[StrID, Expr], *associations: Tuple[StrID, Expr]) -> None:
+        self.associations = [(ID(n) if isinstance(n, str) else n, e) for n, e in associations]
+        super().__init__(prefix)
+
+    @property
+    def _representation(self) -> str:
+        assert len(self.associations) > 0
+        associations = ", ".join(f"{name} => {element}" for name, element in self.associations)
+        return f"{self.prefix}'{self.__class__.__name__} ({associations})"
+
+
+class Update(NamedAttributeExpr):
+    pass
+
+
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:

@@ -2608,12 +2608,12 @@ def test_has_fixed_size() -> None:
     assert not SEQUENCE_MESSAGE.has_fixed_size
 
 
-def test_has_bounded_size() -> None:
-    assert NULL_MESSAGE.has_bounded_size
-    assert FIXED_SIZE_MESSAGE.has_bounded_size
-    assert TLV_MESSAGE.has_bounded_size
-    assert not ETHERNET_FRAME.has_bounded_size
-    assert SEQUENCE_MESSAGE.has_bounded_size
+def test_has_implicit_size() -> None:
+    assert NULL_MESSAGE.has_implicit_size
+    assert FIXED_SIZE_MESSAGE.has_implicit_size
+    assert TLV_MESSAGE.has_implicit_size
+    assert not ETHERNET_FRAME.has_implicit_size
+    assert SEQUENCE_MESSAGE.has_implicit_size
 
 
 def test_is_definite() -> None:
@@ -2766,7 +2766,7 @@ def test_max_size() -> None:
 def test_max_size_error() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r"^model: error: unable to calculate maximum size of unbounded message$",
+        match=r"^model: error: unable to calculate maximum size of message with implicit size$",
     ):
         ETHERNET_FRAME.max_size()
 
@@ -2789,7 +2789,9 @@ def test_max_field_sizes() -> None:
 def test_max_field_sizes_error() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r"^model: error: unable to calculate maximum field sizes of unbounded message$",
+        match=(
+            r"^model: error: unable to calculate maximum field sizes of message with implicit size$"
+        ),
     ):
         ETHERNET_FRAME.max_field_sizes()
 

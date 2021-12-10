@@ -12,7 +12,7 @@ is
    begin
       RFLX.Universal.Message.Take_Buffer (Universal_Message_PDU_Context, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.Universal.Option.Initialize (Universal_Option_SDU_Context, Buffer, First, Last);
+      RFLX.Universal.Option.Initialize (Universal_Option_SDU_Context, Buffer, First, Last, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Data;
 
@@ -25,7 +25,7 @@ is
       RFLX.Universal.Option.Take_Buffer (Universal_Option_SDU_Context, Buffer);
       pragma Warnings (On, """Universal_Option_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.Universal.Message.Get_Data (Universal_Message_PDU_Context, Buffer.all);
-      RFLX.Universal.Option.Initialize (Universal_Option_SDU_Context, Buffer, First, First + Size - 1);
+      RFLX.Universal.Option.Initialize (Universal_Option_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Data;
 
 end RFLX.Universal.Contains;

@@ -312,7 +312,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return unit
 
-    # pylint: disable=too-many-statements
+    # pylint: disable = too-many-statements, too-many-branches
     def __create_message(self, message: Message) -> None:
         if not message.fields:
             return
@@ -352,6 +352,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         composite_fields = []
         sequence_fields = {}
         opaque_fields = []
+        fields_with_explicit_size = []
+        fields_with_implicit_size = []
 
         for f, t in message.field_types.items():
             if isinstance(t, Scalar):
@@ -362,6 +364,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     sequence_fields[f] = t
                 if isinstance(t, Opaque):
                     opaque_fields.append(f)
+                if any(
+                    bool(
+                        l.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")])
+                    )
+                    for l in message.incoming(f)
+                ):
+                    fields_with_implicit_size.append(f)
+                else:
+                    fields_with_explicit_size.append(f)
 
         unit += self.__create_use_type_clause(composite_fields)
         unit += self.__create_field_type(message)
@@ -389,7 +400,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_message_data_function()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
-        unit += self.__create_field_size_function(message)
+        unit += self.__create_field_size_function(message, scalar_fields, composite_fields)
         unit += self.__create_field_first_function(message)
         unit += self.__create_field_last_function()
         unit += self.__create_predecessor_function()
@@ -420,12 +431,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__parser.create_generic_opaque_getter_procedures(opaque_fields)
 
         unit += self.__serializer.create_internal_functions(message, scalar_fields)
+        unit += self.__serializer.create_valid_length_function(message)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
         unit += self.__serializer.create_sequence_setter_procedures(message, sequence_fields)
-        unit += self.__serializer.create_composite_initialize_procedures(message)
+        unit += self.__serializer.create_composite_initialize_procedures(
+            message, fields_with_explicit_size, fields_with_implicit_size
+        )
         unit += self.__serializer.create_opaque_setter_procedures(message)
-        unit += self.__serializer.create_generic_opaque_setter_procedures(message)
+        unit += self.__serializer.create_generic_opaque_setter_procedures(
+            message, fields_with_implicit_size
+        )
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_complete_functions(message, sequence_fields)
@@ -597,7 +613,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
     @staticmethod
     def __create_context_type(message: Message) -> UnitPart:
         """
-        Create a context type.
+        Create the context type for a message.
 
         Components of a context type:
 
@@ -609,9 +625,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 The positions of the first and last usable bit of `Buffer`. These are hard bounds
                 which must not be changed during the lifetime of the context.
 
-            Message_Last:
-                The position of the last bit of the message. The value is increased after each
-                parsed or set field.
+            Verified_Last:
+                The position of the last bit of the last verified field. The value is initialized
+                to `First - 1` and increased after each successfully verified or set field.
+
+            Written_Last:
+                The position of the last bit of written data. The value is initialized
+                to `First - 1`, increased or kept when writing data into the buffer and set to
+                `Verified_Last` when setting a field.
 
             Buffer:
                 An access type refering to memory containing the binary message.
@@ -650,7 +671,12 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     "Context",
                     [
                         Component(
-                            "Message_Last",
+                            "Verified_Last",
+                            const.TYPES_BIT_LENGTH,
+                            Sub(Variable("First"), Number(1)),
+                        ),
+                        Component(
+                            "Written_Last",
                             const.TYPES_BIT_LENGTH,
                             Sub(Variable("First"), Number(1)),
                         ),
@@ -683,7 +709,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     Variable("Context.Buffer_Last"),
                                     Variable("Context.First"),
                                     Variable("Context.Last"),
-                                    Variable("Context.Message_Last"),
+                                    Variable("Context.Verified_Last"),
+                                    Variable("Context.Written_Last"),
                                     Variable("Context.Buffer"),
                                     Variable("Context.Cursors"),
                                     *[
@@ -788,6 +815,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 OutParameter(["Ctx"], "Context"),
                 InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
                 *message_parameters(message),
+                Parameter(["Written_Last"], const.TYPES_BIT_LENGTH, Number(0)),
             ],
         )
 
@@ -802,6 +830,31 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 NotEqual(Variable("Buffer"), NULL),
                                 Greater(Length("Buffer"), Number(0)),
                                 Less(Last("Buffer"), Last(const.TYPES_INDEX)),
+                                Or(
+                                    Equal(Variable("Written_Last"), Number(0)),
+                                    And(
+                                        GreaterEqual(
+                                            Variable("Written_Last"),
+                                            Sub(
+                                                Call(
+                                                    const.TYPES_TO_FIRST_BIT_INDEX,
+                                                    [First("Buffer")],
+                                                ),
+                                                Number(1),
+                                            ),
+                                        ),
+                                        LessEqual(
+                                            Variable("Written_Last"),
+                                            Call(
+                                                const.TYPES_TO_LAST_BIT_INDEX,
+                                                [Last("Buffer")],
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                Equal(
+                                    Mod(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)
+                                ),
                             )
                         ),
                         Postcondition(
@@ -813,14 +866,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Equal(
                                     Variable("Ctx.First"),
                                     Call(
-                                        const.TYPES * "To_First_Bit_Index",
+                                        const.TYPES_TO_FIRST_BIT_INDEX,
                                         [Variable("Ctx.Buffer_First")],
                                     ),
                                 ),
                                 Equal(
                                     Variable("Ctx.Last"),
                                     Call(
-                                        const.TYPES * "To_Last_Bit_Index",
+                                        const.TYPES_TO_LAST_BIT_INDEX,
                                         [Variable("Ctx.Buffer_Last")],
                                     ),
                                 ),
@@ -829,7 +882,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         ),
                         Depends(
                             {
-                                "Ctx": ["Buffer", *[p.name for p in message.parameter_types]],
+                                "Ctx": [
+                                    "Buffer",
+                                    *[p.name for p in message.parameter_types],
+                                    "Written_Last",
+                                ],
                                 "Buffer": [],
                             }
                         ),
@@ -849,6 +906,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Call(const.TYPES_TO_FIRST_BIT_INDEX, [First("Buffer")]),
                                 Call(const.TYPES_TO_LAST_BIT_INDEX, [Last("Buffer")]),
                                 *[Variable(ID(p.identifier)) for p in message.parameter_types],
+                                Variable("Written_Last"),
                             ],
                         )
                     ],
@@ -866,6 +924,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 Parameter(["First"], const.TYPES_BIT_INDEX),
                 Parameter(["Last"], const.TYPES_BIT_LENGTH),
                 *message_parameters(message),
+                Parameter(["Written_Last"], const.TYPES_BIT_LENGTH, Number(0)),
             ],
         )
 
@@ -892,6 +951,22 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
                                 Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
                                 Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
+                                Or(
+                                    Equal(Variable("Written_Last"), Number(0)),
+                                    And(
+                                        GreaterEqual(
+                                            Variable("Written_Last"),
+                                            Sub(Variable("First"), Number(1)),
+                                        ),
+                                        LessEqual(
+                                            Variable("Written_Last"),
+                                            Variable("Last"),
+                                        ),
+                                    ),
+                                ),
+                                Equal(
+                                    Mod(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)
+                                ),
                             )
                         ),
                         Postcondition(
@@ -912,6 +987,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     "First",
                                     "Last",
                                     *[p.name for p in message.parameter_types],
+                                    "Written_Last",
                                 ],
                                 "Buffer": [],
                             }
@@ -940,6 +1016,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Variable("Last"),
                                 *[Variable(ID(p.identifier)) for p in message.parameter_types],
                                 Sub(Variable("First"), Number(1)),
+                                If(
+                                    [
+                                        (
+                                            Equal(Variable("Written_Last"), Number(0)),
+                                            Sub(Variable("First"), Number(1)),
+                                        )
+                                    ],
+                                    Variable("Written_Last"),
+                                ),
                                 Variable("Buffer"),
                                 context_cursors_initialization(message),
                             ),
@@ -964,7 +1049,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     specification,
                     AndThen(
                         Equal(
-                            Variable("Ctx.Message_Last"),
+                            Variable("Ctx.Verified_Last"),
                             Sub(Variable("Ctx.First"), Number(1)),
                         ),
                         Call(
@@ -1150,6 +1235,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Variable("Last"),
                                 *[Variable(ID(p.identifier)) for p in message.parameter_types],
                                 Sub(Variable("First"), Number(1)),
+                                Sub(Variable("First"), Number(1)),
                                 Variable("Ctx.Buffer"),
                                 context_cursors_initialization(message),
                             ),
@@ -1241,7 +1327,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                     ),
                                                     Call(
                                                         const.TYPES_TO_INDEX,
-                                                        [Variable("Ctx.Message_Last")],
+                                                        [Variable("Ctx.Verified_Last")],
                                                     ),
                                                 ),
                                             ),
@@ -1254,9 +1340,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     "Buffer",
                                     Indexed(
                                         Variable("Ctx.Buffer.all"),
-                                        ValueRange(
-                                            Last(const.TYPES_INDEX), First(const.TYPES_INDEX)
-                                        ),
+                                        ValueRange(Number(1), Number(0)),
                                     ),
                                 )
                             ],
@@ -1295,7 +1379,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         Variable("Ctx.Buffer.all"),
                         ValueRange(
                             Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                            Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                            Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
                         ),
                     ),
                 )
@@ -1473,6 +1557,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     [ObjectDeclaration(["Length"], const.TYPES_LENGTH)],
                     [
                         CallStatement(
+                            "Reset",
+                            [
+                                Variable("Ctx"),
+                                Call(
+                                    const.TYPES_TO_FIRST_BIT_INDEX, [Variable("Ctx.Buffer_First")]
+                                ),
+                                Call(const.TYPES_TO_LAST_BIT_INDEX, [Variable("Ctx.Buffer_Last")]),
+                                *[
+                                    Variable(ID("Ctx" * p.identifier))
+                                    for p in message.parameter_types
+                                ],
+                            ],
+                        ),
+                        CallStatement(
                             "Write",
                             [
                                 Slice(
@@ -1508,36 +1606,26 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 ),
                             ],
                         ),
-                        CallStatement(
-                            "Reset",
-                            [
-                                Variable("Ctx"),
+                        Assignment(
+                            "Ctx.Written_Last",
+                            Max(
+                                const.TYPES_BIT_INDEX,
+                                Variable("Ctx.Written_Last"),
                                 Call(
-                                    const.TYPES_TO_FIRST_BIT_INDEX, [Variable("Ctx.Buffer_First")]
-                                ),
-                                Max(
-                                    const.TYPES_BIT_INDEX,
-                                    Variable("Ctx.Last"),
-                                    Call(
-                                        const.TYPES_TO_LAST_BIT_INDEX,
-                                        [
-                                            Add(
-                                                Call(
-                                                    const.TYPES_LENGTH,
-                                                    [Variable("Ctx.Buffer_First")],
-                                                ),
-                                                Variable("Offset"),
-                                                Variable("Length"),
-                                                -Number(1),
+                                    const.TYPES_TO_LAST_BIT_INDEX,
+                                    [
+                                        Add(
+                                            Call(
+                                                const.TYPES_LENGTH,
+                                                [Variable("Ctx.Buffer_First")],
                                             ),
-                                        ],
-                                    ),
+                                            Variable("Offset"),
+                                            Variable("Length"),
+                                            -Number(1),
+                                        ),
+                                    ],
                                 ),
-                                *[
-                                    Variable(ID("Ctx" * p.identifier))
-                                    for p in message.parameter_types
-                                ],
-                            ],
+                            ),
                         ),
                     ],
                 )
@@ -1602,7 +1690,12 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             ],
         )
 
-    def __create_field_size_function(self, message: Message) -> UnitPart:
+    def __create_field_size_function(
+        self,
+        message: Message,
+        scalar_fields: ty.Mapping[Field, Type],
+        composite_fields: ty.Sequence[Field],
+    ) -> UnitPart:
         def size(field: Field, message: Message) -> Expr:
             def substituted(expression: expr.Expr) -> Expr:
                 return (
@@ -1663,7 +1756,38 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             And(
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
-                        )
+                        ),
+                        *(
+                            [
+                                Postcondition(
+                                    Case(
+                                        Variable("Fld"),
+                                        [
+                                            *[
+                                                (
+                                                    Variable(f.affixed_name),
+                                                    Equal(
+                                                        Mod(
+                                                            Result("Field_Size"),
+                                                            Size(const.TYPES_BYTE),
+                                                        ),
+                                                        Number(0),
+                                                    ),
+                                                )
+                                                for f in composite_fields
+                                            ],
+                                            *(
+                                                [(Variable("others"), TRUE)]
+                                                if scalar_fields
+                                                else []
+                                            ),
+                                        ],
+                                    )
+                                )
+                            ]
+                            if composite_fields
+                            else []
+                        ),
                     ],
                 )
             ],
@@ -2116,6 +2240,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 )
                             ]
                         ),
+                        PragmaStatement("Assert", [field_location_invariant]),
                         Assignment(
                             Indexed(
                                 Variable("Ctx.Cursors"),
@@ -2297,14 +2422,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         [
                             (
                                 Equal(
-                                    Variable("Ctx.Message_Last"),
+                                    Variable("Ctx.Verified_Last"),
                                     Sub(Variable("Ctx.First"), Number(1)),
                                 ),
                                 Number(0),
                             )
                         ],
                         Add(
-                            Variable("Ctx.Message_Last"),
+                            Variable("Ctx.Verified_Last"),
                             -Variable("Ctx.First"),
                             Number(1),
                         ),
@@ -2328,7 +2453,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         [
                             (
                                 Equal(
-                                    Variable("Ctx.Message_Last"),
+                                    Variable("Ctx.Verified_Last"),
                                     Sub(Variable("Ctx.First"), Number(1)),
                                 ),
                                 Number(0),
@@ -2337,7 +2462,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         Indexed(
                             Variable(const.TYPES_LENGTH),
                             Add(
-                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
                                 -Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
                                 Number(1),
                             ),
@@ -2367,7 +2492,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     ],
                 ),
             ],
-            private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Message_Last"))],
+            private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Verified_Last"))],
         )
 
     @staticmethod
@@ -2402,7 +2527,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     Slice(
                         Variable("Ctx.Buffer.all"),
                         Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Message_Last")]),
+                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
                     ),
                 )
             ],
@@ -2459,9 +2584,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             Variable("Ctx.First"),
                             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         ),
-                        GreaterEqual(
-                            Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
-                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                        LessEqual(
+                            Add(
+                                Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                                -Number(1),
+                            ),
+                            Variable("Ctx.Written_Last"),
                         ),
                     ),
                     [
@@ -2654,16 +2783,23 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                 Variable(f.affixed_name),
                                             ],
                                         ),
-                                    ]
-                                    + [
                                         Call(
-                                            "Context_Cursor",
+                                            "Field_Last",
                                             [
                                                 Variable("Ctx"),
-                                                Variable(p.affixed_name),
+                                                Variable(f.affixed_name),
                                             ],
-                                        )
-                                        for p in message.predecessors(f)
+                                        ),
+                                        *[
+                                            Call(
+                                                "Context_Cursor",
+                                                [
+                                                    Variable("Ctx"),
+                                                    Variable(p.affixed_name),
+                                                ],
+                                            )
+                                            for p in message.predecessors(f)
+                                        ],
                                     ]
                                 ],
                             )
@@ -3007,7 +3143,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 Parameter(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
                 Parameter(["First"], const.TYPES_BIT_INDEX),
                 Parameter(["Last"], const.TYPES_BIT_LENGTH),
-                Parameter(["Message_Last"], const.TYPES_BIT_LENGTH),
+                Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+                Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
                 Parameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Cursors"], "Field_Cursors"),
                 *message_parameters(message),
@@ -3848,6 +3985,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Variable("Buffer"),
                                 Variable("First"),
                                 Variable("Last"),
+                                Variable("Last"),
                             ],
                         ),
                         PragmaStatement(
@@ -4011,6 +4149,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Variable(sdu_context),
                                 Variable("Buffer"),
                                 Variable("First"),
+                                Add(
+                                    Variable("First"),
+                                    Variable("Size"),
+                                    -Number(1),
+                                ),
                                 Add(
                                     Variable("First"),
                                     Variable("Size"),

@@ -1,0 +1,13 @@
+input:
+  Channel:
+    - 6 0 1 2
+output:
+  - Channel
+sequence: |
+  Write Channel: 6 0 1 2
+  State: Start
+  State: Process
+  Read Channel: 6 0 1 2
+  State: Reply
+# ISSUE: Componolit/RecordFlux#691
+# prove:

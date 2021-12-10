@@ -44,7 +44,7 @@ is
    begin
       Ctx.Buffer := null;
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Element_Initialize (Element_Ctx, Buffer, Ctx.Sequence_Last + 1, Ctx.Last);
+      Element_Initialize (Element_Ctx, Buffer, Ctx.Sequence_Last + 1, Ctx.Last, Ctx.Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch;
 

@@ -54,7 +54,7 @@ is
                   Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Opaque'Size + 24) - 1);
                   Universal.Message.Set_Message_Type (Message_Ctx, MT);
                   Universal.Message.Set_Length (Message_Ctx, Length);
-                  if Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Data) = Opaque'Size then
+                  if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Opaque'Size)) then
                      Universal.Message.Set_Data (Message_Ctx, Opaque);
                   else
                      RFLX_Exception := True;

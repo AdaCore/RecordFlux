@@ -47,10 +47,10 @@ is
          if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) then
             Test.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + RFLX_Types.Bit_Length (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) - 1, Length => M_R_Ctx.Length, Extended => True);
             if Test.Message.Valid_Next (M_R_Ctx, Test.Message.F_Data) then
-               if Test.Message.Field_Size (M_S_Ctx, Test.Message.F_Data) = Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data) then
+               if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data))) then
                   if Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data) then
                      Test.Message.Set_Data (M_S_Ctx, Test.Message.Get_Data (M_R_Ctx));
-                     if Test.Message.Field_Size (M_S_Ctx, Test.Message.F_Extension) = 2 * RFLX_Types.Byte'Size then
+                     if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                         Test.Message.Set_Extension (M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
                      else
                         P_Next_State := S_Error;

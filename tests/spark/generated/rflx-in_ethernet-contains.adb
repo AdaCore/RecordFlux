@@ -12,7 +12,7 @@ is
    begin
       RFLX.Ethernet.Frame.Take_Buffer (Ethernet_Frame_PDU_Context, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.IPv4.Packet.Initialize (IPv4_Packet_SDU_Context, Buffer, First, Last);
+      RFLX.IPv4.Packet.Initialize (IPv4_Packet_SDU_Context, Buffer, First, Last, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Payload;
 
@@ -25,7 +25,7 @@ is
       RFLX.IPv4.Packet.Take_Buffer (IPv4_Packet_SDU_Context, Buffer);
       pragma Warnings (On, """IPv4_Packet_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.Ethernet.Frame.Get_Payload (Ethernet_Frame_PDU_Context, Buffer.all);
-      RFLX.IPv4.Packet.Initialize (IPv4_Packet_SDU_Context, Buffer, First, First + Size - 1);
+      RFLX.IPv4.Packet.Initialize (IPv4_Packet_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 
 end RFLX.In_Ethernet.Contains;

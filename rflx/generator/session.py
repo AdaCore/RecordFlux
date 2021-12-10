@@ -1979,7 +1979,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         required_space = (
             size.substituted(
                 lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
-                if isinstance(x, expr.Selected)
+                if isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE
                 else x
             )
             .substituted(self._substitution())
@@ -2218,6 +2218,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                             [
                                                                 Variable(target_context),
                                                                 Variable(target_buffer),
+                                                                Call(
+                                                                    target_type * "Size",
+                                                                    [Variable(element_context)],
+                                                                ),
                                                             ],
                                                         ),
                                                         CallStatement(
@@ -3159,15 +3163,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     size = Size(v.substituted(self._substitution()).ada_expr())
                 statements = self._ensure(
                     statements,
-                    Equal(
-                        Call(
-                            target_type * "Field_Size",
-                            [
-                                Variable(target_context),
-                                Variable(target_type * f"F_{f}"),
-                            ],
-                        ),
-                        size,
+                    Call(
+                        target_type * "Valid_Length",
+                        [
+                            Variable(target_context),
+                            Variable(target_type * f"F_{f}"),
+                            Call(const.TYPES_TO_LENGTH, [size]),
+                        ],
                     ),
                     f'Error: invalid message field size for "{v}"',
                     exception_handler,
@@ -3644,6 +3646,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         first: Expr = None,
         last: Expr = None,
         parameters: Mapping[ID, Expr] = None,
+        written_last: Expr = None,
     ) -> CallStatement:
         return CallStatement(
             type_ * "Initialize",
@@ -3659,6 +3662,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     if first or last
                     else []
                 ),
+                *([written_last] if written_last else []),
             ],
             parameters,
         )

@@ -25,7 +25,7 @@ package body RFLX.Fixed_Size_Tests is
       Structure : Fixed_Size.Simple_Message.Structure;
       package Message renames Fixed_Size.Simple_Message;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Structural_Valid_Message (Context), "Structural invalid message");

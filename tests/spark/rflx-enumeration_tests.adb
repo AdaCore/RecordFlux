@@ -25,7 +25,7 @@ package body RFLX.Enumeration_Tests is
       Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
-      Enumeration.Message.Initialize (Context, Buffer);
+      Enumeration.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
 
       Enumeration.Message.Verify_Message (Context);
 
@@ -55,7 +55,7 @@ package body RFLX.Enumeration_Tests is
       Context : Enumeration.Message.Context;
       Prio    : Enumeration.Priority;
    begin
-      Enumeration.Message.Initialize (Context, Buffer);
+      Enumeration.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
 
       Enumeration.Message.Verify_Message (Context);
 

@@ -223,7 +223,7 @@ def test_message_fixed_size_sequence(tmp_path: Path) -> None:
     )
 
 
-def test_unbounded_message(tmp_path: Path) -> None:
+def test_message_with_implicit_size(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         """
            package Test is

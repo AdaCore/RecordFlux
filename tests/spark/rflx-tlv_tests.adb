@@ -50,7 +50,7 @@ package body RFLX.TLV_Tests is
       Length  : TLV.Length;
       Value   : RFLX_Builtin_Types.Bytes := (0, 0, 0, 0);
    begin
-      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
@@ -94,7 +94,7 @@ package body RFLX.TLV_Tests is
       Tag     : TLV.Tag;
       Length  : TLV.Length;
    begin
-      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
@@ -125,7 +125,7 @@ package body RFLX.TLV_Tests is
       Context : TLV.Message.Context;
       Tag     : TLV.Tag;
    begin
-      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Tag), "Invalid Tag");
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
@@ -148,7 +148,7 @@ package body RFLX.TLV_Tests is
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context : TLV.Message.Context;
    begin
-      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
       Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
@@ -280,7 +280,7 @@ package body RFLX.TLV_Tests is
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
       Context : TLV.Message.Context;
    begin
-      TLV.Message.Initialize (Context, Buffer);
+      TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after initialization");

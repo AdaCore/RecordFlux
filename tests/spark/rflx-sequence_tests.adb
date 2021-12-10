@@ -43,12 +43,12 @@ package body RFLX.Sequence_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 3, 4, 0, 1, 1, 2);
       Context : Sequence.Message.Context;
       Length  : Sequence.Length;
       package Message renames Sequence.Message;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
@@ -117,7 +117,7 @@ package body RFLX.Sequence_Tests is
 
          Element := Sequence.Range_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.Range_Integer'Image (1), "Invalid value of element 1");
+         Assert (Element'Image, Sequence.Range_Integer'Image (3), "Invalid value of element 1");
          Assert (Sequence.Range_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
          Sequence.Range_Vector.Next (Sequence_Context);
@@ -126,7 +126,7 @@ package body RFLX.Sequence_Tests is
 
          Element := Sequence.Range_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.Range_Integer'Image (2), "Invalid value of element 2");
+         Assert (Element'Image, Sequence.Range_Integer'Image (4), "Invalid value of element 2");
          Assert (not Sequence.Range_Vector.Has_Element (Sequence_Context),
                  "Invalid acceptance of further element");
          Assert (not Message.Valid (Context, Message.F_Range_Vector),
@@ -161,7 +161,7 @@ package body RFLX.Sequence_Tests is
 
          Element := Sequence.Enumeration_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.One'Image, "Invalid value of element 1");
+         Assert (Element'Image, Sequence.Zero'Image, "Invalid value of element 1");
          Assert (Sequence.Enumeration_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
          Sequence.Enumeration_Vector.Next (Sequence_Context);
@@ -170,7 +170,7 @@ package body RFLX.Sequence_Tests is
 
          Element := Sequence.Enumeration_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.Two'Image, "Invalid value of element 2");
+         Assert (Element'Image, Sequence.One'Image, "Invalid value of element 2");
          Assert (not Sequence.Enumeration_Vector.Has_Element (Sequence_Context),
                  "Invalid acceptance of further element");
          Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
@@ -250,7 +250,7 @@ package body RFLX.Sequence_Tests is
       Length  : Sequence.Length;
       package Message renames Sequence.Message;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
@@ -753,7 +753,7 @@ package body RFLX.Sequence_Tests is
    is
       pragma Unreferenced (T);
       Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(0, 1, 2, 1, 2, 1, 2);
+        new RFLX_Builtin_Types.Bytes'(0, 1, 2, 0, 1, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
       Modular_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
@@ -768,9 +768,9 @@ package body RFLX.Sequence_Tests is
       package Message renames Sequence.Message;
    begin
       Sequence.Modular_Vector.Initialize (Modular_Vector_Context, Modular_Vector_Buffer);
+
       Assert (Sequence.Modular_Vector.Has_Element (Modular_Vector_Context),
               "No acceptance of further element in Modular_Vector");
-
       Assert (not Message.Valid (Context, Message.F_Modular_Vector),
               "Valid Modular_Vector before context update");
 
@@ -784,8 +784,8 @@ package body RFLX.Sequence_Tests is
               "Valid Range_Vector before context update");
 
       Sequence.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
+      Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.Zero);
       Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.One);
-      Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.Two);
 
       Assert (not Sequence.Enumeration_Vector.Has_Element (Enumeration_Vector_Context),
               "Invalid acceptance of further element in Enumeration_Vector");
@@ -866,7 +866,7 @@ package body RFLX.Sequence_Tests is
       package Message renames Sequence.Messages_Message;
       package Inner_Message renames Sequence.Inner_Message;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Length), "Invalid Length");
@@ -963,7 +963,7 @@ package body RFLX.Sequence_Tests is
       package Message renames Sequence.Messages_Message;
       package Inner_Message renames Sequence.Inner_Message;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Length),  "Invalid Length");
@@ -1245,7 +1245,7 @@ package body RFLX.Sequence_Tests is
       I                : Natural := 1;
       package Message renames Sequence.Sequence_Size_Defined_By_Message_Size;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Header), "Invalid Header");
@@ -1314,7 +1314,7 @@ package body RFLX.Sequence_Tests is
       Header           : Sequence.Enumeration;
       package Message renames Sequence.Sequence_Size_Defined_By_Message_Size;
    begin
-      Message.Initialize (Context, Buffer);
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
       Assert (Message.Valid (Context, Message.F_Header), "Invalid Header");
@@ -1346,8 +1346,8 @@ package body RFLX.Sequence_Tests is
       package Message renames Sequence.Sequence_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
-
       Message.Set_Header (Context, Sequence.One);
+      Message.Initialize_Vector (Context, 4);
       Message.Switch_To_Vector (Context, Sequence_Context);
       Sequence.Modular_Vector.Append_Element (Sequence_Context, 1);
       Sequence.Modular_Vector.Append_Element (Sequence_Context, 2);

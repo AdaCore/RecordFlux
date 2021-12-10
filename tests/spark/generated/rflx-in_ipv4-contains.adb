@@ -12,7 +12,7 @@ is
    begin
       RFLX.IPv4.Packet.Take_Buffer (IPv4_Packet_PDU_Context, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, Last);
+      RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, Last, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Payload;
 
@@ -25,7 +25,7 @@ is
       RFLX.UDP.Datagram.Take_Buffer (UDP_Datagram_SDU_Context, Buffer);
       pragma Warnings (On, """UDP_Datagram_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all);
-      RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, First + Size - 1);
+      RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : out RFLX.ICMP.Message.Context) is
@@ -35,7 +35,7 @@ is
    begin
       RFLX.IPv4.Packet.Take_Buffer (IPv4_Packet_PDU_Context, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.ICMP.Message.Initialize (ICMP_Message_SDU_Context, Buffer, First, Last);
+      RFLX.ICMP.Message.Initialize (ICMP_Message_SDU_Context, Buffer, First, Last, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Payload;
 
@@ -48,7 +48,7 @@ is
       RFLX.ICMP.Message.Take_Buffer (ICMP_Message_SDU_Context, Buffer);
       pragma Warnings (On, """ICMP_Message_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all);
-      RFLX.ICMP.Message.Initialize (ICMP_Message_SDU_Context, Buffer, First, First + Size - 1);
+      RFLX.ICMP.Message.Initialize (ICMP_Message_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 
 end RFLX.In_IPv4.Contains;

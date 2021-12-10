@@ -169,20 +169,9 @@ is
                        Last :    out RFLX.RFLX_Builtin_Types.Index)
    is
       use type RFLX.ICMP.Sequence_Number;
-      use type RFLX.RFLX_Builtin_Types.Bit_Length;
       IP_Context   : RFLX.IPv4.Packet.Context;
       ICMP_Context : RFLX.ICMP.Message.Context;
       Data         : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 56) := (others => 65);
-      function Valid_Length (L : RFLX.RFLX_Builtin_Types.Length) return Boolean is
-         (L = Data'Length);
-      procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes) with
-         Pre => Valid_Length (Buffer'Length);
-      procedure Process_Data (Buffer : out RFLX.RFLX_Builtin_Types.Bytes)
-      is
-      begin
-         Buffer := Data;
-      end Process_Data;
-      procedure Set_Data is new RFLX.ICMP.Message.Generic_Set_Data (Process_Data, Valid_Length);
    begin
       --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
@@ -215,7 +204,7 @@ is
                                              0, 0, Sequence, Data));
          RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
          RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
-         Set_Data (ICMP_Context);
+         RFLX.ICMP.Message.Set_Data (ICMP_Context, Data);
          Last := RFLX.RFLX_Types.To_Index (RFLX.ICMP.Message.Message_Last (ICMP_Context));
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
@@ -244,7 +233,7 @@ is
       --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
-      RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
+      RFLX.IPv4.Packet.Initialize (IP_Context, Buf, RFLX.RFLX_Types.To_Last_Bit_Index (Buf'Last));
       RFLX.IPv4.Packet.Verify_Message (IP_Context);
       if
          not RFLX.IPv4.Packet.Structural_Valid_Message (IP_Context)
