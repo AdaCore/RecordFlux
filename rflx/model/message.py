@@ -486,10 +486,19 @@ class AbstractMessage(mty.Type):
         ]
 
     def __validate(self) -> None:
-        # pylint: disable=too-many-locals, too-many-branches
-
-        type_fields = self.__types.keys() | {INITIAL, FINAL}
+        type_fields = {*self.__types.keys(), INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+
+        self._validate_types(type_fields, structure_fields)
+        self._validate_initial_link()
+        self._validate_names(type_fields)
+
+        self.error.propagate()
+
+        self._validate_structure(structure_fields)
+        self._validate_link_aspects()
+
+    def _validate_types(self, type_fields: Set[Field], structure_fields: Set[Field]) -> None:
         parameters = self.__types.keys() - structure_fields
 
         for p in parameters:
@@ -529,6 +538,7 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
+    def _validate_initial_link(self) -> None:
         initial_links = self.outgoing(INITIAL)
 
         if len(initial_links) != 1:
@@ -560,6 +570,7 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
+    def _validate_names(self, type_fields: Set[Field]) -> None:
         name_conflicts = [
             (f, l)
             for f in type_fields
@@ -587,8 +598,7 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
-        self.error.propagate()
-
+    def _validate_structure(self, structure_fields: Set[Field]) -> None:
         for f in structure_fields:
             for l in self.structure:
                 if f in (INITIAL, l.target):
@@ -633,6 +643,7 @@ class AbstractMessage(mty.Type):
                     ]
                 )
 
+    def _validate_link_aspects(self) -> None:
         for l in self.structure:
             exponentiations = itertools.chain.from_iterable(
                 e.findall(lambda x: isinstance(x, expr.Pow)) for e in [l.condition, l.first, l.size]
