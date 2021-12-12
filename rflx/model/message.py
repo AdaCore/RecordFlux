@@ -1929,7 +1929,16 @@ class UnprovenMessage(AbstractMessage):
                     structure.append(link)
 
             structure.extend(
-                l for l in inner_message.structure if l.target != FINAL and l.source != INITIAL
+                Link(
+                    l.source,
+                    l.target,
+                    l.condition.substituted(mapping=message_argument_substitution),
+                    l.size.substituted(mapping=message_argument_substitution),
+                    l.first.substituted(mapping=message_argument_substitution),
+                    l.location,
+                )
+                for l in inner_message.structure
+                if l.target != FINAL and l.source != INITIAL
             )
 
             types = {
