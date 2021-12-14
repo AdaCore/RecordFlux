@@ -402,6 +402,107 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
     p.create_model()
 
 
+def test_invalid_implicit_size() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type Kind is mod 2 ** 16;
+
+               type M is
+                  message
+                     A : Kind
+                        then B
+                           if Kind = 1
+                        then C
+                           if Kind = 2;
+                     B : Kind;
+                     C : Opaque
+                        with Size => Message'Last - A'Last;
+                  end message;
+
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:15:38: model: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:15:38: model: info: remove size aspect to define field with implicit size"
+        r"$",
+    )
+
+
+def test_invalid_use_of_message_type_with_implicit_size() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type T is mod 2 ** 16;
+
+               type Inner is
+                  message
+                     Data : Opaque;
+                  end message;
+
+               type Outer is
+                  message
+                     A : T;
+                     Inner : Inner;
+                     B : T;
+                  end message;
+
+            end Test;
+        """,
+        r"^"
+        r"<stdin>:14:22: model: error: messages with implicit size may only be used"
+        " for last fields\n"
+        r'<stdin>:8:22: model: info: message field with implicit size in "Test::Inner"'
+        r"$",
+    )
+
+
+def test_invalid_message_with_multiple_fields_with_implicit_size() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type M is
+                  message
+                     A : Opaque
+                        with Size => Message'Size;
+                     B : Opaque
+                        with Size => Message'Size - A'Size;
+                  end message;
+
+            end Test;
+        """,
+        r"^"
+        r'<stdin>:9:38: model: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:9:38: model: info: remove size aspect to define field with implicit size\n"
+        r'<stdin>:7:38: model: error: "Message" must not be used in size aspects'
+        r"$",
+    )
+
+
+def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
+    assert_error_string(
+        """
+            package Test is
+
+               type T is mod 2**8;
+
+               type M is
+                  message
+                     A : T;
+                     B : Opaque
+                        with Size => Message'Size - 2 * Test::T'Size;
+                     C : T;
+                  end message;
+
+            end Test;
+        """,
+        r'^<stdin>:10:38: model: error: "Message" must not be used in size aspects$',
+    )
+
+
 def test_dependency_order() -> None:
     p = parser.Parser()
     p.parse(Path(f"{SPEC_DIR}/in_p1.rflx"))
