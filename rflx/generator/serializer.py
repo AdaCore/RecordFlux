@@ -523,7 +523,9 @@ class SerializerGenerator:
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f),
-                                    *self.composite_setter_field_condition_precondition(message, f),
+                                    *self.composite_setter_field_condition_precondition(
+                                        message, f, empty=True
+                                    ),
                                     *self.composite_setter_preconditions(f),
                                     Equal(
                                         Call(
@@ -1204,10 +1206,15 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def composite_setter_field_condition_precondition(message: Message, field: Field) -> List[Expr]:
+    def composite_setter_field_condition_precondition(
+        message: Message, field: Field, empty: bool = False
+    ) -> List[Expr]:
         return [
             common.field_condition_call(
-                message, field, Variable("Data"), Call(const.TYPES_TO_BIT_LENGTH, [Length("Data")])
+                message,
+                field,
+                Variable("Data"),
+                None if empty else Call(const.TYPES_TO_BIT_LENGTH, [Length("Data")]),
             ),
         ]
 

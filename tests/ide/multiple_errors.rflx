@@ -264,6 +264,7 @@ package RFLX_Invalid is
       message
          -- error: unconstrainted field without size aspect
          F1 : Opaque;
+         F2 : Opaque;
       end message;
 
    type U8 is mod 2 ** 8;

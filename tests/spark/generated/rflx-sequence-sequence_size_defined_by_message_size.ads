@@ -579,7 +579,7 @@ private
                    and then (if
                                 Structural_Valid (Cursors (F_Vector))
                              then
-                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last - First + 1) - RFLX_Types.Bit_Length (Cursors (F_Header).Last - Cursors (F_Header).First + 1)
+                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)
                                 and then Cursors (F_Vector).Predecessor = F_Header
                                 and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1)));
 
@@ -650,7 +650,7 @@ private
           when F_Header =>
              (case Fld is
                  when F_Vector =>
-                    RFLX_Types.Bit_Length (Ctx.Written_Last - Ctx.First + 1) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Header).Last - Ctx.Cursors (F_Header).First + 1),
+                    RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Header).Last),
                  when others =>
                     raise Program_Error),
           when F_Vector | F_Final =>

@@ -5,7 +5,6 @@ from rflx.expression import (
     Equal,
     First,
     GreaterEqual,
-    Last,
     LessEqual,
     Mul,
     NotEqual,
@@ -135,7 +134,6 @@ ETHERNET_FRAME = Message(
             Field("Type_Length"),
             Field("Payload"),
             GreaterEqual(Variable("Type_Length"), Number(1536)),
-            Sub(Last("Message"), Last("Type_Length")),
         ),
         Link(
             Field("Payload"),
@@ -240,7 +238,7 @@ SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE = Message(
     "Sequence::Sequence_Size_Defined_By_Message_Size",
     [
         Link(INITIAL, Field("Header")),
-        Link(Field("Header"), Field("Vector"), size=Sub(Size("Message"), Size("Header"))),
+        Link(Field("Header"), Field("Vector")),
         Link(Field("Vector"), FINAL),
     ],
     {
@@ -295,7 +293,7 @@ INVALID_MESSAGE = UnprovenMessage(
     "P::M",
     [
         Link(INITIAL, Field("F")),
-        Link(Field("F"), FINAL),
+        Link(Field("X"), FINAL),
     ],
     {Field("F"): OPAQUE},
 )
@@ -390,13 +388,11 @@ UNIVERSAL_MESSAGE = Message(
             Field("Message_Type"),
             Field("Data"),
             condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Data")),
-            size=Sub(Last("Message"), Last("Message_Type")),
         ),
         Link(
             Field("Message_Type"),
             Field("Options"),
             condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Options")),
-            size=Sub(Last("Message"), Last("Message_Type")),
         ),
         Link(
             Field("Message_Type"),

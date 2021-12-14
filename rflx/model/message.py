@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
@@ -383,51 +385,6 @@ class AbstractMessage(mty.Type):
 
         return self.copy(structure=structure, types=types)
 
-    def replaced_message_attributes(self) -> Tuple["AbstractMessage", List[Optional[Location]]]:
-        """
-        Replace all occurences of the message attribute Message'Size.
-
-        Replace Message'Size by the equivalent term Message'Last - Message'First + 1. Then replace
-        all occurences of the message attribute Message'First by a reference to the first field of a
-        message. Return the new message and a list of locations where Message'Last or Message'Size
-        have been used.
-        """
-        first_field = self.outgoing(INITIAL)[0].target
-        locations = []
-
-        def replace(expression: expr.Expr) -> expr.Expr:
-            if (
-                not isinstance(expression, expr.Attribute)
-                or not isinstance(expression.prefix, expr.Variable)
-                or expression.prefix.name != "Message"
-            ):
-                return expression
-            if isinstance(expression, expr.First):
-                return expr.First(ID(first_field.identifier, location=expression.location))
-            locations.append(expression.location)
-            if isinstance(expression, expr.Last):
-                return expression
-            if isinstance(expression, expr.Size):
-                return expr.Add(
-                    expr.Sub(expr.Last("Message"), expr.First(first_field.identifier)),
-                    expr.Number(1),
-                    location=expression.location,
-                )
-            assert False
-
-        structure = [
-            Link(
-                l.source,
-                l.target,
-                l.condition.substituted(replace),
-                l.size.substituted(replace),
-                l.first.substituted(replace),
-                l.location,
-            )
-            for l in self.structure
-        ]
-        return self.copy(structure=structure), locations
-
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self.__types[Field(field.name)]
@@ -644,9 +601,10 @@ class AbstractMessage(mty.Type):
                 )
 
     def _validate_link_aspects(self) -> None:
-        for l in self.structure:
+        for link in self.structure:
             exponentiations = itertools.chain.from_iterable(
-                e.findall(lambda x: isinstance(x, expr.Pow)) for e in [l.condition, l.first, l.size]
+                e.findall(lambda x: isinstance(x, expr.Pow))
+                for e in [link.condition, link.first, link.size]
             )
             for e in exponentiations:
                 assert isinstance(e, expr.Pow)
@@ -672,8 +630,70 @@ class AbstractMessage(mty.Type):
                         ]
                     )
 
+            if link.target != FINAL:
+                if link.condition.findall(
+                    lambda x: x in {expr.Size("Message"), expr.Last("Message")}
+                ):
+                    self.error.extend(
+                        [
+                            (
+                                '"Message" may only be used in conditions of last fields',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                link.condition.location,
+                            ),
+                        ]
+                    )
+
+            if link.size.findall(lambda x: x in {expr.Size("Message"), expr.Last("Message")}):
+                if any(l.target != FINAL for l in self.outgoing(link.target)):
+                    self.error.extend(
+                        [
+                            (
+                                '"Message" must not be used in size aspects',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                link.size.location,
+                            ),
+                        ]
+                    )
+                else:
+                    valid_definitions = (
+                        [
+                            expr.Add(expr.Last("Message"), -expr.Last(link.source.name)),
+                            expr.Sub(expr.Last("Message"), expr.Last(link.source.name)),
+                        ]
+                        if link.source != INITIAL
+                        else [
+                            expr.Size("Message"),
+                            expr.Sub(expr.Last("Message"), expr.Last(INITIAL.name)),
+                        ]
+                    )
+                    if link.size not in valid_definitions:
+                        self.error.extend(
+                            [
+                                (
+                                    'invalid use of "Message" in size aspect',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    link.size.location,
+                                ),
+                                (
+                                    "remove size aspect to define field with implicit size",
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    link.size.location,
+                                ),
+                            ]
+                        )
+
     def __normalize(self) -> None:
-        """Qualify enumeration literals in conditions to prevent ambiguities."""
+        """
+        Normalize structure of message.
+
+        Qualify enumeration literals in conditions to prevent ambiguities. Add size expression for
+        fields with implicit size.
+        """
 
         def qualify_enum_literals(expression: expr.Expr) -> expr.Expr:
             if (
@@ -690,6 +710,20 @@ class AbstractMessage(mty.Type):
 
         for link in self.structure:
             link.condition = link.condition.substituted(qualify_enum_literals)
+
+            if link.size == expr.UNDEFINED and link.target in self.__types:
+                t = self.__types[link.target]
+                if isinstance(t, (mty.Opaque, mty.Sequence)) and all(
+                    l.target == FINAL for l in self.outgoing(link.target)
+                ):
+                    if link.source == INITIAL:
+                        link.size = expr.Size(ID("Message", location=link.location))
+                    else:
+                        link.size = expr.Sub(
+                            expr.Last("Message"),
+                            expr.Last(link.source.identifier),
+                            location=link.location,
+                        )
 
     def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
@@ -1155,7 +1189,7 @@ class Message(AbstractMessage):
             self.error.extend(
                 [
                     (
-                        f'size attribute for final field in "{self.identifier}"',
+                        f'size aspect for final field in "{self.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         link.size.location,
@@ -1875,48 +1909,57 @@ class UnprovenMessage(AbstractMessage):
     @ensure(lambda result: valid_message_field_types(result))
     def merged(
         self, message_arguments: Mapping[ID, Mapping[ID, expr.Expr]] = None
-    ) -> "UnprovenMessage":
+    ) -> UnprovenMessage:
         message_arguments = message_arguments or {}
         message = self
 
         while True:
-            inner_messages = [
-                (f, t) for f, t in message.types.items() if isinstance(t, AbstractMessage)
-            ]
-
-            if not inner_messages:
-                break
-
-            field, inner_message = inner_messages.pop(0)
-            inner_message, message_attribute_locations = inner_message.prefixed(
-                f"{field.name}_"
-            ).replaced_message_attributes()
-
-            self._check_message_attributes(
-                message, inner_message, message_attribute_locations, field
+            inner_message = next(
+                ((f, t) for f, t in message.types.items() if isinstance(t, AbstractMessage)),
+                None,
             )
-            self._check_name_conflicts(message, inner_message, field)
 
-            message_argument_substitution: Mapping[expr.Name, expr.Expr] = (
-                {
-                    expr.Variable(a): e
-                    for a, e in message_arguments[inner_message.identifier].items()
-                }
-                if inner_message.identifier in message_arguments
-                else {}
-            )
-            structure = []
+            if not inner_message:
+                return message
 
-            for link in message.structure:
+            message = self._merge_inner_message(message, *inner_message, message_arguments)
+
+    def _merge_inner_message(
+        self,
+        message: UnprovenMessage,
+        field: Field,
+        inner_message: AbstractMessage,
+        message_arguments: Mapping[ID, Mapping[ID, expr.Expr]],
+    ) -> UnprovenMessage:
+        inner_message = self._replace_message_attributes(inner_message.prefixed(f"{field.name}_"))
+
+        assert not inner_message.error.errors
+
+        self._check_message_attributes(message, inner_message, field)
+        self._check_name_conflicts(message, inner_message, field)
+
+        substitution: Mapping[expr.Name, expr.Expr] = (
+            {expr.Variable(a): e for a, e in message_arguments[inner_message.identifier].items()}
+            if inner_message.identifier in message_arguments
+            else {}
+        )
+        structure = []
+
+        for path in message.paths(FINAL):
+            for link in path:
                 if link.target == field:
+                    substitution = {
+                        **substitution,
+                        expr.Variable(INITIAL.name): expr.Variable(link.source.name),
+                    }
                     initial_link = inner_message.outgoing(INITIAL)[0]
                     structure.append(
                         Link(
                             link.source,
                             initial_link.target,
-                            link.condition.substituted(mapping=message_argument_substitution),
-                            initial_link.size.substituted(mapping=message_argument_substitution),
-                            link.first.substituted(mapping=message_argument_substitution),
+                            link.condition.substituted(mapping=substitution),
+                            initial_link.size.substituted(mapping=substitution),
+                            link.first.substituted(mapping=substitution),
                             link.location,
                         )
                     )
@@ -1924,7 +1967,7 @@ class UnprovenMessage(AbstractMessage):
                     for final_link in inner_message.incoming(FINAL):
                         merged_condition = expr.And(
                             link.condition, final_link.condition
-                        ).substituted(mapping=message_argument_substitution)
+                        ).substituted(mapping=substitution)
                         proof = merged_condition.check(
                             [
                                 *inner_message.message_constraints(),
@@ -1938,79 +1981,136 @@ class UnprovenMessage(AbstractMessage):
                                     final_link.source,
                                     link.target,
                                     merged_condition.simplified(),
-                                    link.size.substituted(mapping=message_argument_substitution),
-                                    link.first.substituted(mapping=message_argument_substitution),
+                                    link.size.substituted(
+                                        mapping={
+                                            **substitution,
+                                            expr.Last(field.identifier): expr.Last(
+                                                final_link.source.identifier
+                                            ),
+                                        }
+                                    ),
+                                    link.first.substituted(mapping=substitution),
                                     link.location,
                                 )
                             )
                 else:
                     structure.append(link)
 
-            structure.extend(
+        structure = list(set(structure))
+        structure.extend(
+            Link(
+                l.source,
+                l.target,
+                l.condition.substituted(mapping=substitution),
+                l.size.substituted(mapping=substitution),
+                l.first.substituted(mapping=substitution),
+                l.location,
+            )
+            for l in inner_message.structure
+            if l.target != FINAL and l.source != INITIAL
+        )
+
+        types = {
+            **{f: t for f, t in message.types.items() if f != field},
+            **{
+                f: t
+                for f, t in inner_message.types.items()
+                if inner_message.identifier not in message_arguments
+                or f.identifier not in message_arguments[inner_message.identifier]
+            },
+        }
+
+        structure, types = self._prune_dangling_fields(structure, types)
+        if not structure or not types:
+            fail(
+                f'empty message type when merging field "{field.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                field.identifier.location,
+            )
+
+        return message.copy(structure=structure, types=types)
+
+    @staticmethod
+    def _replace_message_attributes(message: AbstractMessage) -> UnprovenMessage:
+        first_field = message.outgoing(INITIAL)[0].target
+
+        def replace(expression: expr.Expr) -> expr.Expr:
+            if (
+                not isinstance(expression, expr.Attribute)
+                or not isinstance(expression.prefix, expr.Variable)
+                or expression.prefix.name != "Message"
+            ):
+                return expression
+            if isinstance(expression, expr.First):
+                return expr.First(ID(first_field.identifier, location=expression.location))
+            if isinstance(expression, expr.Last):
+                return expression
+            if isinstance(expression, expr.Size):
+                return expr.Sub(
+                    expr.Last(ID("Message", location=expression.location)),
+                    expr.Last(INITIAL.name),
+                    location=expression.location,
+                )
+            assert False
+
+        return UnprovenMessage(
+            message.identifier,
+            [
                 Link(
                     l.source,
                     l.target,
-                    l.condition.substituted(mapping=message_argument_substitution),
-                    l.size.substituted(mapping=message_argument_substitution),
-                    l.first.substituted(mapping=message_argument_substitution),
+                    l.condition.substituted(replace),
+                    l.size.substituted(replace),
+                    l.first.substituted(replace),
                     l.location,
                 )
-                for l in inner_message.structure
-                if l.target != FINAL and l.source != INITIAL
-            )
+                for l in message.structure
+            ],
+            message.types,
+            message.aspects,
+            message.location,
+            message.error,
+        )
 
-            types = {
-                **{f: t for f, t in message.types.items() if f != field},
-                **{
-                    f: t
-                    for f, t in inner_message.types.items()
-                    if inner_message.identifier not in message_arguments
-                    or f.identifier not in message_arguments[inner_message.identifier]
-                },
-            }
-
-            structure, types = self._prune_dangling_fields(structure, types)
-            if not structure or not types:
-                fail(
-                    f'empty message type when merging field "{field.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    field.identifier.location,
-                )
-
-            message = message.copy(structure=structure, types=types)
-
-        return message
-
+    @staticmethod
     def _check_message_attributes(
-        self,
         message: AbstractMessage,
         inner_message: AbstractMessage,
-        message_attribute_locations: List[Optional[Location]],
         field: Field,
     ) -> None:
-        if len(message_attribute_locations) > 0 and any(
-            n.target != FINAL for n in message.outgoing(field)
-        ):
-            self.error.extend(
-                [
-                    (
-                        "message types with message attribute may only be used for last field",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        field.identifier.location,
-                    ),
-                    *[
-                        (
-                            f'message attribute used in "{inner_message.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            loc,
-                        )
-                        for loc in message_attribute_locations
-                    ],
+        if any(n.target != FINAL for n in message.outgoing(field)):
+            for expressions, error in [
+                ((l.condition for l in inner_message.structure), 'reference to "Message"'),
+                ((l.size for l in inner_message.structure), "implicit size"),
+            ]:
+                locations = [
+                    m.location
+                    for e in expressions
+                    for m in e.findall(
+                        lambda x: isinstance(x, expr.Variable) and x.identifier == ID("Message")
+                    )
                 ]
-            )
+                if locations:
+                    message.error.extend(
+                        [
+                            (
+                                f"messages with {error} may only be used for last fields",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                field.identifier.location,
+                            ),
+                            *[
+                                (
+                                    f'message field with {error} in "{inner_message.identifier}"',
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    loc,
+                                )
+                                for loc in locations
+                            ],
+                        ]
+                    )
 
     def _check_name_conflicts(
         self, message: AbstractMessage, inner_message: AbstractMessage, field: Field

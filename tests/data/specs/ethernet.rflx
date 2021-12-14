@@ -23,7 +23,6 @@ package Ethernet is
                with Size => Type_Length * 8
                if Type_Length <= 1500
             then Payload
-               with Size => Message'Last - Type_Length'Last
                if Type_Length >= 1536;
          Payload : Opaque
             then null
