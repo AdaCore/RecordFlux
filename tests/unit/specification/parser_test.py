@@ -1530,58 +1530,7 @@ def test_parse_ethernet_spec() -> None:
                                             },
                                             {
                                                 "_kind": "ThenNode",
-                                                "aspects": [
-                                                    {
-                                                        "_kind": "Aspect",
-                                                        "identifier": {
-                                                            "_kind": "UnqualifiedID",
-                                                            "_value": "Size",
-                                                        },
-                                                        "value": {
-                                                            "_kind": "BinOp",
-                                                            "left": {
-                                                                "_kind": "Attribute",
-                                                                "expression": {
-                                                                    "_kind": "Variable",
-                                                                    "identifier": {
-                                                                        "_kind": "ID",
-                                                                        "name": {
-                                                                            "_kind": "UnqualifiedID",
-                                                                            "_value": "Message",
-                                                                        },
-                                                                        "package": None,
-                                                                    },
-                                                                },
-                                                                "kind": {
-                                                                    "_kind": "AttrLast",
-                                                                    "_value": "Last",
-                                                                },
-                                                            },
-                                                            "op": {
-                                                                "_kind": "OpSub",
-                                                                "_value": "-",
-                                                            },
-                                                            "right": {
-                                                                "_kind": "Attribute",
-                                                                "expression": {
-                                                                    "_kind": "Variable",
-                                                                    "identifier": {
-                                                                        "_kind": "ID",
-                                                                        "name": {
-                                                                            "_kind": "UnqualifiedID",
-                                                                            "_value": "Type_Length",
-                                                                        },
-                                                                        "package": None,
-                                                                    },
-                                                                },
-                                                                "kind": {
-                                                                    "_kind": "AttrLast",
-                                                                    "_value": "Last",
-                                                                },
-                                                            },
-                                                        },
-                                                    }
-                                                ],
+                                                "aspects": [],
                                                 "condition": {
                                                     "_kind": "BinOp",
                                                     "left": {

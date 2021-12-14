@@ -182,7 +182,7 @@ A message type specifies the message format of a protocol. A message is represen
 
 A message can be parameterized. Message parameters can be used in conditions and aspects and enable the definition of message formats that depend on prior negotiation. Only scalar types are allowed for parameters.
 
-The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields must be always defined by a size aspect. Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
+The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields and sequence fields must be defined by a size aspect, if another field can follow. If no size aspect is given, the field size is implicitly defined by the available space (defined by the outer message when parsing or by the written data when serializing). Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
 
 A checksum aspect specifies which parts of a message is covered by a checksum. The definition of the checksum calculation is not part of the specification. Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements. A checksum element can be a field value, a field size or a range of fields. The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum. For this purpose the `Valid_Checksum` attribute is added to a condition. All message parts on which the checksum depends have to be known at this point.
 
@@ -206,9 +206,7 @@ type Frame is
             if Type_Length_TPID >= 1536 and Type_Length_TPID /= 16#8100#;
       TPID : TPID;
       TCI : TCI;
-      Ether_Type : Ether_Type
-         then Payload
-            with Size => Message'Last - Ether_Type'Last;
+      Ether_Type : Ether_Type;
       Payload : Opaque
          then null
             if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
@@ -1575,9 +1573,7 @@ package Ethernet is
                if Type_Length_TPID >= 1536 and Type_Length_TPID /= 16#8100#;
          TPID : TPID;
          TCI : TCI;
-         Ether_Type : Ether_Type
-            then Payload
-               with Size => Message'Last - Ether_Type'Last;
+         Ether_Type : Ether_Type;
          Payload : Opaque
             then null
                if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;

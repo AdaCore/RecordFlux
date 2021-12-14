@@ -37,14 +37,14 @@ def test_multiple_errors() -> None:
         [
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
-            f'{path}:296:5: parser: error: inconsistent package identifier "Inconsistent"',
+            f'{path}:297:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid",'
             ' should be "rflx_invalid.rflx"',
             f'{path}:40:4: model: error: illegal redefinition of built-in type "Boolean"',
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
-            f'{path}:296:5: parser: error: inconsistent package identifier "Inconsistent"',
+            f'{path}:297:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
@@ -141,12 +141,12 @@ def test_multiple_errors() -> None:
             f'{path}:199:9: model: info: unsatisfied "F1 < 2 ** 32"',
             f"{path}:260:10: model: info: unsatisfied \"F2'Last + 1 >= Message'First\"",
             f'{path}:266:10: model: error: unconstrained field "F1" without size aspect',
-            f'{path}:271:9: model: error: field "F3" not congruent with overlaid field "F1"',
-            f"{path}:271:9: model: info: unsatisfied \"F1'First = Message'First\"",
-            f"{path}:273:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
-            f"{path}:275:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
-            f'{path}:287:29: model: error: size attribute for final field in "RFLX_Invalid::M17"',
-            f"{path}:290:9: model: error: unnecessary always-valid aspect"
+            f'{path}:272:9: model: error: field "F3" not congruent with overlaid field "F1"',
+            f"{path}:272:9: model: info: unsatisfied \"F1'First = Message'First\"",
+            f"{path}:274:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
+            f"{path}:276:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
+            f'{path}:288:29: model: error: size aspect for final field in "RFLX_Invalid::M17"',
+            f"{path}:291:9: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
             f'{path}:37:9: model: error: name conflict for type "RFLX_Invalid::R"',
             f'{path}:8:9: model: info: previous occurrence of "RFLX_Invalid::R"',

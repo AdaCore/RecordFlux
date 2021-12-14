@@ -775,7 +775,7 @@ def field_condition_call(
                     else []
                 ),
             ),
-            *([size] if size_dependent_condition(message) else []),
+            *([size] if size_dependent_condition(message, field) else []),
         ],
     )
 
@@ -831,11 +831,12 @@ def contains_function_name(
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
-def size_dependent_condition(message: model.Message) -> bool:
+def size_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
+    links = message.outgoing(field) if field else message.structure
     return any(
         size in field_sizes
-        for link in message.structure
+        for link in links
         for size in link.condition.findall(lambda x: isinstance(x, expr.Size))
     )
 

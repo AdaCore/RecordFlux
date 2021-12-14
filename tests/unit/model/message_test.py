@@ -10,6 +10,7 @@ from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
+    UNDEFINED,
     Add,
     Aggregate,
     And,
@@ -1146,7 +1147,7 @@ def test_prefixed_message_attribute() -> None:
                 first=First("F1"),
             ),
             Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(42))),
-            Link(Field("F3"), Field("F4"), size=Sub(Last("Message"), Last("F3"))),
+            Link(Field("F3"), Field("F4")),
             Link(Field("F4"), FINAL),
         ],
         {
@@ -1718,11 +1719,11 @@ def test_payload_no_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): OPAQUE,
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
-        structure, types, r'^model: error: unconstrained field "F2" without size aspect$'
+        structure, types, r'^model: error: unconstrained field "F1" without size aspect$'
     )
 
 
@@ -1733,11 +1734,11 @@ def test_sequence_no_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): SEQUENCE_MODULAR_VECTOR,
         Field("F2"): SEQUENCE_MODULAR_VECTOR,
     }
     assert_message_model_error(
-        structure, types, '^model: error: unconstrained field "F2" without size aspect$'
+        structure, types, '^model: error: unconstrained field "F1" without size aspect$'
     )
 
 
@@ -1846,26 +1847,88 @@ def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
     )
 
 
-def test_valid_use_message_size() -> None:
+@pytest.mark.parametrize("size", [UNDEFINED, Size("Message")])
+@pytest.mark.parametrize(
+    "condition",
+    [
+        Equal(Size("Message"), Number(64)),
+        Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
+    ],
+)
+@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_MODULAR_VECTOR])
+def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, type_: Type) -> None:
+    x = Field("X")
+
     structure = [
-        Link(INITIAL, Field("Verify_Data"), size=Size("Message")),
-        Link(Field("Verify_Data"), FINAL),
+        Link(INITIAL, x, size=size),
+        Link(x, FINAL, condition=condition),
     ]
-    types = {Field("Verify_Data"): OPAQUE}
-    Message("P::M", structure, types)
+
+    types = {x: type_}
+
+    message = Message("P::M", structure, types)
+
+    assert message.structure[0] == Link(INITIAL, x, size=Size("Message"))
 
 
-def test_valid_use_message_first_last() -> None:
+@pytest.mark.parametrize("size", [UNDEFINED, Sub(Last("Message"), Last("X"))])
+@pytest.mark.parametrize(
+    "condition",
+    [
+        Equal(Size("Message"), Number(64)),
+        Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
+    ],
+)
+@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_MODULAR_VECTOR])
+def test_message_with_implicit_size_multiple_fields(
+    size: Expr, condition: Expr, type_: Type
+) -> None:
+    x = Field("X")
+    y = Field("Y")
+
+    structure = [
+        Link(INITIAL, x, size=Number(8)),
+        Link(x, y, size=size),
+        Link(y, FINAL, condition=condition),
+    ]
+
+    types = {x: type_, y: type_}
+
+    message = Message("P::M", structure, types)
+
+    assert message.structure[1] == Link(x, y, size=Sub(Last("Message"), Last("X")))
+
+
+def test_invalid_use_of_message_attributes() -> None:
+    x = Field("X")
+    y = Field("Y")
+
     structure = [
         Link(
             INITIAL,
-            Field("Verify_Data"),
-            size=Add(Sub(Last("Message"), First("Message")), Number(1)),
+            x,
+            size=Add(Last("Message"), -First("Message"), Number(65), location=Location((1, 2))),
         ),
-        Link(Field("Verify_Data"), FINAL),
+        Link(
+            x,
+            y,
+            condition=Equal(Size("Message"), Number(64)),
+            size=Sub(Size("Message"), Size("X"), location=Location((5, 6))),
+        ),
+        Link(y, FINAL),
     ]
-    types = {Field("Verify_Data"): OPAQUE}
-    Message("P::M", structure, types)
+
+    types = {x: OPAQUE, y: OPAQUE}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'<stdin>:1:2: model: error: "Message" must not be used in size aspects\n'
+        r'<stdin>:5:6: model: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:5:6: model: info: remove size aspect to define field with implicit size"
+        r"$",
+    )
 
 
 def test_no_path_to_final() -> None:
@@ -1950,8 +2013,8 @@ def test_conditionally_unreachable_field_mod_first() -> None:
 def test_conditionally_unreachable_field_mod_last() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Equal(Last("F1"), Last("Message"))),
-        Link(Field("F2"), FINAL),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
         Field("F1"): MODULAR_INTEGER,
@@ -2006,8 +2069,8 @@ def test_conditionally_unreachable_field_range_first() -> None:
 def test_conditionally_unreachable_field_range_last() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Equal(Last("F1"), Last("Message"))),
-        Link(Field("F2"), FINAL),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
         Field("F1"): RANGE_INTEGER,
@@ -2062,8 +2125,8 @@ def test_conditionally_unreachable_field_enum_first() -> None:
 def test_conditionally_unreachable_field_enum_last() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Equal(Last("F1"), Last("Message"))),
-        Link(Field("F2"), FINAL),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
         Field("F1"): ENUMERATION,
@@ -2142,7 +2205,7 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
     )
 
 
-def test_size_attribute_final() -> None:
+def test_size_aspect_final() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -2153,7 +2216,7 @@ def test_size_attribute_final() -> None:
         Field("F2"): MODULAR_INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^<stdin>:4:12: model: error: size attribute for final field in "P::M"$'
+        structure, types, '^<stdin>:4:12: model: error: size aspect for final field in "P::M"$'
     )
 
 
@@ -2516,7 +2579,7 @@ def test_field_size() -> None:
         [
             Link(INITIAL, Field("A")),
             Link(Field("A"), Field("B"), size=Mul(Size("A"), Number(8))),
-            Link(Field("B"), Field("C"), size=Sub(Last("Message"), Last("B"))),
+            Link(Field("B"), Field("C")),
             Link(Field("C"), FINAL),
         ],
         {Field("A"): MODULAR_INTEGER, Field("B"): OPAQUE, Field("C"): OPAQUE},
@@ -3203,6 +3266,240 @@ def test_merge_message_parameterized() -> None:
     )
 
 
+def test_merge_message_with_message_last_attribute() -> None:
+    inner = UnprovenMessage(
+        "P::I",
+        [
+            Link(INITIAL, Field("I1")),
+            Link(
+                Field("I1"),
+                Field("I2"),
+                condition=Less(Variable("I1"), Number(128)),
+                size=Sub(Last(ID("Message", location=Location((5, 10)))), Last("I1")),
+                first=First("Message"),
+            ),
+            Link(
+                Field("I1"),
+                Field("I2"),
+                condition=GreaterEqual(Variable("I1"), Number(128)),
+                size=Sub(Last(ID("Message", location=Location((6, 10)))), Last("I1")),
+            ),
+            Link(Field("I2"), FINAL),
+        ],
+        {Field("I1"): MODULAR_INTEGER, Field("I2"): OPAQUE},
+    )
+
+    inner.error.propagate()
+
+    valid_outer = (
+        UnprovenMessage(
+            "P::O",
+            [
+                Link(INITIAL, Field("O1")),
+                Link(Field("O1"), Field("O2")),
+                Link(Field("O2"), FINAL),
+            ],
+            {Field("O1"): MODULAR_INTEGER, Field("O2"): inner},
+        )
+        .merged()
+        .proven()
+    )
+
+    assert_equal(
+        valid_outer,
+        Message(
+            "P::O",
+            [
+                Link(INITIAL, Field("O1")),
+                Link(Field("O1"), Field("O2_I1")),
+                Link(
+                    Field("O2_I1"),
+                    Field("O2_I2"),
+                    condition=Less(Variable("O2_I1"), Number(128)),
+                    size=Add(Last("Message"), -Last("O2_I1")),
+                    first=First("O2_I1"),
+                ),
+                Link(
+                    Field("O2_I1"),
+                    Field("O2_I2"),
+                    condition=GreaterEqual(Variable("O2_I1"), Number(128)),
+                    size=Add(Last("Message"), -Last("O2_I1")),
+                ),
+                Link(Field("O2_I2"), FINAL),
+            ],
+            {Field("O1"): MODULAR_INTEGER, Field("O2_I1"): MODULAR_INTEGER, Field("O2_I2"): OPAQUE},
+        ),
+    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "<stdin>:2:10: model: error: messages with implicit size may only be used for"
+            " last fields\n"
+            '<stdin>:5:10: model: info: message field with implicit size in "P::I"\n'
+            '<stdin>:6:10: model: info: message field with implicit size in "P::I"'
+            "$"
+        ),
+    ):
+        o1 = Field(ID("O1", location=Location((2, 10))))
+        valid_outer = (
+            UnprovenMessage(
+                "P::O",
+                [
+                    Link(INITIAL, o1),
+                    Link(o1, Field("O2")),
+                    Link(Field("O2"), FINAL),
+                ],
+                {o1: inner, Field("O2"): MODULAR_INTEGER},
+            )
+            .merged()
+            .proven()
+        )
+
+
+def test_merge_message_with_message_size_attribute() -> None:
+    inner = UnprovenMessage(
+        "P::I",
+        [
+            Link(
+                INITIAL,
+                Field("I"),
+                size=Size("Message"),
+            ),
+            Link(
+                Field("I"),
+                FINAL,
+                condition=Equal(Size("Message"), Number(128)),
+            ),
+        ],
+        {Field("I"): OPAQUE},
+    )
+
+    inner.error.propagate()
+
+    outer = UnprovenMessage(
+        "P::O",
+        [
+            Link(INITIAL, Field("O1")),
+            Link(Field("O1"), Field("O2"), condition=Less(Variable("O1"), Number(100))),
+            Link(
+                Field("O1"),
+                Field("O3"),
+                condition=GreaterEqual(Variable("O1"), Number(100)),
+            ),
+            Link(Field("O2"), Field("A")),
+            Link(Field("O3"), Field("B")),
+            Link(Field("A"), FINAL),
+            Link(Field("B"), FINAL),
+        ],
+        {
+            Field("O1"): MODULAR_INTEGER,
+            Field("O2"): MODULAR_INTEGER,
+            Field("O3"): MODULAR_INTEGER,
+            Field("A"): inner,
+            Field("B"): inner,
+        },
+    )
+
+    expected = Message(
+        "P::O",
+        [
+            Link(INITIAL, Field("O1")),
+            Link(Field("O1"), Field("O2"), condition=Less(Variable("O1"), Number(100))),
+            Link(
+                Field("O1"),
+                Field("O3"),
+                condition=GreaterEqual(Variable("O1"), Number(100)),
+            ),
+            Link(
+                Field("O2"),
+                Field("A_I"),
+                size=Sub(Last("Message"), Last("O2")),
+            ),
+            Link(
+                Field("A_I"),
+                FINAL,
+                condition=Equal(Sub(Last("Message"), Last("O2")), Number(128)),
+            ),
+            Link(
+                Field("O3"),
+                Field("B_I"),
+                size=Sub(Last("Message"), Last("O3")),
+            ),
+            Link(
+                Field("B_I"),
+                FINAL,
+                condition=Equal(Sub(Last("Message"), Last("O3")), Number(128)),
+            ),
+        ],
+        {
+            Field("O1"): MODULAR_INTEGER,
+            Field("O2"): MODULAR_INTEGER,
+            Field("O3"): MODULAR_INTEGER,
+            Field("A_I"): OPAQUE,
+            Field("B_I"): OPAQUE,
+        },
+    )
+
+    assert outer.merged().proven() == expected
+
+
+def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
+    inner = UnprovenMessage(
+        "P::I",
+        [
+            Link(
+                INITIAL,
+                Field("I"),
+                size=Number(128),
+            ),
+            Link(
+                Field("I"),
+                FINAL,
+            ),
+        ],
+        {Field("I"): OPAQUE},
+    )
+
+    inner.error.propagate()
+
+    outer = UnprovenMessage(
+        "P::O",
+        [
+            Link(INITIAL, Field("O1")),
+            Link(Field("O1"), Field("O2"), size=Sub(Last("Message"), Last("O1"))),
+            Link(Field("O2"), FINAL),
+        ],
+        {
+            Field("O1"): inner,
+            Field("O2"): OPAQUE,
+        },
+    )
+
+    expected = Message(
+        "P::O",
+        [
+            Link(
+                INITIAL,
+                Field("O1_I"),
+                size=Number(128),
+            ),
+            Link(
+                Field("O1_I"),
+                Field("O2"),
+                size=Sub(Last("Message"), Last("O1_I")),
+            ),
+            Link(Field("O2"), FINAL),
+        ],
+        {
+            Field("O1_I"): OPAQUE,
+            Field("O2"): OPAQUE,
+        },
+    )
+
+    assert outer.merged().proven() == expected
+
+
 def test_paths() -> None:
     message = Message(
         "P::M",
@@ -3397,91 +3694,3 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         r' of "P::M"'
         r"$",
     )
-
-
-def test_message_type_with_message_attribute() -> None:
-    inner = UnprovenMessage(
-        "P::I",
-        [
-            Link(INITIAL, Field("I1")),
-            Link(
-                Field("I1"),
-                Field("I2"),
-                condition=Less(Variable("I1"), Number(128)),
-                size=Sub(Size(ID("Message", location=Location((5, 10)))), Number(8)),
-            ),
-            Link(
-                Field("I1"),
-                Field("I2"),
-                condition=GreaterEqual(Variable("I1"), Number(128)),
-                size=Sub(
-                    Sub(Last(ID("Message", location=Location((6, 10)))), First("Message")),
-                    Number(7),
-                ),
-            ),
-            Link(Field("I2"), FINAL),
-        ],
-        {Field("I1"): MODULAR_INTEGER, Field("I2"): OPAQUE},
-    )
-    valid_outer = (
-        UnprovenMessage(
-            "P::O",
-            [
-                Link(INITIAL, Field("O1")),
-                Link(Field("O1"), Field("O2")),
-                Link(Field("O2"), FINAL),
-            ],
-            {Field("O1"): MODULAR_INTEGER, Field("O2"): inner},
-        )
-        .merged()
-        .proven()
-    )
-    assert_equal(
-        valid_outer,
-        Message(
-            "P::O",
-            [
-                Link(INITIAL, Field("O1")),
-                Link(Field("O1"), Field("O2_I1")),
-                Link(
-                    Field("O2_I1"),
-                    Field("O2_I2"),
-                    condition=Less(Variable("O2_I1"), Number(128)),
-                    size=Add(Add(Add(Last("Message"), -First("O2_I1")), Number(1)), -Number(8)),
-                ),
-                Link(
-                    Field("O2_I1"),
-                    Field("O2_I2"),
-                    condition=GreaterEqual(Variable("O2_I1"), Number(128)),
-                    size=Add(Add(Last("Message"), -First("O2_I1")), -Number(7)),
-                ),
-                Link(Field("O2_I2"), FINAL),
-            ],
-            {Field("O1"): MODULAR_INTEGER, Field("O2_I1"): MODULAR_INTEGER, Field("O2_I2"): OPAQUE},
-        ),
-    )
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            "^"
-            "<stdin>:2:10: model: error: message types with message attribute may only be used for"
-            " last field\n"
-            '<stdin>:5:10: model: info: message attribute used in "P::I"\n'
-            '<stdin>:6:10: model: info: message attribute used in "P::I"'
-            "$"
-        ),
-    ):
-        o1 = Field(ID("O1", location=Location((2, 10))))
-        valid_outer = (
-            UnprovenMessage(
-                "P::O",
-                [
-                    Link(INITIAL, o1),
-                    Link(o1, Field("O2")),
-                    Link(Field("O2"), FINAL),
-                ],
-                {o1: inner, Field("O2"): MODULAR_INTEGER},
-            )
-            .merged()
-            .proven()
-        )
