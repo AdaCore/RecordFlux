@@ -242,6 +242,29 @@ def test_message_with_implicit_size(tmp_path: Path) -> None:
     )
 
 
+def test_message_with_optional_field_based_on_message_size(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+           package Test is
+
+              type T is mod 2**8;
+
+              type M is
+                 message
+                    Data : T
+                       then More_Data
+                          if Data'Last - Message'First + 1 + 8 = Message'Size
+                       then null
+                          if Data'Last = Message'Last;
+                    More_Data : T;
+                 end message;
+
+           end Test;
+        """,
+        tmp_path,
+    )
+
+
 @pytest.mark.parametrize(
     "aspects",
     [

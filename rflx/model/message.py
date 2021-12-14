@@ -630,21 +630,6 @@ class AbstractMessage(mty.Type):
                         ]
                     )
 
-            if link.target != FINAL:
-                if link.condition.findall(
-                    lambda x: x in {expr.Size("Message"), expr.Last("Message")}
-                ):
-                    self.error.extend(
-                        [
-                            (
-                                '"Message" may only be used in conditions of last fields',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                link.condition.location,
-                            ),
-                        ]
-                    )
-
             if link.size.findall(lambda x: x in {expr.Size("Message"), expr.Last("Message")}):
                 if any(l.target != FINAL for l in self.outgoing(link.target)):
                     self.error.extend(
@@ -1377,9 +1362,18 @@ class Message(AbstractMessage):
                                 ),
                             ],
                         )
+                        facts = [
+                            *self.type_constraints(conflict),
+                            expr.Equal(
+                                expr.Size("Message"),
+                                expr.Add(
+                                    expr.Last("Message"), -expr.First("Message"), expr.Number(1)
+                                ),
+                            ),
+                        ]
                         proofs.add(
                             conflict,
-                            self.type_constraints(conflict),
+                            facts,
                             expr.ProofResult.SAT,
                             error,
                             negate=True,

@@ -146,7 +146,7 @@ def substitution_facts(
         return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
-    last = prefixed("Written_Last")
+    last = expr.Call("Written_Last", [expr.Variable("Ctx")]) if public else prefixed("Written_Last")
     cursors = prefixed("Cursors")
 
     def field_first(field: model.Field) -> expr.Expr:
