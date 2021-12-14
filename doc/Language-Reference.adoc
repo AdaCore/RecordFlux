@@ -186,6 +186,8 @@ The field type `Opaque` represents an unconstrained sequence of bytes. The size 
 
 A checksum aspect specifies which parts of a message is covered by a checksum. The definition of the checksum calculation is not part of the specification. Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements. A checksum element can be a field value, a field size or a range of fields. The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum. For this purpose the `Valid_Checksum` attribute is added to a condition. All message parts on which the checksum depends have to be known at this point.
 
+`Message'First`, `Message'Last` and `Message'Size` can be used in expressions to refer to the position of the first or last bit of the message or the size of the message. All bytes which were received when parsing or were written when serializing are considered as part of the message.
+
 *Example*
 
 [source,ada,rflx,basic_declaration]

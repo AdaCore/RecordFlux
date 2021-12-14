@@ -228,6 +228,8 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
 
+   function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
+
    function Message_Data (Ctx : Context) return RFLX_Types.Bytes with
      Pre =>
        Has_Buffer (Ctx)
@@ -644,6 +646,9 @@ private
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Verified_Last);
+
+   function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
+     (Ctx.Written_Last);
 
    function Message_Data (Ctx : Context) return RFLX_Types.Bytes is
      (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));

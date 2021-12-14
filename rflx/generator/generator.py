@@ -397,6 +397,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_size_function()
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
+        unit += self.__create_written_last_function()
         unit += self.__create_message_data_function()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
@@ -2493,6 +2494,23 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ),
             ],
             private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Verified_Last"))],
+        )
+
+    @staticmethod
+    def __create_written_last_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Written_Last", const.TYPES_BIT_LENGTH, [Parameter(["Ctx"], "Context")]
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(specification, Variable("Ctx.Written_Last")),
+            ],
         )
 
     @staticmethod
