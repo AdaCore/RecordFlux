@@ -1362,22 +1362,18 @@ class Message(AbstractMessage):
                                 ),
                             ],
                         )
-                        facts = [
-                            *self.type_constraints(conflict),
-                            expr.Equal(
-                                expr.Size("Message"),
-                                expr.Add(
-                                    expr.Last("Message"), -expr.First("Message"), expr.Number(1)
-                                ),
-                            ),
-                        ]
-                        proofs.add(
-                            conflict,
-                            facts,
-                            expr.ProofResult.SAT,
-                            error,
-                            negate=True,
-                        )
+                        for path in self.paths(f):
+                            facts = [
+                                *self.type_constraints(conflict),
+                                *[fact for link in path for fact in self.__link_expression(link)],
+                            ]
+                            proofs.add(
+                                conflict,
+                                facts,
+                                expr.ProofResult.SAT,
+                                error,
+                                negate=True,
+                            )
             proofs.push()
         proofs.check(self.error)
 

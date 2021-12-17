@@ -10,7 +10,7 @@ package Message_Size is
             then null
                if Message'Size = (A + 1) * 8
             then C
-               if Message'Size = (A + 2) * 8;
+               if Message'Last = B'Last + 8;
          C : T;
       end message;
 
