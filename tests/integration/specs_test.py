@@ -9,7 +9,6 @@ from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
-from tests import utils
 from tests.const import CAPTURED_DIR, GENERATED_DIR, SPEC_DIR
 
 
@@ -455,7 +454,3 @@ def test_tlv_generating_tlv_error(tlv_message_value: pyrflx.MessageValue) -> Non
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\x03"
-
-
-def test_feature_integeration(tmp_path: Path) -> None:
-    utils.assert_compilable_code_specs([SPEC_DIR / "feature_integration.rflx"], tmp_path)

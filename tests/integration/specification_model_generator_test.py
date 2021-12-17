@@ -450,6 +450,14 @@ def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(spec, tmp_path)
 
 
+def test_message_size(tmp_path: Path) -> None:
+    utils.assert_compilable_code_specs([SPEC_DIR / "message_size.rflx"], tmp_path)
+
+
+def test_feature_integration(tmp_path: Path) -> None:
+    utils.assert_compilable_code_specs([SPEC_DIR / "feature_integration.rflx"], tmp_path)
+
+
 @pytest.mark.verification
 def test_parameterized_message(tmp_path: Path) -> None:
     spec = """
