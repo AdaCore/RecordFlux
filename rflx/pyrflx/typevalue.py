@@ -811,6 +811,7 @@ class MessageValue(TypeValue):
         self._path.clear()
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
+        message_size = len(value)
         current_field_name = self._next_field(INITIAL.name, append_to_path=True)
         last_field_first_in_bitstr = current_field_first_in_bitstr = 0
 
@@ -837,7 +838,7 @@ class MessageValue(TypeValue):
             first = self._get_first(field_name)
             assert first is not None
             field.first = first
-            self._set_parsed_value(field_name, value[current_pos_in_bitstring:])
+            self._set_parsed_value(field_name, value[current_pos_in_bitstring:], message_size)
             return last_pos_in_bitstr, current_pos_in_bitstring
 
         def set_field_with_size(field_name: str, field_size: int) -> ty.Tuple[int, int]:
@@ -846,6 +847,7 @@ class MessageValue(TypeValue):
             self._set_parsed_value(
                 field_name,
                 value[current_pos_in_bitstring : current_pos_in_bitstring + field_size],
+                message_size,
             )
             current_pos_in_bitstring += field_size
             return last_pos_in_bitstr, current_pos_in_bitstring
@@ -893,11 +895,14 @@ class MessageValue(TypeValue):
         if isinstance(field.typeval, CompositeValue) and f_size is not None:
             field.typeval.set_expected_size(f_size)
         field.typeval.assign(value, not self._skip_verification)
-        self.__update_simplified_mapping(field)
+        self.__update_simplified_mapping(field=field)
         self.accessible_fields.append(field_name)
 
     def _set_checked(
-        self, field_name: str, value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring]
+        self,
+        field_name: str,
+        value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring],
+        message_size: int = None,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -969,7 +974,7 @@ class MessageValue(TypeValue):
         else:
             raise PyRFLXError(f"cannot access field {field_name}")
 
-        self.__update_simplified_mapping()
+        self.__update_simplified_mapping(message_size)
         check_outgoing_condition_satisfied()
 
     def set(
@@ -995,8 +1000,9 @@ class MessageValue(TypeValue):
         self,
         field_name: str,
         value: ty.Union[bytes, int, str, ty.Sequence[TypeValue], Bitstring],
+        message_size: int,
     ) -> None:
-        self._set_checked(field_name, value)
+        self._set_checked(field_name, value, message_size)
         self._preset_fields(field_name)
 
     def _preset_fields(self, fld: str) -> None:
@@ -1258,7 +1264,9 @@ class MessageValue(TypeValue):
             )
         )
 
-    def __update_simplified_mapping(self, field: ty.Optional[Field] = None) -> None:
+    def __update_simplified_mapping(
+        self, message_size: int = None, field: ty.Optional[Field] = None
+    ) -> None:
         if field:
             if isinstance(field.typeval, ScalarValue):
                 self._simplified_mapping[field.name_variable] = field.typeval.expr
@@ -1267,8 +1275,12 @@ class MessageValue(TypeValue):
             self._simplified_mapping[field.name_size] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = last
-            self._simplified_mapping[self.__message_last_name] = last
-            self._simplified_mapping[self.__message_size_name] = last + Number(1)
+            self._simplified_mapping[self.__message_last_name] = (
+                Number(message_size - 1) if message_size else last
+            )
+            self._simplified_mapping[self.__message_size_name] = (
+                Number(message_size) if message_size else last + Number(1)
+            )
             return
 
         self._simplified_mapping = {
@@ -1297,8 +1309,12 @@ class MessageValue(TypeValue):
             if nxt:
                 continue
             if any(l.target == FINAL for l in self._type.outgoing(Field(last_field))):
-                self._simplified_mapping[self.__message_last_name] = last
-                self._simplified_mapping[self.__message_size_name] = last + Number(1)
+                self._simplified_mapping[self.__message_last_name] = (
+                    Number(message_size - 1) if message_size else last
+                )
+                self._simplified_mapping[self.__message_size_name] = (
+                    Number(message_size) if message_size else last + Number(1)
+                )
 
         # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})

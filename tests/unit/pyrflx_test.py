@@ -1286,12 +1286,25 @@ def test_unaligned_field_serialization(data: bytes, f1: int, f2: int, f3: int) -
 
 def test_message_size(message_size_value: MessageValue) -> None:
     message_size_value.parse(b"\x02\x01\x02")
+
     assert message_size_value.valid_message
     assert message_size_value.get("A") == 2
     assert message_size_value.get("B") == b"\x01\x02"
+
     message_size_value.set("A", 2)
     message_size_value.set("B", b"\x01\x02")
+    # ISSUE: Componolit/RecordFlux#422
+    # Serialization of optional fields dependent of message size not supported.
+    # message_size_value.set("C", 3)
+
     assert message_size_value.valid_message
+
+    message_size_value.parse(b"\x02\x01\x02\x03")
+
+    assert message_size_value.valid_message
+    assert message_size_value.get("A") == 2
+    assert message_size_value.get("B") == b"\x01\x02"
+    assert message_size_value.get("C") == 3
 
 
 def test_message_size_unverified() -> None:
@@ -1300,7 +1313,7 @@ def test_message_size_unverified() -> None:
         skip_model_verification=True,
         skip_message_verification=True,
     )
-    message = pyrflx_.package("Message_Size").new_message("Msg")
+    message = pyrflx_.package("Message_Size").new_message("M")
     message.set("A", 2)
     message.set("B", b"\x01\x02")
     assert message.valid_message

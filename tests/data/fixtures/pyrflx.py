@@ -199,7 +199,7 @@ def fixture_message_size_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
 
 @pytest.fixture(name="message_size_value")
 def fixture_message_size_value(message_size_package: pyrflx.Package) -> pyrflx.MessageValue:
-    return message_size_package.new_message("Msg")
+    return message_size_package.new_message("M")
 
 
 @pytest.fixture(name="message_type_size_package", scope="session")
