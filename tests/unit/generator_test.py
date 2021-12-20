@@ -327,7 +327,7 @@ DUMMY_SESSION = Session(
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.OutParameter(["F"], "T"),
+                            ada.OutParameter(["F"], "Boolean"),
                         ],
                     )
                 ),
@@ -337,7 +337,7 @@ DUMMY_SESSION = Session(
             decl.FunctionDeclaration(
                 "F",
                 [
-                    decl.Argument("P1", "T1", type_=rty.BOOLEAN),
+                    decl.Argument("P1", "Boolean", type_=rty.BOOLEAN),
                     decl.Argument("P2", "T2", type_=rty.OPAQUE),
                     decl.Argument("P3", "T3", type_=rty.Enumeration("T4", always_valid=True)),
                     decl.Argument("P4", "T4", type_=rty.Integer("T2")),
@@ -352,7 +352,7 @@ DUMMY_SESSION = Session(
                         identifier="F",
                         parameters=[
                             ada.OutParameter(["F"], "T.Structure"),
-                            ada.Parameter(["P1"], "T1"),
+                            ada.Parameter(["P1"], "Boolean"),
                             ada.Parameter(["P2"], const.TYPES_BYTES),
                             ada.Parameter(["P3"], "T3"),
                             ada.Parameter(["P4"], "T4"),

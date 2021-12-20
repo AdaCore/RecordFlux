@@ -329,6 +329,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 [ID(function.identifier)],
                 ID(self._prefix * function.return_type * "Structure")
                 if isinstance(function.type_, rty.Message)
+                else ID("Boolean")
+                if function.type_ == rty.BOOLEAN
                 else ID(self._prefix * function.return_type),
             )
         )
@@ -347,6 +349,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [ID(a.identifier)],
                     ID(const.TYPES_BYTES)
                     if a.type_ == rty.OPAQUE
+                    else ID("Boolean")
+                    if a.type_ == rty.BOOLEAN
                     else ID(self._prefix * a.type_identifier * "Structure")
                     if isinstance(a.type_, rty.Message)
                     else ID(self._prefix * a.type_identifier),
