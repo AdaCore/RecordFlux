@@ -264,7 +264,13 @@ is
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
        Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld);
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+     Post =>
+       (case Fld is
+           when F_Value =>
+              Field_Last'Result mod RFLX_Types.Byte'Size = 0,
+           when others =>
+              True);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field;
 

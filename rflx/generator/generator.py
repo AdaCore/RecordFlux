@@ -403,7 +403,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_field_condition_function(message)
         unit += self.__create_field_size_function(message, scalar_fields, composite_fields)
         unit += self.__create_field_first_function(message)
-        unit += self.__create_field_last_function()
+        unit += self.__create_field_last_function(scalar_fields, composite_fields)
         unit += self.__create_predecessor_function()
         unit += self.__create_successor_function(message)
         unit += self.__create_valid_predecessor_function(message, composite_fields)
@@ -1891,7 +1891,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     @staticmethod
-    def __create_field_last_function() -> UnitPart:
+    def __create_field_last_function(
+        scalar_fields: ty.Mapping[Field, Type], composite_fields: ty.Sequence[Field]
+    ) -> UnitPart:
         specification = FunctionSpecification(
             "Field_Last",
             const.TYPES_BIT_INDEX,
@@ -1911,7 +1913,38 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                                 ),
                             )
-                        )
+                        ),
+                        *(
+                            [
+                                Postcondition(
+                                    Case(
+                                        Variable("Fld"),
+                                        [
+                                            *[
+                                                (
+                                                    Variable(f.affixed_name),
+                                                    Equal(
+                                                        Mod(
+                                                            Result("Field_Last"),
+                                                            Size(const.TYPES_BYTE),
+                                                        ),
+                                                        Number(0),
+                                                    ),
+                                                )
+                                                for f in composite_fields
+                                            ],
+                                            *(
+                                                [(Variable("others"), TRUE)]
+                                                if scalar_fields
+                                                else []
+                                            ),
+                                        ],
+                                    )
+                                )
+                            ]
+                            if composite_fields
+                            else []
+                        ),
                     ],
                 )
             ],

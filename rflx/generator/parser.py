@@ -34,6 +34,7 @@ from rflx.ada import (
     Mod,
     Mul,
     NamedAggregate,
+    NullStatement,
     Number,
     ObjectDeclaration,
     Old,
@@ -310,7 +311,32 @@ class ParserGenerator:
                 [
                     (
                         Call("Composite_Field", [Variable("Fld")]),
-                        [set_context_cursor_composite_field("Fld")],
+                        # Componolit/RecordFlux#664
+                        # The provability of the context predicate is increased by duplicating
+                        # the statement inside a case statement. Not required for versions newer
+                        # than SPARK Community 2021.
+                        [
+                            CaseStatement(
+                                Variable("Fld"),
+                                [
+                                    *[
+                                        (
+                                            Variable(f.affixed_name),
+                                            [set_context_cursor_composite_field(f.affixed_name)],
+                                        )
+                                        for f in composite_fields
+                                    ],
+                                    *(
+                                        [(Variable("others"), [NullStatement()])]
+                                        if scalar_fields
+                                        else []
+                                    ),
+                                ],
+                                case_grouping=False,
+                            )
+                        ]
+                        if len(composite_fields) > 1
+                        else [set_context_cursor_composite_field("Fld")],
                     )
                 ],
                 [set_context_cursor_scalar()],
