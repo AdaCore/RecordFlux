@@ -557,3 +557,8 @@ def test_while_str() -> None:
 
 def test_qualified_expr() -> None:
     assert str(ada.QualifiedExpr("T", ada.Variable("A"))) == "T'(A)"
+
+
+def test_parameter() -> None:
+    assert str(ada.Parameter(["P1"], "T")) == "P1 : T"
+    assert str(ada.Parameter(["P1"], ada.ID("Boolean"))) == "P1 : Boolean"

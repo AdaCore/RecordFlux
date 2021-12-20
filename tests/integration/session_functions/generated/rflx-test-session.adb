@@ -35,9 +35,11 @@ is
      Post =>
        Initialized
    is
+      Valid : Boolean;
       Message_Type : Universal.Option_Type;
    begin
       Get_Message_Type (Message_Type);
+      Valid_Message (Valid, Message_Type, True);
       if Universal.Message.Structural_Valid (Message_Ctx, Universal.Message.F_Data) then
          declare
             Fixed_Size_Message : Fixed_Size.Simple_Message.Structure;
@@ -49,7 +51,11 @@ is
          P_Next_State := S_Terminated;
          return;
       end if;
-      P_Next_State := S_Reply;
+      if not Valid then
+         P_Next_State := S_Terminated;
+      else
+         P_Next_State := S_Reply;
+      end if;
    end Process;
 
    procedure Reply (P_Next_State : out State) with

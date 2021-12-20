@@ -12,6 +12,11 @@ package Test is
          (Message_Type : Universal::Option_Type;
           Data : Opaque)
       return Fixed_Size::Simple_Message;
+      -- §S-P-F-P-S, §S-P-F-R-S
+      with function Valid_Message
+         (Message_Type : Universal::Option_Type;
+          Strict : Boolean)
+      return Boolean;
    session Session with
       Initial => Start,
       Final => Terminated
@@ -31,11 +36,15 @@ package Test is
       end Start;
 
       state Process is
+         Valid : Boolean; -- §S-S-D-V-T-SC
          Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
       begin
          Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
+         Valid := Valid_Message (Message_Type, True); --  §S-S-A-A-CL, §S-E-CL-L
          Fixed_Size_Message := Create_Message (Message_Type, Message.Data); -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
       transition
+         goto Terminated
+            if Valid = False -- §S-S-T-BE
          goto Reply -- §S-S-T-N
       exception
          goto Terminated -- §S-S-E
