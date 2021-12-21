@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Sequence
 from rflx import expression as expr, identifier as rid, typing_ as rty
 from rflx.ada import (
     ID,
-    TRUE,
     Add,
     And,
     AndThen,
@@ -209,9 +208,7 @@ class AllocatorGenerator:
                             )
                             for slot in slots
                         ]
-                    )
-                    if slots
-                    else TRUE,
+                    ),
                 )
             ]
         )
@@ -238,9 +235,7 @@ class AllocatorGenerator:
                             for slot in slots
                             if not slot.global_
                         ],
-                    )
-                    if slots
-                    else TRUE,
+                    ),
                 )
             ]
         )

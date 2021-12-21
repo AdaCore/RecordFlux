@@ -523,6 +523,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _create_declarations(
         self, session: model.Session, declarations: Sequence[Declaration]
     ) -> UnitPart:
+        channel_params = [
+            x for x in session.parameters.values() if isinstance(x, decl.ChannelDeclaration)
+        ]
         return UnitPart(
             [
                 *[
@@ -534,14 +537,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [
                         EnumerationType(
                             "Channel",
-                            {
-                                ID(f"C_{parameter.identifier}"): None
-                                for parameter in session.parameters.values()
-                                if isinstance(parameter, decl.ChannelDeclaration)
-                            },
+                            {ID(f"C_{parameter.identifier}"): None for parameter in channel_params},
                         )
                     ]
-                    if session.parameters.values()
+                    if channel_params
                     else []
                 ),
                 EnumerationType("State", {ID(f"S_{s.identifier}"): None for s in session.states}),
