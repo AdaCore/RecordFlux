@@ -2672,11 +2672,11 @@ def test_has_fixed_size() -> None:
 
 
 def test_has_implicit_size() -> None:
-    assert NULL_MESSAGE.has_implicit_size
-    assert FIXED_SIZE_MESSAGE.has_implicit_size
-    assert TLV_MESSAGE.has_implicit_size
-    assert not ETHERNET_FRAME.has_implicit_size
-    assert SEQUENCE_MESSAGE.has_implicit_size
+    assert not NULL_MESSAGE.has_implicit_size
+    assert not FIXED_SIZE_MESSAGE.has_implicit_size
+    assert not TLV_MESSAGE.has_implicit_size
+    assert ETHERNET_FRAME.has_implicit_size
+    assert not SEQUENCE_MESSAGE.has_implicit_size
 
 
 def test_is_definite() -> None:

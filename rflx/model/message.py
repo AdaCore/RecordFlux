@@ -81,6 +81,10 @@ class Link(Base):
     def __hash__(self) -> int:
         return 0
 
+    @property
+    def has_implicit_size(self) -> bool:
+        return bool(self.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
+
 
 def valid_message_field_types(message: "AbstractMessage") -> bool:
     for t in message.types.values():
@@ -630,7 +634,7 @@ class AbstractMessage(mty.Type):
                         ]
                     )
 
-            if link.size.findall(lambda x: x in {expr.Size("Message"), expr.Last("Message")}):
+            if link.has_implicit_size:
                 if any(l.target != FINAL for l in self.outgoing(link.target)):
                     self.error.extend(
                         [
@@ -868,15 +872,7 @@ class Message(AbstractMessage):
 
     @property
     def has_implicit_size(self) -> bool:
-        """
-        Return true if the message has a implicit size.
-
-        All messages containing a reference to `Message` in a size aspect are considered as
-        having a implicit size.
-        """
-        return all(
-            v.identifier != ID("Message") for l in self.structure for v in l.size.variables()
-        )
+        return any(l.has_implicit_size for l in self.structure)
 
     @property
     def is_definite(self) -> bool:
@@ -888,7 +884,7 @@ class Message(AbstractMessage):
         """
         return (
             len(self.paths(FINAL)) <= 1
-            and self.has_implicit_size
+            and not self.has_implicit_size
             and all(
                 not l.size.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
                 for l in self.structure
@@ -1016,7 +1012,7 @@ class Message(AbstractMessage):
         if not self.structure:
             return expr.Number(0)
 
-        if not self.has_implicit_size:
+        if self.has_implicit_size:
             fail(
                 "unable to calculate maximum size of message with implicit size",
                 Subsystem.MODEL,
@@ -1035,7 +1031,7 @@ class Message(AbstractMessage):
         if not self.structure:
             return {}
 
-        if not self.has_implicit_size:
+        if self.has_implicit_size:
             fail(
                 "unable to calculate maximum field sizes of message with implicit size",
                 Subsystem.MODEL,
