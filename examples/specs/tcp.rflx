@@ -41,7 +41,6 @@ package TCP is
          Kind : Kind
             then null
                if Kind = End_Of_Option_List or Kind = No_Operation
-                  and Message'Size = Kind'Size
             then Length
                if Kind = Maximum_Segment_Size
                   or Kind = Window_Scale
@@ -65,22 +64,17 @@ package TCP is
                   and Length = (TCP::Kind'Size + TCP::Length'Size + TCP::TSval'Size + TCP::TSecr'Size) / 8
             then null
                if Kind = SACK_Permitted
-                  and Length = (TCP::Kind'Size + TCP::Length'Size) / 8
-                  and Message'Size = Length * 8;
+                  and Length = (TCP::Kind'Size + TCP::Length'Size) / 8;
          Shift_Cnt : Shift_Cnt
-            then null
-               if Message'Size = Length * 8;
+            then null;
          Max_Seg_Size : Max_Seg_Size
-            then null
-               if Message'Size = Length * 8;
+            then null;
          SACK_Blocks : SACK_Blocks
             with Size => Length * 8 - Kind'Size - Length'Size
-            then null
-               if Message'Size = Length * 8;
+            then null;
          TSval : TSval;
          TSecr : TSecr
-            then null
-               if Message'Size = Length * 8;
+            then null;
       end message;
 
    type Options is sequence of Option;
