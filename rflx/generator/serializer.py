@@ -64,7 +64,7 @@ from rflx.ada import (
 )
 from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
-from rflx.model import FINAL, Enumeration, Field, Link, Message, Opaque, Scalar, Sequence, Type
+from rflx.model import FINAL, Enumeration, Field, Message, Opaque, Scalar, Sequence, Type
 
 from . import common, const
 
@@ -264,11 +264,6 @@ class SerializerGenerator:
                     .ada_expr()
                 )
 
-            def has_implicit_size(link: Link) -> bool:
-                return bool(
-                    link.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")])
-                )
-
             target_links = [
                 (target, list(links))
                 for target, links in itertools.groupby(message.outgoing(field), lambda x: x.target)
@@ -297,13 +292,13 @@ class SerializerGenerator:
                     size = explicit_size
                 else:
                     if len(links) == 1:
-                        size = implicit_size if has_implicit_size(links[0]) else explicit_size
+                        size = implicit_size if links[0].has_implicit_size else explicit_size
                     else:
                         size = If(
                             [
                                 (
                                     substituted(l.condition),
-                                    implicit_size if has_implicit_size(l) else explicit_size,
+                                    implicit_size if l.has_implicit_size else explicit_size,
                                 )
                                 for l in links
                             ],

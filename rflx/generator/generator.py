@@ -364,12 +364,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     sequence_fields[f] = t
                 if isinstance(t, Opaque):
                     opaque_fields.append(f)
-                if any(
-                    bool(
-                        l.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")])
-                    )
-                    for l in message.incoming(f)
-                ):
+                if any(l.has_implicit_size for l in message.incoming(f)):
                     fields_with_implicit_size.append(f)
                 else:
                     fields_with_explicit_size.append(f)
