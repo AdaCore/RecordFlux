@@ -2654,3 +2654,12 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
         main=main,
         units=spark_units,
     )
+
+
+def test_simple_model(tmp_path: Path) -> None:
+    state = State("St", transitions=[])
+    session = Session(
+        "P::S", initial="St", final="St", states=[state], declarations=[], parameters=[], types=[]
+    )
+    model = Model(types=[], sessions=[session])
+    assert_compilable_code(model, Integration(), tmp_path)

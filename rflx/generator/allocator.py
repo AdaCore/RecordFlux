@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Sequence
 from rflx import expression as expr, identifier as rid, typing_ as rty
 from rflx.ada import (
     ID,
+    TRUE,
     Add,
     And,
     AndThen,
@@ -20,6 +21,7 @@ from rflx.ada import (
     Last,
     NamedAggregate,
     NotEqual,
+    NullStatement,
     Number,
     ObjectDeclaration,
     OrElse,
@@ -128,8 +130,9 @@ class AllocatorGenerator:
         return ID(f"Slot_Ptr_Type_{size}")
 
     def _create(self, slots: List[NumberedSlotInfo]) -> None:
-        self._unit_part += self._create_ptr_subtypes(slots)
-        self._unit_part += self._create_slots(slots)
+        if slots:
+            self._unit_part += self._create_ptr_subtypes(slots)
+            self._unit_part += self._create_slots(slots)
         self._unit_part += self._create_init_pred(slots)
         self._unit_part += self._create_init_proc(slots)
         self._unit_part += self._create_global_allocated_pred(slots)
@@ -206,7 +209,9 @@ class AllocatorGenerator:
                             )
                             for slot in slots
                         ]
-                    ),
+                    )
+                    if slots
+                    else TRUE,
                 )
             ]
         )
@@ -233,19 +238,25 @@ class AllocatorGenerator:
                             for slot in slots
                             if not slot.global_
                         ],
-                    ),
+                    )
+                    if slots
+                    else TRUE,
                 )
             ]
         )
 
     def _create_init_proc(self, slots: List[NumberedSlotInfo]) -> UnitPart:
-        assignments = [
-            Assignment(
-                self._slot_name(slot.slot_id),
-                UnrestrictedAccess(Variable(ID(f"Slot_{slot.slot_id}"))),
-            )
-            for slot in slots
-        ]
+        assignments: List[Statement] = (
+            [
+                Assignment(
+                    self._slot_name(slot.slot_id),
+                    UnrestrictedAccess(Variable(ID(f"Slot_{slot.slot_id}"))),
+                )
+                for slot in slots
+            ]
+            if slots
+            else [NullStatement()]
+        )
         proc = ProcedureSpecification(ID("Initialize"))
         return UnitPart(
             [SubprogramDeclaration(proc, [Postcondition(Call("Initialized"))])],

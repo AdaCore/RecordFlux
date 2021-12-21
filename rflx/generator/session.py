@@ -530,13 +530,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     for t in self._session_context.used_types
                     if not model.is_builtin_type(t) and not model.is_internal_type(t)
                 ],
-                EnumerationType(
-                    "Channel",
-                    {
-                        ID(f"C_{parameter.identifier}"): None
-                        for parameter in session.parameters.values()
-                        if isinstance(parameter, decl.ChannelDeclaration)
-                    },
+                *(
+                    [
+                        EnumerationType(
+                            "Channel",
+                            {
+                                ID(f"C_{parameter.identifier}"): None
+                                for parameter in session.parameters.values()
+                                if isinstance(parameter, decl.ChannelDeclaration)
+                            },
+                        )
+                    ]
+                    if session.parameters.values()
+                    else []
                 ),
                 EnumerationType("State", {ID(f"S_{s.identifier}"): None for s in session.states}),
             ],
@@ -906,7 +912,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     In(
                         Variable("P_Next_State"),
                         ChoiceList(*[Variable(f"S_{state.identifier}") for state in io_states]),
-                    ),
+                    )
+                    if io_states
+                    else FALSE,
                 ),
                 SubprogramBody(
                     specification,
