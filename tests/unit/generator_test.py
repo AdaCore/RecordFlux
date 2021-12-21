@@ -2656,7 +2656,7 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
     )
 
 
-def test_simple_model(tmp_path: Path) -> None:
+def test_session_with_only_null_state(tmp_path: Path) -> None:
     state = State("St", transitions=[])
     session = Session(
         "P::S", initial="St", final="St", states=[state], declarations=[], parameters=[], types=[]
