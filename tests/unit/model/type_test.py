@@ -2,12 +2,16 @@ import pytest
 
 import rflx.typing_ as rty
 from rflx.error import Location, RecordFluxError
-from rflx.expression import Add, Number, Pow, Sub, Variable
+from rflx.expression import Add, Equal, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
+    FINAL,
+    INITIAL,
     OPAQUE,
     Enumeration,
+    Field,
+    Link,
     Message,
     ModularInteger,
     RangeInteger,
@@ -386,24 +390,53 @@ def test_sequence_dependencies() -> None:
     ]
 
 
-def test_sequence_invalid_element_type() -> None:
-    assert_type_error(
-        Sequence(
-            "P::A", Sequence("P::B", models.MODULAR_INTEGER, Location((3, 4))), Location((5, 4))
+@pytest.mark.parametrize(
+    "element_type, error",
+    [
+        (
+            Sequence("P::B", models.MODULAR_INTEGER, Location((3, 4))),
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r'<stdin>:3:4: model: info: type "B" must be scalar or message',
         ),
-        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
-        r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
-    )
-    assert_type_error(
-        Sequence("P::A", Message("P::B", [], {}, location=Location((3, 4))), Location((5, 4))),
-        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
-        r'<stdin>:3:4: model: info: type "B" must be scalar or non-null message$',
-    )
-    assert_type_error(
-        Sequence("P::A", OPAQUE, Location((5, 4))),
-        r'^<stdin>:5:4: model: error: invalid element type of sequence "A"\n'
-        r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or non-null message$',
-    )
+        (
+            OPAQUE,
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or message',
+        ),
+        (
+            Message("P::B", [], {}, location=Location((3, 4))),
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: model: info: null messages must not be used as sequence element",
+        ),
+        (
+            Message(
+                "P::B",
+                [Link(INITIAL, Field("A"), size=Size("Message")), Link(Field("A"), FINAL)],
+                {Field("A"): OPAQUE},
+                location=Location((3, 4)),
+            ),
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: model: info: messages used as sequence element must not depend"
+            ' on "Message\'Size" or "Message\'Last"',
+        ),
+        (
+            Message(
+                "P::B",
+                [
+                    Link(INITIAL, Field("A"), condition=Equal(Size("Message"), Number(8))),
+                    Link(Field("A"), FINAL),
+                ],
+                {Field("A"): models.MODULAR_INTEGER},
+                location=Location((3, 4)),
+            ),
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: model: info: messages used as sequence element must not depend"
+            ' on "Message\'Size" or "Message\'Last"',
+        ),
+    ],
+)
+def test_sequence_invalid_element_type(element_type: Type, error: str) -> None:
+    assert_type_error(Sequence("P::A", element_type, Location((1, 2))), f"^{error}$")
 
 
 def test_sequence_unsupported_element_type() -> None:

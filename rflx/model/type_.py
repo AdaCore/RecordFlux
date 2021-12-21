@@ -523,9 +523,7 @@ class Sequence(Composite):
         super().__init__(identifier, location)
         self.element_type = element_type
 
-        if not isinstance(element_type, Scalar) and not (
-            isinstance(element_type, message.Message) and element_type.structure
-        ):
+        if not isinstance(element_type, Scalar) and not isinstance(element_type, message.Message):
             self.error.extend(
                 [
                     (
@@ -535,7 +533,7 @@ class Sequence(Composite):
                         location,
                     ),
                     (
-                        f'type "{element_type.name}" must be scalar or non-null message',
+                        f'type "{element_type.name}" must be scalar or message',
                         Subsystem.MODEL,
                         Severity.INFO,
                         element_type.location,
@@ -557,6 +555,45 @@ class Sequence(Composite):
                         (
                             f'type "{element_type.name}" has size {element_type_size},'
                             r" must be multiple of 8",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            element_type.location,
+                        ),
+                    ],
+                )
+
+        if isinstance(element_type, message.Message):
+            error = (
+                f'invalid element type of sequence "{self.name}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                location,
+            )
+
+            if not element_type.structure:
+                self.error.extend(
+                    [
+                        error,
+                        (
+                            "null messages must not be used as sequence element",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            element_type.location,
+                        ),
+                    ],
+                )
+
+            if any(
+                bool(e.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
+                for l in element_type.structure
+                for e in [l.condition, l.size]
+            ):
+                self.error.extend(
+                    [
+                        error,
+                        (
+                            "messages used as sequence element must not depend"
+                            ' on "Message\'Size" or "Message\'Last"',
                             Subsystem.MODEL,
                             Severity.INFO,
                             element_type.location,
