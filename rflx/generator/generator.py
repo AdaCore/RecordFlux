@@ -1884,7 +1884,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
     ) -> UnitPart:
         specification = FunctionSpecification(
             "Field_Last",
-            const.TYPES_BIT_INDEX,
+            const.TYPES_BIT_LENGTH,
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 

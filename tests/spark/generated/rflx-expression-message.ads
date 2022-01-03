@@ -288,7 +288,7 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
+   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld)
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
@@ -631,7 +631,7 @@ private
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Ctx.First);
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
+   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
