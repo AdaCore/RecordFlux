@@ -379,13 +379,23 @@ grammar.add_rules(
     checksum_aspect=ast.ChecksumAspect(
         "Checksum", "=>", "(", List(grammar.checksum_association, sep=","), ")"
     ),
+    byte_order_aspect=ast.ByteOrderAspect(
+        "Byte_Order",
+        "=>",
+        Or(
+            # pylint: disable=no-member
+            ast.ByteOrderType.alt_highorderfirst("High_Order_First"),
+            ast.ByteOrderType.alt_loworderfirst("Low_Order_First"),
+        ),
+    ),
+    message_aspect_list=List(Or(grammar.checksum_aspect, grammar.byte_order_aspect), sep=","),
     message_type_definition=Or(
         ast.MessageTypeDef(
             "message",
             grammar.message_field_list,
             "end",
             "message",
-            Opt("with", grammar.checksum_aspect),
+            Opt("with", grammar.message_aspect_list),
         ),
         ast.NullMessageTypeDef("null", "message"),
     ),

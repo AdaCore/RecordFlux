@@ -59,11 +59,14 @@ class Token(LexerToken):  # type: ignore[misc]
     Read = WithText()
     Write = WithText()
     Reset = WithText()
+    HighOrderFirst = WithText()
+    LowOrderFirst = WithText()
 
     # Aspect names
     First = WithText()
     Size = WithText()
     Last = WithText()
+    ByteOrder = WithText()
     Checksum = WithText()
     ValidChecksum = WithText()
     HasData = WithText()
@@ -210,6 +213,9 @@ rflx_lexer.add_rules(
     (Literal("Write"), Token.Write),
     (Literal("Reset"), Token.Reset),
     (Literal("Checksum"), Token.Checksum),
+    (Literal("Byte_Order"), Token.ByteOrder),
+    (Literal("High_Order_First"), Token.HighOrderFirst),
+    (Literal("Low_Order_First"), Token.LowOrderFirst),
     (Literal("Valid_Checksum"), Token.ValidChecksum),
     (Literal("Has_Data"), Token.HasData),
     (Literal("Head"), Token.Head),

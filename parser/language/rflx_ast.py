@@ -441,15 +441,34 @@ class ChecksumAssoc(RFLXNode):
     covered_fields = Field(type=BaseChecksumVal.list)
 
 
-class ChecksumAspect(RFLXNode):
+@abstract
+class MessageAspect(RFLXNode):
+    """Base class for message aspects."""
+
+
+class ChecksumAspect(MessageAspect):
 
     associations = Field(type=ChecksumAssoc.list)
+
+
+class ByteOrderType(RFLXNode):
+
+    enum_node = True
+    alternatives = [
+        "HighOrderFirst",
+        "LowOrderFirst",
+    ]
+
+
+class ByteOrderAspect(MessageAspect):
+
+    byte_order = Field(type=ByteOrderType)
 
 
 class MessageTypeDef(AbstractMessageTypeDef):
 
     message_fields = Field(type=MessageFields)
-    checksums = Field(type=ChecksumAspect)
+    aspects = Field(type=MessageAspect.list)
 
 
 class Variable(Expr):

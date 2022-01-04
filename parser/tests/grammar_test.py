@@ -3473,7 +3473,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 "_kind": "TypeDecl",
                 "definition": {
                     "_kind": "MessageTypeDef",
-                    "checksums": None,
+                    "aspects": [],
                     "message_fields": {
                         "_kind": "MessageFields",
                         "fields": [
@@ -3526,7 +3526,7 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 "_kind": "TypeDecl",
                 "definition": {
                     "_kind": "MessageTypeDef",
-                    "checksums": None,
+                    "aspects": [],
                     "message_fields": {
                         "_kind": "MessageFields",
                         "fields": [
