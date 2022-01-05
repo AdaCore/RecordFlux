@@ -110,10 +110,10 @@ private
       and not Test.Message.Has_Buffer (M_S_Ctx));
 
    function Initialized return Boolean is
-     (Message.Has_Buffer (M_R_Ctx)
+     (Test.Message.Has_Buffer (M_R_Ctx)
       and then M_R_Ctx.Buffer_First = RFLX_Types.Index'First
       and then M_R_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Message.Has_Buffer (M_S_Ctx)
+      and then Test.Message.Has_Buffer (M_S_Ctx)
       and then M_S_Ctx.Buffer_First = RFLX_Types.Index'First
       and then M_S_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Test.Session_Allocator.Global_Allocated);

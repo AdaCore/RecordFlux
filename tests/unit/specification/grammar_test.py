@@ -33,7 +33,7 @@ def parse_statement(data: str) -> stmt.Statement:
 def parse_declaration(data: str) -> decl.Declaration:
     parser_declaration, filename = parse(data, lang.GrammarRule.declaration_rule)
     assert isinstance(parser_declaration, lang.LocalDecl)
-    declaration = create_declaration(parser_declaration, filename)
+    declaration = create_declaration(parser_declaration, ID("Package"), filename)
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
@@ -41,7 +41,7 @@ def parse_declaration(data: str) -> decl.Declaration:
 def parse_formal_declaration(data: str) -> decl.Declaration:
     parser_declaration, filename = parse(data, lang.GrammarRule.session_parameter_rule)
     assert isinstance(parser_declaration, lang.FormalDecl)
-    declaration = create_formal_declaration(parser_declaration, filename)
+    declaration = create_formal_declaration(parser_declaration, ID("Package"), filename)
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
@@ -49,7 +49,7 @@ def parse_formal_declaration(data: str) -> decl.Declaration:
 def parse_state(data: str) -> State:
     parser_state, source = parse(data, lang.GrammarRule.state_rule)
     assert isinstance(parser_state, lang.State)
-    state = create_state(parser_state, source)
+    state = create_state(parser_state, ID("Package"), source)
     assert isinstance(state, State)
     return state
 
@@ -562,7 +562,9 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
 
 def test_private_type_declaration() -> None:
     string = "type X is private"
-    expected = decl.TypeDeclaration(model.Private("X", location=Location((1, 1), None, (1, 17))))
+    expected = decl.TypeDeclaration(
+        model.Private("Package::X", location=Location((1, 1), None, (1, 17)))
+    )
     actual = parse_formal_declaration(string)
     assert actual == expected
     assert actual.location
@@ -588,10 +590,15 @@ def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
 @pytest.mark.parametrize(
     "string,expected",
     [
-        ("with function X return Y", decl.FunctionDeclaration("X", [], "Y")),
+        ("with function X return Y", decl.FunctionDeclaration("X", [], "Package::Y")),
+        ("with function X return Package::Y", decl.FunctionDeclaration("X", [], "Package::Y")),
         (
             "with function X (A : B; C : D) return Y",
-            decl.FunctionDeclaration("X", [decl.Argument("A", "B"), decl.Argument("C", "D")], "Y"),
+            decl.FunctionDeclaration(
+                "X",
+                [decl.Argument("A", "Package::B"), decl.Argument("C", "Package::D")],
+                "Package::Y",
+            ),
         ),
         (
             "with function X (A : Boolean) return Boolean",
@@ -612,9 +619,9 @@ def test_formal_function_declaration(string: str, expected: decl.Declaration) ->
 @pytest.mark.parametrize(
     "string,expected",
     [
-        ("A : B", decl.VariableDeclaration("A", "B")),
-        ("A : B := C", decl.VariableDeclaration("A", "B", expr.Variable("C"))),
-        ("A : B := 1", decl.VariableDeclaration("A", "B", expr.Number(1))),
+        ("A : B", decl.VariableDeclaration("A", "Package::B")),
+        ("A : B := C", decl.VariableDeclaration("A", "Package::B", expr.Variable("C"))),
+        ("A : B := 1", decl.VariableDeclaration("A", "Package::B", expr.Number(1))),
     ],
 )
 def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
@@ -628,7 +635,7 @@ def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
     [
         (
             "A : B renames C.D",
-            decl.RenamingDeclaration("A", "B", expr.Selected(expr.Variable("C"), "D")),
+            decl.RenamingDeclaration("A", "Package::B", expr.Selected(expr.Variable("C"), "D")),
         ),
     ],
 )
@@ -862,8 +869,8 @@ def test_state_error(string: str, error: str) -> None:
                 [decl.VariableDeclaration("Y", "__BUILTINS__::Boolean", expr.Variable("True"))],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.TypeDeclaration(model.Private("T")),
-                    decl.FunctionDeclaration("F", [], "T"),
+                    decl.TypeDeclaration(model.Private("Package::T")),
+                    decl.FunctionDeclaration("F", [], "Package::T"),
                 ],
                 [],
                 location=Location((2, 16), None, (23, 27)),

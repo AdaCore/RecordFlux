@@ -1,8 +1,10 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal;
+with RFLX.Test;
 use type RFLX.Universal.Message_Type;
 use type RFLX.Universal.Length;
+use type RFLX.Test.Result;
 with RFLX.RFLX_Types;
 use type RFLX.RFLX_Types.Bit_Length;
 
@@ -35,7 +37,7 @@ is
      Post =>
        Initialized
    is
-      Valid : Boolean;
+      Valid : Test.Result;
       Message_Type : Universal.Option_Type;
    begin
       Get_Message_Type (Message_Type);
@@ -51,7 +53,7 @@ is
          P_Next_State := S_Terminated;
          return;
       end if;
-      if not Valid then
+      if Valid = M_Valid then
          P_Next_State := S_Terminated;
       else
          P_Next_State := S_Reply;

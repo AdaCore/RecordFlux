@@ -22,13 +22,15 @@ is
    end Create_Message;
 
    procedure Valid_Message
-      (Valid_Message : out Boolean;
+      (Valid_Message : out RFLX.Test.Result;
        Message_Type  :     RFLX.Universal.Option_Type;
        Strict        :     Boolean)
    is
       use type RFLX.Universal.Option_Type;
    begin
-      Valid_Message := Strict and then Message_Type = (Known => True, Enum => RFLX.Universal.OT_Data);
+      Valid_Message := (if Strict and then Message_Type = (Known => True, Enum => RFLX.Universal.OT_Data)
+                        then RFLX.Test.M_Invalid
+                        else RFLX.Test.M_Valid);
    end Valid_Message;
 
 end Func;

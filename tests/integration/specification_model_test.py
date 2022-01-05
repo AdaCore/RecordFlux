@@ -572,14 +572,14 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             State("C"),
         ],
         [
-            decl.VariableDeclaration("M", "Message"),
+            decl.VariableDeclaration("M", "Test::Message"),
             decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
         ],
         [
             decl.ChannelDeclaration("X", readable=True, writable=True),
-            decl.TypeDeclaration(Private("T")),
-            decl.FunctionDeclaration("F", [], "T"),
-            decl.FunctionDeclaration("G", [decl.Argument("P", "T")], BOOLEAN.identifier),
+            decl.TypeDeclaration(Private("Test::T")),
+            decl.FunctionDeclaration("F", [], "Test::T"),
+            decl.FunctionDeclaration("G", [decl.Argument("P", "Test::T")], BOOLEAN.identifier),
         ],
         [BOOLEAN, OPAQUE, tag, length, message],
     )
