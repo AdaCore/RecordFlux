@@ -16,12 +16,14 @@ def template(name: str, interfaces: List[str]) -> str:
 with "gnatcoll";
 
 library project Lib{name} is
+   type Library_Type_Type is ("relocatable", "static", "static-pic");
+   Library_Type : Library_Type_Type := External ("LIBRARY_TYPE", "static");
    for Create_Missing_Dirs use "true";
 
    for Languages use ("Ada", "C");
    for Source_Dirs use ("src", "langkit/support", "gnatcoll-bindings/gmp", "gnatcoll-bindings/iconv");
    for Library_Name use "{name}";
-   for Library_Kind use "relocatable";
+   for Library_Kind use Library_Type;
    for Library_Dir use "python/librflxlang";
    for Interfaces use ({interfaces_str});
    for Object_Dir use "obj/dev";
