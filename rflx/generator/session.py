@@ -2230,13 +2230,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         # pylint: disable = too-many-locals
 
         assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
-        if not isinstance(comprehension.type_.element, (rty.Integer, rty.Enumeration)):
-            fail(
-                f"creating sequence with element {comprehension.type_.element}"
-                " using list comprehension not yet supported",
-                Subsystem.GENERATOR,
-                location=comprehension.location,
-            )
         assert isinstance(comprehension.sequence.type_, rty.Sequence)
 
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
@@ -3406,40 +3399,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 condition.substituted(
                                                     self._substitution()
                                                 ).ada_expr(),
-                                                [
-                                                    self._if_sufficient_space_in_sequence(
-                                                        Size(
-                                                            ID(
-                                                                target_type.element.identifier
-                                                                + "_Enum"
-                                                                if isinstance(
-                                                                    target_type.element,
-                                                                    rty.Enumeration,
-                                                                )
-                                                                and target_type.element.always_valid
-                                                                else target_type.element.identifier
-                                                            )
-                                                        ),
-                                                        target_type_id,
-                                                        context_id(target_identifier),
-                                                        [
-                                                            CallStatement(
-                                                                target_type_id * "Append_Element",
-                                                                [
-                                                                    Variable(
-                                                                        context_id(
-                                                                            target_identifier
-                                                                        )
-                                                                    ),
-                                                                    selector.substituted(
-                                                                        self._substitution()
-                                                                    ).ada_expr(),
-                                                                ],
-                                                            )
-                                                        ],
-                                                        local_exception_handler,
-                                                    ),
-                                                ],
+                                                self._comprehension_append_element(
+                                                    target_identifier,
+                                                    target_type,
+                                                    selector,
+                                                    local_exception_handler,
+                                                ),
                                             )
                                         ]
                                     )
@@ -3456,6 +3421,94 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     self._exit_on_deferred_exception(),
                 ],
             )
+
+    def _comprehension_append_element(
+        self,
+        target_identifier: ID,
+        target_type: rty.Sequence,
+        selector: expr.Expr,
+        exception_handler: ExceptionHandler,
+    ) -> List[Statement]:
+        target_type_id = ID(target_type.identifier)
+        required_space: Expr
+        append_element: Statement
+
+        if isinstance(target_type.element, rty.Message):
+            if not isinstance(selector, expr.Variable):
+                fail(
+                    "expressions other than variables not yet supported"
+                    " as selector for message types",
+                    Subsystem.GENERATOR,
+                    location=selector.location,
+                )
+
+            element_id = ID(selector.identifier + "_Ctx")
+            required_space = Call(
+                ID(target_type.element.identifier * "Size"),
+                [Variable(element_id)],
+            )
+            append_element = self._if_structural_valid_message(
+                ID(target_type.element.identifier),
+                element_id,
+                [
+                    self._if(
+                        Greater(
+                            Call(
+                                ID(target_type.element.identifier) * "Size",
+                                [
+                                    Variable(element_id),
+                                ],
+                            ),
+                            Number(0),
+                        ),
+                        [
+                            CallStatement(
+                                target_type_id * "Append_Element",
+                                [
+                                    Variable(context_id(target_identifier)),
+                                    Variable(element_id),
+                                ],
+                            )
+                        ],
+                        "empty messages cannot be appended to sequence",
+                        exception_handler,
+                    )
+                ],
+                exception_handler,
+            )
+
+        elif isinstance(target_type.element, (rty.Integer, rty.Enumeration)):
+            required_space = Size(
+                ID(
+                    target_type.element.identifier + "_Enum"
+                    if isinstance(
+                        target_type.element,
+                        rty.Enumeration,
+                    )
+                    and target_type.element.always_valid
+                    else target_type.element.identifier
+                )
+            )
+            append_element = CallStatement(
+                target_type_id * "Append_Element",
+                [
+                    Variable(context_id(target_identifier)),
+                    selector.substituted(self._substitution()).ada_expr(),
+                ],
+            )
+
+        else:
+            assert False
+
+        return [
+            self._if_sufficient_space_in_sequence(
+                required_space,
+                target_type_id,
+                context_id(target_identifier),
+                [append_element],
+                exception_handler,
+            ),
+        ]
 
     def _free_context_buffer(
         self, identifier: ID, type_: ID, alloc_id: Optional[Location]

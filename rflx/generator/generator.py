@@ -2443,7 +2443,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Postcondition(
+                            Equal(Mod(Result("Size"), Size(const.TYPES_BYTE)), Number(0)),
+                        )
+                    ],
+                )
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -2474,7 +2483,19 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Postcondition(
+                            Equal(
+                                Result("Byte_Size"),
+                                Call(const.TYPES_TO_LENGTH, [Call("Size", [Variable("Ctx")])]),
+                            )
+                        ),
+                    ],
+                )
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
