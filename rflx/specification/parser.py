@@ -142,7 +142,7 @@ def create_statement(statement: lang.Statement, filename: Path) -> stmt.Statemen
     return handlers[statement.kind_name](statement, filename)
 
 
-def create_state(state: lang.State, filename: Path) -> model.State:
+def create_state(state: lang.State, package: ID, filename: Path) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(state.f_identifier, filename)
     if isinstance(state.f_body, lang.NullStateBody):
@@ -170,7 +170,7 @@ def create_state(state: lang.State, filename: Path) -> model.State:
         actions.append(create_statement(a, filename))
     declarations = []
     for d in state.f_body.f_declarations:
-        declarations.append(create_declaration(d, filename))
+        declarations.append(create_declaration(d, package, filename))
     description = create_description(state.f_description)
     return model.State(
         identifier=identifier,
@@ -206,9 +206,9 @@ def create_unproven_session(
         package * create_id(session.f_identifier, filename),
         create_id(session.f_aspects.f_initial, filename),
         create_id(session.f_aspects.f_final, filename),
-        [create_state(s, filename) for s in session.f_states],
-        [create_declaration(d, filename) for d in session.f_declarations],
-        [create_formal_declaration(p, filename) for p in session.f_parameters],
+        [create_state(s, package, filename) for s in session.f_states],
+        [create_declaration(d, package, filename) for d in session.f_declarations],
+        [create_formal_declaration(p, package, filename) for p in session.f_parameters],
         types or [],
         node_location(session, filename),
     )
@@ -496,7 +496,9 @@ def create_binding(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_variable_decl(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
+def create_variable_decl(
+    declaration: lang.LocalDecl, package: ID, filename: Path
+) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.VariableDecl)
     initializer = (
         create_expression(declaration.f_initializer, filename)
@@ -505,19 +507,21 @@ def create_variable_decl(declaration: lang.LocalDecl, filename: Path) -> decl.Ba
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename)),
+        model.qualified_type_identifier(
+            create_id(declaration.f_type_identifier, filename), package
+        ),
         initializer,
         location=node_location(declaration, filename),
     )
 
 
 def create_private_type_decl(
-    declaration: lang.FormalDecl, filename: Path
+    declaration: lang.FormalDecl, package: ID, filename: Path
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
         model.Private(
-            create_id(declaration.f_identifier, filename),
+            model.qualified_type_identifier(create_id(declaration.f_identifier, filename), package),
             location=node_location(declaration, filename),
         )
     )
@@ -525,6 +529,7 @@ def create_private_type_decl(
 
 def create_channel_decl(
     declaration: lang.FormalDecl,
+    _package: ID,
     filename: Path,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalChannelDecl)
@@ -545,13 +550,17 @@ def create_channel_decl(
     )
 
 
-def create_renaming_decl(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
+def create_renaming_decl(
+    declaration: lang.LocalDecl, package: ID, filename: Path
+) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.RenamingDecl)
     selected = create_expression(declaration.f_expression, filename)
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(create_id(declaration.f_type_identifier, filename), None),
+        model.qualified_type_identifier(
+            create_id(declaration.f_type_identifier, filename), package
+        ),
         selected,
         location=node_location(declaration, filename),
     )
@@ -559,6 +568,7 @@ def create_renaming_decl(declaration: lang.LocalDecl, filename: Path) -> decl.Ba
 
 def create_function_decl(
     declaration: lang.FormalDecl,
+    package: ID,
     filename: Path,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalFunctionDecl)
@@ -568,13 +578,17 @@ def create_function_decl(
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    model.qualified_type_identifier(create_id(p.f_type_identifier, filename)),
+                    model.qualified_type_identifier(
+                        create_id(p.f_type_identifier, filename), package
+                    ),
                 )
             )
     return decl.FunctionDeclaration(
         create_id(declaration.f_identifier, filename),
         arguments,
-        model.qualified_type_identifier(create_id(declaration.f_return_type_identifier, filename)),
+        model.qualified_type_identifier(
+            create_id(declaration.f_return_type_identifier, filename), package
+        ),
         location=node_location(declaration, filename),
     )
 
@@ -675,23 +689,25 @@ def create_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
     return EXPRESSION_MAP[expression.kind_name](expression, filename)
 
 
-def create_declaration(declaration: lang.LocalDecl, filename: Path) -> decl.BasicDeclaration:
+def create_declaration(
+    declaration: lang.LocalDecl, package: ID, filename: Path
+) -> decl.BasicDeclaration:
     handlers = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    return handlers[declaration.kind_name](declaration, filename)
+    return handlers[declaration.kind_name](declaration, package, filename)
 
 
 def create_formal_declaration(
-    declaration: lang.FormalDecl, filename: Path
+    declaration: lang.FormalDecl, package: ID, filename: Path
 ) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, filename)
+    return handlers[declaration.kind_name](declaration, package, filename)
 
 
 def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
