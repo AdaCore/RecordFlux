@@ -221,9 +221,13 @@ is
      Pre =>
        Has_Buffer (Ctx);
 
-   function Size (Ctx : Context) return RFLX_Types.Bit_Length;
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length with
+     Post =>
+       Size'Result mod RFLX_Types.Byte'Size = 0;
 
-   function Byte_Size (Ctx : Context) return RFLX_Types.Length;
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length with
+     Post =>
+       Byte_Size'Result = RFLX_Types.To_Length (Size (Ctx));
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>

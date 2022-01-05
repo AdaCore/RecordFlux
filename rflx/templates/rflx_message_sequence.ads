@@ -5,7 +5,9 @@ generic
    type Element_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is private;
    with procedure Element_Initialize (Ctx : out Element_Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0);
    with procedure Element_Take_Buffer (Ctx : in out Element_Context; Buffer : out RFLX_Types.Bytes_Ptr);
+   with procedure Element_Copy (Ctx : Element_Context; Buffer : out RFLX_Types.Bytes);
    with function Element_Has_Buffer (Ctx : Element_Context) return Boolean;
+   with function Element_Size (Ctx : Element_Context) return RFLX_Types.Bit_Length;
    with function Element_Last (Ctx : Element_Context) return RFLX_Types.Bit_Index;
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
@@ -114,6 +116,23 @@ is
      Contract_Cases =>
        (Has_Buffer (Ctx) => (Has_Element'Result or not Has_Element'Result) and Has_Buffer (Ctx),
         not Has_Buffer (Ctx) => (Has_Element'Result or not Has_Element'Result) and not Has_Buffer (Ctx));
+
+   procedure Append_Element (Ctx : in out Context; Element_Ctx : Element_Context) with
+     Pre =>
+       (Has_Buffer (Ctx)
+        and then Valid (Ctx)
+        and then Element_Has_Buffer (Element_Ctx)
+        and then Element_Valid_Message (Element_Ctx)
+        and then Element_Size (Element_Ctx) > 0
+        and then Available_Space (Ctx) >= Element_Size (Element_Ctx)),
+     Post =>
+       (Has_Buffer (Ctx)
+        and Valid (Ctx)
+        and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + Element_Size (Element_Ctx)
+        and Ctx.Buffer_First = Ctx.Buffer_First'Old
+        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+        and Ctx.First = Ctx.First'Old
+        and Ctx.Last = Ctx.Last'Old);
 
    procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context) with
      Pre =>

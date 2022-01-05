@@ -39,6 +39,12 @@ is
       end if;
    end Copy;
 
+   procedure Append_Element (Ctx : in out Context; Element_Ctx : Element_Context) is
+   begin
+      Element_Copy (Element_Ctx, Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.Sequence_Last + 1) .. RFLX_Types.To_Index (Ctx.Sequence_Last + Element_Size (Element_Ctx))));
+      Ctx.Sequence_Last := Ctx.Sequence_Last + Element_Size (Element_Ctx);
+   end Append_Element;
+
    procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context) is
       Buffer : RFLX_Types.Bytes_Ptr := Ctx.Buffer;
    begin
