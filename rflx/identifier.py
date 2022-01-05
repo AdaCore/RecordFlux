@@ -1,7 +1,7 @@
 import re
 from typing import Optional, Sequence, TypeVar, Union
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fatal_fail
 
 Self = TypeVar("Self", bound="ID")
 
@@ -25,23 +25,17 @@ class ID:
 
         error = RecordFluxError()
         if not self._parts:
-            error.extend([("empty identifier", Subsystem.ID, Severity.ERROR, location)])
+            fatal_fail("empty identifier", Subsystem.ID, Severity.ERROR, location)
         elif "" in self._parts:
-            error.extend(
-                [(f'empty part in identifier "{self}"', Subsystem.ID, Severity.ERROR, location)]
-            )
+            fatal_fail(f'empty part in identifier "{self}"', Subsystem.ID, Severity.ERROR, location)
         else:
             for c in [" ", ".", ":"]:
                 if any(c in part for part in self._parts):
-                    error.extend(
-                        [
-                            (
-                                f'"{c}" in identifier parts of "{self}"',
-                                Subsystem.ID,
-                                Severity.ERROR,
-                                location,
-                            )
-                        ],
+                    fatal_fail(
+                        f'"{c}" in identifier parts of "{self}"',
+                        Subsystem.ID,
+                        Severity.ERROR,
+                        location,
                     )
         error.propagate()
 
