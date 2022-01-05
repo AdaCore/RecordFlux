@@ -68,7 +68,7 @@ def generate(model: Model) -> Generator:
 
 
 def test_invalid_prefix() -> None:
-    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "A..B"$'):
+    with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A..B"$'):
         Generator(Model(), Integration(), "A..B")
 
 
