@@ -30,7 +30,6 @@ manage.run(
         version,
         "--build-dir",
         f"{build_dir}",
-        "--no-ada-api",
         "--relative-project",
         "--no-pretty-print",
         "--relative-project",
