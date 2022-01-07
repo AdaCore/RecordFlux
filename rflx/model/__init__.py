@@ -3,6 +3,7 @@ from .message import (  # noqa: F401
     FINAL as FINAL,
     INITIAL as INITIAL,
     AbstractMessage as AbstractMessage,
+    ByteOrder as ByteOrder,
     DerivedMessage as DerivedMessage,
     Field as Field,
     Link as Link,

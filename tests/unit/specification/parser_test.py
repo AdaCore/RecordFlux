@@ -11,6 +11,7 @@ from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
+from rflx.model.message import ByteOrder
 from rflx.specification import cache, parser
 from tests.const import SPEC_DIR
 from tests.data import models
@@ -541,7 +542,7 @@ def test_parse_sequence_type_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -670,7 +671,7 @@ def test_parse_message_type_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -788,7 +789,7 @@ def test_parse_message_type_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -870,7 +871,7 @@ def test_parse_type_refinement_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -988,7 +989,7 @@ def test_parse_type_refinement_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -1135,7 +1136,7 @@ def test_parse_type_derivation_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -1262,7 +1263,7 @@ def test_parse_ethernet_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "MessageTypeDef",
-                            "checksums": None,
+                            "aspects": [],
                             "message_fields": {
                                 "_kind": "MessageFields",
                                 "fields": [
@@ -2206,6 +2207,85 @@ def test_create_model_checksum() -> None:
             )
         ],
     }
+
+
+@pytest.mark.parametrize(
+    "spec,byte_order",
+    [
+        (
+            """
+                package Test is
+                   type T is mod 2**8;
+                   type M is
+                      message
+                         F1 : T;
+                         F2 : T;
+                         F3 : T;
+                     end message
+                        with Byte_Order => Low_Order_First;
+                 end Test;
+            """,
+            model.ByteOrder.LOW_ORDER_FIRST,
+        ),
+        (
+            """
+                package Test is
+                   type T is mod 2**8;
+                   type M is
+                      message
+                         F1 : T;
+                         F2 : T;
+                         F3 : T;
+                     end message
+                        with Byte_Order => High_Order_First;
+                 end Test;
+            """,
+            model.ByteOrder.HIGH_ORDER_FIRST,
+        ),
+        (
+            """
+                package Test is
+                   type T is mod 2**8;
+                   type M is
+                      message
+                         F1 : T;
+                         F2 : T;
+                         F3 : T;
+                     end message;
+                 end Test;
+            """,
+            model.ByteOrder.HIGH_ORDER_FIRST,
+        ),
+        (
+            """
+                package Test is
+                    type T is mod 2**8;
+                    type M is
+                        message
+                            F1 : T;
+                            F2 : T;
+                            C1 : T;
+                            F3 : T;
+                            C2 : T
+                            then F4
+                            if C1'Valid_Checksum and C2'Valid_Checksum;
+                        F4 : T;
+                    end message
+                        with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                        C2 => (C1'Last + 1 .. C2'First - 1)),
+                             Byte_Order => Low_Order_First;
+                end Test;
+            """,
+            model.ByteOrder.LOW_ORDER_FIRST,
+        ),
+    ],
+)
+def test_create_model_byteorder(spec: str, byte_order: ByteOrder) -> None:
+    p = parser.Parser()
+    p.parse_string(spec)
+    m = p.create_model()
+
+    assert m.messages[0].byte_order == byte_order
 
 
 @pytest.mark.parametrize(

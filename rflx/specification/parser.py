@@ -820,13 +820,16 @@ def create_message(
         error, identifier, parameters, fields, types, filename
     )
     structure = create_message_structure(error, fields, filename)
-    checksum_aspects = create_checksum_aspects(message.f_checksums, filename)
-    aspects = {ID("Checksum"): checksum_aspects} if checksum_aspects else {}
-
+    checksum_aspects, byte_order_aspect = parse_aspects(message.f_aspects, filename)
     try:
         result = create_proven_message(
             model.UnprovenMessage(
-                identifier, structure, field_types, aspects, type_location(identifier, message)
+                identifier,
+                structure,
+                field_types,
+                checksum_aspects,
+                byte_order_aspect,
+                type_location(identifier, message),
             ).merged(message_arguments),
             skip_verification,
             workers,
@@ -1161,27 +1164,34 @@ def merge_field_condition(
             )
 
 
-def create_checksum_aspects(
-    checksum: lang.ChecksumAspect, filename: Path
-) -> Mapping[ID, Sequence[expr.Expr]]:
-    result = {}
-    if checksum:
-        for assoc in checksum.f_associations:
-            exprs = []
-            for value in assoc.f_covered_fields:
-                if isinstance(value, lang.ChecksumVal):
-                    exprs.append(create_math_expression(value.f_data, filename))
-                elif isinstance(value, lang.ChecksumValueRange):
-                    exprs.append(
-                        expr.ValueRange(
-                            create_math_expression(value.f_first, filename),
-                            create_math_expression(value.f_last, filename),
+def parse_aspects(
+    aspects: lang.MessageAspectList, filename: Path
+) -> Tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
+    checksum_result = {}
+    byte_order_result = None
+    for aspect in aspects:
+        if isinstance(aspect, lang.ChecksumAspect):
+            for assoc in aspect.f_associations:
+                exprs = []
+                for value in assoc.f_covered_fields:
+                    if isinstance(value, lang.ChecksumVal):
+                        exprs.append(create_math_expression(value.f_data, filename))
+                    elif isinstance(value, lang.ChecksumValueRange):
+                        exprs.append(
+                            expr.ValueRange(
+                                create_math_expression(value.f_first, filename),
+                                create_math_expression(value.f_last, filename),
+                            )
                         )
-                    )
-                else:
-                    raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
-            result[create_id(assoc.f_identifier, filename)] = exprs
-    return result
+                    else:
+                        raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
+                checksum_result[create_id(assoc.f_identifier, filename)] = exprs
+        if isinstance(aspect, lang.ByteOrderAspect):
+            if isinstance(aspect.f_byte_order, lang.ByteOrderTypeLoworderfirst):
+                byte_order_result = model.ByteOrder.LOW_ORDER_FIRST
+            else:
+                byte_order_result = model.ByteOrder.HIGH_ORDER_FIRST
+    return checksum_result, byte_order_result
 
 
 def create_derived_message(

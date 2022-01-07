@@ -34,11 +34,11 @@ def assert_message_model_error(
     structure: Sequence[Link],
     types: Mapping[Field, Type],
     regex: str,
-    aspects: Mapping[ID, Mapping[ID, Sequence[Expr]]] = None,
+    checksum_aspects: Mapping[ID, Sequence[Expr]] = None,
     location: Location = None,
 ) -> None:
     with pytest.raises(RecordFluxError, match=regex):
-        Message("P::M", structure, types, aspects=aspects, location=location)
+        Message("P::M", structure, types, checksum_aspects=checksum_aspects, location=location)
 
 
 def assert_session_model_error(
