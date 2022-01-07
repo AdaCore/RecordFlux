@@ -86,7 +86,7 @@ TLV_WITH_CHECKSUM_MESSAGE = Message(
         Field("Value"): OPAQUE,
         Field("Checksum"): TLV_WITH_CHECKSUM_CHECKSUM,
     },
-    aspects={ID("Checksum"): {ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]}},
+    checksum_aspects={ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]},
     skip_proof=True,
 )
 TLV_WITH_CHECKSUM_MODEL = Model(

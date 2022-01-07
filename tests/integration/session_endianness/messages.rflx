@@ -1,0 +1,16 @@
+package Messages is
+
+   type Integer is mod 2 ** 32;
+
+   type Msg is
+      message
+         A : Integer;
+      end message;
+
+   type Msg_LE is
+      message
+         B : Integer;
+      end message
+         with Byte_Order => Low_Order_First;
+
+end Messages;

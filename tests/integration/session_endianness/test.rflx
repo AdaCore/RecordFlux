@@ -1,0 +1,43 @@
+with Messages;
+
+package Test is
+
+   generic
+      I : Channel with Readable;
+      O : Channel with Writable;
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      In_Msg : Messages::Msg;
+      Out_Msg : Messages::Msg_LE;
+   begin
+      state Start is
+      begin
+         I'Read (In_Msg);
+      transition
+         goto Copy
+            if In_Msg'Has_Data
+         goto Terminated
+      end Start;
+
+      state Copy is
+      begin
+         Out_Msg := Messages::Msg_LE'(B => In_Msg.A);
+      transition
+         goto Reply
+      exception
+         goto Terminated
+      end Copy;
+
+      state Reply is
+      begin
+         O'Write (Out_Msg);
+      transition
+         goto Start
+      end Reply;
+
+      state Terminated is null state;
+   end Session;
+
+end Test;

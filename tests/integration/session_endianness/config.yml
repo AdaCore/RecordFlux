@@ -1,0 +1,13 @@
+input:
+  I:
+    - 1 0 1 0
+output:
+  - O
+sequence: |
+  Write I: 1 0 1 0
+  State: Start
+  State: Copy
+  Read O: 0 1 0 1
+  State: Reply
+  State: Start
+prove:
