@@ -31,7 +31,8 @@ abstract project Defaults is
       "-gnatVd",  --  Default (RM) validity checks.
       "-gnatVe",  --  Validity checks for elementary components.
       "-gnatVf",  --  Validity checks for floating-point values.
-      "-gnatVi",  --  Validity checks for ``in`` mode parameters.
+      --  ISSUE: Componolit/Workarounds#43
+      --  "-gnatVi",  --  Validity checks for ``in`` mode parameters.
       "-gnatVm",  --  Validity checks for ``in out`` mode parameters.
       --  ISSUE: Componolit/Workarounds#23
       --  "-gnatVo",  --  Validity checks for operator and attribute operands.
