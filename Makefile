@@ -83,6 +83,12 @@ test_apps:
 	$(MAKE) -C examples/apps/ping test_spark
 	$(MAKE) -C examples/apps/dhcp_client test
 
+test_compilation:
+	$(MAKE) -C tests/spark test
+	$(MAKE) -C examples/apps/ping build
+	$(MAKE) -C examples/apps/dhcp_client build
+	python3 -m pytest -n$(shell nproc) -vv -m "compilation and not verification" tests
+
 test_specs:
 	cd examples/specs && python3 -m pytest -n$(shell nproc) -vv tests/test_specs.py
 
@@ -126,17 +132,20 @@ install_devel_edge: install_devel
 	$(MAKE) -C .config/python-style install_devel_edge
 
 install_gnat:
-	alr toolchain --install gnat_native=11.2.1 && \
-	mkdir -p build && \
-	cd build && \
-	alr init --lib -n alire && \
-	cd alire && \
-	alr with -n aunit
+	test -d build/alire || ( \
+	    alr toolchain --install gnat_native=11.2.1 && \
+	    mkdir -p build && \
+	    cd build && \
+	    alr init --lib -n alire && \
+	    cd alire && \
+	    alr with -n aunit gnatcoll_iconv gnatcoll_gmp \
+	)
 
 printenv_gnat:
-	@test -d build/alire && \
-	cd build/alire && \
-	alr printenv
+	@test -d build/alire && (\
+	    cd build/alire && \
+	    alr printenv \
+	) || true
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache

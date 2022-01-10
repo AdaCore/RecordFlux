@@ -21,6 +21,9 @@ hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default")
 
 def pytest_configure(config: Config) -> None:
     config.addinivalue_line(
+        "markers", "compilation: Tests which use GNAT to compile Ada/SPARK code."
+    )
+    config.addinivalue_line(
         "markers", "verification: Tests which use GNATprove to formally verify SPARK code."
     )
 
