@@ -10,7 +10,7 @@ generic
    type Custom_Bytes_Ptr is access Custom_Bytes;
    type Custom_Length is range <>;
    type Custom_Bit_Length is range <>;
-package RFLX.RFLX_Generic_Types with
+package {prefix}RFLX_Generic_Types with
   SPARK_Mode
 is
 

@@ -74,7 +74,7 @@ def assert_compilable_code_specs(
     for spec_file in spec_files:
         parser.parse(pathlib.Path(spec_file))
 
-    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix)
+    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix)
 
 
 def assert_compilable_code_string(
@@ -83,7 +83,7 @@ def assert_compilable_code_string(
     parser = Parser()
     parser.parse_string(specification)
 
-    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix)
+    assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix)
 
 
 def assert_compilable_code(
@@ -193,7 +193,7 @@ def _create_files(
     generator = Generator(
         model,
         integration,
-        prefix if prefix else "RFLX",
+        prefix if prefix is not None else "RFLX",
         debug=True,
         ignore_unsupported_checksum=True,
     )
