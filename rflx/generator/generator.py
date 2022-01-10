@@ -186,7 +186,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     [
                         l.format(prefix=prefix)
                         for l in template_file.split("\n")
-                        if "  --  WORKAROUND" not in l
+                        if "  --  ISSUE" not in l
                     ]
                 ),
             )
