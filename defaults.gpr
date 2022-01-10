@@ -46,7 +46,8 @@ abstract project Defaults is
       --  Debugging
       "-fstack-check",  --  Activate stack checking.
       "-g",             --  Enable generation of debugging information.
-      "-gnata",         --  Enable assertions.
+      --  ISSUE: Componolit/Workarounds#44
+      --  "-gnata",         --  Enable assertions.
 
       --  Warnings
       "-gnatwa",   --  Activate most optional warnings.
