@@ -353,18 +353,15 @@ package body RFLX.TLV_Tests is
                Write_Pre (Context_Buffer_Length, Offset),
             Post =>
                Length <= Buffer'Length
-               and Buffer'Initialized,
-            Relaxed_Initialization =>
-               Buffer
          is
             Target : constant RFLX_Types.Bytes := (1, 0, 2, 0, 0, 0, 0);
          begin
             Assert (Context_Buffer_Length = 7, "Invalid context buffer length");
             Assert (Buffer'Length = 7 - Offset, "Invalid buffer length");
+            Buffer := (others => 0);
             Buffer (Buffer'First .. Buffer'First + 3) :=
                Target (Target'First + RFLX_Types.Index (Offset + 1) - 1
                        .. Target'First + RFLX_Types.Index (Offset + 1) + 2);
-            Buffer (Buffer'First + 4 .. Buffer'Last) := (others => 0);
             Length := 4;
          end Write_4;
          procedure Message_Write is new TLV.Message.Generic_Write (Write_4, Write_Pre);

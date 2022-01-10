@@ -51,7 +51,6 @@ from rflx.ada import (
     IfStatement,
     In,
     Indexed,
-    Initialized,
     Last,
     Length,
     Less,
@@ -76,7 +75,6 @@ from rflx.ada import (
     ProcedureSpecification,
     Raise,
     RaiseStatement,
-    RelaxedInitialization,
     ReturnStatement,
     Selected,
     Size,
@@ -1370,6 +1368,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             [
                                 Assignment(Variable("Length"), Length("Buffer")),
                                 Assignment(
+                                    Variable("Message_Buffer"),
+                                    NamedAggregate(("others", Number(0))),
+                                ),
+                                Assignment(
                                     Slice(
                                         Variable("Message_Buffer"),
                                         First("Message_Buffer"),
@@ -1388,25 +1390,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                         ),
                                     ),
                                     Variable("Buffer"),
-                                ),
-                                Assignment(
-                                    Slice(
-                                        Variable("Message_Buffer"),
-                                        Call(
-                                            const.TYPES_INDEX,
-                                            [
-                                                Add(
-                                                    Call(
-                                                        const.TYPES_LENGTH,
-                                                        [First("Message_Buffer")],
-                                                    ),
-                                                    Variable("Length"),
-                                                )
-                                            ],
-                                        ),
-                                        Last("Message_Buffer"),
-                                    ),
-                                    NamedAggregate(("others", Number(0))),
                                 ),
                             ],
                             aspects=[
@@ -1433,12 +1416,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     )
                                 ),
                                 Postcondition(
-                                    And(
-                                        LessEqual(Variable("Length"), Length("Message_Buffer")),
-                                        Initialized("Message_Buffer"),
-                                    )
+                                    LessEqual(Variable("Length"), Length("Message_Buffer")),
                                 ),
-                                RelaxedInitialization(Variable("Message_Buffer")),
                             ],
                         ),
                         *[
