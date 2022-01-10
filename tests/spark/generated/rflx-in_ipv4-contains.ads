@@ -26,7 +26,11 @@ is
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Known
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = IPv4.P_UDP);
 
+   pragma Warnings (Off, """Field_Cursors"" is already use-visible through package use clause");
+
    use type RFLX.IPv4.Packet.Field_Cursors;
+
+   pragma Warnings (On, """Field_Cursors"" is already use-visible through package use clause");
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : out RFLX.UDP.Datagram.Context) with
      Pre =>
@@ -72,6 +76,10 @@ is
       and then RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Protocol)
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Known
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = IPv4.P_ICMP);
+
+   pragma Warnings (Off, """Field_Cursors"" is already use-visible through package use clause");
+
+   pragma Warnings (On, """Field_Cursors"" is already use-visible through package use clause");
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : out RFLX.ICMP.Message.Context) with
      Pre =>
