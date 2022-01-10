@@ -201,6 +201,13 @@ is
 
 private
 
+   --  ISSUE: Componolit/Workarounds#24
+   pragma Warnings (Off, "use clause for package * has no effect");
+
+   use {prefix}RFLX_Types;
+
+   pragma Warnings (On, "use clause for package * has no effect");
+
    type Context_State is (S_Valid, S_Invalid);
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is
