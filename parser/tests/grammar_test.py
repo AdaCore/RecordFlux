@@ -3567,6 +3567,45 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
                 },
             },
         ),
+        (
+            "type T is message A : Integer; end message with Byte_Order => Low_Order_First",
+            {
+                "_kind": "TypeDecl",
+                "definition": {
+                    "_kind": "MessageTypeDef",
+                    "aspects": [
+                        {
+                            "_kind": "ByteOrderAspect",
+                            "byte_order": {
+                                "_kind": "ByteOrderTypeLoworderfirst",
+                                "_value": "Low_Order_First",
+                            },
+                        }
+                    ],
+                    "message_fields": {
+                        "_kind": "MessageFields",
+                        "fields": [
+                            {
+                                "_kind": "MessageField",
+                                "aspects": [],
+                                "condition": None,
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
+                                "thens": [],
+                                "type_arguments": [],
+                                "type_identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "Integer"},
+                                    "package": None,
+                                },
+                            }
+                        ],
+                        "initial_field": None,
+                    },
+                },
+                "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
+                "parameters": None,
+            },
+        ),
     ],
 )
 def test_type_declaration(string: str, expected: Dict[str, str]) -> None:
