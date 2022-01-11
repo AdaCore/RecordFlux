@@ -4,6 +4,16 @@ package body RFLX.RFLX_Arithmetic with
   SPARK_Mode
 is
 
+   function Shift_Left (Value : U64; Amount : Natural) return U64 with
+      Import,
+      Convention => Intrinsic,
+      Global => null;
+
+   function Shift_Right (Value : U64; Amount : Natural) return U64 with
+      Import,
+      Convention => Intrinsic,
+      Global => null;
+
    function Shift_Add (V : U64;
                        Data : U64;
                        Amount : Natural;

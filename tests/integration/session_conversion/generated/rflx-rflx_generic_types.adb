@@ -44,18 +44,16 @@ is
       (Data       : Bytes;
        Off        : Offset;
        Value_Size : Positive) return U64 with
-     Pre =>
-       (Value_Size in 1 .. U64'Size
-        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length
-        and then (Natural (Off) + Value_Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Off) mod Byte'Size) < Long_Integer'Size - 1),
+      Pre =>
+        (Value_Size in 1 .. U64'Size
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length),
      Post =>
        (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size)
    is
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
-      RME_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
+      RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
 
       LME_Size   : constant Natural := (RME_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -91,7 +89,7 @@ is
          return Result;
       end if;
 
-      pragma Assert (Has_Bits (Result, LME_Size));
+      pragma Assert (Fits_Into (Result, LME_Size));
 
       --  We now iterate over the "inner bytes" excluding the two extreme bytes.
       for I in LME_Index + 1  .. RME_Index  - 1 loop
@@ -102,7 +100,7 @@ is
               Byte'Size,
               Natural (I - LME_Index) * Byte'Size - LME_Offset);
          pragma Loop_Invariant
-           (Has_Bits (Result, Natural (I - LME_Index + 1) * Byte'Size - LME_Offset));
+           (Fits_Into (Result, Natural (I - LME_Index + 1) * Byte'Size - LME_Offset));
       end loop;
 
       --  We now add the relevant bits from the last byte.
@@ -120,18 +118,16 @@ is
       (Data       : Bytes;
        Off        : Offset;
        Value_Size : Positive) return U64 with
-     Pre =>
-       (Value_Size in 1 .. U64'Size
-        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length
-        and then (Natural (Off) + Value_Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Off) mod Byte'Size) < Long_Integer'Size - 1),
+      Pre =>
+        (Value_Size in 1 .. U64'Size
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length),
      Post =>
        (if Value_Size < U64'Size then U64_Extract_LE'Result < 2**Value_Size)
    is
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
-      RME_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
+      RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
 
       LME_Size   : constant Natural := (RME_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -146,28 +142,32 @@ is
          Tmp : U64 := Byte'Pos (Data (RME_Index));
       begin
          if RME_Index = LME_Index then
-            Tmp := Tmp and (2 ** LME_Size - 1);
+            Tmp := Mask_Upper (Tmp, LME_Size);
          end if;
-         Tmp := Shift_Right (Tmp, RME_Offset);
+         Tmp :=
+           Right_Shift
+             (Tmp,
+              RME_Offset,
+              (if RME_Index = LME_Index then LME_Size else Byte'Size));
          Result := Result + Tmp;
       end;
 
       if RME_Index = LME_Index then
-         pragma Assert (Result < 2 ** Value_Size);
+         pragma Assert (Fits_Into (Result, Value_Size));
          return Result;
       end if;
 
-      pragma Assert (Has_Bits (Result, RME_Size));
+      pragma Assert (Fits_Into (Result, RME_Size));
 
       for I in reverse LME_Index + 1  .. RME_Index  - 1 loop
-         pragma Loop_Invariant
-           (Has_Bits (Result, Natural (RME_Index - I) * Byte'Size - RME_Offset));
          Result :=
             Shift_Add
                (Result,
                 Byte'Pos (Data (I)),
                 Byte'Size,
                 Natural (RME_Index - I) * Byte'Size - RME_Offset);
+         pragma Loop_Invariant
+           (Fits_Into (Result, Natural (RME_Index - I + 1) * Byte'Size - RME_Offset));
       end loop;
 
       pragma Assert (LME_Size < U64'Size);
@@ -176,7 +176,7 @@ is
                    Mask_Upper (Byte'Pos (Data (LME_Index)), LME_Size),
                    LME_Size,
                    Value_Size - LME_Size);
-      pragma Assert (Has_Bits (Result, Value_Size));
+      pragma Assert (Fits_Into (Result, Value_Size));
       return Result;
    end U64_Extract_LE;
 
@@ -218,7 +218,7 @@ is
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
-      RME_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
+      RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
 
       LME_Size   : constant Natural := (RME_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -232,7 +232,7 @@ is
       if RME_Index = LME_Index then
          declare
             D : constant U64 := Byte'Pos (Data (RME_Index));
-            pragma Assert (D < 2 ** Byte'Size);
+            pragma Assert (Fits_Into (D, Byte'Size));
             L_Bits : constant U64 := Mask_Lower (D, RME_Offset + Value_Size, Byte'Size);
             R_Bits : constant U64 := Mask_Upper (D, RME_Offset);
             Bits_To_Add : constant U64 := Left_Shift (Val, RME_Offset, Value_Size);
@@ -251,11 +251,8 @@ is
          --  order).
 
          declare
-            L_Bits : constant U64 := Byte'Pos (Data (RME_Index)) and (2 ** RME_Offset - 1);
-            pragma Assert (L_Bits < 2 ** RME_Offset);
-            V_Bits : constant U64 := Val and (2 ** RME_Size - 1);
-            pragma Assert (V_Bits < 2 ** RME_Size);
-
+            L_Bits : constant U64 := Mask_Upper (Byte'Pos (Data (RME_Index)), RME_Offset);
+            V_Bits : constant U64 := Mask_Upper (Val, RME_Size);
             V_Value : constant U64 := Left_Shift (V_Bits, RME_Offset, RME_Size);
          begin
             Data (RME_Index) := Byte'Val (L_Bits + V_Value);
@@ -263,7 +260,7 @@ is
          end;
 
          pragma Assert (RME_Size < Value_Size);
-         pragma Assert (Has_Bits (RV, Value_Size - RME_Size));
+         pragma Assert (Fits_Into (RV, Value_Size - RME_Size));
          Bits := Value_Size - RME_Size;
 
          --  The inner bytes are fully overwritten.
@@ -274,13 +271,13 @@ is
             RV := Right_Shift (RV, Byte'Size, Bits);
             Bits := Bits - Byte'Size;
             pragma Loop_Invariant (Bits =  Value_Size - RME_Size - Natural (RME_Index - I) * Byte'Size
-                                   and then Has_Bits (RV, Bits));
+                                   and then Fits_Into (RV, Bits));
          end loop;
 
          --  The last byte (LME in network byte order).
 
          pragma Assert (LME_Size = Value_Size - RME_Size - Natural (RME_Index - LME_Index - 1) * Byte'Size);
-         pragma Assert (Has_Bits (RV, LME_Size));
+         pragma Assert (Fits_Into (RV, LME_Size));
          declare
             U_Value : constant U64 := Mask_Lower (Byte'Pos (Data (LME_Index)), LME_Size, Byte'Size);
             Sum : U64;
@@ -303,7 +300,7 @@ is
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
-      RME_Offset : constant Natural := Natural (Natural (Off) mod Byte'Size);
+      RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
 
       LME_Size   : constant Natural := (RME_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
@@ -316,12 +313,14 @@ is
       if RME_Index = LME_Index then
          declare
             D : constant U64 := Byte'Pos (Data (RME_Index));
-            pragma Assert (D < 2 ** Byte'Size);
-            Delete_Mask : constant U64 := not (Shift_Left (2 ** Value_Size - 1, RME_Offset));
-            Bits_To_Add : constant U64 := Shift_Left (Val, RME_Offset);
-            Deleted : constant U64 := D and (Delete_Mask);
-            pragma Assert (Deleted < 2 ** Byte'Size);
-            Result : constant U64 := Deleted or Bits_To_Add;
+            L_Bits : constant U64 := Mask_Lower (D, RME_Offset + Value_Size, Byte'Size);
+            R_Bits : constant U64 := Mask_Upper (D, RME_Offset);
+            Bits_To_Add : constant U64 := Left_Shift (Val, RME_Offset, Value_Size);
+            Result : constant U64 :=
+              Add (L_Bits,
+                   Add (Bits_To_Add, R_Bits, Value_Size + RME_Offset, RME_Offset),
+                   Byte'Size,
+                   RME_Offset + Value_Size);
          begin
             Data (RME_Index) := Byte'Val (Result);
          end;
@@ -334,17 +333,17 @@ is
             Data (LME_Index) := Byte'Val (Add (L_Bits, V_Bits, Byte'Size, LME_Size));
          end;
          RV := Right_Shift (Val, LME_Size, Value_Size);
-         pragma Assert (Has_Bits (RV, Value_Size - LME_Size));
+         pragma Assert (Fits_Into (RV, Value_Size - LME_Size));
 
          for I in LME_Index + 1 .. RME_Index - 1
          loop
             Data (I) := Byte'Val (RV mod 2**Byte'Size);
             RV := Right_Shift (RV, Byte'Size, Value_Size - LME_Size - Natural (I - LME_Index - 1) * Byte'Size);
-            pragma Loop_Invariant (Has_Bits (RV, Value_Size - LME_Size - Natural (I - LME_Index) * Byte'Size));
+            pragma Loop_Invariant (Fits_Into (RV, Value_Size - LME_Size - Natural (I - LME_Index) * Byte'Size));
          end loop;
 
          pragma Assert (RME_Size = Value_Size - LME_Size - Natural (RME_Index - LME_Index - 1) * Byte'Size);
-         pragma Assert (Has_Bits (RV, RME_Size));
+         pragma Assert (Fits_Into (RV, RME_Size));
          declare
             U_Value : constant U64 := Mask_Upper (Byte'Pos (Data (RME_Index)), RME_Offset);
             R_Value : constant U64 := Left_Shift (RV, RME_Offset, RME_Size);

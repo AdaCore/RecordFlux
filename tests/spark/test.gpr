@@ -61,19 +61,7 @@ project Test is
    end Compiler;
 
    package Prove is
-      for Proof_Switches ("Ada") use
-            (
-               "--prover=z3,cvc4,altergo",
-               "--steps=0",
-               "--timeout=90",
-               "--checks-as-errors",
-               "--warnings=error",
-               --  ISSUE: Componolit/RecordFlux#670
-               --  "--proof-warnings",
-               "--no-axiom-guard",
-               "--counterexamples=off",
-               "-j0"
-            );
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches;
    end Prove;
 
 end Test;
