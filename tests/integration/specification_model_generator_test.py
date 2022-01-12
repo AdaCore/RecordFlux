@@ -8,8 +8,15 @@ from tests import utils
 from tests.const import SPEC_DIR
 
 
-def test_no_prefix(tmp_path: Path) -> None:
-    utils.assert_compilable_code_specs([f"{SPEC_DIR}/tlv.rflx"], tmp_path, prefix="")
+@pytest.mark.parametrize(
+    "prefix",
+    [
+        "",
+        "Foo",
+    ],
+)
+def test_prefix(prefix: str, tmp_path: Path) -> None:
+    utils.assert_compilable_code_specs([f"{SPEC_DIR}/tlv.rflx"], tmp_path, prefix=prefix)
 
 
 @pytest.mark.parametrize(

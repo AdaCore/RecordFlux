@@ -19,7 +19,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Reply, S_Terminated);
+   type State is (S_Start, S_Process, S_Send_1, S_Send_2, S_Terminated);
 
    function Uninitialized return Boolean;
 
@@ -88,19 +88,25 @@ private
 
    Options_Ctx : Universal.Options.Context;
 
-   Message_Ctx : Universal.Message.Context;
+   Message_1_Ctx : Universal.Message.Context;
+
+   Message_2_Ctx : Universal.Message.Context;
 
    function Uninitialized return Boolean is
      (not Universal.Options.Has_Buffer (Options_Ctx)
-      and not Universal.Message.Has_Buffer (Message_Ctx));
+      and not Universal.Message.Has_Buffer (Message_1_Ctx)
+      and not Universal.Message.Has_Buffer (Message_2_Ctx));
 
    function Initialized return Boolean is
      (Universal.Options.Has_Buffer (Options_Ctx)
       and then Options_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Options_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Message.Has_Buffer (Message_Ctx)
-      and then Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Message.Has_Buffer (Message_1_Ctx)
+      and then Message_1_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Message_1_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Message.Has_Buffer (Message_2_Ctx)
+      and then Message_2_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is

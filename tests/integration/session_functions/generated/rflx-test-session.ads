@@ -6,11 +6,12 @@ with RFLX.Universal;
 with RFLX.Universal.Message;
 with RFLX.Fixed_Size;
 with RFLX.Fixed_Size.Simple_Message;
+with RFLX.Test;
 
 generic
    with procedure Get_Message_Type (Get_Message_Type : out RFLX.Universal.Option_Type);
    with procedure Create_Message (Create_Message : out RFLX.Fixed_Size.Simple_Message.Structure; Message_Type : RFLX.Universal.Option_Type; Data : RFLX_Types.Bytes);
-   with procedure Valid_Message (Valid_Message : out Boolean; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean);
+   with procedure Valid_Message (Valid_Message : out RFLX.Test.Result; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean);
 package RFLX.Test.Session with
   SPARK_Mode,
   Initial_Condition =>

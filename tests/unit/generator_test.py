@@ -68,7 +68,7 @@ def generate(model: Model) -> Generator:
 
 
 def test_invalid_prefix() -> None:
-    with pytest.raises(RecordFluxError, match=r'^id: error: empty part in identifier "A..B"$'):
+    with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A..B"$'):
         Generator(Model(), Integration(), "A..B")
 
 
@@ -2053,14 +2053,23 @@ def test_session_state_action_error(
             rty.Sequence("A", rty.Message("B")),
             expr.Comprehension(
                 "E",
-                expr.Variable("L"),
-                expr.Selected(expr.Variable("E"), "Z", type_=rty.Message("B")),
-                expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
-                location=Location((10, 20)),
+                expr.Variable(
+                    "L",
+                    type_=rty.Sequence("A", rty.Message("B")),
+                ),
+                expr.Call(
+                    "F",
+                    [expr.Variable("E")],
+                    type_=rty.Message("B"),
+                    location=Location((10, 20)),
+                ),
+                expr.Greater(
+                    expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
+                    expr.Number(0),
+                ),
             ),
             RecordFluxError,
-            r'creating sequence with element message type "B" using list comprehension'
-            r" not yet supported",
+            "expressions other than variables not yet supported as selector for message types",
         ),
         (
             rty.Sequence("A", rty.Integer("B")),

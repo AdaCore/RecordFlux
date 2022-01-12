@@ -1,6 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 with RFLX.RFLX_Types;
+with RFLX.Test;
 with RFLX.Universal;
 with RFLX.Fixed_Size.Simple_Message;
 
@@ -14,6 +15,6 @@ is
 
    procedure Create_Message (Result : out RFLX.Fixed_Size.Simple_Message.Structure; Message_Type : RFLX.Universal.Option_Type; Data : RFLX.RFLX_Types.Bytes);
 
-   procedure Valid_Message (Valid_Message : out Boolean; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean);
+   procedure Valid_Message (Valid_Message : out RFLX.Test.Result; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean);
 
 end Func;

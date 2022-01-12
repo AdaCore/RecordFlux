@@ -3,6 +3,8 @@ with Universal;
 
 package Test is
 
+   type Result is (M_Valid, M_Invalid) with Size => 2;
+
    generic
       Channel : Channel with Readable, Writable; -- §S-P-C-RW
       -- §S-P-F-R-S
@@ -16,7 +18,7 @@ package Test is
       with function Valid_Message
          (Message_Type : Universal::Option_Type;
           Strict : Boolean)
-      return Boolean;
+      return Result;
    session Session with
       Initial => Start,
       Final => Terminated
@@ -36,7 +38,7 @@ package Test is
       end Start;
 
       state Process is
-         Valid : Boolean; -- §S-S-D-V-T-SC
+         Valid : Result; -- §S-S-D-V-T-SC
          Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
       begin
          Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
@@ -44,7 +46,7 @@ package Test is
          Fixed_Size_Message := Create_Message (Message_Type, Message.Data); -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
       transition
          goto Terminated
-            if Valid = False -- §S-S-T-BE
+            if Valid = M_Valid -- §S-S-T-BE
          goto Reply -- §S-S-T-N
       exception
          goto Terminated -- §S-S-E

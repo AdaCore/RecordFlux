@@ -104,22 +104,29 @@ is
        Initialized
    is
       Option_Types_Ctx : Universal.Option_Types.Context;
+      Message_Options_Ctx : Universal.Options.Context;
       RFLX_Exception : Boolean := False;
       Option_Types_Buffer : RFLX_Types.Bytes_Ptr;
+      Message_Options_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Option_Types_Buffer := Test.Session_Allocator.Slot_Ptr_3;
+      Option_Types_Buffer := Test.Session_Allocator.Slot_Ptr_4;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_3 := null;
+      Test.Session_Allocator.Slot_Ptr_4 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
+      Message_Options_Buffer := Test.Session_Allocator.Slot_Ptr_6;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_6 := null;
+      pragma Warnings (On, "unused assignment");
+      Universal.Options.Initialize (Message_Options_Ctx, Message_Options_Buffer);
       if Universal.Options.Valid (Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
             RFLX_Copy_Options_Buffer : RFLX_Types.Bytes_Ptr;
          begin
-            RFLX_Copy_Options_Buffer := Test.Session_Allocator.Slot_Ptr_4;
+            RFLX_Copy_Options_Buffer := Test.Session_Allocator.Slot_Ptr_5;
             pragma Warnings (Off, "unused assignment");
-            Test.Session_Allocator.Slot_Ptr_4 := null;
+            Test.Session_Allocator.Slot_Ptr_5 := null;
             pragma Warnings (On, "unused assignment");
             if Universal.Options.Byte_Size (Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
                Universal.Options.Copy (Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Options_Ctx) + 1) - 2));
@@ -171,7 +178,7 @@ is
             pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""RFLX_Copy_Options_Ctx""");
             pragma Warnings (Off, "unused assignment");
-            Test.Session_Allocator.Slot_Ptr_4 := RFLX_Copy_Options_Buffer;
+            Test.Session_Allocator.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
             pragma Warnings (On, "unused assignment");
          end;
       else
@@ -182,7 +189,15 @@ is
          pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -194,7 +209,15 @@ is
          pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -206,7 +229,15 @@ is
          pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
@@ -214,12 +245,12 @@ is
          Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) then
-            Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) - 1);
-            Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Option_Types);
-            Universal.Message.Set_Length (Message_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
-            if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Option_Types, RFLX_Types.To_Length (Universal.Option_Types.Size (Option_Types_Ctx))) then
-               Universal.Message.Set_Option_Types (Message_Ctx, Option_Types_Ctx);
+         if RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) then
+            Universal.Message.Reset (Message_1_Ctx, RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) - 1);
+            Universal.Message.Set_Message_Type (Message_1_Ctx, Universal.MT_Option_Types);
+            Universal.Message.Set_Length (Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
+            if Universal.Message.Valid_Length (Message_1_Ctx, Universal.Message.F_Option_Types, RFLX_Types.To_Length (Universal.Option_Types.Size (Option_Types_Ctx))) then
+               Universal.Message.Set_Option_Types (Message_1_Ctx, Option_Types_Ctx);
             else
                P_Next_State := S_Terminated;
                pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
@@ -228,7 +259,15 @@ is
                pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
                pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
                pragma Warnings (Off, "unused assignment");
-               Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+               Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+               pragma Warnings (On, "unused assignment");
+               pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+               pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+               pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+               pragma Warnings (Off, "unused assignment");
+               Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
                pragma Warnings (On, "unused assignment");
                return;
             end if;
@@ -240,7 +279,15 @@ is
             pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
             pragma Warnings (Off, "unused assignment");
-            Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+            Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+            pragma Warnings (On, "unused assignment");
+            pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+            pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+            pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
             pragma Warnings (On, "unused assignment");
             return;
          end if;
@@ -252,22 +299,248 @@ is
          pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
          pragma Warnings (Off, "unused assignment");
-         Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
          pragma Warnings (On, "unused assignment");
          return;
       end if;
-      P_Next_State := S_Reply;
+      if Universal.Options.Valid (Options_Ctx) then
+         declare
+            RFLX_Copy_Options_Ctx : Universal.Options.Context;
+            RFLX_Copy_Options_Buffer : RFLX_Types.Bytes_Ptr;
+         begin
+            RFLX_Copy_Options_Buffer := Test.Session_Allocator.Slot_Ptr_7;
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_7 := null;
+            pragma Warnings (On, "unused assignment");
+            if Universal.Options.Byte_Size (Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
+               Universal.Options.Copy (Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Options_Ctx) + 1) - 2));
+            else
+               RFLX_Exception := True;
+            end if;
+            Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Options_Ctx));
+            while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
+               pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
+               pragma Loop_Invariant (Universal.Options.Has_Buffer (Message_Options_Ctx));
+               pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_First = RFLX_Copy_Options_Ctx.Buffer_First'Loop_Entry);
+               pragma Loop_Invariant (Message_Options_Ctx.Buffer_First = Message_Options_Ctx.Buffer_First'Loop_Entry);
+               pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Message_Options_Ctx.Buffer_Last = Message_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Universal.Options.Valid (Message_Options_Ctx));
+               declare
+                  E_Ctx : Universal.Option.Context;
+               begin
+                  Universal.Options.Switch (RFLX_Copy_Options_Ctx, E_Ctx);
+                  Universal.Option.Verify_Message (E_Ctx);
+                  if Universal.Option.Valid (E_Ctx, Universal.Option.F_Option_Type) then
+                     if
+                        Universal.Option.Get_Option_Type (E_Ctx).Known
+                        and then Universal.Option.Get_Option_Type (E_Ctx).Enum = Universal.OT_Data
+                     then
+                        if
+                           Universal.Options.Has_Element (Message_Options_Ctx)
+                           and then Universal.Options.Available_Space (Message_Options_Ctx) >= Universal.Option.Size (E_Ctx)
+                        then
+                           if Universal.Option.Structural_Valid_Message (E_Ctx) then
+                              if Universal.Option.Size (E_Ctx) > 0 then
+                                 Universal.Options.Append_Element (Message_Options_Ctx, E_Ctx);
+                              else
+                                 RFLX_Exception := True;
+                              end if;
+                           else
+                              RFLX_Exception := True;
+                           end if;
+                        else
+                           RFLX_Exception := True;
+                        end if;
+                     end if;
+                  else
+                     RFLX_Exception := True;
+                  end if;
+                  pragma Warnings (Off, "unused assignment to ""E_Ctx""");
+                  pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                  Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                  pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                  pragma Warnings (On, "unused assignment to ""E_Ctx""");
+               end;
+               exit when RFLX_Exception;
+            end loop;
+            pragma Warnings (Off, "unused assignment to ""RFLX_Copy_Options_Ctx""");
+            pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+            pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Warnings (On, "unused assignment to ""RFLX_Copy_Options_Ctx""");
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_7 := RFLX_Copy_Options_Buffer;
+            pragma Warnings (On, "unused assignment");
+         end;
+      else
+         P_Next_State := S_Terminated;
+         pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+         pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+         pragma Warnings (On, "unused assignment");
+         return;
+      end if;
+      if RFLX_Exception then
+         P_Next_State := S_Terminated;
+         pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+         pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+         pragma Warnings (On, "unused assignment");
+         return;
+      end if;
+      if RFLX_Exception then
+         P_Next_State := S_Terminated;
+         pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+         pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+         pragma Warnings (On, "unused assignment");
+         return;
+      end if;
+      if
+         Universal.Options.Size (Message_Options_Ctx) <= 32768
+         and then Universal.Options.Size (Message_Options_Ctx) mod RFLX_Types.Byte'Size = 0
+      then
+         if RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Options.Size (Message_Options_Ctx) + 24) then
+            Universal.Message.Reset (Message_2_Ctx, RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Options.Size (Message_Options_Ctx) + 24) - 1);
+            Universal.Message.Set_Message_Type (Message_2_Ctx, Universal.MT_Options);
+            Universal.Message.Set_Length (Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
+            if Universal.Message.Valid_Length (Message_2_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Message_Options_Ctx))) then
+               Universal.Message.Set_Options (Message_2_Ctx, Message_Options_Ctx);
+            else
+               P_Next_State := S_Terminated;
+               pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+               pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+               pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+               pragma Warnings (Off, "unused assignment");
+               Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+               pragma Warnings (On, "unused assignment");
+               pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+               pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+               pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+               pragma Warnings (Off, "unused assignment");
+               Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+               pragma Warnings (On, "unused assignment");
+               return;
+            end if;
+         else
+            P_Next_State := S_Terminated;
+            pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+            pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+            pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+            pragma Warnings (On, "unused assignment");
+            pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+            pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+            pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+            pragma Warnings (Off, "unused assignment");
+            Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+            pragma Warnings (On, "unused assignment");
+            return;
+         end if;
+      else
+         P_Next_State := S_Terminated;
+         pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
+         pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+         pragma Warnings (On, "unused assignment");
+         pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+         pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+         pragma Warnings (Off, "unused assignment");
+         Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
+         pragma Warnings (On, "unused assignment");
+         return;
+      end if;
+      P_Next_State := S_Send_1;
       pragma Warnings (Off, "unused assignment to ""Option_Types_Ctx""");
       pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
       pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Warnings (On, "unused assignment to ""Option_Types_Ctx""");
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_3 := Option_Types_Buffer;
+      Test.Session_Allocator.Slot_Ptr_4 := Option_Types_Buffer;
+      pragma Warnings (On, "unused assignment");
+      pragma Warnings (Off, "unused assignment to ""Message_Options_Ctx""");
+      pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
+      pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Message_Options_Ctx""");
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_6 := Message_Options_Buffer;
       pragma Warnings (On, "unused assignment");
    end Process;
 
-   procedure Reply (P_Next_State : out State) with
+   procedure Send_1 (P_Next_State : out State) with
+     Pre =>
+       Initialized,
+     Post =>
+       Initialized
+   is
+   begin
+      P_Next_State := S_Send_2;
+   end Send_1;
+
+   procedure Send_2 (P_Next_State : out State) with
      Pre =>
        Initialized,
      Post =>
@@ -275,11 +548,12 @@ is
    is
    begin
       P_Next_State := S_Terminated;
-   end Reply;
+   end Send_2;
 
    procedure Initialize is
       Options_Buffer : RFLX_Types.Bytes_Ptr;
-      Message_Buffer : RFLX_Types.Bytes_Ptr;
+      Message_1_Buffer : RFLX_Types.Bytes_Ptr;
+      Message_2_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       Test.Session_Allocator.Initialize;
       Options_Buffer := Test.Session_Allocator.Slot_Ptr_1;
@@ -287,17 +561,23 @@ is
       Test.Session_Allocator.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
-      Message_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      Message_1_Buffer := Test.Session_Allocator.Slot_Ptr_2;
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
-      Universal.Message.Initialize (Message_Ctx, Message_Buffer);
+      Universal.Message.Initialize (Message_1_Ctx, Message_1_Buffer);
+      Message_2_Buffer := Test.Session_Allocator.Slot_Ptr_3;
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_3 := null;
+      pragma Warnings (On, "unused assignment");
+      Universal.Message.Initialize (Message_2_Ctx, Message_2_Buffer);
       P_Next_State := S_Start;
    end Initialize;
 
    procedure Finalize is
       Options_Buffer : RFLX_Types.Bytes_Ptr;
-      Message_Buffer : RFLX_Types.Bytes_Ptr;
+      Message_1_Buffer : RFLX_Types.Bytes_Ptr;
+      Message_2_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       pragma Warnings (Off, "unused assignment to ""Options_Ctx""");
       pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -307,13 +587,21 @@ is
       pragma Warnings (Off, "unused assignment");
       Test.Session_Allocator.Slot_Ptr_1 := Options_Buffer;
       pragma Warnings (On, "unused assignment");
-      pragma Warnings (Off, "unused assignment to ""Message_Ctx""");
-      pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
-      pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""Message_Ctx""");
+      pragma Warnings (Off, "unused assignment to ""Message_1_Ctx""");
+      pragma Warnings (Off, """Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Universal.Message.Take_Buffer (Message_1_Ctx, Message_1_Buffer);
+      pragma Warnings (On, """Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Message_1_Ctx""");
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_2 := Message_Buffer;
+      Test.Session_Allocator.Slot_Ptr_2 := Message_1_Buffer;
+      pragma Warnings (On, "unused assignment");
+      pragma Warnings (Off, "unused assignment to ""Message_2_Ctx""");
+      pragma Warnings (Off, """Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Universal.Message.Take_Buffer (Message_2_Ctx, Message_2_Buffer);
+      pragma Warnings (On, """Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Message_2_Ctx""");
+      pragma Warnings (Off, "unused assignment");
+      Test.Session_Allocator.Slot_Ptr_3 := Message_2_Buffer;
       pragma Warnings (On, "unused assignment");
       P_Next_State := S_Terminated;
    end Finalize;
@@ -325,15 +613,17 @@ is
             Start (P_Next_State);
          when S_Process =>
             Process (P_Next_State);
-         when S_Reply =>
-            Reply (P_Next_State);
+         when S_Send_1 =>
+            Send_1 (P_Next_State);
+         when S_Send_2 =>
+            Send_2 (P_Next_State);
          when S_Terminated =>
             null;
       end case;
    end Tick;
 
    function In_IO_State return Boolean is
-     (P_Next_State in S_Reply);
+     (P_Next_State in S_Send_1 | S_Send_2);
 
    procedure Run is
    begin
@@ -351,9 +641,12 @@ is
      ((case Chan is
           when C_Channel =>
              (case P_Next_State is
-                 when S_Reply =>
-                    Universal.Message.Structural_Valid_Message (Message_Ctx)
-                    and Universal.Message.Byte_Size (Message_Ctx) > 0,
+                 when S_Send_1 =>
+                    Universal.Message.Structural_Valid_Message (Message_1_Ctx)
+                    and Universal.Message.Byte_Size (Message_1_Ctx) > 0,
+                 when S_Send_2 =>
+                    Universal.Message.Structural_Valid_Message (Message_2_Ctx)
+                    and Universal.Message.Byte_Size (Message_2_Ctx) > 0,
                  when others =>
                     False)));
 
@@ -361,8 +654,10 @@ is
      ((case Chan is
           when C_Channel =>
              (case P_Next_State is
-                 when S_Reply =>
-                    Universal.Message.Byte_Size (Message_Ctx),
+                 when S_Send_1 =>
+                    Universal.Message.Byte_Size (Message_1_Ctx),
+                 when S_Send_2 =>
+                    Universal.Message.Byte_Size (Message_2_Ctx),
                  when others =>
                     raise Program_Error)));
 
@@ -385,8 +680,10 @@ is
       case Chan is
          when C_Channel =>
             case P_Next_State is
-               when S_Reply =>
-                  Universal_Message_Read (Message_Ctx);
+               when S_Send_1 =>
+                  Universal_Message_Read (Message_1_Ctx);
+               when S_Send_2 =>
+                  Universal_Message_Read (Message_2_Ctx);
                when others =>
                   raise Program_Error;
             end case;

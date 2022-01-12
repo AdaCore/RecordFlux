@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, Union
 
-from rflx.error import RecordFluxError
+from rflx.error import FatalError
 from rflx.identifier import ID, StrID
 from rflx.model import Model
 from rflx.pyrflx.typevalue import MessageValue, RefinementValue
@@ -61,7 +61,7 @@ class PyRFLX:
             identifier_str = str(identifier_str)
             try:
                 message_identifier = ID(identifier_str)
-            except RecordFluxError as e:
+            except FatalError as e:
                 raise PyRFLXError(f'"{identifier_str}" is not a valid identifier: {e}') from e
 
             if len(message_identifier.parts) < 2:

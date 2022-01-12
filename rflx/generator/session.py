@@ -141,7 +141,6 @@ class ExceptionHandler:
 
     def execute(self) -> Sequence[Statement]:
         if self.inside_declare:
-            # ISSUE: Componolit/Workarounds#569
             self.session_context_state_exception.add(self.state.identifier)
             self.raised_deferred_exception = True
             return [Assignment("RFLX_Exception", TRUE)]
@@ -159,7 +158,6 @@ class ExceptionHandler:
         ]
 
     def execute_deferred(self) -> Sequence[Statement]:
-        # ISSUE: Componolit/Workarounds#569
         if self.raised_deferred_exception and not self.inside_declare:
             self.raised_deferred_exception = False
             return [
@@ -183,7 +181,6 @@ class ExceptionHandler:
         This is needed because SPARK does not yet support return statements in the scope of a local
         owning declaration.
         """
-        # ISSUE: Componolit/Workarounds#569
 
         local_exception_handler = ExceptionHandler(
             self.session_context_state_exception, self.state, self.finalization, inside_declare=True
@@ -1910,35 +1907,25 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             or selected.type_ == rty.OPAQUE
         ):
             return [
-                IfStatement(
+                self._if(
+                    Call(
+                        message_type * "Valid",
+                        [
+                            Variable(message_context),
+                            Variable(message_type * f"F_{selector}"),
+                        ],
+                    ),
                     [
-                        (
+                        Assignment(
+                            Variable(ID(target)),
                             Call(
-                                message_type * "Valid",
-                                [
-                                    Variable(message_context),
-                                    Variable(message_type * f"F_{selector}"),
-                                ],
+                                message_type * f"Get_{selector}",
+                                [Variable(message_context)],
                             ),
-                            [
-                                Assignment(
-                                    Variable(ID(target)),
-                                    Call(
-                                        message_type * f"Get_{selector}",
-                                        [Variable(message_context)],
-                                    ),
-                                )
-                            ],
                         )
                     ],
-                    # ISSUE: Componolit/RecordFlux#569
-                    [
-                        *self._debug_output(
-                            f'Error: access to invalid field "{selector}" of'
-                            f' "{message_context}"'
-                        ),
-                        *exception_handler.execute(),
-                    ],
+                    f'access to invalid field "{selector}" of' f' "{message_context}"',
+                    exception_handler,
                 )
             ]
 
@@ -2050,36 +2037,25 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if size_variables:
             expressions = " or ".join(f'"{v}"' for v in size_variables)
             return [
-                IfStatement(
-                    [
-                        (
-                            AndThen(
-                                *[
-                                    e
-                                    for v in size_variables
-                                    if isinstance(v.type_, (rty.Message, rty.Sequence))
-                                    for s in [
-                                        expr.Size(v).substituted(self._substitution()).ada_expr()
-                                    ]
-                                    for e in [
-                                        LessEqual(
-                                            s,
-                                            Number(
-                                                self._allocator.get_size(v.identifier, state) * 8
-                                            ),
-                                        ),
-                                        Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
-                                    ]
-                                ]
-                            ),
-                            assign_to_message_aggregate,
-                        )
-                    ],
-                    # ISSUE: Componolit/RecordFlux#569
-                    [
-                        *self._debug_output(f"Error: unexpected size of {expressions}"),
-                        *exception_handler.execute(),
-                    ],
+                self._if(
+                    AndThen(
+                        *[
+                            e
+                            for v in size_variables
+                            if isinstance(v.type_, (rty.Message, rty.Sequence))
+                            for s in [expr.Size(v).substituted(self._substitution()).ada_expr()]
+                            for e in [
+                                LessEqual(
+                                    s,
+                                    Number(self._allocator.get_size(v.identifier, state) * 8),
+                                ),
+                                Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
+                            ]
+                        ]
+                    ),
+                    assign_to_message_aggregate,
+                    f"unexpected size of {expressions}",
+                    exception_handler,
                 )
             ]
 
@@ -2114,42 +2090,33 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if isinstance(head.prefix.type_.element, (rty.Integer, rty.Enumeration)):
             return [
-                IfStatement(
-                    [
-                        (
-                            AndThen(
-                                Call(sequence_type * "Valid", [Variable(sequence_context)]),
-                                Call(
-                                    sequence_type * "Has_Element",
-                                    [Variable(sequence_context)],
-                                ),
-                                GreaterEqual(
-                                    Call(
-                                        sequence_type * "Size",
-                                        [Variable(sequence_context)],
-                                    ),
-                                    Size(ID(head.prefix.type_.element.identifier)),
-                                ),
+                self._if(
+                    AndThen(
+                        Call(sequence_type * "Valid", [Variable(sequence_context)]),
+                        Call(
+                            sequence_type * "Has_Element",
+                            [Variable(sequence_context)],
+                        ),
+                        GreaterEqual(
+                            Call(
+                                sequence_type * "Size",
+                                [Variable(sequence_context)],
                             ),
-                            [
-                                Assignment(
-                                    Variable(ID(target)),
-                                    Call(
-                                        sequence_type * "Head",
-                                        [Variable(sequence_context)],
-                                    ),
-                                )
-                            ],
+                            Size(ID(head.prefix.type_.element.identifier)),
+                        ),
+                    ),
+                    [
+                        Assignment(
+                            Variable(ID(target)),
+                            Call(
+                                sequence_type * "Head",
+                                [Variable(sequence_context)],
+                            ),
                         )
                     ],
-                    # ISSUE: Componolit/RecordFlux#569
-                    [
-                        *self._debug_output(
-                            f"Error: access to first element of invalid or empty sequence"
-                            f' "{sequence_context}"'
-                        ),
-                        *exception_handler.execute(),
-                    ],
+                    f"access to first element of invalid or empty sequence"
+                    f' "{sequence_context}"',
+                    exception_handler,
                 )
             ]
 
@@ -2263,13 +2230,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         # pylint: disable = too-many-locals
 
         assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
-        if not isinstance(comprehension.type_.element, (rty.Integer, rty.Enumeration)):
-            fail(
-                f"creating sequence with element {comprehension.type_.element}"
-                " using list comprehension not yet supported",
-                Subsystem.GENERATOR,
-                location=comprehension.location,
-            )
         assert isinstance(comprehension.sequence.type_, rty.Sequence)
 
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
@@ -2494,38 +2454,31 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.referenced_packages_body.append(contains_package)
 
         return [
-            IfStatement(
+            self._if(
+                Call(
+                    ID(contains_package)
+                    * self.contains_function_name(
+                        refinement.package, pdu.identifier, sdu.identifier, field
+                    ),
+                    [Variable(context_id(conversion.argument.prefix.identifier))],
+                ),
                 [
-                    (
-                        Call(
-                            ID(contains_package)
-                            * self.contains_function_name(
-                                refinement.package, pdu.identifier, sdu.identifier, field
-                            ),
-                            [Variable(context_id(conversion.argument.prefix.identifier))],
-                        ),
+                    CallStatement(
+                        ID(contains_package) * f"Copy_{field}",
                         [
-                            CallStatement(
-                                ID(contains_package) * f"Copy_{field}",
-                                [
-                                    Variable(context_id(conversion.argument.prefix.identifier)),
-                                    Variable(context_id(target)),
-                                ],
-                            ),
-                            CallStatement(
-                                ID(sdu.identifier) * "Verify_Message",
-                                [
-                                    Variable(context_id(target)),
-                                ],
-                            ),
+                            Variable(context_id(conversion.argument.prefix.identifier)),
+                            Variable(context_id(target)),
                         ],
-                    )
+                    ),
+                    CallStatement(
+                        ID(sdu.identifier) * "Verify_Message",
+                        [
+                            Variable(context_id(target)),
+                        ],
+                    ),
                 ],
-                # ISSUE: Componolit/RecordFlux#569
-                [
-                    *self._debug_output(f'Error: invalid conversion "{conversion}"'),
-                    *exception_handler.execute(),
-                ],
+                f'invalid conversion "{conversion}"',
+                exception_handler,
             )
         ]
 
@@ -2892,6 +2845,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return func
 
+    def _if(
+        self,
+        condition: Expr,
+        statements: Sequence[Statement],
+        error_message: str,
+        exception_handler: ExceptionHandler,
+    ) -> IfStatement:
+        return IfStatement(
+            [
+                (condition, statements),
+            ],
+            [
+                *self._debug_output(f"Error: {error_message}"),
+                *exception_handler.execute(),
+            ],
+        )
+
     def _if_valid_sequence(
         self,
         sequence_type: ID,
@@ -2899,19 +2869,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # ISSUE: Componlit/RecordFlux#569
-        return IfStatement(
-            [
-                (
-                    Call(sequence_type * "Valid", [Variable(sequence_context)]),
-                    statements,
-                )
-            ],
-            # ISSUE: Componolit/RecordFlux#569
-            [
-                *self._debug_output(f'Error: invalid sequence "{sequence_context}"'),
-                *exception_handler.execute(),
-            ],
+        return self._if(
+            Call(sequence_type * "Valid", [Variable(sequence_context)]),
+            statements,
+            f'invalid sequence "{sequence_context}"',
+            exception_handler,
         )
 
     def _if_structural_valid_message(
@@ -2921,22 +2883,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # ISSUE: Componlit/RecordFlux#569
-        return IfStatement(
-            [
-                (
-                    Call(
-                        message_type * "Structural_Valid_Message",
-                        [Variable(message_context)],
-                    ),
-                    statements,
-                )
-            ],
-            # ISSUE: Componolit/RecordFlux#569
-            [
-                *self._debug_output(f'Error: invalid message "{message_context}"'),
-                *exception_handler.execute(),
-            ],
+        return self._if(
+            Call(
+                message_type * "Structural_Valid_Message",
+                [Variable(message_context)],
+            ),
+            statements,
+            f'invalid message "{message_context}"',
+            exception_handler,
         )
 
     def _if_structural_valid_message_field(
@@ -2947,27 +2901,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # ISSUE: Componlit/RecordFlux#569
-        return IfStatement(
-            [
-                (
-                    Call(
-                        message_type * "Structural_Valid",
-                        [
-                            Variable(message_context),
-                            Variable(message_type * model.Field(message_field).affixed_name),
-                        ],
-                    ),
-                    statements,
-                )
-            ],
-            # ISSUE: Componolit/RecordFlux#569
-            [
-                *self._debug_output(
-                    f'Error: invalid message field "{message_type * message_field}"'
-                ),
-                *exception_handler.execute(),
-            ],
+        return self._if(
+            Call(
+                message_type * "Structural_Valid",
+                [
+                    Variable(message_context),
+                    Variable(message_type * model.Field(message_field).affixed_name),
+                ],
+            ),
+            statements,
+            f'invalid message field "{message_type * message_field}"',
+            exception_handler,
         )
 
     def _if_valid_fields(
@@ -2977,29 +2921,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
     ) -> Sequence[Statement]:
         """Ensure that all referenced fields in the expression are valid."""
-        # ISSUE: Componlit/RecordFlux#569
 
         selected = expression.findall(lambda x: isinstance(x, expr.Selected))
 
         if selected:
             expressions = " or ".join(f'"{s}"' for s in selected)
             return [
-                IfStatement(
-                    [
-                        (
-                            expr.AndThen(*[expr.Valid(e) for e in selected])
-                            .substituted(self._substitution())
-                            .ada_expr(),
-                            statements,
-                        )
-                    ],
-                    # ISSUE: Componolit/RecordFlux#569
-                    [
-                        *self._debug_output(
-                            f"Error: reference to invalid message field in {expressions}"
-                        ),
-                        *exception_handler.execute(),
-                    ],
+                self._if(
+                    expr.AndThen(*[expr.Valid(e) for e in selected])
+                    .substituted(self._substitution())
+                    .ada_expr(),
+                    statements,
+                    f"reference to invalid message field in {expressions}",
+                    exception_handler,
                 )
             ]
 
@@ -3012,34 +2946,28 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        return IfStatement(
-            [
-                (
-                    GreaterEqual(
-                        Add(
-                            Call(
-                                const.TYPES_TO_FIRST_BIT_INDEX,
-                                [
-                                    Variable(f"{target_context}.Buffer_Last"),
-                                ],
-                            ),
-                            -Call(
-                                const.TYPES_TO_FIRST_BIT_INDEX,
-                                [
-                                    Variable(f"{target_context}.Buffer_First"),
-                                ],
-                            ),
-                            Number(1),
-                        ),
-                        required_space,
+        return self._if(
+            GreaterEqual(
+                Add(
+                    Call(
+                        const.TYPES_TO_FIRST_BIT_INDEX,
+                        [
+                            Variable(f"{target_context}.Buffer_Last"),
+                        ],
                     ),
-                    statements,
-                )
-            ],
-            [
-                *self._debug_output(f'Error: insufficient space in message "{target_context}"'),
-                *exception_handler.execute(),
-            ],
+                    -Call(
+                        const.TYPES_TO_FIRST_BIT_INDEX,
+                        [
+                            Variable(f"{target_context}.Buffer_First"),
+                        ],
+                    ),
+                    Number(1),
+                ),
+                required_space,
+            ),
+            statements,
+            f'insufficient space in message "{target_context}"',
+            exception_handler,
         )
 
     def _if_sufficient_space_in_sequence(
@@ -3050,29 +2978,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        return IfStatement(
-            [
-                (
-                    AndThen(
-                        Call(
-                            sequence_type * "Has_Element",
-                            [Variable(sequence_context)],
-                        ),
-                        GreaterEqual(
-                            Call(
-                                sequence_type * "Available_Space",
-                                [Variable(sequence_context)],
-                            ),
-                            required_space,
-                        ),
+        return self._if(
+            AndThen(
+                Call(
+                    sequence_type * "Has_Element",
+                    [Variable(sequence_context)],
+                ),
+                GreaterEqual(
+                    Call(
+                        sequence_type * "Available_Space",
+                        [Variable(sequence_context)],
                     ),
-                    statements,
-                )
-            ],
-            [
-                *self._debug_output(f'Error: insufficient space in sequence "{sequence_context}"'),
-                *exception_handler.execute(),
-            ],
+                    required_space,
+                ),
+            ),
+            statements,
+            f'insufficient space in sequence "{sequence_context}"',
+            exception_handler,
         )
 
     def _ensure(
@@ -3091,9 +3013,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         nested,
                     )
                 ],
-                # ISSUE: Componolit/RecordFlux#569
                 [
-                    *self._debug_output(error_message),
+                    *self._debug_output(f"Error: {error_message}"),
                     *exception_handler.execute(),
                 ],
             )
@@ -3102,7 +3023,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     @staticmethod
     def _exit_on_deferred_exception() -> ExitStatement:
-        # ISSUE: Componolit/Workarounds#569
         return ExitStatement(Variable("RFLX_Exception"))
 
     def _set_message_fields(
@@ -3149,7 +3069,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 Variable(message_type * f"F_{v.selector}"),
                             ],
                         ),
-                        f'Error: access to invalid next message field for "{v}"',
+                        f'access to invalid next message field for "{v}"',
                         exception_handler,
                     )
                     size = Call(
@@ -3171,7 +3091,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Call(const.TYPES_TO_LENGTH, [size]),
                         ],
                     ),
-                    f'Error: invalid message field size for "{v}"',
+                    f'invalid message field size for "{v}"',
                     exception_handler,
                 )
 
@@ -3226,7 +3146,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Variable(message_type * f"F_{v.selector}"),
                         ],
                     ),
-                    f'Error: access to invalid message field in "{v}"',
+                    f'access to invalid message field in "{v}"',
                     exception_handler,
                 )
                 get_field_value = self._convert_type(
@@ -3479,40 +3399,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 condition.substituted(
                                                     self._substitution()
                                                 ).ada_expr(),
-                                                [
-                                                    self._if_sufficient_space_in_sequence(
-                                                        Size(
-                                                            ID(
-                                                                target_type.element.identifier
-                                                                + "_Enum"
-                                                                if isinstance(
-                                                                    target_type.element,
-                                                                    rty.Enumeration,
-                                                                )
-                                                                and target_type.element.always_valid
-                                                                else target_type.element.identifier
-                                                            )
-                                                        ),
-                                                        target_type_id,
-                                                        context_id(target_identifier),
-                                                        [
-                                                            CallStatement(
-                                                                target_type_id * "Append_Element",
-                                                                [
-                                                                    Variable(
-                                                                        context_id(
-                                                                            target_identifier
-                                                                        )
-                                                                    ),
-                                                                    selector.substituted(
-                                                                        self._substitution()
-                                                                    ).ada_expr(),
-                                                                ],
-                                                            )
-                                                        ],
-                                                        local_exception_handler,
-                                                    ),
-                                                ],
+                                                self._comprehension_append_element(
+                                                    target_identifier,
+                                                    target_type,
+                                                    selector,
+                                                    local_exception_handler,
+                                                ),
                                             )
                                         ]
                                     )
@@ -3529,6 +3421,94 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     self._exit_on_deferred_exception(),
                 ],
             )
+
+    def _comprehension_append_element(
+        self,
+        target_identifier: ID,
+        target_type: rty.Sequence,
+        selector: expr.Expr,
+        exception_handler: ExceptionHandler,
+    ) -> List[Statement]:
+        target_type_id = ID(target_type.identifier)
+        required_space: Expr
+        append_element: Statement
+
+        if isinstance(target_type.element, rty.Message):
+            if not isinstance(selector, expr.Variable):
+                fail(
+                    "expressions other than variables not yet supported"
+                    " as selector for message types",
+                    Subsystem.GENERATOR,
+                    location=selector.location,
+                )
+
+            element_id = ID(selector.identifier + "_Ctx")
+            required_space = Call(
+                ID(target_type.element.identifier * "Size"),
+                [Variable(element_id)],
+            )
+            append_element = self._if_structural_valid_message(
+                ID(target_type.element.identifier),
+                element_id,
+                [
+                    self._if(
+                        Greater(
+                            Call(
+                                ID(target_type.element.identifier) * "Size",
+                                [
+                                    Variable(element_id),
+                                ],
+                            ),
+                            Number(0),
+                        ),
+                        [
+                            CallStatement(
+                                target_type_id * "Append_Element",
+                                [
+                                    Variable(context_id(target_identifier)),
+                                    Variable(element_id),
+                                ],
+                            )
+                        ],
+                        "empty messages cannot be appended to sequence",
+                        exception_handler,
+                    )
+                ],
+                exception_handler,
+            )
+
+        elif isinstance(target_type.element, (rty.Integer, rty.Enumeration)):
+            required_space = Size(
+                ID(
+                    target_type.element.identifier + "_Enum"
+                    if isinstance(
+                        target_type.element,
+                        rty.Enumeration,
+                    )
+                    and target_type.element.always_valid
+                    else target_type.element.identifier
+                )
+            )
+            append_element = CallStatement(
+                target_type_id * "Append_Element",
+                [
+                    Variable(context_id(target_identifier)),
+                    selector.substituted(self._substitution()).ada_expr(),
+                ],
+            )
+
+        else:
+            assert False
+
+        return [
+            self._if_sufficient_space_in_sequence(
+                required_space,
+                target_type_id,
+                context_id(target_identifier),
+                [append_element],
+                exception_handler,
+            ),
+        ]
 
     def _free_context_buffer(
         self, identifier: ID, type_: ID, alloc_id: Optional[Location]

@@ -6,7 +6,7 @@ import pytest
 import z3
 
 from rflx import ada, typing_ as rty
-from rflx.error import Location, RecordFluxError
+from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -719,7 +719,7 @@ def test_term_simplified() -> None:
 
 
 def test_variable_invalid_name() -> None:
-    with pytest.raises(RecordFluxError):
+    with pytest.raises(FatalError):
         Variable("Foo (Bar)")
 
 

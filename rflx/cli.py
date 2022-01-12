@@ -347,7 +347,7 @@ def validate(args: argparse.Namespace) -> None:
 
     try:
         identifier = ID(args.message_identifier)
-    except RecordFluxError as e:
+    except FatalError as e:
         fail(f"invalid identifier: {e}", Subsystem.CLI)
 
     try:
