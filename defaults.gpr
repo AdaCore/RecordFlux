@@ -1,5 +1,27 @@
 abstract project Defaults is
 
+   Compiler_Variant := external ("gnat", "");
+
+   GNATVI := "-gnatVi";  --  ISSUE: Componolit/Workarounds#43
+   GNATVO := "-gnatVo";  --  ISSUE: Componolit/Workarounds#23
+   GNATEV := "-gnateV";  --  ISSUE: Componolit/Workarounds#22
+   GNATA := "-gnata";    --  ISSUE: Componolit/Workarounds#44
+
+   case Compiler_Variant is
+      when "community2020" =>
+         GNATVI := "";
+      when "pro20.2" =>
+         GNATVI := "";
+         GNATVO := "";
+         GNATEV := "";
+      when "community2019" =>
+         GNATVI := "";
+         GNATVO := "";
+         GNATEV := "";
+         GNATA  := "";
+      when others =>
+   end case;
+
    Proof_Switches :=
    (
       "--prover=z3,cvc4,altergo",
@@ -31,23 +53,19 @@ abstract project Defaults is
       "-gnatVd",  --  Default (RM) validity checks.
       "-gnatVe",  --  Validity checks for elementary components.
       "-gnatVf",  --  Validity checks for floating-point values.
-      --  ISSUE: Componolit/Workarounds#43
-      --  "-gnatVi",  --  Validity checks for ``in`` mode parameters.
+      GNATVI,     --  Validity checks for ``in`` mode parameters.
       "-gnatVm",  --  Validity checks for ``in out`` mode parameters.
-      --  ISSUE: Componolit/Workarounds#23
-      --  "-gnatVo",  --  Validity checks for operator and attribute operands.
+      GNATVO,     --  Validity checks for operator and attribute operands.
       "-gnatVp",  --  Validity checks for parameters.
       "-gnatVr",  --  Validity checks for function returns.
       "-gnatVs",  --  Validity checks for subscripts.
       "-gnatVt",  --  Validity checks for tests.
-      --  ISSUE: Componolit/Workarounds#22
-      --  "-gnateV",  --  Check that all actual parameters of a subprogram call are valid according to the rules of validity checking (Validity Checking).
+      GNATEV,     --  Check that all actual parameters of a subprogram call are valid according to the rules of validity checking (Validity Checking).
 
       --  Debugging
       "-fstack-check",  --  Activate stack checking.
       "-g",             --  Enable generation of debugging information.
-      --  ISSUE: Componolit/Workarounds#44
-      --  "-gnata",         --  Enable assertions.
+      GNATA,            --  Enable assertions.
 
       --  Warnings
       "-gnatwa",   --  Activate most optional warnings.
