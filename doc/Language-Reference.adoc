@@ -161,7 +161,7 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
 
 [[syntax-message_aspects]]message_aspects ::= xref:syntax-message_aspect[message_aspect] { *,* xref:syntax-message_aspect[message_aspect] }
 
-[[syntax-message_aspect]]message_aspect ::= xref:syntax-checksum_aspect[checksum_aspect]
+[[syntax-message_aspect]]message_aspect ::= xref:syntax-checksum_aspect[checksum_aspect] | xref:syntax-byteorder_aspect[byteorder_aspect]
 
 [[syntax-checksum_aspect]]checksum_aspect ::= *Checksum* *=>* *(* xref:syntax-checksum_definition[checksum_definition] { *,* xref:syntax-checksum_definition[checksum_definition] } *)*
 
@@ -174,6 +174,10 @@ A message type is a collection of fields. Additional xref:syntax-then_clause[the
 [[syntax-field_range_first]]field_range_first ::= xref:syntax-name[name]*'First* | xref:syntax-name[name]*'Last + 1*
 
 [[syntax-field_range_last]]field_range_last ::= xref:syntax-name[name]*'Last* | xref:syntax-name[name]*'First - 1*
+
+[[syntax-byteorder_aspect]]byteorder_aspect ::= *Byte_Order* *=>* xref:syntax-byteorder_definition[byteorder_definition]
+
+[[syntax-byteorder_definition]]byteorder_definition ::= *High_Order_First* | *Low_Order_First*
 ----
 
 *Static Semantics*
@@ -185,6 +189,8 @@ A message can be parameterized. Message parameters can be used in conditions and
 The field type `Opaque` represents an unconstrained sequence of bytes. The size of opaque fields and sequence fields must be defined by a size aspect, if another field can follow. If no size aspect is given, the field size is implicitly defined by the available space (defined by the outer message when parsing or by the written data when serializing). Opaque fields and sequence fields must be byte aligned. The size of a message must be a multiple of 8 bit.
 
 A checksum aspect specifies which parts of a message is covered by a checksum. The definition of the checksum calculation is not part of the specification. Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements. A checksum element can be a field value, a field size or a range of fields. The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum. For this purpose the `Valid_Checksum` attribute is added to a condition. All message parts on which the checksum depends have to be known at this point.
+
+The `Byte_Order` aspect allows the user to specify the endianness of the message, with the two possible choices `High_Order_First` (big endian, or network byte order) and `Low_Order_First` (little endian). If the `Byte_Order` aspect is not specified, the byte order of the message is set to `High_Order_First`.
 
 `Message'First`, `Message'Last` and `Message'Size` can be used in expressions to refer to the position of the first or last bit of the message or the size of the message. All bytes which were received when parsing or were written when serializing are considered as part of the message.
 
