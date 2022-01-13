@@ -252,6 +252,7 @@ jobs:
           - gnat-distrib: "fsf"
     env:
       python-version: 3.7
+      GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
       - uses: actions/checkout@v2
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}

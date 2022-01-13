@@ -26,4 +26,4 @@ $(src): $(specs)
 	rflx generate -d generated --ignore-unsupported-checksum $^
 
 $(bin): $(src)
-	gprbuild -Pping
+	gprbuild -Pping -Xgnat=$(GNAT)
