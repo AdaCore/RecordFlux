@@ -116,6 +116,7 @@ def test_equality(feature: str, tmp_path: Path) -> None:
         assert generated.read_text() == expected.read_text(), f"mismatch in {generated.name}"
 
 
+@pytest.mark.compilation
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
@@ -125,6 +126,7 @@ def test_compilability(feature: str, tmp_path: Path) -> None:
     assert_compilable_code(model, integration, tmp_path)
 
 
+@pytest.mark.compilation
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_executability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)

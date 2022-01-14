@@ -2624,6 +2624,7 @@ def test_equality(test_case: str) -> None:
         assert result[filename] == content, f"mismatch in {filename}"
 
 
+@pytest.mark.compilation
 @pytest.mark.parametrize("test_case", TEST_CASES)
 def test_compilability(test_case: str, tmp_path: Path) -> None:
     if TEST_CASES[test_case].complement:
@@ -2665,6 +2666,7 @@ def test_provability(test_case: str, tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.compilation
 def test_session_with_only_null_state(tmp_path: Path) -> None:
     state = State("St", transitions=[])
     session = Session(

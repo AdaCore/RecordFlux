@@ -21,4 +21,4 @@ $(src): $(specs)
 	rflx generate -d generated --debug $^
 
 $(bin): $(src) $(wildcard src/*)
-	gprbuild -Pdhcp_client
+	gprbuild -Pdhcp_client -Xgnat=$(GNAT)

@@ -186,7 +186,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     [
                         l.format(prefix=prefix)
                         for l in template_file.split("\n")
-                        if "  --  WORKAROUND" not in l
+                        if "  --  ISSUE" not in l
                     ]
                 ),
             )
@@ -3660,6 +3660,31 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         unit += self.__create_contains_function(refinement, condition_fields, null_sdu)
         if not null_sdu:
+            unit += UnitPart(
+                [
+                    # ISSUE: Componolit/Workarounds#45
+                    # Suppress warning for backward compatibility to GNAT Community 2019.
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("Off"),
+                            String(
+                                '"Field_Cursors" is already use-visible through package use clause'
+                            ),
+                        ],
+                    ),
+                    UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("On"),
+                            String(
+                                '"Field_Cursors" is already use-visible through package use clause'
+                            ),
+                        ],
+                    ),
+                ]
+            )
             unit += self.__create_switch_procedure(refinement, condition_fields)
             unit += self.__create_copy_refined_field_procedure(refinement, condition_fields)
 
@@ -3939,7 +3964,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return UnitPart(
             [
-                UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -4083,7 +4107,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return UnitPart(
             [
-                UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
                 SubprogramDeclaration(
                     specification,
                     [

@@ -19,7 +19,11 @@ is
      (RFLX.Universal.Message.Has_Buffer (Ctx)
       and then RFLX.Universal.Message.Present (Ctx, RFLX.Universal.Message.F_Data));
 
+   pragma Warnings (Off, """Field_Cursors"" is already use-visible through package use clause");
+
    use type RFLX.Universal.Message.Field_Cursors;
+
+   pragma Warnings (On, """Field_Cursors"" is already use-visible through package use clause");
 
    procedure Switch_To_Data (Universal_Message_PDU_Context : in out RFLX.Universal.Message.Context; Universal_Option_SDU_Context : out RFLX.Universal.Option.Context) with
      Pre =>

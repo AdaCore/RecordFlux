@@ -16,11 +16,11 @@ endif
 .PHONY: test test_optimized prove prove_cvc4 clean
 
 test: $(test_files)
-	gprbuild -P$(project) -Xtest=$(TEST)
+	gprbuild -P$(project) -Xtest=$(TEST) -Xgnat=$(GNAT)
 	cd ../.. && $(test_bin)
 
 test_optimized: $(test_files)
-	gprbuild -P$(project) -Xtype=optimized
+	gprbuild -P$(project) -Xtype=optimized -Xgnat=$(GNAT)
 	cd ../.. && $(test_bin)
 
 prove: $(proof_sessions) $(test_files)
@@ -30,7 +30,7 @@ prove_cvc4: $(test_files)
 	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests --memcached-server=localhost:11211 $(GNATPROVE_ARGS)
 
 clean:
-	gnatclean -P$(project)
+	gprclean -P$(project)
 
 remove-prefix = $(VERBOSE) \
 	mkdir -p $(dir $@) && \

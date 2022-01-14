@@ -112,14 +112,11 @@ is
           and then Message_Buffer'Length + Offset = Write_Buffer_Size (Chan),
         Post =>
           Length <= Message_Buffer'Length
-          and Message_Buffer'Initialized,
-        Relaxed_Initialization =>
-          Message_Buffer
       is
       begin
          Length := Buffer'Length;
+         Message_Buffer := (others => 0);
          Message_Buffer (Message_Buffer'First .. RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) - 1 + Length)) := Buffer;
-         Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Length) .. Message_Buffer'Last) := (others => 0);
       end Write;
       procedure Universal_Message_Write is new Universal.Message.Generic_Write (Write, Write_Pre);
    begin
