@@ -323,7 +323,7 @@ def test_no_verification_icmp_checksum(
                 else l
                 for l in icmp_message.structure
             ],
-            checksum_aspects={
+            checksums={
                 ID("Checksum"): [
                     ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
                     Size("Checksum"),

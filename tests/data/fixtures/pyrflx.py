@@ -72,7 +72,7 @@ def fixture_icmp_checksum_message_value(icmp_message: model.Message) -> pyrflx.M
                 else l
                 for l in icmp_message.structure
             ],
-            checksum_aspects={
+            checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
                         expr.First("Tag"), expr.Sub(expr.First("Checksum"), expr.Number(1))
@@ -101,7 +101,7 @@ def fixture_icmp_checksum_message_first(icmp_message: model.Message) -> pyrflx.M
                 else l
                 for l in icmp_message.structure
             ],
-            checksum_aspects={
+            checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
                         expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))

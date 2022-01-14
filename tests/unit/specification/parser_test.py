@@ -2272,7 +2272,7 @@ def test_create_model_checksum() -> None:
                         F4 : T;
                     end message
                         with Checksum => (C1 => (F3, F1'First .. F2'Last),
-                                        C2 => (C1'Last + 1 .. C2'First - 1)),
+                                          C2 => (C1'Last + 1 .. C2'First - 1)),
                              Byte_Order => Low_Order_First;
                 end Test;
             """,
