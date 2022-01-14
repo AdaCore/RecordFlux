@@ -245,8 +245,8 @@ is
          Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) then
-            Universal.Message.Reset (Message_1_Ctx, RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Option_Types.Size (Option_Types_Ctx) + 24) - 1);
+         if RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + 1 >= Universal.Option_Types.Size (Option_Types_Ctx) + 24 then
+            Universal.Message.Reset (Message_1_Ctx, RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_1_Ctx.Buffer_First) + (Universal.Option_Types.Size (Option_Types_Ctx) + 24) - 1);
             Universal.Message.Set_Message_Type (Message_1_Ctx, Universal.MT_Option_Types);
             Universal.Message.Set_Length (Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
             if Universal.Message.Valid_Length (Message_1_Ctx, Universal.Message.F_Option_Types, RFLX_Types.To_Length (Universal.Option_Types.Size (Option_Types_Ctx))) then
@@ -445,8 +445,8 @@ is
          Universal.Options.Size (Message_Options_Ctx) <= 32768
          and then Universal.Options.Size (Message_Options_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Options.Size (Message_Options_Ctx) + 24) then
-            Universal.Message.Reset (Message_2_Ctx, RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Options.Size (Message_Options_Ctx) + 24) - 1);
+         if RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + 1 >= Universal.Options.Size (Message_Options_Ctx) + 24 then
+            Universal.Message.Reset (Message_2_Ctx, RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_2_Ctx.Buffer_First) + (Universal.Options.Size (Message_Options_Ctx) + 24) - 1);
             Universal.Message.Set_Message_Type (Message_2_Ctx, Universal.MT_Options);
             Universal.Message.Set_Length (Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
             if Universal.Message.Valid_Length (Message_2_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Message_Options_Ctx))) then

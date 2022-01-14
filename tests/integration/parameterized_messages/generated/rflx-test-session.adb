@@ -1,7 +1,9 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.Test;
 with RFLX.RFLX_Types;
 use type RFLX.RFLX_Types.Bit_Length;
+use type RFLX.Test.Length;
 
 package body RFLX.Test.Session with
   SPARK_Mode
@@ -44,8 +46,8 @@ is
          Test.Message.Size (M_R_Ctx) <= 32768
          and then Test.Message.Size (M_R_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) then
-            Test.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + RFLX_Types.Bit_Length (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) - 1, Length => M_R_Ctx.Length, Extended => True);
+         if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16 then
+            Test.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) - 1, Length => M_R_Ctx.Length, Extended => True);
             if Test.Message.Valid_Next (M_R_Ctx, Test.Message.F_Data) then
                if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data))) then
                   if Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data) then

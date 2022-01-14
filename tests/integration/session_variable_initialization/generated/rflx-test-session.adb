@@ -35,8 +35,8 @@ is
          return;
       end if;
       Global := Local + 20;
-      if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (32) then
-         Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
+      if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= 32 then
+         Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Value);
          Universal.Message.Set_Length (Message_Ctx, Universal.Length (Universal.Value'Size / 8));
          Universal.Message.Set_Value (Message_Ctx, Global);
