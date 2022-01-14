@@ -1058,7 +1058,7 @@ def test_checksum_no_verification() -> None:
                 else l
                 for l in icmp_message.structure
             ],
-            checksum_aspects={
+            checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
                         expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))
@@ -1134,7 +1134,7 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
             else l
             for l in no_conditionals_message.structure
         ],
-        checksum_aspects={ID("Checksum"): [expr.ValueRange(expr.First("Tag"), expr.Last("Data"))]},
+        checksums={ID("Checksum"): [expr.ValueRange(expr.First("Tag"), expr.Last("Data"))]},
     )
     msg = MessageValue(message)
     msg.set("Tag", 0)

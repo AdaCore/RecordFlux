@@ -2507,7 +2507,7 @@ def test_checksum(checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr)
         Link(f3, FINAL, condition),
     ]
     types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
-    message = Message("P::M", structure, types, checksum_aspects=checksums)
+    message = Message("P::M", structure, types, checksums=checksums)
     assert message.checksums == checksums
 
 
@@ -2563,7 +2563,7 @@ def test_checksum_error(
         Link(f3, FINAL, condition),
     ]
     types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
-    assert_message_model_error(structure, types, error, checksum_aspects=checksums)
+    assert_message_model_error(structure, types, error, checksums=checksums)
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
