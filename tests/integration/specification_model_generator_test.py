@@ -7,6 +7,8 @@ from rflx.specification import Parser
 from tests import utils
 from tests.const import SPEC_DIR
 
+pytestmark = pytest.mark.compilation
+
 
 @pytest.mark.parametrize(
     "prefix",

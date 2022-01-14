@@ -140,21 +140,13 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
-        gnat-distrib:
-          - "community"
         include:
           - target: "python_unit"
             python-version: 3.7
-            gnat-distrib: "community"
           - target: "python_property"
             python-version: 3.7
-            gnat-distrib: "community"
           - target: "python_optimized"
             python-version: 3.7
-            gnat-distrib: "community"
-          - target: "python_optimized"
-            python-version: 3.7
-            gnat-distrib: "fsf"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
@@ -196,17 +188,9 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
-        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
-    - name: Install Alire
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
-      uses: alire-project/setup-alire@v1
-    - name: Install FSF GNAT
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
-      run: |
-        make install_gnat
     - name: Connect to Memcached server
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       shell: bash
@@ -232,6 +216,133 @@ jobs:
         eval `make printenv_gnat`
         gnat --version
         make test_${{ matrix.target }}
+
+  skip_check_compilation:
+    name: Skip Check Compilation
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v3.4.0
+        with:
+          paths: '["defaults.gpr", "examples/apps/**", "rflx/**", "tests/**"]'
+
+  compilation:
+    name: Compilation
+    needs: skip_check_compilation
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gnat-distrib:
+          - "community"
+        gnat-version:
+          - "2019"
+          - "2020"
+          - "2021"
+        include:
+          - gnat-distrib: "pro"
+            gnat-version: "20.2"
+          - gnat-distrib: "pro"
+            gnat-version: "21.2"
+          - gnat-distrib: "pro"
+            gnat-version: "22.0"
+          - gnat-distrib: "fsf"
+    env:
+      python-version: 3.7
+      GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        with:
+          submodules: true
+      - name: Set up Python ${{ env.python-version }}
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+      - name: Determine exact Python version
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        run:
+          echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+      - name: Cache Python dependencies
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/lib/python${{ env.python-version }}/site-packages
+            ~/.local/bin
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8', 'Makefile') }}
+      - name: Cache GNAT Community
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'community' }}
+        uses: actions/cache@v2
+        with:
+          path: /home/runner/work/gnat
+          key: ${{ runner.os }}-gnat-ce${{ matrix.gnat-version }}
+      - name: Install GNAT Community
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'community' }}
+        uses: ada-actions/toolchain@ce2021
+        with:
+          distrib: community
+          community_year: ${{ matrix.gnat-version }}
+          install_dir: /home/runner/work/gnat
+      - name: Install GNAT Pro
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'pro' }}
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
+          SERVER: ${{ secrets.MEMCACHED_SERVER }}
+        run: |
+          eval $(ssh-agent -s)
+          echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          scp -q ci@$SERVER:/srv/gnatpro-${{ matrix.gnat-version }}-x86_64-linux-bin.tar.gz /home/runner/work/
+          tar -C /home/runner/work -xzf /home/runner/work/gnatpro-${{ matrix.gnat-version }}-x86_64-linux-bin.tar.gz
+          cd /home/runner/work/gnatpro-${{ matrix.gnat-version }}-*x86_64-linux-bin && echo -e "\n/home/runner/work/gnat\nY\nY" | ./doinstall
+          echo "/home/runner/work/gnat/bin" >> $GITHUB_PATH
+      - name: Cache Alire and FSF GNAT
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.config/alire
+            build/alire
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8', 'Makefile') }}
+      - name: Install Alire
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        uses: alire-project/setup-alire@v1
+      - name: Install FSF GNAT
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        run: |
+          make install_gnat
+      # Note: RecordFlux-parser depends on the GNAT toolchain. If the caching of Python dependencies
+      # is used, it must be ensured that the cached RecordFlux-parser fits to the selected GNAT
+      # toolchain. In case of FSF GNAT, some libraries required by RecordFlux-parser
+      # (e.g., libgnatcoll.so) must be cached as well, as they will be only created, if the
+      # compilation during the installation of RecordFlux-parser is executed.
+      - name: Install dependencies
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+          echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+          sudo apt install graphviz libgmp-dev patchelf
+          python -m pip install --upgrade pip wheel
+          eval `make printenv_gnat`
+          gnat --version
+          make install_devel
+      - name: Test
+        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
+        run: |
+          eval `make printenv_gnat`
+          gnat --version
+          make test_compilation
 
   verification_python_scheduled:
     name: Verification
@@ -276,7 +387,6 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
-        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
@@ -606,7 +716,6 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
-        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel
@@ -764,7 +873,6 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
-        echo "PYTEST_ADDOPTS=--basetemp=build" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make install_devel

@@ -10,6 +10,7 @@ from tests import utils
 from tests.property import strategies
 
 
+@pytest.mark.compilation
 @given(strategies.models())
 @settings(
     deadline=None,

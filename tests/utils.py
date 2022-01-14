@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import pathlib
 import shutil
 import subprocess
@@ -95,7 +96,12 @@ def assert_compilable_code(
 ) -> None:
     _create_files(tmp_path, model, integration, main, prefix)
 
-    p = subprocess.run(["gprbuild", "-Ptest"], cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+    p = subprocess.run(
+        ["gprbuild", "-Ptest", f"-Xgnat={os.getenv('GNAT', '')}"],
+        cwd=tmp_path,
+        check=False,
+        stderr=subprocess.PIPE,
+    )
     if p.returncode:
         raise AssertionError(
             f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",

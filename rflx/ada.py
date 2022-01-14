@@ -945,19 +945,6 @@ class Postcondition(Aspect):
         return str(self.expr)
 
 
-class RelaxedInitialization(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
-
-    @property
-    def mark(self) -> str:
-        return "Relaxed_Initialization"
-
-    @property
-    def definition(self) -> str:
-        return str(self.expr)
-
-
 class ContractCases(Aspect):
     def __init__(self, *cases: Tuple[Expr, Expr]) -> None:
         self.cases = cases
