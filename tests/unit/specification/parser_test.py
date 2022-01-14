@@ -2221,8 +2221,8 @@ def test_create_model_checksum() -> None:
                          F1 : T;
                          F2 : T;
                          F3 : T;
-                     end message
-                        with Byte_Order => Low_Order_First;
+                      end message
+                         with Byte_Order => Low_Order_First;
                  end Test;
             """,
             model.ByteOrder.LOW_ORDER_FIRST,
@@ -2236,8 +2236,8 @@ def test_create_model_checksum() -> None:
                          F1 : T;
                          F2 : T;
                          F3 : T;
-                     end message
-                        with Byte_Order => High_Order_First;
+                      end message
+                         with Byte_Order => High_Order_First;
                  end Test;
             """,
             model.ByteOrder.HIGH_ORDER_FIRST,
@@ -2259,21 +2259,21 @@ def test_create_model_checksum() -> None:
         (
             """
                 package Test is
-                    type T is mod 2**8;
-                    type M is
-                        message
-                            F1 : T;
-                            F2 : T;
-                            C1 : T;
-                            F3 : T;
-                            C2 : T
+                   type T is mod 2**8;
+                   type M is
+                      message
+                         F1 : T;
+                         F2 : T;
+                         C1 : T;
+                         F3 : T;
+                         C2 : T
                             then F4
-                            if C1'Valid_Checksum and C2'Valid_Checksum;
-                        F4 : T;
-                    end message
-                        with Checksum => (C1 => (F3, F1'First .. F2'Last),
-                                          C2 => (C1'Last + 1 .. C2'First - 1)),
-                             Byte_Order => Low_Order_First;
+                               if C1'Valid_Checksum and C2'Valid_Checksum;
+                         F4 : T;
+                      end message
+                         with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                           C2 => (C1'Last + 1 .. C2'First - 1)),
+                              Byte_Order => Low_Order_First;
                 end Test;
             """,
             model.ByteOrder.LOW_ORDER_FIRST,
