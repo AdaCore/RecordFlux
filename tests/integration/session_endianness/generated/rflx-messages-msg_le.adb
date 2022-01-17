@@ -14,7 +14,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_B => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_C => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
       Buffer := null;
    end Initialize;
 
@@ -25,7 +25,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_B => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_C => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -75,7 +75,9 @@ is
 
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
-          when F_B =>
+          when F_C =>
+             F_D,
+          when F_D =>
              F_Final))
     with
      Pre =>
@@ -84,6 +86,13 @@ is
        and Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
+
+   function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
+     ((case Fld is
+          when F_C =>
+             Invalid (Ctx.Cursors (F_D)),
+          when F_D =>
+             True));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -101,6 +110,7 @@ is
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
+       and Invalid_Successor (Ctx, Fld)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -109,7 +119,8 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and Invalid (Ctx, F_B)
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
       First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
         Ghost;
@@ -118,6 +129,13 @@ is
    begin
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
+      for Fld_Loop in reverse Field'Succ (Fld) .. Field'Last loop
+         Ctx.Cursors (Fld_Loop) := (S_Invalid, F_Final);
+         pragma Loop_Invariant (Field_First (Ctx, Fld) = First
+                                and Field_Size (Ctx, Fld) = Size);
+         pragma Loop_Invariant ((for all F in Field =>
+                                    (if F < Fld_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
+      end loop;
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
       Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
@@ -142,10 +160,13 @@ is
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
       function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Integer);
+      function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Measurement_Hash_Algo_Base);
    begin
       return ((case Fld is
-                  when F_B =>
-                     (Fld => F_B, B_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
+                  when F_C =>
+                     (Fld => F_C, C_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                  when F_D =>
+                     (Fld => F_D, D_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -163,9 +184,20 @@ is
                Valid_Value (Value)
                and Field_Condition (Ctx, Value)
             then
-               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               pragma Assert ((if Fld = F_D then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+               case Fld is
+                  when F_C =>
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+                  when F_D =>
+                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               end case;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+               if Fld = F_C then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_D then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               end if;
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
@@ -177,7 +209,8 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_B);
+      Verify (Ctx, F_C);
+      Verify (Ctx, F_D);
    end Verify_Message;
 
    procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
@@ -213,41 +246,59 @@ is
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
       procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Integer);
+      procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Measurement_Hash_Algo_Base);
    begin
       Fst := First;
       Lst := Last;
       case Val.Fld is
          when F_Initial =>
             null;
-         when F_B =>
-            Insert (Val.B_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+         when F_C =>
+            Insert (Val.C_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+         when F_D =>
+            Insert (Val.D_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
          when F_Final =>
             null;
       end case;
    end Set_Field_Value;
 
-   procedure Set_B (Ctx : in out Context; Val : RFLX.Messages.Integer) is
-      Field_Value : constant Field_Dependent_Value := (F_B, To_Base (Val));
+   procedure Set_C (Ctx : in out Context; Val : RFLX.Messages.Integer) is
+      Field_Value : constant Field_Dependent_Value := (F_C, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
    begin
-      Reset_Dependent_Fields (Ctx, F_B);
+      Reset_Dependent_Fields (Ctx, F_C);
+      Set_Field_Value (Ctx, Field_Value, First, Last);
+      pragma Warnings (Off, "attribute Update is an obsolescent feature");
+      Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
+      pragma Warnings (On, "attribute Update is an obsolescent feature");
+      Ctx.Cursors (F_C) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_C).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_C)) := (State => S_Invalid, Predecessor => F_C);
+   end Set_C;
+
+   procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Measurement_Hash_Algo) is
+      Field_Value : constant Field_Dependent_Value := (F_D, To_Base (Val));
+      First, Last : RFLX_Types.Bit_Index;
+   begin
+      Reset_Dependent_Fields (Ctx, F_D);
       Set_Field_Value (Ctx, Field_Value, First, Last);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_B) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_B).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_B)) := (State => S_Invalid, Predecessor => F_B);
-   end Set_B;
+      Ctx.Cursors (F_D) := (State => S_Valid, First => First, Last => Last, Value => Field_Value, Predecessor => Ctx.Cursors (F_D).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_D)) := (State => S_Invalid, Predecessor => F_D);
+   end Set_D;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is
    begin
-      Struct.B := Get_B (Ctx);
+      Struct.C := Get_C (Ctx);
+      Struct.D := Get_D (Ctx);
    end To_Structure;
 
    procedure To_Context (Struct : Structure; Ctx : in out Context) is
    begin
       Reset (Ctx);
-      Set_B (Ctx, Struct.B);
+      Set_C (Ctx, Struct.C);
+      Set_D (Ctx, Struct.D);
    end To_Context;
 
 end RFLX.Messages.Msg_LE;

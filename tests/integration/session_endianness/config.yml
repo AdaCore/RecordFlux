@@ -1,13 +1,13 @@
 input:
   I:
-    - 1 0 1 0
+    - 1 0 1 0 0 0 0 16
 output:
   - O
 sequence: |
-  Write I: 1 0 1 0
+  Write I: 1 0 1 0 0 0 0 16
   State: Start
   State: Copy
-  Read O: 0 1 0 1
+  Read O: 0 1 0 1 16 0 0 0
   State: Reply
   State: Start
 prove:
