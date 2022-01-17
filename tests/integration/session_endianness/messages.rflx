@@ -2,26 +2,26 @@ package Messages is
 
    type Integer is mod 2 ** 32;
 
-   type Measurement_Hash_Algo is
-      (Raw_Bit_Streams_Only => 0,
-       MH_TPM_ALG_SHA_256   => 1,
-       MH_TPM_ALG_SHA_384   => 2,
-       MH_TPM_ALG_SHA_512   => 4,
-       MH_TPM_ALG_SHA3_256  => 8,
-       MH_TPM_ALG_SHA3_384  => 16,
-       MH_TPM_ALG_SHA3_512  => 32)
+   type Enum_T is
+      (Enum_A => 0,
+       Enum_B => 1,
+       Enum_C => 2,
+       Enum_D => 4,
+       Enum_E => 8,
+       Enum_F => 16,
+       Enum_G => 32)
    with Size => 32;
 
    type Msg is
       message
          A : Integer;
-         B : Measurement_Hash_Algo;
+         B : Enum_T;
       end message;
 
    type Msg_LE is
       message
          C : Integer;
-         D : Measurement_Hash_Algo;
+         D : Enum_T;
       end message
          with Byte_Order => Low_Order_First;
 

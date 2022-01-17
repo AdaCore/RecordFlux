@@ -56,7 +56,7 @@ is
             when F_C =>
                C_Value : RFLX.Messages.Integer;
             when F_D =>
-               D_Value : RFLX.Messages.Measurement_Hash_Algo_Base;
+               D_Value : RFLX.Messages.Enum_T_Base;
          end case;
       end record;
 
@@ -316,7 +316,7 @@ is
      Pre =>
        Valid (Ctx, F_C);
 
-   function Get_D (Ctx : Context) return RFLX.Messages.Measurement_Hash_Algo with
+   function Get_D (Ctx : Context) return RFLX.Messages.Enum_T with
      Pre =>
        Valid (Ctx, F_D);
 
@@ -348,7 +348,7 @@ is
        and Predecessor (Ctx, F_C) = Predecessor (Ctx, F_C)'Old
        and Valid_Next (Ctx, F_C) = Valid_Next (Ctx, F_C)'Old;
 
-   procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Measurement_Hash_Algo) with
+   procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Enum_T) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -383,7 +383,7 @@ is
    type Structure is
       record
          C : RFLX.Messages.Integer;
-         D : RFLX.Messages.Measurement_Hash_Algo;
+         D : RFLX.Messages.Enum_T;
       end record;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
@@ -484,7 +484,7 @@ private
                    and then (if
                                 Structural_Valid (Cursors (F_D))
                              then
-                                Cursors (F_D).Last - Cursors (F_D).First + 1 = RFLX.Messages.Measurement_Hash_Algo_Base'Size
+                                Cursors (F_D).Last - Cursors (F_D).First + 1 = RFLX.Messages.Enum_T_Base'Size
                                 and then Cursors (F_D).Predecessor = F_C
                                 and then Cursors (F_D).First = Cursors (F_C).Last + 1)));
 
@@ -558,7 +558,7 @@ private
           when F_C =>
              (case Fld is
                  when F_D =>
-                    RFLX.Messages.Measurement_Hash_Algo_Base'Size,
+                    RFLX.Messages.Enum_T_Base'Size,
                  when others =>
                     raise Program_Error),
           when F_D | F_Final =>
@@ -640,7 +640,7 @@ private
    function Get_C (Ctx : Context) return RFLX.Messages.Integer is
      (To_Actual (Ctx.Cursors (F_C).Value.C_Value));
 
-   function Get_D (Ctx : Context) return RFLX.Messages.Measurement_Hash_Algo is
+   function Get_D (Ctx : Context) return RFLX.Messages.Enum_T is
      (To_Actual (Ctx.Cursors (F_D).Value.D_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
