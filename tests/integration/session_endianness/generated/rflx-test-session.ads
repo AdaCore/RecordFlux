@@ -19,7 +19,7 @@ is
 
    type Channel is (C_I, C_O);
 
-   type State is (S_Start, S_Copy, S_Reply, S_Terminated);
+   type State is (S_Start, S_Copy, S_Reply, S_Copy2, S_Reply2, S_Terminated);
 
    function Uninitialized return Boolean;
 
@@ -106,9 +106,12 @@ private
 
    Out_Msg_Ctx : Messages.Msg_LE.Context;
 
+   Out_Msg2_Ctx : Messages.Msg.Context;
+
    function Uninitialized return Boolean is
      (not Messages.Msg.Has_Buffer (In_Msg_Ctx)
-      and not Messages.Msg_LE.Has_Buffer (Out_Msg_Ctx));
+      and not Messages.Msg_LE.Has_Buffer (Out_Msg_Ctx)
+      and not Messages.Msg.Has_Buffer (Out_Msg2_Ctx));
 
    function Initialized return Boolean is
      (Messages.Msg.Has_Buffer (In_Msg_Ctx)
@@ -117,6 +120,9 @@ private
       and then Messages.Msg_LE.Has_Buffer (Out_Msg_Ctx)
       and then Out_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Out_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Messages.Msg.Has_Buffer (Out_Msg2_Ctx)
+      and then Out_Msg2_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Out_Msg2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Test.Session_Allocator.Global_Allocated);
 
    function Active return Boolean is
