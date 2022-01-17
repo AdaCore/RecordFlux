@@ -29,10 +29,16 @@ is
        Initialized
    is
    begin
-      if RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (32) then
-         Messages.Msg_LE.Reset (Out_Msg_Ctx, RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
+      if RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (64) then
+         Messages.Msg_LE.Reset (Out_Msg_Ctx, RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Out_Msg_Ctx.Buffer_First) + RFLX_Types.Bit_Length (64) - 1);
          if Messages.Msg.Valid (In_Msg_Ctx, Messages.Msg.F_A) then
-            Messages.Msg_LE.Set_B (Out_Msg_Ctx, Messages.Msg.Get_A (In_Msg_Ctx));
+            Messages.Msg_LE.Set_C (Out_Msg_Ctx, Messages.Msg.Get_A (In_Msg_Ctx));
+            if Messages.Msg.Valid (In_Msg_Ctx, Messages.Msg.F_B) then
+               Messages.Msg_LE.Set_D (Out_Msg_Ctx, Messages.Msg.Get_B (In_Msg_Ctx));
+            else
+               P_Next_State := S_Terminated;
+               return;
+            end if;
          else
             P_Next_State := S_Terminated;
             return;

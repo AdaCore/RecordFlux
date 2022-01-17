@@ -23,7 +23,7 @@ package Test is
 
       state Copy is
       begin
-         Out_Msg := Messages::Msg_LE'(B => In_Msg.A);
+         Out_Msg := Messages::Msg_LE'(C => In_Msg.A, D => In_Msg.B);
       transition
          goto Reply
       exception
