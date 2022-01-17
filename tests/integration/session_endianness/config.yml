@@ -9,5 +9,8 @@ sequence: |
   State: Copy
   Read O: 0 1 0 1 16 0 0 0
   State: Reply
+  State: Copy2
+  Read O: 1 0 1 0 0 0 0 16
+  State: Reply2
   State: Start
 prove:
