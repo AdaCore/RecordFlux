@@ -571,6 +571,56 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(spec, tmp_path)
 
 
+def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> None:
+    spec = """
+        package Test is
+
+           type Length is mod 2 ** 8;
+           type Elems is range 0 .. 1 with Size => 8;
+
+           type Data is
+              message
+                 Length : Length;
+                 Value  : Opaque
+                    with Size => 8 * Length;
+              end message;
+
+           type Message (L : Length) is
+              message
+                 Elems : Elems;
+                 Data  : Opaque
+                    with Size => 8 * L * Elems;
+              end message;
+
+           generic
+           session S with
+              Initial => Init,
+              Final   => Done
+           is
+              M : Message;
+              D : Data;
+              E : Elems;
+           begin
+              state Init
+              is
+              begin
+                 M := Message'(L     => 64,
+                               Elems => E,
+                               Data  => D.Value);
+              transition
+                 goto Done
+              exception
+                 goto Done
+              end Init;
+
+              state Done is null state;
+           end S;
+
+        end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)
+
+
 def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
     spec = """
         package Test is
