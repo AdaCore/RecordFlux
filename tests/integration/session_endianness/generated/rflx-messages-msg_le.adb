@@ -160,7 +160,7 @@ is
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
       function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Integer);
-      function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Measurement_Hash_Algo_Base);
+      function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Enum_T_Base);
    begin
       return ((case Fld is
                   when F_C =>
@@ -246,7 +246,7 @@ is
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
       procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Integer);
-      procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Measurement_Hash_Algo_Base);
+      procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Enum_T_Base);
    begin
       Fst := First;
       Lst := Last;
@@ -275,7 +275,7 @@ is
       Ctx.Cursors (Successor (Ctx, F_C)) := (State => S_Invalid, Predecessor => F_C);
    end Set_C;
 
-   procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Measurement_Hash_Algo) is
+   procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
       Field_Value : constant Field_Dependent_Value := (F_D, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
    begin

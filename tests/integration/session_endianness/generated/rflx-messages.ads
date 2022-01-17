@@ -29,55 +29,55 @@ is
      Pre =>
        Valid (Val);
 
-   type Measurement_Hash_Algo_Base is mod 2**32;
+   type Enum_T_Base is mod 2**32;
 
-   type Measurement_Hash_Algo is (Raw_Bit_Streams_Only, MH_TPM_ALG_SHA_256, MH_TPM_ALG_SHA_384, MH_TPM_ALG_SHA_512, MH_TPM_ALG_SHA3_256, MH_TPM_ALG_SHA3_384, MH_TPM_ALG_SHA3_512) with
+   type Enum_T is (Enum_A, Enum_B, Enum_C, Enum_D, Enum_E, Enum_F, Enum_G) with
      Size =>
        32;
-   for Measurement_Hash_Algo use (Raw_Bit_Streams_Only => 0, MH_TPM_ALG_SHA_256 => 1, MH_TPM_ALG_SHA_384 => 2, MH_TPM_ALG_SHA_512 => 4, MH_TPM_ALG_SHA3_256 => 8, MH_TPM_ALG_SHA3_384 => 16, MH_TPM_ALG_SHA3_512 => 32);
+   for Enum_T use (Enum_A => 0, Enum_B => 1, Enum_C => 2, Enum_D => 4, Enum_E => 8, Enum_F => 16, Enum_G => 32);
 
-   function Valid (Val : RFLX.Messages.Measurement_Hash_Algo_Base) return Boolean is
+   function Valid (Val : RFLX.Messages.Enum_T_Base) return Boolean is
      ((case Val is
           when 0 | 1 | 2 | 4 | 8 | 16 | 32 =>
              True,
           when others =>
              False));
 
-   function To_Base (Enum : RFLX.Messages.Measurement_Hash_Algo) return RFLX.Messages.Measurement_Hash_Algo_Base is
+   function To_Base (Enum : RFLX.Messages.Enum_T) return RFLX.Messages.Enum_T_Base is
      ((case Enum is
-          when Raw_Bit_Streams_Only =>
+          when Enum_A =>
              0,
-          when MH_TPM_ALG_SHA_256 =>
+          when Enum_B =>
              1,
-          when MH_TPM_ALG_SHA_384 =>
+          when Enum_C =>
              2,
-          when MH_TPM_ALG_SHA_512 =>
+          when Enum_D =>
              4,
-          when MH_TPM_ALG_SHA3_256 =>
+          when Enum_E =>
              8,
-          when MH_TPM_ALG_SHA3_384 =>
+          when Enum_F =>
              16,
-          when MH_TPM_ALG_SHA3_512 =>
+          when Enum_G =>
              32));
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.Messages.Measurement_Hash_Algo_Base) return RFLX.Messages.Measurement_Hash_Algo is
+   function To_Actual (Val : RFLX.Messages.Enum_T_Base) return RFLX.Messages.Enum_T is
      ((case Val is
           when 0 =>
-             Raw_Bit_Streams_Only,
+             Enum_A,
           when 1 =>
-             MH_TPM_ALG_SHA_256,
+             Enum_B,
           when 2 =>
-             MH_TPM_ALG_SHA_384,
+             Enum_C,
           when 4 =>
-             MH_TPM_ALG_SHA_512,
+             Enum_D,
           when 8 =>
-             MH_TPM_ALG_SHA3_256,
+             Enum_E,
           when 16 =>
-             MH_TPM_ALG_SHA3_384,
+             Enum_F,
           when 32 =>
-             MH_TPM_ALG_SHA3_512,
+             Enum_G,
           when others =>
              raise Program_Error))
     with
