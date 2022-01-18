@@ -1943,12 +1943,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             v for v in size.variables() if isinstance(v.type_, (rty.Message, rty.Sequence))
         ]
         required_space = (
-            size.substituted(
+            size.substituted(self._substitution())
+            .substituted(
                 lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
-                if isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE
+                if (isinstance(x, expr.Variable) and isinstance(x.type_, rty.AnyInteger))
+                or (isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE)
                 else x
             )
-            .substituted(self._substitution())
             .ada_expr()
         )
         target_type = ID(message_aggregate.type_.identifier)
@@ -1963,12 +1964,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         assign_to_message_aggregate = [
             self._if_sufficient_space(
-                Call(
-                    const.TYPES_BIT_LENGTH,
-                    [
-                        required_space,
-                    ],
-                ),
+                required_space,
                 target_context,
                 [
                     CallStatement(
@@ -1988,12 +1984,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                         Variable(f"{target_context}.Buffer_First"),
                                     ],
                                 ),
-                                Call(
-                                    const.TYPES_BIT_LENGTH,
-                                    [
-                                        required_space,
-                                    ],
-                                ),
+                                required_space,
                                 -Number(1),
                             ),
                         ],

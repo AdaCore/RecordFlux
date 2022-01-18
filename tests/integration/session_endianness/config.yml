@@ -1,0 +1,19 @@
+input:
+  I:
+    - 1 0 1 0 0 0 0 16
+    - 1 0 1 0 32 0 0 0
+output:
+  - O
+sequence: |
+  Write I: 1 0 1 0 0 0 0 16
+  State: Start
+  State: Copy
+  Read O: 0 1 0 1 16 0 0 0
+  State: Reply
+  Write I: 1 0 1 0 32 0 0 0
+  State: Read2
+  State: Copy2
+  Read O: 0 1 0 1 0 0 0 32
+  State: Reply2
+  State: Start
+prove:

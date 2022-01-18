@@ -61,7 +61,7 @@ from rflx.ada import (
 )
 from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
-from rflx.model import FINAL, INITIAL, Composite, Field, Message, Scalar, Type
+from rflx.model import FINAL, INITIAL, ByteOrder, Composite, Field, Message, Scalar, Type
 
 from . import common, const
 
@@ -70,11 +70,13 @@ class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def extract_function(self, type_identifier: ID) -> Subprogram:
+    def extract_function(self, type_identifier: ID, byte_order: ByteOrder) -> Subprogram:
         return GenericFunctionInstantiation(
             "Extract",
             FunctionSpecification(
-                const.TYPES * "Extract",
+                const.TYPES * "Extract"
+                if byte_order == ByteOrder.HIGH_ORDER_FIRST
+                else const.TYPES * "Extract_LE",
                 type_identifier,
                 [
                     Parameter(["Buffer"], const.TYPES_BYTES),
@@ -167,7 +169,7 @@ class ParserGenerator:
                             else common.field_byte_bounds_declarations()
                         ),
                         *unique(
-                            self.extract_function(common.full_base_type_name(t))
+                            self.extract_function(common.full_base_type_name(t), message.byte_order)
                             for f, t in message.field_types.items()
                             if isinstance(t, Scalar)
                         ),

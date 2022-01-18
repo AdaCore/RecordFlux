@@ -50,8 +50,8 @@ is
                  Size =>
                    1 * RFLX_Types.Byte'Size;
             begin
-               if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Opaque'Size + 24) then
-                  Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Opaque'Size + 24) - 1);
+               if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= Opaque'Size + 24 then
+                  Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + (Opaque'Size + 24) - 1);
                   Universal.Message.Set_Message_Type (Message_Ctx, MT);
                   Universal.Message.Set_Length (Message_Ctx, Length);
                   if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Opaque'Size)) then

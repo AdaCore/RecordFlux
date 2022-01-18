@@ -36,8 +36,8 @@ is
        Initialized
    is
    begin
-      if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (32) then
-         Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
+      if RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 1 >= 32 then
+         Universal.Message.Reset (Message_Ctx, RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
          Universal.Message.Set_Length (Message_Ctx, 1);
          if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
@@ -77,8 +77,8 @@ is
       Test.Session_Allocator.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
-      if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (32) then
-         Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + RFLX_Types.Bit_Length (32) - 1);
+      if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= 32 then
+         Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
          Universal.Message.Set_Length (M_Ctx, 1);
          if Universal.Message.Valid_Length (M_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then

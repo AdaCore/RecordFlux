@@ -29,8 +29,8 @@ is
          Universal.Message.Size (M_R_Ctx) <= 32768
          and then Universal.Message.Size (M_R_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data) + 8) then
-            Universal.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + RFLX_Types.Bit_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data) + 8) - 1);
+         if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data) + 8 then
+            Universal.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data) + 8) - 1);
             Universal.Message.Set_Message_Type (M_S_Ctx, Universal.MT_Unconstrained_Data);
             if Universal.Message.Valid_Next (M_R_Ctx, Universal.Message.F_Data) then
                if Universal.Message.Valid_Length (M_S_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data))) then

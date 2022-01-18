@@ -7,6 +7,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
+from enum import Enum
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import rflx.typing_ as rty
@@ -17,6 +18,11 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fat
 from rflx.identifier import ID, StrID
 
 from . import type_ as mty
+
+
+class ByteOrder(Enum):
+    HIGH_ORDER_FIRST = 1
+    LOW_ORDER_FIRST = 2
 
 
 class Field(Base):
@@ -98,7 +104,6 @@ class MessageState(Base):
     field_types: Mapping[Field, mty.Type] = {}
     definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
     path_condition: Optional[Mapping[Field, expr.Expr]] = None
-    checksums: Mapping[ID, Sequence[expr.Expr]] = {}
 
 
 @invariant(lambda self: valid_message_field_types(self))
@@ -110,7 +115,8 @@ class AbstractMessage(mty.Type):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
@@ -122,9 +128,11 @@ class AbstractMessage(mty.Type):
         self.structure = sorted(structure)
 
         self.__types = types
-        self.__aspects = aspects or {}
         self.__has_unreachable = False
         self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
+        self.byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
+
+        self._checksums = checksums or {}
 
         self._state = state or MessageState()
         self._unqualified_enum_literals = {
@@ -146,8 +154,7 @@ class AbstractMessage(mty.Type):
                     self._state.parameter_types = {
                         f: t for f, t in self.__types.items() if f not in fields
                     }
-                if ID("Checksum") in self.__aspects:
-                    self._state.checksums = self.__aspects[ID("Checksum")]
+
             except RecordFluxError:
                 pass
 
@@ -160,12 +167,13 @@ class AbstractMessage(mty.Type):
                 self.identifier == other.identifier
                 and self.structure == other.structure
                 and self.types == other.types
-                and self.aspects == other.aspects
+                and self.byte_order == other.byte_order
+                and self.checksums == other.checksums
             )
         return NotImplemented
 
     def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "structure", "types", "aspects"])
+        return verbose_repr(self, ["identifier", "structure", "types", "checksums", "byte_order"])
 
     def __str__(self) -> str:
         if not self.structure or not self.types:
@@ -215,7 +223,8 @@ class AbstractMessage(mty.Type):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "AbstractMessage":
@@ -254,12 +263,8 @@ class AbstractMessage(mty.Type):
         return {**self._state.parameter_types, **self._state.field_types}
 
     @property
-    def aspects(self) -> Mapping[ID, Mapping[ID, Sequence[expr.Expr]]]:
-        return self.__aspects
-
-    @property
     def checksums(self) -> Mapping[ID, Sequence[expr.Expr]]:
-        return self._state.checksums or {}
+        return self._checksums
 
     def incoming(self, field: Field) -> List[Link]:
         return [l for l in self.structure if l.target == field]
@@ -767,14 +772,17 @@ class Message(AbstractMessage):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
         skip_proof: bool = False,
         workers: int = 1,
     ) -> None:
-        super().__init__(identifier, structure, types, aspects, location, error, state)
+        super().__init__(
+            identifier, structure, types, checksums, byte_order, location, error, state
+        )
 
         self._refinements: List["Refinement"] = []
         self._skip_proof = skip_proof
@@ -808,7 +816,8 @@ class Message(AbstractMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "Message":
@@ -816,7 +825,8 @@ class Message(AbstractMessage):
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
-            aspects if aspects else copy(self.aspects),
+            checksums if checksums else copy(self.checksums),
+            byte_order if byte_order else self.byte_order,
             location if location else self.location,
             error if error else self.error,
             skip_proof=self._skip_proof,
@@ -1822,7 +1832,8 @@ class DerivedMessage(Message):
         base: Message,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1830,7 +1841,8 @@ class DerivedMessage(Message):
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
-            aspects if aspects else copy(base.aspects),
+            checksums if checksums else copy(base.checksums),
+            byte_order if byte_order else base.byte_order,
             location if location else base.location,
             error if error else base.error,
         )
@@ -1841,7 +1853,8 @@ class DerivedMessage(Message):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "DerivedMessage":
@@ -1850,7 +1863,8 @@ class DerivedMessage(Message):
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
-            aspects if aspects else copy(self.aspects),
+            checksums if checksums else copy(self.checksums),
+            byte_order if byte_order else self.byte_order,
             location if location else self.location,
             error if error else self.error,
         )
@@ -1866,7 +1880,8 @@ class UnprovenMessage(AbstractMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenMessage":
@@ -1874,7 +1889,8 @@ class UnprovenMessage(AbstractMessage):
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
-            aspects if aspects else copy(self.aspects),
+            checksums if checksums else copy(self.checksums),
+            byte_order if byte_order else self.byte_order,
             location if location else self.location,
             error if error else self.error,
         )
@@ -1884,7 +1900,8 @@ class UnprovenMessage(AbstractMessage):
             identifier=self.identifier,
             structure=self.structure,
             types=self.types,
-            aspects=self.aspects,
+            checksums=self.checksums,
+            byte_order=self.byte_order,
             location=self.location,
             error=self.error,
             state=self._state,
@@ -2054,7 +2071,8 @@ class UnprovenMessage(AbstractMessage):
                 for l in message.structure
             ],
             message.types,
-            message.aspects,
+            message.checksums,
+            message.byte_order,
             message.location,
             message.error,
         )
@@ -2160,7 +2178,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         base: Union[UnprovenMessage, Message],
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -2168,7 +2187,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
             identifier,
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
-            aspects if aspects else copy(base.aspects),
+            checksums if checksums else copy(base.checksums),
+            byte_order if byte_order else base.byte_order,
             location if location else base.location,
             error if error else base.error,
         )
@@ -2199,7 +2219,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         identifier: StrID = None,
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
-        aspects: Mapping[ID, Mapping[ID, Sequence[expr.Expr]]] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
+        byte_order: ByteOrder = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenDerivedMessage":
@@ -2208,7 +2229,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
             self.base,
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
-            aspects if aspects else copy(self.aspects),
+            checksums if checksums else copy(self.checksums),
+            byte_order if byte_order else self.byte_order,
             location if location else self.location,
             error if error else self.error,
         )
@@ -2219,7 +2241,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
             self.base if isinstance(self.base, Message) else self.base.proven(),
             self.structure,
             self.types,
-            self.aspects,
+            self.checksums,
+            self.byte_order,
             self.location,
             self.error,
         )
