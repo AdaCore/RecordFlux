@@ -29,6 +29,7 @@ from rflx.identifier import ID
 from rflx.model import (
     FINAL,
     INITIAL,
+    ByteOrder,
     Composite,
     Enumeration,
     Field,
@@ -952,7 +953,13 @@ class MessageValue(TypeValue):
             set_refinement(field, field_name)
             try:
                 if isinstance(value, Bitstring):
-                    field.typeval.parse(value)
+                    buffer = (
+                        value
+                        if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
+                        or not (isinstance(field.typeval, ScalarValue))
+                        else value.swap()
+                    )
+                    field.typeval.parse(buffer)
                     if (
                         isinstance(field.typeval, EnumValue)
                         and Variable(field.typeval.value) not in self.__type_literals
@@ -1184,7 +1191,14 @@ class MessageValue(TypeValue):
                 # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
                 dummy = 0  # noqa: F841
                 break
-            bits = f"{bits[: field_val.first.value]}{str(self._fields[field].typeval.bitstring)}"
+            added_bits = str(self._fields[field].typeval.bitstring)
+            added_bits_adjusted = (
+                added_bits
+                if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
+                or not isinstance(self._fields[field].typeval, ScalarValue)
+                else Bitstring.swap_bitstring(added_bits)
+            )
+            bits = f"{bits[: field_val.first.value]}{added_bits_adjusted}"
             field = self._next_field(field)
 
         return Bitstring(bits)

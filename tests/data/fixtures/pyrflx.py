@@ -27,6 +27,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/message_type_size_condition.rflx",
             f"{SPEC_DIR}/always_valid_aspect.rflx",
             f"{SPEC_DIR}/parameterized.rflx",
+            f"{SPEC_DIR}/endianness.rflx",
         ],
         skip_model_verification=True,
     )
@@ -225,3 +226,8 @@ def fixture_always_valid_aspect_value(
 @pytest.fixture(name="parameterized_package", scope="session")
 def fixture_parameterized_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_.package("Parameterized")
+
+
+@pytest.fixture(name="endianness_package", scope="session")
+def fixture_endianness_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_.package("Endianness")

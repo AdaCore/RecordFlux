@@ -1,0 +1,31 @@
+package Endianness is
+
+   type Tag is (None => 1, Data => 2) with Size => 16;
+   type Length is range 0 .. 2 ** 14 - 1 with Size => 16;
+
+   type Message is
+      message
+         Tag : Tag
+            then null
+               if Tag = None
+            then Length
+               if Tag = Data;
+         Length : Length;
+         Payload : Opaque
+            with Size => Length * 8;
+      end message;
+
+   type Message_LE is
+      message
+         Tag : Tag
+            then null
+               if Tag = None
+            then Length
+               if Tag = Data;
+         Length : Length;
+         Payload : Opaque
+            with Size => Length * 8;
+      end message
+         with Byte_Order => Low_Order_First;
+
+end Endianness;
