@@ -60,6 +60,7 @@ def test_package_iterator(tlv_package: Package) -> None:
 
 def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
     assert {p.name for p in pyrflx_} == {
+        "Endianness",
         "Ethernet",
         "ICMP",
         "IPv4",
@@ -1439,3 +1440,67 @@ def test_json_serialization() -> None:
     opaque_value = OpaqueValue(Opaque())
     opaque_value.assign(b"RecordFlux")
     assert opaque_value.as_json() == b"RecordFlux"
+
+
+def test_message_endianness_parse_be(endianness_package: Package) -> None:
+    message = endianness_package.new_message("Message")
+
+    message.parse(b"\x00\x01")
+
+    assert message.valid_message
+    assert message.get("Tag") == "None"
+
+    message.parse(b"\x00\x02\x00\x04\x01\x02\x03\x04")
+
+    assert message.valid_message
+    assert message.get("Tag") == "Data"
+    assert message.get("Length") == 4
+    assert message.get("Payload") == b"\x01\x02\x03\x04"
+
+
+def test_message_endianness_parse_le(endianness_package: Package) -> None:
+    message_le = endianness_package.new_message("Message_LE")
+
+    message_le.parse(b"\x01\x00")
+
+    assert message_le.valid_message
+    assert message_le.get("Tag") == "None"
+
+    message_le.parse(b"\x02\x00\x04\x00\x01\x02\x03\x04")
+
+    assert message_le.valid_message
+    assert message_le.get("Tag") == "Data"
+    assert message_le.get("Length") == 4
+    assert message_le.get("Payload") == b"\x01\x02\x03\x04"
+
+
+def test_message_endianness_set_be(endianness_package: Package) -> None:
+    message = endianness_package.new_message("Message")
+
+    message.set("Tag", "None")
+
+    assert message.valid_message
+    assert message.bytestring == b"\x00\x01"
+
+    message.set("Tag", "Data")
+    message.set("Length", 4)
+    message.set("Payload", b"\x01\x02\x03\x04")
+
+    assert message.valid_message
+    assert message.bytestring == b"\x00\x02\x00\x04\x01\x02\x03\x04"
+
+
+def test_message_endianness_set_le(endianness_package: Package) -> None:
+    message_le = endianness_package.new_message("Message_LE")
+
+    message_le.set("Tag", "None")
+
+    assert message_le.valid_message
+    assert message_le.bytestring == b"\x01\x00"
+
+    message_le.set("Tag", "Data")
+    message_le.set("Length", 4)
+    message_le.set("Payload", b"\x01\x02\x03\x04")
+
+    assert message_le.valid_message
+    assert message_le.bytestring == b"\x02\x00\x04\x00\x01\x02\x03\x04"

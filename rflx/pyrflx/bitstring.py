@@ -43,6 +43,19 @@ class Bitstring:
     def __len__(self) -> int:
         return len(self._bits)
 
+    @staticmethod
+    def swap_bitstring(bitstring: str) -> str:
+        assert len(bitstring) > 8
+        assert len(bitstring) % 8 == 0
+        result = ""
+        for i in range(len(bitstring), 0, -8):
+            result += bitstring[i - 8 : i]
+        assert len(bitstring) == len(result)
+        return result
+
+    def swap(self) -> "Bitstring":
+        return Bitstring(self.swap_bitstring(self._bits))
+
     @classmethod
     def from_bytes(cls, msg: bytes) -> "Bitstring":
         return cls(format(int.from_bytes(msg, "big"), f"0{len(msg) * 8}b"))
