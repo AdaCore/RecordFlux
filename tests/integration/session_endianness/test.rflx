@@ -10,6 +10,7 @@ package Test is
       Final => Terminated
    is
       In_Msg : Messages::Msg;
+      In_Msg2 : Messages::Msg_LE;
       Out_Msg : Messages::Msg_LE;
       Out_Msg2 : Messages::Msg;
    begin
@@ -35,12 +36,21 @@ package Test is
       begin
          O'Write (Out_Msg);
       transition
-         goto Copy2
+         goto Read2
       end Reply;
+
+      state Read2 is
+      begin
+         I'Read (In_Msg2);
+      transition
+         goto Copy2
+          if In_Msg2'Has_Data
+         goto Terminated
+      end Read2;
 
       state Copy2 is
       begin
-         Out_Msg2 := Messages::Msg'(A => Out_Msg.C, B => Out_Msg.D);
+         Out_Msg2 := Messages::Msg'(A => In_Msg2.C, B => In_Msg2.D);
       transition
          goto Reply2
       exception

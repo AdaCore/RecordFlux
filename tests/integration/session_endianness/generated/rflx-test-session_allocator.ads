@@ -24,10 +24,13 @@ is
 
    Slot_Ptr_3 : Slot_Ptr_Type_4096;
 
+   Slot_Ptr_4 : Slot_Ptr_Type_4096;
+
    function Initialized return Boolean is
      (Slot_Ptr_1 /= null
       and Slot_Ptr_2 /= null
-      and Slot_Ptr_3 /= null);
+      and Slot_Ptr_3 /= null
+      and Slot_Ptr_4 /= null);
 
    procedure Initialize with
      Post =>
@@ -36,6 +39,7 @@ is
    function Global_Allocated return Boolean is
      (Slot_Ptr_1 = null
       and Slot_Ptr_2 = null
-      and Slot_Ptr_3 = null);
+      and Slot_Ptr_3 = null
+      and Slot_Ptr_4 = null);
 
 end RFLX.Test.Session_Allocator;
