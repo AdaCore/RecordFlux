@@ -81,6 +81,9 @@ abstract project Defaults is
       --  "-gnatwh",   --  Activate warnings on hiding.
       "-gnatwt",   --  Activate warnings for tracking of deleted conditional code.
 
+      --  ISSUE: Componolit/RecordFlux#905
+      "-gnatwR",   --  Suppress warnings on redundant constructs.
+
       --  Style Checks
       "-gnaty3",    --  Specify indentation level.
       "-gnatya",    --  Check attribute casing.
