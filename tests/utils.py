@@ -224,47 +224,52 @@ def session_main(
     output_channels: Sequence[str] = None,
     context: Sequence[ada.ContextItem] = None,
     subprograms: Sequence[ada.SubprogramBody] = None,
-    session_package: str = "RFLX.P.S",
-    session_parameters: Sequence[ada.StrID] = None,
+    session_package: ada.StrID = "RFLX.Test.Session",
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}
     output_channels = output_channels or []
     context = context or []
     subprograms = subprograms or []
-    session_parameters = session_parameters or []
+    session_package = ada.ID(session_package)
 
     run_procedure_spec = ada.ProcedureSpecification("Run")
-    run_procedure_decl = ada.SubprogramDeclaration(
-        run_procedure_spec,
-        aspects=[
-            ada.Precondition(ada.Variable("Session.Uninitialized")),
-            ada.Postcondition(ada.Variable("Session.Uninitialized")),
-        ],
-    )
+    run_procedure_decl = ada.SubprogramDeclaration(run_procedure_spec)
     run_procedure_body = ada.SubprogramBody(
         run_procedure_spec,
-        [],
         [
-            ada.CallStatement("Session.Initialize"),
+            ada.ObjectDeclaration(["Ctx"], "Session.Context"),
+        ],
+        [
+            ada.CallStatement(session_package * "Initialize", [ada.Variable("Ctx")]),
             ada.While(
-                ada.Variable("Session.Active"),
+                ada.Call(session_package * "Active", [ada.Variable("Ctx")]),
                 [
-                    ada.PragmaStatement("Loop_Invariant", [ada.Variable("Session.Initialized")]),
+                    ada.PragmaStatement(
+                        "Loop_Invariant",
+                        [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
+                    ),
                     ada.ForIn(
                         "C",
-                        ada.Range("Session.Channel"),
+                        ada.Range(session_package * "Channel"),
                         [
                             ada.PragmaStatement(
-                                "Loop_Invariant", [ada.Variable("Session.Initialized")]
+                                "Loop_Invariant",
+                                [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
                             ),
                             *(
                                 [
                                     ada.IfStatement(
                                         [
                                             (
-                                                ada.Call("Session.Has_Data", [ada.Variable("C")]),
+                                                ada.Call(
+                                                    session_package * "Has_Data",
+                                                    [ada.Variable("Ctx"), ada.Variable("C")],
+                                                ),
                                                 [
-                                                    ada.CallStatement("Read", [ada.Variable("C")]),
+                                                    ada.CallStatement(
+                                                        "Read",
+                                                        [ada.Variable("Ctx"), ada.Variable("C")],
+                                                    ),
                                                 ],
                                             )
                                         ]
@@ -278,9 +283,15 @@ def session_main(
                                     ada.IfStatement(
                                         [
                                             (
-                                                ada.Call("Session.Needs_Data", [ada.Variable("C")]),
+                                                ada.Call(
+                                                    session_package * "Needs_Data",
+                                                    [ada.Variable("Ctx"), ada.Variable("C")],
+                                                ),
                                                 [
-                                                    ada.CallStatement("Write", [ada.Variable("C")]),
+                                                    ada.CallStatement(
+                                                        "Write",
+                                                        [ada.Variable("Ctx"), ada.Variable("C")],
+                                                    ),
                                                 ],
                                             )
                                         ]
@@ -291,10 +302,9 @@ def session_main(
                             ),
                         ],
                     ),
-                    ada.CallStatement("Session.Run"),
+                    ada.CallStatement(session_package * "Run", [ada.Variable("Ctx")]),
                 ],
             ),
-            ada.CallStatement("Session.Finalize"),
         ],
     )
 
@@ -303,7 +313,7 @@ def session_main(
             "Print",
             [
                 ada.Parameter(["Prefix"], "String"),
-                ada.Parameter(["Chan"], "Session.Channel"),
+                ada.Parameter(["Chan"], session_package * "Channel"),
                 ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES),
             ],
         ),
@@ -318,7 +328,10 @@ def session_main(
                         ada.Case(
                             ada.Variable("Chan"),
                             [
-                                (ada.Variable(f"Session.C_{channel}"), ada.String(channel))
+                                (
+                                    ada.Variable(session_package * f"C_{channel}"),
+                                    ada.String(channel),
+                                )
                                 for channel in sorted({*input_channels.keys(), *output_channels})
                             ],
                         ),
@@ -341,7 +354,8 @@ def session_main(
         ada.ProcedureSpecification(
             "Read",
             [
-                ada.Parameter(["Chan"], "Session.Channel"),
+                ada.Parameter(["Ctx"], "Session.Context"),
+                ada.Parameter(["Chan"], session_package * "Channel"),
             ],
         ),
         [
@@ -356,94 +370,109 @@ def session_main(
                 ),
                 ada.NamedAggregate(("others", ada.Number(0))),
             ),
+            ada.ObjectDeclaration(
+                ["Size"],
+                "RFLX" * const.TYPES_LENGTH,
+                ada.Call(
+                    session_package * "Read_Buffer_Size",
+                    [
+                        ada.Variable("Ctx"),
+                        ada.Variable("Chan"),
+                    ],
+                ),
+                constant=True,
+            ),
         ],
         [
             ada.IfStatement(
                 [
                     (
-                        ada.GreaterEqual(
-                            ada.Length("Buffer"),
-                            ada.Call("Session.Read_Buffer_Size", [ada.Variable("Chan")]),
-                        ),
+                        ada.Equal(ada.Variable("Size"), ada.Number(0)),
                         [
                             ada.CallStatement(
-                                "Session.Read",
+                                "Ada.Text_IO.Put_Line",
                                 [
-                                    ada.Variable("Chan"),
-                                    ada.Slice(
-                                        ada.Variable("Buffer"),
-                                        ada.First("Buffer"),
-                                        ada.Add(
-                                            ada.First("Buffer"),
-                                            -ada.Number(2),
-                                            ada.Call(
-                                                "RFLX" * const.TYPES_INDEX,
-                                                [
-                                                    ada.Add(
-                                                        ada.Call(
-                                                            "Session.Read_Buffer_Size",
-                                                            [ada.Variable("Chan")],
-                                                        ),
-                                                        ada.Number(1),
-                                                    )
-                                                ],
-                                            ),
-                                        ),
-                                    ),
+                                    ada.Concatenation(
+                                        ada.String("Read "),
+                                        ada.Image("Chan"),
+                                        ada.String(": read buffer size is 0"),
+                                    )
                                 ],
                             ),
-                            ada.CallStatement(
-                                "Print",
-                                [
-                                    ada.String("Read"),
-                                    ada.Variable("Chan"),
-                                    ada.Slice(
-                                        ada.Variable("Buffer"),
-                                        ada.First("Buffer"),
-                                        ada.Add(
-                                            ada.First("Buffer"),
-                                            -ada.Number(2),
-                                            ada.Call(
-                                                "RFLX" * const.TYPES_INDEX,
-                                                [
-                                                    ada.Add(
-                                                        ada.Call(
-                                                            "Session.Read_Buffer_Size",
-                                                            [ada.Variable("Chan")],
-                                                        ),
-                                                        ada.Number(1),
-                                                    )
-                                                ],
-                                            ),
-                                        ),
-                                    ),
-                                ],
-                            ),
+                            ada.ReturnStatement(),
                         ],
-                    )
-                ],
+                    ),
+                ]
+            ),
+            ada.IfStatement(
                 [
-                    ada.CallStatement(
-                        "Ada.Text_IO.Put_Line",
+                    (
+                        ada.Less(ada.Length("Buffer"), ada.Variable("Size")),
                         [
-                            ada.Concatenation(
-                                ada.String("Read "),
-                                ada.Image("Chan"),
-                                ada.String(": buffer too small"),
-                            )
+                            ada.CallStatement(
+                                "Ada.Text_IO.Put_Line",
+                                [
+                                    ada.Concatenation(
+                                        ada.String("Read "),
+                                        ada.Image("Chan"),
+                                        ada.String(": read buffer size too small"),
+                                    )
+                                ],
+                            ),
+                            ada.ReturnStatement(),
                         ],
                     ),
                 ],
-            )
+            ),
+            ada.CallStatement(
+                session_package * "Read",
+                [
+                    ada.Variable("Ctx"),
+                    ada.Variable("Chan"),
+                    ada.Slice(
+                        ada.Variable("Buffer"),
+                        ada.First("Buffer"),
+                        ada.Add(
+                            ada.First("Buffer"),
+                            -ada.Number(2),
+                            ada.Call(
+                                "RFLX" * const.TYPES_INDEX,
+                                [ada.Add(ada.Variable("Size"), ada.Number(1))],
+                            ),
+                        ),
+                    ),
+                ],
+            ),
+            ada.CallStatement(
+                "Print",
+                [
+                    ada.String("Read"),
+                    ada.Variable("Chan"),
+                    ada.Slice(
+                        ada.Variable("Buffer"),
+                        ada.First("Buffer"),
+                        ada.Add(
+                            ada.First("Buffer"),
+                            -ada.Number(2),
+                            ada.Call(
+                                "RFLX" * const.TYPES_INDEX,
+                                [ada.Add(ada.Variable("Size"), ada.Number(1))],
+                            ),
+                        ),
+                    ),
+                ],
+            ),
         ],
         aspects=[
             ada.Precondition(
                 ada.AndThen(
-                    ada.Variable("Session.Initialized"),
-                    ada.Call("Session.Has_Data", [ada.Variable("Chan")]),
+                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(
+                        session_package * "Has_Data", [ada.Variable("Ctx"), ada.Variable("Chan")]
+                    ),
                 ),
             ),
-            ada.Postcondition(ada.Variable("Session.Initialized")),
+            ada.Postcondition(ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])),
         ],
     )
 
@@ -451,12 +480,13 @@ def session_main(
         ada.ProcedureSpecification(
             "Write",
             [
-                ada.Parameter(["Chan"], "Session.Channel"),
+                ada.InOutParameter(["Ctx"], "Session.Context"),
+                ada.Parameter(["Chan"], session_package * "Channel"),
             ],
         ),
         [
             ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
-            *([ada.UseTypeClause("Session.Channel")] if len(input_channels) > 1 else []),
+            *([ada.UseTypeClause(session_package * "Channel")] if len(input_channels) > 1 else []),
             ada.ObjectDeclaration(
                 ["None"],
                 ada.Slice(
@@ -478,7 +508,7 @@ def session_main(
                                     [
                                         ada.Equal(
                                             ada.Variable("Chan"),
-                                            ada.Variable(f"Session.C_{channel}"),
+                                            ada.Variable(session_package * f"C_{channel}"),
                                         )
                                     ]
                                     if len(input_channels) > 1
@@ -519,7 +549,10 @@ def session_main(
                             ),
                             ada.LessEqual(
                                 ada.Length("Message"),
-                                ada.Call("Session.Write_Buffer_Size", [ada.Variable("Chan")]),
+                                ada.Call(
+                                    session_package * "Write_Buffer_Size",
+                                    [ada.Variable("Ctx"), ada.Variable("Chan")],
+                                ),
                             ),
                         ),
                         [
@@ -532,8 +565,9 @@ def session_main(
                                 ],
                             ),
                             ada.CallStatement(
-                                "Session.Write",
+                                session_package * "Write",
                                 [
+                                    ada.Variable("Ctx"),
                                     ada.Variable("Chan"),
                                     ada.Variable("Message"),
                                 ],
@@ -569,32 +603,34 @@ def session_main(
         aspects=[
             ada.Precondition(
                 ada.AndThen(
-                    ada.Variable("Session.Initialized"),
-                    ada.Call("Session.Needs_Data", [ada.Variable("Chan")]),
+                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(
+                        session_package * "Needs_Data", [ada.Variable("Ctx"), ada.Variable("Chan")]
+                    ),
                 ),
             ),
-            ada.Postcondition(ada.Variable("Session.Initialized")),
+            ada.Postcondition(ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])),
         ],
     )
 
     lib_unit = ada.PackageUnit(
         [
             *const.CONFIGURATION_PRAGMAS,
-            ada.WithClause(session_package),
             *context,
         ],
         ada.PackageDeclaration(
             "Lib",
             [
-                ada.GenericPackageInstantiation("Session", session_package, session_parameters),
                 run_procedure_decl,
             ],
-            aspects=[ada.SparkMode(), ada.InitialCondition(ada.Call("Session.Uninitialized"))],
+            aspects=[ada.SparkMode()],
         ),
         [
             *const.CONFIGURATION_PRAGMAS,
             ada.WithClause("Ada.Text_IO"),
             ada.WithClause("RFLX" * const.TYPES),
+            ada.WithClause(session_package),
+            ada.WithClause("Session"),
         ],
         ada.PackageBody(
             "Lib",
@@ -603,7 +639,7 @@ def session_main(
                 *([read_procedure] if output_channels else []),
                 *(
                     [
-                        ada.ArrayType("Number_Per_Channel", "Session.Channel", "Natural"),
+                        ada.ArrayType("Number_Per_Channel", session_package * "Channel", "Natural"),
                         ada.ObjectDeclaration(
                             ["Written_Messages"],
                             "Number_Per_Channel",
@@ -624,15 +660,32 @@ def session_main(
         ),
     )
 
+    session_unit = ada.PackageUnit(
+        [
+            *const.CONFIGURATION_PRAGMAS,
+            ada.WithClause(session_package),
+        ],
+        ada.PackageDeclaration(
+            "Session",
+            [
+                ada.DerivedType("Context", session_package * "Context", []),
+            ],
+            aspects=[
+                ada.SparkMode(),
+            ],
+        ),
+        [],
+        ada.PackageBody("Session"),
+    )
+
     return {
+        f"{session_unit.name}.ads": session_unit.ads,
         f"{lib_unit.name}.ads": lib_unit.ads,
         f"{lib_unit.name}.adb": lib_unit.adb,
         "main.adb": """with Lib;
-pragma Elaborate (Lib);
 
 procedure Main with
-   SPARK_Mode,
-   Pre => Lib.Session.Uninitialized
+   SPARK_Mode
 is
 begin
    Lib.Run;

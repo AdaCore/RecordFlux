@@ -1,2 +1,6 @@
-pragma Restrictions (No_Elaboration_Code);
 pragma Restrictions (No_Secondary_Stack);
+-- ISSUE: Componolit/RecordFlux#905
+-- The restriction `No_Elaboration_Code` requires `No_Tagged_Type_Registration`, if tagged types
+-- are used. The support for `No_Tagged_Type_Registration` was added in GNAT Pro 23.x.
+-- pragma Restrictions (No_Elaboration_Code);
+-- pragma Restrictions (No_Tagged_Type_Registration);

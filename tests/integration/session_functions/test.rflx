@@ -45,9 +45,9 @@ package Test is
          Valid := Valid_Message (Message_Type, True); --  §S-S-A-A-CL, §S-E-CL-L
          Fixed_Size_Message := Create_Message (Message_Type, Message.Data); -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
       transition
-         goto Terminated
+         goto Reply
             if Valid = M_Valid -- §S-S-T-BE
-         goto Reply -- §S-S-T-N
+         goto Terminated -- §S-S-T-N
       exception
          goto Terminated -- §S-S-E
       end Process;

@@ -5,14 +5,20 @@ package body RFLX.B.Session_Allocator with
   SPARK_Mode
 is
 
-   Slot_1 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 2047 => RFLX_Types.Byte'First);
-
-   procedure Initialize with
+   procedure Initialize (S : out Slots; M : Memory) with
      SPARK_Mode =>
        Off
    is
    begin
-      Slot_Ptr_1 := Slot_1'Unrestricted_Access;
+      S.Slot_Ptr_1 := M.Slot_1'Unrestricted_Access;
    end Initialize;
+
+   procedure Finalize (S : in out Slots) with
+     SPARK_Mode =>
+       Off
+   is
+   begin
+      S.Slot_Ptr_1 := null;
+   end Finalize;
 
 end RFLX.B.Session_Allocator;

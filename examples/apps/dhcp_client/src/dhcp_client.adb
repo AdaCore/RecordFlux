@@ -2,87 +2,86 @@ pragma SPARK_Mode;
 
 with Ada.Text_IO;
 
-with GNAT.Sockets;
-
 with RFLX.RFLX_Types;
 with RFLX.RFLX_Builtin_Types;
 with RFLX.DHCP_Client.Session;
 
 with Channel;
+with Session;
 
 procedure DHCP_Client is
-   Socket : GNAT.Sockets.Socket_Type;
+   package DHCP_Client_Session renames RFLX.DHCP_Client.Session;
+   package Types renames RFLX.RFLX_Types;
 
-   package Session is new RFLX.DHCP_Client.Session;
-
-   procedure Read with
+   procedure Read (Ctx : in out Session.Context) with
       Pre =>
-         Session.Initialized
-         and then Session.Has_Data (Session.C_Channel),
+         DHCP_Client_Session.Initialized (Ctx)
+         and then DHCP_Client_Session.Has_Data (Ctx, DHCP_Client_Session.C_Channel),
       Post =>
-         Session.Initialized
+         DHCP_Client_Session.Initialized (Ctx)
    is
-      use type RFLX.RFLX_Types.Index;
-      use type RFLX.RFLX_Types.Length;
-      Buffer : RFLX.RFLX_Types.Bytes (RFLX.RFLX_Types.Index'First .. RFLX.RFLX_Types.Index'First + 4095)
+      use type Types.Index;
+      use type Types.Length;
+      Buffer : Types.Bytes (Types.Index'First .. Types.Index'First + 4095)
          := (others => 0);
+      Size : constant Types.Length := DHCP_Client_Session.Read_Buffer_Size (Ctx, DHCP_Client_Session.C_Channel);
    begin
-      if Buffer'Length >= Session.Read_Buffer_Size (Session.C_Channel) then
-         Session.Read
-            (Session.C_Channel,
-             Buffer
-                (Buffer'First
-                 .. Buffer'First - 2 + RFLX.RFLX_Types.Index (Session.Read_Buffer_Size (Session.C_Channel) + 1)));
-         Channel.Send
-            (Socket,
-             Buffer
-                (Buffer'First
-                 .. Buffer'First - 2 + RFLX.RFLX_Types.Index (Session.Read_Buffer_Size (Session.C_Channel) + 1)));
-      else
-         Ada.Text_IO.Put_Line ("Error: read buffer too small");
+      if Size = 0 then
+         Ada.Text_IO.Put_Line ("Error: read buffer size is 0");
+         return;
       end if;
+      if Buffer'Length < Size then
+         Ada.Text_IO.Put_Line ("Error: buffer too small");
+         return;
+      end if;
+      DHCP_Client_Session.Read
+         (Ctx,
+          DHCP_Client_Session.C_Channel,
+          Buffer (Buffer'First .. Buffer'First - 2 + Types.Index (Size + 1)));
+      Channel.Send
+         (Ctx.Socket,
+          Buffer (Buffer'First .. Buffer'First - 2 + Types.Index (Size + 1)));
    end Read;
 
-   procedure Write with
+   procedure Write (Ctx : in out Session.Context) with
       Pre =>
-         Session.Initialized
-         and then Session.Needs_Data (Session.C_Channel),
+         DHCP_Client_Session.Initialized (Ctx)
+         and then DHCP_Client_Session.Needs_Data (Ctx, DHCP_Client_Session.C_Channel),
       Post =>
-         Session.Initialized
+         DHCP_Client_Session.Initialized (Ctx)
    is
-      use type RFLX.RFLX_Types.Index;
-      use type RFLX.RFLX_Types.Length;
-      Buffer : RFLX.RFLX_Types.Bytes (RFLX.RFLX_Types.Index'First .. RFLX.RFLX_Types.Index'First + 4095);
+      use type Types.Index;
+      use type Types.Length;
+      Buffer : Types.Bytes (Types.Index'First .. Types.Index'First + 4095);
       Length : RFLX.RFLX_Builtin_Types.Length;
    begin
-      Channel.Receive (Socket, Buffer, Length);
+      Channel.Receive (Ctx.Socket, Buffer, Length);
       if
          Length > 0
-         and Length <= Session.Write_Buffer_Size (Session.C_Channel)
+         and Length <= DHCP_Client_Session.Write_Buffer_Size (Ctx, DHCP_Client_Session.C_Channel)
       then
-         Session.Write
-            (Session.C_Channel,
+         DHCP_Client_Session.Write
+            (Ctx,
+             DHCP_Client_Session.C_Channel,
              Buffer (Buffer'First .. Buffer'First +  RFLX.RFLX_Builtin_Types.Index (Length) - 1));
       end if;
    end Write;
+
+   Ctx : Session.Context;
 begin
-   Channel.Initialize (Socket);
-   Session.Initialize;
-   while Session.Active loop
-      pragma Loop_Invariant (Session.Initialized);
-      for C in Session.Channel'Range loop
-         pragma Loop_Invariant (Session.Initialized);
-         if Session.Has_Data (C) then
-            Read;
+   Channel.Initialize (Ctx.Socket);
+   DHCP_Client_Session.Initialize (Ctx);
+   while DHCP_Client_Session.Active (Ctx) loop
+      pragma Loop_Invariant (DHCP_Client_Session.Initialized (Ctx));
+      for C in DHCP_Client_Session.Channel'Range loop
+         pragma Loop_Invariant (DHCP_Client_Session.Initialized (Ctx));
+         if DHCP_Client_Session.Has_Data (Ctx, C) then
+            Read (Ctx);
          end if;
-         if Session.Needs_Data (C) then
-            Write;
+         if DHCP_Client_Session.Needs_Data (Ctx, C) then
+            Write (Ctx);
          end if;
       end loop;
-      Session.Run;
+      DHCP_Client_Session.Run (Ctx);
    end loop;
-   --  ISSUE: Componolit/Workarounds#32
-   pragma Warnings (Off, """*"" is set by ""Finalize"" but not used after the call");
-   Session.Finalize;
-   pragma Warnings (On, """*"" is set by ""Finalize"" but not used after the call");
 end DHCP_Client;
