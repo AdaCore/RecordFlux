@@ -22,10 +22,11 @@ Subdirectories containing a `test.rflx` file are considered as feature tests. Th
 
 The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. The actions can be configured in an optional `config.yml` file:
 
-- `functions`: All fully-qualified names for the session functions are listed. The functions are defined inside the `src` directory.
 - `input`: Each list element is interpreted as an input message for the session channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
 - `output`: Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output is defined in `output`.
 - `prove`: If the `prove` key exists, the generated SPARK code for `Session` and each unit listed in `prove` will be proved.
+
+Session functions can be defined by putting a custom implementation of the `Session` package inside the `src` directory.
 
 ### Property Tests (`tests/property`)
 

@@ -8,7 +8,6 @@ from typing import Optional, Sequence, Tuple
 import pytest
 from ruamel.yaml.main import YAML
 
-from rflx import ada
 from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.integration import Integration
@@ -29,7 +28,6 @@ FEATURES = [
 
 @dataclass(frozen=True)
 class Config:
-    functions: Sequence[str] = dataclass_field(default_factory=list)
     inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
     out: Sequence[str] = dataclass_field(default_factory=list)
     sequence: str = dataclass_field(default="")
@@ -43,7 +41,6 @@ def get_config(feature: str) -> Config:
         yaml = YAML(typ="safe")
         cfg = yaml.load(config_file)
         return Config(
-            cfg["functions"] if "functions" in cfg and cfg["functions"] else [],
             {
                 str(c): [tuple(int(e) for e in str(m).split()) for m in i]
                 for c, i in cfg["input"].items()
@@ -65,13 +62,10 @@ def create_model(feature: str) -> Tuple[Model, Integration]:
 
 
 def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
-    context = [ada.WithClause(f.split(".")[0]) for f in config.functions]
     complement = session_main(
         config.inp,
         config.out,
-        context=context,
         session_package="RFLX.Test.Session",
-        session_parameters=config.functions,
     )
 
     assert MAIN in complement
@@ -145,6 +139,6 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     if model.sessions:
         assert len(model.sessions) == 1
         assert model.sessions[0].identifier == ID("Test::Session")
-        units = ["main", "lib"]
+        units = ["main", "lib", "rflx-test-session"]
         create_complement(config, feature, tmp_path)
     assert_provable_code(model, integration, tmp_path, main=MAIN, units=[*units, *config.prove])

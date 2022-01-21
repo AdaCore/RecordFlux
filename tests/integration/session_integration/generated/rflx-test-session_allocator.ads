@@ -10,7 +10,11 @@ package RFLX.Test.Session_Allocator with
     (GNATprove, Terminating)
 is
 
-   pragma Elaborate_Body;
+   type Memory is
+      record
+         Slot_1 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 1023) := (others => 0);
+         Slot_2 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8191) := (others => 0);
+      end record;
 
    subtype Slot_Ptr_Type_1024 is RFLX_Types.Bytes_Ptr with
      Dynamic_Predicate =>
@@ -24,20 +28,30 @@ is
        or else (Slot_Ptr_Type_8192'First = RFLX_Types.Index'First
                 and then Slot_Ptr_Type_8192'Last = RFLX_Types.Index'First + 8191);
 
-   Slot_Ptr_1 : Slot_Ptr_Type_1024;
+   type Slots is
+      record
+         Slot_Ptr_1 : Slot_Ptr_Type_1024;
+         Slot_Ptr_2 : Slot_Ptr_Type_8192;
+      end record;
 
-   Slot_Ptr_2 : Slot_Ptr_Type_8192;
+   function Initialized (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 /= null
+      and S.Slot_Ptr_2 /= null);
 
-   function Initialized return Boolean is
-     (Slot_Ptr_1 /= null
-      and Slot_Ptr_2 /= null);
+   function Uninitialized (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 = null
+      and S.Slot_Ptr_2 = null);
 
-   procedure Initialize with
+   procedure Initialize (S : out Slots; M : Memory) with
      Post =>
-       Initialized;
+       Initialized (S);
 
-   function Global_Allocated return Boolean is
-     (Slot_Ptr_1 = null
-      and Slot_Ptr_2 /= null);
+   procedure Finalize (S : in out Slots) with
+     Post =>
+       Uninitialized (S);
+
+   function Global_Allocated (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 = null
+      and S.Slot_Ptr_2 /= null);
 
 end RFLX.Test.Session_Allocator;

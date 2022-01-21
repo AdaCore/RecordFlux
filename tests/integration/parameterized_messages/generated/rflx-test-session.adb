@@ -1,3 +1,4 @@
+pragma Restrictions (No_Streams);
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test;
@@ -9,225 +10,203 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (P_Next_State : out State) with
+   procedure Start (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      Test.Message.Reset (M_R_Ctx, Length => 2, Extended => False);
-      P_Next_State := S_Receive;
+      Test.Message.Reset (Ctx.P.M_R_Ctx, Length => 2, Extended => False);
+      Ctx.P.Next_State := S_Receive;
    end Start;
 
-   procedure Receive (P_Next_State : out State) with
+   procedure Receive (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      Test.Message.Verify_Message (M_R_Ctx);
-      if Test.Message.Structural_Valid_Message (M_R_Ctx) then
-         P_Next_State := S_Process;
+      Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
+      if Test.Message.Structural_Valid_Message (Ctx.P.M_R_Ctx) then
+         Ctx.P.Next_State := S_Process;
       else
-         P_Next_State := S_Error;
+         Ctx.P.Next_State := S_Error;
       end if;
    end Receive;
 
-   procedure Process (P_Next_State : out State) with
+   procedure Process (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
       if
-         Test.Message.Size (M_R_Ctx) <= 32768
-         and then Test.Message.Size (M_R_Ctx) mod RFLX_Types.Byte'Size = 0
+         Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
+         and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
       then
-         if RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16 then
-            Test.Message.Reset (M_S_Ctx, RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_S_Ctx.Buffer_First) + (RFLX_Types.Bit_Length (M_R_Ctx.Length) * 8 + 16) - 1, Length => M_R_Ctx.Length, Extended => True);
-            if Test.Message.Valid_Next (M_R_Ctx, Test.Message.F_Data) then
-               if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data))) then
-                  if Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data) then
+         if RFLX_Types.To_First_Bit_Index (Ctx.P.M_S_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.M_S_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Ctx.P.M_R_Ctx.Length) * 8 + 16 then
+            Test.Message.Reset (Ctx.P.M_S_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.M_S_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.M_S_Ctx.Buffer_First) + (RFLX_Types.Bit_Length (Ctx.P.M_R_Ctx.Length) * 8 + 16) - 1, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
+            if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+               if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
+                  if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
                      declare
+                        pragma Warnings (Off, "is not modified, could be declared constant");
+                        RFLX_Ctx_P_M_R_Ctx_Tmp : Test.Message.Context := Ctx.P.M_R_Ctx;
+                        pragma Warnings (On, "is not modified, could be declared constant");
                         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                          (Test.Message.Has_Buffer (M_R_Ctx)
-                           and then Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data)
-                           and then Length >= RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data)));
+                          (Test.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
+                           and then Test.Message.Structural_Valid (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)
+                           and then Length >= RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
                         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                           Pre =>
                             RFLX_Process_Data_Pre (Data'Length)
                         is
                         begin
-                           Test.Message.Get_Data (M_R_Ctx, Data);
+                           Test.Message.Get_Data (RFLX_Ctx_P_M_R_Ctx_Tmp, Data);
                         end RFLX_Process_Data;
                         procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
                      begin
-                        RFLX_Test_Message_Set_Data (M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data)));
+                        RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                        Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
                      end;
-                     if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-                        Test.Message.Set_Extension (M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
+                     if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+                        Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
                      else
-                        P_Next_State := S_Error;
+                        Ctx.P.Next_State := S_Error;
                         return;
                      end if;
                   else
-                     P_Next_State := S_Error;
+                     Ctx.P.Next_State := S_Error;
                      return;
                   end if;
                else
-                  P_Next_State := S_Error;
+                  Ctx.P.Next_State := S_Error;
                   return;
                end if;
             else
-               P_Next_State := S_Error;
+               Ctx.P.Next_State := S_Error;
                return;
             end if;
          else
-            P_Next_State := S_Error;
+            Ctx.P.Next_State := S_Error;
             return;
          end if;
       else
-         P_Next_State := S_Error;
+         Ctx.P.Next_State := S_Error;
          return;
       end if;
-      P_Next_State := S_Reply;
+      Ctx.P.Next_State := S_Reply;
    end Process;
 
-   procedure Reply (P_Next_State : out State) with
+   procedure Reply (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      P_Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Terminated;
    end Reply;
 
-   procedure Error (P_Next_State : out State) with
+   procedure Error (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      P_Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Terminated;
    end Error;
 
-   procedure Initialize is
+   procedure Initialize (Ctx : in out Context'Class) is
       M_R_Buffer : RFLX_Types.Bytes_Ptr;
       M_S_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Test.Session_Allocator.Initialize;
-      M_R_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      Test.Session_Allocator.Initialize (Ctx.P.Slots, Ctx.P.Memory);
+      M_R_Buffer := Ctx.P.Slots.Slot_Ptr_1;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_1 := null;
+      Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
-      Test.Message.Initialize (M_R_Ctx, M_R_Buffer, Length => Test.Length'First, Extended => Boolean'First);
-      M_S_Buffer := Test.Session_Allocator.Slot_Ptr_2;
+      Test.Message.Initialize (Ctx.P.M_R_Ctx, M_R_Buffer, Length => Test.Length'First, Extended => Boolean'First);
+      M_S_Buffer := Ctx.P.Slots.Slot_Ptr_2;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_2 := null;
+      Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
-      Test.Message.Initialize (M_S_Ctx, M_S_Buffer, Length => Test.Length'First, Extended => Boolean'First);
-      P_Next_State := S_Start;
+      Test.Message.Initialize (Ctx.P.M_S_Ctx, M_S_Buffer, Length => Test.Length'First, Extended => Boolean'First);
+      Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize is
+   procedure Finalize (Ctx : in out Context'Class) is
       M_R_Buffer : RFLX_Types.Bytes_Ptr;
       M_S_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      pragma Warnings (Off, "unused assignment to ""M_R_Ctx""");
-      pragma Warnings (Off, """M_R_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Test.Message.Take_Buffer (M_R_Ctx, M_R_Buffer);
-      pragma Warnings (On, """M_R_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""M_R_Ctx""");
-      pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_1 := M_R_Buffer;
-      pragma Warnings (On, "unused assignment");
-      pragma Warnings (Off, "unused assignment to ""M_S_Ctx""");
-      pragma Warnings (Off, """M_S_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Test.Message.Take_Buffer (M_S_Ctx, M_S_Buffer);
-      pragma Warnings (On, """M_S_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""M_S_Ctx""");
-      pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_2 := M_S_Buffer;
-      pragma Warnings (On, "unused assignment");
-      P_Next_State := S_Terminated;
+      pragma Warnings (Off, """Ctx.P.M_R_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Test.Message.Take_Buffer (Ctx.P.M_R_Ctx, M_R_Buffer);
+      pragma Warnings (On, """Ctx.P.M_R_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Ctx.P.Slots.Slot_Ptr_1 := M_R_Buffer;
+      pragma Warnings (Off, """Ctx.P.M_S_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Test.Message.Take_Buffer (Ctx.P.M_S_Ctx, M_S_Buffer);
+      pragma Warnings (On, """Ctx.P.M_S_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Ctx.P.Slots.Slot_Ptr_2 := M_S_Buffer;
+      Test.Session_Allocator.Finalize (Ctx.P.Slots);
+      Ctx.P.Next_State := S_Terminated;
    end Finalize;
 
-   procedure Reset_Messages_Before_Write with
+   procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      case P_Next_State is
+      case Ctx.P.Next_State is
          when S_Start =>
             null;
          when S_Receive =>
-            Test.Message.Reset (M_R_Ctx, M_R_Ctx.First, M_R_Ctx.First - 1, M_R_Ctx.Length, M_R_Ctx.Extended);
+            Test.Message.Reset (Ctx.P.M_R_Ctx, Ctx.P.M_R_Ctx.First, Ctx.P.M_R_Ctx.First - 1, Ctx.P.M_R_Ctx.Length, Ctx.P.M_R_Ctx.Extended);
          when S_Process | S_Reply | S_Error | S_Terminated =>
             null;
       end case;
    end Reset_Messages_Before_Write;
 
-   procedure Tick is
+   procedure Tick (Ctx : in out Context'Class) is
    begin
-      case P_Next_State is
+      case Ctx.P.Next_State is
          when S_Start =>
-            Start (P_Next_State);
+            Start (Ctx);
          when S_Receive =>
-            Receive (P_Next_State);
+            Receive (Ctx);
          when S_Process =>
-            Process (P_Next_State);
+            Process (Ctx);
          when S_Reply =>
-            Reply (P_Next_State);
+            Reply (Ctx);
          when S_Error =>
-            Error (P_Next_State);
+            Error (Ctx);
          when S_Terminated =>
             null;
       end case;
-      Reset_Messages_Before_Write;
+      Reset_Messages_Before_Write (Ctx);
    end Tick;
 
-   function In_IO_State return Boolean is
-     (P_Next_State in S_Receive | S_Reply);
+   function In_IO_State (Ctx : Context'Class) return Boolean is
+     (Ctx.P.Next_State in S_Receive | S_Reply);
 
-   procedure Run is
+   procedure Run (Ctx : in out Context'Class) is
    begin
-      Tick;
+      Tick (Ctx);
       while
-         Active
-         and not In_IO_State
+         Active (Ctx)
+         and not In_IO_State (Ctx)
       loop
-         pragma Loop_Invariant (Initialized);
-         Tick;
+         pragma Loop_Invariant (Initialized (Ctx));
+         Tick (Ctx);
       end loop;
    end Run;
 
-   function Has_Data (Chan : Channel) return Boolean is
-     ((case Chan is
-          when C_C =>
-             (case P_Next_State is
-                 when S_Reply =>
-                    Test.Message.Structural_Valid_Message (M_S_Ctx)
-                    and Test.Message.Byte_Size (M_S_Ctx) > 0,
-                 when others =>
-                    False)));
-
-   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
-          when C_C =>
-             (case P_Next_State is
-                 when S_Reply =>
-                    Test.Message.Byte_Size (M_S_Ctx),
-                 when others =>
-                    raise Program_Error)));
-
-   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Read (Ctx : Context'Class; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
@@ -245,40 +224,27 @@ is
       Buffer := (others => 0);
       case Chan is
          when C_C =>
-            case P_Next_State is
+            case Ctx.P.Next_State is
                when S_Reply =>
-                  Test_Message_Read (M_S_Ctx);
+                  Test_Message_Read (Ctx.P.M_S_Ctx);
                when others =>
                   raise Program_Error;
             end case;
       end case;
    end Read;
 
-   function Needs_Data (Chan : Channel) return Boolean is
-     ((case Chan is
-          when C_C =>
-             (case P_Next_State is
-                 when S_Receive =>
-                    True,
-                 when others =>
-                    False)));
-
-   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
-          when C_C =>
-             4096));
-
-   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Write (Ctx : in out Context'Class; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+      Write_Buffer_Length : constant RFLX_Types.Length := Write_Buffer_Size (Ctx, Chan);
       function Write_Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
         (Buffer'Length > 0
-         and then Context_Buffer_Length = Write_Buffer_Size (Chan)
+         and then Context_Buffer_Length = Write_Buffer_Length
          and then Offset <= RFLX_Types.Length'Last - Buffer'Length
-         and then Buffer'Length + Offset <= Write_Buffer_Size (Chan));
+         and then Buffer'Length + Offset <= Write_Buffer_Length);
       procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) with
         Pre =>
           Write_Pre (Context_Buffer_Length, Offset)
           and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length
-          and then Message_Buffer'Length + Offset = Write_Buffer_Size (Chan),
+          and then Message_Buffer'Length + Offset = Write_Buffer_Length,
         Post =>
           Length <= Message_Buffer'Length
       is
@@ -291,9 +257,9 @@ is
    begin
       case Chan is
          when C_C =>
-            case P_Next_State is
+            case Ctx.P.Next_State is
                when S_Receive =>
-                  Test_Message_Write (M_R_Ctx, Offset);
+                  Test_Message_Write (Ctx.P.M_R_Ctx, Offset);
                when others =>
                   raise Program_Error;
             end case;

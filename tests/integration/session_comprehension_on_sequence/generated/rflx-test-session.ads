@@ -1,3 +1,4 @@
+pragma Restrictions (No_Streams);
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Session_Allocator;
@@ -6,11 +7,8 @@ with RFLX.Universal;
 with RFLX.Universal.Options;
 with RFLX.Universal.Message;
 
-generic
 package RFLX.Test.Session with
-  SPARK_Mode,
-  Initial_Condition =>
-    Uninitialized
+  SPARK_Mode
 is
 
    use type RFLX.RFLX_Types.Index;
@@ -21,98 +19,132 @@ is
 
    type State is (S_Start, S_Process, S_Send_1, S_Send_2, S_Terminated);
 
-   function Uninitialized return Boolean;
+   type Private_Context is private;
 
-   function Initialized return Boolean;
+   type Context is abstract tagged
+      record
+         P : Private_Context;
+      end record;
 
-   function Active return Boolean;
+   function Uninitialized (Ctx : Context'Class) return Boolean;
 
-   procedure Initialize with
+   function Initialized (Ctx : Context'Class) return Boolean;
+
+   function Active (Ctx : Context'Class) return Boolean;
+
+   procedure Initialize (Ctx : in out Context'Class) with
      Pre =>
-       Uninitialized,
+       Uninitialized (Ctx),
      Post =>
-       Initialized
-       and Active;
+       Initialized (Ctx)
+       and Active (Ctx);
 
-   procedure Finalize with
+   procedure Finalize (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Uninitialized
-       and not Active;
+       Uninitialized (Ctx)
+       and not Active (Ctx);
 
    pragma Warnings (Off, "subprogram ""Tick"" has no effect");
 
-   procedure Tick with
+   procedure Tick (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
    pragma Warnings (On, "subprogram ""Tick"" has no effect");
 
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
-   procedure Run with
+   procedure Run (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
-   function Next_State return State;
+   function Next_State (Ctx : Context'Class) return State;
 
-   function Has_Data (Chan : Channel) return Boolean with
+   function Has_Data (Ctx : Context'Class; Chan : Channel) return Boolean with
      Pre =>
-       Initialized;
+       Initialized (Ctx);
 
-   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length with
+   function Read_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length with
      Pre =>
-       Initialized
-       and then Has_Data (Chan);
+       Initialized (Ctx)
+       and then Has_Data (Ctx, Chan);
 
-   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+   procedure Read (Ctx : Context'Class; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
      Pre =>
-       Initialized
-       and then Has_Data (Chan)
+       Initialized (Ctx)
+       and then Has_Data (Ctx, Chan)
        and then Buffer'Length > 0
        and then Offset <= RFLX_Types.Length'Last - Buffer'Length
-       and then Buffer'Length + Offset <= Read_Buffer_Size (Chan),
+       and then Buffer'Length + Offset <= Read_Buffer_Size (Ctx, Chan),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
 private
 
-   P_Next_State : State := S_Start;
+   type Private_Context is
+      record
+         Next_State : State := S_Start;
+         Options_Ctx : Universal.Options.Context;
+         Message_1_Ctx : Universal.Message.Context;
+         Message_2_Ctx : Universal.Message.Context;
+         Slots : Test.Session_Allocator.Slots;
+         Memory : Test.Session_Allocator.Memory;
+      end record;
 
-   Options_Ctx : Universal.Options.Context;
+   function Uninitialized (Ctx : Context'Class) return Boolean is
+     (not Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
+      and not Universal.Message.Has_Buffer (Ctx.P.Message_1_Ctx)
+      and not Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
+      and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
-   Message_1_Ctx : Universal.Message.Context;
+   function Initialized (Ctx : Context'Class) return Boolean is
+     (Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
+      and then Ctx.P.Options_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Options_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Message.Has_Buffer (Ctx.P.Message_1_Ctx)
+      and then Ctx.P.Message_1_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Message_1_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
+      and then Ctx.P.Message_2_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
-   Message_2_Ctx : Universal.Message.Context;
+   function Active (Ctx : Context'Class) return Boolean is
+     (Ctx.P.Next_State /= S_Terminated);
 
-   function Uninitialized return Boolean is
-     (not Universal.Options.Has_Buffer (Options_Ctx)
-      and not Universal.Message.Has_Buffer (Message_1_Ctx)
-      and not Universal.Message.Has_Buffer (Message_2_Ctx));
+   function Next_State (Ctx : Context'Class) return State is
+     (Ctx.P.Next_State);
 
-   function Initialized return Boolean is
-     (Universal.Options.Has_Buffer (Options_Ctx)
-      and then Options_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Options_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Message.Has_Buffer (Message_1_Ctx)
-      and then Message_1_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Message_1_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Message.Has_Buffer (Message_2_Ctx)
-      and then Message_2_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Test.Session_Allocator.Global_Allocated);
+   function Has_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_Channel =>
+             (case Ctx.P.Next_State is
+                 when S_Send_1 =>
+                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_1_Ctx)
+                    and Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0,
+                 when S_Send_2 =>
+                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_2_Ctx)
+                    and Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx) > 0,
+                 when others =>
+                    False)));
 
-   function Active return Boolean is
-     (P_Next_State /= S_Terminated);
-
-   function Next_State return State is
-     (P_Next_State);
+   function Read_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_Channel =>
+             (case Ctx.P.Next_State is
+                 when S_Send_1 =>
+                    Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx),
+                 when S_Send_2 =>
+                    Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx),
+                 when others =>
+                    raise Program_Error)));
 
 end RFLX.Test.Session;

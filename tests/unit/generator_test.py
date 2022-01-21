@@ -309,27 +309,25 @@ DUMMY_SESSION = Session(
     "parameter, expected",
     [
         (
-            decl.ChannelDeclaration("Channel", readable=True, writable=False),  # §S-P-C-R
-            [],
-        ),
-        (
-            decl.ChannelDeclaration("Channel", readable=False, writable=True),  # §S-P-C-W
-            [],
-        ),
-        (
-            decl.ChannelDeclaration("Channel", readable=True, writable=True),  # §S-P-C-RW
-            [],
-        ),
-        (
             decl.FunctionDeclaration("F", [], "T", type_=rty.BOOLEAN),
             [
-                ada.FormalSubprogramDeclaration(
+                ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.OutParameter(["F"], "Boolean"),
+                            ada.InOutParameter(["Ctx"], "Context"),
+                            ada.OutParameter(["RFLX_Result"], "Boolean"),
                         ],
-                    )
+                    ),
+                    aspects=[
+                        ada.ClassPrecondition(
+                            ada.And(
+                                ada.Call("Initialized", [ada.Variable("Ctx")]),
+                            )
+                        ),
+                        ada.ClassPostcondition(ada.Call("Initialized", [ada.Variable("Ctx")])),
+                    ],
+                    abstract=True,
                 ),
             ],
         ),
@@ -347,31 +345,41 @@ DUMMY_SESSION = Session(
                 type_=rty.Message("T", is_definite=True),
             ),
             [
-                ada.FormalSubprogramDeclaration(
+                ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.OutParameter(["F"], "T.Structure"),
+                            ada.InOutParameter(["Ctx"], "Context"),
                             ada.Parameter(["P1"], "Boolean"),
                             ada.Parameter(["P2"], const.TYPES_BYTES),
                             ada.Parameter(["P3"], "T3"),
                             ada.Parameter(["P4"], "T4"),
                             ada.Parameter(["P5"], "T5.Structure"),
+                            ada.OutParameter(["RFLX_Result"], "T.Structure"),
                         ],
-                    )
+                    ),
+                    aspects=[
+                        ada.ClassPrecondition(
+                            ada.And(
+                                ada.Call("Initialized", [ada.Variable("Ctx")]),
+                            )
+                        ),
+                        ada.ClassPostcondition(ada.Call("Initialized", [ada.Variable("Ctx")])),
+                    ],
+                    abstract=True,
                 ),
             ],
         ),
     ],
 )
-def test_session_create_formal_parameters(
-    parameter: decl.FormalDeclaration, expected: Sequence[ada.FormalDeclaration]
+def test_session_create_abstract_function(
+    parameter: decl.FunctionDeclaration, expected: Sequence[ada.SubprogramDeclaration]
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
     # pylint: disable = protected-access
-    assert session_generator._create_formal_parameters([parameter]) == expected
+    assert session_generator._create_abstract_function(parameter) == expected
 
 
 class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
@@ -448,7 +456,7 @@ class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
         ),
     ],
 )
-def test_session_create_formal_parameters_error(
+def test_session_create_abstract_functions_error(
     parameter: decl.FormalDeclaration, error_type: Type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
@@ -457,7 +465,7 @@ def test_session_create_formal_parameters_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._create_formal_parameters([parameter])
+        session_generator._create_abstract_functions([parameter])
 
 
 @pytest.mark.parametrize(
@@ -479,7 +487,8 @@ def test_session_create_formal_parameters_error(
             decl.VariableDeclaration("X", "T", expr.Number(1), type_=rty.Integer("T")),
             True,
             EvaluatedDeclaration(
-                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))]
+                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
+                initialization=[ada.Assignment("Ctx.P.X", ada.Conversion("T", ada.Number(1)))],
             ),
         ),
         (
@@ -497,7 +506,7 @@ def test_session_create_formal_parameters_error(
                 initialization=[
                     ada.Assignment(
                         "X_Buffer",
-                        ada.Variable("P.S_Allocator.Slot_Ptr_1"),
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
                     ),
                     ada.PragmaStatement(
                         "Warnings",
@@ -506,7 +515,7 @@ def test_session_create_formal_parameters_error(
                             ada.String("unused assignment"),
                         ],
                     ),
-                    ada.Assignment(ada.Variable("P.S_Allocator.Slot_Ptr_1"), ada.Variable("null")),
+                    ada.Assignment(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")),
                     ada.PragmaStatement(
                         "Warnings",
                         [
@@ -519,13 +528,6 @@ def test_session_create_formal_parameters_error(
                     ),
                 ],
                 finalization=[
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("Off"),
-                            ada.String('unused assignment to "X_Ctx"'),
-                        ],
-                    ),
                     ada.PragmaStatement(
                         "Warnings",
                         [
@@ -551,29 +553,8 @@ def test_session_create_formal_parameters_error(
                             ),
                         ],
                     ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("On"),
-                            ada.String('unused assignment to "X_Ctx"'),
-                        ],
-                    ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("Off"),
-                            ada.String("unused assignment"),
-                        ],
-                    ),
                     ada.Assignment(
-                        ada.Variable("P.S_Allocator.Slot_Ptr_1"), ada.Variable("X_Buffer")
-                    ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("On"),
-                            ada.String("unused assignment"),
-                        ],
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
                     ),
                 ],
             ),
@@ -591,9 +572,13 @@ def test_session_create_formal_parameters_error(
                     ada.ObjectDeclaration(["X_Buffer"], const.TYPES_BYTES_PTR),
                 ],
                 initialization=[
+                    ada.CallStatement(
+                        "P.S_Allocator.Initialize",
+                        [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
+                    ),
                     ada.Assignment(
                         "X_Buffer",
-                        ada.Variable("P.S_Allocator.Slot_Ptr_1"),
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
                     ),
                     ada.PragmaStatement(
                         "Warnings",
@@ -602,7 +587,7 @@ def test_session_create_formal_parameters_error(
                             ada.String("unused assignment"),
                         ],
                     ),
-                    ada.Assignment(ada.Variable("P.S_Allocator.Slot_Ptr_1"), ada.Variable("null")),
+                    ada.Assignment(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")),
                     ada.PragmaStatement(
                         "Warnings",
                         [
@@ -611,7 +596,7 @@ def test_session_create_formal_parameters_error(
                         ],
                     ),
                     ada.CallStatement(
-                        "P.T.Initialize", [ada.Variable("X_Ctx"), ada.Variable("X_Buffer")]
+                        "P.T.Initialize", [ada.Variable("Ctx.P.X_Ctx"), ada.Variable("X_Buffer")]
                     ),
                 ],
                 finalization=[
@@ -619,22 +604,15 @@ def test_session_create_formal_parameters_error(
                         "Warnings",
                         [
                             ada.Variable("Off"),
-                            ada.String('unused assignment to "X_Ctx"'),
-                        ],
-                    ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("Off"),
                             ada.String(
-                                '"X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call'
                             ),
                         ],
                     ),
                     ada.CallStatement(
                         "P.T.Take_Buffer",
                         [
-                            ada.Variable("X_Ctx"),
+                            ada.Variable("Ctx.P.X_Ctx"),
                             ada.Variable("X_Buffer"),
                         ],
                     ),
@@ -643,34 +621,14 @@ def test_session_create_formal_parameters_error(
                         [
                             ada.Variable("On"),
                             ada.String(
-                                '"X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call'
                             ),
                         ],
                     ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("On"),
-                            ada.String('unused assignment to "X_Ctx"'),
-                        ],
-                    ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("Off"),
-                            ada.String("unused assignment"),
-                        ],
-                    ),
                     ada.Assignment(
-                        ada.Variable("P.S_Allocator.Slot_Ptr_1"), ada.Variable("X_Buffer")
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
                     ),
-                    ada.PragmaStatement(
-                        "Warnings",
-                        [
-                            ada.Variable("On"),
-                            ada.String("unused assignment"),
-                        ],
-                    ),
+                    ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
                 ],
             ),
         ),
@@ -684,7 +642,12 @@ def test_session_evaluate_declarations(
     allocator._allocation_slots[Location(start=(1, 1))] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
     # pylint: disable = protected-access
-    assert session_generator._evaluate_declarations([declaration], session_global) == expected
+    assert (
+        session_generator._evaluate_declarations(
+            [declaration], is_global=lambda x: False, session_global=session_global
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize(
@@ -716,7 +679,7 @@ def test_session_evaluate_declarations_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._evaluate_declarations([declaration])
+        session_generator._evaluate_declarations([declaration], is_global=lambda x: False)
 
 
 @dataclass
@@ -746,6 +709,7 @@ class EvaluatedDeclarationStr:
             True,
             EvaluatedDeclarationStr(
                 global_declarations="X : P.T := 1;",
+                initialization="X := T (1);",
             ),
         ),
         (
@@ -775,23 +739,19 @@ class EvaluatedDeclarationStr:
                 global_declarations=("X_Ctx : P.T.Context;"),
                 initialization_declarations=("X_Buffer : RFLX_Types.Bytes_Ptr;"),
                 initialization=(
-                    "X_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+                    "X_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
                     'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := null;\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := null;\n"
                     'pragma Warnings (On, "unused assignment");\n'
                     "P.T.Initialize (X_Ctx, X_Buffer);"
                 ),
                 finalization=(
-                    'pragma Warnings (Off, "unused assignment to ""X_Ctx""");\n'
                     'pragma Warnings (Off, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    'pragma Warnings (On, "unused assignment to ""X_Ctx""");\n'
-                    'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := X_Buffer;\n"
-                    'pragma Warnings (On, "unused assignment");'
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
                 ),
             ),
         ),
@@ -804,23 +764,19 @@ class EvaluatedDeclarationStr:
                 global_declarations=("X_Ctx : P.T.Context;"),
                 initialization_declarations=("X_Buffer : RFLX_Types.Bytes_Ptr;"),
                 initialization=(
-                    "X_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+                    "X_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
                     'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := null;\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := null;\n"
                     'pragma Warnings (On, "unused assignment");\n'
                     "P.T.Initialize (X_Ctx, X_Buffer);"
                 ),
                 finalization=(
-                    'pragma Warnings (Off, "unused assignment to ""X_Ctx""");\n'
                     'pragma Warnings (Off, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    'pragma Warnings (On, "unused assignment to ""X_Ctx""");\n'
-                    'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := X_Buffer;\n"
-                    'pragma Warnings (On, "unused assignment");'
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
                 ),
             ),
         ),
@@ -833,23 +789,19 @@ class EvaluatedDeclarationStr:
                 global_declarations=("X_Ctx : P.T.Context;"),
                 initialization_declarations=("X_Buffer : RFLX_Types.Bytes_Ptr;"),
                 initialization=(
-                    "X_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+                    "X_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
                     'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := null;\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := null;\n"
                     'pragma Warnings (On, "unused assignment");\n'
                     "P.T.Initialize (X_Ctx, X_Buffer);"
                 ),
                 finalization=(
-                    'pragma Warnings (Off, "unused assignment to ""X_Ctx""");\n'
                     'pragma Warnings (Off, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    'pragma Warnings (On, "unused assignment to ""X_Ctx""");\n'
-                    'pragma Warnings (Off, "unused assignment");\n'
-                    "P.S_Allocator.Slot_Ptr_1 := X_Buffer;\n"
-                    'pragma Warnings (On, "unused assignment");'
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
                 ),
             ),
         ),
@@ -979,7 +931,9 @@ def test_session_declare(
     allocator._allocation_slots[loc] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
     # pylint: disable = protected-access
-    result = session_generator._declare(ID("X"), type_, loc, expression, constant, session_global)
+    result = session_generator._declare(
+        ID("X"), type_, lambda x: False, loc, expression, constant, session_global
+    )
     assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
     assert (
         "\n".join(str(d) for d in result.initialization_declarations)
@@ -1022,7 +976,11 @@ def test_session_declare_error(
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
         session_generator._declare(
-            ID("X", location=Location((10, 20))), type_, expression=expression, alloc_id=None
+            ID("X", location=Location((10, 20))),
+            type_,
+            lambda x: False,
+            expression=expression,
+            alloc_id=None,
         )
 
 
@@ -1102,9 +1060,9 @@ class UnknownStatement(stmt.Statement):
             "         C_Ctx : Universal.Option.Context;\n"
             "         C_Buffer : RFLX_Types.Bytes_Ptr;\n"
             "      begin\n"
-            "         C_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+            "         C_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
             '         pragma Warnings (Off, "unused assignment");\n'
-            "         P.S_Allocator.Slot_Ptr_1 := null;\n"
+            "         Ctx.P.Slots.Slot_Ptr_1 := null;\n"
             '         pragma Warnings (On, "unused assignment");\n'
             "         Universal.Option.Initialize (C_Ctx, C_Buffer);\n"
             "         if RFLX_Types.To_First_Bit_Index (C_Ctx.Buffer_Last)"
@@ -1158,26 +1116,22 @@ class UnknownStatement(stmt.Statement):
             '            Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
             "            RFLX_Exception := True;\n"
             "         end if;\n"
-            '         pragma Warnings (Off, "unused assignment to ""C_Ctx""");\n'
             '         pragma Warnings (Off, """C_Ctx"" is set by ""Take_Buffer""'
             ' but not used after the call");\n'
             "         Universal.Option.Take_Buffer (C_Ctx, C_Buffer);\n"
             '         pragma Warnings (On, """C_Ctx"" is set by ""Take_Buffer""'
             ' but not used after the call");\n'
-            '         pragma Warnings (On, "unused assignment to ""C_Ctx""");\n'
-            '         pragma Warnings (Off, "unused assignment");\n'
-            "         P.S_Allocator.Slot_Ptr_1 := C_Buffer;\n"
-            '         pragma Warnings (On, "unused assignment");\n'
+            "         Ctx.P.Slots.Slot_Ptr_1 := C_Buffer;\n"
             "      end;\n"
             "   end;\n"
             "   if RFLX_Exception then\n"
-            "      P_Next_State := S_E;\n"
+            "      Ctx.P.Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "end;\n"
             "if RFLX_Exception then\n"
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1225,7 +1179,7 @@ class UnknownStatement(stmt.Statement):
             "         declare\n"
             "            X : Universal.Message.Structure;\n"
             "         begin\n"
-            "            F (X, A, B, C);\n"
+            "            F (Ctx, A, B, C, X);\n"
             "            Universal.Message.To_Context (X, X_Ctx);\n"
             "         end;\n"
             "      end;\n"
@@ -1285,9 +1239,9 @@ class UnknownStatement(stmt.Statement):
             "   A_Ctx : Universal.Message.Context;\n"
             "   A_Buffer : RFLX_Types.Bytes_Ptr;\n"
             "begin\n"
-            "   A_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+            "   A_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
             '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := null;\n"
+            "   Ctx.P.Slots.Slot_Ptr_1 := null;\n"
             '   pragma Warnings (On, "unused assignment");\n'
             "   Universal.Message.Initialize (A_Ctx, A_Buffer);\n"
             "   if RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_Last)"
@@ -1319,19 +1273,15 @@ class UnknownStatement(stmt.Statement):
             ' ""Universal::Option (A.Data)""");\n'
             "      RFLX_Exception := True;\n"
             "   end if;\n"
-            '   pragma Warnings (Off, "unused assignment to ""A_Ctx""");\n'
             '   pragma Warnings (Off, """A_Ctx"" is set by ""Take_Buffer"" but not used after the'
             ' call");\n'
             "   Universal.Message.Take_Buffer (A_Ctx, A_Buffer);\n"
             '   pragma Warnings (On, """A_Ctx"" is set by ""Take_Buffer"" but not used after the'
             ' call");\n'
-            '   pragma Warnings (On, "unused assignment to ""A_Ctx""");\n'
-            '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := A_Buffer;\n"
-            '   pragma Warnings (On, "unused assignment");\n'
+            "   Ctx.P.Slots.Slot_Ptr_1 := A_Buffer;\n"
             "end;\n"
             "if RFLX_Exception then\n"
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1372,9 +1322,9 @@ class UnknownStatement(stmt.Statement):
             "   A_Ctx : Universal.Message.Context;\n"
             "   A_Buffer : RFLX_Types.Bytes_Ptr;\n"
             "begin\n"
-            "   A_Buffer := P.S_Allocator.Slot_Ptr_1;\n"
+            "   A_Buffer := Ctx.P.Slots.Slot_Ptr_1;\n"
             '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := null;\n"
+            "   Ctx.P.Slots.Slot_Ptr_1 := null;\n"
             '   pragma Warnings (On, "unused assignment");\n'
             "   Universal.Message.Initialize (A_Ctx, A_Buffer);\n"
             "   if RFLX_Types.To_First_Bit_Index (A_Ctx.Buffer_Last)"
@@ -1396,19 +1346,15 @@ class UnknownStatement(stmt.Statement):
             ' of ""A_Ctx""");\n'
             "      RFLX_Exception := True;\n"
             "   end if;\n"
-            '   pragma Warnings (Off, "unused assignment to ""A_Ctx""");\n'
             '   pragma Warnings (Off, """A_Ctx"" is set by ""Take_Buffer"" but not used after the'
             ' call");\n'
             "   Universal.Message.Take_Buffer (A_Ctx, A_Buffer);\n"
             '   pragma Warnings (On, """A_Ctx"" is set by ""Take_Buffer"" but not used after the'
             ' call");\n'
-            '   pragma Warnings (On, "unused assignment to ""A_Ctx""");\n'
-            '   pragma Warnings (Off, "unused assignment");\n'
-            "   P.S_Allocator.Slot_Ptr_1 := A_Buffer;\n"
-            '   pragma Warnings (On, "unused assignment");\n'
+            "   Ctx.P.Slots.Slot_Ptr_1 := A_Buffer;\n"
             "end;\n"
             "if RFLX_Exception then\n"
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1517,13 +1463,13 @@ class UnknownStatement(stmt.Statement):
             "      Universal.Message.Set_Data_Empty (X_Ctx);\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""");\n'
-            "      P_Next_State := S_E;\n"
+            "      Ctx.P.Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1595,19 +1541,19 @@ class UnknownStatement(stmt.Statement):
             "      else\n"
             '         Ada.Text_IO.Put_Line ("Error: invalid message field size'
             ' for ""Y\'Opaque""");\n'
-            "         P_Next_State := S_E;\n"
+            "         Ctx.P.Next_State := S_E;\n"
             "         pragma Finalization;\n"
             "         return;\n"
             "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "      P_Next_State := S_E;\n"
+            "      Ctx.P.Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""");\n'
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1705,72 +1651,77 @@ class UnknownStatement(stmt.Statement):
             "                  if Universal.Message.Structural_Valid (Y_Ctx,"
             " Universal.Message.F_Data) then\n"
             "                     declare\n"
+            '                        pragma Warnings (Off, "is not modified, could be declared'
+            ' constant");\n'
+            "                        RFLX_Y_Ctx_Tmp : Universal.Message.Context := Y_Ctx;\n"
+            '                        pragma Warnings (On, "is not modified, could be declared'
+            ' constant");\n'
             "                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length)"
             " return Boolean is\n"
-            "                          (Universal.Message.Has_Buffer (Y_Ctx)\n"
+            "                          (Universal.Message.Has_Buffer (RFLX_Y_Ctx_Tmp)\n"
             "                           and then Universal.Message.Structural_Valid"
-            " (Y_Ctx, Universal.Message.F_Data)\n"
+            " (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)\n"
             "                           and then Length >= RFLX_Types.To_Length"
-            " (Universal.Message.Field_Size (Y_Ctx, Universal.Message.F_Data)));\n"
-            "                        procedure RFLX_Process_Data"
-            " (Data : out RFLX_Types.Bytes) with\n"
+            " (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));\n"
+            "                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes)"
+            " with\n"
             "                          Pre =>\n"
             "                            RFLX_Process_Data_Pre (Data'Length)\n"
             "                        is\n"
             "                        begin\n"
-            "                           Universal.Message.Get_Data (Y_Ctx, Data);\n"
+            "                           Universal.Message.Get_Data (RFLX_Y_Ctx_Tmp, Data);\n"
             "                        end RFLX_Process_Data;\n"
             "                        procedure RFLX_Universal_Message_Set_Data is"
             " new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);\n"
             "                     begin\n"
-            "                        RFLX_Universal_Message_Set_Data"
-            " (X_Ctx, RFLX_Types.To_Length (Universal.Message.Field_Size"
-            " (Y_Ctx, Universal.Message.F_Data)));\n"
+            "                        RFLX_Universal_Message_Set_Data (X_Ctx, RFLX_Types.To_Length"
+            " (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));\n"
+            "                        Y_Ctx := RFLX_Y_Ctx_Tmp;\n"
             "                     end;\n"
             "                  else\n"
             '                     Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Data""");\n'
-            "                     P_Next_State := S_E;\n"
+            "                     Ctx.P.Next_State := S_E;\n"
             "                     pragma Finalization;\n"
             "                     return;\n"
             "                  end if;\n"
             "               else\n"
             '                  Ada.Text_IO.Put_Line ("Error: invalid message field size'
             ' for ""Y.Data""");\n'
-            "                  P_Next_State := S_E;\n"
+            "                  Ctx.P.Next_State := S_E;\n"
             "                  pragma Finalization;\n"
             "                  return;\n"
             "               end if;\n"
             "            else\n"
             '               Ada.Text_IO.Put_Line ("Error: access to invalid next message field'
             ' for ""Y.Data""");\n'
-            "               P_Next_State := S_E;\n"
+            "               Ctx.P.Next_State := S_E;\n"
             "               pragma Finalization;\n"
             "               return;\n"
             "            end if;\n"
             "         else\n"
             '            Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Length""");\n'
-            "            P_Next_State := S_E;\n"
+            "            Ctx.P.Next_State := S_E;\n"
             "            pragma Finalization;\n"
             "            return;\n"
             "         end if;\n"
             "      else\n"
             '         Ada.Text_IO.Put_Line ("Error: access to invalid message field'
             ' in ""Y.Message_Type""");\n'
-            "         P_Next_State := S_E;\n"
+            "         Ctx.P.Next_State := S_E;\n"
             "         pragma Finalization;\n"
             "         return;\n"
             "      end if;\n"
             "   else\n"
             '      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""");\n'
-            "      P_Next_State := S_E;\n"
+            "      Ctx.P.Next_State := S_E;\n"
             "      pragma Finalization;\n"
             "      return;\n"
             "   end if;\n"
             "else\n"
             '   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""");\n'
-            "   P_Next_State := S_E;\n"
+            "   Ctx.P.Next_State := S_E;\n"
             "   pragma Finalization;\n"
             "   return;\n"
             "end if;",
@@ -1793,7 +1744,7 @@ class UnknownStatement(stmt.Statement):
             "   A : Universal.Message.Structure;\n"
             "begin\n"
             "   Universal.Message.To_Structure (A_Ctx, A);\n"
-            "   F (X, A);\n"
+            "   F (Ctx, A, X);\n"
             "end;",
         ),
         (
@@ -1815,7 +1766,7 @@ class UnknownStatement(stmt.Statement):
             "   A : Universal.Message.Structure;\n"
             "begin\n"
             "   Universal.Message.To_Structure (A_Ctx, A);\n"
-            "   F (X, A);\n"
+            "   F (Ctx, A, X);\n"
             "   Universal.Option.To_Context (X, X_Ctx);\n"
             "end;",
         ),
@@ -1850,6 +1801,7 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
                     State("S", exception_transition=Transition("E")),
                     [ada.PragmaStatement("Finalization", [])],
                 ),
+                lambda x: False,
             )
         )
         == expected
@@ -1907,7 +1859,12 @@ def test_session_state_action_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._state_action(ID("S"), action, ExceptionHandler(set(), State("S"), []))
+        session_generator._state_action(
+            ID("S"),
+            action,
+            ExceptionHandler(set(), State("S"), []),
+            lambda x: False,
+        )
 
 
 @pytest.mark.parametrize(
@@ -2258,6 +2215,7 @@ def test_session_assign_error(
             type_,
             expression,
             ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
+            lambda x: False,
             ID("State"),
             alloc_id=None,
         )
@@ -2296,7 +2254,9 @@ def test_session_append_error(
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
         session_generator._append(
-            append, ExceptionHandler(set(), State("S", exception_transition=Transition("E")), [])
+            append,
+            ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
+            lambda x: False,
         )
 
 
@@ -2321,7 +2281,10 @@ def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._read(read)
+        session_generator._read(
+            read,
+            lambda x: False,
+        )
 
 
 @pytest.mark.parametrize(
@@ -2466,7 +2429,7 @@ def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> Non
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=True
     )
     # pylint: disable = protected-access
-    assert expression.substituted(session_generator._substitution()) == expected
+    assert expression.substituted(session_generator._substitution(lambda x: False)) == expected
 
 
 @pytest.mark.parametrize(
@@ -2497,7 +2460,7 @@ def test_session_substitution_error(
     )
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        expression.substituted(session_generator._substitution())
+        expression.substituted(session_generator._substitution(lambda x: False))
 
 
 @pytest.mark.parametrize(
@@ -2552,8 +2515,14 @@ def test_session_substitution_equality(
     )
 
     # pylint: disable = protected-access
-    assert relation(left, right).substituted(session_generator._substitution()) == expected
-    assert relation(right, left).substituted(session_generator._substitution()) == expected
+    assert (
+        relation(left, right).substituted(session_generator._substitution(lambda x: False))
+        == expected
+    )
+    assert (
+        relation(right, left).substituted(session_generator._substitution(lambda x: False))
+        == expected
+    )
 
 
 @pytest.mark.parametrize(

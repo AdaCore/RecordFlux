@@ -10,34 +10,33 @@ from rflx.ada import (
     AndThen,
     Assignment,
     Call,
+    Component,
     ContextItem,
-    Declaration,
     DynamicPredicate,
     Equal,
     ExpressionFunctionDeclaration,
     First,
     FunctionSpecification,
+    InOutParameter,
     Last,
     NamedAggregate,
     NotEqual,
     NullStatement,
     Number,
-    ObjectDeclaration,
     OrElse,
+    OutParameter,
+    Parameter,
     Postcondition,
-    Pragma,
-    PragmaStatement,
     ProcedureSpecification,
+    RecordType,
+    Slice,
     SparkMode,
-    Statement,
-    String,
     SubprogramBody,
     SubprogramDeclaration,
     Subtype,
     UnitPart,
     UnrestrictedAccess,
     UseTypeClause,
-    ValueRange,
     Variable,
     WithClause,
 )
@@ -67,7 +66,7 @@ class AllocatorGenerator:
         self._declaration_context: List[ContextItem] = []
         self._body_context: List[ContextItem] = []
         self._allocation_slots: Dict[Location, int] = {}
-        self._unit_part = UnitPart(specification=[Pragma("Elaborate_Body")])
+        self._unit_part = UnitPart()
         self._integration = integration
         global_slots: List[SlotInfo] = self._allocate_global_slots()
         local_slots: List[SlotInfo] = self._allocate_local_slots()
@@ -100,43 +99,66 @@ class AllocatorGenerator:
     def unit_part(self) -> UnitPart:
         return self._unit_part
 
-    def _slot_name(self, slot_id: int, qualified: bool = False) -> ID:
-        base = f"Slot_Ptr_{slot_id}"
-        return ID(self.unit_identifier * base) if qualified else ID(base)
+    @property
+    def required(self) -> bool:
+        return any(
+            True
+            for d in self._session.declarations.values()
+            if isinstance(d, decl.VariableDeclaration)
+            and isinstance(d.type_, (rty.Message, rty.Sequence))
+        )
 
-    def get_slot_ptr(self, location: Optional[Location]) -> Variable:
+    def get_slot_ptr(self, location: Optional[Location]) -> ID:
         assert location is not None
         slot_id: int = self._allocation_slots[location]
-        return Variable(self._slot_name(slot_id, qualified=True))
-
-    def free_buffer(self, identifier: ID, location: Optional[Location]) -> Sequence[Statement]:
-        assert location is not None
-        slot_id = self._allocation_slots[location]
-        return [
-            PragmaStatement("Warnings", [Variable("Off"), String("unused assignment")]),
-            Assignment(
-                self._slot_name(slot_id, qualified=True),
-                Variable(identifier),
-            ),
-            PragmaStatement("Warnings", [Variable("On"), String("unused assignment")]),
-        ]
+        return self._slot_name(slot_id)
 
     def get_size(self, variable: rid.ID, state: Optional[rid.ID] = None) -> int:
         return self._integration.get_size(self._session.identifier, variable, state)
 
     @staticmethod
+    def _slot_name(slot_id: int) -> ID:
+        return ID(f"Slot_Ptr_{slot_id}")
+
+    @staticmethod
     def _ptr_type(size: int) -> ID:
         return ID(f"Slot_Ptr_Type_{size}")
 
-    def _create(self, slots: List[NumberedSlotInfo]) -> None:
+    def _create(self, slots: Sequence[NumberedSlotInfo]) -> None:
+        self._unit_part += self._create_memory(slots)
         if slots:
             self._unit_part += self._create_ptr_subtypes(slots)
-            self._unit_part += self._create_slots(slots)
+        self._unit_part += self._create_slots(slots)
         self._unit_part += self._create_init_pred(slots)
+        self._unit_part += self._create_uninitialized_pred(slots)
         self._unit_part += self._create_init_proc(slots)
+        self._unit_part += self._create_finalize_proc(slots)
         self._unit_part += self._create_global_allocated_pred(slots)
 
-    def _create_ptr_subtypes(self, slots: List[NumberedSlotInfo]) -> UnitPart:
+    @staticmethod
+    def _create_memory(slots: Sequence[NumberedSlotInfo]) -> UnitPart:
+        return UnitPart(
+            [
+                RecordType(
+                    "Memory",
+                    [
+                        Component(
+                            f"Slot_{slot.slot_id}",
+                            Slice(
+                                Variable(const.TYPES_BYTES),
+                                First(const.TYPES_INDEX),
+                                Add(First(const.TYPES_INDEX), Number(slot.size - 1)),
+                            ),
+                            NamedAggregate(("others", Number(0))),
+                            aliased=True,
+                        )
+                        for slot in slots
+                    ],
+                )
+            ]
+        )
+
+    def _create_ptr_subtypes(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
         unit = UnitPart(
             specification=[
                 Subtype(
@@ -165,45 +187,30 @@ class AllocatorGenerator:
         self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_BYTES_PTR))
         return unit
 
-    def _create_slots(self, slots: List[NumberedSlotInfo]) -> UnitPart:
-        array_decls: List[Declaration] = [
-            ObjectDeclaration(
-                [ID(f"Slot_{slot.slot_id}")],
-                const.TYPES_BYTES,
-                aliased=True,
-                expression=NamedAggregate(
-                    (
-                        ValueRange(
-                            First(const.TYPES_INDEX),
-                            Add(First(const.TYPES_INDEX), Number(slot.size - 1)),
-                        ),
-                        First(const.TYPES_BYTE),
-                    )
-                ),
-            )
-            for slot in slots
-        ]
-
-        pointer_decls: List[Declaration] = [
-            ObjectDeclaration(
-                [self._slot_name(slot.slot_id)],
-                self._ptr_type(slot.size),
-            )
-            for slot in slots
-        ]
+    def _create_slots(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
         self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
-        unit = UnitPart(specification=pointer_decls, body=array_decls)
-        return unit
 
-    def _create_init_pred(self, slots: List[NumberedSlotInfo]) -> UnitPart:
+        return UnitPart(
+            [
+                RecordType(
+                    "Slots",
+                    [
+                        Component(self._slot_name(slot.slot_id), self._ptr_type(slot.size))
+                        for slot in slots
+                    ],
+                )
+            ]
+        )
+
+    def _create_init_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
         return UnitPart(
             [
                 ExpressionFunctionDeclaration(
-                    FunctionSpecification("Initialized", "Boolean"),
+                    FunctionSpecification("Initialized", "Boolean", [Parameter(["S"], "Slots")]),
                     And(
                         *[
                             NotEqual(
-                                Variable(self._slot_name(slot.slot_id)),
+                                Variable("S" * self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
                             for slot in slots
@@ -213,15 +220,35 @@ class AllocatorGenerator:
             ]
         )
 
-    def _create_global_allocated_pred(self, slots: List[NumberedSlotInfo]) -> UnitPart:
+    def _create_uninitialized_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
         return UnitPart(
             [
                 ExpressionFunctionDeclaration(
-                    FunctionSpecification("Global_Allocated", "Boolean"),
+                    FunctionSpecification("Uninitialized", "Boolean", [Parameter(["S"], "Slots")]),
                     And(
                         *[
                             Equal(
-                                Variable(self._slot_name(slot.slot_id)),
+                                Variable("S" * self._slot_name(slot.slot_id)),
+                                Variable("null"),
+                            )
+                            for slot in slots
+                        ]
+                    ),
+                )
+            ]
+        )
+
+    def _create_global_allocated_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
+        return UnitPart(
+            [
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        "Global_Allocated", "Boolean", [Parameter(["S"], "Slots")]
+                    ),
+                    And(
+                        *[
+                            Equal(
+                                Variable("S" * self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
                             for slot in slots
@@ -229,7 +256,7 @@ class AllocatorGenerator:
                         ],
                         *[
                             NotEqual(
-                                Variable(self._slot_name(slot.slot_id)),
+                                Variable("S" * self._slot_name(slot.slot_id)),
                                 Variable("null"),
                             )
                             for slot in slots
@@ -240,24 +267,58 @@ class AllocatorGenerator:
             ]
         )
 
-    def _create_init_proc(self, slots: List[NumberedSlotInfo]) -> UnitPart:
-        assignments: List[Statement] = (
-            [
-                Assignment(
-                    self._slot_name(slot.slot_id),
-                    UnrestrictedAccess(Variable(ID(f"Slot_{slot.slot_id}"))),
-                )
-                for slot in slots
-            ]
-            if slots
-            else [NullStatement()]
+    def _create_init_proc(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
+        proc = ProcedureSpecification(
+            "Initialize", [OutParameter(["S"], "Slots"), Parameter(["M"], "Memory")]
         )
-        proc = ProcedureSpecification(ID("Initialize"))
         return UnitPart(
-            [SubprogramDeclaration(proc, [Postcondition(Call("Initialized"))])],
+            [
+                SubprogramDeclaration(proc, [Postcondition(Call("Initialized", [Variable("S")]))]),
+            ],
             [
                 SubprogramBody(
-                    proc, declarations=[], statements=assignments, aspects=[SparkMode(off=True)]
+                    proc,
+                    declarations=[],
+                    statements=(
+                        [
+                            Assignment(
+                                "S" * self._slot_name(slot.slot_id),
+                                UnrestrictedAccess(Variable(ID(f"M.Slot_{slot.slot_id}"))),
+                            )
+                            for slot in slots
+                        ]
+                        if slots
+                        else [NullStatement()]
+                    ),
+                    aspects=[SparkMode(off=True)],
+                )
+            ],
+        )
+
+    def _create_finalize_proc(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
+        proc = ProcedureSpecification("Finalize", [InOutParameter(["S"], "Slots")])
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    proc, [Postcondition(Call("Uninitialized", [Variable("S")]))]
+                ),
+            ],
+            [
+                SubprogramBody(
+                    proc,
+                    declarations=[],
+                    statements=(
+                        [
+                            Assignment(
+                                "S" * self._slot_name(slot.slot_id),
+                                Variable("null"),
+                            )
+                            for slot in slots
+                        ]
+                        if slots
+                        else [NullStatement()]
+                    ),
+                    aspects=[SparkMode(off=True)],
                 )
             ],
         )

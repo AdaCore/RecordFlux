@@ -439,14 +439,48 @@ def test_conversion_str() -> None:
     assert str(ada.Not(ada.Conversion("A", ada.Variable("B")))) == "not A (B)"
 
 
-def test_import() -> None:
-    assert str(ada.Import()) == "Import"
+@pytest.mark.parametrize(
+    "aspect, expected",
+    [
+        (ada.Precondition(ada.Variable("X")), "Pre =>\n  X"),
+        (ada.Postcondition(ada.Variable("X")), "Post =>\n  X"),
+        (ada.ClassPrecondition(ada.Variable("X")), "Pre'Class =>\n  X"),
+        (ada.ClassPostcondition(ada.Variable("X")), "Post'Class =>\n  X"),
+        (
+            ada.ContractCases((ada.Variable("X"), ada.Variable("Y"))),
+            "Contract_Cases =>\n  (X =>\n      Y)",
+        ),
+        (ada.Depends({"X": ["Y", "Z"]}), "Depends =>\n  (X => (Y, Z))"),
+        (ada.DynamicPredicate(ada.Variable("X")), "Dynamic_Predicate =>\n  X"),
+        (ada.SizeAspect(ada.Variable("X")), "Size =>\n  X"),
+        (ada.InitialCondition(ada.Variable("X")), "Initial_Condition =>\n  X"),
+        (ada.DefaultInitialCondition(ada.Variable("X")), "Default_Initial_Condition =>\n  X"),
+        (ada.SparkMode(), "SPARK_Mode"),
+        (ada.SparkMode(off=True), "SPARK_Mode =>\n  Off"),
+        (ada.Ghost(), "Ghost"),
+        (ada.Import(), "Import"),
+        (ada.Annotate("X"), "Annotate =>\n  (X)"),
+        (ada.ElaborateBody(), "Elaborate_Body"),
+    ],
+)
+def test_aspects(aspect: ada.Aspect, expected: str) -> None:
+    assert str(aspect) == expected
 
 
 def test_formal_package_declaration() -> None:
     assert (
         str(ada.FormalPackageDeclaration("A", "B", ["C", "D"])) == "with package A is new B (C, D);"
     )
+
+
+def test_generic_package_instantiation() -> None:
+    assert (
+        str(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) == "package A is new B (C, D);"
+    )
+
+
+def test_generic_package_instantiation_hash() -> None:
+    assert hash(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) is not None
 
 
 def test_package_renaming_declaration() -> None:
@@ -466,6 +500,10 @@ def test_range_subtype() -> None:
 
 def test_derived_type() -> None:
     assert str(ada.DerivedType("A", "B")) == "type A is new B;"
+    assert (
+        str(ada.DerivedType("A", "B", [ada.Component("C", "D")]))
+        == "type A is new B with\n   record\n      C : D;\n   end record;"
+    )
 
 
 def test_private_type() -> None:
@@ -482,6 +520,14 @@ def test_array_type() -> None:
 
 def test_unconstrained_array_type() -> None:
     assert str(ada.UnconstrainedArrayType("A", "B", "C")) == "type A is array (B range <>) of C;"
+
+
+def test_record_type() -> None:
+    assert str(ada.RecordType("A", [])) == "type A is null record;"
+    assert (
+        str(ada.RecordType("A", [ada.Component("B", "C")]))
+        == "type A is\n   record\n      B : C;\n   end record;"
+    )
 
 
 def test_access_type() -> None:

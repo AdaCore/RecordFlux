@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import itertools
 import os
 from abc import abstractmethod
@@ -410,6 +412,10 @@ class Initialized(Attribute):
 
 
 class Image(Attribute):
+    pass
+
+
+class Class(Attribute):
     pass
 
 
@@ -945,6 +951,32 @@ class Postcondition(Aspect):
         return str(self.expr)
 
 
+class ClassPrecondition(Aspect):
+    def __init__(self, expr: Expr) -> None:
+        self.expr = expr
+
+    @property
+    def mark(self) -> str:
+        return "Pre'Class"
+
+    @property
+    def definition(self) -> str:
+        return str(self.expr)
+
+
+class ClassPostcondition(Aspect):
+    def __init__(self, expr: Expr) -> None:
+        self.expr = expr
+
+    @property
+    def mark(self) -> str:
+        return "Post'Class"
+
+    @property
+    def definition(self) -> str:
+        return str(self.expr)
+
+
 class ContractCases(Aspect):
     def __init__(self, *cases: Tuple[Expr, Expr]) -> None:
         self.cases = cases
@@ -1069,6 +1101,7 @@ class Import(Aspect):
 
 class Annotate(Aspect):
     def __init__(self, *args: str) -> None:
+        assert len(args) > 0
         self.args = args
 
     @property
@@ -1079,6 +1112,16 @@ class Annotate(Aspect):
     def definition(self) -> str:
         args = ", ".join(self.args)
         return f"({args})"
+
+
+class ElaborateBody(Aspect):
+    @property
+    def mark(self) -> str:
+        return "Elaborate_Body"
+
+    @property
+    def definition(self) -> str:
+        return ""
 
 
 class FormalDeclaration(Base):
@@ -1365,13 +1408,32 @@ class RangeSubtype(Subtype):
 
 
 class DerivedType(TypeDeclaration):
-    def __init__(self, identifier: StrID, type_identifier: StrID) -> None:
+    def __init__(
+        self,
+        identifier: StrID,
+        type_identifier: StrID,
+        record_extension: Sequence[Component] = None,
+    ) -> None:
         super().__init__(identifier)
         self.type_identifier = ID(type_identifier)
+        self.record_extension = record_extension
 
     @property
     def type_definition(self) -> str:
-        return f" new {self.type_identifier}"
+        extension = ""
+
+        if self.record_extension is not None:
+            if len(self.record_extension) == 0:
+                extension = " with null record"
+            else:
+                components = (
+                    (indent("\n".join(map(str, self.record_extension)), 6) + "\n")
+                    if self.record_extension
+                    else ""
+                )
+                extension = f" with\n   record\n{components}   end record"
+
+        return f" new {self.type_identifier}{extension}"
 
 
 class PrivateType(TypeDeclaration):
@@ -1415,17 +1477,23 @@ class AccessType(TypeDeclaration):
 
 class Component(Base):
     def __init__(
-        self, identifier: StrID, type_identifier: Union[StrID, Expr], default: Expr = None
+        self,
+        identifier: StrID,
+        type_identifier: Union[StrID, Expr],
+        default: Expr = None,
+        aliased: bool = False,
     ) -> None:
         self.identifier = ID(identifier)
         self.type_identifier = (
             type_identifier if isinstance(type_identifier, Expr) else Variable(type_identifier)
         )
         self.default = default
+        self.aliased = aliased
 
     def __str__(self) -> str:
         default = f" := {self.default}" if self.default else ""
-        return f"{self.identifier} : {self.type_identifier}{default};"
+        aliased = "aliased " if self.aliased else ""
+        return f"{self.identifier} : {aliased}{self.type_identifier}{default};"
 
 
 class NullComponent(Component):
@@ -1458,26 +1526,39 @@ class VariantPart(Base):
 
 
 class RecordType(TypeDeclaration):
-    def __init__(
+    def __init__(  # pylint: disable = too-many-arguments
         self,
         identifier: StrID,
         components: List[Component],
         discriminants: Sequence[Discriminant] = None,
         variant_part: VariantPart = None,
         aspects: Sequence[Aspect] = None,
+        abstract: bool = False,
+        tagged: bool = False,
     ) -> None:
+        assert tagged if abstract else True
         super().__init__(identifier, discriminants, aspects)
         self.components = components
         self.discriminants = discriminants or []
         self.variant_part = variant_part
+        self.abstract = abstract
+        self.tagged = tagged
 
     @property
     def type_definition(self) -> str:
-        components = (
-            (indent("\n".join(map(str, self.components)), 6) + "\n") if self.components else ""
-        )
-        variant_part = indent(str(self.variant_part), 6) if self.variant_part else ""
-        return f"\n" f"   record\n" f"{components}" f"{variant_part}" f"   end record"
+        abstract = " abstract" if self.abstract else ""
+        tagged = " tagged" if self.tagged else ""
+
+        if self.components or self.variant_part:
+            components = (
+                (indent("\n".join(map(str, self.components)), 6) + "\n") if self.components else ""
+            )
+            variant_part = indent(str(self.variant_part), 6) if self.variant_part else ""
+            definition = f"\n   record\n{components}{variant_part}   end record"
+        else:
+            definition = " null record"
+
+        return f"{abstract}{tagged}{definition}"
 
 
 class Statement(Base):
@@ -1808,15 +1889,18 @@ class SubprogramDeclaration(Subprogram):
         specification: SubprogramSpecification,
         aspects: Sequence[Aspect] = None,
         formal_parameters: Sequence[FormalDeclaration] = None,
+        abstract: bool = False,
     ) -> None:
         super().__init__(specification)
         self.aspects = aspects or []
         self.formal_parameters = formal_parameters
+        self.abstract = abstract
 
     def __str__(self) -> str:
+        abstract = " is abstract" if self.abstract else ""
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"{self.specification}{aspect_specification(self.aspects)};"
+            f"{self.specification}{abstract}{aspect_specification(self.aspects)};"
         )
 
 

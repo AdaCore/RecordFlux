@@ -5,17 +5,22 @@ package body RFLX.Test.Session_Allocator with
   SPARK_Mode
 is
 
-   Slot_1 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
-
-   Slot_2 : aliased RFLX_Types.Bytes := (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095 => RFLX_Types.Byte'First);
-
-   procedure Initialize with
+   procedure Initialize (S : out Slots; M : Memory) with
      SPARK_Mode =>
        Off
    is
    begin
-      Slot_Ptr_1 := Slot_1'Unrestricted_Access;
-      Slot_Ptr_2 := Slot_2'Unrestricted_Access;
+      S.Slot_Ptr_1 := M.Slot_1'Unrestricted_Access;
+      S.Slot_Ptr_2 := M.Slot_2'Unrestricted_Access;
    end Initialize;
+
+   procedure Finalize (S : in out Slots) with
+     SPARK_Mode =>
+       Off
+   is
+   begin
+      S.Slot_Ptr_1 := null;
+      S.Slot_Ptr_2 := null;
+   end Finalize;
 
 end RFLX.Test.Session_Allocator;

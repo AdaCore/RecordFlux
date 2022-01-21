@@ -1,7 +1,3 @@
-functions:
-  - Func.Get_Message_Type
-  - Func.Create_Message
-  - Func.Valid_Message
 input:
   Channel:
     - 1 0 3 0 1 2

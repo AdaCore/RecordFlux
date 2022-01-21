@@ -52,7 +52,6 @@ from rflx.ada import (
     IfStatement,
     In,
     Indexed,
-    InitialCondition,
     InOutParameter,
     InstantiationUnit,
     Last,
@@ -248,12 +247,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
     def __create_session(self, session: Session, integration: Integration) -> None:
         allocator_generator = AllocatorGenerator(session, integration, self.__prefix)
-        unit = self.__create_unit(
-            allocator_generator.unit_identifier,
-            allocator_generator.declaration_context,
-            allocator_generator.body_context,
-        )
-        unit += allocator_generator.unit_part
+        if allocator_generator.required:
+            unit = self.__create_unit(
+                allocator_generator.unit_identifier,
+                allocator_generator.declaration_context,
+                allocator_generator.body_context,
+            )
+            unit += allocator_generator.unit_part
         session_generator = SessionGenerator(
             session, allocator_generator, self.__prefix, debug=self.__debug
         )
@@ -261,8 +261,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             session_generator.unit_identifier,
             session_generator.declaration_context,
             session_generator.body_context,
-            session_generator.formal_parameters,
-            [InitialCondition(Variable("Uninitialized"))],
+            configuration_pragmas=[Pragma("Restrictions", [Variable("No_Streams")])],
             terminating=False,
         )
         unit += session_generator.unit_part
@@ -273,15 +272,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         declaration_context: ty.Sequence[ContextItem] = None,
         body_context: ty.Sequence[ContextItem] = None,
         formal_parameters: ty.List[FormalDeclaration] = None,
+        configuration_pragmas: ty.Sequence[Pragma] = None,
         aspects: ty.Sequence[Aspect] = None,
         terminating: bool = True,
     ) -> PackageUnit:
         declaration_context = declaration_context if declaration_context else []
         body_context = body_context if body_context else []
         aspects = aspects if aspects else []
+        configuration_pragmas = configuration_pragmas if configuration_pragmas else []
 
         unit = PackageUnit(
-            [*const.CONFIGURATION_PRAGMAS, *declaration_context],
+            [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
                 self.__prefix * identifier,
                 formal_parameters=formal_parameters,
@@ -291,7 +292,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     *aspects,
                 ],
             ),
-            [*const.CONFIGURATION_PRAGMAS, *body_context],
+            [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *body_context],
             PackageBody(self.__prefix * identifier, aspects=[SparkMode()]),
         )
         self._units[identifier] = unit
