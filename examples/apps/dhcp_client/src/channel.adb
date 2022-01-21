@@ -57,12 +57,11 @@ is
       SPARK_Mode => Off
    is
       Data : constant Ada.Streams.Stream_Element_Array (1 .. Buffer'Length) := To_Ada_Stream (Buffer);
-      Last : Ada.Streams.Stream_Element_Offset;
+      Unused_Last : Ada.Streams.Stream_Element_Offset;
    begin
-      pragma Unreferenced (Last);
       GNAT.Sockets.Send_Socket (Socket => Socket,
                                 Item => Data,
-                                Last => Last,
+                                Last => Unused_Last,
                                 To => GNAT.Sockets.Sock_Addr_Type'(Family => GNAT.Sockets.Family_Inet,
                                                                    Addr => GNAT.Sockets.Inet_Addr ("255.255.255.255"),
                                                                    Port => 67));

@@ -1,3 +1,4 @@
+pragma Restrictions (No_Streams);
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Session_Allocator;
@@ -6,11 +7,8 @@ with RFLX.Messages;
 with RFLX.Messages.Msg;
 with RFLX.Messages.Msg_LE;
 
-generic
 package RFLX.Test.Session with
-  SPARK_Mode,
-  Initial_Condition =>
-    Uninitialized
+  SPARK_Mode
 is
 
    use type RFLX.RFLX_Types.Index;
@@ -21,120 +19,175 @@ is
 
    type State is (S_Start, S_Copy, S_Reply, S_Read2, S_Copy2, S_Reply2, S_Terminated);
 
-   function Uninitialized return Boolean;
+   type Private_Context is private;
 
-   function Initialized return Boolean;
+   type Context is abstract tagged
+      record
+         P : Private_Context;
+      end record;
 
-   function Active return Boolean;
+   function Uninitialized (Ctx : Context'Class) return Boolean;
 
-   procedure Initialize with
+   function Initialized (Ctx : Context'Class) return Boolean;
+
+   function Active (Ctx : Context'Class) return Boolean;
+
+   procedure Initialize (Ctx : in out Context'Class) with
      Pre =>
-       Uninitialized,
+       Uninitialized (Ctx),
      Post =>
-       Initialized
-       and Active;
+       Initialized (Ctx)
+       and Active (Ctx);
 
-   procedure Finalize with
+   procedure Finalize (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Uninitialized
-       and not Active;
+       Uninitialized (Ctx)
+       and not Active (Ctx);
 
    pragma Warnings (Off, "subprogram ""Tick"" has no effect");
 
-   procedure Tick with
+   procedure Tick (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
    pragma Warnings (On, "subprogram ""Tick"" has no effect");
 
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
-   procedure Run with
+   procedure Run (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
    pragma Warnings (On, "subprogram ""Run"" has no effect");
 
-   function Next_State return State;
+   function Next_State (Ctx : Context'Class) return State;
 
-   function Has_Data (Chan : Channel) return Boolean with
+   function Has_Data (Ctx : Context'Class; Chan : Channel) return Boolean with
      Pre =>
-       Initialized;
+       Initialized (Ctx);
 
-   function Read_Buffer_Size (Chan : Channel) return RFLX_Types.Length with
+   function Read_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length with
      Pre =>
-       Initialized
-       and then Has_Data (Chan);
+       Initialized (Ctx)
+       and then Has_Data (Ctx, Chan);
 
-   procedure Read (Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+   procedure Read (Ctx : Context'Class; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
      Pre =>
-       Initialized
-       and then Has_Data (Chan)
+       Initialized (Ctx)
+       and then Has_Data (Ctx, Chan)
        and then Buffer'Length > 0
        and then Offset <= RFLX_Types.Length'Last - Buffer'Length
-       and then Buffer'Length + Offset <= Read_Buffer_Size (Chan),
+       and then Buffer'Length + Offset <= Read_Buffer_Size (Ctx, Chan),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
-   function Needs_Data (Chan : Channel) return Boolean with
+   function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean with
      Pre =>
-       Initialized;
+       Initialized (Ctx);
 
-   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length;
+   function Write_Buffer_Size (Unused_Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length;
 
-   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+   procedure Write (Ctx : in out Context'Class; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
      Pre =>
-       Initialized
-       and then Needs_Data (Chan)
+       Initialized (Ctx)
+       and then Needs_Data (Ctx, Chan)
        and then Buffer'Length > 0
        and then Offset <= RFLX_Types.Length'Last - Buffer'Length
-       and then Buffer'Length + Offset <= Write_Buffer_Size (Chan),
+       and then Buffer'Length + Offset <= Write_Buffer_Size (Ctx, Chan),
      Post =>
-       Initialized;
+       Initialized (Ctx);
 
 private
 
-   P_Next_State : State := S_Start;
+   type Private_Context is
+      record
+         Next_State : State := S_Start;
+         In_Msg_Ctx : Messages.Msg.Context;
+         In_Msg2_Ctx : Messages.Msg_LE.Context;
+         Out_Msg_Ctx : Messages.Msg_LE.Context;
+         Out_Msg2_Ctx : Messages.Msg.Context;
+         Slots : Test.Session_Allocator.Slots;
+         Memory : Test.Session_Allocator.Memory;
+      end record;
 
-   In_Msg_Ctx : Messages.Msg.Context;
+   function Uninitialized (Ctx : Context'Class) return Boolean is
+     (not Messages.Msg.Has_Buffer (Ctx.P.In_Msg_Ctx)
+      and not Messages.Msg_LE.Has_Buffer (Ctx.P.In_Msg2_Ctx)
+      and not Messages.Msg_LE.Has_Buffer (Ctx.P.Out_Msg_Ctx)
+      and not Messages.Msg.Has_Buffer (Ctx.P.Out_Msg2_Ctx)
+      and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
-   In_Msg2_Ctx : Messages.Msg_LE.Context;
+   function Initialized (Ctx : Context'Class) return Boolean is
+     (Messages.Msg.Has_Buffer (Ctx.P.In_Msg_Ctx)
+      and then Ctx.P.In_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.In_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Messages.Msg_LE.Has_Buffer (Ctx.P.In_Msg2_Ctx)
+      and then Ctx.P.In_Msg2_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.In_Msg2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Messages.Msg_LE.Has_Buffer (Ctx.P.Out_Msg_Ctx)
+      and then Ctx.P.Out_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Out_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Messages.Msg.Has_Buffer (Ctx.P.Out_Msg2_Ctx)
+      and then Ctx.P.Out_Msg2_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Out_Msg2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
-   Out_Msg_Ctx : Messages.Msg_LE.Context;
+   function Active (Ctx : Context'Class) return Boolean is
+     (Ctx.P.Next_State /= S_Terminated);
 
-   Out_Msg2_Ctx : Messages.Msg.Context;
+   function Next_State (Ctx : Context'Class) return State is
+     (Ctx.P.Next_State);
 
-   function Uninitialized return Boolean is
-     (not Messages.Msg.Has_Buffer (In_Msg_Ctx)
-      and not Messages.Msg_LE.Has_Buffer (In_Msg2_Ctx)
-      and not Messages.Msg_LE.Has_Buffer (Out_Msg_Ctx)
-      and not Messages.Msg.Has_Buffer (Out_Msg2_Ctx));
+   function Has_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_I =>
+             False,
+          when C_O =>
+             (case Ctx.P.Next_State is
+                 when S_Reply =>
+                    Messages.Msg_LE.Structural_Valid_Message (Ctx.P.Out_Msg_Ctx)
+                    and Messages.Msg_LE.Byte_Size (Ctx.P.Out_Msg_Ctx) > 0,
+                 when S_Reply2 =>
+                    Messages.Msg.Structural_Valid_Message (Ctx.P.Out_Msg2_Ctx)
+                    and Messages.Msg.Byte_Size (Ctx.P.Out_Msg2_Ctx) > 0,
+                 when others =>
+                    False)));
 
-   function Initialized return Boolean is
-     (Messages.Msg.Has_Buffer (In_Msg_Ctx)
-      and then In_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then In_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Messages.Msg_LE.Has_Buffer (In_Msg2_Ctx)
-      and then In_Msg2_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then In_Msg2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Messages.Msg_LE.Has_Buffer (Out_Msg_Ctx)
-      and then Out_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Out_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Messages.Msg.Has_Buffer (Out_Msg2_Ctx)
-      and then Out_Msg2_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Out_Msg2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Test.Session_Allocator.Global_Allocated);
+   function Read_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_I =>
+             raise Program_Error,
+          when C_O =>
+             (case Ctx.P.Next_State is
+                 when S_Reply =>
+                    Messages.Msg_LE.Byte_Size (Ctx.P.Out_Msg_Ctx),
+                 when S_Reply2 =>
+                    Messages.Msg.Byte_Size (Ctx.P.Out_Msg2_Ctx),
+                 when others =>
+                    raise Program_Error)));
 
-   function Active return Boolean is
-     (P_Next_State /= S_Terminated);
+   function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_I =>
+             (case Ctx.P.Next_State is
+                 when S_Start | S_Read2 =>
+                    True,
+                 when others =>
+                    False),
+          when C_O =>
+             False));
 
-   function Next_State return State is
-     (P_Next_State);
+   function Write_Buffer_Size (Unused_Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_I =>
+             4096,
+          when C_O =>
+             0));
 
 end RFLX.Test.Session;

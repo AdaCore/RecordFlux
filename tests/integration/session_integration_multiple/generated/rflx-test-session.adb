@@ -1,3 +1,4 @@
+pragma Restrictions (No_Streams);
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
@@ -7,109 +8,93 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Start (P_Next_State : out State) with
+   procedure Start (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      Universal.Message.Verify_Message (M_Ctx);
-      P_Next_State := S_Terminated;
+      Universal.Message.Verify_Message (Ctx.P.M_Ctx);
+      Ctx.P.Next_State := S_Terminated;
    end Start;
 
-   procedure Initialize is
+   procedure Initialize (Ctx : in out Context'Class) is
       M_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Test.Session_Allocator.Initialize;
-      M_Buffer := Test.Session_Allocator.Slot_Ptr_1;
+      Test.Session_Allocator.Initialize (Ctx.P.Slots, Ctx.P.Memory);
+      M_Buffer := Ctx.P.Slots.Slot_Ptr_1;
       pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_1 := null;
+      Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
-      Universal.Message.Initialize (M_Ctx, M_Buffer);
-      P_Next_State := S_Start;
+      Universal.Message.Initialize (Ctx.P.M_Ctx, M_Buffer);
+      Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize is
+   procedure Finalize (Ctx : in out Context'Class) is
       M_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      pragma Warnings (Off, "unused assignment to ""M_Ctx""");
-      pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Universal.Message.Take_Buffer (M_Ctx, M_Buffer);
-      pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""M_Ctx""");
-      pragma Warnings (Off, "unused assignment");
-      Test.Session_Allocator.Slot_Ptr_1 := M_Buffer;
-      pragma Warnings (On, "unused assignment");
-      P_Next_State := S_Terminated;
+      pragma Warnings (Off, """Ctx.P.M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Universal.Message.Take_Buffer (Ctx.P.M_Ctx, M_Buffer);
+      pragma Warnings (On, """Ctx.P.M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Ctx.P.Slots.Slot_Ptr_1 := M_Buffer;
+      Test.Session_Allocator.Finalize (Ctx.P.Slots);
+      Ctx.P.Next_State := S_Terminated;
    end Finalize;
 
-   procedure Reset_Messages_Before_Write with
+   procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
      Pre =>
-       Initialized,
+       Initialized (Ctx),
      Post =>
-       Initialized
+       Initialized (Ctx)
    is
    begin
-      case P_Next_State is
+      case Ctx.P.Next_State is
          when S_Start =>
-            Universal.Message.Reset (M_Ctx, M_Ctx.First, M_Ctx.First - 1);
+            Universal.Message.Reset (Ctx.P.M_Ctx, Ctx.P.M_Ctx.First, Ctx.P.M_Ctx.First - 1);
          when S_Terminated =>
             null;
       end case;
    end Reset_Messages_Before_Write;
 
-   procedure Tick is
+   procedure Tick (Ctx : in out Context'Class) is
    begin
-      case P_Next_State is
+      case Ctx.P.Next_State is
          when S_Start =>
-            Start (P_Next_State);
+            Start (Ctx);
          when S_Terminated =>
             null;
       end case;
-      Reset_Messages_Before_Write;
+      Reset_Messages_Before_Write (Ctx);
    end Tick;
 
-   function In_IO_State return Boolean is
-     (P_Next_State in S_Start);
+   function In_IO_State (Ctx : Context'Class) return Boolean is
+     (Ctx.P.Next_State in S_Start);
 
-   procedure Run is
+   procedure Run (Ctx : in out Context'Class) is
    begin
-      Tick;
+      Tick (Ctx);
       while
-         Active
-         and not In_IO_State
+         Active (Ctx)
+         and not In_IO_State (Ctx)
       loop
-         pragma Loop_Invariant (Initialized);
-         Tick;
+         pragma Loop_Invariant (Initialized (Ctx));
+         Tick (Ctx);
       end loop;
    end Run;
 
-   function Needs_Data (Chan : Channel) return Boolean is
-     ((case Chan is
-          when C_Channel =>
-             (case P_Next_State is
-                 when S_Start =>
-                    True,
-                 when others =>
-                    False)));
-
-   function Write_Buffer_Size (Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
-          when C_Channel =>
-             4096));
-
-   procedure Write (Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Write (Ctx : in out Context'Class; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+      Write_Buffer_Length : constant RFLX_Types.Length := Write_Buffer_Size (Ctx, Chan);
       function Write_Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
         (Buffer'Length > 0
-         and then Context_Buffer_Length = Write_Buffer_Size (Chan)
+         and then Context_Buffer_Length = Write_Buffer_Length
          and then Offset <= RFLX_Types.Length'Last - Buffer'Length
-         and then Buffer'Length + Offset <= Write_Buffer_Size (Chan));
+         and then Buffer'Length + Offset <= Write_Buffer_Length);
       procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) with
         Pre =>
           Write_Pre (Context_Buffer_Length, Offset)
           and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length
-          and then Message_Buffer'Length + Offset = Write_Buffer_Size (Chan),
+          and then Message_Buffer'Length + Offset = Write_Buffer_Length,
         Post =>
           Length <= Message_Buffer'Length
       is
@@ -122,9 +107,9 @@ is
    begin
       case Chan is
          when C_Channel =>
-            case P_Next_State is
+            case Ctx.P.Next_State is
                when S_Start =>
-                  Universal_Message_Write (M_Ctx, Offset);
+                  Universal_Message_Write (Ctx.P.M_Ctx, Offset);
                when others =>
                   raise Program_Error;
             end case;

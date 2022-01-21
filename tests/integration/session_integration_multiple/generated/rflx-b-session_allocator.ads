@@ -10,7 +10,10 @@ package RFLX.B.Session_Allocator with
     (GNATprove, Terminating)
 is
 
-   pragma Elaborate_Body;
+   type Memory is
+      record
+         Slot_1 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 2047) := (others => 0);
+      end record;
 
    subtype Slot_Ptr_Type_2048 is RFLX_Types.Bytes_Ptr with
      Dynamic_Predicate =>
@@ -18,16 +21,26 @@ is
        or else (Slot_Ptr_Type_2048'First = RFLX_Types.Index'First
                 and then Slot_Ptr_Type_2048'Last = RFLX_Types.Index'First + 2047);
 
-   Slot_Ptr_1 : Slot_Ptr_Type_2048;
+   type Slots is
+      record
+         Slot_Ptr_1 : Slot_Ptr_Type_2048;
+      end record;
 
-   function Initialized return Boolean is
-     (Slot_Ptr_1 /= null);
+   function Initialized (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 /= null);
 
-   procedure Initialize with
+   function Uninitialized (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 = null);
+
+   procedure Initialize (S : out Slots; M : Memory) with
      Post =>
-       Initialized;
+       Initialized (S);
 
-   function Global_Allocated return Boolean is
-     (Slot_Ptr_1 = null);
+   procedure Finalize (S : in out Slots) with
+     Post =>
+       Uninitialized (S);
+
+   function Global_Allocated (S : Slots) return Boolean is
+     (S.Slot_Ptr_1 = null);
 
 end RFLX.B.Session_Allocator;
