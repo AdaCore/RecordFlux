@@ -184,6 +184,13 @@ jobs:
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
+      with:
+        version: "23.0w"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
@@ -383,6 +390,12 @@ jobs:
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
+      with:
+        version: "23.0w"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -515,6 +528,13 @@ jobs:
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
+      with:
+        version: "23.0w"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
@@ -680,6 +700,13 @@ jobs:
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+      with:
+        version: "23.0w"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
