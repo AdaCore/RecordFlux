@@ -2284,8 +2284,8 @@ def test_create_model_byteorder(spec: str, byte_order: ByteOrder) -> None:
     p = parser.Parser()
     p.parse_string(spec)
     m = p.create_model()
-
-    assert m.messages[0].byte_order == byte_order
+    for v in m.messages[0].byte_order.values():
+        assert v == byte_order
 
 
 @pytest.mark.parametrize(

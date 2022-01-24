@@ -55,6 +55,7 @@ from rflx.model import (
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
+from rflx.model.message import ByteOrder
 from tests.data.models import (
     ENUMERATION,
     ETHERNET_FRAME,
@@ -2615,6 +2616,7 @@ def test_copy() -> None:
         message.copy(
             structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
             types={Field("C"): RANGE_INTEGER},
+            byte_order={Field("C"): ByteOrder.HIGH_ORDER_FIRST},
         ),
         Message(
             "P::M",
@@ -3122,6 +3124,7 @@ def test_merge_message_simple_derived() -> None:
                 Field("NR_F3"): deepcopy(ENUMERATION),
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
             },
+            byte_order=ByteOrder.HIGH_ORDER_FIRST,
         ),
     )
 

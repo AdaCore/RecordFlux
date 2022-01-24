@@ -183,7 +183,7 @@ is
    begin
       return ((case Fld is
                   when F_Message_Type =>
-                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data)));
    end Get_Field_Value;
@@ -293,7 +293,7 @@ is
          when F_Initial =>
             null;
          when F_Message_Type =>
-            Insert (Val.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
          when F_Data | F_Final =>
             null;
       end case;

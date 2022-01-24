@@ -69,13 +69,11 @@ class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def extract_function(self, type_identifier: ID, byte_order: ByteOrder) -> Subprogram:
+    def extract_function(self, type_identifier: ID) -> Subprogram:
         return GenericFunctionInstantiation(
             "Extract",
             FunctionSpecification(
-                const.TYPES * "Extract"
-                if byte_order == ByteOrder.HIGH_ORDER_FIRST
-                else const.TYPES * "Extract_LE",
+                const.TYPES * "Extract",
                 type_identifier,
                 [
                     Parameter(["Buffer"], const.TYPES_BYTES),
@@ -106,6 +104,11 @@ class ParserGenerator:
                                     Variable("Buffer_Last"),
                                 ),
                                 Variable("Offset"),
+                                Variable(
+                                    const.TYPES_HIGH_ORDER_FIRST
+                                    if message.byte_order[field] == ByteOrder.HIGH_ORDER_FIRST
+                                    else const.TYPES_LOW_ORDER_FIRST
+                                ),
                             ],
                         ),
                     )
@@ -168,8 +171,8 @@ class ParserGenerator:
                             else common.field_byte_bounds_declarations()
                         ),
                         *unique(
-                            self.extract_function(common.full_base_type_name(t), message.byte_order)
-                            for f, t in message.field_types.items()
+                            self.extract_function(common.full_base_type_name(t))
+                            for t in message.field_types.values()
                             if isinstance(t, Scalar)
                         ),
                     ]

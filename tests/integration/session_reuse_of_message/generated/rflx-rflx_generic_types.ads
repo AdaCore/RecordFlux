@@ -66,19 +66,13 @@ is
 
    type Offset is mod 8;
 
-   generic
-      type Value is mod <>;
-   function Extract (Data : Bytes;
-                     Off  : Offset) return Value with
-     Pre =>
-       ((Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length
-        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
+   type Byte_Order is (High_Order_First, Low_Order_First);
 
    generic
       type Value is mod <>;
-   function Extract_LE (Data : Bytes;
-                        Off  : Offset) return Value with
+   function Extract (Data : Bytes;
+                     Off  : Offset;
+                     BO   : Byte_Order) return Value with
      Pre =>
        ((Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length
         and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
@@ -88,15 +82,8 @@ is
       type Value is mod <>;
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
-                     Off  :        Offset) with
-     Pre =>
-       (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
-
-   generic
-      type Value is mod <>;
-   procedure Insert_LE (Val  :        Value;
-                        Data : in out Bytes;
-                        Off  :        Offset) with
+                     Off  :        Offset;
+                     BO   : Byte_Order) with
      Pre =>
        (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
 

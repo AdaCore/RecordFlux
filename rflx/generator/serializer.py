@@ -73,13 +73,11 @@ class SerializerGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def insert_function(self, type_identifier: ID, byte_order: ByteOrder) -> Subprogram:
+    def insert_function(self, type_identifier: ID) -> Subprogram:
         return GenericProcedureInstantiation(
             "Insert",
             ProcedureSpecification(
-                const.TYPES * "Insert"
-                if byte_order == ByteOrder.HIGH_ORDER_FIRST
-                else const.TYPES * "Insert_LE",
+                const.TYPES * "Insert",
                 [
                     Parameter(["Val"], type_identifier),
                     InOutParameter(["Buffer"], const.TYPES_BYTES),
@@ -108,7 +106,7 @@ class SerializerGenerator:
                         *common.field_bit_location_declarations(Variable("Val.Fld")),
                         *common.field_byte_location_declarations(),
                         *unique(
-                            self.insert_function(common.full_base_type_name(t), message.byte_order)
+                            self.insert_function(common.full_base_type_name(t))
                             for t in message.field_types.values()
                             if isinstance(t, Scalar)
                         ),
@@ -132,6 +130,12 @@ class SerializerGenerator:
                                                     Variable("Buffer_Last"),
                                                 ),
                                                 Variable("Offset"),
+                                                Variable(
+                                                    const.TYPES_HIGH_ORDER_FIRST
+                                                    if message.byte_order[f]
+                                                    == ByteOrder.HIGH_ORDER_FIRST
+                                                    else const.TYPES_LOW_ORDER_FIRST
+                                                ),
                                             ],
                                         )
                                         if f in scalar_fields

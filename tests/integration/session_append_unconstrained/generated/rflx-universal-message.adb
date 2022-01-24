@@ -240,9 +240,9 @@ is
    begin
       return ((case Fld is
                   when F_Message_Type =>
-                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
                   when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data),
                   when F_Option_Types =>
@@ -250,7 +250,7 @@ is
                   when F_Options =>
                      (Fld => F_Options),
                   when F_Value =>
-                     (Fld => F_Value, Value_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                     (Fld => F_Value, Value_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
                   when F_Values =>
                      (Fld => F_Values)));
    end Get_Field_Value;
@@ -385,13 +385,13 @@ is
          when F_Initial =>
             null;
          when F_Message_Type =>
-            Insert (Val.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
          when F_Length =>
-            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
          when F_Data | F_Option_Types | F_Options =>
             null;
          when F_Value =>
-            Insert (Val.Value_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Value_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
          when F_Values | F_Final =>
             null;
       end case;

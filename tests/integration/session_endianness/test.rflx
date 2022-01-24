@@ -9,7 +9,7 @@ package Test is
       Initial => Start,
       Final => Terminated
    is
-      In_Msg : Messages::Msg;
+      In_Msg : Messages::Msg_BE;
       In_Msg2 : Messages::Msg_LE;
       Out_Msg : Messages::Msg_LE;
       Out_Msg2 : Messages::Msg;
@@ -25,7 +25,7 @@ package Test is
 
       state Copy is
       begin
-         Out_Msg := Messages::Msg_LE'(C => In_Msg.A, D => In_Msg.B);
+         Out_Msg := Messages::Msg_LE'(C => In_Msg.X_A, D => In_Msg.X_B);
       transition
          goto Reply
       exception

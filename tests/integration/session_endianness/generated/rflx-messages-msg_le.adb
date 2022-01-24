@@ -164,14 +164,14 @@ is
         (RFLX_Types.To_Index (Last));
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Integer);
-      function Extract is new RFLX_Types.Extract_LE (RFLX.Messages.Enum_T_Base);
+      function Extract is new RFLX_Types.Extract (RFLX.Messages.Integer);
+      function Extract is new RFLX_Types.Extract (RFLX.Messages.Enum_T_Base);
    begin
       return ((case Fld is
                   when F_C =>
-                     (Fld => F_C, C_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset)),
+                     (Fld => F_C, C_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.Low_Order_First)),
                   when F_D =>
-                     (Fld => F_D, D_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
+                     (Fld => F_D, D_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.Low_Order_First))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -245,8 +245,8 @@ is
         (RFLX_Types.To_Index (Last));
       function Offset return RFLX_Types.Offset is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Integer);
-      procedure Insert is new RFLX_Types.Insert_LE (RFLX.Messages.Enum_T_Base);
+      procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Integer);
+      procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Enum_T_Base);
    begin
       Fst := First;
       Lst := Last;
@@ -254,9 +254,9 @@ is
          when F_Initial =>
             null;
          when F_C =>
-            Insert (Val.C_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.C_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.Low_Order_First);
          when F_D =>
-            Insert (Val.D_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.D_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.Low_Order_First);
          when F_Final =>
             null;
       end case;
