@@ -955,7 +955,7 @@ class MessageValue(TypeValue):
                 if isinstance(value, Bitstring):
                     buffer = (
                         value
-                        if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
+                        if self._type.byte_order[Field(field_name)] == ByteOrder.HIGH_ORDER_FIRST
                         or not (isinstance(field.typeval, ScalarValue))
                         or len(value) <= 8
                         or len(value) % 8 != 0
@@ -1196,7 +1196,7 @@ class MessageValue(TypeValue):
             added_bits = str(self._fields[field].typeval.bitstring)
             added_bits_adjusted = (
                 added_bits
-                if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
+                if self._type.byte_order[Field(field)] == ByteOrder.HIGH_ORDER_FIRST
                 or not isinstance(self._fields[field].typeval, ScalarValue)
                 or len(added_bits) <= 8
                 or len(added_bits) % 8 != 0

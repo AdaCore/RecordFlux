@@ -18,6 +18,13 @@ package Messages is
          B : Enum_T;
       end message;
 
+   type Msg_BE is
+      message
+         X : Msg;
+         Y : Enum_T;
+      end message
+         with Byte_Order => Low_Order_First;
+
    type Msg_LE is
       message
          C : Integer;

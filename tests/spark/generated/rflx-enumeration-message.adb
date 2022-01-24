@@ -150,7 +150,7 @@ is
    begin
       return ((case Fld is
                   when F_Priority =>
-                     (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset))));
+                     (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -225,7 +225,7 @@ is
          when F_Initial =>
             null;
          when F_Priority =>
-            Insert (Val.Priority_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset);
+            Insert (Val.Priority_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
          when F_Final =>
             null;
       end case;

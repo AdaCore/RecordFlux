@@ -180,9 +180,9 @@ is
       return Result;
    end U64_Extract_LE;
 
-   function Extract
-         (Data : Bytes;
-          Off  : Offset) return Value
+   function Extract (Data : Bytes;
+                     Off  : Offset;
+                     BO   : Byte_Order) return Value
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -190,21 +190,12 @@ is
                                     U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
                                  "Value must cover entire value range");
    begin
-      return Value (U64_Extract (Data, Off, Value'Size));
+      if BO = High_Order_First then
+         return Value (U64_Extract (Data, Off, Value'Size));
+      else
+         return Value (U64_Extract_LE (Data, Off, Value'Size));
+      end if;
    end Extract;
-
-   function Extract_LE
-         (Data : Bytes;
-          Off  : Offset) return Value
-   is
-      pragma Compile_Time_Error ((if Value'Size = 64 then
-                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
-                                 else
-                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
-                                 "Value must cover entire value range");
-   begin
-      return Value (U64_Extract_LE (Data, Off, Value'Size));
-   end Extract_LE;
 
    procedure U64_Insert (Val        :        U64;
                          Data       : in out Bytes;
@@ -351,7 +342,8 @@ is
 
    procedure Insert (Val  :        Value;
                      Data : in out Bytes;
-                     Off  :        Offset)
+                     Off  :        Offset;
+                     BO   : Byte_Order)
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -359,19 +351,11 @@ is
                                     U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
                                  "Value must cover entire value range");
    begin
-      U64_Insert (U64 (Val), Data, Off, Value'Size);
+      if BO = High_Order_First then
+         U64_Insert (U64 (Val), Data, Off, Value'Size);
+      else
+         U64_Insert_LE (U64 (Val), Data, Off, Value'Size);
+      end if;
    end Insert;
 
-   procedure Insert_LE (Val  :        Value;
-                        Data : in out Bytes;
-                        Off  :        Offset)
-   is
-      pragma Compile_Time_Error ((if Value'Size = 64 then
-                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
-                                 else
-                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
-                                 "Value must cover entire value range");
-   begin
-      U64_Insert_LE (U64 (Val), Data, Off, Value'Size);
-   end Insert_LE;
 end {prefix}RFLX_Generic_Types;

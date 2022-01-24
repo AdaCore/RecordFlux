@@ -116,7 +116,7 @@ class AbstractMessage(mty.Type):
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
@@ -130,8 +130,6 @@ class AbstractMessage(mty.Type):
         self.__types = types
         self.__has_unreachable = False
         self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
-        self.byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
-
         self._checksums = checksums or {}
 
         self._state = state or MessageState()
@@ -154,9 +152,14 @@ class AbstractMessage(mty.Type):
                     self._state.parameter_types = {
                         f: t for f, t in self.__types.items() if f not in fields
                     }
-
             except RecordFluxError:
                 pass
+        _byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
+        if not isinstance(_byte_order, dict):
+            assert isinstance(_byte_order, ByteOrder)
+            self._byte_order = {f: _byte_order for f in self.fields}
+        else:
+            self._byte_order = _byte_order
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -217,6 +220,11 @@ class AbstractMessage(mty.Type):
     def dependencies(self) -> List[mty.Type]:
         return [self, *unique(a for t in self.__types.values() for a in t.dependencies)]
 
+    @property
+    def byte_order(self) -> Mapping[Field, ByteOrder]:
+        assert isinstance(self._byte_order, dict)
+        return self._byte_order
+
     @abstractmethod
     def copy(
         self,
@@ -224,7 +232,7 @@ class AbstractMessage(mty.Type):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "AbstractMessage":
@@ -392,7 +400,11 @@ class AbstractMessage(mty.Type):
             **{Field(prefix + f.identifier): t for f, t in self.field_types.items()},
         }
 
-        return self.copy(structure=structure, types=types)
+        byte_order = {
+            **{Field(prefix + f.identifier): t for f, t in self.byte_order.items()},
+        }
+
+        return self.copy(structure=structure, types=types, byte_order=byte_order)
 
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
@@ -773,7 +785,7 @@ class Message(AbstractMessage):
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
         state: MessageState = None,
@@ -817,7 +829,7 @@ class Message(AbstractMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "Message":
@@ -826,7 +838,7 @@ class Message(AbstractMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else self.byte_order,
+            byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
             error if error else self.error,
             skip_proof=self._skip_proof,
@@ -1833,7 +1845,7 @@ class DerivedMessage(Message):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -1842,7 +1854,7 @@ class DerivedMessage(Message):
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
             checksums if checksums else copy(base.checksums),
-            byte_order if byte_order else base.byte_order,
+            byte_order if byte_order else copy(base.byte_order),
             location if location else base.location,
             error if error else base.error,
         )
@@ -1854,7 +1866,7 @@ class DerivedMessage(Message):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "DerivedMessage":
@@ -1864,7 +1876,7 @@ class DerivedMessage(Message):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else self.byte_order,
+            byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
             error if error else self.error,
         )
@@ -1881,7 +1893,7 @@ class UnprovenMessage(AbstractMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenMessage":
@@ -1890,7 +1902,7 @@ class UnprovenMessage(AbstractMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else self.byte_order,
+            byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
             error if error else self.error,
         )
@@ -2023,7 +2035,17 @@ class UnprovenMessage(AbstractMessage):
             },
         }
 
-        structure, types = self._prune_dangling_fields(structure, types)
+        byte_order = {
+            **{f: b for f, b in message.byte_order.items() if f != field},
+            **{
+                f: b
+                for f, b in inner_message.byte_order.items()
+                if inner_message.identifier not in message_arguments
+                or f.identifier not in message_arguments[inner_message.identifier]
+            },
+        }
+
+        structure, types, byte_order = self._prune_dangling_fields(structure, types, byte_order)
         if not structure or not types:
             fail(
                 f'empty message type when merging field "{field.identifier}"',
@@ -2032,7 +2054,7 @@ class UnprovenMessage(AbstractMessage):
                 field.identifier.location,
             )
 
-        return message.copy(structure=structure, types=types)
+        return message.copy(structure=structure, types=types, byte_order=byte_order)
 
     @staticmethod
     def _replace_message_attributes(message: AbstractMessage) -> UnprovenMessage:
@@ -2151,8 +2173,8 @@ class UnprovenMessage(AbstractMessage):
 
     @staticmethod
     def _prune_dangling_fields(
-        structure: List[Link], types: Dict[Field, mty.Type]
-    ) -> Tuple[List[Link], Dict[Field, mty.Type]]:
+        structure: List[Link], types: Dict[Field, mty.Type], byte_order: Dict[Field, ByteOrder]
+    ) -> Tuple[List[Link], Dict[Field, mty.Type], Dict[Field, ByteOrder]]:
         dangling = []
         progress = True
         while progress:
@@ -2167,6 +2189,7 @@ class UnprovenMessage(AbstractMessage):
         return (
             structure,
             {k: v for k, v in types.items() if k not in dangling},
+            {k: v for k, v in byte_order.items() if k not in dangling},
         )
 
 
@@ -2179,7 +2202,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
@@ -2188,7 +2211,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             structure if structure else copy(base.structure),
             types if types else copy(base.types),
             checksums if checksums else copy(base.checksums),
-            byte_order if byte_order else base.byte_order,
+            byte_order if byte_order else copy(base.byte_order),
             location if location else base.location,
             error if error else base.error,
         )
@@ -2220,7 +2243,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         structure: Sequence[Link] = None,
         types: Mapping[Field, mty.Type] = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: ByteOrder = None,
+        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
     ) -> "UnprovenDerivedMessage":
@@ -2230,7 +2253,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             structure if structure else copy(self.structure),
             types if types else copy(self.types),
             checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else self.byte_order,
+            byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
             error if error else self.error,
         )
