@@ -8,7 +8,6 @@ abstract project Defaults is
    GNATVI := "-gnatVi";  --  ISSUE: Componolit/Workarounds#43
    GNATVO := "-gnatVo";  --  ISSUE: Componolit/Workarounds#23
    GNATEV := "-gnateV";  --  ISSUE: Componolit/Workarounds#22
-   GNATA := "-gnata";    --  ISSUE: Componolit/Workarounds#44
 
    case Compiler_Variant is
       when "community2020" =>
@@ -17,13 +16,10 @@ abstract project Defaults is
          GNATVI := "";
          GNATVO := "";
          GNATEV := "";
-      when "community2019" =>
-         GNATVI := "";
-         GNATVO := "";
-         GNATEV := "";
-         GNATA  := "";
       when others =>
    end case;
+
+   GNATA := "-gnata";
 
    case Mode is
       when "strict" =>

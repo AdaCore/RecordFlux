@@ -23,11 +23,7 @@ is
       and then RFLX.Ethernet.Frame.Valid (Ctx, RFLX.Ethernet.Frame.F_Type_Length)
       and then RFLX.Ethernet.Frame.Get_Type_Length (Ctx) = 16#800#);
 
-   pragma Warnings (Off, """Field_Cursors"" is already use-visible through package use clause");
-
    use type RFLX.Ethernet.Frame.Field_Cursors;
-
-   pragma Warnings (On, """Field_Cursors"" is already use-visible through package use clause");
 
    procedure Switch_To_Payload (Ethernet_Frame_PDU_Context : in out RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : out RFLX.IPv4.Packet.Context) with
      Pre =>
