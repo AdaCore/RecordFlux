@@ -285,7 +285,7 @@ class ParserGenerator:
                 if len(message.fields) > 1
                 else []
             ),
-            # Componolit/RecordFlux#664:
+            # ISSUE: Componolit/RecordFlux#664:
             # The provability of the context predicate is increased by duplicating the statement
             # inside a case statement.
             CaseStatement(
@@ -314,7 +314,7 @@ class ParserGenerator:
                 [
                     (
                         Call("Composite_Field", [Variable("Fld")]),
-                        # Componolit/RecordFlux#664
+                        # ISSUE: Componolit/RecordFlux#664
                         # The provability of the context predicate is increased by duplicating
                         # the statement inside a case statement. Not required for versions newer
                         # than SPARK Community 2021.
