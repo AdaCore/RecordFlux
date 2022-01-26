@@ -420,51 +420,6 @@ jobs:
         with:
           paths: '["*.gpr", "tests/spark/**"]'
 
-  tests_spark:
-    name: Tests
-    needs: skip_check_spark
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - "spark"
-          - "spark NOPREFIX=1"
-          - "spark_optimized"
-        gnat-distrib:
-          - "community"
-          - "fsf"
-    steps:
-    - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      with:
-        submodules: true
-    - name: Cache GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: actions/cache@v2
-      with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2021
-      with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
-    - name: Install Alire
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
-      uses: alire-project/setup-alire@v1
-    - name: Install FSF GNAT
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
-      run: |
-        make install_gnat
-    - name: Test
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      run: |
-        eval `make printenv_gnat`
-        gnat --version
-        make test_${{ matrix.target }}
-
   runtime_compatibility:
     name: Runtime compatibility
     runs-on: ubuntu-20.04
@@ -511,100 +466,33 @@ jobs:
         test:
           - "builtin_types"
           - "custom_types"
-          - "ethernet"
-          - "ipv4"
-          - "tlv"
-          - "in_tlv"
-          - "enumeration"
-          - "sequence"
           - "derivation"
+          - "enumeration"
+          - "ethernet"
           - "expression"
           - "fixed_size"
-    steps:
-    - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      with:
-        submodules: true
-    - name: Set up Python
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Determine exact Python version
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      run:
-        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
-    - name: Cache Python dependencies
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/pip
-          ~/.local/lib/python${{ matrix.python-version }}/site-packages
-          ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
-    - name: Cache GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: actions/cache@v2
-      with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2021
-      with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
-    - name: Install dependencies
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-        sudo apt install libgmp-dev patchelf
-        python -m pip install --upgrade pip wheel
-        make install_devel
-    - name: Connect to Memcached server
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      shell: bash
-      env:
-        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
-        SERVER: ${{ secrets.MEMCACHED_SERVER }}
-      run: |
-        eval $(ssh-agent -s)
-        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
-        echo "stats" | nc -q 1 localhost 11211
-    - name: Verify
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      run: |
-        make prove_tests TEST=${{ matrix.test }}
-
-  verification_spark_scheduled:
-    name: Verification
-    if: github.event.schedule
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        test:
           - "in_ethernet"
           - "in_ipv4"
+          - "in_tlv"
+          - "ipv4"
+          - "sequence"
+          - "tlv"
     steps:
     - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -613,16 +501,19 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
     - name: Cache GNAT Community
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -630,6 +521,7 @@ jobs:
         python -m pip install --upgrade pip wheel
         make install_devel
     - name: Connect to Memcached server
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       shell: bash
       env:
         SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
@@ -644,6 +536,7 @@ jobs:
         ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
         echo "stats" | nc -q 1 localhost 11211
     - name: Verify
+      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         make prove_tests TEST=${{ matrix.test }}
 
