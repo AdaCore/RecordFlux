@@ -1,4 +1,7 @@
 # pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
+
+from __future__ import annotations
+
 import difflib
 import itertools
 import operator
@@ -1511,6 +1514,33 @@ class Call(Name):
             expr.argument_types,
             expr.location,
         )
+
+
+class Slice(Name):
+    """Only used by code generator and therefore provides minimum functionality."""
+
+    def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
+        self.prefix = prefix
+        self.first = first
+        self.last = last
+        super().__init__()
+
+    def __neg__(self) -> Name:
+        raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
+
+    @property
+    def representation(self) -> str:
+        return f"{self.prefix} ({self.first} .. {self.last})"
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Slice(self.prefix.ada_expr(), self.first.ada_expr(), self.last.ada_expr())
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
 
 
 class UndefinedExpr(Name):

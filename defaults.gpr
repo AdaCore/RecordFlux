@@ -1,5 +1,8 @@
 abstract project Defaults is
 
+   type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
+   Mode : Build_Mode := external ("mode", "strict");
+
    Compiler_Variant := external ("gnat", "");
 
    GNATVI := "-gnatVi";  --  ISSUE: Componolit/Workarounds#43
@@ -20,6 +23,12 @@ abstract project Defaults is
          GNATEV := "";
          GNATA  := "";
       when others =>
+   end case;
+
+   case Mode is
+      when "strict" =>
+         GNATA  := "";
+      when "asserts_enabled" | "optimized" | "runtime_compatible" =>
    end case;
 
    Proof_Switches :=

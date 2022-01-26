@@ -35,7 +35,22 @@ is
             if Universal.Message.Valid_Next (M_R_Ctx, Universal.Message.F_Data) then
                if Universal.Message.Valid_Length (M_S_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data))) then
                   if Universal.Message.Structural_Valid (M_R_Ctx, Universal.Message.F_Data) then
-                     Universal.Message.Set_Data (M_S_Ctx, Universal.Message.Get_Data (M_R_Ctx));
+                     declare
+                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                          (Universal.Message.Has_Buffer (M_R_Ctx)
+                           and then Universal.Message.Structural_Valid (M_R_Ctx, Universal.Message.F_Data)
+                           and then Length >= RFLX_Types.To_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data)));
+                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                          Pre =>
+                            RFLX_Process_Data_Pre (Data'Length)
+                        is
+                        begin
+                           Universal.Message.Get_Data (M_R_Ctx, Data);
+                        end RFLX_Process_Data;
+                        procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+                     begin
+                        RFLX_Universal_Message_Set_Data (M_S_Ctx, RFLX_Types.To_Length (Universal.Message.Field_Size (M_R_Ctx, Universal.Message.F_Data)));
+                     end;
                   else
                      P_Next_State := S_Terminated;
                      return;

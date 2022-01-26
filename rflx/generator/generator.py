@@ -393,7 +393,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_byte_size_function()
         unit += self.__create_message_last_function()
         unit += self.__create_written_last_function()
-        unit += self.__create_message_data_function()
+        unit += self.__create_message_data_procedure()
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
         unit += self.__create_field_size_function(message, scalar_fields, composite_fields)
@@ -435,9 +435,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             message, fields_with_explicit_size, fields_with_implicit_size
         )
         unit += self.__serializer.create_opaque_setter_procedures(message)
-        unit += self.__serializer.create_generic_opaque_setter_procedures(
-            message, fields_with_implicit_size
-        )
+        unit += self.__serializer.create_generic_opaque_setter_procedures(message)
 
         unit += self.__create_switch_procedures(message, sequence_fields)
         unit += self.__create_complete_functions(message, sequence_fields)
@@ -1359,6 +1357,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 SubprogramDeclaration(
                     specification,
                     [
+                        Ghost(),
                         Precondition(
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
@@ -1442,7 +1441,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     specification,
                     [],
                     [
-                        CallStatement("Read", [Call("Read", [Variable("Ctx")])]),
+                        CallStatement(
+                            "Read",
+                            [
+                                Indexed(
+                                    Variable("Ctx.Buffer.all"),
+                                    ValueRange(
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
+                                    ),
+                                )
+                            ],
+                        ),
                     ],
                 )
             ],
@@ -2563,9 +2573,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     @staticmethod
-    def __create_message_data_function() -> UnitPart:
-        specification = FunctionSpecification(
-            "Message_Data", const.TYPES_BYTES, [Parameter(["Ctx"], "Context")]
+    def __create_message_data_procedure() -> UnitPart:
+        specification = ProcedureSpecification(
+            "Message_Data",
+            [Parameter(["Ctx"], "Context"), OutParameter(["Data"], const.TYPES_BYTES)],
         )
 
         return UnitPart(
@@ -2577,25 +2588,34 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Call("Structural_Valid_Message", [Variable("Ctx")]),
-                            )
-                        ),
-                        Postcondition(
-                            Equal(
-                                Length(Result(specification.identifier)),
-                                Call("Byte_Size", [Variable("Ctx")]),
+                                Equal(
+                                    Length("Data"),
+                                    Call(
+                                        "Byte_Size",
+                                        [
+                                            Variable("Ctx"),
+                                        ],
+                                    ),
+                                ),
                             )
                         ),
                     ],
                 ),
             ],
-            private=[
-                ExpressionFunctionDeclaration(
+            [
+                SubprogramBody(
                     specification,
-                    Slice(
-                        Variable("Ctx.Buffer.all"),
-                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                        Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
-                    ),
+                    [],
+                    [
+                        Assignment(
+                            "Data",
+                            Slice(
+                                Variable("Ctx.Buffer.all"),
+                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
+                                Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
+                            ),
+                        )
+                    ],
                 )
             ],
         )

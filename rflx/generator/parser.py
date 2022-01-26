@@ -23,6 +23,7 @@ from rflx.ada import (
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericFunctionInstantiation,
+    Ghost,
     GreaterEqual,
     If,
     IfStatement,
@@ -797,6 +798,7 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification(f),
                     [
+                        Ghost(),
                         Precondition(
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),

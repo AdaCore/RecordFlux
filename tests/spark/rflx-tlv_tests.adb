@@ -71,7 +71,12 @@ package body RFLX.TLV_Tests is
                     .. RFLX_Builtin_Types.Index (RFLX_Builtin_Types.Length (Value'First)
                       + RFLX_Types.To_Length (TLV.Message.Field_Size (Context, TLV.Message.F_Value)) - 1)));
                Assert (Value, (1, 2, 3, 4), "Unexpected Value");
-               Assert (TLV.Message.Get_Value (Context), (1, 2, 3, 4), "Unexpected Value returned by function");
+               declare
+                  Data : RFLX_Types.Bytes := (0, 0, 0, 0);
+               begin
+                  TLV.Message.Get_Value (Context, Data);
+                  Assert (Data, (1, 2, 3, 4), "Unexpected Value returned by function");
+               end;
             end if;
          end if;
       end if;
@@ -201,7 +206,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Set_Tag (Context, TLV.Msg_Data);
       TLV.Message.Set_Length (Context, 4);
       Data := (1, 2, 3, 4);
-      Set_Value (Context);
+      Set_Value (Context, Data'Length);
 
       Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");

@@ -174,6 +174,7 @@ is
        and then Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
+     Ghost,
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
@@ -242,12 +243,11 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes with
+   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx),
-     Post =>
-       Message_Data'Result'Length = Byte_Size (Ctx);
+       and then Structural_Valid_Message (Ctx)
+       and then Data'Length = Byte_Size (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -366,6 +366,7 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
+     Ghost,
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Payload)
@@ -632,6 +633,36 @@ is
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
        and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old;
 
+   generic
+      with procedure Process_Payload (Payload : out RFLX_Types.Bytes);
+      with function Process_Data_Pre (Length : RFLX_Types.Length) return Boolean;
+   procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Payload)
+       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
+       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
+       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
+       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
+       and then Valid_Length (Ctx, F_Payload, Length)
+       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
+       and then Process_Data_Pre (Length),
+     Post =>
+       Has_Buffer (Ctx)
+       and Structural_Valid (Ctx, F_Payload)
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
+       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old;
+
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
@@ -877,9 +908,6 @@ private
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
-
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes is
-     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

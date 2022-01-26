@@ -45,8 +45,11 @@ is
       if Universal.Message.Structural_Valid (Message_Ctx, Universal.Message.F_Data) then
          declare
             Fixed_Size_Message : Fixed_Size.Simple_Message.Structure;
+            RFLX_Create_Message_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+            RFLX_Create_Message_Arg_1_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Data)) + 1;
          begin
-            Create_Message (Fixed_Size_Message, Message_Type, Universal.Message.Get_Data (Message_Ctx));
+            Universal.Message.Get_Data (Message_Ctx, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2));
+            Create_Message (Fixed_Size_Message, Message_Type, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2));
             Fixed_Size.Simple_Message.To_Context (Fixed_Size_Message, Fixed_Size_Message_Ctx);
          end;
       else

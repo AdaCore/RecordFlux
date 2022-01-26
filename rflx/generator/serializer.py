@@ -779,14 +779,11 @@ class SerializerGenerator:
             ],
         )
 
-    def create_generic_opaque_setter_procedures(
-        self,
-        message: Message,
-        fields_with_implicit_size: List[Field],
-    ) -> UnitPart:
+    def create_generic_opaque_setter_procedures(self, message: Message) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
-                f"Generic_Set_{field.name}", [InOutParameter(["Ctx"], "Context")]
+                f"Generic_Set_{field.name}",
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_LENGTH)],
             )
 
         def formal_parameters(field: Field) -> List[FormalSubprogramDeclaration]:
@@ -801,7 +798,7 @@ class SerializerGenerator:
                 ),
                 FormalSubprogramDeclaration(
                     FunctionSpecification(
-                        "Valid_Length",
+                        "Process_Data_Pre",
                         "Boolean",
                         [Parameter(["Length"], const.TYPES_LENGTH)],
                     )
@@ -820,18 +817,30 @@ class SerializerGenerator:
                                 Call(
                                     "Valid_Length",
                                     [
-                                        Call(
-                                            const.TYPES_TO_LENGTH,
-                                            [
-                                                Call(
-                                                    "Field_Size",
-                                                    [
-                                                        Variable("Ctx"),
-                                                        Variable(f.affixed_name),
-                                                    ],
-                                                ),
-                                            ],
-                                        ),
+                                        Variable("Ctx"),
+                                        Variable(f.affixed_name),
+                                        Variable("Length"),
+                                    ],
+                                ),
+                                GreaterEqual(
+                                    Call(
+                                        const.TYPES_TO_LENGTH,
+                                        [
+                                            Call(
+                                                "Available_Space",
+                                                [
+                                                    Variable("Ctx"),
+                                                    Variable(f.affixed_name),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                    Variable("Length"),
+                                ),
+                                Call(
+                                    "Process_Data_Pre",
+                                    [
+                                        Variable("Length"),
                                     ],
                                 ),
                             )
@@ -846,14 +855,39 @@ class SerializerGenerator:
                     formal_parameters(f),
                 )
                 for f, t in message.field_types.items()
-                if isinstance(t, Opaque) and f not in fields_with_implicit_size
+                if isinstance(t, Opaque)
             ],
             [
                 SubprogramBody(
                     specification(f),
                     [
-                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        *self.__field_byte_location_declarations(),
+                        ObjectDeclaration(
+                            ["First"],
+                            const.TYPES_BIT_INDEX,
+                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(
+                            ["Buffer_First"],
+                            const.TYPES_INDEX,
+                            Call(const.TYPES_TO_INDEX, [Variable("First")]),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(
+                            ["Buffer_Last"],
+                            const.TYPES_INDEX,
+                            Call(
+                                const.TYPES_TO_INDEX,
+                                [
+                                    Add(
+                                        Variable("First"),
+                                        Call(const.TYPES_TO_BIT_LENGTH, [Variable("Length")]),
+                                        -Number(1),
+                                    )
+                                ],
+                            ),
+                            constant=True,
+                        ),
                     ],
                     [
                         CallStatement(
@@ -870,22 +904,13 @@ class SerializerGenerator:
                             f"Initialize_{f.name}_Private",
                             [
                                 Variable("Ctx"),
-                                Call(
-                                    const.TYPES_LENGTH,
-                                    [
-                                        Add(
-                                            Variable("Buffer_Last"),
-                                            -Variable("Buffer_First"),
-                                            Number(1),
-                                        ),
-                                    ],
-                                ),
+                                Variable("Length"),
                             ],
                         ),
                     ],
                 )
                 for f, t in message.field_types.items()
-                if isinstance(t, Opaque) and f not in fields_with_implicit_size
+                if isinstance(t, Opaque)
             ],
         )
 

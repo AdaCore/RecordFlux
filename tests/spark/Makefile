@@ -16,12 +16,15 @@ endif
 .PHONY: test test_optimized prove prove_cvc4 clean
 
 test: $(test_files)
-	gprbuild -P$(project) -Xtest=$(TEST) -Xgnat=$(GNAT)
+	gprbuild -P$(project) -Xtest=$(TEST) -Xgnat=$(GNAT) -Xmode=asserts_enabled
 	cd ../.. && $(test_bin)
 
 test_optimized: $(test_files)
-	gprbuild -P$(project) -Xtype=optimized -Xgnat=$(GNAT)
+	gprbuild -P$(project) -Xgnat=$(GNAT) -Xmode=optimized
 	cd ../.. && $(test_bin)
+
+build_strict: $(test_files)
+	gprbuild -P$(project) -Xgnat=$(GNAT) -Xmode=strict
 
 prove: $(proof_sessions) $(test_files)
 	gnatprove -P$(project) -Xtest=$(TEST) --memcached-server=localhost:11211 $(GNATPROVE_ARGS)

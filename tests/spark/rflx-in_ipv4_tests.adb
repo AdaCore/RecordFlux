@@ -183,7 +183,7 @@ package body RFLX.In_IPv4_Tests is
             pragma Assert (UDP.Datagram.Get_Length (UDP_Datagram_Context) = 26);
             pragma Assert (UDP.Datagram.Field_First (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 337);
             pragma Assert (UDP.Datagram.Field_Size (UDP_Datagram_Context, UDP.Datagram.F_Payload) = 144);
-            Set_Payload (UDP_Datagram_Context);
+            Set_Payload (UDP_Datagram_Context, 18);
 
             --  WORKAROUND: Componolit/Workarounds#32
             Message_Last := UDP.Datagram.Message_Last (UDP_Datagram_Context);

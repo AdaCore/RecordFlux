@@ -90,7 +90,7 @@ package body RFLX.Derivation_Tests is
       Derivation.Message.Set_Tag (Context, TLV.Msg_Data);
       Derivation.Message.Set_Length (Context, 4);
       Data := (0, 0, 0, 0);
-      Set_Value (Context);
+      Set_Value (Context, Data'Length);
 
       Assert (Derivation.Message.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not Derivation.Message.Valid_Message (Context), "Valid message");

@@ -166,6 +166,7 @@ is
        and then Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
+     Ghost,
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
@@ -234,12 +235,11 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes with
+   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx),
-     Post =>
-       Message_Data'Result'Length = Byte_Size (Ctx);
+       and then Structural_Valid_Message (Ctx)
+       and then Data'Length = Byte_Size (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -342,6 +342,7 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Get_Value (Ctx : Context) return RFLX_Types.Bytes with
+     Ghost,
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Value)
@@ -490,8 +491,8 @@ is
 
    generic
       with procedure Process_Value (Value : out RFLX_Types.Bytes);
-      with function Valid_Length (Length : RFLX_Types.Length) return Boolean;
-   procedure Generic_Set_Value (Ctx : in out Context) with
+      with function Process_Data_Pre (Length : RFLX_Types.Length) return Boolean;
+   procedure Generic_Set_Value (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -500,7 +501,9 @@ is
        and then Field_First (Ctx, F_Value) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Value) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Value) mod RFLX_Types.Byte'Size = 0
-       and then Valid_Length (RFLX_Types.To_Length (Field_Size (Ctx, F_Value))),
+       and then Valid_Length (Ctx, F_Value, Length)
+       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Value)) >= Length
+       and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)
@@ -659,9 +662,6 @@ private
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
-
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes is
-     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

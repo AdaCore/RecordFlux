@@ -48,7 +48,7 @@ is
 
    procedure Generic_Read (Ctx : Context) is
    begin
-      Read (Read (Ctx));
+      Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
    end Generic_Read;
 
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
@@ -70,6 +70,11 @@ is
           0
        else
           RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Verified_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
+
+   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
+   begin
+      Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
+   end Message_Data;
 
    pragma Warnings (Off, "precondition is always False");
 

@@ -93,11 +93,12 @@ def assert_compilable_code(
     tmp_path: pathlib.Path,
     main: str = None,
     prefix: str = None,
+    mode: str = "strict",
 ) -> None:
     _create_files(tmp_path, model, integration, main, prefix)
 
     p = subprocess.run(
-        ["gprbuild", "-Ptest", f"-Xgnat={os.getenv('GNAT', '')}"],
+        ["gprbuild", "-Ptest", f"-Xmode={mode}", f"-Xgnat={os.getenv('GNAT', '')}"],
         cwd=tmp_path,
         check=False,
         stderr=subprocess.PIPE,
@@ -111,7 +112,7 @@ def assert_compilable_code(
 def assert_executable_code(
     model: Model, integration: Integration, tmp_path: pathlib.Path, main: str, prefix: str = None
 ) -> str:
-    assert_compilable_code(model, integration, tmp_path, main, prefix)
+    assert_compilable_code(model, integration, tmp_path, main, prefix, mode="asserts_enabled")
 
     p = subprocess.run(
         ["./" + main.split(".")[0]],
@@ -171,17 +172,27 @@ def _create_files(
     prefix: str = None,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
+    shutil.copy("defaults.adc", tmp_path)
     main = f'"{main}"' if main else ""
     (tmp_path / "test.gpr").write_text(
         multilinestr(
             f"""with "defaults";
 
                project Test is
+                  type Build_Mode is ("strict", "asserts_enabled");
+                  Mode : Build_Mode := external ("mode", "strict");
+
                   for Source_Dirs use (".");
                   for Main use ({main});
 
                   package Builder is
                      for Default_Switches ("Ada") use Defaults.Builder_Switches;
+                     case Mode is
+                        when "strict" =>
+                           for Global_Configuration_Pragmas use "defaults.adc";
+                        when others =>
+                           null;
+                     end case;
                   end Builder;
 
                   package Compiler is
@@ -287,29 +298,33 @@ def session_main(
         ],
     )
 
-    image_function = ada.ExpressionFunctionDeclaration(
-        ada.FunctionSpecification("Image", "String", [ada.Parameter(["Chan"], "Session.Channel")]),
-        ada.Case(
-            ada.Variable("Chan"),
-            [
-                (ada.Variable(f"Session.C_{channel}"), ada.String(channel))
-                for channel in sorted({*input_channels.keys(), *output_channels})
-            ],
-        ),
-    )
-
     print_procedure = ada.SubprogramBody(
         ada.ProcedureSpecification(
             "Print",
             [
                 ada.Parameter(["Prefix"], "String"),
+                ada.Parameter(["Chan"], "Session.Channel"),
                 ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES),
             ],
         ),
         [],
         [
             ada.CallStatement(
-                "Ada.Text_IO.Put", [ada.Concatenation(ada.Variable("Prefix"), ada.String(":"))]
+                "Ada.Text_IO.Put",
+                [
+                    ada.Concatenation(
+                        ada.Variable("Prefix"),
+                        ada.String(" "),
+                        ada.Case(
+                            ada.Variable("Chan"),
+                            [
+                                (ada.Variable(f"Session.C_{channel}"), ada.String(channel))
+                                for channel in sorted({*input_channels.keys(), *output_channels})
+                            ],
+                        ),
+                        ada.String(":"),
+                    )
+                ],
             ),
             ada.ForOf(
                 "B",
@@ -319,77 +334,6 @@ def session_main(
                 ],
             ),
             ada.CallStatement("Ada.Text_IO.New_Line"),
-        ],
-    )
-
-    next_message_function = ada.SubprogramBody(
-        ada.FunctionSpecification(
-            "Next_Message",
-            "RFLX" * const.TYPES_BYTES,
-            [
-                ada.Parameter(["Chan"], "Session.Channel"),
-            ],
-        ),
-        [
-            *(
-                [ada.Pragma("Unreferenced", [ada.Variable("Chan")])]
-                if sum(len(message) for message in input_channels.values()) == 0
-                else []
-            ),
-            *([ada.UseTypeClause("Session.Channel")] if len(input_channels) > 1 else []),
-            ada.ObjectDeclaration(
-                ["None"],
-                ada.Slice(
-                    ada.Variable("RFLX" * const.TYPES_BYTES),
-                    ada.Number(1),
-                    ada.Number(0),
-                ),
-                ada.NamedAggregate(("others", ada.Number(0))),
-                constant=True,
-            ),
-            ada.ObjectDeclaration(
-                ["Message"],
-                "RFLX" * const.TYPES_BYTES,
-                ada.If(
-                    [
-                        (
-                            ada.And(
-                                *(
-                                    [
-                                        ada.Equal(
-                                            ada.Variable("Chan"),
-                                            ada.Variable(f"Session.C_{channel}"),
-                                        )
-                                    ]
-                                    if len(input_channels) > 1
-                                    else []
-                                ),
-                                ada.Equal(
-                                    ada.Call("Written_Messages", [ada.Variable("Chan")]),
-                                    ada.Number(i),
-                                ),
-                            ),
-                            ada.Aggregate(*[ada.Number(b) for b in message])
-                            if len(message) > 1
-                            else ada.NamedAggregate(
-                                *[
-                                    (
-                                        ada.First("RFLX" * const.TYPES_INDEX),
-                                        ada.Number(message[0]),
-                                    )
-                                ]
-                            ),
-                        )
-                        for channel, messages in input_channels.items()
-                        for i, message in enumerate(messages)
-                    ],
-                    ada.Variable("None"),
-                ),
-                constant=True,
-            ),
-        ],
-        [
-            ada.ReturnStatement(ada.Variable("Message")),
         ],
     )
 
@@ -451,10 +395,8 @@ def session_main(
                             ada.CallStatement(
                                 "Print",
                                 [
-                                    ada.Concatenation(
-                                        ada.String("Read "),
-                                        ada.Call("Image", [ada.Variable("Chan")]),
-                                    ),
+                                    ada.String("Read"),
+                                    ada.Variable("Chan"),
                                     ada.Slice(
                                         ada.Variable("Buffer"),
                                         ada.First("Buffer"),
@@ -514,10 +456,55 @@ def session_main(
         ),
         [
             ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
+            *([ada.UseTypeClause("Session.Channel")] if len(input_channels) > 1 else []),
+            ada.ObjectDeclaration(
+                ["None"],
+                ada.Slice(
+                    ada.Variable("RFLX" * const.TYPES_BYTES),
+                    ada.Number(1),
+                    ada.Number(0),
+                ),
+                ada.NamedAggregate(("others", ada.Number(0))),
+                constant=True,
+            ),
             ada.ObjectDeclaration(
                 ["Message"],
-                ada.Variable("RFLX" * const.TYPES_BYTES),
-                ada.Call("Next_Message", [ada.Variable("Chan")]),
+                "RFLX" * const.TYPES_BYTES,
+                ada.If(
+                    [
+                        (
+                            ada.And(
+                                *(
+                                    [
+                                        ada.Equal(
+                                            ada.Variable("Chan"),
+                                            ada.Variable(f"Session.C_{channel}"),
+                                        )
+                                    ]
+                                    if len(input_channels) > 1
+                                    else []
+                                ),
+                                ada.Equal(
+                                    ada.Call("Written_Messages", [ada.Variable("Chan")]),
+                                    ada.Number(i),
+                                ),
+                            ),
+                            ada.Aggregate(*[ada.Number(b) for b in message])
+                            if len(message) > 1
+                            else ada.NamedAggregate(
+                                *[
+                                    (
+                                        ada.First("RFLX" * const.TYPES_INDEX),
+                                        ada.Number(message[0]),
+                                    )
+                                ]
+                            ),
+                        )
+                        for channel, messages in input_channels.items()
+                        for i, message in enumerate(messages)
+                    ],
+                    ada.Variable("None"),
+                ),
                 constant=True,
             ),
         ],
@@ -539,10 +526,8 @@ def session_main(
                             ada.CallStatement(
                                 "Print",
                                 [
-                                    ada.Concatenation(
-                                        ada.String("Write "),
-                                        ada.Call("Image", [ada.Variable("Chan")]),
-                                    ),
+                                    ada.String("Write"),
+                                    ada.Variable("Chan"),
                                     ada.Variable("Message"),
                                 ],
                             ),
@@ -614,7 +599,6 @@ def session_main(
         ada.PackageBody(
             "Lib",
             [
-                image_function,
                 print_procedure,
                 *([read_procedure] if output_channels else []),
                 *(
@@ -625,7 +609,6 @@ def session_main(
                             "Number_Per_Channel",
                             ada.NamedAggregate(("others", ada.Number(0))),
                         ),
-                        next_message_function,
                         write_procedure,
                     ]
                     if input_channels

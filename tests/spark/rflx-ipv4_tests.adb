@@ -324,7 +324,7 @@ package body RFLX.IPv4_Tests is
       IPv4.Packet.Set_Destination (Context, 16#7f000001#);
       IPv4.Packet.Set_Options_Empty (Context);
       Data := (0, 53, 0, 53, 0, 24, 1, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-      Set_Payload (Context);
+      Set_Payload (Context, 24);
 
       Assert (IPv4.Packet.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not IPv4.Packet.Valid_Message (Context), "Valid message");
@@ -360,7 +360,7 @@ package body RFLX.IPv4_Tests is
       IPv4.Option.Set_Option_Number (Context, 4);
       IPv4.Option.Set_Option_Length (Context, 3);
       Data := (42, others => 0);
-      Set_Option_Data (Context);
+      Set_Option_Data (Context, 1);
 
       Assert (IPv4.Option.Structural_Valid_Message (Context), "Structural invalid message");
       Assert (not IPv4.Option.Valid_Message (Context), "Valid message");
