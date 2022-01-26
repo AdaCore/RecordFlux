@@ -78,12 +78,14 @@ test_apps:
 	$(MAKE) -C examples/apps/dhcp_client test
 
 test_compilation:
-	$(MAKE) -C tests/spark build_strict
+	test "${GNAT}" = "fsf" || $(MAKE) -C tests/spark build_strict
+	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
 	python3 -m pytest -n$(shell nproc) -vv -m "compilation and not verification" tests
 	$(MAKE) -C tests/spark test NOPREFIX=1
+	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
 
 test_specs:
