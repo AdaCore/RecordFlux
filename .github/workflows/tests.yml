@@ -239,7 +239,6 @@ jobs:
         gnat-distrib:
           - "community"
         gnat-version:
-          - "2019"
           - "2020"
           - "2021"
         include:

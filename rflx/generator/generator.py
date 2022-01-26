@@ -3682,27 +3682,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         if not null_sdu:
             unit += UnitPart(
                 [
-                    # ISSUE: Componolit/Workarounds#45
-                    # Suppress warning for backward compatibility to GNAT Community 2019.
-                    Pragma(
-                        "Warnings",
-                        [
-                            Variable("Off"),
-                            String(
-                                '"Field_Cursors" is already use-visible through package use clause'
-                            ),
-                        ],
-                    ),
                     UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
-                    Pragma(
-                        "Warnings",
-                        [
-                            Variable("On"),
-                            String(
-                                '"Field_Cursors" is already use-visible through package use clause'
-                            ),
-                        ],
-                    ),
                 ]
             )
             unit += self.__create_switch_procedure(refinement, condition_fields)

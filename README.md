@@ -270,7 +270,7 @@ if parse_message(b"\x01\x00\x04\x01\x02\x03\x04") != create_message():
 As a prerequisite, the following dependencies need to be installed:
 
 - For compiling the generated code, one of the following versions of GNAT is required:
-    - [GNAT Community](https://www.adacore.com/download) 2019, 2020 or 2021
+    - [GNAT Community](https://www.adacore.com/download) 2020 or 2021
     - [GNAT Pro](https://www.adacore.com/gnatpro) 20.2 or 21.2
     - [FSF GNAT](https://www.gnu.org/software/gnat/) 11.2 [![GNAT Alire Crate](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/gnat_native.json)](https://alire.ada.dev/crates/gnat_native.html)
 - [GNATcoll iconv binding](https://github.com/AdaCore/gnatcoll-bindings/tree/master/iconv) [![GNATcoll iconv binding Alire Crate](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/gnatcoll_iconv.json)](https://alire.ada.dev/crates/gnatcoll_iconv.html) must be installed separately if FSF GNAT is used.
