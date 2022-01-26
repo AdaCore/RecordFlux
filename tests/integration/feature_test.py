@@ -119,9 +119,6 @@ def test_equality(feature: str, tmp_path: Path) -> None:
 @pytest.mark.compilation
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
-    config = get_config(feature)
-    if config.sequence:
-        pytest.skip()
     model, integration = create_model(feature)
     assert_compilable_code(model, integration, tmp_path)
 

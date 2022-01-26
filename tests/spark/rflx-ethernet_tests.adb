@@ -301,6 +301,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
+      use type RFLX_Types.Length;
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_ipv4_udp.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
@@ -319,8 +320,26 @@ package body RFLX.Ethernet_Tests is
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Byte_Size (Context)'Img, Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Ethernet.Frame.Read (Context), Expected.all,
-              "Invalid binary representation");
+
+      declare
+         Data : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 2000 - 1) := (others => 0);
+         Length : constant RFLX_Types.Length := Ethernet.Frame.Byte_Size (Context);
+         First  : constant RFLX_Types.Index := Data'First;
+         Last   : constant RFLX_Types.Index := Data'First + RFLX_Types.Index (Length + 1) - 2;
+         function Read_Pre (Buffer : RFLX_Types.Bytes) return Boolean is
+            (Data'Length >= Length and Buffer'Length = Length);
+         procedure Read (Buffer : RFLX_Types.Bytes) with
+            Pre =>
+               Read_Pre (Buffer)
+         is
+         begin
+            Data (First .. Last) := Buffer;
+         end Read;
+         procedure Ethernet_Frame_Read is new Ethernet.Frame.Generic_Read (Read, Read_Pre);
+      begin
+         Ethernet_Frame_Read (Context);
+         Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
+      end;
 
       --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
@@ -335,6 +354,7 @@ package body RFLX.Ethernet_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
+      use type RFLX_Types.Length;
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_802.3.raw");
       Buffer   : RFLX_Builtin_Types.Bytes_Ptr :=
         new RFLX_Builtin_Types.Bytes'(RFLX_Builtin_Types.Index'First .. RFLX_Builtin_Types.Index'First + 2000 - 1 => 0);
@@ -352,8 +372,26 @@ package body RFLX.Ethernet_Tests is
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Byte_Size (Context)'Img, Expected'Length'Img,
               "Invalid buffer length");
-      Assert (Ethernet.Frame.Read (Context), Expected.all,
-              "Invalid binary representation");
+
+      declare
+         Data : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 2000 - 1) := (others => 0);
+         Length : constant RFLX_Types.Length := Ethernet.Frame.Byte_Size (Context);
+         First  : constant RFLX_Types.Index := Data'First;
+         Last   : constant RFLX_Types.Index := Data'First + RFLX_Types.Index (Length + 1) - 2;
+         function Read_Pre (Buffer : RFLX_Types.Bytes) return Boolean is
+            (Data'Length >= Length and Buffer'Length = Length);
+         procedure Read (Buffer : RFLX_Types.Bytes) with
+            Pre =>
+               Read_Pre (Buffer)
+         is
+         begin
+            Data (First .. Last) := Buffer;
+         end Read;
+         procedure Ethernet_Frame_Read is new Ethernet.Frame.Generic_Read (Read, Read_Pre);
+      begin
+         Ethernet_Frame_Read (Context);
+         Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
+      end;
 
       --  WORKAROUND: Componolit/Workarounds#32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");

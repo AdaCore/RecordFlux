@@ -164,6 +164,7 @@ is
        and then Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
+     Ghost,
      Pre =>
        Has_Buffer (Ctx)
        and then Structural_Valid_Message (Ctx);
@@ -232,12 +233,11 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes with
+   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx),
-     Post =>
-       Message_Data'Result'Length = Byte_Size (Ctx);
+       and then Structural_Valid_Message (Ctx)
+       and then Data'Length = Byte_Size (Ctx);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
@@ -519,9 +519,6 @@ private
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
-
-   function Message_Data (Ctx : Context) return RFLX_Types.Bytes is
-     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

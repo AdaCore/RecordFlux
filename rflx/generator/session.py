@@ -2330,7 +2330,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ),
             )
 
-        for a in call_expr.args:
+        arguments: list[expr.Expr] = []
+
+        for i, a in enumerate(call_expr.args):
             if not isinstance(a, (expr.Number, expr.Variable, expr.Selected, expr.String)) and not (
                 isinstance(a, expr.Opaque)
                 and isinstance(a.prefix, expr.Variable)
@@ -2355,13 +2357,85 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         ],
                     ),
                 )
+                arguments.append(a)
+            elif isinstance(a, expr.Selected) and a.type_ == rty.OPAQUE:
+                assert isinstance(a.prefix, expr.Variable)
+                assert isinstance(a.prefix.type_, rty.Message)
+                assert isinstance(a.type_, rty.Sequence)
+                argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
+                argument_length = f"{argument_name}_Length"
+                argument = expr.Slice(
+                    expr.Variable(argument_name),
+                    expr.First(const.TYPES_INDEX),
+                    expr.Add(
+                        expr.First(const.TYPES_INDEX),
+                        expr.Call(
+                            const.TYPES_INDEX,
+                            [
+                                expr.Variable(argument_length),
+                            ],
+                        ),
+                        -expr.Number(2),
+                    ),
+                )
+                type_identifier = self._ada_type(a.prefix.type_.identifier)
+                local_declarations.extend(
+                    [
+                        # ISSUE: Componolit/RecordFlux#917
+                        # The use of intermediate buffers should be removed.
+                        ObjectDeclaration(
+                            [argument_name],
+                            Slice(
+                                Variable(const.TYPES_BYTES),
+                                First(const.TYPES_INDEX),
+                                Add(
+                                    First(const.TYPES_INDEX),
+                                    Number(4095),
+                                ),
+                            ),
+                            NamedAggregate(("others", Number(0))),
+                        ),
+                        ObjectDeclaration(
+                            [argument_length],
+                            const.TYPES_LENGTH,
+                            Add(
+                                Call(
+                                    const.TYPES_TO_LENGTH,
+                                    [
+                                        Call(
+                                            type_identifier * "Field_Size",
+                                            [
+                                                Variable(context_id(a.prefix.identifier)),
+                                                Variable(type_identifier * f"F_{a.selector}"),
+                                            ],
+                                        ),
+                                    ],
+                                ),
+                                Number(1),
+                            ),
+                            constant=True,
+                        ),
+                    ]
+                )
+                pre_call.append(
+                    CallStatement(
+                        type_identifier * f"Get_{a.selector}",
+                        [
+                            Variable(context_id(a.prefix.identifier)),
+                            argument.ada_expr(),
+                        ],
+                    ),
+                )
+                arguments.append(argument)
+            else:
+                arguments.append(a)
 
         call = [
             CallStatement(
                 ID(call_expr.identifier),
                 [
                     Variable(ID(target)),
-                    *[a.substituted(self._substitution()).ada_expr() for a in call_expr.args],
+                    *[a.substituted(self._substitution()).ada_expr() for a in arguments],
                 ],
             )
         ]
@@ -3049,6 +3123,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Variable(message_type * f"F_{v.selector}"),
                         ],
                     )
+                elif isinstance(v, expr.Opaque):
+                    size = expr.Size(v.prefix).substituted(self._substitution()).ada_expr()
                 else:
                     size = Size(v.substituted(self._substitution()).ada_expr())
                 statements = self._ensure(
@@ -3105,7 +3181,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_type = ID(v.prefix.type_.identifier)
                 message_context = context_id(v.prefix.identifier)
                 target_field_type = message_aggregate.type_.types[f]
-                assert isinstance(target_field_type, (rty.Integer, rty.Enumeration, rty.Sequence))
                 statements = self._ensure(
                     statements,
                     Call(
@@ -3119,22 +3194,86 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     f'access to invalid message field in "{v}"',
                     exception_handler,
                 )
-                get_field_value = self._convert_type(
-                    expr.Call(message_type * f"Get_{v.selector}", [expr.Variable(message_context)]),
-                    target_field_type,
-                    v.type_,
-                ).ada_expr()
-                statements.extend(
-                    [
-                        CallStatement(
-                            target_type * f"Set_{f}",
-                            [
-                                Variable(target_context),
-                                get_field_value,
-                            ],
+                if isinstance(target_field_type, (rty.Integer, rty.Enumeration)):
+                    get_field_value = self._convert_type(
+                        expr.Call(
+                            message_type * f"Get_{v.selector}", [expr.Variable(message_context)]
                         ),
-                    ]
-                )
+                        target_field_type,
+                        v.type_,
+                    ).ada_expr()
+                    statements.extend(
+                        [
+                            CallStatement(
+                                target_type * f"Set_{f}",
+                                [
+                                    Variable(target_context),
+                                    get_field_value,
+                                ],
+                            ),
+                        ]
+                    )
+                else:
+                    assert target_field_type == rty.OPAQUE
+                    self._session_context.used_types_body.append(const.TYPES_LENGTH)
+                    statements.extend(
+                        [
+                            self._set_opaque_field(
+                                target_type,
+                                target_context,
+                                ID(f),
+                                get_preconditions=AndThen(
+                                    Call(
+                                        ID(message_type * "Has_Buffer"),
+                                        [Variable(message_context)],
+                                    ),
+                                    Call(
+                                        ID(message_type * "Structural_Valid"),
+                                        [
+                                            Variable(message_context),
+                                            Variable(message_type * f"F_{v.selector}"),
+                                        ],
+                                    ),
+                                    GreaterEqual(
+                                        Variable("Length"),
+                                        Call(
+                                            const.TYPES_TO_LENGTH,
+                                            [
+                                                Call(
+                                                    message_type * "Field_Size",
+                                                    [
+                                                        Variable(message_context),
+                                                        Variable(message_type * f"F_{v.selector}"),
+                                                    ],
+                                                )
+                                            ],
+                                        ),
+                                    ),
+                                ),
+                                get_statements=[
+                                    CallStatement(
+                                        message_type * f"Get_{v.selector}",
+                                        [
+                                            Variable(message_context),
+                                            Variable("Data"),
+                                        ],
+                                    ),
+                                ],
+                                length=Call(
+                                    const.TYPES_TO_LENGTH,
+                                    [
+                                        Call(
+                                            message_type * "Field_Size",
+                                            [
+                                                Variable(message_context),
+                                                Variable(message_type * f"F_{v.selector}"),
+                                            ],
+                                        )
+                                    ],
+                                ),
+                            ),
+                        ]
+                    )
             elif isinstance(v, expr.Opaque) and isinstance(v.prefix, expr.Variable):
                 assert v.type_ == rty.OPAQUE
                 assert isinstance(v.prefix.type_, rty.Message)
@@ -3142,18 +3281,97 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_context = context_id(v.prefix.identifier)
                 statements.extend(
                     [
-                        CallStatement(
-                            target_type * f"Set_{f}",
-                            [
-                                Variable(target_context),
-                                Call(message_type * "Message_Data", [Variable(message_context)]),
+                        self._set_opaque_field(
+                            target_type,
+                            target_context,
+                            ID(f),
+                            get_preconditions=AndThen(
+                                Call(
+                                    ID(message_type * "Has_Buffer"),
+                                    [Variable(message_context)],
+                                ),
+                                Call(
+                                    ID(message_type * "Structural_Valid_Message"),
+                                    [
+                                        Variable(message_context),
+                                    ],
+                                ),
+                                GreaterEqual(
+                                    Variable("Length"),
+                                    Call(
+                                        message_type * "Byte_Size",
+                                        [
+                                            Variable(message_context),
+                                        ],
+                                    ),
+                                ),
+                            ),
+                            get_statements=[
+                                CallStatement(
+                                    message_type * "Message_Data",
+                                    [
+                                        Variable(message_context),
+                                        Variable("Data"),
+                                    ],
+                                ),
                             ],
+                            length=Call(
+                                message_type * "Byte_Size",
+                                [
+                                    Variable(message_context),
+                                ],
+                            ),
                         ),
                     ]
                 )
             else:
                 _unsupported_expression(v, "in message aggregate")
         return result
+
+    @staticmethod
+    def _set_opaque_field(
+        target_type: ID,
+        target_context: ID,
+        field: ID,
+        get_preconditions: Expr,
+        get_statements: Sequence[Statement],
+        length: Expr,
+    ) -> Declare:
+        return Declare(
+            [
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        "RFLX_Process_Data_Pre",
+                        "Boolean",
+                        [Parameter(["Length"], const.TYPES_LENGTH)],
+                    ),
+                    get_preconditions,
+                ),
+                SubprogramBody(
+                    ProcedureSpecification(
+                        "RFLX_Process_Data",
+                        [OutParameter(["Data"], const.TYPES_BYTES)],
+                    ),
+                    [],
+                    get_statements,
+                    aspects=[Precondition(Call("RFLX_Process_Data_Pre", [Length("Data")]))],
+                ),
+                GenericProcedureInstantiation(
+                    "RFLX_" + (target_type * f"Set_{field}").flat,
+                    ProcedureSpecification(target_type * f"Generic_Set_{field}"),
+                    ["RFLX_Process_Data", "RFLX_Process_Data_Pre"],
+                ),
+            ],
+            [
+                CallStatement(
+                    "RFLX_" + (target_type * f"Set_{field}").flat,
+                    [
+                        Variable(target_context),
+                        length,
+                    ],
+                ),
+            ],
+        )
 
     def _declare_context_buffer(self, identifier: ID, type_: ID) -> List[Declaration]:
         return [

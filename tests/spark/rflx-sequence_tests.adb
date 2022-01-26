@@ -1052,7 +1052,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Inner_Messages.Switch (Sequence_Context, Element_Context);
       Inner_Message.Set_Length (Element_Context, 1);
       Data := (3, 0);
-      Set_Payload (Element_Context);
+      Set_Payload (Element_Context, 1);
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
@@ -1068,7 +1068,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Inner_Messages.Switch (Sequence_Context, Element_Context);
       Inner_Message.Set_Length (Element_Context, 2);
       Data := (4, 6);
-      Set_Payload (Element_Context);
+      Set_Payload (Element_Context, 2);
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
 
@@ -1129,7 +1129,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Inner_Messages.Switch (Sequence_Context, Element_Context);
       Inner_Message.Set_Length (Element_Context, 1);
       Data := (3, 0);
-      Set_Payload (Element_Context);
+      Set_Payload (Element_Context, 1);
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
 
@@ -1145,7 +1145,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Inner_Messages.Switch (Sequence_Context, Element_Context);
       Inner_Message.Set_Length (Element_Context, 2);
       Data := (4, 6);
-      Set_Payload (Element_Context);
+      Set_Payload (Element_Context, 2);
 
       Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
 

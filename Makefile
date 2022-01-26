@@ -49,7 +49,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: test_python_coverage test_python_property test_spark test_apps test_specs test_runtime test_installation
+test: test_python_coverage test_python_property test_spark test_apps test_compilation test_specs test_runtime test_installation
 
 test_python:
 	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
@@ -84,6 +84,7 @@ test_apps:
 	$(MAKE) -C examples/apps/dhcp_client test
 
 test_compilation:
+	$(MAKE) -C tests/spark build_strict
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
@@ -98,7 +99,7 @@ test_runtime:
 	$(MAKE) -C build/ada-runtime
 	mkdir -p build/aunit
 	echo "project AUnit is end AUnit;" > build/aunit/aunit.gpr
-	cd tests/spark && gprbuild -Ptest --RTS=../../build/ada-runtime/build/posix/obj -Xtype=unchecked -aP ../../build/aunit
+	cd tests/spark && gprbuild -Ptest --RTS=../../build/ada-runtime/build/posix/obj -Xmode=runtime_compatible -aP ../../build/aunit
 
 test_installation:
 	rm -rf $(build-dir)/venv

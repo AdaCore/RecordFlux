@@ -48,7 +48,7 @@ is
 
    procedure Generic_Read (Ctx : Context) is
    begin
-      Read (Read (Ctx));
+      Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
    end Generic_Read;
 
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
@@ -70,6 +70,11 @@ is
           0
        else
           RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Verified_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
+
+   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
+   begin
+      Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
+   end Message_Data;
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -408,16 +413,13 @@ is
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
    end Set_Value;
 
-   procedure Generic_Set_Value (Ctx : in out Context) is
+   procedure Generic_Set_Value (Ctx : in out Context; Length : RFLX_Types.Length) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Value);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Value);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (First + RFLX_Types.To_Bit_Length (Length) - 1);
    begin
       Process_Value (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-      Initialize_Value_Private (Ctx, RFLX_Types.Length (Buffer_Last - Buffer_First + 1));
+      Initialize_Value_Private (Ctx, Length);
    end Generic_Set_Value;
 
 end RFLX.Derivation.Message;

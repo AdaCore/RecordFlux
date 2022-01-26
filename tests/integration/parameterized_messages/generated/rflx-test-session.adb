@@ -51,7 +51,22 @@ is
             if Test.Message.Valid_Next (M_R_Ctx, Test.Message.F_Data) then
                if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data))) then
                   if Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data) then
-                     Test.Message.Set_Data (M_S_Ctx, Test.Message.Get_Data (M_R_Ctx));
+                     declare
+                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                          (Test.Message.Has_Buffer (M_R_Ctx)
+                           and then Test.Message.Structural_Valid (M_R_Ctx, Test.Message.F_Data)
+                           and then Length >= RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data)));
+                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                          Pre =>
+                            RFLX_Process_Data_Pre (Data'Length)
+                        is
+                        begin
+                           Test.Message.Get_Data (M_R_Ctx, Data);
+                        end RFLX_Process_Data;
+                        procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+                     begin
+                        RFLX_Test_Message_Set_Data (M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (M_R_Ctx, Test.Message.F_Data)));
+                     end;
                      if Test.Message.Valid_Length (M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                         Test.Message.Set_Extension (M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
                      else

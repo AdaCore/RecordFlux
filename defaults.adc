@@ -1,0 +1,2 @@
+pragma Restrictions (No_Elaboration_Code);
+pragma Restrictions (No_Secondary_Stack);
