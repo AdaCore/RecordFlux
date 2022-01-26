@@ -22,9 +22,9 @@ abstract project Defaults is
    GNATA := "-gnata";
 
    case Mode is
-      when "strict" =>
+      when "strict" | "optimized" =>
          GNATA  := "";
-      when "asserts_enabled" | "optimized" | "runtime_compatible" =>
+      when "asserts_enabled" | "runtime_compatible" =>
    end case;
 
    Proof_Switches :=
