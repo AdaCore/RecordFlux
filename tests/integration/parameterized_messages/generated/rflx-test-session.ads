@@ -3,7 +3,6 @@ pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Session_Allocator;
 with RFLX.RFLX_Types;
-with RFLX.Test;
 with RFLX.Test.Message;
 
 package RFLX.Test.Session with

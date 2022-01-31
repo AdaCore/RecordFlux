@@ -7,7 +7,6 @@ with RFLX.Universal;
 with RFLX.Universal.Message;
 with RFLX.Fixed_Size;
 with RFLX.Fixed_Size.Simple_Message;
-with RFLX.Test;
 
 package RFLX.Test.Session with
   SPARK_Mode
