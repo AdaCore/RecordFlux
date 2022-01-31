@@ -957,6 +957,8 @@ class MessageValue(TypeValue):
                         value
                         if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
                         or not (isinstance(field.typeval, ScalarValue))
+                        or len(value) <= 8
+                        or len(value) % 8 != 0
                         else value.swap()
                     )
                     field.typeval.parse(buffer)
@@ -1196,6 +1198,8 @@ class MessageValue(TypeValue):
                 added_bits
                 if self._type.byte_order == ByteOrder.HIGH_ORDER_FIRST
                 or not isinstance(self._fields[field].typeval, ScalarValue)
+                or len(added_bits) <= 8
+                or len(added_bits) % 8 != 0
                 else Bitstring.swap_bitstring(added_bits)
             )
             bits = f"{bits[: field_val.first.value]}{added_bits_adjusted}"
