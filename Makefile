@@ -1,4 +1,5 @@
 VERBOSE ?= @
+TEST_PROCS ?= $(shell nproc)
 
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
@@ -52,13 +53,13 @@ format:
 test: test_python_coverage test_python_property test_apps test_compilation test_specs test_runtime test_installation
 
 test_python:
-	python3 -m pytest -n$(shell nproc) -vv -m "not hypothesis" tests
+	python3 -m pytest -n$(TEST_PROCS) -vv -m "not hypothesis" tests
 
 test_python_unit:
-	python3 -m pytest -n$(shell nproc) -vv tests/unit
+	python3 -m pytest -n$(TEST_PROCS) -vv tests/unit
 
 test_python_integration:
-	python3 -m pytest -n$(shell nproc) -vv tests/integration
+	python3 -m pytest -n$(TEST_PROCS) -vv tests/integration
 
 test_python_property:
 	python3 -m pytest -vv -m "not verification" tests/property
@@ -67,10 +68,10 @@ test_python_property_verification:
 	python3 -m pytest -vv -m "verification" -s tests/property
 
 test_python_optimized:
-	PYTHONOPTIMIZE=1 python3 -m pytest -n$(shell nproc) -vv -m "not verification and not hypothesis" tests
+	PYTHONOPTIMIZE=1 python3 -m pytest -n$(TEST_PROCS) -vv -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
+	python3 -m pytest -n$(TEST_PROCS) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
@@ -83,13 +84,13 @@ test_compilation:
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
-	python3 -m pytest -n$(shell nproc) -vv -m "compilation and not verification" tests
+	python3 -m pytest -n$(TEST_PROCS) -vv -m "compilation and not verification" tests
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
 
 test_specs:
-	cd examples/specs && python3 -m pytest -n$(shell nproc) -vv tests/test_specs.py
+	cd examples/specs && python3 -m pytest -n$(TEST_PROCS) -vv tests/test_specs.py
 
 test_runtime:
 	rm -rf $(build-dir)/ada-runtime
