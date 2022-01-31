@@ -1,0 +1,20 @@
+package Nested_Byte_Order is
+   type Reserved_7 is mod 2 ** 7;
+   type M1 is
+      message
+         R1 : Reserved_7;
+         F1 : Boolean
+            then F2
+               if F1 = True
+            then null
+               if F1 = False;
+         F2 : Opaque
+            with Size => 8;
+      end message;
+
+   type M2 is
+      message
+         M : M1;
+      end message
+         with Byte_Order => Low_Order_First;
+end Nested_Byte_Order;
