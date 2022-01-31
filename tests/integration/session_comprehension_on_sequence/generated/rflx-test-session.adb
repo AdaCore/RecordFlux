@@ -1,17 +1,16 @@
 pragma Restrictions (No_Streams);
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
-with RFLX.Universal;
 with RFLX.Universal.Option;
 with RFLX.Universal.Option_Types;
-with RFLX.RFLX_Types;
-use type RFLX.RFLX_Types.Bit_Length;
-use type RFLX.Universal.Option_Type;
-use type RFLX.Universal.Option_Type_Enum;
 
 package body RFLX.Test.Session with
   SPARK_Mode
 is
+
+   use type RFLX.RFLX_Types.Bit_Length;
+
+   use type RFLX.Universal.Option_Type_Enum;
 
    procedure Start (Ctx : in out Context'Class) with
      Pre =>

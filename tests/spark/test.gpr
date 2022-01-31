@@ -50,7 +50,7 @@ project Test is
       end case;
       case Mode is
          when "strict" | "runtime_compatible" =>
-            for Global_Configuration_Pragmas use "../../defaults.adc";
+            for Global_Configuration_Pragmas use "../../" & Defaults.Global_Configuration_Pragmas;
          when "asserts_enabled" | "optimized" =>
             null;
       end case;

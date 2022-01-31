@@ -5,7 +5,6 @@ with RFLX.Ethernet;
 use RFLX.Ethernet;
 with RFLX.Ethernet.Frame;
 with RFLX.IPv4.Packet;
-use RFLX.IPv4.Packet;
 
 package RFLX.In_Ethernet.Contains with
   SPARK_Mode,

@@ -173,6 +173,7 @@ def _create_files(
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     shutil.copy("defaults.adc", tmp_path)
+    shutil.copy("defaults_backward_compatible.adc", tmp_path)
     main = f'"{main}"' if main else ""
     (tmp_path / "test.gpr").write_text(
         multilinestr(
@@ -189,7 +190,8 @@ def _create_files(
                      for Default_Switches ("Ada") use Defaults.Builder_Switches;
                      case Mode is
                         when "strict" =>
-                           for Global_Configuration_Pragmas use "defaults.adc";
+                           for Global_Configuration_Pragmas use
+                              Defaults.Global_Configuration_Pragmas;
                         when others =>
                            null;
                      end case;

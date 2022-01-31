@@ -3688,7 +3688,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             unit.declaration_context.extend(
                 [
                     WithClause(sdu_identifier),
-                    UsePackageClause(sdu_identifier),
                 ]
             )
 

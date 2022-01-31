@@ -891,7 +891,11 @@ def create_sequence_instantiation(
         element_type_identifier = ada.ID(prefix * element_type.identifier)
         sequence_context = [
             ada.WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
-            ada.WithClause(prefix * element_type_package),
+            *(
+                [ada.WithClause(prefix * element_type_package)]
+                if element_type_package != sequence_type.package
+                else []
+            ),
         ]
         sequence_package = ada.GenericPackageInstantiation(
             ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),

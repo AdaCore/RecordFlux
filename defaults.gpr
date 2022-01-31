@@ -27,6 +27,14 @@ abstract project Defaults is
       when "asserts_enabled" | "runtime_compatible" =>
    end case;
 
+   Global_Configuration_Pragmas := "defaults_backward_compatible.adc";
+
+   case Compiler_Variant is
+      when "pro23.0w-20220202" | "pro23.0" | "pro23.1" | "pro23.2" =>
+         Global_Configuration_Pragmas := "defaults.adc";
+      when others =>
+   end case;
+
    Proof_Switches :=
    (
       "--prover=z3,cvc4,altergo",
@@ -80,9 +88,6 @@ abstract project Defaults is
       --  ISSUE: Componolit/Workarounds#27
       --  "-gnatwh",   --  Activate warnings on hiding.
       "-gnatwt",   --  Activate warnings for tracking of deleted conditional code.
-
-      --  ISSUE: Componolit/RecordFlux#905
-      "-gnatwR",   --  Suppress warnings on redundant constructs.
 
       --  Style Checks
       "-gnaty3",    --  Specify indentation level.
