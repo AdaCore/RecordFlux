@@ -223,7 +223,6 @@ is
 
       LME_Size   : constant Natural := (RME_Offset + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
 
-      Bits : Natural;
       RV : U64;
    begin
 
@@ -261,17 +260,14 @@ is
 
          pragma Assert (RME_Size < Value_Size);
          pragma Assert (Fits_Into (RV, Value_Size - RME_Size));
-         Bits := Value_Size - RME_Size;
 
          --  The inner bytes are fully overwritten.
 
          for I in reverse LME_Index + 1 .. RME_Index - 1
          loop
             Data (I) := Byte'Val (RV mod 2**Byte'Size);
-            RV := Right_Shift (RV, Byte'Size, Bits);
-            Bits := Bits - Byte'Size;
-            pragma Loop_Invariant (Bits =  Value_Size - RME_Size - Natural (RME_Index - I) * Byte'Size
-                                   and then Fits_Into (RV, Bits));
+            RV := Right_Shift (RV, Byte'Size, Value_Size - RME_Size - Natural (RME_Index - I - 1) * Byte'Size);
+            pragma Loop_Invariant (Fits_Into (RV, Value_Size - RME_Size - Natural (RME_Index - I) * Byte'Size));
          end loop;
 
          --  The last byte (LME in network byte order).
