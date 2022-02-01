@@ -1,7 +1,7 @@
 abstract project Defaults is
 
    type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
-   Mode : Build_Mode := external ("mode", "strict");
+   Mode : Build_Mode := external ("mode", "asserts_enabled");
 
    Compiler_Variant := external ("gnat", "");
 
