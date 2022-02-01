@@ -231,19 +231,19 @@ is
       Verify (Ctx, F_Messages);
    end Verify_Message;
 
-   procedure Set_Field_Value (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
+   procedure Set_Field_Value_Length (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then Val.Fld in Field'Range
-       and then Valid_Next (Ctx, Val.Fld)
-       and then Available_Space (Ctx, Val.Fld) >= Field_Size (Ctx, Val.Fld)
+       and then F_Length in Field'Range
+       and then Valid_Next (Ctx, F_Length)
+       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length)
        and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, Val.Fld))),
+                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Length))),
      Post =>
        Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, Val.Fld)
-       and Lst = Field_Last (Ctx, Val.Fld)
+       and Fst = Field_First (Ctx, F_Length)
+       and Lst = Field_Last (Ctx, F_Length)
        and Fst >= Ctx.First
        and Fst <= Lst + 1
        and Lst <= Ctx.Last
@@ -255,8 +255,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Ctx.Cursors = Ctx.Cursors'Old
    is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Val.Fld);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Val.Fld);
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Length);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Length);
       function Buffer_First return RFLX_Types.Index is
         (RFLX_Types.To_Index (First));
       function Buffer_Last return RFLX_Types.Index is
@@ -267,22 +267,15 @@ is
    begin
       Fst := First;
       Lst := Last;
-      case Val.Fld is
-         when F_Initial =>
-            null;
-         when F_Length =>
-            Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-         when F_Messages | F_Final =>
-            null;
-      end case;
-   end Set_Field_Value;
+      Insert (Val.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+   end Set_Field_Value_Length;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is
       Field_Value : constant Field_Dependent_Value := (F_Length, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
    begin
       Reset_Dependent_Fields (Ctx, F_Length);
-      Set_Field_Value (Ctx, Field_Value, First, Last);
+      Set_Field_Value_Length (Ctx, Field_Value, First, Last);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");

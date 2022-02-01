@@ -15,7 +15,6 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
-    CaseStatement,
     Constrained,
     Declaration,
     Div,
@@ -38,7 +37,6 @@ from rflx.ada import (
     Mul,
     NamedAggregate,
     Not,
-    NullStatement,
     Number,
     ObjectDeclaration,
     Old,
@@ -63,7 +61,6 @@ from rflx.ada import (
     ValueRange,
     Variable,
 )
-from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
 from rflx.model import FINAL, ByteOrder, Enumeration, Field, Message, Opaque, Scalar, Sequence, Type
 
@@ -96,7 +93,7 @@ class SerializerGenerator:
             [
                 SubprogramBody(
                     ProcedureSpecification(
-                        "Set_Field_Value",
+                        f"Set_Field_Value_{f.name}",
                         [
                             InOutParameter(["Ctx"], "Context"),
                             Parameter(["Val"], "Field_Dependent_Value"),
@@ -104,46 +101,28 @@ class SerializerGenerator:
                         ],
                     ),
                     [
-                        *common.field_bit_location_declarations(Variable("Val.Fld")),
+                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
                         *common.field_byte_location_declarations(),
-                        *unique(
-                            self.insert_function(common.full_base_type_name(t))
-                            for t in message.field_types.values()
-                            if isinstance(t, Scalar)
-                        ),
+                        self.insert_function(common.full_base_type_name(t)),
                     ],
                     [
                         Assignment("Fst", Variable("First")),
                         Assignment("Lst", Variable("Last")),
-                        CaseStatement(
-                            Variable("Val.Fld"),
+                        CallStatement(
+                            "Insert",
                             [
-                                (
-                                    Variable(f.affixed_name),
-                                    [
-                                        CallStatement(
-                                            "Insert",
-                                            [
-                                                Variable(f"Val.{f.name}_Value"),
-                                                Slice(
-                                                    Variable("Ctx.Buffer.all"),
-                                                    Variable("Buffer_First"),
-                                                    Variable("Buffer_Last"),
-                                                ),
-                                                Variable("Offset"),
-                                                Variable(
-                                                    const.TYPES_HIGH_ORDER_FIRST
-                                                    if message.byte_order[f]
-                                                    == ByteOrder.HIGH_ORDER_FIRST
-                                                    else const.TYPES_LOW_ORDER_FIRST
-                                                ),
-                                            ],
-                                        )
-                                        if f in scalar_fields
-                                        else NullStatement()
-                                    ],
-                                )
-                                for f in message.all_fields
+                                Variable(f"Val.{f.name}_Value"),
+                                Slice(
+                                    Variable("Ctx.Buffer.all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
+                                ),
+                                Variable("Offset"),
+                                Variable(
+                                    const.TYPES_HIGH_ORDER_FIRST
+                                    if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
+                                    else const.TYPES_LOW_ORDER_FIRST
+                                ),
                             ],
                         ),
                     ],
@@ -152,9 +131,11 @@ class SerializerGenerator:
                             AndThen(
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                In(Variable("Val.Fld"), Range("Field")),
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
-                                common.sufficient_space_for_field_condition(Variable("Val.Fld")),
+                                In(Variable(f.affixed_name), Range("Field")),
+                                Call("Valid_Next", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                common.sufficient_space_for_field_condition(
+                                    Variable(f.affixed_name)
+                                ),
                                 ForAllIn(
                                     "F",
                                     Range("Field"),
@@ -180,7 +161,10 @@ class SerializerGenerator:
                                                     ),
                                                     Call(
                                                         "Field_Last",
-                                                        [Variable("Ctx"), Variable("Val.Fld")],
+                                                        [
+                                                            Variable("Ctx"),
+                                                            Variable(f.affixed_name),
+                                                        ],
                                                     ),
                                                 ),
                                             )
@@ -194,11 +178,17 @@ class SerializerGenerator:
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 Equal(
                                     Variable("Fst"),
-                                    Call("Field_First", [Variable("Ctx"), Variable("Val.Fld")]),
+                                    Call(
+                                        "Field_First",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ),
                                 ),
                                 Equal(
                                     Variable("Lst"),
-                                    Call("Field_Last", [Variable("Ctx"), Variable("Val.Fld")]),
+                                    Call(
+                                        "Field_Last",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ),
                                 ),
                                 GreaterEqual(Variable("Fst"), Variable("Ctx.First")),
                                 LessEqual(Variable("Fst"), Add(Variable("Lst"), Number(1))),
@@ -243,9 +233,8 @@ class SerializerGenerator:
                         ),
                     ],
                 )
-            ]
-            if scalar_fields
-            else [],
+                for f, t in scalar_fields.items()
+            ],
         )
 
     def create_valid_length_function(self, message: Message) -> UnitPart:
@@ -473,7 +462,7 @@ class SerializerGenerator:
                             [Variable("Ctx"), Variable(f.affixed_name)],
                         ),
                         CallStatement(
-                            "Set_Field_Value",
+                            f"Set_Field_Value_{f.name}",
                             [
                                 Variable("Ctx"),
                                 Variable("Field_Value"),
