@@ -7,7 +7,7 @@ build-dir := build
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_specs test_runtime test_installation \
+	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_runtime test_installation \
 	prove prove_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	clean
@@ -50,7 +50,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: test_python_coverage test_python_property test_apps test_compilation test_specs test_runtime test_installation
+test: test_python_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_runtime test_installation
 
 test_python:
 	python3 -m pytest -n$(TEST_PROCS) -vv -m "not hypothesis" tests
@@ -88,6 +88,9 @@ test_compilation:
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
+
+test_binary_size:
+	$(MAKE) -C examples/apps/dhcp_client binary_size
 
 test_specs:
 	cd examples/specs && python3 -m pytest -n$(TEST_PROCS) -vv tests/test_specs.py
