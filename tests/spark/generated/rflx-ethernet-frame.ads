@@ -1098,63 +1098,24 @@ private
              0));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((case Fld is
-          when F_Destination =>
-             Ctx.First,
-          when F_Source =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Destination
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Type_Length_TPID =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Source
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_TPID =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
-                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
-              then
-                 Ctx.Cursors (F_Type_Length_TPID).First
-              else
-                 raise Program_Error),
-          when F_TCI =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_TPID
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Type_Length =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_TCI
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
-                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
-              then
-                 Ctx.Cursors (F_Type_Length_TPID).First
-              else
-                 raise Program_Error),
-          when F_Payload =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error)));
+     ((if
+          Fld = F_Destination
+       then
+          Ctx.First
+       elsif
+          Fld = F_TPID
+          and then Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
+          and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
+       then
+          Ctx.Cursors (F_Type_Length_TPID).First
+       elsif
+          Fld = F_Type_Length
+          and then Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID
+          and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
+       then
+          Ctx.Cursors (F_Type_Length_TPID).First
+       else
+          Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

@@ -1,4 +1,7 @@
 # pylint: disable=too-many-lines
+
+from __future__ import annotations
+
 import itertools
 import logging
 import typing as ty
@@ -124,6 +127,7 @@ from rflx.model import (
     Enumeration,
     Field,
     Integer,
+    Link,
     Message,
     Model,
     ModularInteger,
@@ -1841,7 +1845,23 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     def __create_field_first_function(self, message: Message) -> UnitPart:
-        def first(field: Field, message: Message) -> Expr:
+        contiguous_first = expr.Add(
+            expr.Selected(
+                expr.Indexed(
+                    expr.Variable(rid.ID("Ctx") * "Cursors"),
+                    expr.Selected(
+                        expr.Indexed(
+                            expr.Variable(rid.ID("Ctx") * "Cursors"), expr.Variable("Fld")
+                        ),
+                        "Predecessor",
+                    ),
+                ),
+                "Last",
+            ),
+            expr.Number(1),
+        )
+
+        def first(link: Link, message: Message) -> tuple[Expr, Expr]:
             def substituted(
                 expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_U64
             ) -> Expr:
@@ -1853,48 +1873,30 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     .ada_expr()
                 )
 
-            if field == message.fields[0]:
-                return Variable("Ctx.First")
+            if link.target == message.fields[0]:
+                return (
+                    Equal(Variable("Fld"), Variable(link.target.affixed_name)),
+                    Variable("Ctx.First"),
+                )
 
-            contiguous_first = expr.Add(
-                expr.Selected(
-                    expr.Indexed(
-                        expr.Variable(rid.ID("Ctx") * "Cursors"),
-                        expr.Selected(
-                            expr.Indexed(
-                                expr.Variable(rid.ID("Ctx") * "Cursors"), expr.Variable("Fld")
-                            ),
+            return (
+                AndThen(
+                    Equal(Variable("Fld"), Variable(link.target.affixed_name)),
+                    Equal(
+                        Selected(
+                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                             "Predecessor",
                         ),
+                        Variable(link.source.affixed_name),
                     ),
-                    "Last",
+                    *([substituted(link.condition)] if link.condition != expr.TRUE else []),
                 ),
-                expr.Number(1),
-            )
-
-            return If(
-                [
-                    (
-                        AndThen(
-                            Equal(
-                                Selected(
-                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                    "Predecessor",
-                                ),
-                                Variable(l.source.affixed_name),
-                            ),
-                            *([substituted(l.condition)] if l.condition != expr.TRUE else []),
-                        ),
-                        substituted(
-                            l.first.substituted(
-                                lambda x: contiguous_first if x == expr.UNDEFINED else x
-                            ),
-                            target_type=None,
-                        ),
-                    )
-                    for l in message.incoming(field)
-                ],
-                const.UNREACHABLE,
+                substituted(
+                    link.first.substituted(
+                        lambda x: contiguous_first if x == expr.UNDEFINED else x
+                    ),
+                    target_type=None,
+                ),
             )
 
         specification = FunctionSpecification(
@@ -1929,10 +1931,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    Case(
-                        Variable("Fld"),
-                        [(Variable(f.affixed_name), first(f, message)) for f in message.fields],
-                    ),
+                    If(
+                        [
+                            first(l, message)
+                            for l in message.structure
+                            if l.source == INITIAL or l.first != expr.UNDEFINED
+                        ],
+                        contiguous_first.ada_expr(),
+                    )
+                    if len(message.fields) > 1
+                    else Variable("Ctx.First"),
                 )
             ],
         )
