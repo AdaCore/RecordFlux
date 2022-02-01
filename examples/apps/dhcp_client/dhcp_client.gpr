@@ -2,15 +2,20 @@ with "../../../defaults";
 
 project DHCP_Client is
 
+   type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
+   Mode : Build_Mode := external ("mode", "asserts_enabled");
+   Test := external ("test", "");
+
    for Languages use ("Ada", "RecordFlux");
    for Source_Dirs use ("specs", "src", "generated");
-   for Object_Dir use "obj";
+   case Mode is
+      when "strict" | "asserts_enabled" | "runtime_compatible" =>
+         for Object_Dir use "obj";
+      when "optimized" =>
+         for Object_Dir use "obj_optimized";
+   end case;
    for Create_Missing_Dirs use "True";
    for Main use ("dhcp_client");
-
-   package Compiler is
-      for Driver ("RecordFlux") use "";
-   end Compiler;
 
    package Naming is
       for Spec_Suffix ("RecordFlux") use ".rflx";
@@ -21,12 +26,38 @@ project DHCP_Client is
    end RecordFlux;
 
    package Builder is
-      for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;
+      for Default_Switches ("Ada") use Defaults.Builder_Switches;
    end Builder;
 
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+      case Mode is
+         when "strict" | "asserts_enabled" | "runtime_compatible" =>
+            for Default_Switches ("Ada") use Defaults.Compiler_Switches;
+         when "optimized" =>
+            for Default_Switches ("Ada") use
+               ("-fdata-sections",
+                "-ffunction-sections",
+                "-fno-early-inlining",
+                "-gnatd.8",
+                "-gnatp",
+                "-Os");
+      end case;
+   end Compiler;
+
    package Binder is
-      for Default_Switches ("Ada") use Defaults.Binder_Switches;
+      case Mode is
+         when "strict" | "asserts_enabled" | "runtime_compatible" =>
+            for Default_Switches ("Ada") use Defaults.Binder_Switches;
+         when "optimized" =>
+      end case;
    end Binder;
+
+   package Linker is
+      for Default_Switches ("Ada") use
+         ("-Os",
+          "-Wl,-gc-sections");
+   end Linker;
 
    package Prove is
       for Proof_Switches ("Ada") use Defaults.Proof_Switches & ("--timeout=300");

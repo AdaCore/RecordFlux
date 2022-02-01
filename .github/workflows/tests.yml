@@ -344,6 +344,57 @@ jobs:
           gnat --version
           make test_compilation
 
+  binary_size:
+    name: Binary size
+    runs-on: ubuntu-20.04
+    env:
+      python-version: 3.7
+      gnat-version: "23.0w-20220202"
+      GNAT: "pro23.0w-20220202"
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        with:
+          submodules: true
+      - name: Set up Python ${{ env.python-version }}
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+      - name: Determine exact Python version
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        run:
+          echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+      - name: Cache Python dependencies
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/lib/python${{ env.python-version }}/site-packages
+            ~/.local/bin
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-gnat${{ env.GNAT }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+      - name: Install GNAT Pro
+        uses: ./.github/actions/install_gnat_pro
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        with:
+          version: ${{ env.gnat-version }}
+          ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+          server: ${{ secrets.MEMCACHED_SERVER }}
+      - name: Install dependencies
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+          echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
+          sudo apt install graphviz libgmp-dev patchelf
+          python -m pip install --upgrade pip wheel
+          make install_devel
+      - name: Test
+        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+        run: |
+          make test_binary_size
+
   verification_python_scheduled:
     name: Verification
     if: github.event.schedule
