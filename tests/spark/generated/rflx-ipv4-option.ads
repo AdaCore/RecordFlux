@@ -983,50 +983,7 @@ private
              0));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((case Fld is
-          when F_Copied =>
-             Ctx.First,
-          when F_Option_Class =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Copied
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Option_Number =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Option_Class
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Option_Length =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Option_Number
-                 and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Option_Data =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Option_Length
-                 and then ((RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                            and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                           or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                               and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                                    or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                               and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                           or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                               and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error)));
+     ((if Fld = F_Copied then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

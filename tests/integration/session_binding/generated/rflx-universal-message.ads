@@ -1469,70 +1469,7 @@ private
              0));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((case Fld is
-          when F_Message_Type =>
-             Ctx.First,
-          when F_Length =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                 and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options))
-                           and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null))
-                           and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data)))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Data =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Data))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Option_Types =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Option_Types))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Options =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Options))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Value =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-                 and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Value))
-                           and RFLX_Types.U64 (Ctx.Cursors (F_Length).Value.Length_Value) = Universal.Value'Size / 8)
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Values =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Values))
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error)));
+     ((if Fld = F_Message_Type then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

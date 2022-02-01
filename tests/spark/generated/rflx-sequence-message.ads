@@ -1201,37 +1201,7 @@ private
              0));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((case Fld is
-          when F_Length =>
-             Ctx.First,
-          when F_Modular_Vector =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Length
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Range_Vector =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Modular_Vector
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_Enumeration_Vector =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Range_Vector
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error),
-          when F_AV_Enumeration_Vector =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Enumeration_Vector
-              then
-                 Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1
-              else
-                 raise Program_Error)));
+     ((if Fld = F_Length then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
