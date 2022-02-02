@@ -14,7 +14,6 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
-    CaseStatement,
     Div,
     Equal,
     Expr,
@@ -35,7 +34,6 @@ from rflx.ada import (
     Mod,
     Mul,
     NamedAggregate,
-    NullStatement,
     Number,
     ObjectDeclaration,
     Old,
@@ -238,20 +236,6 @@ class ParserGenerator:
             ),
         )
 
-        set_message_last = Assignment(
-            Variable("Ctx.Verified_Last"),
-            Mul(
-                Div(
-                    Add(
-                        Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                        Number(7),
-                    ),
-                    Number(8),
-                ),
-                Number(8),
-            ),
-        )
-
         set_cursors_statements = [
             *(
                 [
@@ -285,22 +269,19 @@ class ParserGenerator:
                 if len(message.fields) > 1
                 else []
             ),
-            # ISSUE: Componolit/RecordFlux#664:
-            # The provability of the context predicate is increased by duplicating the statement
-            # inside a case statement.
-            CaseStatement(
-                Variable("Fld"),
-                [
-                    (
-                        Variable(f.affixed_name),
-                        [set_message_last],
-                    )
-                    for f in message.fields
-                ],
-                case_grouping=False,
-            )
-            if len(message.fields) > 1
-            else set_message_last,
+            Assignment(
+                Variable("Ctx.Verified_Last"),
+                Mul(
+                    Div(
+                        Add(
+                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                            Number(7),
+                        ),
+                        Number(8),
+                    ),
+                    Number(8),
+                ),
+            ),
             PragmaStatement(
                 "Assert",
                 [
@@ -314,32 +295,7 @@ class ParserGenerator:
                 [
                     (
                         Call("Composite_Field", [Variable("Fld")]),
-                        # ISSUE: Componolit/RecordFlux#664
-                        # The provability of the context predicate is increased by duplicating
-                        # the statement inside a case statement. Not required for versions newer
-                        # than SPARK Community 2021.
-                        [
-                            CaseStatement(
-                                Variable("Fld"),
-                                [
-                                    *[
-                                        (
-                                            Variable(f.affixed_name),
-                                            [set_context_cursor_composite_field(f.affixed_name)],
-                                        )
-                                        for f in composite_fields
-                                    ],
-                                    *(
-                                        [(Variable("others"), [NullStatement()])]
-                                        if scalar_fields
-                                        else []
-                                    ),
-                                ],
-                                case_grouping=False,
-                            )
-                        ]
-                        if len(composite_fields) > 1
-                        else [set_context_cursor_composite_field("Fld")],
+                        [set_context_cursor_composite_field("Fld")],
                     )
                 ],
                 [set_context_cursor_scalar()],
@@ -350,28 +306,15 @@ class ParserGenerator:
             else set_context_cursor_composite_field("Fld"),
             *(
                 [
-                    # ISSUE: Componolit/RecordFlux#664
-                    # The provability of the context predicate is increased by splitting the
-                    # assignment into multiple statements.
-                    IfStatement(
-                        [
-                            (
-                                Equal(Variable("Fld"), Variable(f.affixed_name)),
-                                [
-                                    Assignment(
-                                        Indexed(
-                                            Variable("Ctx.Cursors"),
-                                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
-                                        ),
-                                        NamedAggregate(
-                                            ("State", Variable("S_Invalid")),
-                                            ("Predecessor", Variable("Fld")),
-                                        ),
-                                    )
-                                ],
-                            )
-                            for f in message.fields
-                        ]
+                    Assignment(
+                        Indexed(
+                            Variable("Ctx.Cursors"),
+                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
+                        ),
+                        NamedAggregate(
+                            ("State", Variable("S_Invalid")),
+                            ("Predecessor", Variable("Fld")),
+                        ),
                     )
                 ]
                 if len(message.fields) > 1
