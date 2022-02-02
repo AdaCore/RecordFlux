@@ -151,7 +151,7 @@ private
    function Read_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
      ((case Chan is
           when C_I_1 | C_I_2 =>
-             raise Program_Error,
+             RFLX_Types.Unreachable,
           when C_O =>
              (case Ctx.P.Next_State is
                  when S_Reply_1 =>
@@ -159,7 +159,7 @@ private
                  when S_Reply_2 =>
                     Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx),
                  when others =>
-                    raise Program_Error)));
+                    RFLX_Types.Unreachable)));
 
    function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
      ((case Chan is

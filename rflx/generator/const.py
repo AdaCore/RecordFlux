@@ -53,7 +53,7 @@ TYPES_BYTE_ORDER = TYPES * "Byte_Order"
 TYPES_HIGH_ORDER_FIRST = TYPES * "High_Order_First"
 TYPES_LOW_ORDER_FIRST = TYPES * "Low_Order_First"
 
-UNREACHABLE = ada.Raise("Program_Error")
+UNREACHABLE = ada.Call(TYPES * "Unreachable")
 
 CONFIGURATION_PRAGMAS = [
     ada.Pragma("Style_Checks", [ada.String("N3aAbcdefhiIklnOprStux")]),

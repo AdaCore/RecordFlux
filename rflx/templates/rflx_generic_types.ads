@@ -89,4 +89,10 @@ is
 
    procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 
+   function Unreachable return Boolean is (False) with Pre => False;
+
+   function Unreachable return Bit_Length is (0) with Pre => False;
+
+   function Unreachable return Length is (0) with Pre => False;
+
 end {prefix}RFLX_Generic_Types;

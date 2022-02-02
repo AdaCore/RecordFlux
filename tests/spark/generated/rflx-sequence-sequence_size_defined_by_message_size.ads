@@ -720,13 +720,13 @@ private
                  when F_Header =>
                     RFLX.Sequence.Enumeration_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Header =>
              (case Fld is
                  when F_Vector =>
                     RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Header).Last),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Vector | F_Final =>
              0));
 
@@ -802,15 +802,15 @@ private
                  when F_Header =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Header =>
              (case Fld is
                  when F_Vector =>
                     Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Vector | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Complete_Vector (Ctx : Context; Seq_Ctx : Sequence.Modular_Vector.Context) return Boolean is
      (Sequence.Modular_Vector.Valid (Seq_Ctx)

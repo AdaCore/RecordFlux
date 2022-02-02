@@ -954,31 +954,31 @@ private
                  when F_Copied =>
                     RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Copied =>
              (case Fld is
                  when F_Option_Class =>
                     RFLX.IPv4.Option_Class_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Class =>
              (case Fld is
                  when F_Option_Number =>
                     RFLX.IPv4.Option_Number'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Number =>
              (case Fld is
                  when F_Option_Length =>
                     RFLX.IPv4.Option_Length_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Length =>
              (case Fld is
                  when F_Option_Data =>
                     (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Data | F_Final =>
              0));
 
@@ -1083,33 +1083,33 @@ private
                  when F_Copied =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Copied =>
              (case Fld is
                  when F_Option_Class =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Class =>
              (case Fld is
                  when F_Option_Number =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Number =>
              (case Fld is
                  when F_Option_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Length =>
              (case Fld is
                  when F_Option_Data =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Option_Data | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

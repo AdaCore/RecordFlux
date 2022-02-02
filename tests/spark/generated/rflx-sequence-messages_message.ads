@@ -718,13 +718,13 @@ private
                  when F_Length =>
                     RFLX.Sequence.Length'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Messages =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Messages | F_Final =>
              0));
 
@@ -800,15 +800,15 @@ private
                  when F_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Messages =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Messages | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Complete_Messages (Ctx : Context; Seq_Ctx : Sequence.Inner_Messages.Context) return Boolean is
      (Sequence.Inner_Messages.Valid (Seq_Ctx)

@@ -108,7 +108,7 @@ is
           when 2 =>
              Two,
           when others =>
-             raise Program_Error))
+             RFLX.Sequence.Enumeration'Last))
     with
      Pre =>
        Valid (Val);

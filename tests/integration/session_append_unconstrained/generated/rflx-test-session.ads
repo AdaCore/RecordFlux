@@ -129,6 +129,6 @@ private
                  when S_Reply =>
                     Universal.Message.Byte_Size (Ctx.P.Message_Ctx),
                  when others =>
-                    raise Program_Error)));
+                    RFLX_Types.Unreachable)));
 
 end RFLX.Test.Session;

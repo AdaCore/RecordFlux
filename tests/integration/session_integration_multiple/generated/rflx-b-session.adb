@@ -111,7 +111,7 @@ is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.M_Ctx, Offset);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Write;

@@ -71,7 +71,7 @@ is
           when 16 =>
              Information_Reply,
           when others =>
-             raise Program_Error))
+             RFLX.ICMP.Tag'Last))
     with
      Pre =>
        Valid (Val);
@@ -124,7 +124,7 @@ is
           when 5 =>
              Source_Route_Failed,
           when others =>
-             raise Program_Error))
+             RFLX.ICMP.Code_Destination_Unreachable'Last))
     with
      Pre =>
        Valid (Val);
@@ -161,7 +161,7 @@ is
           when 1 =>
              Fragment_Reassembly_Time_Exceeded,
           when others =>
-             raise Program_Error))
+             RFLX.ICMP.Code_Time_Exceeded'Last))
     with
      Pre =>
        Valid (Val);
@@ -206,7 +206,7 @@ is
           when 3 =>
              Redirect_for_Service_Host,
           when others =>
-             raise Program_Error))
+             RFLX.ICMP.Code_Redirect'Last))
     with
      Pre =>
        Valid (Val);

@@ -320,7 +320,7 @@ is
           when 2 =>
              Debugging_And_Measurement,
           when others =>
-             raise Program_Error))
+             RFLX.IPv4.Option_Class'Last))
     with
      Pre =>
        Valid (Val);

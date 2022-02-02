@@ -1444,7 +1444,7 @@ private
                  when F_Message_Type =>
                     RFLX.Universal.Message_Type_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Message_Type =>
              (case Fld is
                  when F_Data =>
@@ -1454,7 +1454,7 @@ private
                  when F_Options =>
                     RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Data | F_Option_Types | F_Options =>
@@ -1464,7 +1464,7 @@ private
                  when F_Values =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
              0));
 
@@ -1589,7 +1589,7 @@ private
                  when F_Message_Type =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Message_Type =>
              (case Fld is
                  when F_Data =>
@@ -1599,15 +1599,15 @@ private
                  when F_Options =>
                     Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Data | F_Option_Types | F_Options | F_Value | F_Values =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Complete_Option_Types (Ctx : Context; Seq_Ctx : Universal.Option_Types.Context) return Boolean is
      (Universal.Option_Types.Valid (Seq_Ctx)

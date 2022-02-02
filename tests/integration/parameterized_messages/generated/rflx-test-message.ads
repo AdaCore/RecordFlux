@@ -785,13 +785,13 @@ private
                  when F_Data =>
                     RFLX_Types.Bit_Length (Ctx.Length) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data =>
              (case Fld is
                  when F_Extension =>
                     RFLX_Types.Bit_Length (Ctx.Length) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Extension | F_Final =>
              0));
 
@@ -870,15 +870,15 @@ private
                  when F_Data =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data =>
              (case Fld is
                  when F_Extension =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Extension | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
