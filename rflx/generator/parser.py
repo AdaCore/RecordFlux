@@ -60,7 +60,7 @@ from rflx.ada import (
 )
 from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
-from rflx.model import FINAL, INITIAL, ByteOrder, Composite, Field, Message, Scalar, Type
+from rflx.model import FINAL, ByteOrder, Composite, Field, Message, Scalar, Type
 
 from . import common, const
 
@@ -1018,33 +1018,26 @@ class ParserGenerator:
             ],
         )
 
-    def valid_message_condition(
-        self, message: Message, field: Field = INITIAL, structural: bool = False
-    ) -> Expr:
-        def condition(message: Message, field: Field, structural: bool) -> expr.Expr:
-            return expr.Or(
+    def valid_message_condition(self, message: Message, structural: bool = False) -> Expr:
+        return (
+            expr.Or(
                 *[
-                    l.condition
-                    if l.target == FINAL
-                    else expr.AndThen(
+                    expr.And(
                         expr.Call(
                             "Structural_Valid"
-                            if structural and isinstance(message.field_types[l.target], Composite)
+                            if structural and isinstance(message.field_types[l.source], Composite)
                             else "Valid",
                             [
                                 expr.Variable("Ctx"),
-                                expr.Variable(l.target.affixed_name, immutable=True),
+                                expr.Variable(l.source.affixed_name, immutable=True),
                             ],
                         ),
                         l.condition,
-                        condition(message, l.target, structural),
                     )
-                    for l in message.outgoing(field)
+                    for l in message.incoming(FINAL)
+                    if l.target == FINAL
                 ]
             )
-
-        return (
-            condition(message, field, structural)
             .substituted(common.substitution(message, self.prefix))
             .simplified()
             .ada_expr()
