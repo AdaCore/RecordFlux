@@ -77,8 +77,6 @@ from rflx.ada import (
     Precondition,
     PrivateType,
     ProcedureSpecification,
-    Raise,
-    RaiseStatement,
     RecordType,
     ReturnStatement,
     Selected,
@@ -1249,7 +1247,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                             )
                                             for write in writes
                                         ],
-                                        (Variable("others"), Raise("Program_Error")),
+                                        (Variable("others"), const.UNREACHABLE),
                                     ],
                                 ),
                             )
@@ -1465,7 +1463,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 (
                                                     Variable("others"),
                                                     [
-                                                        RaiseStatement("Program_Error"),
+                                                        NullStatement(),
                                                     ],
                                                 ),
                                             ],
@@ -1672,7 +1670,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 (
                                                     Variable("others"),
                                                     [
-                                                        RaiseStatement("Program_Error"),
+                                                        NullStatement(),
                                                     ],
                                                 ),
                                             ],

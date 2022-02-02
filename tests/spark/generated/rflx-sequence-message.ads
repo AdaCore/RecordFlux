@@ -1172,31 +1172,31 @@ private
                  when F_Length =>
                     RFLX.Sequence.Length'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Modular_Vector =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Modular_Vector =>
              (case Fld is
                  when F_Range_Vector =>
                     16,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Range_Vector =>
              (case Fld is
                  when F_Enumeration_Vector =>
                     16,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Enumeration_Vector =>
              (case Fld is
                  when F_AV_Enumeration_Vector =>
                     16,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_AV_Enumeration_Vector | F_Final =>
              0));
 
@@ -1284,33 +1284,33 @@ private
                  when F_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Modular_Vector =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Modular_Vector =>
              (case Fld is
                  when F_Range_Vector =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Range_Vector =>
              (case Fld is
                  when F_Enumeration_Vector =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Enumeration_Vector =>
              (case Fld is
                  when F_AV_Enumeration_Vector =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_AV_Enumeration_Vector | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Complete_Modular_Vector (Ctx : Context; Seq_Ctx : Sequence.Modular_Vector.Context) return Boolean is
      (Sequence.Modular_Vector.Valid (Seq_Ctx)

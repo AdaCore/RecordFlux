@@ -226,7 +226,7 @@ is
                when S_Reply =>
                   Test_Message_Read (Ctx.P.M_S_Ctx);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Read;
@@ -259,7 +259,7 @@ is
                when S_Receive =>
                   Test_Message_Write (Ctx.P.M_R_Ctx, Offset);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Write;

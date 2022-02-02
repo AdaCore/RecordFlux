@@ -35,7 +35,7 @@ is
           when 3 =>
              Msg_Error,
           when others =>
-             raise Program_Error))
+             RFLX.TLV.Tag'Last))
     with
      Pre =>
        Valid (Val);

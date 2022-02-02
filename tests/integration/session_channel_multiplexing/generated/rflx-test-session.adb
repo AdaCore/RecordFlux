@@ -144,7 +144,7 @@ is
       Buffer := (others => 0);
       case Chan is
          when C_I_1 | C_I_2 =>
-            raise Program_Error;
+            null;
          when C_O =>
             case Ctx.P.Next_State is
                when S_Reply_1 =>
@@ -152,7 +152,7 @@ is
                when S_Reply_2 =>
                   Universal_Message_Read (Ctx.P.Message_2_Ctx);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Read;
@@ -185,17 +185,17 @@ is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.Message_1_Ctx, Offset);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
          when C_I_2 =>
             case Ctx.P.Next_State is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.Message_2_Ctx, Offset);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
          when C_O =>
-            raise Program_Error;
+            null;
       end case;
    end Write;
 

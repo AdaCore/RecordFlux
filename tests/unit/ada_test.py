@@ -608,3 +608,8 @@ def test_qualified_expr() -> None:
 def test_parameter() -> None:
     assert str(ada.Parameter(["P1"], "T")) == "P1 : T"
     assert str(ada.Parameter(["P1"], ada.ID("Boolean"))) == "P1 : Boolean"
+
+
+def test_raise_statement() -> None:
+    assert str(ada.RaiseStatement("X")) == "raise X;"
+    assert str(ada.RaiseStatement("X", ada.String("Y"))) == 'raise X with "Y";'

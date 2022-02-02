@@ -3973,7 +3973,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 (value.ada_expr(), Variable(ID(key))) for key, value in enum.literals.items()
             )
             if incomplete:
-                conversion_cases.append((Variable("others"), const.UNREACHABLE))
+                conversion_cases.append(
+                    (Variable("others"), Last(self.__prefix * ID(enum.identifier)))
+                )
 
             specification.extend(
                 [

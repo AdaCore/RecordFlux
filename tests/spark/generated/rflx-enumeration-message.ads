@@ -631,7 +631,7 @@ private
                  when F_Priority =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))),
           when F_Priority | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

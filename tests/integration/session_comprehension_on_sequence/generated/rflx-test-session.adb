@@ -528,7 +528,7 @@ is
                when S_Send_2 =>
                   Universal_Message_Read (Ctx.P.Message_2_Ctx);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Read;

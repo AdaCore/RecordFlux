@@ -2137,7 +2137,7 @@ private
                  when F_Tag =>
                     RFLX.ICMP.Tag_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Tag =>
              (case Fld is
                  when F_Code_Destination_Unreachable =>
@@ -2149,13 +2149,13 @@ private
                  when F_Code_Zero =>
                     RFLX.ICMP.Code_Zero_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              (case Fld is
                  when F_Checksum =>
                     RFLX.ICMP.Checksum'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Checksum =>
              (case Fld is
                  when F_Gateway_Internet_Address =>
@@ -2167,31 +2167,31 @@ private
                  when F_Unused_32 =>
                     RFLX.ICMP.Unused_32_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Gateway_Internet_Address =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Identifier =>
              (case Fld is
                  when F_Sequence_Number =>
                     RFLX.ICMP.Sequence_Number'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Pointer =>
              (case Fld is
                  when F_Unused_24 =>
                     RFLX.ICMP.Unused_24_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Unused_32 =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
@@ -2199,19 +2199,19 @@ private
                  when F_Originate_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Unused_24 =>
              (case Fld is
                  when F_Data =>
                     224,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Originate_Timestamp =>
              (case Fld is
                  when F_Receive_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data =>
              0,
           when F_Receive_Timestamp =>
@@ -2219,7 +2219,7 @@ private
                  when F_Transmit_Timestamp =>
                     RFLX.ICMP.Timestamp'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Transmit_Timestamp | F_Final =>
              0));
 
@@ -2399,49 +2399,49 @@ private
                  when F_Tag =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Tag =>
              (case Fld is
                  when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              (case Fld is
                  when F_Checksum =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Checksum =>
              (case Fld is
                  when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Gateway_Internet_Address =>
              (case Fld is
                  when F_Data =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Identifier =>
              (case Fld is
                  when F_Sequence_Number =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Pointer =>
              (case Fld is
                  when F_Unused_24 =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Unused_32 =>
              (case Fld is
                  when F_Data =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
@@ -2449,29 +2449,29 @@ private
                  when F_Originate_Timestamp =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Unused_24 =>
              (case Fld is
                  when F_Data =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Originate_Timestamp =>
              (case Fld is
                  when F_Receive_Timestamp =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Data =>
-             raise Program_Error,
+             RFLX_Types.Unreachable,
           when F_Receive_Timestamp =>
              (case Fld is
                  when F_Transmit_Timestamp =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Transmit_Timestamp | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

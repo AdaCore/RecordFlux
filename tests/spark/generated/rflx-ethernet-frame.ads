@@ -1046,19 +1046,19 @@ private
                  when F_Destination =>
                     RFLX.Ethernet.Address'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Destination =>
              (case Fld is
                  when F_Source =>
                     RFLX.Ethernet.Address'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Source =>
              (case Fld is
                  when F_Type_Length_TPID =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Type_Length_TPID =>
              (case Fld is
                  when F_TPID =>
@@ -1066,19 +1066,19 @@ private
                  when F_Type_Length =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_TPID =>
              (case Fld is
                  when F_TCI =>
                     RFLX.Ethernet.TCI'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_TCI =>
              (case Fld is
                  when F_Type_Length =>
                     RFLX.Ethernet.Type_Length_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Type_Length =>
              (case Fld is
                  when F_Payload =>
@@ -1091,9 +1091,9 @@ private
                      then
                         RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Last)
                      else
-                        raise Program_Error),
+                        RFLX_Types.Unreachable),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Payload | F_Final =>
              0));
 
@@ -1227,37 +1227,37 @@ private
                  when F_Destination =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Destination =>
              (case Fld is
                  when F_Source =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Source =>
              (case Fld is
                  when F_Type_Length_TPID =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Type_Length_TPID =>
              (case Fld is
                  when F_TPID | F_Type_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_TPID =>
              (case Fld is
                  when F_TCI =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_TCI =>
              (case Fld is
                  when F_Type_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Type_Length =>
              (case Fld is
                  when F_Payload =>
@@ -1270,11 +1270,11 @@ private
                      then
                         Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
                      else
-                        raise Program_Error),
+                        RFLX_Types.Unreachable),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Payload | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

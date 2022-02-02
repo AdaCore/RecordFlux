@@ -59,7 +59,7 @@ is
           when 7 =>
              MT_Unconstrained_Options,
           when others =>
-             raise Program_Error))
+             RFLX.Universal.Message_Type'Last))
     with
      Pre =>
        Valid (Val);

@@ -35,7 +35,7 @@ is
           when 1 =>
              M_Invalid,
           when others =>
-             raise Program_Error))
+             RFLX.Test.Result'Last))
     with
      Pre =>
        Valid (Val);

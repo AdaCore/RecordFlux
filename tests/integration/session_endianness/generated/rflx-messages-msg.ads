@@ -613,13 +613,13 @@ private
                  when F_A =>
                     RFLX.Messages.Integer'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_A =>
              (case Fld is
                  when F_B =>
                     RFLX.Messages.Enum_T_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_B | F_Final =>
              0));
 
@@ -698,15 +698,15 @@ private
                  when F_A =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_A =>
              (case Fld is
                  when F_B =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_B | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

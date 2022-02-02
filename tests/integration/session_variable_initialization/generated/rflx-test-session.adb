@@ -153,7 +153,7 @@ is
                when S_Reply =>
                   Universal_Message_Read (Ctx.P.Message_Ctx);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Read;
@@ -186,7 +186,7 @@ is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.Message_Ctx, Offset);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Write;

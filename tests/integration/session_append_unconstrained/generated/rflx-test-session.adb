@@ -235,7 +235,7 @@ is
                when S_Reply =>
                   Universal_Message_Read (Ctx.P.Message_Ctx);
                when others =>
-                  raise Program_Error;
+                  null;
             end case;
       end case;
    end Read;

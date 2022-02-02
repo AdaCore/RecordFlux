@@ -79,7 +79,7 @@ is
           when 32 =>
              Enum_G,
           when others =>
-             raise Program_Error))
+             RFLX.Messages.Enum_T'Last))
     with
      Pre =>
        Valid (Val);

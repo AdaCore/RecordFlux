@@ -149,7 +149,7 @@ private
                  when S_Reply =>
                     Test.Message.Byte_Size (Ctx.P.M_S_Ctx),
                  when others =>
-                    raise Program_Error)));
+                    RFLX_Types.Unreachable)));
 
    function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
      ((case Chan is

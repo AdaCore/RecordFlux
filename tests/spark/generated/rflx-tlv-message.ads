@@ -767,19 +767,19 @@ private
                  when F_Tag =>
                     RFLX.TLV.Tag_Base'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Tag =>
              (case Fld is
                  when F_Length =>
                     RFLX.TLV.Length'Size,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Value =>
                     RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Value | F_Final =>
              0));
 
@@ -868,21 +868,21 @@ private
                  when F_Tag =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Tag =>
              (case Fld is
                  when F_Length =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Length =>
              (case Fld is
                  when F_Value =>
                     Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
                  when others =>
-                    raise Program_Error),
+                    RFLX_Types.Unreachable),
           when F_Value | F_Final =>
-             raise Program_Error));
+             RFLX_Types.Unreachable));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
