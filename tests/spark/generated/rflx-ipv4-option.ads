@@ -857,11 +857,8 @@ private
       and then Valid_Next (Ctx, F_Copied)
       and then Field_First (Ctx, F_Copied) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Copied) = Ctx.Last - Ctx.First + 1
-      and then Invalid (Ctx, F_Copied)
-      and then Invalid (Ctx, F_Option_Class)
-      and then Invalid (Ctx, F_Option_Number)
-      and then Invalid (Ctx, F_Option_Length)
-      and then Invalid (Ctx, F_Option_Data));
+      and then (for all F in Field =>
+                   Invalid (Ctx, F)));
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);

@@ -1094,13 +1094,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Number(1),
                             ),
                         ),
-                        *[
+                        ForAllIn(
+                            "F",
+                            Variable("Field"),
                             Call(
                                 "Invalid",
-                                [Variable("Ctx"), Variable(f.affixed_name)],
-                            )
-                            for f in message.fields
-                        ],
+                                [Variable("Ctx"), Variable("F")],
+                            ),
+                        ),
                     ),
                 )
             ],

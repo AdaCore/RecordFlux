@@ -1948,22 +1948,8 @@ private
       and then Valid_Next (Ctx, F_Tag)
       and then Field_First (Ctx, F_Tag) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
-      and then Invalid (Ctx, F_Tag)
-      and then Invalid (Ctx, F_Code_Destination_Unreachable)
-      and then Invalid (Ctx, F_Code_Redirect)
-      and then Invalid (Ctx, F_Code_Time_Exceeded)
-      and then Invalid (Ctx, F_Code_Zero)
-      and then Invalid (Ctx, F_Checksum)
-      and then Invalid (Ctx, F_Gateway_Internet_Address)
-      and then Invalid (Ctx, F_Identifier)
-      and then Invalid (Ctx, F_Pointer)
-      and then Invalid (Ctx, F_Unused_32)
-      and then Invalid (Ctx, F_Sequence_Number)
-      and then Invalid (Ctx, F_Unused_24)
-      and then Invalid (Ctx, F_Originate_Timestamp)
-      and then Invalid (Ctx, F_Data)
-      and then Invalid (Ctx, F_Receive_Timestamp)
-      and then Invalid (Ctx, F_Transmit_Timestamp));
+      and then (for all F in Field =>
+                   Invalid (Ctx, F)));
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);

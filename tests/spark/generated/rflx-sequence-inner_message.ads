@@ -675,8 +675,8 @@ private
       and then Valid_Next (Ctx, F_Length)
       and then Field_First (Ctx, F_Length) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Length) = Ctx.Last - Ctx.First + 1
-      and then Invalid (Ctx, F_Length)
-      and then Invalid (Ctx, F_Payload));
+      and then (for all F in Field =>
+                   Invalid (Ctx, F)));
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
