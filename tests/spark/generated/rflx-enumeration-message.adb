@@ -182,7 +182,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Priority);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is

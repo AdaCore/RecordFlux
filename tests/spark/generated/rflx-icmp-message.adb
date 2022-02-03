@@ -417,22 +417,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Tag);
-      Verify (Ctx, F_Code_Destination_Unreachable);
-      Verify (Ctx, F_Code_Redirect);
-      Verify (Ctx, F_Code_Time_Exceeded);
-      Verify (Ctx, F_Code_Zero);
-      Verify (Ctx, F_Checksum);
-      Verify (Ctx, F_Gateway_Internet_Address);
-      Verify (Ctx, F_Identifier);
-      Verify (Ctx, F_Pointer);
-      Verify (Ctx, F_Unused_32);
-      Verify (Ctx, F_Sequence_Number);
-      Verify (Ctx, F_Unused_24);
-      Verify (Ctx, F_Originate_Timestamp);
-      Verify (Ctx, F_Data);
-      Verify (Ctx, F_Receive_Timestamp);
-      Verify (Ctx, F_Transmit_Timestamp);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    function Get_Data (Ctx : Context) return RFLX_Types.Bytes is

@@ -368,23 +368,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Version);
-      Verify (Ctx, F_IHL);
-      Verify (Ctx, F_DSCP);
-      Verify (Ctx, F_ECN);
-      Verify (Ctx, F_Total_Length);
-      Verify (Ctx, F_Identification);
-      Verify (Ctx, F_Flag_R);
-      Verify (Ctx, F_Flag_DF);
-      Verify (Ctx, F_Flag_MF);
-      Verify (Ctx, F_Fragment_Offset);
-      Verify (Ctx, F_TTL);
-      Verify (Ctx, F_Protocol);
-      Verify (Ctx, F_Header_Checksum);
-      Verify (Ctx, F_Source);
-      Verify (Ctx, F_Destination);
-      Verify (Ctx, F_Options);
-      Verify (Ctx, F_Payload);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes is

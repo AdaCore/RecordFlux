@@ -251,11 +251,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Length);
-      Verify (Ctx, F_Modular_Vector);
-      Verify (Ctx, F_Range_Vector);
-      Verify (Ctx, F_Enumeration_Vector);
-      Verify (Ctx, F_AV_Enumeration_Vector);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is

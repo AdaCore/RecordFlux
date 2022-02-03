@@ -19,6 +19,7 @@ from rflx.ada import (
     Expr,
     ExpressionFunctionDeclaration,
     First,
+    ForIn,
     FormalSubprogramDeclaration,
     ForSomeIn,
     FunctionSpecification,
@@ -474,8 +475,11 @@ class ParserGenerator:
                     specification,
                     [],
                     [
-                        CallStatement("Verify", [Variable("Ctx"), Variable(f.affixed_name)])
-                        for f in message.fields
+                        ForIn(
+                            "F",
+                            Variable("Field"),
+                            [CallStatement("Verify", [Variable("Ctx"), Variable("F")])],
+                        )
                     ],
                 )
             ],

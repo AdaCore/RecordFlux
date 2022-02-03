@@ -227,8 +227,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Header);
-      Verify (Ctx, F_Vector);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) is

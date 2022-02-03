@@ -209,8 +209,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_C);
-      Verify (Ctx, F_D);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    procedure Set_C (Ctx : in out Context; Val : RFLX.Messages.Integer) is
