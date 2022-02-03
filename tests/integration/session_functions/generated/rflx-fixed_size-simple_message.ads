@@ -769,8 +769,8 @@ private
      (Valid (Ctx, F_Data));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Message_Type)
-      or Incomplete (Ctx, F_Data));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Message_Type (Ctx : Context) return RFLX.Universal.Option_Type is
      (To_Actual (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value));

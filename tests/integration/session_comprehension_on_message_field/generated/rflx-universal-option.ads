@@ -851,9 +851,8 @@ private
           and then RFLX_Types.U64 (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.OT_Null))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Option_Type)
-      or Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Data));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Option_Type (Ctx : Context) return RFLX.Universal.Option_Type is
      (To_Actual (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value));

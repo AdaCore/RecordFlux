@@ -860,8 +860,8 @@ private
       or Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Data)
-      or Incomplete (Ctx, F_Extension));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

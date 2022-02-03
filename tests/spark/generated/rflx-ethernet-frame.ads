@@ -1194,13 +1194,8 @@ private
                 and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Destination)
-      or Incomplete (Ctx, F_Source)
-      or Incomplete (Ctx, F_Type_Length_TPID)
-      or Incomplete (Ctx, F_TPID)
-      or Incomplete (Ctx, F_TCI)
-      or Incomplete (Ctx, F_Type_Length)
-      or Incomplete (Ctx, F_Payload));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Destination (Ctx : Context) return RFLX.Ethernet.Address is
      (To_Actual (Ctx.Cursors (F_Destination).Value.Destination_Value));

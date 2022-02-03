@@ -787,8 +787,8 @@ private
      (Valid (Ctx, F_Messages));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Messages));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Length (Ctx : Context) return RFLX.Sequence.Length is
      (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));

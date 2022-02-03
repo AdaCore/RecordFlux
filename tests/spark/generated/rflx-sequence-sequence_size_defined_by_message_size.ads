@@ -789,8 +789,8 @@ private
      (Valid (Ctx, F_Vector));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Header)
-      or Incomplete (Ctx, F_Vector));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Header (Ctx : Context) return RFLX.Sequence.Enumeration is
      (To_Actual (Ctx.Cursors (F_Header).Value.Header_Value));

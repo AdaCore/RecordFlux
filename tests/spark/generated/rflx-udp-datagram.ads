@@ -997,11 +997,8 @@ private
      (Valid (Ctx, F_Payload));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Source_Port)
-      or Incomplete (Ctx, F_Destination_Port)
-      or Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Checksum)
-      or Incomplete (Ctx, F_Payload));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port is
      (To_Actual (Ctx.Cursors (F_Source_Port).Value.Source_Port_Value));

@@ -1565,13 +1565,8 @@ private
       or Valid (Ctx, F_Values));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Message_Type)
-      or Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Data)
-      or Incomplete (Ctx, F_Option_Types)
-      or Incomplete (Ctx, F_Options)
-      or Incomplete (Ctx, F_Value)
-      or Incomplete (Ctx, F_Values));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Message_Type (Ctx : Context) return RFLX.Universal.Message_Type is
      (To_Actual (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value));

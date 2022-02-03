@@ -853,9 +853,8 @@ private
       or Valid (Ctx, F_Value));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Tag)
-      or Incomplete (Ctx, F_Length)
-      or Incomplete (Ctx, F_Value));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Tag (Ctx : Context) return RFLX.TLV.Tag is
      (To_Actual (Ctx.Cursors (F_Tag).Value.Tag_Value));
