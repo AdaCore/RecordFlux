@@ -3253,15 +3253,30 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         String('"Buffer" is not modified, could be of access constant type'),
                     ],
                 ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("Off"),
+                        String("postcondition does not mention function result"),
+                    ],
+                ),
                 ExpressionFunctionDeclaration(
                     specification,
                     common.context_predicate(message, composite_fields, self.__prefix),
+                    [Postcondition(TRUE)]
                 ),
                 Pragma(
                     "Warnings",
                     [
                         Variable("On"),
                         String('"Buffer" is not modified, could be of access constant type'),
+                    ],
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("On"),
+                        String("postcondition does not mention function result"),
                     ],
                 ),
             ],
