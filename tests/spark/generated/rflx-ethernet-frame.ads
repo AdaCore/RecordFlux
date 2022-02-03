@@ -1112,34 +1112,33 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Destination =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Source =>
-             (Valid (Ctx.Cursors (F_Destination))
-              and Ctx.Cursors (Fld).Predecessor = F_Destination),
-          when F_Type_Length_TPID =>
-             (Valid (Ctx.Cursors (F_Source))
-              and Ctx.Cursors (Fld).Predecessor = F_Source),
-          when F_TPID =>
-             (Valid (Ctx.Cursors (F_Type_Length_TPID))
-              and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID),
-          when F_TCI =>
-             (Valid (Ctx.Cursors (F_TPID))
-              and Ctx.Cursors (Fld).Predecessor = F_TPID),
-          when F_Type_Length =>
-             (Valid (Ctx.Cursors (F_TCI))
-              and Ctx.Cursors (Fld).Predecessor = F_TCI)
-             or (Valid (Ctx.Cursors (F_Type_Length_TPID))
-                 and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID),
-          when F_Payload =>
-             (Valid (Ctx.Cursors (F_Type_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Type_Length),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Destination
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Source
+          and ((Valid (Ctx.Cursors (F_Destination))
+                and Ctx.Cursors (Fld).Predecessor = F_Destination)))
+      or (Fld = F_Type_Length_TPID
+          and ((Valid (Ctx.Cursors (F_Source))
+                and Ctx.Cursors (Fld).Predecessor = F_Source)))
+      or (Fld = F_TPID
+          and ((Valid (Ctx.Cursors (F_Type_Length_TPID))
+                and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID)))
+      or (Fld = F_TCI
+          and ((Valid (Ctx.Cursors (F_TPID))
+                and Ctx.Cursors (Fld).Predecessor = F_TPID)))
+      or (Fld = F_Type_Length
+          and ((Valid (Ctx.Cursors (F_TCI))
+                and Ctx.Cursors (Fld).Predecessor = F_TCI)
+               or (Valid (Ctx.Cursors (F_Type_Length_TPID))
+                   and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID)))
+      or (Fld = F_Payload
+          and ((Valid (Ctx.Cursors (F_Type_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Type_Length)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Payload))
+                and Ctx.Cursors (Fld).Predecessor = F_Payload))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -1168,58 +1167,14 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Destination)
-      and then Valid (Ctx, F_Source)
-      and then Valid (Ctx, F_Type_Length_TPID)
-      and then ((Valid (Ctx, F_TPID)
-                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
-                 and then Valid (Ctx, F_TCI)
-                 and then Valid (Ctx, F_Type_Length)
-                 and then ((Structural_Valid (Ctx, F_Payload)
-                            and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                            and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
-                           or (Structural_Valid (Ctx, F_Payload)
-                               and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                               and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
-                or (Valid (Ctx, F_Type_Length)
-                    and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
-                    and then ((Structural_Valid (Ctx, F_Payload)
-                               and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                               and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
-                              or (Structural_Valid (Ctx, F_Payload)
-                                  and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                  and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                            and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
+     (Structural_Valid (Ctx, F_Payload)
+      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500);
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Destination)
-      and then Valid (Ctx, F_Source)
-      and then Valid (Ctx, F_Type_Length_TPID)
-      and then ((Valid (Ctx, F_TPID)
-                 and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value = 16#8100#
-                 and then Valid (Ctx, F_TCI)
-                 and then Valid (Ctx, F_Type_Length)
-                 and then ((Valid (Ctx, F_Payload)
-                            and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                            and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
-                           or (Valid (Ctx, F_Payload)
-                               and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                               and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))
-                or (Valid (Ctx, F_Type_Length)
-                    and then Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#
-                    and then ((Valid (Ctx, F_Payload)
-                               and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                               and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                         and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))
-                              or (Valid (Ctx, F_Payload)
-                                  and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                                  and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                                            and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500))))));
+     (Valid (Ctx, F_Payload)
+      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+      and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500);
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Destination)

@@ -315,90 +315,14 @@ is
                and Field_Condition (Ctx, Value)
             then
                pragma Assert ((if Fld = F_Payload then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               case Fld is
-                  when F_Version =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_IHL =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_DSCP =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_ECN =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Total_Length =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Identification =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Flag_R =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Flag_DF =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Flag_MF =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Fragment_Offset =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_TTL =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Protocol =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Header_Checksum =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Source =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Destination =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Options =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Payload =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               end case;
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
-                  case Fld is
-                     when F_Options =>
-                        Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Options), Last => Field_Last (Ctx, F_Options), Value => Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
-                     when F_Payload =>
-                        Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Payload), Last => Field_Last (Ctx, F_Payload), Value => Value, Predecessor => Ctx.Cursors (F_Payload).Predecessor);
-                     when others =>
-                        null;
-                  end case;
+                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               if Fld = F_Version then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_IHL then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_DSCP then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_ECN then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Total_Length then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Identification then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Flag_R then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Flag_DF then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Flag_MF then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Fragment_Offset then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_TTL then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Protocol then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Header_Checksum then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Source then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Destination then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Options then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Payload then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;

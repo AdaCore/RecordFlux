@@ -1189,26 +1189,25 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Length =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Modular_Vector =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
-          when F_Range_Vector =>
-             (Structural_Valid (Ctx.Cursors (F_Modular_Vector))
-              and Ctx.Cursors (Fld).Predecessor = F_Modular_Vector),
-          when F_Enumeration_Vector =>
-             (Structural_Valid (Ctx.Cursors (F_Range_Vector))
-              and Ctx.Cursors (Fld).Predecessor = F_Range_Vector),
-          when F_AV_Enumeration_Vector =>
-             (Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
-              and Ctx.Cursors (Fld).Predecessor = F_Enumeration_Vector),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
-              and Ctx.Cursors (Fld).Predecessor = F_AV_Enumeration_Vector)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Length
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Modular_Vector
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)))
+      or (Fld = F_Range_Vector
+          and ((Structural_Valid (Ctx.Cursors (F_Modular_Vector))
+                and Ctx.Cursors (Fld).Predecessor = F_Modular_Vector)))
+      or (Fld = F_Enumeration_Vector
+          and ((Structural_Valid (Ctx.Cursors (F_Range_Vector))
+                and Ctx.Cursors (Fld).Predecessor = F_Range_Vector)))
+      or (Fld = F_AV_Enumeration_Vector
+          and ((Structural_Valid (Ctx.Cursors (F_Enumeration_Vector))
+                and Ctx.Cursors (Fld).Predecessor = F_Enumeration_Vector)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_AV_Enumeration_Vector))
+                and Ctx.Cursors (Fld).Predecessor = F_AV_Enumeration_Vector))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -1237,18 +1236,10 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Length)
-      and then Structural_Valid (Ctx, F_Modular_Vector)
-      and then Structural_Valid (Ctx, F_Range_Vector)
-      and then Structural_Valid (Ctx, F_Enumeration_Vector)
-      and then Structural_Valid (Ctx, F_AV_Enumeration_Vector));
+     (Structural_Valid (Ctx, F_AV_Enumeration_Vector));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Length)
-      and then Valid (Ctx, F_Modular_Vector)
-      and then Valid (Ctx, F_Range_Vector)
-      and then Valid (Ctx, F_Enumeration_Vector)
-      and then Valid (Ctx, F_AV_Enumeration_Vector));
+     (Valid (Ctx, F_AV_Enumeration_Vector));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Length)

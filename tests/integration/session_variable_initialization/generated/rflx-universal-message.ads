@@ -1490,43 +1490,45 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Message_Type =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Length =>
-             (Valid (Ctx.Cursors (F_Message_Type))
-              and Ctx.Cursors (Fld).Predecessor = F_Message_Type),
-          when F_Data =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length)
-             or (Valid (Ctx.Cursors (F_Message_Type))
-                 and Ctx.Cursors (Fld).Predecessor = F_Message_Type),
-          when F_Option_Types =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
-          when F_Options =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length)
-             or (Valid (Ctx.Cursors (F_Message_Type))
-                 and Ctx.Cursors (Fld).Predecessor = F_Message_Type),
-          when F_Value | F_Values =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Data))
-              and Ctx.Cursors (Fld).Predecessor = F_Data)
-             or (Valid (Ctx.Cursors (F_Message_Type))
-                 and Ctx.Cursors (Fld).Predecessor = F_Message_Type)
-             or (Structural_Valid (Ctx.Cursors (F_Option_Types))
-                 and Ctx.Cursors (Fld).Predecessor = F_Option_Types)
-             or (Structural_Valid (Ctx.Cursors (F_Options))
-                 and Ctx.Cursors (Fld).Predecessor = F_Options)
-             or (Valid (Ctx.Cursors (F_Value))
-                 and Ctx.Cursors (Fld).Predecessor = F_Value)
-             or (Structural_Valid (Ctx.Cursors (F_Values))
-                 and Ctx.Cursors (Fld).Predecessor = F_Values)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Message_Type
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Length
+          and ((Valid (Ctx.Cursors (F_Message_Type))
+                and Ctx.Cursors (Fld).Predecessor = F_Message_Type)))
+      or (Fld = F_Data
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)
+               or (Valid (Ctx.Cursors (F_Message_Type))
+                   and Ctx.Cursors (Fld).Predecessor = F_Message_Type)))
+      or (Fld = F_Option_Types
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)))
+      or (Fld = F_Options
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)
+               or (Valid (Ctx.Cursors (F_Message_Type))
+                   and Ctx.Cursors (Fld).Predecessor = F_Message_Type)))
+      or (Fld = F_Value
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)))
+      or (Fld = F_Values
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Data))
+                and Ctx.Cursors (Fld).Predecessor = F_Data)
+               or (Valid (Ctx.Cursors (F_Message_Type))
+                   and Ctx.Cursors (Fld).Predecessor = F_Message_Type)
+               or (Structural_Valid (Ctx.Cursors (F_Option_Types))
+                   and Ctx.Cursors (Fld).Predecessor = F_Option_Types)
+               or (Structural_Valid (Ctx.Cursors (F_Options))
+                   and Ctx.Cursors (Fld).Predecessor = F_Options)
+               or (Valid (Ctx.Cursors (F_Value))
+                   and Ctx.Cursors (Fld).Predecessor = F_Value)
+               or (Structural_Valid (Ctx.Cursors (F_Values))
+                   and Ctx.Cursors (Fld).Predecessor = F_Values))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -1555,50 +1557,22 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Message_Type)
-      and then ((Structural_Valid (Ctx, F_Data)
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data)))
-                or RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null))
-                or (Valid (Ctx, F_Length)
-                    and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options))
-                              and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null))
-                              and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data)))
-                    and then ((Structural_Valid (Ctx, F_Data)
-                               and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Data)))
-                              or (Structural_Valid (Ctx, F_Option_Types)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Option_Types)))
-                              or (Structural_Valid (Ctx, F_Options)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Options)))
-                              or (Valid (Ctx, F_Value)
-                                  and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Value))
-                                            and RFLX_Types.U64 (Ctx.Cursors (F_Length).Value.Length_Value) = Universal.Value'Size / 8))
-                              or (Structural_Valid (Ctx, F_Values)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Values)))))
-                or (Structural_Valid (Ctx, F_Options)
-                    and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options)))));
+     (Structural_Valid (Ctx, F_Data)
+      or (Valid (Ctx, F_Message_Type)
+          and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
+      or Structural_Valid (Ctx, F_Option_Types)
+      or Structural_Valid (Ctx, F_Options)
+      or Valid (Ctx, F_Value)
+      or Structural_Valid (Ctx, F_Values));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Message_Type)
-      and then ((Valid (Ctx, F_Data)
-                 and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data)))
-                or RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null))
-                or (Valid (Ctx, F_Length)
-                    and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options))
-                              and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null))
-                              and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) /= RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Data)))
-                    and then ((Valid (Ctx, F_Data)
-                               and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Data)))
-                              or (Valid (Ctx, F_Option_Types)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Option_Types)))
-                              or (Valid (Ctx, F_Options)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Options)))
-                              or (Valid (Ctx, F_Value)
-                                  and then (RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Value))
-                                            and RFLX_Types.U64 (Ctx.Cursors (F_Length).Value.Length_Value) = Universal.Value'Size / 8))
-                              or (Valid (Ctx, F_Values)
-                                  and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Values)))))
-                or (Valid (Ctx, F_Options)
-                    and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Unconstrained_Options)))));
+     (Valid (Ctx, F_Data)
+      or (Valid (Ctx, F_Message_Type)
+          and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
+      or Valid (Ctx, F_Option_Types)
+      or Valid (Ctx, F_Options)
+      or Valid (Ctx, F_Value)
+      or Valid (Ctx, F_Values));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Message_Type)

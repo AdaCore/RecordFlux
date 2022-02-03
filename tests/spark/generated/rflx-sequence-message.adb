@@ -222,46 +222,14 @@ is
                and Field_Condition (Ctx, Value)
             then
                pragma Assert ((if Fld = F_AV_Enumeration_Vector then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               case Fld is
-                  when F_Length =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Modular_Vector =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Range_Vector =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Enumeration_Vector =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_AV_Enumeration_Vector =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               end case;
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
-                  case Fld is
-                     when F_Modular_Vector =>
-                        Ctx.Cursors (F_Modular_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Modular_Vector), Last => Field_Last (Ctx, F_Modular_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
-                     when F_Range_Vector =>
-                        Ctx.Cursors (F_Range_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Range_Vector), Last => Field_Last (Ctx, F_Range_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
-                     when F_Enumeration_Vector =>
-                        Ctx.Cursors (F_Enumeration_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Enumeration_Vector), Last => Field_Last (Ctx, F_Enumeration_Vector), Value => Value, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
-                     when F_AV_Enumeration_Vector =>
-                        Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Structural_Valid, First => Field_First (Ctx, F_AV_Enumeration_Vector), Last => Field_Last (Ctx, F_AV_Enumeration_Vector), Value => Value, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
-                     when others =>
-                        null;
-                  end case;
+                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               if Fld = F_Length then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Modular_Vector then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Range_Vector then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Enumeration_Vector then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_AV_Enumeration_Vector then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
