@@ -167,10 +167,40 @@ class ParserGenerator:
                     ),
                     [
                         *common.field_bit_location_declarations(Variable("Fld")),
+                        ObjectDeclaration(
+                            ["Buffer_First"],
+                            const.TYPES_INDEX,
+                            Call(const.TYPES_TO_INDEX, [Variable("First")]),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(
+                            ["Buffer_Last"],
+                            const.TYPES_INDEX,
+                            Call(const.TYPES_TO_INDEX, [Variable("Last")]),
+                            constant=True,
+                        ),
                         *(
-                            common.field_byte_location_declarations()
+                            [
+                                ObjectDeclaration(
+                                    ["Offset"],
+                                    const.TYPES_OFFSET,
+                                    Call(
+                                        const.TYPES_OFFSET,
+                                        [
+                                            Mod(
+                                                Sub(
+                                                    Number(8),
+                                                    Mod(Variable("Last"), Number(8)),
+                                                ),
+                                                Number(8),
+                                            )
+                                        ],
+                                    ),
+                                    constant=True,
+                                )
+                            ]
                             if scalar_fields
-                            else common.field_byte_bounds_declarations()
+                            else []
                         ),
                         *unique(
                             self.extract_function(common.full_base_type_name(t))
