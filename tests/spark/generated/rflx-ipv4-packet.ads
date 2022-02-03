@@ -1845,23 +1845,8 @@ private
       and then Valid_Next (Ctx, F_Version)
       and then Field_First (Ctx, F_Version) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Version) = Ctx.Last - Ctx.First + 1
-      and then Invalid (Ctx, F_Version)
-      and then Invalid (Ctx, F_IHL)
-      and then Invalid (Ctx, F_DSCP)
-      and then Invalid (Ctx, F_ECN)
-      and then Invalid (Ctx, F_Total_Length)
-      and then Invalid (Ctx, F_Identification)
-      and then Invalid (Ctx, F_Flag_R)
-      and then Invalid (Ctx, F_Flag_DF)
-      and then Invalid (Ctx, F_Flag_MF)
-      and then Invalid (Ctx, F_Fragment_Offset)
-      and then Invalid (Ctx, F_TTL)
-      and then Invalid (Ctx, F_Protocol)
-      and then Invalid (Ctx, F_Header_Checksum)
-      and then Invalid (Ctx, F_Source)
-      and then Invalid (Ctx, F_Destination)
-      and then Invalid (Ctx, F_Options)
-      and then Invalid (Ctx, F_Payload));
+      and then (for all F in Field =>
+                   Invalid (Ctx, F)));
 
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
