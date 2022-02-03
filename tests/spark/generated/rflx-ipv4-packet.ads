@@ -2179,62 +2179,61 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Version =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_IHL =>
-             (Valid (Ctx.Cursors (F_Version))
-              and Ctx.Cursors (Fld).Predecessor = F_Version),
-          when F_DSCP =>
-             (Valid (Ctx.Cursors (F_IHL))
-              and Ctx.Cursors (Fld).Predecessor = F_IHL),
-          when F_ECN =>
-             (Valid (Ctx.Cursors (F_DSCP))
-              and Ctx.Cursors (Fld).Predecessor = F_DSCP),
-          when F_Total_Length =>
-             (Valid (Ctx.Cursors (F_ECN))
-              and Ctx.Cursors (Fld).Predecessor = F_ECN),
-          when F_Identification =>
-             (Valid (Ctx.Cursors (F_Total_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Total_Length),
-          when F_Flag_R =>
-             (Valid (Ctx.Cursors (F_Identification))
-              and Ctx.Cursors (Fld).Predecessor = F_Identification),
-          when F_Flag_DF =>
-             (Valid (Ctx.Cursors (F_Flag_R))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_R),
-          when F_Flag_MF =>
-             (Valid (Ctx.Cursors (F_Flag_DF))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_DF),
-          when F_Fragment_Offset =>
-             (Valid (Ctx.Cursors (F_Flag_MF))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_MF),
-          when F_TTL =>
-             (Valid (Ctx.Cursors (F_Fragment_Offset))
-              and Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset),
-          when F_Protocol =>
-             (Valid (Ctx.Cursors (F_TTL))
-              and Ctx.Cursors (Fld).Predecessor = F_TTL),
-          when F_Header_Checksum =>
-             (Valid (Ctx.Cursors (F_Protocol))
-              and Ctx.Cursors (Fld).Predecessor = F_Protocol),
-          when F_Source =>
-             (Valid (Ctx.Cursors (F_Header_Checksum))
-              and Ctx.Cursors (Fld).Predecessor = F_Header_Checksum),
-          when F_Destination =>
-             (Valid (Ctx.Cursors (F_Source))
-              and Ctx.Cursors (Fld).Predecessor = F_Source),
-          when F_Options =>
-             (Valid (Ctx.Cursors (F_Destination))
-              and Ctx.Cursors (Fld).Predecessor = F_Destination),
-          when F_Payload =>
-             (Structural_Valid (Ctx.Cursors (F_Options))
-              and Ctx.Cursors (Fld).Predecessor = F_Options),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Version
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_IHL
+          and ((Valid (Ctx.Cursors (F_Version))
+                and Ctx.Cursors (Fld).Predecessor = F_Version)))
+      or (Fld = F_DSCP
+          and ((Valid (Ctx.Cursors (F_IHL))
+                and Ctx.Cursors (Fld).Predecessor = F_IHL)))
+      or (Fld = F_ECN
+          and ((Valid (Ctx.Cursors (F_DSCP))
+                and Ctx.Cursors (Fld).Predecessor = F_DSCP)))
+      or (Fld = F_Total_Length
+          and ((Valid (Ctx.Cursors (F_ECN))
+                and Ctx.Cursors (Fld).Predecessor = F_ECN)))
+      or (Fld = F_Identification
+          and ((Valid (Ctx.Cursors (F_Total_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Total_Length)))
+      or (Fld = F_Flag_R
+          and ((Valid (Ctx.Cursors (F_Identification))
+                and Ctx.Cursors (Fld).Predecessor = F_Identification)))
+      or (Fld = F_Flag_DF
+          and ((Valid (Ctx.Cursors (F_Flag_R))
+                and Ctx.Cursors (Fld).Predecessor = F_Flag_R)))
+      or (Fld = F_Flag_MF
+          and ((Valid (Ctx.Cursors (F_Flag_DF))
+                and Ctx.Cursors (Fld).Predecessor = F_Flag_DF)))
+      or (Fld = F_Fragment_Offset
+          and ((Valid (Ctx.Cursors (F_Flag_MF))
+                and Ctx.Cursors (Fld).Predecessor = F_Flag_MF)))
+      or (Fld = F_TTL
+          and ((Valid (Ctx.Cursors (F_Fragment_Offset))
+                and Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset)))
+      or (Fld = F_Protocol
+          and ((Valid (Ctx.Cursors (F_TTL))
+                and Ctx.Cursors (Fld).Predecessor = F_TTL)))
+      or (Fld = F_Header_Checksum
+          and ((Valid (Ctx.Cursors (F_Protocol))
+                and Ctx.Cursors (Fld).Predecessor = F_Protocol)))
+      or (Fld = F_Source
+          and ((Valid (Ctx.Cursors (F_Header_Checksum))
+                and Ctx.Cursors (Fld).Predecessor = F_Header_Checksum)))
+      or (Fld = F_Destination
+          and ((Valid (Ctx.Cursors (F_Source))
+                and Ctx.Cursors (Fld).Predecessor = F_Source)))
+      or (Fld = F_Options
+          and ((Valid (Ctx.Cursors (F_Destination))
+                and Ctx.Cursors (Fld).Predecessor = F_Destination)))
+      or (Fld = F_Payload
+          and ((Structural_Valid (Ctx.Cursors (F_Options))
+                and Ctx.Cursors (Fld).Predecessor = F_Options)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Payload))
+                and Ctx.Cursors (Fld).Predecessor = F_Payload))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -2263,46 +2262,10 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Version)
-      and then Valid (Ctx, F_IHL)
-      and then Valid (Ctx, F_DSCP)
-      and then Valid (Ctx, F_ECN)
-      and then Valid (Ctx, F_Total_Length)
-      and then Valid (Ctx, F_Identification)
-      and then RFLX_Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX_Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
-      and then Valid (Ctx, F_Flag_R)
-      and then Valid (Ctx, F_Flag_DF)
-      and then RFLX_Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = RFLX_Types.U64 (To_Base (False))
-      and then Valid (Ctx, F_Flag_MF)
-      and then Valid (Ctx, F_Fragment_Offset)
-      and then Valid (Ctx, F_TTL)
-      and then Valid (Ctx, F_Protocol)
-      and then Valid (Ctx, F_Header_Checksum)
-      and then Valid (Ctx, F_Source)
-      and then Valid (Ctx, F_Destination)
-      and then Structural_Valid (Ctx, F_Options)
-      and then Structural_Valid (Ctx, F_Payload));
+     (Structural_Valid (Ctx, F_Payload));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Version)
-      and then Valid (Ctx, F_IHL)
-      and then Valid (Ctx, F_DSCP)
-      and then Valid (Ctx, F_ECN)
-      and then Valid (Ctx, F_Total_Length)
-      and then Valid (Ctx, F_Identification)
-      and then RFLX_Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX_Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4
-      and then Valid (Ctx, F_Flag_R)
-      and then Valid (Ctx, F_Flag_DF)
-      and then RFLX_Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = RFLX_Types.U64 (To_Base (False))
-      and then Valid (Ctx, F_Flag_MF)
-      and then Valid (Ctx, F_Fragment_Offset)
-      and then Valid (Ctx, F_TTL)
-      and then Valid (Ctx, F_Protocol)
-      and then Valid (Ctx, F_Header_Checksum)
-      and then Valid (Ctx, F_Source)
-      and then Valid (Ctx, F_Destination)
-      and then Valid (Ctx, F_Options)
-      and then Valid (Ctx, F_Payload));
+     (Valid (Ctx, F_Payload));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Version)

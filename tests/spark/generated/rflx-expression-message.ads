@@ -614,14 +614,13 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Payload =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Payload
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Payload))
+                and Ctx.Cursors (Fld).Predecessor = F_Payload))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -651,11 +650,11 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Payload)
-      and then Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
+      and Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload)
-      and then Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
+      and Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Payload));

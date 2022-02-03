@@ -764,19 +764,18 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Data =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Extension =>
-             (Structural_Valid (Ctx.Cursors (F_Data))
-              and Ctx.Cursors (Fld).Predecessor = F_Data),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Data))
-              and Ctx.Cursors (Fld).Predecessor = F_Data)
-             or (Structural_Valid (Ctx.Cursors (F_Extension))
-                 and Ctx.Cursors (Fld).Predecessor = F_Extension)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Data
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Extension
+          and ((Structural_Valid (Ctx.Cursors (F_Data))
+                and Ctx.Cursors (Fld).Predecessor = F_Data)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Data))
+                and Ctx.Cursors (Fld).Predecessor = F_Data)
+               or (Structural_Valid (Ctx.Cursors (F_Extension))
+                   and Ctx.Cursors (Fld).Predecessor = F_Extension))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -805,16 +804,14 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Structural_Valid (Ctx, F_Data)
-      and then ((Structural_Valid (Ctx, F_Extension)
-                 and then RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True)))
-                or RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False))));
+     ((Structural_Valid (Ctx, F_Data)
+       and RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
+      or Structural_Valid (Ctx, F_Extension));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Data)
-      and then ((Valid (Ctx, F_Extension)
-                 and then RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True)))
-                or RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False))));
+     ((Valid (Ctx, F_Data)
+       and RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
+      or Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Data)

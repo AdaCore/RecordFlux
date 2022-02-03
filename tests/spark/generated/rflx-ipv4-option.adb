@@ -255,35 +255,14 @@ is
                                   or Fld = F_Option_Number
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               case Fld is
-                  when F_Copied =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Option_Class =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Option_Number =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Option_Length =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Option_Data =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               end case;
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               if Fld = F_Copied then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Option_Class then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Option_Number then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Option_Length then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Option_Data then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;

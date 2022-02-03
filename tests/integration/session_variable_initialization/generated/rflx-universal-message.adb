@@ -279,54 +279,14 @@ is
                                   or Fld = F_Values
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               case Fld is
-                  when F_Message_Type =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Length =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Data =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Option_Types =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Options =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Value =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Values =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               end case;
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
-                  case Fld is
-                     when F_Data =>
-                        Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Data), Last => Field_Last (Ctx, F_Data), Value => Value, Predecessor => Ctx.Cursors (F_Data).Predecessor);
-                     when F_Option_Types =>
-                        Ctx.Cursors (F_Option_Types) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Option_Types), Last => Field_Last (Ctx, F_Option_Types), Value => Value, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
-                     when F_Options =>
-                        Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Options), Last => Field_Last (Ctx, F_Options), Value => Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
-                     when F_Values =>
-                        Ctx.Cursors (F_Values) := (State => S_Structural_Valid, First => Field_First (Ctx, F_Values), Last => Field_Last (Ctx, F_Values), Value => Value, Predecessor => Ctx.Cursors (F_Values).Predecessor);
-                     when others =>
-                        null;
-                  end case;
+                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               if Fld = F_Message_Type then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Length then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Data then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Option_Types then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Options then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Value then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Values then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
