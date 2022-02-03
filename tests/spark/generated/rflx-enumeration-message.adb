@@ -185,32 +185,9 @@ is
       Verify (Ctx, F_Priority);
    end Verify_Message;
 
-   procedure Set_Field_Value_Priority (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_Priority in Field'Range
-       and then Valid_Next (Ctx, F_Priority)
-       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Priority))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_Priority)
-       and Lst = Field_Last (Ctx, F_Priority)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Priority);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Priority);
+   procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
+      Field_Value : constant Field_Dependent_Value := (F_Priority, To_Base (Val));
+      First, Last : RFLX_Types.Bit_Index;
       function Buffer_First return RFLX_Types.Index is
         (RFLX_Types.To_Index (First));
       function Buffer_Last return RFLX_Types.Index is
@@ -219,17 +196,10 @@ is
         (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
       procedure Insert is new RFLX_Types.Insert (RFLX.Enumeration.Priority_Base);
    begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.Priority_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_Priority;
-
-   procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
-      Field_Value : constant Field_Dependent_Value := (F_Priority, To_Base (Val));
-      First, Last : RFLX_Types.Bit_Index;
-   begin
       Reset_Dependent_Fields (Ctx, F_Priority);
-      Set_Field_Value_Priority (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_Priority);
+      Last := Field_Last (Ctx, F_Priority);
+      Insert (Field_Value.Priority_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");

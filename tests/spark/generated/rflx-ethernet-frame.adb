@@ -326,249 +326,21 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Payload;
 
-   procedure Set_Field_Value_Destination (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_Destination in Field'Range
-       and then Valid_Next (Ctx, F_Destination)
-       and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Destination))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_Destination)
-       and Lst = Field_Last (Ctx, F_Destination)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Destination);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Destination);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_Destination;
-
-   procedure Set_Field_Value_Source (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_Source in Field'Range
-       and then Valid_Next (Ctx, F_Source)
-       and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Source))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_Source)
-       and Lst = Field_Last (Ctx, F_Source)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Source);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Source);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_Source;
-
-   procedure Set_Field_Value_Type_Length_TPID (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_Type_Length_TPID in Field'Range
-       and then Valid_Next (Ctx, F_Type_Length_TPID)
-       and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID)
-       and then (for all F in Field'Range =>
-                    (if
-                        Structural_Valid (Ctx.Cursors (F))
-                     then
-                        Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Type_Length_TPID))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_Type_Length_TPID)
-       and Lst = Field_Last (Ctx, F_Type_Length_TPID)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Type_Length_TPID);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Type_Length_TPID);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.Type_Length_TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_Type_Length_TPID;
-
-   procedure Set_Field_Value_TPID (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_TPID in Field'Range
-       and then Valid_Next (Ctx, F_TPID)
-       and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_TPID))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_TPID)
-       and Lst = Field_Last (Ctx, F_TPID)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_TPID);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_TPID);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TPID_Base);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_TPID;
-
-   procedure Set_Field_Value_TCI (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_TCI in Field'Range
-       and then Valid_Next (Ctx, F_TCI)
-       and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_TCI))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_TCI)
-       and Lst = Field_Last (Ctx, F_TCI)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_TCI);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_TCI);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TCI);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.TCI_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_TCI;
-
-   procedure Set_Field_Value_Type_Length (Ctx : in out Context; Val : Field_Dependent_Value; Fst, Lst : out RFLX_Types.Bit_Index) with
-     Pre =>
-       not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then F_Type_Length in Field'Range
-       and then Valid_Next (Ctx, F_Type_Length)
-       and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length)
-       and then (for all F in Field'Range =>
-                    (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Field_Last (Ctx, F_Type_Length))),
-     Post =>
-       Has_Buffer (Ctx)
-       and Fst = Field_First (Ctx, F_Type_Length)
-       and Lst = Field_Last (Ctx, F_Type_Length)
-       and Fst >= Ctx.First
-       and Fst <= Lst + 1
-       and Lst <= Ctx.Last
-       and (for all F in Field'Range =>
-               (if Structural_Valid (Ctx.Cursors (F)) then Ctx.Cursors (F).Last <= Lst))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors = Ctx.Cursors'Old
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Type_Length);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Type_Length);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
-      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
-   begin
-      Fst := First;
-      Lst := Last;
-      Insert (Val.Type_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
-   end Set_Field_Value_Type_Length;
-
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
       Field_Value : constant Field_Dependent_Value := (F_Destination, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
    begin
       Reset_Dependent_Fields (Ctx, F_Destination);
-      Set_Field_Value_Destination (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_Destination);
+      Last := Field_Last (Ctx, F_Destination);
+      Insert (Field_Value.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
@@ -579,9 +351,18 @@ is
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
       Field_Value : constant Field_Dependent_Value := (F_Source, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
    begin
       Reset_Dependent_Fields (Ctx, F_Source);
-      Set_Field_Value_Source (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_Source);
+      Last := Field_Last (Ctx, F_Source);
+      Insert (Field_Value.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
@@ -592,9 +373,18 @@ is
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
       Field_Value : constant Field_Dependent_Value := (F_Type_Length_TPID, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length_TPID);
-      Set_Field_Value_Type_Length_TPID (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_Type_Length_TPID);
+      Last := Field_Last (Ctx, F_Type_Length_TPID);
+      Insert (Field_Value.Type_Length_TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
@@ -605,9 +395,18 @@ is
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) is
       Field_Value : constant Field_Dependent_Value := (F_TPID, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TPID_Base);
    begin
       Reset_Dependent_Fields (Ctx, F_TPID);
-      Set_Field_Value_TPID (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_TPID);
+      Last := Field_Last (Ctx, F_TPID);
+      Insert (Field_Value.TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
@@ -618,9 +417,18 @@ is
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) is
       Field_Value : constant Field_Dependent_Value := (F_TCI, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TCI);
    begin
       Reset_Dependent_Fields (Ctx, F_TCI);
-      Set_Field_Value_TCI (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_TCI);
+      Last := Field_Last (Ctx, F_TCI);
+      Insert (Field_Value.TCI_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
@@ -631,9 +439,18 @@ is
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
       Field_Value : constant Field_Dependent_Value := (F_Type_Length, To_Base (Val));
       First, Last : RFLX_Types.Bit_Index;
+      function Buffer_First return RFLX_Types.Index is
+        (RFLX_Types.To_Index (First));
+      function Buffer_Last return RFLX_Types.Index is
+        (RFLX_Types.To_Index (Last));
+      function Offset return RFLX_Types.Offset is
+        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
    begin
       Reset_Dependent_Fields (Ctx, F_Type_Length);
-      Set_Field_Value_Type_Length (Ctx, Field_Value, First, Last);
+      First := Field_First (Ctx, F_Type_Length);
+      Last := Field_Last (Ctx, F_Type_Length);
+      Insert (Field_Value.Type_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + 7) / 8) * 8, Written_Last => ((Last + 7) / 8) * 8);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
