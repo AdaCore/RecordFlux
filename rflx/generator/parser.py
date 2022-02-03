@@ -20,6 +20,7 @@ from rflx.ada import (
     ExpressionFunctionDeclaration,
     First,
     FormalSubprogramDeclaration,
+    ForSomeIn,
     FunctionSpecification,
     GenericFunctionInstantiation,
     Ghost,
@@ -672,7 +673,7 @@ class ParserGenerator:
         )
 
     @staticmethod
-    def create_incomplete_message_function(message: Message) -> UnitPart:
+    def create_incomplete_message_function() -> UnitPart:
         specification = FunctionSpecification(
             "Incomplete_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
@@ -693,14 +694,13 @@ class ParserGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    Or(
-                        *[
-                            Call(
-                                "Incomplete",
-                                [Variable("Ctx"), Variable(f.affixed_name)],
-                            )
-                            for f in message.fields
-                        ]
+                    ForSomeIn(
+                        "F",
+                        Variable("Field"),
+                        Call(
+                            "Incomplete",
+                            [Variable("Ctx"), Variable("F")],
+                        ),
                     ),
                 )
             ],

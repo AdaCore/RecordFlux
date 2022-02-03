@@ -682,8 +682,8 @@ private
      (Valid (Ctx, F_B));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_A)
-      or Incomplete (Ctx, F_B));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_A (Ctx : Context) return RFLX.Messages.Integer is
      (To_Actual (Ctx.Cursors (F_A).Value.A_Value));

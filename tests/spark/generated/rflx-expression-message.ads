@@ -711,7 +711,8 @@ private
       and then Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Payload));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is

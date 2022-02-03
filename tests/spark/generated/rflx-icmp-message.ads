@@ -2330,22 +2330,8 @@ private
       or Valid (Ctx, F_Transmit_Timestamp));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Tag)
-      or Incomplete (Ctx, F_Code_Destination_Unreachable)
-      or Incomplete (Ctx, F_Code_Redirect)
-      or Incomplete (Ctx, F_Code_Time_Exceeded)
-      or Incomplete (Ctx, F_Code_Zero)
-      or Incomplete (Ctx, F_Checksum)
-      or Incomplete (Ctx, F_Gateway_Internet_Address)
-      or Incomplete (Ctx, F_Identifier)
-      or Incomplete (Ctx, F_Pointer)
-      or Incomplete (Ctx, F_Unused_32)
-      or Incomplete (Ctx, F_Sequence_Number)
-      or Incomplete (Ctx, F_Unused_24)
-      or Incomplete (Ctx, F_Originate_Timestamp)
-      or Incomplete (Ctx, F_Data)
-      or Incomplete (Ctx, F_Receive_Timestamp)
-      or Incomplete (Ctx, F_Transmit_Timestamp));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag is
      (To_Actual (Ctx.Cursors (F_Tag).Value.Tag_Value));

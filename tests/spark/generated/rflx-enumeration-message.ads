@@ -619,7 +619,8 @@ private
      (Valid (Ctx, F_Priority));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Priority));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Priority (Ctx : Context) return RFLX.Enumeration.Priority is
      (To_Actual (Ctx.Cursors (F_Priority).Value.Priority_Value));

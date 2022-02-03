@@ -1058,11 +1058,8 @@ private
                     and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Copied)
-      or Incomplete (Ctx, F_Option_Class)
-      or Incomplete (Ctx, F_Option_Number)
-      or Incomplete (Ctx, F_Option_Length)
-      or Incomplete (Ctx, F_Option_Data));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Copied (Ctx : Context) return Boolean is
      (To_Actual (Ctx.Cursors (F_Copied).Value.Copied_Value));

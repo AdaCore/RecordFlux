@@ -2208,23 +2208,8 @@ private
      (Valid (Ctx, F_Payload));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
-     (Incomplete (Ctx, F_Version)
-      or Incomplete (Ctx, F_IHL)
-      or Incomplete (Ctx, F_DSCP)
-      or Incomplete (Ctx, F_ECN)
-      or Incomplete (Ctx, F_Total_Length)
-      or Incomplete (Ctx, F_Identification)
-      or Incomplete (Ctx, F_Flag_R)
-      or Incomplete (Ctx, F_Flag_DF)
-      or Incomplete (Ctx, F_Flag_MF)
-      or Incomplete (Ctx, F_Fragment_Offset)
-      or Incomplete (Ctx, F_TTL)
-      or Incomplete (Ctx, F_Protocol)
-      or Incomplete (Ctx, F_Header_Checksum)
-      or Incomplete (Ctx, F_Source)
-      or Incomplete (Ctx, F_Destination)
-      or Incomplete (Ctx, F_Options)
-      or Incomplete (Ctx, F_Payload));
+     ((for some F in Field =>
+          Incomplete (Ctx, F)));
 
    function Get_Version (Ctx : Context) return RFLX.IPv4.Version is
      (To_Actual (Ctx.Cursors (F_Version).Value.Version_Value));
