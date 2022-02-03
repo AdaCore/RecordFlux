@@ -918,26 +918,25 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Source_Port =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Destination_Port =>
-             (Valid (Ctx.Cursors (F_Source_Port))
-              and Ctx.Cursors (Fld).Predecessor = F_Source_Port),
-          when F_Length =>
-             (Valid (Ctx.Cursors (F_Destination_Port))
-              and Ctx.Cursors (Fld).Predecessor = F_Destination_Port),
-          when F_Checksum =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
-          when F_Payload =>
-             (Valid (Ctx.Cursors (F_Checksum))
-              and Ctx.Cursors (Fld).Predecessor = F_Checksum),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Source_Port
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Destination_Port
+          and ((Valid (Ctx.Cursors (F_Source_Port))
+                and Ctx.Cursors (Fld).Predecessor = F_Source_Port)))
+      or (Fld = F_Length
+          and ((Valid (Ctx.Cursors (F_Destination_Port))
+                and Ctx.Cursors (Fld).Predecessor = F_Destination_Port)))
+      or (Fld = F_Checksum
+          and ((Valid (Ctx.Cursors (F_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Length)))
+      or (Fld = F_Payload
+          and ((Valid (Ctx.Cursors (F_Checksum))
+                and Ctx.Cursors (Fld).Predecessor = F_Checksum)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Payload))
+                and Ctx.Cursors (Fld).Predecessor = F_Payload))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -966,18 +965,10 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Source_Port)
-      and then Valid (Ctx, F_Destination_Port)
-      and then Valid (Ctx, F_Length)
-      and then Valid (Ctx, F_Checksum)
-      and then Structural_Valid (Ctx, F_Payload));
+     (Structural_Valid (Ctx, F_Payload));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Source_Port)
-      and then Valid (Ctx, F_Destination_Port)
-      and then Valid (Ctx, F_Length)
-      and then Valid (Ctx, F_Checksum)
-      and then Valid (Ctx, F_Payload));
+     (Valid (Ctx, F_Payload));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Source_Port)

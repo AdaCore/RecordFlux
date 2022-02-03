@@ -984,28 +984,27 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Copied =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Option_Class =>
-             (Valid (Ctx.Cursors (F_Copied))
-              and Ctx.Cursors (Fld).Predecessor = F_Copied),
-          when F_Option_Number =>
-             (Valid (Ctx.Cursors (F_Option_Class))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Class),
-          when F_Option_Length =>
-             (Valid (Ctx.Cursors (F_Option_Number))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Number),
-          when F_Option_Data =>
-             (Valid (Ctx.Cursors (F_Option_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Length),
-          when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Option_Data))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Data)
-             or (Valid (Ctx.Cursors (F_Option_Number))
-                 and Ctx.Cursors (Fld).Predecessor = F_Option_Number)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Copied
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Option_Class
+          and ((Valid (Ctx.Cursors (F_Copied))
+                and Ctx.Cursors (Fld).Predecessor = F_Copied)))
+      or (Fld = F_Option_Number
+          and ((Valid (Ctx.Cursors (F_Option_Class))
+                and Ctx.Cursors (Fld).Predecessor = F_Option_Class)))
+      or (Fld = F_Option_Length
+          and ((Valid (Ctx.Cursors (F_Option_Number))
+                and Ctx.Cursors (Fld).Predecessor = F_Option_Number)))
+      or (Fld = F_Option_Data
+          and ((Valid (Ctx.Cursors (F_Option_Length))
+                and Ctx.Cursors (Fld).Predecessor = F_Option_Length)))
+      or (Fld = F_Final
+          and ((Structural_Valid (Ctx.Cursors (F_Option_Data))
+                and Ctx.Cursors (Fld).Predecessor = F_Option_Data)
+               or (Valid (Ctx.Cursors (F_Option_Number))
+                   and Ctx.Cursors (Fld).Predecessor = F_Option_Number))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -1034,48 +1033,16 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Copied)
-      and then Valid (Ctx, F_Option_Class)
-      and then Valid (Ctx, F_Option_Number)
-      and then ((RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
-                or (Valid (Ctx, F_Option_Length)
-                    and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
-                    and then Structural_Valid (Ctx, F_Option_Data)
-                    and then ((RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                              or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                                  and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                                  and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)))));
+     (Structural_Valid (Ctx, F_Option_Data)
+      or (Valid (Ctx, F_Option_Number)
+          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_Copied)
-      and then Valid (Ctx, F_Option_Class)
-      and then Valid (Ctx, F_Option_Number)
-      and then ((RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)
-                or (Valid (Ctx, F_Option_Length)
-                    and then Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1
-                    and then Valid (Ctx, F_Option_Data)
-                    and then ((RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                               and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                              or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                                       or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                                  and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                              or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                                  and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                  and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)))));
+     (Valid (Ctx, F_Option_Data)
+      or (Valid (Ctx, F_Option_Number)
+          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Copied)

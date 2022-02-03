@@ -591,17 +591,16 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_C =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_D =>
-             (Valid (Ctx.Cursors (F_C))
-              and Ctx.Cursors (Fld).Predecessor = F_C),
-          when F_Final =>
-             (Valid (Ctx.Cursors (F_D))
-              and Ctx.Cursors (Fld).Predecessor = F_D)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_C
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_D
+          and ((Valid (Ctx.Cursors (F_C))
+                and Ctx.Cursors (Fld).Predecessor = F_C)))
+      or (Fld = F_Final
+          and ((Valid (Ctx.Cursors (F_D))
+                and Ctx.Cursors (Fld).Predecessor = F_D))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
@@ -630,12 +629,10 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_C)
-      and then Valid (Ctx, F_D));
+     (Valid (Ctx, F_D));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_C)
-      and then Valid (Ctx, F_D));
+     (Valid (Ctx, F_D));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_C)

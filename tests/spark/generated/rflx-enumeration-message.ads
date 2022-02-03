@@ -524,14 +524,13 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Priority =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Final =>
-             (Valid (Ctx.Cursors (F_Priority))
-              and Ctx.Cursors (Fld).Predecessor = F_Priority)));
+     ((Fld = F_Initial
+       and (True))
+      or (Fld = F_Priority
+          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
+      or (Fld = F_Final
+          and ((Valid (Ctx.Cursors (F_Priority))
+                and Ctx.Cursors (Fld).Predecessor = F_Priority))));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)

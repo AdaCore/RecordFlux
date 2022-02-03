@@ -366,79 +366,14 @@ is
                                   or Fld = F_Transmit_Timestamp
                                then
                                   Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               case Fld is
-                  when F_Tag =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Code_Destination_Unreachable =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Code_Redirect =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Code_Time_Exceeded =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Code_Zero =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Checksum =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Gateway_Internet_Address =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Identifier =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Pointer =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Unused_32 =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Sequence_Number =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Unused_24 =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Originate_Timestamp =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Data =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Receive_Timestamp =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-                  when F_Transmit_Timestamp =>
-                     Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
-               end case;
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
                   Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               if Fld = F_Tag then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Code_Destination_Unreachable then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Code_Redirect then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Code_Time_Exceeded then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Code_Zero then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Checksum then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Gateway_Internet_Address then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Identifier then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Pointer then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Unused_32 then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Sequence_Number then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Unused_24 then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Originate_Timestamp then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Data then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Receive_Timestamp then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               elsif Fld = F_Transmit_Timestamp then
-                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
-               end if;
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
