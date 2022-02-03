@@ -499,6 +499,8 @@ private
 
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
      ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
@@ -531,9 +533,14 @@ private
                 then
                    Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
                    and then Cursors (F_Payload).Predecessor = F_Initial
-                   and then Cursors (F_Payload).First = First));
+                   and then Cursors (F_Payload).First = First))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is
       record
