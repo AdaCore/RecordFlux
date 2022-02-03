@@ -373,7 +373,39 @@ is
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               if Fld = F_Tag then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Code_Destination_Unreachable then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Code_Redirect then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Code_Time_Exceeded then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Code_Zero then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Checksum then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Gateway_Internet_Address then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Identifier then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Pointer then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Unused_32 then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Sequence_Number then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Unused_24 then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Originate_Timestamp then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Data then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Receive_Timestamp then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               elsif Fld = F_Transmit_Timestamp then
+                  Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               end if;
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;

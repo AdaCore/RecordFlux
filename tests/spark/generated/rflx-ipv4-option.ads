@@ -1035,14 +1035,14 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1));
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-          and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1));
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Copied)

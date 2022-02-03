@@ -650,11 +650,11 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Payload)
-      and Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
+      and then Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload)
-      and Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
+      and then Equal (Ctx, F_Payload, (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Payload));

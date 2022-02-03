@@ -803,12 +803,12 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
-       and RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error)))
+       and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error)))
       or Structural_Valid (Ctx, F_Value));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
-       and RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error)))
+       and then RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Error)))
       or Valid (Ctx, F_Value));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
