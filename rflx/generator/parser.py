@@ -306,15 +306,28 @@ class ParserGenerator:
             else set_context_cursor_composite_field("Fld"),
             *(
                 [
-                    Assignment(
-                        Indexed(
-                            Variable("Ctx.Cursors"),
-                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
-                        ),
-                        NamedAggregate(
-                            ("State", Variable("S_Invalid")),
-                            ("Predecessor", Variable("Fld")),
-                        ),
+                    # ISSUE: Componolit/RecordFlux#664
+                    # The provability of the context predicate is increased by splitting the
+                    # assignment into multiple statements.
+                    IfStatement(
+                        [
+                            (
+                                Equal(Variable("Fld"), Variable(f.affixed_name)),
+                                [
+                                    Assignment(
+                                        Indexed(
+                                            Variable("Ctx.Cursors"),
+                                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
+                                        ),
+                                        NamedAggregate(
+                                            ("State", Variable("S_Invalid")),
+                                            ("Predecessor", Variable("Fld")),
+                                        ),
+                                    )
+                                ],
+                            )
+                            for f in message.fields
+                        ]
                     )
                 ]
                 if len(message.fields) > 1
@@ -1022,7 +1035,7 @@ class ParserGenerator:
         return (
             expr.Or(
                 *[
-                    expr.And(
+                    expr.AndThen(
                         expr.Call(
                             "Structural_Valid"
                             if structural and isinstance(message.field_types[l.source], Composite)

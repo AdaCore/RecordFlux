@@ -805,12 +805,12 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      ((Structural_Valid (Ctx, F_Data)
-       and RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
+       and then RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
       or Structural_Valid (Ctx, F_Extension));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Data)
-       and RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
+       and then RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False)))
       or Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
