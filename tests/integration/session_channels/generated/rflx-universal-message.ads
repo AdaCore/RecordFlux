@@ -1559,7 +1559,7 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Message_Type)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
+          and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
       or Structural_Valid (Ctx, F_Option_Types)
       or Structural_Valid (Ctx, F_Options)
       or Valid (Ctx, F_Value)
@@ -1568,7 +1568,7 @@ private
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Message_Type)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
+          and then RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Null)))
       or Valid (Ctx, F_Option_Types)
       or Valid (Ctx, F_Options)
       or Valid (Ctx, F_Value)

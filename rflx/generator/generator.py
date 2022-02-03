@@ -3262,7 +3262,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ExpressionFunctionDeclaration(
                     specification,
                     common.context_predicate(message, composite_fields, self.__prefix),
-                    [Postcondition(TRUE)]
+                    [Postcondition(TRUE)],
                 ),
                 Pragma(
                     "Warnings",

@@ -804,12 +804,12 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Option_Type)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.OT_Null))));
+          and then RFLX_Types.U64 (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.OT_Null))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Option_Type)
-          and RFLX_Types.U64 (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.OT_Null))));
+          and then RFLX_Types.U64 (Ctx.Cursors (F_Option_Type).Value.Option_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.OT_Null))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      (Incomplete (Ctx, F_Option_Type)
