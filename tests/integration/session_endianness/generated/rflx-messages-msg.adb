@@ -158,12 +158,9 @@ is
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
-      function Buffer_First return RFLX_Types.Index is
-        (RFLX_Types.To_Index (First));
-      function Buffer_Last return RFLX_Types.Index is
-        (RFLX_Types.To_Index (Last));
-      function Offset return RFLX_Types.Offset is
-        (RFLX_Types.Offset ((8 - Last mod 8) mod 8));
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last);
+      Offset : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - Last mod 8) mod 8);
       function Extract is new RFLX_Types.Extract (RFLX.Messages.Integer);
       function Extract is new RFLX_Types.Extract (RFLX.Messages.Enum_T_Base);
    begin
