@@ -253,11 +253,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Source_Port);
-      Verify (Ctx, F_Destination_Port);
-      Verify (Ctx, F_Length);
-      Verify (Ctx, F_Checksum);
-      Verify (Ctx, F_Payload);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes is

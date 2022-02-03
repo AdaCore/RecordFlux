@@ -284,11 +284,9 @@ is
 
    procedure Verify_Message (Ctx : in out Context) is
    begin
-      Verify (Ctx, F_Copied);
-      Verify (Ctx, F_Option_Class);
-      Verify (Ctx, F_Option_Number);
-      Verify (Ctx, F_Option_Length);
-      Verify (Ctx, F_Option_Data);
+      for F in Field loop
+         Verify (Ctx, F);
+      end loop;
    end Verify_Message;
 
    function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes is
