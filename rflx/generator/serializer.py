@@ -21,14 +21,12 @@ from rflx.ada import (
     Equal,
     Expr,
     ExpressionFunctionDeclaration,
-    ForAllIn,
     FormalSubprogramDeclaration,
     FunctionSpecification,
     GenericProcedureInstantiation,
     Greater,
     GreaterEqual,
     If,
-    In,
     Indexed,
     InOutParameter,
     Length,
@@ -47,7 +45,6 @@ from rflx.ada import (
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
-    Range,
     Selected,
     Size,
     Slice,
@@ -83,158 +80,6 @@ class SerializerGenerator:
                 ],
             ),
             [common.prefixed_type_identifier(type_identifier, self.prefix)],
-        )
-
-    def create_internal_functions(
-        self, message: Message, scalar_fields: Mapping[Field, Scalar]
-    ) -> UnitPart:
-        return UnitPart(
-            [],
-            [
-                SubprogramBody(
-                    ProcedureSpecification(
-                        f"Set_Field_Value_{f.name}",
-                        [
-                            InOutParameter(["Ctx"], "Context"),
-                            Parameter(["Val"], "Field_Dependent_Value"),
-                            OutParameter(["Fst", "Lst"], const.TYPES_BIT_INDEX),
-                        ],
-                    ),
-                    [
-                        *common.field_bit_location_declarations(Variable(f.affixed_name)),
-                        *common.field_byte_location_declarations(),
-                        self.insert_function(common.full_base_type_name(t)),
-                    ],
-                    [
-                        Assignment("Fst", Variable("First")),
-                        Assignment("Lst", Variable("Last")),
-                        CallStatement(
-                            "Insert",
-                            [
-                                Variable(f"Val.{f.name}_Value"),
-                                Slice(
-                                    Variable("Ctx.Buffer.all"),
-                                    Variable("Buffer_First"),
-                                    Variable("Buffer_Last"),
-                                ),
-                                Variable("Offset"),
-                                Variable(
-                                    const.TYPES_HIGH_ORDER_FIRST
-                                    if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
-                                    else const.TYPES_LOW_ORDER_FIRST
-                                ),
-                            ],
-                        ),
-                    ],
-                    [
-                        Precondition(
-                            AndThen(
-                                Not(Constrained("Ctx")),
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                In(Variable(f.affixed_name), Range("Field")),
-                                Call("Valid_Next", [Variable("Ctx"), Variable(f.affixed_name)]),
-                                common.sufficient_space_for_field_condition(
-                                    Variable(f.affixed_name)
-                                ),
-                                ForAllIn(
-                                    "F",
-                                    Range("Field"),
-                                    If(
-                                        [
-                                            (
-                                                Call(
-                                                    "Structural_Valid",
-                                                    [
-                                                        Indexed(
-                                                            Variable("Ctx.Cursors"),
-                                                            Variable("F"),
-                                                        )
-                                                    ],
-                                                ),
-                                                LessEqual(
-                                                    Selected(
-                                                        Indexed(
-                                                            Variable("Ctx.Cursors"),
-                                                            Variable("F"),
-                                                        ),
-                                                        "Last",
-                                                    ),
-                                                    Call(
-                                                        "Field_Last",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(f.affixed_name),
-                                                        ],
-                                                    ),
-                                                ),
-                                            )
-                                        ]
-                                    ),
-                                ),
-                            )
-                        ),
-                        Postcondition(
-                            And(
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                Equal(
-                                    Variable("Fst"),
-                                    Call(
-                                        "Field_First",
-                                        [Variable("Ctx"), Variable(f.affixed_name)],
-                                    ),
-                                ),
-                                Equal(
-                                    Variable("Lst"),
-                                    Call(
-                                        "Field_Last",
-                                        [Variable("Ctx"), Variable(f.affixed_name)],
-                                    ),
-                                ),
-                                GreaterEqual(Variable("Fst"), Variable("Ctx.First")),
-                                LessEqual(Variable("Fst"), Add(Variable("Lst"), Number(1))),
-                                LessEqual(Variable("Lst"), Variable("Ctx.Last")),
-                                ForAllIn(
-                                    "F",
-                                    Range("Field"),
-                                    If(
-                                        [
-                                            (
-                                                Call(
-                                                    "Structural_Valid",
-                                                    [
-                                                        Indexed(
-                                                            Variable("Ctx.Cursors"),
-                                                            Variable("F"),
-                                                        )
-                                                    ],
-                                                ),
-                                                LessEqual(
-                                                    Selected(
-                                                        Indexed(
-                                                            Variable("Ctx.Cursors"),
-                                                            Variable("F"),
-                                                        ),
-                                                        "Last",
-                                                    ),
-                                                    Variable("Lst"),
-                                                ),
-                                            )
-                                        ]
-                                    ),
-                                ),
-                                *common.context_invariant(message),
-                                *[
-                                    Equal(e, Old(e))
-                                    for e in [
-                                        Variable("Ctx.Cursors"),
-                                    ]
-                                ],
-                            )
-                        ),
-                    ],
-                )
-                for f, t in scalar_fields.items()
-            ],
         )
 
     def create_valid_length_function(self, message: Message) -> UnitPart:
@@ -455,19 +300,36 @@ class SerializerGenerator:
                             constant=True,
                         ),
                         ObjectDeclaration(["First", "Last"], const.TYPES_BIT_INDEX),
+                        *common.field_byte_location_declarations(),
+                        self.insert_function(common.full_base_type_name(t)),
                     ],
                     [
                         CallStatement(
                             "Reset_Dependent_Fields",
                             [Variable("Ctx"), Variable(f.affixed_name)],
                         ),
+                        Assignment(
+                            "First",
+                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
+                        ),
+                        Assignment(
+                            "Last", Call("Field_Last", [Variable("Ctx"), Variable(f.affixed_name)])
+                        ),
                         CallStatement(
-                            f"Set_Field_Value_{f.name}",
+                            "Insert",
                             [
-                                Variable("Ctx"),
-                                Variable("Field_Value"),
-                                Variable("First"),
-                                Variable("Last"),
+                                Variable(f"Field_Value.{f.name}_Value"),
+                                Slice(
+                                    Variable("Ctx.Buffer.all"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
+                                ),
+                                Variable("Offset"),
+                                Variable(
+                                    const.TYPES_HIGH_ORDER_FIRST
+                                    if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
+                                    else const.TYPES_LOW_ORDER_FIRST
+                                ),
                             ],
                         ),
                         *self._update_last(message, f),

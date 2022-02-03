@@ -428,7 +428,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__parser.create_opaque_getter_procedures(opaque_fields)
         unit += self.__parser.create_generic_opaque_getter_procedures(opaque_fields)
 
-        unit += self.__serializer.create_internal_functions(message, scalar_fields)
         unit += self.__serializer.create_valid_length_function(message)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
