@@ -751,20 +751,10 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Data =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Extension | F_Final =>
+             True,
           when F_Data =>
-             (case Fld is
-                 when F_Extension =>
-                    RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True)),
-                 when others =>
-                    False),
-          when F_Extension | F_Final =>
-             False));
+             RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True))));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is

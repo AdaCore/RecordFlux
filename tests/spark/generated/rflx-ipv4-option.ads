@@ -874,49 +874,23 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Copied =>
-                    True,
-                 when others =>
-                    False),
-          when F_Copied =>
-             (case Fld is
-                 when F_Option_Class =>
-                    True,
-                 when others =>
-                    False),
-          when F_Option_Class =>
-             (case Fld is
-                 when F_Option_Number =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Copied | F_Option_Class | F_Option_Data | F_Final =>
+             True,
           when F_Option_Number =>
-             (case Fld is
-                 when F_Option_Length =>
-                    Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1,
-                 when others =>
-                    False),
+             Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1,
           when F_Option_Length =>
-             (case Fld is
-                 when F_Option_Data =>
-                    (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                     and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                    or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                        and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                             or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                             or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                    or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                        and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                        and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                    or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                        and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                        and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8),
-                 when others =>
-                    False),
-          when F_Option_Data | F_Final =>
-             False));
+             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
+              and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
+             or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                 and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
+                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
+                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
+             or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
+             or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is

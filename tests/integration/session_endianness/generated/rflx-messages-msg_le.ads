@@ -583,21 +583,7 @@ private
      (Ctx.Written_Last);
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_C =>
-                    True,
-                 when others =>
-                    False),
-          when F_C =>
-             (case Fld is
-                 when F_D =>
-                    True,
-                 when others =>
-                    False),
-          when F_D | F_Final =>
-             False));
+     (True);
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is

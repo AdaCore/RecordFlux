@@ -1862,110 +1862,12 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Version =>
-                    True,
-                 when others =>
-                    False),
-          when F_Version =>
-             (case Fld is
-                 when F_IHL =>
-                    True,
-                 when others =>
-                    False),
-          when F_IHL =>
-             (case Fld is
-                 when F_DSCP =>
-                    True,
-                 when others =>
-                    False),
-          when F_DSCP =>
-             (case Fld is
-                 when F_ECN =>
-                    True,
-                 when others =>
-                    False),
-          when F_ECN =>
-             (case Fld is
-                 when F_Total_Length =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Version | F_IHL | F_DSCP | F_ECN | F_Identification | F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload | F_Final =>
+             True,
           when F_Total_Length =>
-             (case Fld is
-                 when F_Identification =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX_Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4,
-                 when others =>
-                    False),
-          when F_Identification =>
-             (case Fld is
-                 when F_Flag_R =>
-                    True,
-                 when others =>
-                    False),
+             RFLX_Types.U64 (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) >= RFLX_Types.U64 (Ctx.Cursors (F_IHL).Value.IHL_Value) * 4,
           when F_Flag_R =>
-             (case Fld is
-                 when F_Flag_DF =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = RFLX_Types.U64 (To_Base (False)),
-                 when others =>
-                    False),
-          when F_Flag_DF =>
-             (case Fld is
-                 when F_Flag_MF =>
-                    True,
-                 when others =>
-                    False),
-          when F_Flag_MF =>
-             (case Fld is
-                 when F_Fragment_Offset =>
-                    True,
-                 when others =>
-                    False),
-          when F_Fragment_Offset =>
-             (case Fld is
-                 when F_TTL =>
-                    True,
-                 when others =>
-                    False),
-          when F_TTL =>
-             (case Fld is
-                 when F_Protocol =>
-                    True,
-                 when others =>
-                    False),
-          when F_Protocol =>
-             (case Fld is
-                 when F_Header_Checksum =>
-                    True,
-                 when others =>
-                    False),
-          when F_Header_Checksum =>
-             (case Fld is
-                 when F_Source =>
-                    True,
-                 when others =>
-                    False),
-          when F_Source =>
-             (case Fld is
-                 when F_Destination =>
-                    True,
-                 when others =>
-                    False),
-          when F_Destination =>
-             (case Fld is
-                 when F_Options =>
-                    True,
-                 when others =>
-                    False),
-          when F_Options =>
-             (case Fld is
-                 when F_Payload =>
-                    True,
-                 when others =>
-                    False),
-          when F_Payload | F_Final =>
-             False));
+             RFLX_Types.U64 (Ctx.Cursors (F_Flag_R).Value.Flag_R_Value) = RFLX_Types.U64 (To_Base (False))));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is

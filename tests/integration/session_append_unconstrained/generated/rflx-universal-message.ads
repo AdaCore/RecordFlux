@@ -1373,12 +1373,8 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Message_Type =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
+             True,
           when F_Message_Type =>
              (case Fld is
                  when F_Data =>
@@ -1405,9 +1401,7 @@ private
                  when F_Values =>
                     RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.U64 (To_Base (RFLX.Universal.MT_Values)),
                  when others =>
-                    False),
-          when F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
-             False));
+                    False)));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is
