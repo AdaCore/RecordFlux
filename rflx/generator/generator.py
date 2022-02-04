@@ -1669,26 +1669,38 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         """Check if the condition at the incoming link to the field is valid."""
 
         def condition(field: Field, message: Message) -> Expr:
-            cases: ty.List[ty.Tuple[Expr, Expr]] = [
-                (
-                    target,
-                    expr.Or(*[c for _, c in conditions])
-                    .substituted(common.substitution(message, self.__prefix))
+            links = [l for l in message.outgoing(field) if l.target != FINAL]
+
+            if not links:
+                return TRUE
+
+            if all(l.condition == links[0].condition for l in links):
+                return (
+                    links[0]
+                    .condition.substituted(common.substitution(message, self.__prefix))
                     .simplified()
-                    .ada_expr(),
+                    .ada_expr()
                 )
-                for target, conditions in itertools.groupby(
-                    [
-                        (Variable(l.target.affixed_name), l.condition)
-                        for l in message.outgoing(field)
-                        if l.target != FINAL
+
+            return Case(
+                Variable("Fld"),
+                [
+                    *[
+                        (
+                            target,
+                            expr.Or(*[c for _, c in conditions])
+                            .substituted(common.substitution(message, self.__prefix))
+                            .simplified()
+                            .ada_expr(),
+                        )
+                        for target, conditions in itertools.groupby(
+                            [(Variable(l.target.affixed_name), l.condition) for l in links],
+                            lambda x: x[0],
+                        )
                     ],
-                    lambda x: x[0],
-                )
-            ]
-            if set(message.fields) - {l.target for l in message.outgoing(field)}:
-                cases.append((Variable("others"), FALSE))
-            return Case(Variable("Fld"), cases)
+                    (Variable("others"), FALSE),
+                ],
+            )
 
         specification = FunctionSpecification(
             "Path_Condition",
@@ -1724,11 +1736,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     specification,
                     Case(
                         Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-                        [
-                            (Variable(f.affixed_name), condition(f, message))
-                            for f in message.all_fields
-                        ],
-                    ),
+                        sorted(
+                            [
+                                (Variable(f.affixed_name), condition(f, message))
+                                for f in message.all_fields
+                            ],
+                            key=lambda x: x[1] != TRUE,
+                        ),
+                    )
+                    if any(l.condition != expr.TRUE for l in message.structure)
+                    else TRUE,
                 )
             ],
         )

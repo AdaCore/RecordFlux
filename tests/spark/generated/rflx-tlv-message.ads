@@ -726,26 +726,10 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Tag =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Length | F_Value | F_Final =>
+             True,
           when F_Tag =>
-             (case Fld is
-                 when F_Length =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data)),
-                 when others =>
-                    False),
-          when F_Length =>
-             (case Fld is
-                 when F_Value =>
-                    True,
-                 when others =>
-                    False),
-          when F_Value | F_Final =>
-             False));
+             RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.TLV.Msg_Data))));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is

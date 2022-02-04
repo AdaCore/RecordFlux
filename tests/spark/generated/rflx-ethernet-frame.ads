@@ -968,24 +968,8 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Destination =>
-                    True,
-                 when others =>
-                    False),
-          when F_Destination =>
-             (case Fld is
-                 when F_Source =>
-                    True,
-                 when others =>
-                    False),
-          when F_Source =>
-             (case Fld is
-                 when F_Type_Length_TPID =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Destination | F_Source | F_TPID | F_TCI | F_Payload | F_Final =>
+             True,
           when F_Type_Length_TPID =>
              (case Fld is
                  when F_TPID =>
@@ -994,27 +978,13 @@ private
                     Ctx.Cursors (F_Type_Length_TPID).Value.Type_Length_TPID_Value /= 16#8100#,
                  when others =>
                     False),
-          when F_TPID =>
-             (case Fld is
-                 when F_TCI =>
-                    True,
-                 when others =>
-                    False),
-          when F_TCI =>
-             (case Fld is
-                 when F_Type_Length =>
-                    True,
-                 when others =>
-                    False),
           when F_Type_Length =>
              (case Fld is
                  when F_Payload =>
                     Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
                     or Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536,
                  when others =>
-                    False),
-          when F_Payload | F_Final =>
-             False));
+                    False)));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value; Size : RFLX_Types.Bit_Length := 0) return Boolean is
      ((case Val.Fld is

@@ -1965,12 +1965,8 @@ private
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Tag =>
-                    True,
-                 when others =>
-                    False),
+          when F_Initial | F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero | F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 | F_Unused_24 | F_Originate_Timestamp | F_Data | F_Receive_Timestamp | F_Transmit_Timestamp | F_Final =>
+             True,
           when F_Tag =>
              (case Fld is
                  when F_Code_Destination_Unreachable =>
@@ -1988,12 +1984,6 @@ private
                     or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
                     or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
                     or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)),
-                 when others =>
-                    False),
-          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-             (case Fld is
-                 when F_Checksum =>
-                    True,
                  when others =>
                     False),
           when F_Checksum =>
@@ -2015,30 +2005,6 @@ private
                     or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)),
                  when others =>
                     False),
-          when F_Gateway_Internet_Address =>
-             (case Fld is
-                 when F_Data =>
-                    True,
-                 when others =>
-                    False),
-          when F_Identifier =>
-             (case Fld is
-                 when F_Sequence_Number =>
-                    True,
-                 when others =>
-                    False),
-          when F_Pointer =>
-             (case Fld is
-                 when F_Unused_24 =>
-                    True,
-                 when others =>
-                    False),
-          when F_Unused_32 =>
-             (case Fld is
-                 when F_Data =>
-                    True,
-                 when others =>
-                    False),
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
@@ -2048,29 +2014,7 @@ private
                     RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
                     or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)),
                  when others =>
-                    False),
-          when F_Unused_24 =>
-             (case Fld is
-                 when F_Data =>
-                    True,
-                 when others =>
-                    False),
-          when F_Originate_Timestamp =>
-             (case Fld is
-                 when F_Receive_Timestamp =>
-                    True,
-                 when others =>
-                    False),
-          when F_Data =>
-             False,
-          when F_Receive_Timestamp =>
-             (case Fld is
-                 when F_Transmit_Timestamp =>
-                    True,
-                 when others =>
-                    False),
-          when F_Transmit_Timestamp | F_Final =>
-             False));
+                    False)));
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is
