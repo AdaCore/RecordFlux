@@ -1272,39 +1272,7 @@ private
      (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Length =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Length =>
-             (case Fld is
-                 when F_Modular_Vector =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Modular_Vector =>
-             (case Fld is
-                 when F_Range_Vector =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Range_Vector =>
-             (case Fld is
-                 when F_Enumeration_Vector =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Enumeration_Vector =>
-             (case Fld is
-                 when F_AV_Enumeration_Vector =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_AV_Enumeration_Vector | F_Final =>
-             RFLX_Types.Unreachable));
+     (Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)));
 
    function Complete_Modular_Vector (Ctx : Context; Seq_Ctx : Sequence.Modular_Vector.Context) return Boolean is
      (Sequence.Modular_Vector.Valid (Seq_Ctx)

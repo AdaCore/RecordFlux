@@ -796,21 +796,13 @@ private
      (To_Actual (Ctx.Cursors (F_Header).Value.Header_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Header =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Header =>
-             (case Fld is
-                 when F_Vector =>
-                    Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Vector | F_Final =>
-             RFLX_Types.Unreachable));
+     ((if
+          Fld = F_Vector
+          and then Ctx.Cursors (Fld).Predecessor = F_Header
+       then
+          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+       else
+          Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))));
 
    function Complete_Vector (Ctx : Context; Seq_Ctx : Sequence.Modular_Vector.Context) return Boolean is
      (Sequence.Modular_Vector.Valid (Seq_Ctx)

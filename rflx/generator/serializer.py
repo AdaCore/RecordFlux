@@ -1,7 +1,6 @@
 # pylint: disable = too-many-lines
 
-import itertools
-from typing import List, Mapping, Tuple
+from typing import List, Mapping
 
 from rflx import expression as expr
 from rflx.ada import (
@@ -14,7 +13,6 @@ from rflx.ada import (
     Assignment,
     Call,
     CallStatement,
-    Case,
     Constrained,
     Declaration,
     Div,
@@ -93,71 +91,25 @@ class SerializerGenerator:
             ],
         )
 
-        def size(field: Field, message: Message) -> Expr:
-            def substituted(expression: expr.Expr) -> Expr:
-                return (
-                    expression.substituted(
-                        common.substitution(
-                            message, self.prefix, target_type=const.TYPES_BIT_LENGTH
-                        )
+        implicit_size_condition = LessEqual(
+            Variable("Length"),
+            Call(
+                const.TYPES_TO_LENGTH,
+                [
+                    Call(
+                        "Available_Space",
+                        [Variable("Ctx"), Variable("Fld")],
                     )
-                    .simplified()
-                    .ada_expr()
-                )
-
-            target_links = [
-                (target, list(links))
-                for target, links in itertools.groupby(message.outgoing(field), lambda x: x.target)
-                if target != FINAL
-            ]
-            explicit_size = Equal(
-                Variable("Length"),
-                Call(
-                    const.TYPES_TO_LENGTH,
-                    [Call("Field_Size", [Variable("Ctx"), Variable("Fld")])],
-                ),
-            )
-            implicit_size = LessEqual(
-                Variable("Length"),
-                Call(
-                    const.TYPES_TO_LENGTH,
-                    [Call("Available_Space", [Variable("Ctx"), Variable("Fld")])],
-                ),
-            )
-
-            cases: List[Tuple[Expr, Expr]] = []
-            for target, links in target_links:
-                field_type = message.field_types[target]
-                size: Expr
-                if isinstance(field_type, Scalar):
-                    size = explicit_size
-                else:
-                    if len(links) == 1:
-                        size = implicit_size if links[0].has_implicit_size else explicit_size
-                    else:
-                        size = If(
-                            [
-                                (
-                                    substituted(l.condition),
-                                    implicit_size if l.has_implicit_size else explicit_size,
-                                )
-                                for l in links
-                            ],
-                            const.UNREACHABLE,
-                        )
-                cases.append(
-                    (
-                        Variable(target.affixed_name),
-                        size,
-                    )
-                )
-
-            if not cases:
-                return const.UNREACHABLE
-
-            if set(message.fields) - {l.target for l in message.outgoing(field)}:
-                cases.append((Variable("others"), const.UNREACHABLE))
-            return Case(Variable("Fld"), cases)
+                ],
+            ),
+        )
+        explicit_size_condition = Equal(
+            Variable("Length"),
+            Call(
+                const.TYPES_TO_LENGTH,
+                [Call("Field_Size", [Variable("Ctx"), Variable("Fld")])],
+            ),
+        )
 
         return UnitPart(
             [
@@ -185,10 +137,44 @@ class SerializerGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    Case(
-                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-                        [(Variable(f.affixed_name), size(f, message)) for f in message.all_fields],
-                    ),
+                    If(
+                        [
+                            (
+                                AndThen(
+                                    Equal(Variable("Fld"), Variable(l.target.affixed_name)),
+                                    Equal(
+                                        Selected(
+                                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
+                                            "Predecessor",
+                                        ),
+                                        Variable(l.source.affixed_name),
+                                    ),
+                                    *(
+                                        [
+                                            l.condition.substituted(
+                                                common.substitution(
+                                                    message,
+                                                    self.prefix,
+                                                    target_type=const.TYPES_BIT_LENGTH,
+                                                )
+                                            )
+                                            .simplified()
+                                            .ada_expr()
+                                        ]
+                                        if l.condition != expr.TRUE
+                                        else []
+                                    ),
+                                ),
+                                implicit_size_condition,
+                            )
+                            for l in message.structure
+                            if l.has_implicit_size
+                        ],
+                        explicit_size_condition,
+                    )
+                    if len(message.fields) > 1
+                    or all(not l.has_implicit_size for l in message.structure)
+                    else implicit_size_condition,
                 )
             ],
         )

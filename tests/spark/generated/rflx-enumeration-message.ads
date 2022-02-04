@@ -627,13 +627,7 @@ private
      (To_Actual (Ctx.Cursors (F_Priority).Value.Priority_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Priority =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))),
-          when F_Priority | F_Final =>
-             RFLX_Types.Unreachable));
+     (Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));
