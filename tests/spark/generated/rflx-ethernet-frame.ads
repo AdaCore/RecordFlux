@@ -1211,60 +1211,14 @@ private
      (To_Actual (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Destination =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Destination =>
-             (case Fld is
-                 when F_Source =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Source =>
-             (case Fld is
-                 when F_Type_Length_TPID =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Type_Length_TPID =>
-             (case Fld is
-                 when F_TPID | F_Type_Length =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_TPID =>
-             (case Fld is
-                 when F_TCI =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_TCI =>
-             (case Fld is
-                 when F_Type_Length =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Type_Length =>
-             (case Fld is
-                 when F_Payload =>
-                    (if
-                        Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                     then
-                        Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))
-                     elsif
-                        Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                     then
-                        Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
-                     else
-                        RFLX_Types.Unreachable),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Payload | F_Final =>
-             RFLX_Types.Unreachable));
+     ((if
+          Fld = F_Payload
+          and then Ctx.Cursors (Fld).Predecessor = F_Type_Length
+          and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
+       then
+          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+       else
+          Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

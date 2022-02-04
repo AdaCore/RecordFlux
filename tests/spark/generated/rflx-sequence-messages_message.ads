@@ -794,21 +794,7 @@ private
      (To_Actual (Ctx.Cursors (F_Length).Value.Length_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Length =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Length =>
-             (case Fld is
-                 when F_Messages =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Messages | F_Final =>
-             RFLX_Types.Unreachable));
+     (Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)));
 
    function Complete_Messages (Ctx : Context; Seq_Ctx : Sequence.Inner_Messages.Context) return Boolean is
      (Sequence.Inner_Messages.Valid (Seq_Ctx)

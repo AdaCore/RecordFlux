@@ -2365,85 +2365,15 @@ private
      (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value.Transmit_Timestamp_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Tag =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Tag =>
-             (case Fld is
-                 when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-             (case Fld is
-                 when F_Checksum =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Checksum =>
-             (case Fld is
-                 when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Gateway_Internet_Address =>
-             (case Fld is
-                 when F_Data =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Identifier =>
-             (case Fld is
-                 when F_Sequence_Number =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Pointer =>
-             (case Fld is
-                 when F_Unused_24 =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Unused_32 =>
-             (case Fld is
-                 when F_Data =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Sequence_Number =>
-             (case Fld is
-                 when F_Data =>
-                    Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
-                 when F_Originate_Timestamp =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Unused_24 =>
-             (case Fld is
-                 when F_Data =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Originate_Timestamp =>
-             (case Fld is
-                 when F_Receive_Timestamp =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Data =>
-             RFLX_Types.Unreachable,
-          when F_Receive_Timestamp =>
-             (case Fld is
-                 when F_Transmit_Timestamp =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Transmit_Timestamp | F_Final =>
-             RFLX_Types.Unreachable));
+     ((if
+          Fld = F_Data
+          and then Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
+          and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Reply))
+                    or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Request)))
+       then
+          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+       else
+          Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

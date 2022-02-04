@@ -1573,31 +1573,20 @@ private
      (To_Actual (Ctx.Cursors (F_Value).Value.Value_Value));
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Message_Type =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Message_Type =>
-             (case Fld is
-                 when F_Data =>
-                    Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
-                 when F_Length =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when F_Options =>
-                    Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Length =>
-             (case Fld is
-                 when F_Data | F_Option_Types | F_Options | F_Value | F_Values =>
-                    Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
-             RFLX_Types.Unreachable));
+     ((if
+          Fld = F_Data
+          and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
+          and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Data))
+       then
+          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+       elsif
+          Fld = F_Options
+          and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
+          and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Options))
+       then
+          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+       else
+          Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))));
 
    function Complete_Option_Types (Ctx : Context; Seq_Ctx : Universal.Option_Types.Context) return Boolean is
      (Universal.Option_Types.Valid (Seq_Ctx)
