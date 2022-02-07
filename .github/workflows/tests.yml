@@ -300,22 +300,12 @@ jobs:
           community_year: ${{ matrix.gnat-version }}
           install_dir: /home/runner/work/gnat
       - name: Install GNAT Pro
+        uses: ./.github/actions/install_gnat_pro
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'pro' }}
-        shell: bash
-        env:
-          SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
-          SERVER: ${{ secrets.MEMCACHED_SERVER }}
-        run: |
-          eval $(ssh-agent -s)
-          echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          scp -q ci@$SERVER:/srv/gnatpro-${{ matrix.gnat-version }}-x86_64-linux-bin.tar.gz /home/runner/work/
-          tar -C /home/runner/work -xzf /home/runner/work/gnatpro-${{ matrix.gnat-version }}-x86_64-linux-bin.tar.gz
-          cd /home/runner/work/gnatpro-${{ matrix.gnat-version }}-*x86_64-linux-bin && echo -e "\n/home/runner/work/gnat\nY\nY" | ./doinstall
-          echo "/home/runner/work/gnat/bin" >> $GITHUB_PATH
+        with:
+          version: ${{ matrix.gnat-version }}
+          ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+          server: ${{ secrets.MEMCACHED_SERVER }}
       - name: Cache Alire and FSF GNAT
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
         uses: actions/cache@v2
