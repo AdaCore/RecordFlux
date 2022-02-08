@@ -1545,6 +1545,7 @@ class RecordType(TypeDeclaration):
         aspects: Sequence[Aspect] = None,
         abstract: bool = False,
         tagged: bool = False,
+        limited: bool = False,
     ) -> None:
         assert tagged if abstract else True
         super().__init__(identifier, discriminants, aspects)
@@ -1553,11 +1554,13 @@ class RecordType(TypeDeclaration):
         self.variant_part = variant_part
         self.abstract = abstract
         self.tagged = tagged
+        self.limited = limited
 
     @property
     def type_definition(self) -> str:
         abstract = " abstract" if self.abstract else ""
         tagged = " tagged" if self.tagged else ""
+        limited = " limited" if self.limited else ""
 
         if self.components or self.variant_part:
             components = (
@@ -1568,7 +1571,7 @@ class RecordType(TypeDeclaration):
         else:
             definition = " null record"
 
-        return f"{abstract}{tagged}{definition}"
+        return f"{abstract}{tagged}{limited}{definition}"
 
 
 class Statement(Base):

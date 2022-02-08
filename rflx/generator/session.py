@@ -466,6 +466,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ],
                     abstract=True,
                     tagged=True,
+                    limited=True,
                 ),
             ],
             private=[
