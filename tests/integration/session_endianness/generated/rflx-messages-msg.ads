@@ -45,8 +45,8 @@ is
        and Buffer_Last < RFLX_Types.Index'Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Index'Last
-       and First mod RFLX_Types.Byte'Size = 1
-       and Last mod RFLX_Types.Byte'Size = 0;
+       and First rem RFLX_Types.Byte'Size = 1
+       and Last rem RFLX_Types.Byte'Size = 0;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -91,12 +91,12 @@ is
        and then RFLX_Types.To_Index (Last) <= Buffer'Last
        and then First <= Last + 1
        and then Last < RFLX_Types.Bit_Index'Last
-       and then First mod RFLX_Types.Byte'Size = 1
-       and then Last mod RFLX_Types.Byte'Size = 0
+       and then First rem RFLX_Types.Byte'Size = 1
+       and then Last rem RFLX_Types.Byte'Size = 0
        and then (Written_Last = 0
                  or (Written_Last >= First - 1
                      and Written_Last <= Last))
-       and then Written_Last mod RFLX_Types.Byte'Size = 0,
+       and then Written_Last rem RFLX_Types.Byte'Size = 0,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -131,8 +131,8 @@ is
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Length'Last
-       and First mod RFLX_Types.Byte'Size = 1
-       and Last mod RFLX_Types.Byte'Size = 0,
+       and First rem RFLX_Types.Byte'Size = 1
+       and Last rem RFLX_Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -220,7 +220,7 @@ is
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
-       Size'Result mod RFLX_Types.Byte'Size = 0;
+       Size'Result rem RFLX_Types.Byte'Size = 0;
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length with
      Post =>
@@ -453,16 +453,16 @@ private
                 and Buffer_Last < RFLX_Types.Index'Last
                 and First <= Last + 1
                 and Last < RFLX_Types.Bit_Index'Last
-                and First mod RFLX_Types.Byte'Size = 1
-                and Last mod RFLX_Types.Byte'Size = 0)
+                and First rem RFLX_Types.Byte'Size = 1
+                and Last rem RFLX_Types.Byte'Size = 0)
       and then First - 1 <= Verified_Last
       and then First - 1 <= Written_Last
       and then Verified_Last <= Written_Last
       and then Written_Last <= Last
-      and then First mod RFLX_Types.Byte'Size = 1
-      and then Last mod RFLX_Types.Byte'Size = 0
-      and then Verified_Last mod RFLX_Types.Byte'Size = 0
-      and then Written_Last mod RFLX_Types.Byte'Size = 0
+      and then First rem RFLX_Types.Byte'Size = 1
+      and then Last rem RFLX_Types.Byte'Size = 0
+      and then Verified_Last rem RFLX_Types.Byte'Size = 0
+      and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
@@ -510,7 +510,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_A)
-      and then Field_First (Ctx, F_A) mod RFLX_Types.Byte'Size = 1
+      and then Field_First (Ctx, F_A) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_A) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_A)
       and then Invalid (Ctx, F_B));
@@ -591,16 +591,17 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((Fld = F_Initial
-       and (True))
-      or (Fld = F_A
-          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
-      or (Fld = F_B
-          and ((Valid (Ctx.Cursors (F_A))
-                and Ctx.Cursors (Fld).Predecessor = F_A)))
-      or (Fld = F_Final
-          and ((Valid (Ctx.Cursors (F_B))
-                and Ctx.Cursors (Fld).Predecessor = F_B))));
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_A =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_B =>
+             (Valid (Ctx.Cursors (F_A))
+              and Ctx.Cursors (Fld).Predecessor = F_A),
+          when F_Final =>
+             (Valid (Ctx.Cursors (F_B))
+              and Ctx.Cursors (Fld).Predecessor = F_B)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
