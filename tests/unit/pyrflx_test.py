@@ -77,7 +77,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "No_Conditionals",
         "Message_Type_Size_Condition",
         "Always_Valid_Aspect",
-        "Nested_Byte_Order",
+        "Low_Order",
     }
 
 
@@ -1507,19 +1507,11 @@ def test_message_endianness_set_le(endianness_package: Package) -> None:
     assert message_le.bytestring == b"\x02\x00\x04\x00\x01\x02\x03\x04"
 
 
-def test_nested_byte_order(nested_byte_order_package: Package) -> None:
-    m1 = nested_byte_order_package.new_message("M1")
+def test_low_order(low_order_package: Package) -> None:
+    m1 = low_order_package.new_message("M1")
     m1.set("R1", 0)
     m1.set("F1", "True")
     m1.set("F2", b"\x00")
 
     assert m1.valid_message
     assert m1.bytestring == b"\x01\x00"
-
-    m2 = nested_byte_order_package.new_message("M2")
-    m2.set("M_R1", 0)
-    m2.set("M_F1", "True")
-    m2.set("M_F2", b"\x00")
-
-    assert m2.valid_message
-    assert m2.bytestring == b"\x01\x00"
