@@ -86,6 +86,7 @@ from rflx.ada import (
     RangeSubtype,
     RangeType,
     RecordType,
+    Rem,
     Result,
     Selected,
     Size,
@@ -944,8 +945,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 ),
                                 LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
                                 Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
-                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
-                                Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
+                                Equal(Rem(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+                                Equal(Rem(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
                                 Or(
                                     Equal(Variable("Written_Last"), Number(0)),
                                     And(
@@ -960,7 +961,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     ),
                                 ),
                                 Equal(
-                                    Mod(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)
+                                    Rem(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)
                                 ),
                             )
                         ),
@@ -1194,8 +1195,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 ),
                                 LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
                                 Less(Variable("Last"), Last(const.TYPES_BIT_LENGTH)),
-                                Equal(Mod(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
-                                Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
+                                Equal(Rem(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+                                Equal(Rem(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
                             )
                         ),
                         Postcondition(
@@ -1774,7 +1775,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                 (
                                                     Variable(f.affixed_name),
                                                     Equal(
-                                                        Mod(
+                                                        Rem(
                                                             Result("Field_Size"),
                                                             Size(const.TYPES_BYTE),
                                                         ),
@@ -1930,7 +1931,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                 (
                                                     Variable(f.affixed_name),
                                                     Equal(
-                                                        Mod(
+                                                        Rem(
                                                             Result("Field_Last"),
                                                             Size(const.TYPES_BYTE),
                                                         ),
@@ -2459,7 +2460,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     specification,
                     [
                         Postcondition(
-                            Equal(Mod(Result("Size"), Size(const.TYPES_BYTE)), Number(0)),
+                            Equal(Rem(Result("Size"), Size(const.TYPES_BYTE)), Number(0)),
                         )
                     ],
                 )
@@ -4550,7 +4551,7 @@ def switch_update_conditions(message: Message, field: Field) -> ty.Sequence[Expr
 
 def byte_aligned_field(field: Field) -> Expr:
     return Equal(
-        Mod(
+        Rem(
             Call(
                 "Field_First",
                 [Variable("Ctx"), Variable(field.affixed_name)],

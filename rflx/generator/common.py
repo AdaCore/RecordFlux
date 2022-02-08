@@ -473,12 +473,12 @@ def context_predicate(
         ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Written_Last")),
         ada.LessEqual(ada.Variable("Verified_Last"), ada.Variable("Written_Last")),
         ada.LessEqual(ada.Variable("Written_Last"), ada.Variable("Last")),
-        ada.Equal(ada.Mod(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
-        ada.Equal(ada.Mod(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+        ada.Equal(ada.Rem(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
+        ada.Equal(ada.Rem(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
         ada.Equal(
-            ada.Mod(ada.Variable("Verified_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)
+            ada.Rem(ada.Variable("Verified_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)
         ),
-        ada.Equal(ada.Mod(ada.Variable("Written_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+        ada.Equal(ada.Rem(ada.Variable("Written_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
         ada.ForAllIn(
             "F",
             ada.ValueRange(ada.First("Field"), ada.Last("Field")),
@@ -546,8 +546,8 @@ def public_context_predicate() -> ada.Expr:
         ada.Less(ada.Variable("Buffer_Last"), ada.Last(const.TYPES_INDEX)),
         ada.LessEqual(ada.Variable("First"), ada.Add(ada.Variable("Last"), ada.Number(1))),
         ada.Less(ada.Variable("Last"), ada.Last(const.TYPES_BIT_INDEX)),
-        ada.Equal(ada.Mod(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
-        ada.Equal(ada.Mod(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+        ada.Equal(ada.Rem(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
+        ada.Equal(ada.Rem(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
     )
 
 
