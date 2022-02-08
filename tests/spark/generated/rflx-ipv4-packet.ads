@@ -51,8 +51,8 @@ is
        and Buffer_Last < RFLX_Types.Index'Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Index'Last
-       and First mod RFLX_Types.Byte'Size = 1
-       and Last mod RFLX_Types.Byte'Size = 0;
+       and First rem RFLX_Types.Byte'Size = 1
+       and Last rem RFLX_Types.Byte'Size = 0;
 
    type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
       record
@@ -123,12 +123,12 @@ is
        and then RFLX_Types.To_Index (Last) <= Buffer'Last
        and then First <= Last + 1
        and then Last < RFLX_Types.Bit_Index'Last
-       and then First mod RFLX_Types.Byte'Size = 1
-       and then Last mod RFLX_Types.Byte'Size = 0
+       and then First rem RFLX_Types.Byte'Size = 1
+       and then Last rem RFLX_Types.Byte'Size = 0
        and then (Written_Last = 0
                  or (Written_Last >= First - 1
                      and Written_Last <= Last))
-       and then Written_Last mod RFLX_Types.Byte'Size = 0,
+       and then Written_Last rem RFLX_Types.Byte'Size = 0,
      Post =>
        Buffer = null
        and Has_Buffer (Ctx)
@@ -163,8 +163,8 @@ is
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
        and Last < RFLX_Types.Bit_Length'Last
-       and First mod RFLX_Types.Byte'Size = 1
-       and Last mod RFLX_Types.Byte'Size = 0,
+       and First rem RFLX_Types.Byte'Size = 1
+       and Last rem RFLX_Types.Byte'Size = 0,
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -252,7 +252,7 @@ is
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
-       Size'Result mod RFLX_Types.Byte'Size = 0;
+       Size'Result rem RFLX_Types.Byte'Size = 0;
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length with
      Post =>
@@ -287,7 +287,7 @@ is
      Post =>
        (case Fld is
            when F_Options | F_Payload =>
-              Field_Size'Result mod RFLX_Types.Byte'Size = 0,
+              Field_Size'Result rem RFLX_Types.Byte'Size = 0,
            when others =>
               True);
 
@@ -302,7 +302,7 @@ is
      Post =>
        (case Fld is
            when F_Options | F_Payload =>
-              Field_Last'Result mod RFLX_Types.Byte'Size = 0,
+              Field_Last'Result rem RFLX_Types.Byte'Size = 0,
            when others =>
               True);
 
@@ -1369,7 +1369,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
        and then Field_Size (Ctx, F_Options) > 0
-       and then Field_First (Ctx, F_Options) mod RFLX_Types.Byte'Size = 1
+       and then Field_First (Ctx, F_Options) rem RFLX_Types.Byte'Size = 1
        and then Field_Condition (Ctx, (Fld => F_Options))
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options),
      Post =>
@@ -1547,16 +1547,16 @@ private
                 and Buffer_Last < RFLX_Types.Index'Last
                 and First <= Last + 1
                 and Last < RFLX_Types.Bit_Index'Last
-                and First mod RFLX_Types.Byte'Size = 1
-                and Last mod RFLX_Types.Byte'Size = 0)
+                and First rem RFLX_Types.Byte'Size = 1
+                and Last rem RFLX_Types.Byte'Size = 0)
       and then First - 1 <= Verified_Last
       and then First - 1 <= Written_Last
       and then Verified_Last <= Written_Last
       and then Written_Last <= Last
-      and then First mod RFLX_Types.Byte'Size = 1
-      and then Last mod RFLX_Types.Byte'Size = 0
-      and then Verified_Last mod RFLX_Types.Byte'Size = 0
-      and then Written_Last mod RFLX_Types.Byte'Size = 0
+      and then First rem RFLX_Types.Byte'Size = 1
+      and then Last rem RFLX_Types.Byte'Size = 0
+      and then Verified_Last rem RFLX_Types.Byte'Size = 0
+      and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then (for all F in Field'First .. Field'Last =>
                    (if
                        Structural_Valid (Cursors (F))
@@ -1788,7 +1788,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Version)
-      and then Field_First (Ctx, F_Version) mod RFLX_Types.Byte'Size = 1
+      and then Field_First (Ctx, F_Version) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Version) = Ctx.Last - Ctx.First + 1
       and then Invalid (Ctx, F_Version)
       and then Invalid (Ctx, F_IHL)
@@ -2179,61 +2179,62 @@ private
              Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((Fld = F_Initial
-       and (True))
-      or (Fld = F_Version
-          and (Ctx.Cursors (Fld).Predecessor = F_Initial))
-      or (Fld = F_IHL
-          and ((Valid (Ctx.Cursors (F_Version))
-                and Ctx.Cursors (Fld).Predecessor = F_Version)))
-      or (Fld = F_DSCP
-          and ((Valid (Ctx.Cursors (F_IHL))
-                and Ctx.Cursors (Fld).Predecessor = F_IHL)))
-      or (Fld = F_ECN
-          and ((Valid (Ctx.Cursors (F_DSCP))
-                and Ctx.Cursors (Fld).Predecessor = F_DSCP)))
-      or (Fld = F_Total_Length
-          and ((Valid (Ctx.Cursors (F_ECN))
-                and Ctx.Cursors (Fld).Predecessor = F_ECN)))
-      or (Fld = F_Identification
-          and ((Valid (Ctx.Cursors (F_Total_Length))
-                and Ctx.Cursors (Fld).Predecessor = F_Total_Length)))
-      or (Fld = F_Flag_R
-          and ((Valid (Ctx.Cursors (F_Identification))
-                and Ctx.Cursors (Fld).Predecessor = F_Identification)))
-      or (Fld = F_Flag_DF
-          and ((Valid (Ctx.Cursors (F_Flag_R))
-                and Ctx.Cursors (Fld).Predecessor = F_Flag_R)))
-      or (Fld = F_Flag_MF
-          and ((Valid (Ctx.Cursors (F_Flag_DF))
-                and Ctx.Cursors (Fld).Predecessor = F_Flag_DF)))
-      or (Fld = F_Fragment_Offset
-          and ((Valid (Ctx.Cursors (F_Flag_MF))
-                and Ctx.Cursors (Fld).Predecessor = F_Flag_MF)))
-      or (Fld = F_TTL
-          and ((Valid (Ctx.Cursors (F_Fragment_Offset))
-                and Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset)))
-      or (Fld = F_Protocol
-          and ((Valid (Ctx.Cursors (F_TTL))
-                and Ctx.Cursors (Fld).Predecessor = F_TTL)))
-      or (Fld = F_Header_Checksum
-          and ((Valid (Ctx.Cursors (F_Protocol))
-                and Ctx.Cursors (Fld).Predecessor = F_Protocol)))
-      or (Fld = F_Source
-          and ((Valid (Ctx.Cursors (F_Header_Checksum))
-                and Ctx.Cursors (Fld).Predecessor = F_Header_Checksum)))
-      or (Fld = F_Destination
-          and ((Valid (Ctx.Cursors (F_Source))
-                and Ctx.Cursors (Fld).Predecessor = F_Source)))
-      or (Fld = F_Options
-          and ((Valid (Ctx.Cursors (F_Destination))
-                and Ctx.Cursors (Fld).Predecessor = F_Destination)))
-      or (Fld = F_Payload
-          and ((Structural_Valid (Ctx.Cursors (F_Options))
-                and Ctx.Cursors (Fld).Predecessor = F_Options)))
-      or (Fld = F_Final
-          and ((Structural_Valid (Ctx.Cursors (F_Payload))
-                and Ctx.Cursors (Fld).Predecessor = F_Payload))));
+     ((case Fld is
+          when F_Initial =>
+             True,
+          when F_Version =>
+             Ctx.Cursors (Fld).Predecessor = F_Initial,
+          when F_IHL =>
+             (Valid (Ctx.Cursors (F_Version))
+              and Ctx.Cursors (Fld).Predecessor = F_Version),
+          when F_DSCP =>
+             (Valid (Ctx.Cursors (F_IHL))
+              and Ctx.Cursors (Fld).Predecessor = F_IHL),
+          when F_ECN =>
+             (Valid (Ctx.Cursors (F_DSCP))
+              and Ctx.Cursors (Fld).Predecessor = F_DSCP),
+          when F_Total_Length =>
+             (Valid (Ctx.Cursors (F_ECN))
+              and Ctx.Cursors (Fld).Predecessor = F_ECN),
+          when F_Identification =>
+             (Valid (Ctx.Cursors (F_Total_Length))
+              and Ctx.Cursors (Fld).Predecessor = F_Total_Length),
+          when F_Flag_R =>
+             (Valid (Ctx.Cursors (F_Identification))
+              and Ctx.Cursors (Fld).Predecessor = F_Identification),
+          when F_Flag_DF =>
+             (Valid (Ctx.Cursors (F_Flag_R))
+              and Ctx.Cursors (Fld).Predecessor = F_Flag_R),
+          when F_Flag_MF =>
+             (Valid (Ctx.Cursors (F_Flag_DF))
+              and Ctx.Cursors (Fld).Predecessor = F_Flag_DF),
+          when F_Fragment_Offset =>
+             (Valid (Ctx.Cursors (F_Flag_MF))
+              and Ctx.Cursors (Fld).Predecessor = F_Flag_MF),
+          when F_TTL =>
+             (Valid (Ctx.Cursors (F_Fragment_Offset))
+              and Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset),
+          when F_Protocol =>
+             (Valid (Ctx.Cursors (F_TTL))
+              and Ctx.Cursors (Fld).Predecessor = F_TTL),
+          when F_Header_Checksum =>
+             (Valid (Ctx.Cursors (F_Protocol))
+              and Ctx.Cursors (Fld).Predecessor = F_Protocol),
+          when F_Source =>
+             (Valid (Ctx.Cursors (F_Header_Checksum))
+              and Ctx.Cursors (Fld).Predecessor = F_Header_Checksum),
+          when F_Destination =>
+             (Valid (Ctx.Cursors (F_Source))
+              and Ctx.Cursors (Fld).Predecessor = F_Source),
+          when F_Options =>
+             (Valid (Ctx.Cursors (F_Destination))
+              and Ctx.Cursors (Fld).Predecessor = F_Destination),
+          when F_Payload =>
+             (Structural_Valid (Ctx.Cursors (F_Options))
+              and Ctx.Cursors (Fld).Predecessor = F_Options),
+          when F_Final =>
+             (Structural_Valid (Ctx.Cursors (F_Payload))
+              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Predecessor (Ctx, Fld)
