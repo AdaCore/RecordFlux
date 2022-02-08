@@ -303,6 +303,16 @@ class Mod(BinExpr):
         return " mod "
 
 
+class Rem(BinExpr):
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.MULTIPLYING_OPERATOR
+
+    @property
+    def symbol(self) -> str:
+        return " rem "
+
+
 class Name(Expr):
     def __init__(self, negative: bool = False) -> None:
         super().__init__()
