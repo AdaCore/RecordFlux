@@ -19,7 +19,7 @@ is
 
    type Private_Context is private;
 
-   type Context is abstract tagged
+   type Context is abstract tagged limited
       record
          P : Private_Context;
       end record;
