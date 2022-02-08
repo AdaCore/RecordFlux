@@ -2402,10 +2402,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    Or(
-                        *[
-                            And(
-                                Equal(Variable("Fld"), Variable(f.affixed_name)),
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (
+                                Variable(f.affixed_name),
                                 Or(
                                     *[
                                         expr.And(
