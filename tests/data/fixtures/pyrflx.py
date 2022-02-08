@@ -28,7 +28,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/always_valid_aspect.rflx",
             f"{SPEC_DIR}/parameterized.rflx",
             f"{SPEC_DIR}/endianness.rflx",
-            f"{SPEC_DIR}/nested_byte_order.rflx",
+            f"{SPEC_DIR}/low_order.rflx",
         ],
         skip_model_verification=True,
     )
@@ -234,6 +234,6 @@ def fixture_endianness_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_.package("Endianness")
 
 
-@pytest.fixture(name="nested_byte_order_package", scope="session")
-def fixure_nested_byte_order_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
-    return pyrflx_.package("Nested_Byte_Order")
+@pytest.fixture(name="low_order_package", scope="session")
+def fixure_low_order_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_.package("Low_Order")
