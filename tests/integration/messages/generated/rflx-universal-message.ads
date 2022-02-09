@@ -1427,35 +1427,43 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Message_Type =>
-                    RFLX.Universal.Message_Type_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Message_Type =>
-             (case Fld is
-                 when F_Data =>
-                    RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last),
-                 when F_Length =>
-                    RFLX.Universal.Length_Base'Size,
-                 when F_Options =>
-                    RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last),
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.Universal.Message_Type_Base'Size,
           when F_Length =>
-             (case Fld is
-                 when F_Data | F_Option_Types | F_Options =>
-                    RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
-                 when F_Value =>
-                    RFLX.Universal.Value'Size,
-                 when F_Values =>
-                    RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
-             0));
+             RFLX.Universal.Length_Base'Size,
+          when F_Data =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Length
+                 and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Data))
+              then
+                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
+                 and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Data))
+              then
+                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
+              else
+                 RFLX_Types.Unreachable),
+          when F_Option_Types =>
+             RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
+          when F_Options =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Length
+                 and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Options))
+              then
+                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
+                 and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Options))
+              then
+                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
+              else
+                 RFLX_Types.Unreachable),
+          when F_Value =>
+             RFLX.Universal.Value'Size,
+          when F_Values =>
+             RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Message_Type then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

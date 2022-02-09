@@ -1885,111 +1885,35 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Version =>
-                    RFLX.IPv4.Version_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Version =>
-             (case Fld is
-                 when F_IHL =>
-                    RFLX.IPv4.IHL_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Version_Base'Size,
           when F_IHL =>
-             (case Fld is
-                 when F_DSCP =>
-                    RFLX.IPv4.DCSP'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.IHL_Base'Size,
           when F_DSCP =>
-             (case Fld is
-                 when F_ECN =>
-                    RFLX.IPv4.ECN'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.DCSP'Size,
           when F_ECN =>
-             (case Fld is
-                 when F_Total_Length =>
-                    RFLX.IPv4.Total_Length'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.ECN'Size,
           when F_Total_Length =>
-             (case Fld is
-                 when F_Identification =>
-                    RFLX.IPv4.Identification'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Total_Length'Size,
           when F_Identification =>
-             (case Fld is
-                 when F_Flag_R =>
-                    RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Flag_R =>
-             (case Fld is
-                 when F_Flag_DF =>
-                    RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Flag_DF =>
-             (case Fld is
-                 when F_Flag_MF =>
-                    RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Flag_MF =>
-             (case Fld is
-                 when F_Fragment_Offset =>
-                    RFLX.IPv4.Fragment_Offset'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Identification'Size,
+          when F_Flag_R | F_Flag_DF | F_Flag_MF =>
+             RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
           when F_Fragment_Offset =>
-             (case Fld is
-                 when F_TTL =>
-                    RFLX.IPv4.TTL'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Fragment_Offset'Size,
           when F_TTL =>
-             (case Fld is
-                 when F_Protocol =>
-                    RFLX.IPv4.Protocol_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.TTL'Size,
           when F_Protocol =>
-             (case Fld is
-                 when F_Header_Checksum =>
-                    RFLX.IPv4.Header_Checksum'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Protocol_Base'Size,
           when F_Header_Checksum =>
-             (case Fld is
-                 when F_Source =>
-                    RFLX.IPv4.Address'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Source =>
-             (case Fld is
-                 when F_Destination =>
-                    RFLX.IPv4.Address'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Destination =>
-             (case Fld is
-                 when F_Options =>
-                    (RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Header_Checksum'Size,
+          when F_Source | F_Destination =>
+             RFLX.IPv4.Address'Size,
           when F_Options =>
-             (case Fld is
-                 when F_Payload =>
-                    RFLX_Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Payload | F_Final =>
-             0));
+             (RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) - 5) * 32,
+          when F_Payload =>
+             RFLX_Types.Bit_Length (Ctx.Cursors (F_Total_Length).Value.Total_Length_Value) * 8 + RFLX_Types.Bit_Length (Ctx.Cursors (F_IHL).Value.IHL_Value) * (-32)));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Version then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

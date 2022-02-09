@@ -1768,38 +1768,34 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     .ada_expr()
                 )
 
-            target_links = [
-                (target, list(links))
-                for target, links in itertools.groupby(message.outgoing(field), lambda x: x.target)
-                if target != FINAL
-            ]
-            cases: ty.List[ty.Tuple[Expr, Expr]] = []
-            for target, links in target_links:
-                field_type = message.field_types[target]
-                size: Expr
-                if isinstance(field_type, Scalar):
-                    size = Size(self.__prefix * common.full_base_type_name(field_type))
-                else:
-                    if len(links) == 1:
-                        size = substituted(links[0].size)
-                    else:
-                        size = If(
-                            [(substituted(l.condition), substituted(l.size)) for l in links],
-                            const.UNREACHABLE,
-                        )
-                cases.append(
+            field_type = message.field_types[field]
+
+            if isinstance(field_type, Scalar):
+                return Size(self.__prefix * common.full_base_type_name(field_type))
+
+            links = message.incoming(field)
+
+            if len(links) == 1:
+                return substituted(links[0].size)
+
+            return If(
+                [
                     (
-                        Variable(target.affixed_name),
-                        size,
+                        AndThen(
+                            Equal(
+                                Selected(
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
+                                ),
+                                Variable(l.source.affixed_name),
+                            ),
+                            *([substituted(l.condition)] if l.condition != expr.TRUE else []),
+                        ),
+                        substituted(l.size),
                     )
-                )
-
-            if not cases:
-                return Number(0)
-
-            if set(message.fields) - {l.target for l in message.outgoing(field)}:
-                cases.append((Variable("others"), const.UNREACHABLE))
-            return Case(Variable("Fld"), cases)
+                    for l in links
+                ],
+                const.UNREACHABLE,
+            )
 
         specification = FunctionSpecification(
             "Field_Size",
@@ -1855,8 +1851,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-                        [(Variable(f.affixed_name), size(f, message)) for f in message.all_fields],
+                        Variable("Fld"),
+                        [(Variable(f.affixed_name), size(f, message)) for f in message.fields],
                     ),
                 )
             ],

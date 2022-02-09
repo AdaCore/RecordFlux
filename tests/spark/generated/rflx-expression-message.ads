@@ -642,13 +642,9 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Payload =>
-                    16),
-          when F_Payload | F_Final =>
-             0));
+     ((case Fld is
+          when F_Payload =>
+             16));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      (Ctx.First);

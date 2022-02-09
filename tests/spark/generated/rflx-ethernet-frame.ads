@@ -1005,62 +1005,30 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Destination =>
-                    RFLX.Ethernet.Address'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Destination =>
-             (case Fld is
-                 when F_Source =>
-                    RFLX.Ethernet.Address'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Source =>
-             (case Fld is
-                 when F_Type_Length_TPID =>
-                    RFLX.Ethernet.Type_Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
+          when F_Destination | F_Source =>
+             RFLX.Ethernet.Address'Size,
           when F_Type_Length_TPID =>
-             (case Fld is
-                 when F_TPID =>
-                    RFLX.Ethernet.TPID_Base'Size,
-                 when F_Type_Length =>
-                    RFLX.Ethernet.Type_Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.Ethernet.Type_Length_Base'Size,
           when F_TPID =>
-             (case Fld is
-                 when F_TCI =>
-                    RFLX.Ethernet.TCI'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.Ethernet.TPID_Base'Size,
           when F_TCI =>
-             (case Fld is
-                 when F_Type_Length =>
-                    RFLX.Ethernet.Type_Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.Ethernet.TCI'Size,
           when F_Type_Length =>
-             (case Fld is
-                 when F_Payload =>
-                    (if
-                        Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
-                     then
-                        RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) * 8
-                     elsif
-                        Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
-                     then
-                        RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Last)
-                     else
-                        RFLX_Types.Unreachable),
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Payload | F_Final =>
-             0));
+             RFLX.Ethernet.Type_Length_Base'Size,
+          when F_Payload =>
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
+                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value <= 1500
+              then
+                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value.Type_Length_Value) * 8
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
+                 and then Ctx.Cursors (F_Type_Length).Value.Type_Length_Value >= 1536
+              then
+                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Last)
+              else
+                 RFLX_Types.Unreachable)));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if

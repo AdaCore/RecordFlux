@@ -746,27 +746,13 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Tag =>
-                    RFLX.TLV.Tag_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Tag =>
-             (case Fld is
-                 when F_Length =>
-                    RFLX.TLV.Length'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.TLV.Tag_Base'Size,
           when F_Length =>
-             (case Fld is
-                 when F_Value =>
-                    RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Value | F_Final =>
-             0));
+             RFLX.TLV.Length'Size,
+          when F_Value =>
+             RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Tag then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
