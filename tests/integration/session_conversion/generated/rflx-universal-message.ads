@@ -27,6 +27,8 @@ is
 
    use type RFLX_Types.U64;
 
+   use type RFLX_Types.Offset;
+
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
@@ -1574,21 +1576,27 @@ private
    function Get_Value (Ctx : Context) return RFLX.Universal.Value is
      (To_Actual (Ctx.Cursors (F_Value).Value.Value_Value));
 
-   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
+   function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      ((if
           Fld = F_Data
           and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
           and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Data))
        then
-          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+          Size <= Available_Space (Ctx, Fld)
        elsif
           Fld = F_Options
           and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
           and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value.Message_Type_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.Universal.MT_Unconstrained_Options))
        then
-          Length <= RFLX_Types.To_Length (Available_Space (Ctx, Fld))
+          Size <= Available_Space (Ctx, Fld)
        else
-          Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld))));
+          Size = Field_Size (Ctx, Fld)))
+    with
+     Pre =>
+       Valid_Next (Ctx, Fld);
+
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
+     (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
    function Complete_Option_Types (Ctx : Context; Seq_Ctx : Universal.Option_Types.Context) return Boolean is
      (Universal.Option_Types.Valid (Seq_Ctx)

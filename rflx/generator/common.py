@@ -717,37 +717,6 @@ def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declar
     ]
 
 
-def field_byte_bounds_declarations() -> Sequence[ada.Declaration]:
-    return [
-        ada.ExpressionFunctionDeclaration(
-            ada.FunctionSpecification("Buffer_First", const.TYPES_INDEX),
-            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("First")]),
-        ),
-        ada.ExpressionFunctionDeclaration(
-            ada.FunctionSpecification("Buffer_Last", const.TYPES_INDEX),
-            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]),
-        ),
-    ]
-
-
-def field_byte_location_declarations() -> Sequence[ada.Declaration]:
-    return [
-        *field_byte_bounds_declarations(),
-        ada.ExpressionFunctionDeclaration(
-            ada.FunctionSpecification("Offset", const.TYPES_OFFSET),
-            ada.Call(
-                const.TYPES_OFFSET,
-                [
-                    ada.Mod(
-                        ada.Sub(ada.Number(8), ada.Mod(ada.Variable("Last"), ada.Number(8))),
-                        ada.Number(8),
-                    )
-                ],
-            ),
-        ),
-    ]
-
-
 def field_condition_call(
     message: model.Message, field: model.Field, value: ada.Expr, size: ada.Expr = None
 ) -> ada.Expr:
@@ -918,3 +887,44 @@ def create_sequence_instantiation(
         assert False, 'unexpected element type "{type(element_type)}"'
 
     return (sequence_context, sequence_package)
+
+
+def unchanged_cursor_before_or_invalid(
+    limit: ada.Expr, loop_entry: bool, or_invalid: bool = True
+) -> ada.Expr:
+    return ada.ForAllIn(
+        "F",
+        ada.Variable("Field"),
+        ada.IfExpr(
+            [
+                (
+                    ada.Less(ada.Variable("F"), limit),
+                    ada.Equal(
+                        ada.Indexed(
+                            ada.Variable("Ctx.Cursors"),
+                            ada.Variable("F"),
+                        ),
+                        ada.Indexed(
+                            ada.LoopEntry(ada.Variable("Ctx.Cursors"))
+                            if loop_entry
+                            else ada.Old(ada.Variable("Ctx.Cursors")),
+                            ada.Variable("F"),
+                        ),
+                    ),
+                )
+            ],
+            *(
+                [
+                    ada.Call(
+                        "Invalid",
+                        [
+                            ada.Variable("Ctx"),
+                            ada.Variable("F"),
+                        ],
+                    )
+                ]
+                if or_invalid
+                else []
+            ),
+        ),
+    )

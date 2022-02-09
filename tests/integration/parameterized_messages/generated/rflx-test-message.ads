@@ -841,8 +841,14 @@ private
      ((for some F in Field =>
           Incomplete (Ctx, F)));
 
+   function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
+     (Size = Field_Size (Ctx, Fld))
+    with
+     Pre =>
+       Valid_Next (Ctx, Fld);
+
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     (Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)));
+     (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

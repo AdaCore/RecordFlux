@@ -26,6 +26,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    ChoiceList,
     Component,
     Constrained,
     ContextItem,
@@ -51,7 +52,6 @@ from rflx.ada import (
     Greater,
     GreaterEqual,
     If,
-    IfExpr,
     IfStatement,
     In,
     Indexed,
@@ -61,7 +61,6 @@ from rflx.ada import (
     Length,
     Less,
     LessEqual,
-    LoopEntry,
     Max,
     Mod,
     ModularType,
@@ -375,7 +374,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 else:
                     fields_with_explicit_size.append(f)
 
-        unit += self.__create_use_type_clause(composite_fields)
+        unit += self.__create_use_type_clause(
+            composite_fields, self.__serializer.requires_set_procedure(message)
+        )
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
         unit += self.__create_cursor_type(message)
@@ -415,8 +416,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         if composite_fields:
             unit += self.__create_equal_function(scalar_fields, composite_fields)
         unit += self.__create_reset_dependent_fields_procedure(message)
+        if (
+            (scalar_fields and composite_fields)
+            or any(message.is_possibly_empty(f) for f in composite_fields)
+            or sequence_fields
+        ):
+            unit += self.__create_composite_field_function(scalar_fields, composite_fields)
 
-        unit += self.__parser.create_internal_functions(message, scalar_fields, composite_fields)
+        unit += self.__parser.create_internal_functions(message, scalar_fields)
         unit += self.__parser.create_verify_procedure(message, scalar_fields, composite_fields)
         unit += self.__parser.create_verify_message_procedure(message)
         unit += self.__parser.create_present_function()
@@ -432,7 +439,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__parser.create_opaque_getter_procedures(opaque_fields)
         unit += self.__parser.create_generic_opaque_getter_procedures(opaque_fields)
 
-        unit += self.__serializer.create_valid_length_function(message)
+        unit += self.__serializer.create_valid_size_function(message)
+        unit += self.__serializer.create_valid_length_function()
+        unit += self.__serializer.create_set_procedure(message, scalar_fields, composite_fields)
         unit += self.__serializer.create_scalar_setter_procedures(message, scalar_fields)
         unit += self.__serializer.create_composite_setter_empty_procedures(message)
         unit += self.__serializer.create_sequence_setter_procedures(message, sequence_fields)
@@ -450,7 +459,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_structure(message)
 
     @staticmethod
-    def __create_use_type_clause(composite_fields: ty.Sequence[Field]) -> UnitPart:
+    def __create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -> UnitPart:
         return UnitPart(
             [
                 Pragma(
@@ -473,6 +482,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         const.TYPES_INDEX,
                         const.TYPES_BIT_INDEX,
                         const.TYPES_U64,
+                        *([const.TYPES_OFFSET] if offset else []),
                     ]
                 ],
                 Pragma(
@@ -2275,38 +2285,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             ),
         )
 
-        def unchanged_before_or_invalid(limit: Expr, loop_entry: bool) -> Expr:
-            return ForAllIn(
-                "F",
-                Variable("Field"),
-                IfExpr(
-                    [
-                        (
-                            Less(Variable("F"), limit),
-                            Equal(
-                                Indexed(
-                                    Variable("Ctx.Cursors"),
-                                    Variable("F"),
-                                ),
-                                Indexed(
-                                    LoopEntry(Variable("Ctx.Cursors"))
-                                    if loop_entry
-                                    else Old(Variable("Ctx.Cursors")),
-                                    Variable("F"),
-                                ),
-                            ),
-                        )
-                    ],
-                    Call(
-                        "Invalid",
-                        [
-                            Variable("Ctx"),
-                            Variable("F"),
-                        ],
-                    ),
-                ),
-            )
-
         return UnitPart(
             [],
             [
@@ -2354,7 +2332,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                         PragmaStatement(
                                             "Loop_Invariant",
                                             [
-                                                unchanged_before_or_invalid(
+                                                common.unchanged_cursor_before_or_invalid(
                                                     Variable("Fld_Loop"), loop_entry=True
                                                 )
                                             ],
@@ -2433,7 +2411,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     ],
                                 )
                                 if len(message.fields) == 1
-                                else unchanged_before_or_invalid(Variable("Fld"), loop_entry=False),
+                                else common.unchanged_cursor_before_or_invalid(
+                                    Variable("Fld"), loop_entry=False
+                                ),
                             )
                         ),
                     ],
@@ -2866,6 +2846,29 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 *([(Variable("others"), FALSE)] if scalar_fields else []),
                             ],
                         ),
+                    ),
+                )
+            ],
+        )
+
+    @staticmethod
+    def __create_composite_field_function(
+        scalar_fields: ty.Mapping[Field, Type], composite_fields: ty.Sequence[Field]
+    ) -> UnitPart:
+        always_true = not scalar_fields and len(composite_fields) == 1
+        return UnitPart(
+            body=[
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        "Composite_Field",
+                        "Boolean",
+                        [Parameter(["Unused_Fld" if always_true else "Fld"], "Field")],
+                    ),
+                    TRUE
+                    if always_true
+                    else In(
+                        Variable("Fld"),
+                        ChoiceList(*[Variable(f.affixed_name) for f in composite_fields]),
                     ),
                 )
             ],

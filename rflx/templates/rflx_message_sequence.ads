@@ -244,17 +244,12 @@ private
      (Ctx.Last - Ctx.Sequence_Last);
 
    function Sequence_Last (Ctx : Context) return RFLX_Types.Bit_Length is
-      (Ctx.Sequence_Last);
+     (Ctx.Sequence_Last);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
-      (Ctx.Sequence_Last - Ctx.First + 1);
+     (Ctx.Sequence_Last - Ctx.First + 1);
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
-     (if
-        Ctx.Sequence_Last = Ctx.First - 1
-      then
-         0
-      else
-         RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Sequence_Last) - RFLX_Types.To_Index (Ctx.First)) + 1);
+     (RFLX_Types.To_Length (Size (Ctx)));
 
 end {prefix}RFLX_Message_Sequence;
