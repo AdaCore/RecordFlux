@@ -533,10 +533,23 @@ def create_channel_decl(
     filename: Path,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalChannelDecl)
+    error = RecordFluxError()
     readable = False
     writable = False
     for p in declaration.f_parameters:
-        if p.kind_name == "Readable":
+        if (p.kind_name == "Readable" and readable) or (p.kind_name == "Writable" and writable):
+            error.extend(
+                [
+                    (
+                        f'duplicate aspect "{p.kind_name}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(p, filename),
+                    )
+                ],
+            )
+            error.propagate()
+        elif p.kind_name == "Readable":
             readable = True
         elif p.kind_name == "Writable":
             writable = True
@@ -984,7 +997,20 @@ def create_message_structure(
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
         for aspect in aspects:
-            if aspect.f_identifier.text == "Size":
+            if (aspect.f_identifier.text == "Size" and size != expr.UNDEFINED) or (
+                aspect.f_identifier.text == "First" and first != expr.UNDEFINED
+            ):
+                error.extend(
+                    [
+                        (
+                            f'duplicate aspect "{aspect.f_identifier.text}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(aspect.f_identifier, filename),
+                        )
+                    ],
+                )
+            elif aspect.f_identifier.text == "Size":
                 size = create_math_expression(aspect.f_value, filename)
             elif aspect.f_identifier.text == "First":
                 first = create_math_expression(aspect.f_value, filename)
