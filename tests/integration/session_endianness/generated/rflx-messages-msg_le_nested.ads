@@ -641,27 +641,11 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_X_A =>
-                    RFLX.Messages.Integer'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_X_A =>
-             (case Fld is
-                 when F_X_B =>
-                    RFLX.Messages.Enum_T_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_X_B =>
-             (case Fld is
-                 when F_Y =>
-                    RFLX.Messages.Enum_T_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Y | F_Final =>
-             0));
+             RFLX.Messages.Integer'Size,
+          when F_X_B | F_Y =>
+             RFLX.Messages.Enum_T_Base'Size));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_X_A then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

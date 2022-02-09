@@ -919,39 +919,17 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Copied =>
-                    RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Copied =>
-             (case Fld is
-                 when F_Option_Class =>
-                    RFLX.IPv4.Option_Class_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
           when F_Option_Class =>
-             (case Fld is
-                 when F_Option_Number =>
-                    RFLX.IPv4.Option_Number'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Option_Class_Base'Size,
           when F_Option_Number =>
-             (case Fld is
-                 when F_Option_Length =>
-                    RFLX.IPv4.Option_Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.IPv4.Option_Number'Size,
           when F_Option_Length =>
-             (case Fld is
-                 when F_Option_Data =>
-                    (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Option_Data | F_Final =>
-             0));
+             RFLX.IPv4.Option_Length_Base'Size,
+          when F_Option_Data =>
+             (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Copied then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

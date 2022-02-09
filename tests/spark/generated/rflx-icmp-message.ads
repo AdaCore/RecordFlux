@@ -2061,97 +2061,56 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Tag =>
-                    RFLX.ICMP.Tag_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Tag =>
-             (case Fld is
-                 when F_Code_Destination_Unreachable =>
-                    RFLX.ICMP.Code_Destination_Unreachable_Base'Size,
-                 when F_Code_Redirect =>
-                    RFLX.ICMP.Code_Redirect_Base'Size,
-                 when F_Code_Time_Exceeded =>
-                    RFLX.ICMP.Code_Time_Exceeded_Base'Size,
-                 when F_Code_Zero =>
-                    RFLX.ICMP.Code_Zero_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-             (case Fld is
-                 when F_Checksum =>
-                    RFLX.ICMP.Checksum'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Tag_Base'Size,
+          when F_Code_Destination_Unreachable =>
+             RFLX.ICMP.Code_Destination_Unreachable_Base'Size,
+          when F_Code_Redirect =>
+             RFLX.ICMP.Code_Redirect_Base'Size,
+          when F_Code_Time_Exceeded =>
+             RFLX.ICMP.Code_Time_Exceeded_Base'Size,
+          when F_Code_Zero =>
+             RFLX.ICMP.Code_Zero_Base'Size,
           when F_Checksum =>
-             (case Fld is
-                 when F_Gateway_Internet_Address =>
-                    RFLX.ICMP.Gateway_Internet_Address'Size,
-                 when F_Identifier =>
-                    RFLX.ICMP.Identifier'Size,
-                 when F_Pointer =>
-                    RFLX.ICMP.Pointer'Size,
-                 when F_Unused_32 =>
-                    RFLX.ICMP.Unused_32_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Checksum'Size,
           when F_Gateway_Internet_Address =>
-             (case Fld is
-                 when F_Data =>
-                    224,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Gateway_Internet_Address'Size,
           when F_Identifier =>
-             (case Fld is
-                 when F_Sequence_Number =>
-                    RFLX.ICMP.Sequence_Number'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Identifier'Size,
           when F_Pointer =>
-             (case Fld is
-                 when F_Unused_24 =>
-                    RFLX.ICMP.Unused_24_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Pointer'Size,
           when F_Unused_32 =>
-             (case Fld is
-                 when F_Data =>
-                    224,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Unused_32_Base'Size,
           when F_Sequence_Number =>
-             (case Fld is
-                 when F_Data =>
-                    RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last),
-                 when F_Originate_Timestamp =>
-                    RFLX.ICMP.Timestamp'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Sequence_Number'Size,
           when F_Unused_24 =>
-             (case Fld is
-                 when F_Data =>
-                    224,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Unused_24_Base'Size,
           when F_Originate_Timestamp =>
-             (case Fld is
-                 when F_Receive_Timestamp =>
-                    RFLX.ICMP.Timestamp'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.ICMP.Timestamp'Size,
           when F_Data =>
-             0,
-          when F_Receive_Timestamp =>
-             (case Fld is
-                 when F_Transmit_Timestamp =>
-                    RFLX.ICMP.Timestamp'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Transmit_Timestamp | F_Final =>
-             0));
+             (if
+                 Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address
+              then
+                 224
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
+                 and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Reply))
+                           or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Request)))
+              then
+                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Unused_24
+              then
+                 224
+              elsif
+                 Ctx.Cursors (Fld).Predecessor = F_Unused_32
+              then
+                 224
+              else
+                 RFLX_Types.Unreachable),
+          when F_Receive_Timestamp | F_Transmit_Timestamp =>
+             RFLX.ICMP.Timestamp'Size));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Tag then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

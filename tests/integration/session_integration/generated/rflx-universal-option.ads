@@ -744,27 +744,13 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Option_Type =>
-                    RFLX.Universal.Option_Type_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
           when F_Option_Type =>
-             (case Fld is
-                 when F_Length =>
-                    RFLX.Universal.Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.Universal.Option_Type_Base'Size,
           when F_Length =>
-             (case Fld is
-                 when F_Data =>
-                    RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Data | F_Final =>
-             0));
+             RFLX.Universal.Length_Base'Size,
+          when F_Data =>
+             RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Option_Type then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

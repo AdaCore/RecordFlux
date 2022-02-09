@@ -860,39 +860,15 @@ private
              False));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial =>
-             (case Fld is
-                 when F_Source_Port =>
-                    RFLX.UDP.Port'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Source_Port =>
-             (case Fld is
-                 when F_Destination_Port =>
-                    RFLX.UDP.Port'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Destination_Port =>
-             (case Fld is
-                 when F_Length =>
-                    RFLX.UDP.Length_Base'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+     ((case Fld is
+          when F_Source_Port | F_Destination_Port =>
+             RFLX.UDP.Port'Size,
           when F_Length =>
-             (case Fld is
-                 when F_Checksum =>
-                    RFLX.UDP.Checksum'Size,
-                 when others =>
-                    RFLX_Types.Unreachable),
+             RFLX.UDP.Length_Base'Size,
           when F_Checksum =>
-             (case Fld is
-                 when F_Payload =>
-                    (RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) - 8) * 8,
-                 when others =>
-                    RFLX_Types.Unreachable),
-          when F_Payload | F_Final =>
-             0));
+             RFLX.UDP.Checksum'Size,
+          when F_Payload =>
+             (RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value.Length_Value) - 8) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Source_Port then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
