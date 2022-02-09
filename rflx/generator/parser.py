@@ -4,7 +4,6 @@ from typing import List, Mapping, Sequence, Tuple
 
 import rflx.expression as expr
 from rflx.ada import (
-    FALSE,
     ID,
     TRUE,
     Add,
@@ -86,10 +85,7 @@ class ParserGenerator:
         )
 
     def create_internal_functions(
-        self,
-        message: Message,
-        scalar_fields: Mapping[Field, Type],
-        composite_fields: Sequence[Field],
+        self, message: Message, scalar_fields: Mapping[Field, Type]
     ) -> UnitPart:
         def result(field: Field, message: Message) -> NamedAggregate:
             aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
@@ -138,27 +134,6 @@ class ParserGenerator:
         return UnitPart(
             [],
             [
-                *(
-                    [
-                        ExpressionFunctionDeclaration(
-                            FunctionSpecification(
-                                "Composite_Field", "Boolean", [Parameter(["Fld"], "Field")]
-                            ),
-                            Case(
-                                Variable("Fld"),
-                                [
-                                    (
-                                        Variable(f.affixed_name),
-                                        TRUE if f in composite_fields else FALSE,
-                                    )
-                                    for f in message.fields
-                                ],
-                            ),
-                        )
-                    ]
-                    if scalar_fields and composite_fields
-                    else []
-                ),
                 SubprogramBody(
                     FunctionSpecification(
                         "Get_Field_Value",

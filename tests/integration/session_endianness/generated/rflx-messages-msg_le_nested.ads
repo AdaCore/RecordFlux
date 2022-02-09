@@ -22,6 +22,8 @@ is
 
    use type RFLX_Types.U64;
 
+   use type RFLX_Types.Offset;
+
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
@@ -721,8 +723,14 @@ private
    function Get_Y (Ctx : Context) return RFLX.Messages.Enum_T is
      (To_Actual (Ctx.Cursors (F_Y).Value.Y_Value));
 
+   function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
+     (Size = Field_Size (Ctx, Fld))
+    with
+     Pre =>
+       Valid_Next (Ctx, Fld);
+
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
-     (Length = RFLX_Types.To_Length (Field_Size (Ctx, Fld)));
+     (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

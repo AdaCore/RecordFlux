@@ -39,7 +39,7 @@ abstract project Defaults is
    (
       "--prover=z3,cvc4,altergo",
       "--steps=0",
-      "--timeout=90",
+      "--timeout=120",
       "--memlimit=1000",
       "--checks-as-errors",
       "--warnings=error",
@@ -88,6 +88,7 @@ abstract project Defaults is
       --  ISSUE: Componolit/Workarounds#27
       --  "-gnatwh",   --  Activate warnings on hiding.
       "-gnatwt",   --  Activate warnings for tracking of deleted conditional code.
+      "-gnatwQ",   --  Suppress warnings on questionable missing parentheses.
 
       --  Style Checks
       "-gnaty3",    --  Specify indentation level.
