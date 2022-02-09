@@ -3253,6 +3253,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         String('"Buffer" is not modified, could be of access constant type'),
                     ],
                 ),
+                # We want to avoid inlining of the context predicate for proof. The way to do
+                # that in SPARK Pro 23.x is to add a dummy postcondition ("True"). We silence
+                # the warning that this dummy postcondition doesn't mention the function result.
                 Pragma(
                     "Warnings",
                     [
