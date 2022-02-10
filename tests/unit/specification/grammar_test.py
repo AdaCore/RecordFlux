@@ -41,7 +41,8 @@ def parse_declaration(data: str) -> decl.Declaration:
 def parse_formal_declaration(data: str) -> decl.Declaration:
     parser_declaration, filename = parse(data, lang.GrammarRule.session_parameter_rule)
     assert isinstance(parser_declaration, lang.FormalDecl)
-    declaration = create_formal_declaration(parser_declaration, ID("Package"), filename)
+    error = RecordFluxError()
+    declaration = create_formal_declaration(parser_declaration, ID("Package"), filename, error)
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
@@ -62,7 +63,7 @@ def parse_session(string: str) -> model.Session:
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     assert isinstance(unit.root, lang.SessionDecl)
-    return create_session(unit.root, ID("Package"), Path("<stdin>"))
+    return create_session(unit.root, ID("Package"), Path("<stdin>"), error)
 
 
 def parse_unproven_session(string: str) -> model.UnprovenSession:
@@ -73,7 +74,7 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     assert isinstance(unit.root, lang.SessionDecl)
-    return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"))
+    return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"), error)
 
 
 def parse_id(data: str, rule: str) -> ID:

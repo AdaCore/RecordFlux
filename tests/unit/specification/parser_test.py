@@ -1929,14 +1929,14 @@ def test_parse_error_duplicate_message_aspect_size() -> None:
     assert_error_string(
         """
             package Test is
-                type M is
-                    message
-                        B : Opaque
-                            with First => 123, Size => 123, Size => 521;
-                    end message;
+               type M is
+                  message
+                     B : Opaque
+                        with First => 123, Size => 123, Size => 521;
+                  end message;
             end Test;
         """,
-        r'^<stdin>:6:61: parser: error: duplicate aspect "Size"',
+        r'^<stdin>:6:57: parser: error: duplicate aspect "Size"',
     )
 
 
@@ -1944,102 +1944,102 @@ def test_parse_error_duplicate_message_aspect_first() -> None:
     assert_error_string(
         """
             package Test is
-                type M is
-                    message
-                        B : Opaque
-                            with First => 123, Size => 123, First => 521;
-                    end message;
+               type M is
+                  message
+                     B : Opaque
+                        with First => 123, Size => 123, First => 521;
+                  end message;
             end Test;
         """,
-        r'^<stdin>:6:61: parser: error: duplicate aspect "First"',
+        r'^<stdin>:6:57: parser: error: duplicate aspect "First"',
     )
 
 
 def test_parse_error_duplicate_channel_aspect_readable() -> None:
     assert_error_string(
         """
-        package Test is
+            package Test is
 
-            type M is
-                message
-                    B : Opaque
+               type M is
+                  message
+                     B : Opaque
                         with Size => 8;
-                end message;
+                  end message;
 
-            generic
-                Channel : Channel with Readable, Writable, Readable;
-            session Session with
-                Initial => Start,
-                Final => Terminated
-            is
-                Message : M;
-            begin
-                state Start is
-                begin
-                    Channel'Read (Message);
-                transition
-                    goto Reply
+               generic
+                  Channel : Channel with Readable, Writable, Readable;
+               session Session with
+                  Initial => Start,
+                  Final => Terminated
+               is
+                  Message : M;
+               begin
+                  state Start is
+                  begin
+                     Channel'Read (Message);
+                  transition
+                     goto Reply
                         if Message'Valid
-                    goto Terminated
-                end Start;
+                     goto Terminated
+                  end Start;
 
-                state Reply is
-                begin
-                    Channel'Write (Message);
-                transition
-                    goto Terminated
-                end Reply;
+                  state Reply is
+                  begin
+                     Channel'Write (Message);
+                  transition
+                     goto Terminated
+                  end Reply;
 
-                state Terminated is null state;
-            end Session;
+                  state Terminated is null state;
+               end Session;
 
-        end Test;
+            end Test;
         """,
-        r'^<stdin>:11:60: parser: error: duplicate aspect "Readable"',
+        r'^<stdin>:11:62: parser: error: duplicate aspect "Readable"',
     )
 
 
 def test_parse_error_duplicate_channel_aspect_writable() -> None:
     assert_error_string(
         """
-        package Test is
+            package Test is
 
-            type M is
-                message
-                    B : Opaque
+               type M is
+                  message
+                     B : Opaque
                         with Size => 8;
-                end message;
+                  end message;
 
-            generic
-                Channel : Channel with Readable, Writable, Writable;
-            session Session with
-                Initial => Start,
-                Final => Terminated
-            is
-                Message : M;
-            begin
-                state Start is
-                begin
-                    Channel'Read (Message);
-                transition
-                    goto Reply
+               generic
+                  Channel : Channel with Readable, Writable, Writable;
+               session Session with
+                  Initial => Start,
+                  Final => Terminated
+               is
+                  Message : M;
+               begin
+                  state Start is
+                  begin
+                     Channel'Read (Message);
+                  transition
+                     goto Reply
                         if Message'Valid
-                    goto Terminated
-                end Start;
+                     goto Terminated
+                  end Start;
 
-                state Reply is
-                begin
-                    Channel'Write (Message);
-                transition
-                    goto Terminated
-                end Reply;
+                  state Reply is
+                  begin
+                     Channel'Write (Message);
+                  transition
+                     goto Terminated
+                  end Reply;
 
-                state Terminated is null state;
-            end Session;
+                  state Terminated is null state;
+               end Session;
 
-        end Test;
+            end Test;
         """,
-        r'^<stdin>:11:60: parser: error: duplicate aspect "Writable"',
+        r'^<stdin>:11:62: parser: error: duplicate aspect "Writable"',
     )
 
 

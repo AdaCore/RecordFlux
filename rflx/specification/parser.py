@@ -198,6 +198,7 @@ def create_unproven_session(
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
+    error: RecordFluxError,
     types: Sequence[model.Type] = None,
 ) -> model.UnprovenSession:
     __check_session_identifier(session, filename)
@@ -208,7 +209,7 @@ def create_unproven_session(
         create_id(session.f_aspects.f_final, filename),
         [create_state(s, package, filename) for s in session.f_states],
         [create_declaration(d, package, filename) for d in session.f_declarations],
-        [create_formal_declaration(p, package, filename) for p in session.f_parameters],
+        [create_formal_declaration(p, package, filename, error) for p in session.f_parameters],
         types or [],
         node_location(session, filename),
     )
@@ -218,9 +219,10 @@ def create_session(
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
+    error: RecordFluxError,
     types: Sequence[model.Type] = None,
 ) -> model.Session:
-    return create_unproven_session(session, package, filename, types).proven()
+    return create_unproven_session(session, package, filename, error, types).proven()
 
 
 def create_id(identifier: lang.AbstractID, filename: Path) -> ID:
@@ -516,7 +518,7 @@ def create_variable_decl(
 
 
 def create_private_type_decl(
-    declaration: lang.FormalDecl, package: ID, filename: Path
+    declaration: lang.FormalDecl, package: ID, filename: Path, _error: RecordFluxError
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
@@ -531,9 +533,9 @@ def create_channel_decl(
     declaration: lang.FormalDecl,
     _package: ID,
     filename: Path,
+    error: RecordFluxError,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalChannelDecl)
-    error = RecordFluxError()
     readable = False
     writable = False
     for p in declaration.f_parameters:
@@ -548,7 +550,6 @@ def create_channel_decl(
                     )
                 ],
             )
-            error.propagate()
         elif p.kind_name == "Readable":
             readable = True
         elif p.kind_name == "Writable":
@@ -583,6 +584,7 @@ def create_function_decl(
     declaration: lang.FormalDecl,
     package: ID,
     filename: Path,
+    _error: RecordFluxError,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalFunctionDecl)
     arguments = []
@@ -713,14 +715,14 @@ def create_declaration(
 
 
 def create_formal_declaration(
-    declaration: lang.FormalDecl, package: ID, filename: Path
+    declaration: lang.FormalDecl, package: ID, filename: Path, error: RecordFluxError
 ) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, package, filename)
+    return handlers[declaration.kind_name](declaration, package, filename, error)
 
 
 def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
@@ -1344,9 +1346,7 @@ def create_enumeration(
             for i, e in enumerate(enumeration.f_elements.f_elements)
         ]
     else:
-        raise NotImplementedError(
-            f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
-        )
+        raise NotImplementedError(f"Enmeration kind {enumeration.f_elements.kind_name} unsupported")
 
     size, always_valid = create_aspects(enumeration.f_aspects)
 
@@ -1703,7 +1703,7 @@ class Parser:
                     error.extend(e)
             elif isinstance(t, lang.SessionDecl):
                 try:
-                    new_session = create_session(t, package_id, filename, self.__types)
+                    new_session = create_session(t, package_id, filename, error, self.__types)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)
                 except RecordFluxError as e:
