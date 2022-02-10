@@ -18,7 +18,7 @@ package Messages is
          B : Enum_T;
       end message;
 
-   type Msg_BE is
+   type Msg_LE_Nested is
       message
          X : Msg;
          Y : Enum_T;

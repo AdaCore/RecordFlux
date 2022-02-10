@@ -141,9 +141,10 @@ class AbstractMessage(mty.Type):
         }
         self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
         self._type_literals = mty.qualified_type_literals(self.dependencies)
+        self._byte_order = {}
 
-        if not state and (structure or types):
-            try:
+        try:
+            if not state and (structure or types):
                 self.__validate()
                 self.__normalize()
                 fields = self.__compute_topological_sorting()
@@ -152,14 +153,16 @@ class AbstractMessage(mty.Type):
                     self._state.parameter_types = {
                         f: t for f, t in self.__types.items() if f not in fields
                     }
-            except RecordFluxError:
-                pass
-        _byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
-        if not isinstance(_byte_order, dict):
-            assert isinstance(_byte_order, ByteOrder)
-            self._byte_order = {f: _byte_order for f in self.fields}
-        else:
-            self._byte_order = _byte_order
+            byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
+            if not isinstance(byte_order, dict):
+                assert isinstance(byte_order, ByteOrder)
+                self._byte_order = {f: byte_order for f in self.fields}
+            else:
+                assert all(f in byte_order for f in self.fields)
+                assert all(f in self.fields for f in byte_order)
+                self._byte_order = byte_order
+        except RecordFluxError:
+            pass
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -222,7 +225,6 @@ class AbstractMessage(mty.Type):
 
     @property
     def byte_order(self) -> Mapping[Field, ByteOrder]:
-        assert isinstance(self._byte_order, dict)
         return self._byte_order
 
     @abstractmethod
@@ -400,9 +402,7 @@ class AbstractMessage(mty.Type):
             **{Field(prefix + f.identifier): t for f, t in self.field_types.items()},
         }
 
-        byte_order = {
-            **{Field(prefix + f.identifier): t for f, t in self.byte_order.items()},
-        }
+        byte_order = {Field(prefix + f.identifier): t for f, t in self.byte_order.items()}
 
         return self.copy(structure=structure, types=types, byte_order=byte_order)
 
@@ -2037,12 +2037,7 @@ class UnprovenMessage(AbstractMessage):
 
         byte_order = {
             **{f: b for f, b in message.byte_order.items() if f != field},
-            **{
-                f: b
-                for f, b in inner_message.byte_order.items()
-                if inner_message.identifier not in message_arguments
-                or f.identifier not in message_arguments[inner_message.identifier]
-            },
+            **inner_message.byte_order,
         }
 
         structure, types, byte_order = self._prune_dangling_fields(structure, types, byte_order)
@@ -2053,7 +2048,6 @@ class UnprovenMessage(AbstractMessage):
                 Severity.ERROR,
                 field.identifier.location,
             )
-
         return message.copy(structure=structure, types=types, byte_order=byte_order)
 
     @staticmethod

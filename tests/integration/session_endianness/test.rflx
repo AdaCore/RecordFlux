@@ -9,7 +9,7 @@ package Test is
       Initial => Start,
       Final => Terminated
    is
-      In_Msg : Messages::Msg_BE;
+      In_Msg : Messages::Msg_LE_Nested;
       In_Msg2 : Messages::Msg_LE;
       Out_Msg : Messages::Msg_LE;
       Out_Msg2 : Messages::Msg;

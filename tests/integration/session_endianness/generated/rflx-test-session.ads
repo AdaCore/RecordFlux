@@ -4,7 +4,7 @@ pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Session_Allocator;
 with RFLX.RFLX_Types;
 with RFLX.Messages;
-with RFLX.Messages.Msg_BE;
+with RFLX.Messages.Msg_LE_Nested;
 with RFLX.Messages.Msg_LE;
 with RFLX.Messages.Msg;
 
@@ -109,7 +109,7 @@ private
    type Private_Context is
       record
          Next_State : State := S_Start;
-         In_Msg_Ctx : Messages.Msg_BE.Context;
+         In_Msg_Ctx : Messages.Msg_LE_Nested.Context;
          In_Msg2_Ctx : Messages.Msg_LE.Context;
          Out_Msg_Ctx : Messages.Msg_LE.Context;
          Out_Msg2_Ctx : Messages.Msg.Context;
@@ -118,14 +118,14 @@ private
       end record;
 
    function Uninitialized (Ctx : Context'Class) return Boolean is
-     (not Messages.Msg_BE.Has_Buffer (Ctx.P.In_Msg_Ctx)
+     (not Messages.Msg_LE_Nested.Has_Buffer (Ctx.P.In_Msg_Ctx)
       and not Messages.Msg_LE.Has_Buffer (Ctx.P.In_Msg2_Ctx)
       and not Messages.Msg_LE.Has_Buffer (Ctx.P.Out_Msg_Ctx)
       and not Messages.Msg.Has_Buffer (Ctx.P.Out_Msg2_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Initialized (Ctx : Context'Class) return Boolean is
-     (Messages.Msg_BE.Has_Buffer (Ctx.P.In_Msg_Ctx)
+     (Messages.Msg_LE_Nested.Has_Buffer (Ctx.P.In_Msg_Ctx)
       and then Ctx.P.In_Msg_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.In_Msg_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Messages.Msg_LE.Has_Buffer (Ctx.P.In_Msg2_Ctx)

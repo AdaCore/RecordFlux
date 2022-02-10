@@ -15,8 +15,8 @@ is
        Initialized (Ctx)
    is
    begin
-      Messages.Msg_BE.Verify_Message (Ctx.P.In_Msg_Ctx);
-      if Messages.Msg_BE.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
+      Messages.Msg_LE_Nested.Verify_Message (Ctx.P.In_Msg_Ctx);
+      if Messages.Msg_LE_Nested.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy;
       else
          Ctx.P.Next_State := S_Terminated;
@@ -32,10 +32,10 @@ is
    begin
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 1 >= 64 then
          Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 64 - 1);
-         if Messages.Msg_BE.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_BE.F_X_A) then
-            Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_BE.Get_X_A (Ctx.P.In_Msg_Ctx));
-            if Messages.Msg_BE.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_BE.F_X_B) then
-               Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_BE.Get_X_B (Ctx.P.In_Msg_Ctx));
+         if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
+            Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
+            if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
+               Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
             else
                Ctx.P.Next_State := S_Terminated;
                return;
@@ -125,7 +125,7 @@ is
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
-      Messages.Msg_BE.Initialize (Ctx.P.In_Msg_Ctx, In_Msg_Buffer);
+      Messages.Msg_LE_Nested.Initialize (Ctx.P.In_Msg_Ctx, In_Msg_Buffer);
       In_Msg2_Buffer := Ctx.P.Slots.Slot_Ptr_2;
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_2 := null;
@@ -151,7 +151,7 @@ is
       Out_Msg2_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       pragma Warnings (Off, """Ctx.P.In_Msg_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Messages.Msg_BE.Take_Buffer (Ctx.P.In_Msg_Ctx, In_Msg_Buffer);
+      Messages.Msg_LE_Nested.Take_Buffer (Ctx.P.In_Msg_Ctx, In_Msg_Buffer);
       pragma Warnings (On, """Ctx.P.In_Msg_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Ctx.P.Slots.Slot_Ptr_1 := In_Msg_Buffer;
       pragma Warnings (Off, """Ctx.P.In_Msg2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -179,7 +179,7 @@ is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
-            Messages.Msg_BE.Reset (Ctx.P.In_Msg_Ctx, Ctx.P.In_Msg_Ctx.First, Ctx.P.In_Msg_Ctx.First - 1);
+            Messages.Msg_LE_Nested.Reset (Ctx.P.In_Msg_Ctx, Ctx.P.In_Msg_Ctx.First, Ctx.P.In_Msg_Ctx.First - 1);
          when S_Copy | S_Reply =>
             null;
          when S_Read2 =>
@@ -277,14 +277,14 @@ is
          Message_Buffer := (others => 0);
          Message_Buffer (Message_Buffer'First .. RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) - 1 + Length)) := Buffer;
       end Write;
-      procedure Messages_Msg_BE_Write is new Messages.Msg_BE.Generic_Write (Write, Write_Pre);
       procedure Messages_Msg_LE_Write is new Messages.Msg_LE.Generic_Write (Write, Write_Pre);
+      procedure Messages_Msg_LE_Nested_Write is new Messages.Msg_LE_Nested.Generic_Write (Write, Write_Pre);
    begin
       case Chan is
          when C_I =>
             case Ctx.P.Next_State is
                when S_Start =>
-                  Messages_Msg_BE_Write (Ctx.P.In_Msg_Ctx, Offset);
+                  Messages_Msg_LE_Nested_Write (Ctx.P.In_Msg_Ctx, Offset);
                when S_Read2 =>
                   Messages_Msg_LE_Write (Ctx.P.In_Msg2_Ctx, Offset);
                when others =>
