@@ -2,7 +2,7 @@ pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Messages.Msg_BE with
+package RFLX.Messages.Msg_LE_Nested with
   SPARK_Mode,
   Annotate =>
     (GNATprove, Terminating)
@@ -749,4 +749,4 @@ private
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
 
-end RFLX.Messages.Msg_BE;
+end RFLX.Messages.Msg_LE_Nested;

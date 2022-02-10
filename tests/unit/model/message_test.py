@@ -2624,6 +2624,19 @@ def test_copy() -> None:
             {Field("C"): RANGE_INTEGER},
         ),
     )
+    assert_equal(
+        message.copy(
+            structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
+            types={Field("C"): RANGE_INTEGER},
+            byte_order={Field("C"): ByteOrder.LOW_ORDER_FIRST},
+        ),
+        Message(
+            "P::M",
+            [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
+            {Field("C"): RANGE_INTEGER},
+            byte_order=ByteOrder.LOW_ORDER_FIRST,
+        ),
+    )
 
 
 def test_proven() -> None:
@@ -3125,6 +3138,39 @@ def test_merge_message_simple_derived() -> None:
                 Field("NR_F4"): deepcopy(RANGE_INTEGER),
             },
             byte_order=ByteOrder.HIGH_ORDER_FIRST,
+        ),
+    )
+
+
+def test_merge_byte_order() -> None:
+    inner_msg = UnprovenMessage(
+        "P::Merge_Test_Byte_Order",
+        [Link(INITIAL, Field("F1")), Link(Field("F1"), Field("F2")), Link(Field("F2"), FINAL)],
+        {Field("F1"): MODULAR_INTEGER, Field("F2"): ENUMERATION},
+        byte_order=ByteOrder.LOW_ORDER_FIRST,
+    )
+    outer_msg = UnprovenMessage(
+        "P::Outer_Msg",
+        [
+            Link(INITIAL, Field("NR")),
+            Link(Field("NR"), FINAL),
+        ],
+        {Field("NR"): inner_msg},
+    )
+    assert_equal(
+        outer_msg.merged(),
+        UnprovenMessage(
+            "P::Outer_Msg",
+            [
+                Link(INITIAL, Field("NR_F1")),
+                Link(Field("NR_F1"), Field("NR_F2")),
+                Link(Field("NR_F2"), FINAL),
+            ],
+            {Field("NR_F1"): MODULAR_INTEGER, Field("NR_F2"): ENUMERATION},
+            byte_order={
+                Field("NR_F1"): ByteOrder.LOW_ORDER_FIRST,
+                Field("NR_F2"): ByteOrder.LOW_ORDER_FIRST,
+            },
         ),
     )
 

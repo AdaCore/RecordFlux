@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Messages.Msg_BE with
+package body RFLX.Messages.Msg_LE_Nested with
   SPARK_Mode
 is
 
@@ -327,4 +327,4 @@ is
       Set_Y (Ctx, Struct.Y);
    end To_Context;
 
-end RFLX.Messages.Msg_BE;
+end RFLX.Messages.Msg_LE_Nested;
