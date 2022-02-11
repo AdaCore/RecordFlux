@@ -686,11 +686,9 @@ class SerializerGenerator:
                             "Insert",
                             [
                                 Variable(f"Field_Value.{f.name}_Value"),
-                                Slice(
-                                    Variable("Ctx.Buffer.all"),
-                                    Variable("Buffer_First"),
-                                    Variable("Buffer_Last"),
-                                ),
+                                Variable("Ctx.Buffer"),
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
                                 Variable("Offset"),
                                 Variable(
                                     const.TYPES_HIGH_ORDER_FIRST

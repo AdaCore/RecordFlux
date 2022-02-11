@@ -176,7 +176,7 @@ is
    begin
       return ((case Fld is
                   when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Payload =>
                      (Fld => F_Payload)));
    end Get_Field_Value;
@@ -317,7 +317,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Sequence.Length);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Length;
 
    procedure Set_Payload_Empty (Ctx : in out Context) is

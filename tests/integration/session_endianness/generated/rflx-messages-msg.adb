@@ -166,9 +166,9 @@ is
    begin
       return ((case Fld is
                   when F_A =>
-                     (Fld => F_A, A_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_A, A_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_B =>
-                     (Fld => F_B, B_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First))));
+                     (Fld => F_B, B_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -282,7 +282,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Integer);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_A), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.A_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.A_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_A;
 
    procedure Set_B (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
@@ -292,7 +292,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Enum_T_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_B), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.B_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.B_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_B;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

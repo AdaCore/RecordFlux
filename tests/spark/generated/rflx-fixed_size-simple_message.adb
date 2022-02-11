@@ -176,7 +176,7 @@ is
    begin
       return ((case Fld is
                   when F_Message_Type =>
-                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data)));
    end Get_Field_Value;
@@ -317,7 +317,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Option_Type_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Message_Type), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Message_Type_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Message_Type;
 
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with

@@ -147,7 +147,7 @@ is
    begin
       return ((case Fld is
                   when F_Priority =>
-                     (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First))));
+                     (Fld => F_Priority, Priority_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -250,7 +250,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Enumeration.Priority_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Priority), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Priority_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Priority_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Priority;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

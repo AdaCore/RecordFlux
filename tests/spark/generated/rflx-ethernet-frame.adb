@@ -224,17 +224,17 @@ is
    begin
       return ((case Fld is
                   when F_Destination =>
-                     (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Source =>
-                     (Fld => F_Source, Source_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Source, Source_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Type_Length_TPID =>
-                     (Fld => F_Type_Length_TPID, Type_Length_TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Type_Length_TPID, Type_Length_TPID_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_TPID =>
-                     (Fld => F_TPID, TPID_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_TPID, TPID_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_TCI =>
-                     (Fld => F_TCI, TCI_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_TCI, TCI_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Type_Length =>
-                     (Fld => F_Type_Length, Type_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Type_Length, Type_Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Payload =>
                      (Fld => F_Payload)));
    end Get_Field_Value;
@@ -420,7 +420,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Destination), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Destination_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Destination;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
@@ -430,7 +430,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Address);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Source), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Source_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Source;
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
@@ -440,7 +440,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Type_Length_TPID), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Type_Length_TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Type_Length_TPID_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Type_Length_TPID;
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) is
@@ -450,7 +450,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TPID_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_TPID), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.TPID_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.TPID_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_TPID;
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) is
@@ -460,7 +460,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.TCI);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_TCI), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.TCI_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.TCI_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_TCI;
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
@@ -470,7 +470,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Ethernet.Type_Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Type_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Type_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Type_Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Type_Length;
 
    procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with

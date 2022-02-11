@@ -176,7 +176,7 @@ is
    begin
       return ((case Fld is
                   when F_Header =>
-                     (Fld => F_Header, Header_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Header, Header_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Vector =>
                      (Fld => F_Vector)));
    end Get_Field_Value;
@@ -295,7 +295,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Sequence.Enumeration_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Header), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Header_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Header_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Header;
 
    procedure Set_Vector_Empty (Ctx : in out Context) is
