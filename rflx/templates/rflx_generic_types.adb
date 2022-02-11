@@ -41,15 +41,23 @@ is
    use {prefix}RFLX_Arithmetic;
 
    function U64_Extract
-      (Data       : Bytes;
+      (Buffer     : Bytes_Ptr;
+       First      : Index;
+       Last       : Index;
        Off        : Offset;
-       Value_Size : Positive) return U64 with
-      Pre =>
-        (Value_Size in 1 .. U64'Size
-        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length),
+       Value_Size : Positive) return U64
+   with
+     Pre =>
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then Value_Size in 1 .. U64'Size
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Buffer.all (First .. Last)'Length),
      Post =>
        (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size)
    is
+      Data : constant Bytes := Buffer.all (First .. Last);
+
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
@@ -115,15 +123,23 @@ is
    end U64_Extract;
 
    function U64_Extract_LE
-      (Data       : Bytes;
+      (Buffer     : Bytes_Ptr;
+       First      : Index;
+       Last       : Index;
        Off        : Offset;
-       Value_Size : Positive) return U64 with
-      Pre =>
-        (Value_Size in 1 .. U64'Size
-        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Data'Length),
+       Value_Size : Positive) return U64
+   with
+     Pre =>
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then Value_Size in 1 .. U64'Size
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Buffer.all (First .. Last)'Length),
      Post =>
        (if Value_Size < U64'Size then U64_Extract_LE'Result < 2**Value_Size)
    is
+      Data : constant Bytes := Buffer.all (First .. Last);
+
       RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
       LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
@@ -180,9 +196,12 @@ is
       return Result;
    end U64_Extract_LE;
 
-   function Extract (Data : Bytes;
-                     Off  : Offset;
-                     BO   : Byte_Order) return Value
+   function Extract
+      (Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       BO     : Byte_Order) return Value
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -191,23 +210,32 @@ is
                                  "Value must cover entire value range");
    begin
       if BO = High_Order_First then
-         return Value (U64_Extract (Data, Off, Value'Size));
+         return Value (U64_Extract (Buffer, First, Last, Off, Value'Size));
       else
-         return Value (U64_Extract_LE (Data, Off, Value'Size));
+         return Value (U64_Extract_LE (Buffer, First, Last, Off, Value'Size));
       end if;
    end Extract;
 
-   procedure U64_Insert (Val        :        U64;
-                         Data       : in out Bytes;
-                         Off        :        Offset;
-                         Value_Size : Positive) with
+   procedure U64_Insert
+      (Val        : U64;
+       Buffer     : Bytes_Ptr;
+       First      : Index;
+       Last       : Index;
+       Off        : Offset;
+       Value_Size : Positive)
+   with
      Pre =>
-       Value_Size <= U64'Size
+       Buffer /= null
+       and then First >= Buffer'First
+       and then Last <= Buffer'Last
+       and then Value_Size <= U64'Size
        and then (if Value_Size < U64'Size then Val < 2**Value_Size)
-       and then Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size < Data'Length
+       and then Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length,
+     Post =>
+       Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last
    is
-      RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
-      LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
+      RME_Index : constant Index := Index (Long_Integer (Last) - Long_Integer (Off) / Byte'Size);
+      LME_Index : constant Index := Index (Long_Integer (Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
       RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
@@ -221,7 +249,7 @@ is
 
       if RME_Index = LME_Index then
          declare
-            D : constant U64 := Byte'Pos (Data (RME_Index));
+            D : constant U64 := Byte'Pos (Buffer.all (RME_Index));
             pragma Assert (Fits_Into (D, Byte'Size));
             L_Bits : constant U64 := Mask_Lower (D, RME_Offset + Value_Size, Byte'Size);
             R_Bits : constant U64 := Mask_Upper (D, RME_Offset);
@@ -229,23 +257,23 @@ is
             Result : constant U64 :=
               Add (L_Bits, Add (Bits_To_Add, R_Bits, RME_Offset + Value_Size, RME_Offset), Byte'Size, RME_Offset + Value_Size);
          begin
-            Data (RME_Index) := Byte'Val (Result);
+            Buffer.all (RME_Index) := Byte'Val (Result);
          end;
 
       else
          --  Case where more than one byte needs to be written. Iterate over
-         --  the relevant bytes of the data array, and write each byte while
+         --  the relevant bytes of the buffer, and write each byte while
          --  preserving bits that should not be overwritten.
 
          --  We start with the least significant byte (RME in network byte
          --  order).
 
          declare
-            L_Bits : constant U64 := Mask_Upper (Byte'Pos (Data (RME_Index)), RME_Offset);
+            L_Bits : constant U64 := Mask_Upper (Byte'Pos (Buffer.all (RME_Index)), RME_Offset);
             V_Bits : constant U64 := Mask_Upper (Val, RME_Size);
             V_Value : constant U64 := Left_Shift (V_Bits, RME_Offset, RME_Size);
          begin
-            Data (RME_Index) := Byte'Val (L_Bits + V_Value);
+            Buffer.all (RME_Index) := Byte'Val (L_Bits + V_Value);
             RV := Right_Shift (Val, RME_Size, Value_Size);
          end;
 
@@ -256,7 +284,7 @@ is
 
          for I in reverse LME_Index + 1 .. RME_Index - 1
          loop
-            Data (I) := Byte'Val (RV mod 2**Byte'Size);
+            Buffer.all (I) := Byte'Val (RV mod 2**Byte'Size);
             RV := Right_Shift (RV, Byte'Size, Value_Size - RME_Size - Natural (RME_Index - I - 1) * Byte'Size);
             pragma Loop_Invariant (Fits_Into (RV, Value_Size - RME_Size - Natural (RME_Index - I) * Byte'Size));
          end loop;
@@ -266,26 +294,35 @@ is
          pragma Assert (LME_Size = Value_Size - RME_Size - Natural (RME_Index - LME_Index - 1) * Byte'Size);
          pragma Assert (Fits_Into (RV, LME_Size));
          declare
-            U_Value : constant U64 := Mask_Lower (Byte'Pos (Data (LME_Index)), LME_Size, Byte'Size);
+            U_Value : constant U64 := Mask_Lower (Byte'Pos (Buffer.all (LME_Index)), LME_Size, Byte'Size);
             Sum : U64;
          begin
             Sum := Add (U_Value, RV, Byte'Size, LME_Size);
-            Data (LME_Index) := Byte'Val (Sum);
+            Buffer.all (LME_Index) := Byte'Val (Sum);
          end;
       end if;
    end U64_Insert;
 
-   procedure U64_Insert_LE (Val        :        U64;
-                            Data       : in out Bytes;
-                            Off        :        Offset;
-                            Value_Size : Positive) with
+   procedure U64_Insert_LE
+      (Val        : U64;
+       Buffer     : Bytes_Ptr;
+       First      : Index;
+       Last       : Index;
+       Off        : Offset;
+       Value_Size : Positive)
+   with
      Pre =>
-       Value_Size <= U64'Size
+       Buffer /= null
+       and then First >= Buffer'First
+       and then Last <= Buffer'Last
+       and then Value_Size <= U64'Size
        and then (if Value_Size < U64'Size then Val < 2**Value_Size)
-       and then Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size < Data'Length
+       and then Long_Integer (Natural (Off) + Value_Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length,
+     Post =>
+       Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last
    is
-      RME_Index : constant Index := Index (Long_Integer (Data'Last) - Long_Integer (Off) / Byte'Size);
-      LME_Index : constant Index := Index (Long_Integer (Data'Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
+      RME_Index : constant Index := Index (Long_Integer (Last) - Long_Integer (Off) / Byte'Size);
+      LME_Index : constant Index := Index (Long_Integer (Last) - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
 
       RME_Offset : constant Natural := Natural (Off);
       RME_Size   : constant Natural := Byte'Size - RME_Offset;
@@ -299,7 +336,7 @@ is
 
       if RME_Index = LME_Index then
          declare
-            D : constant U64 := Byte'Pos (Data (RME_Index));
+            D : constant U64 := Byte'Pos (Buffer.all (RME_Index));
             L_Bits : constant U64 := Mask_Lower (D, RME_Offset + Value_Size, Byte'Size);
             R_Bits : constant U64 := Mask_Upper (D, RME_Offset);
             Bits_To_Add : constant U64 := Left_Shift (Val, RME_Offset, Value_Size);
@@ -309,22 +346,22 @@ is
                    Byte'Size,
                    RME_Offset + Value_Size);
          begin
-            Data (RME_Index) := Byte'Val (Result);
+            Buffer.all (RME_Index) := Byte'Val (Result);
          end;
 
       else
          declare
-            L_Bits : constant U64 := Mask_Lower (Byte'Pos (Data (LME_Index)), LME_Size, Byte'Size);
+            L_Bits : constant U64 := Mask_Lower (Byte'Pos (Buffer.all (LME_Index)), LME_Size, Byte'Size);
             V_Bits : constant U64 := Mask_Upper (Val, LME_Size);
          begin
-            Data (LME_Index) := Byte'Val (Add (L_Bits, V_Bits, Byte'Size, LME_Size));
+            Buffer.all (LME_Index) := Byte'Val (Add (L_Bits, V_Bits, Byte'Size, LME_Size));
          end;
          RV := Right_Shift (Val, LME_Size, Value_Size);
          pragma Assert (Fits_Into (RV, Value_Size - LME_Size));
 
          for I in LME_Index + 1 .. RME_Index - 1
          loop
-            Data (I) := Byte'Val (RV mod 2**Byte'Size);
+            Buffer.all (I) := Byte'Val (RV mod 2**Byte'Size);
             RV := Right_Shift (RV, Byte'Size, Value_Size - LME_Size - Natural (I - LME_Index - 1) * Byte'Size);
             pragma Loop_Invariant (Fits_Into (RV, Value_Size - LME_Size - Natural (I - LME_Index) * Byte'Size));
          end loop;
@@ -332,18 +369,21 @@ is
          pragma Assert (RME_Size = Value_Size - LME_Size - Natural (RME_Index - LME_Index - 1) * Byte'Size);
          pragma Assert (Fits_Into (RV, RME_Size));
          declare
-            U_Value : constant U64 := Mask_Upper (Byte'Pos (Data (RME_Index)), RME_Offset);
+            U_Value : constant U64 := Mask_Upper (Byte'Pos (Buffer.all (RME_Index)), RME_Offset);
             R_Value : constant U64 := Left_Shift (RV, RME_Offset, RME_Size);
          begin
-            Data (RME_Index) := Byte'Val (Add (R_Value, U_Value, Byte'Size, RME_Offset));
+            Buffer.all (RME_Index) := Byte'Val (Add (R_Value, U_Value, Byte'Size, RME_Offset));
          end;
       end if;
    end U64_Insert_LE;
 
-   procedure Insert (Val  :        Value;
-                     Data : in out Bytes;
-                     Off  :        Offset;
-                     BO   : Byte_Order)
+   procedure Insert
+      (Val    : Value;
+       Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       BO     : Byte_Order)
    is
       pragma Compile_Time_Error ((if Value'Size = 64 then
                                     U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
@@ -352,9 +392,9 @@ is
                                  "Value must cover entire value range");
    begin
       if BO = High_Order_First then
-         U64_Insert (U64 (Val), Data, Off, Value'Size);
+         U64_Insert (U64 (Val), Buffer, First, Last, Off, Value'Size);
       else
-         U64_Insert_LE (U64 (Val), Data, Off, Value'Size);
+         U64_Insert_LE (U64 (Val), Buffer, First, Last, Off, Value'Size);
       end if;
    end Insert;
 

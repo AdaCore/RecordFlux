@@ -303,37 +303,37 @@ is
    begin
       return ((case Fld is
                   when F_Tag =>
-                     (Fld => F_Tag, Tag_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Tag, Tag_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Code_Destination_Unreachable =>
-                     (Fld => F_Code_Destination_Unreachable, Code_Destination_Unreachable_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Code_Destination_Unreachable, Code_Destination_Unreachable_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Code_Redirect =>
-                     (Fld => F_Code_Redirect, Code_Redirect_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Code_Redirect, Code_Redirect_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Code_Time_Exceeded =>
-                     (Fld => F_Code_Time_Exceeded, Code_Time_Exceeded_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Code_Time_Exceeded, Code_Time_Exceeded_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Code_Zero =>
-                     (Fld => F_Code_Zero, Code_Zero_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Code_Zero, Code_Zero_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Checksum =>
-                     (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Gateway_Internet_Address =>
-                     (Fld => F_Gateway_Internet_Address, Gateway_Internet_Address_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Gateway_Internet_Address, Gateway_Internet_Address_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Identifier =>
-                     (Fld => F_Identifier, Identifier_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Identifier, Identifier_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Pointer =>
-                     (Fld => F_Pointer, Pointer_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Pointer, Pointer_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Unused_32 =>
-                     (Fld => F_Unused_32, Unused_32_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Unused_32, Unused_32_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Sequence_Number =>
-                     (Fld => F_Sequence_Number, Sequence_Number_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Sequence_Number, Sequence_Number_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Unused_24 =>
-                     (Fld => F_Unused_24, Unused_24_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Unused_24, Unused_24_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Originate_Timestamp =>
-                     (Fld => F_Originate_Timestamp, Originate_Timestamp_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Originate_Timestamp, Originate_Timestamp_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data),
                   when F_Receive_Timestamp =>
-                     (Fld => F_Receive_Timestamp, Receive_Timestamp_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Receive_Timestamp, Receive_Timestamp_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Transmit_Timestamp =>
-                     (Fld => F_Transmit_Timestamp, Transmit_Timestamp_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First))));
+                     (Fld => F_Transmit_Timestamp, Transmit_Timestamp_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First))));
    end Get_Field_Value;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -618,7 +618,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Tag_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Tag), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Tag_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Tag_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Tag;
 
    procedure Set_Code_Destination_Unreachable (Ctx : in out Context; Val : RFLX.ICMP.Code_Destination_Unreachable) is
@@ -628,7 +628,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Code_Destination_Unreachable_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Code_Destination_Unreachable), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Code_Destination_Unreachable_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Code_Destination_Unreachable_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Code_Destination_Unreachable;
 
    procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect) is
@@ -638,7 +638,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Code_Redirect_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Code_Redirect), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Code_Redirect_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Code_Redirect_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Code_Redirect;
 
    procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded) is
@@ -648,7 +648,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Code_Time_Exceeded_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Code_Time_Exceeded), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Code_Time_Exceeded_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Code_Time_Exceeded_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Code_Time_Exceeded;
 
    procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero) is
@@ -658,7 +658,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Code_Zero_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Code_Zero), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Code_Zero_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Code_Zero_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Code_Zero;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum) is
@@ -668,7 +668,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Checksum);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Checksum), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Checksum_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Checksum_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Checksum;
 
    procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address) is
@@ -678,7 +678,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Gateway_Internet_Address);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Gateway_Internet_Address), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Gateway_Internet_Address_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Gateway_Internet_Address_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Gateway_Internet_Address;
 
    procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier) is
@@ -688,7 +688,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Identifier);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Identifier), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Identifier_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Identifier_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Identifier;
 
    procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer) is
@@ -698,7 +698,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Pointer);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Pointer), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Pointer_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Pointer_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Pointer;
 
    procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32) is
@@ -708,7 +708,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Unused_32_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Unused_32), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Unused_32_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Unused_32_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Unused_32;
 
    procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number) is
@@ -718,7 +718,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Sequence_Number);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Sequence_Number), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Sequence_Number_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Sequence_Number_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Sequence_Number;
 
    procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24) is
@@ -728,7 +728,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Unused_24_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Unused_24), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Unused_24_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Unused_24_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Unused_24;
 
    procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
@@ -738,7 +738,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Timestamp);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Originate_Timestamp), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Originate_Timestamp_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Originate_Timestamp_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Originate_Timestamp;
 
    procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
@@ -748,7 +748,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Timestamp);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Receive_Timestamp), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Receive_Timestamp_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Receive_Timestamp_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Receive_Timestamp;
 
    procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
@@ -758,7 +758,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.ICMP.Timestamp);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Transmit_Timestamp), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Transmit_Timestamp_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Transmit_Timestamp_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Transmit_Timestamp;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

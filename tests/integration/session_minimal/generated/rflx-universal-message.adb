@@ -229,9 +229,9 @@ is
    begin
       return ((case Fld is
                   when F_Message_Type =>
-                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Message_Type, Message_Type_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data),
                   when F_Option_Types =>
@@ -239,7 +239,7 @@ is
                   when F_Options =>
                      (Fld => F_Options),
                   when F_Value =>
-                     (Fld => F_Value, Value_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Value, Value_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Values =>
                      (Fld => F_Values)));
    end Get_Field_Value;
@@ -447,7 +447,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Message_Type_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Message_Type), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Message_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Message_Type_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) is
@@ -457,7 +457,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Length;
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Universal.Value) is
@@ -467,7 +467,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Value);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Value), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Value_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Value_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Value;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

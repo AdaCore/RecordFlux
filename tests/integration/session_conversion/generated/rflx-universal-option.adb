@@ -190,9 +190,9 @@ is
    begin
       return ((case Fld is
                   when F_Option_Type =>
-                     (Fld => F_Option_Type, Option_Type_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Option_Type, Option_Type_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Data =>
                      (Fld => F_Data)));
    end Get_Field_Value;
@@ -343,7 +343,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Option_Type_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Option_Type), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Option_Type_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Option_Type_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Option_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) is
@@ -353,7 +353,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.Universal.Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Length;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

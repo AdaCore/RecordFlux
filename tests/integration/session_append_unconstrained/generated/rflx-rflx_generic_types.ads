@@ -70,22 +70,38 @@ is
 
    generic
       type Value is mod <>;
-   function Extract (Data : Bytes;
-                     Off  : Offset;
-                     BO   : Byte_Order) return Value with
+   function Extract
+      (Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       BO     : Byte_Order) return Value
+   with
      Pre =>
-       ((Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length
         and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
         and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
 
    generic
       type Value is mod <>;
-   procedure Insert (Val  :        Value;
-                     Data : in out Bytes;
-                     Off  :        Offset;
-                     BO   : Byte_Order) with
+   procedure Insert
+      (Val    : Value;
+       Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       BO     : Byte_Order)
+   with
      Pre =>
-       (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Data'Length;
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length),
+     Post =>
+       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
 
    procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 

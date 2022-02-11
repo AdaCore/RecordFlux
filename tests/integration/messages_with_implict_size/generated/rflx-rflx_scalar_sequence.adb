@@ -47,7 +47,7 @@ is
       function Extract is new RFLX_Types.Extract (Element_Base_Type);
    begin
       if Buffer_First >= Ctx.Buffer'First and Buffer_Last <= Ctx.Buffer'Last and Buffer_First <= Buffer_Last then
-         Ctx.Next_Element := Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+         Ctx.Next_Element := Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
          if Valid_Element (Ctx) then
             if Size (Ctx) = 0 then
                Ctx.First_Element := Ctx.Next_Element;
@@ -77,7 +77,7 @@ is
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (To_Base (Value), Ctx.Buffer.all (First .. Last), Offset, RFLX_Types.High_Order_First);
+         Insert (To_Base (Value), Ctx.Buffer, First, Last, Offset, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then
          Ctx.First_Element := To_Base (Value);

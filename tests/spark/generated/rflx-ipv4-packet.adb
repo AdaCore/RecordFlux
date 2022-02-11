@@ -257,35 +257,35 @@ is
    begin
       return ((case Fld is
                   when F_Version =>
-                     (Fld => F_Version, Version_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Version, Version_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_IHL =>
-                     (Fld => F_IHL, IHL_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_IHL, IHL_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_DSCP =>
-                     (Fld => F_DSCP, DSCP_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_DSCP, DSCP_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_ECN =>
-                     (Fld => F_ECN, ECN_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_ECN, ECN_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Total_Length =>
-                     (Fld => F_Total_Length, Total_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Total_Length, Total_Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Identification =>
-                     (Fld => F_Identification, Identification_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Identification, Identification_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Flag_R =>
-                     (Fld => F_Flag_R, Flag_R_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Flag_R, Flag_R_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Flag_DF =>
-                     (Fld => F_Flag_DF, Flag_DF_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Flag_DF, Flag_DF_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Flag_MF =>
-                     (Fld => F_Flag_MF, Flag_MF_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Flag_MF, Flag_MF_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Fragment_Offset =>
-                     (Fld => F_Fragment_Offset, Fragment_Offset_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Fragment_Offset, Fragment_Offset_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_TTL =>
-                     (Fld => F_TTL, TTL_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_TTL, TTL_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Protocol =>
-                     (Fld => F_Protocol, Protocol_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Protocol, Protocol_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Header_Checksum =>
-                     (Fld => F_Header_Checksum, Header_Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Header_Checksum, Header_Checksum_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Source =>
-                     (Fld => F_Source, Source_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Source, Source_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Destination =>
-                     (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Destination, Destination_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Options =>
                      (Fld => F_Options),
                   when F_Payload =>
@@ -522,7 +522,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Version_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Version), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Version_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Version_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Version;
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) is
@@ -532,7 +532,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.IHL_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_IHL), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.IHL_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.IHL_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_IHL;
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) is
@@ -542,7 +542,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.DCSP);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_DSCP), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.DSCP_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.DSCP_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_DSCP;
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) is
@@ -552,7 +552,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.ECN);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_ECN), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.ECN_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.ECN_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_ECN;
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) is
@@ -562,7 +562,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Total_Length);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Total_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Total_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Total_Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Total_Length;
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) is
@@ -572,7 +572,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Identification);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Identification), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Identification_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Identification_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Identification;
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) is
@@ -582,7 +582,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.RFLX_Builtin_Types.Boolean_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Flag_R), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Flag_R_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Flag_R_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Flag_R;
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) is
@@ -592,7 +592,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.RFLX_Builtin_Types.Boolean_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Flag_DF), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Flag_DF_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Flag_DF_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Flag_DF;
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) is
@@ -602,7 +602,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.RFLX_Builtin_Types.Boolean_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Flag_MF), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Flag_MF_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Flag_MF_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Flag_MF;
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) is
@@ -612,7 +612,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Fragment_Offset);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Fragment_Offset), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Fragment_Offset_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Fragment_Offset_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Fragment_Offset;
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) is
@@ -622,7 +622,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.TTL);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_TTL), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.TTL_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.TTL_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_TTL;
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) is
@@ -632,7 +632,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Protocol_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Protocol), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Protocol_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Protocol_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Protocol;
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) is
@@ -642,7 +642,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Header_Checksum);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Header_Checksum), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Header_Checksum_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Header_Checksum_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Header_Checksum;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) is
@@ -652,7 +652,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Address);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Source), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Source_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Source_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Source;
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) is
@@ -662,7 +662,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Address);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Destination), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Destination_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Destination_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Destination;
 
    procedure Set_Options_Empty (Ctx : in out Context) is

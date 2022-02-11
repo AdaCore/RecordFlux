@@ -217,13 +217,13 @@ is
    begin
       return ((case Fld is
                   when F_Copied =>
-                     (Fld => F_Copied, Copied_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Copied, Copied_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Option_Class =>
-                     (Fld => F_Option_Class, Option_Class_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Option_Class, Option_Class_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Option_Number =>
-                     (Fld => F_Option_Number, Option_Number_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Option_Number, Option_Number_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Option_Length =>
-                     (Fld => F_Option_Length, Option_Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Option_Length, Option_Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Option_Data =>
                      (Fld => F_Option_Data)));
    end Get_Field_Value;
@@ -404,7 +404,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.RFLX_Builtin_Types.Boolean_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Copied), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Copied_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Copied_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Copied;
 
    procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) is
@@ -414,7 +414,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Option_Class_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Option_Class), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Option_Class_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Option_Class_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Option_Class;
 
    procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) is
@@ -424,7 +424,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Option_Number);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Option_Number), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Option_Number_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Option_Number_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Option_Number;
 
    procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) is
@@ -434,7 +434,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.IPv4.Option_Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Option_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Option_Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Option_Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Option_Length;
 
    procedure Set_Option_Data_Empty (Ctx : in out Context) is

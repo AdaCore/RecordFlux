@@ -190,13 +190,13 @@ is
    begin
       return ((case Fld is
                   when F_Source_Port =>
-                     (Fld => F_Source_Port, Source_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Source_Port, Source_Port_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Destination_Port =>
-                     (Fld => F_Destination_Port, Destination_Port_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Destination_Port, Destination_Port_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Length =>
-                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Length, Length_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Checksum =>
-                     (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First)),
+                     (Fld => F_Checksum, Checksum_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
                   when F_Payload =>
                      (Fld => F_Payload)));
    end Get_Field_Value;
@@ -355,7 +355,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.UDP.Port);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Source_Port), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Source_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Source_Port_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Source_Port;
 
    procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
@@ -365,7 +365,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.UDP.Port);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Destination_Port), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Destination_Port_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Destination_Port_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Destination_Port;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) is
@@ -375,7 +375,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.UDP.Length_Base);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Length), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Length_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Length_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Length;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) is
@@ -385,7 +385,7 @@ is
       procedure Insert is new RFLX_Types.Insert (RFLX.UDP.Checksum);
    begin
       Set (Ctx, Field_Value, Field_Size (Ctx, F_Checksum), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.Checksum_Value, Ctx.Buffer.all (Buffer_First .. Buffer_Last), Offset, RFLX_Types.High_Order_First);
+      Insert (Field_Value.Checksum_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
    end Set_Checksum;
 
    procedure Set_Payload_Empty (Ctx : in out Context) is
