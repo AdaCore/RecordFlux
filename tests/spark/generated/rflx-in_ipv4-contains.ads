@@ -5,9 +5,7 @@ with RFLX.IPv4;
 use RFLX.IPv4;
 with RFLX.IPv4.Packet;
 with RFLX.UDP.Datagram;
-use RFLX.UDP.Datagram;
 with RFLX.ICMP.Message;
-use RFLX.ICMP.Message;
 
 package RFLX.In_IPv4.Contains with
   SPARK_Mode,

@@ -3,7 +3,6 @@ pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 with RFLX.Universal.Message;
 with RFLX.Universal.Option;
-use RFLX.Universal.Option;
 
 package RFLX.Universal.Contains with
   SPARK_Mode,

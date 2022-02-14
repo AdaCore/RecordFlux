@@ -247,8 +247,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
     def _create(self) -> None:
-        self._unit_part = self._create_state_machine()
+        state_machine = self._create_state_machine()
         self._declaration_context, self._body_context = self._create_context()
+        self._unit_part = UnitPart(body=self._create_use_clauses_body()) + state_machine
 
     def _create_context(self) -> Tuple[List[ContextItem], List[ContextItem]]:
         declaration_context: List[ContextItem] = []
@@ -273,7 +274,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 type_ = self._model_type(type_identifier)
                 context.extend(
                     [
-                        WithClause(self._prefix * ID(type_.package)),
+                        *(
+                            [WithClause(self._prefix * ID(type_.package))]
+                            if type_.package != self._session.identifier.parent
+                            else []
+                        ),
                         *(
                             [
                                 WithClause(self._prefix * ID(type_.identifier)),
@@ -300,25 +305,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 body_context.append(
                     WithClause(self._prefix * const.TYPES_PACKAGE),
                 )
-            body_context.append(
-                UseTypeClause(self._prefix * ID(type_identifier)),
-            )
 
-        use_type_clauses = {i for i in body_context if isinstance(i, UseTypeClause)}
         body_context = [
-            i
-            for i in body_context
-            if isinstance(i, UseTypeClause)
-            or (
-                isinstance(i, WithClause)
-                and (
-                    i not in declaration_context
-                    or any(utc.identifier.parent == i.identifier for utc in use_type_clauses)
-                )
-            )
+            i for i in body_context if isinstance(i, WithClause) and i not in declaration_context
         ]
 
         return (declaration_context, body_context)
+
+    def _create_use_clauses_body(self) -> list[Declaration]:
+        return [
+            UseTypeClause(self._prefix * ID(type_identifier))
+            for type_identifier in self._session_context.used_types_body
+            if type_identifier.parent
+            not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE, self._session.identifier.parent]
+            and type_identifier not in self._session_context.used_types
+        ]
 
     def _create_state_machine(self) -> UnitPart:
         evaluated_declarations = self._evaluate_declarations(
@@ -2978,7 +2979,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             # pylint: disable = too-many-branches, too-many-return-statements
             if isinstance(expression, (expr.Relation, expr.MathBinExpr)):
                 for e in [expression.left, expression.right]:
-                    if isinstance(e.type_, (rty.Integer, rty.Enumeration)):
+                    if isinstance(e.type_, rty.Integer) or (
+                        isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
+                    ):
                         self._session_context.used_types_body.append(e.type_.identifier)
 
             if isinstance(expression, expr.MathAssExpr):
