@@ -1925,37 +1925,23 @@ def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
         p.parse(test_file)
 
 
-def test_parse_error_duplicate_message_aspect_size() -> None:
+@pytest.mark.parametrize("aspect", ["Size", "Size", "First", "First"])
+def test_parse_error_duplicate_message_aspect_size_first(aspect: str) -> None:
     assert_error_string(
-        """
+        f"""
             package Test is
                type M is
                   message
                      B : Opaque
-                        with First => 123, Size => 123, Size => 521;
+                        with First => 123, Size => 123, {aspect} => 521;
                   end message;
             end Test;
         """,
-        r'^<stdin>:6:57: parser: error: duplicate aspect "Size"',
+        f'^<stdin>:6:57: parser: error: duplicate aspect "{aspect}"',
     )
 
 
-def test_parse_error_duplicate_message_aspect_first() -> None:
-    assert_error_string(
-        """
-            package Test is
-               type M is
-                  message
-                     B : Opaque
-                        with First => 123, Size => 123, First => 521;
-                  end message;
-            end Test;
-        """,
-        r'^<stdin>:6:57: parser: error: duplicate aspect "First"',
-    )
-
-
-def test_parse_error_duplicate_channel_aspect_readable() -> None:
+def test_parse_error_duplicate_desc_aspect() -> None:
     assert_error_string(
         """
             package Test is
@@ -1967,7 +1953,53 @@ def test_parse_error_duplicate_channel_aspect_readable() -> None:
                   end message;
 
                generic
-                  Channel : Channel with Readable, Writable, Readable;
+                  Channel : Channel with Readable, Writable;
+               session Session with
+                  Initial => Start,
+                  Final => Terminated
+               is
+                  Message : M;
+               begin
+                  state Start is
+                  begin
+                     Channel'Read (Message);
+                  transition
+                     goto Reply
+                        if Message'Valid
+                     goto Terminated
+                        with Desc => "rfc2549.txt+12:3-45:6", Desc => "rfc2549.txt+12:3-45:6"
+                  end Start;
+
+                  state Reply is
+                  begin
+                     Channel'Write (Message);
+                  transition
+                     goto Terminated
+                  end Reply;
+
+                  state Terminated is null state;
+               end Session;
+
+            end Test;
+        """,
+        r"^<stdin>:25:61: parser: error: Expected 'end', got ','",
+    )
+
+
+@pytest.mark.parametrize("aspect", ["Readable", "Readable", "Writable", "Writable"])
+def test_parse_error_duplicate_channel_aspect_readable_writable(aspect: str) -> None:
+    assert_error_string(
+        f"""
+            package Test is
+
+               type M is
+                  message
+                     B : Opaque
+                        with Size => 8;
+                  end message;
+
+               generic
+                  Channel : Channel with Readable, Writable, {aspect};
                session Session with
                   Initial => Start,
                   Final => Terminated
@@ -1995,51 +2027,86 @@ def test_parse_error_duplicate_channel_aspect_readable() -> None:
 
             end Test;
         """,
-        r'^<stdin>:11:62: parser: error: duplicate aspect "Readable"',
+        f'^<stdin>:11:62: parser: error: duplicate aspect "{aspect}"',
     )
 
 
-def test_parse_error_duplicate_channel_aspect_writable() -> None:
+def test_parse_error_duplicate_checksum_aspect() -> None:
     assert_error_string(
         """
             package Test is
-
+               type T is mod 2**8;
                type M is
                   message
-                     B : Opaque
-                        with Size => 8;
-                  end message;
-
-               generic
-                  Channel : Channel with Readable, Writable, Writable;
-               session Session with
-                  Initial => Start,
-                  Final => Terminated
-               is
-                  Message : M;
-               begin
-                  state Start is
-                  begin
-                     Channel'Read (Message);
-                  transition
-                     goto Reply
-                        if Message'Valid
-                     goto Terminated
-                  end Start;
-
-                  state Reply is
-                  begin
-                     Channel'Write (Message);
-                  transition
-                     goto Terminated
-                  end Reply;
-
-                  state Terminated is null state;
-               end Session;
-
+                     F1 : T;
+                     F2 : T;
+                     C1 : T;
+                     F3 : T;
+                     C2 : T
+                        then F4
+                           if C1'Valid_Checksum and C2'Valid_Checksum;
+                     F4 : T;
+                  end message
+                     with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                       C2 => (C1'Last + 1 .. C2'First - 1)),
+                          Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                       C2 => (C1'Last + 1 .. C2'First - 1)),
+                          Byte_Order => Low_Order_First;
             end Test;
         """,
-        r'^<stdin>:11:62: parser: error: duplicate aspect "Writable"',
+        # ISSUE: Componolit/RecordFlux-parser#56
+        # Delete the following line when ticket mentioned above is solved.
+        "^<stdin>:17:27: parser: error: Expected 'Byte_Order', got 'First'",
+        # Uncomment this when ticket #56 is solved.
+        #        r'^<stdin>:17:27: parser: error: duplicate aspect "Checksum"',
+    )
+
+
+def test_parse_error_duplicate_byte_order_aspect() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2**8;
+               type M is
+                  message
+                     F1 : T;
+                     F2 : T;
+                     C1 : T;
+                     F3 : T;
+                     C2 : T
+                        then F4
+                           if C1'Valid_Checksum and C2'Valid_Checksum;
+                     F4 : T;
+                  end message
+                     with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                       C2 => (C1'Last + 1 .. C2'First - 1)),
+                          Byte_Order => Low_Order_First,
+                          Byte_Order => Low_Order_First;
+            end Test;
+        """,
+        r'^<stdin>:18:27: parser: error: duplicate aspect "ByteOrderAspect"',
+    )
+
+
+def test_parse_error_duplicate_always_valid_aspect() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is (A, B) with Always_Valid => True, Always_Valid => False;
+            end Test;
+        """,
+        r'^<stdin>:3:60: parser: error: duplicate aspect "Always_Valid"',
+    )
+
+
+def test_parse_error_duplicate_size_aspect() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is (A, B) with Size => 12, Size => 10;
+            end Test;
+        """,
+        r'^<stdin>:3:50: parser: error: duplicate aspect "Size"',
     )
 
 

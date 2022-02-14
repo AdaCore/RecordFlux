@@ -195,10 +195,10 @@ def __check_session_identifier(session: lang.SessionDecl, filename: Path) -> Non
 
 
 def create_unproven_session(
+    error: RecordFluxError,
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
-    error: RecordFluxError,
     types: Sequence[model.Type] = None,
 ) -> model.UnprovenSession:
     __check_session_identifier(session, filename)
@@ -209,20 +209,20 @@ def create_unproven_session(
         create_id(session.f_aspects.f_final, filename),
         [create_state(s, package, filename) for s in session.f_states],
         [create_declaration(d, package, filename) for d in session.f_declarations],
-        [create_formal_declaration(p, package, filename, error) for p in session.f_parameters],
+        [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
         types or [],
         node_location(session, filename),
     )
 
 
 def create_session(
+    error: RecordFluxError,
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
-    error: RecordFluxError,
     types: Sequence[model.Type] = None,
 ) -> model.Session:
-    return create_unproven_session(session, package, filename, error, types).proven()
+    return create_unproven_session(error, session, package, filename, types).proven()
 
 
 def create_id(identifier: lang.AbstractID, filename: Path) -> ID:
@@ -518,7 +518,10 @@ def create_variable_decl(
 
 
 def create_private_type_decl(
-    declaration: lang.FormalDecl, package: ID, filename: Path, _error: RecordFluxError
+    _error: RecordFluxError,
+    declaration: lang.FormalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
@@ -530,10 +533,10 @@ def create_private_type_decl(
 
 
 def create_channel_decl(
+    error: RecordFluxError,
     declaration: lang.FormalDecl,
     _package: ID,
     filename: Path,
-    error: RecordFluxError,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalChannelDecl)
     readable = False
@@ -581,10 +584,10 @@ def create_renaming_decl(
 
 
 def create_function_decl(
+    _error: RecordFluxError,
     declaration: lang.FormalDecl,
     package: ID,
     filename: Path,
-    _error: RecordFluxError,
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalFunctionDecl)
     arguments = []
@@ -715,14 +718,17 @@ def create_declaration(
 
 
 def create_formal_declaration(
-    declaration: lang.FormalDecl, package: ID, filename: Path, error: RecordFluxError
+    error: RecordFluxError,
+    declaration: lang.FormalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, package, filename, error)
+    return handlers[declaration.kind_name](error, declaration, package, filename)
 
 
 def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
@@ -835,7 +841,7 @@ def create_message(
         error, identifier, parameters, fields, types, filename
     )
     structure = create_message_structure(error, fields, filename)
-    checksum_aspects, byte_order_aspect = parse_aspects(message.f_aspects, filename)
+    checksum_aspects, byte_order_aspect = parse_aspects(message.f_aspects, filename, error)
     try:
         result = create_proven_message(
             model.UnprovenMessage(
@@ -1193,12 +1199,26 @@ def merge_field_condition(
 
 
 def parse_aspects(
-    aspects: lang.MessageAspectList, filename: Path
+    aspects: lang.MessageAspectList, filename: Path, error: RecordFluxError
 ) -> Tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
     checksum_result = {}
+    checksum_parsed = False
     byte_order_result = None
     for aspect in aspects:
-        if isinstance(aspect, lang.ChecksumAspect):
+        if (isinstance(aspect, lang.ChecksumAspect) and checksum_parsed) or (
+            isinstance(aspect, lang.ByteOrderAspect) and byte_order_result
+        ):
+            error.extend(
+                [
+                    (
+                        f'duplicate aspect "{aspect.kind_name}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(aspect, filename),
+                    )
+                ],
+            )
+        elif isinstance(aspect, lang.ChecksumAspect):
             for assoc in aspect.f_associations:
                 exprs = []
                 for value in assoc.f_covered_fields:
@@ -1214,7 +1234,9 @@ def parse_aspects(
                     else:
                         raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
                 checksum_result[create_id(assoc.f_identifier, filename)] = exprs
-        if isinstance(aspect, lang.ByteOrderAspect):
+            checksum_parsed = True
+        else:
+            assert isinstance(aspect, lang.ByteOrderAspect)
             if isinstance(aspect.f_byte_order, lang.ByteOrderTypeLoworderfirst):
                 byte_order_result = model.ByteOrder.LOW_ORDER_FIRST
             else:
@@ -1297,28 +1319,42 @@ def create_enumeration(
         always_valid = False
         size = None
         for a in aspects:
-            if a.f_identifier.text == "Size":
-                size = create_math_expression(a.f_value, filename)
-            if a.f_identifier.text == "Always_Valid":
-                if a.f_value:
-                    av_expr = create_bool_expression(a.f_value, filename)
-                    if av_expr == expr.Variable("True"):
-                        always_valid = True
-                    elif av_expr == expr.Variable("False"):
-                        always_valid = False
-                    else:
-                        error.extend(
-                            [
-                                (
-                                    f"invalid Always_Valid expression: {av_expr}",
-                                    Subsystem.PARSER,
-                                    Severity.ERROR,
-                                    node_location(a.f_value, filename),
-                                )
-                            ],
+            if (a.f_identifier.text == "Size" and size) or (
+                a.f_identifier.text == "Always_Valid" and always_valid
+            ):
+                error.extend(
+                    [
+                        (
+                            f'duplicate aspect "{a.f_identifier.text}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(a, filename),
                         )
-                else:
-                    always_valid = True
+                    ],
+                )
+            else:
+                if a.f_identifier.text == "Size":
+                    size = create_math_expression(a.f_value, filename)
+                if a.f_identifier.text == "Always_Valid":
+                    if a.f_value:
+                        av_expr = create_bool_expression(a.f_value, filename)
+                        if av_expr == expr.Variable("True"):
+                            always_valid = True
+                        elif av_expr == expr.Variable("False"):
+                            always_valid = False
+                        else:
+                            error.extend(
+                                [
+                                    (
+                                        f"invalid Always_Valid expression: {av_expr}",
+                                        Subsystem.PARSER,
+                                        Severity.ERROR,
+                                        node_location(a.f_value, filename),
+                                    )
+                                ],
+                            )
+                    else:
+                        always_valid = True
         if not size:
             error.extend(
                 [
@@ -1346,7 +1382,9 @@ def create_enumeration(
             for i, e in enumerate(enumeration.f_elements.f_elements)
         ]
     else:
-        raise NotImplementedError(f"Enmeration kind {enumeration.f_elements.kind_name} unsupported")
+        raise NotImplementedError(
+            f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
+        )
 
     size, always_valid = create_aspects(enumeration.f_aspects)
 
@@ -1703,7 +1741,7 @@ class Parser:
                     error.extend(e)
             elif isinstance(t, lang.SessionDecl):
                 try:
-                    new_session = create_session(t, package_id, filename, error, self.__types)
+                    new_session = create_session(error, t, package_id, filename, self.__types)
                     self.__sessions.append(new_session)
                     error.extend(new_session.error)
                 except RecordFluxError as e:
