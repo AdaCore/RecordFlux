@@ -1,6 +1,8 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 
+PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv
+
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
@@ -8,8 +10,9 @@ build-dir := build
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_runtime test_installation \
-	prove prove_tests prove_apps \
+	prove prove_tests prove_python_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
+	generate \
 	clean
 
 all: check test prove
@@ -53,25 +56,25 @@ format:
 test: test_python_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_runtime test_installation
 
 test_python:
-	python3 -m pytest -n$(TEST_PROCS) -vv -m "not hypothesis" tests
+	$(PYTEST) -m "not hypothesis" tests
 
 test_python_unit:
-	python3 -m pytest -n$(TEST_PROCS) -vv tests/unit
+	$(PYTEST) tests/unit
 
 test_python_integration:
-	python3 -m pytest -n$(TEST_PROCS) -vv tests/integration
+	$(PYTEST) tests/integration
 
 test_python_property:
-	python3 -m pytest -vv -m "not verification" tests/property
+	$(PYTEST) -m "not verification" tests/property
 
 test_python_property_verification:
-	python3 -m pytest -vv -m "verification" -s tests/property
+	$(PYTEST) -m "verification" -s tests/property
 
 test_python_optimized:
-	PYTHONOPTIMIZE=1 python3 -m pytest -n$(TEST_PROCS) -vv -m "not verification and not hypothesis" tests
+	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	python3 -m pytest -n$(TEST_PROCS) -vv --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
+	$(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
@@ -84,7 +87,7 @@ test_compilation:
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
-	python3 -m pytest -n$(TEST_PROCS) -vv -m "compilation and not verification" tests
+	$(PYTEST) -m "compilation and not verification" tests
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
@@ -93,7 +96,7 @@ test_binary_size:
 	$(MAKE) -C examples/apps/dhcp_client binary_size
 
 test_specs:
-	cd examples/specs && python3 -m pytest -n$(TEST_PROCS) -vv tests/test_specs.py
+	cd examples/specs && $(PYTEST) tests/test_specs.py
 
 test_runtime:
 	rm -rf $(build-dir)/ada-runtime
@@ -105,17 +108,20 @@ test_runtime:
 
 test_installation:
 	rm -rf $(build-dir)/venv
-	virtualenv -p python3 $(build-dir)/venv
+	python3 -m venv $(build-dir)/venv
 	$(build-dir)/venv/bin/pip install .
 	$(build-dir)/venv/bin/rflx --version
 
-prove: prove_tests prove_apps
+prove: prove_tests prove_python_tests prove_apps
 
 prove_tests:
 	$(MAKE) -C tests/spark prove
 
 prove_tests_cvc4:
 	$(MAKE) -C tests/spark prove_cvc4
+
+prove_python_tests:
+	$(PYTEST) -m "verification and not hypothesis" tests
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove
@@ -149,6 +155,9 @@ printenv_gnat:
 	    cd build/alire && \
 	    alr printenv \
 	) || true
+
+generate:
+	tools/generate_spark_test_code.py
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
