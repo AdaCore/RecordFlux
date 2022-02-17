@@ -678,7 +678,18 @@ class ParserGenerator:
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
+            [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
+                SubprogramDeclaration(specification, [Postcondition(TRUE)]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
+            ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,

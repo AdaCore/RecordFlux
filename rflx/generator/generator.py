@@ -525,6 +525,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 PrivateType("Field_Cursors", aspects=[DefaultInitialCondition(FALSE)]),
             ],
             private=[
+                # WORKAROUND: Componolit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "Valid_Value", "Boolean", [Parameter(["Val"], "Field_Dependent_Value")]
@@ -545,6 +550,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             (Variable(FINAL.affixed_name), FALSE),
                         ],
                     ),
+                    [Postcondition(TRUE)],
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
                 ),
                 RecordType(
                     "Field_Cursor",
@@ -1039,7 +1049,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         first_field = message.fields[0]
 
         return UnitPart(
-            [SubprogramDeclaration(specification, [Ghost()])],
+            [
+                # WORKAROUND: Componolit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
+                SubprogramDeclaration(specification, [Ghost(), Postcondition(TRUE)]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
+            ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
@@ -1673,6 +1694,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return UnitPart(
             [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -1680,9 +1706,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             And(
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
                             )
-                        )
+                        ),
+                        Postcondition(TRUE),
                     ],
-                )
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -1875,6 +1906,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return UnitPart(
             [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -1882,9 +1918,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             And(
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
-                        )
+                        ),
+                        Postcondition(TRUE),
                     ],
-                )
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -2021,6 +2062,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         return UnitPart(
             [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -2030,9 +2076,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 In(Variable("Val.Fld"), Range("Field")),
                                 Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
                             )
-                        )
+                        ),
+                        Postcondition(TRUE),
                     ],
-                )
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -2057,7 +2108,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
+            [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
+                SubprogramDeclaration(specification, [Postcondition(TRUE)]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
+            ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
@@ -2399,7 +2461,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
         return UnitPart(
-            [SubprogramDeclaration(specification)],
+            [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
+                SubprogramDeclaration(specification, [Postcondition(TRUE)]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
+            ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
@@ -3254,15 +3327,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         String('"Buffer" is not modified, could be of access constant type'),
                     ],
                 ),
-                # We want to avoid inlining of the context predicate for proof. The way to do
-                # that in SPARK Pro 23.x is to add a dummy postcondition ("True"). We silence
-                # the warning that this dummy postcondition doesn't mention the function result.
+                # WORKAROUND: Componolit/Workarounds#47
                 Pragma(
                     "Warnings",
-                    [
-                        Variable("Off"),
-                        String("postcondition does not mention function result"),
-                    ],
+                    [Variable("Off"), String("postcondition does not mention function result")],
                 ),
                 ExpressionFunctionDeclaration(
                     specification,
@@ -3278,10 +3346,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ),
                 Pragma(
                     "Warnings",
-                    [
-                        Variable("On"),
-                        String("postcondition does not mention function result"),
-                    ],
+                    [Variable("On"), String("postcondition does not mention function result")],
                 ),
             ],
         )

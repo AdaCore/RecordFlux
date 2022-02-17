@@ -108,8 +108,14 @@ is
      Depends =>
        (Ctx => (Buffer, First, Last, Written_Last), Buffer => null);
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Initialized (Ctx : Context) return Boolean with
-     Ghost;
+     Ghost,
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    procedure Reset (Ctx : in out Context) with
      Pre =>
@@ -239,32 +245,62 @@ is
        and then Structural_Valid_Message (Ctx)
        and then Data'Length = Byte_Size (Ctx);
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Predecessor (Ctx, Fld);
+       Valid_Predecessor (Ctx, Fld),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
 
    function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
        and Val.Fld in Field'Range
-       and Valid_Predecessor (Ctx, Val.Fld);
+       and Valid_Predecessor (Ctx, Val.Fld),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
        Valid_Next (Ctx, Fld);
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
        Valid_Next (Ctx, Fld)
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld);
 
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field;
+   pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean;
+   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
@@ -308,7 +344,13 @@ is
      Pre =>
        Has_Buffer (Ctx);
 
-   function Incomplete_Message (Ctx : Context) return Boolean;
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Incomplete_Message (Ctx : Context) return Boolean with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    pragma Warnings (Off, "precondition is always False");
 
@@ -322,9 +364,15 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       Valid_Next (Ctx, Fld),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    procedure Set_A (Ctx : in out Context; Val : RFLX.Messages.Integer) with
      Pre =>
@@ -405,6 +453,8 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Valid_Value (Val : Field_Dependent_Value) return Boolean is
      ((case Val.Fld is
           when F_A =>
@@ -412,7 +462,12 @@ private
           when F_B =>
              Valid (Val.B_Value),
           when F_Initial | F_Final =>
-             False));
+             False))
+    with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
