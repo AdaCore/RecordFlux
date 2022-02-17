@@ -45,6 +45,7 @@ from rflx.ada import (
     OutParameter,
     Parameter,
     Postcondition,
+    Pragma,
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
@@ -326,6 +327,11 @@ class SerializerGenerator:
 
         return UnitPart(
             [
+                # WORKAROUND Compolonit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -333,9 +339,14 @@ class SerializerGenerator:
                             And(
                                 Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                             )
-                        )
+                        ),
+                        Postcondition(TRUE),
                     ],
-                )
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
