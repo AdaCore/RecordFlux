@@ -810,6 +810,7 @@ class Message(AbstractMessage):
             self.__verify_expression_types()
             self.__verify_expressions()
             self.__verify_checksums()
+            self.__verify_parameters()
 
             self.error.propagate()
 
@@ -1345,6 +1346,35 @@ class Message(AbstractMessage):
                     )
                 ],
             )
+
+    def __verify_parameters(self) -> None:
+        for p in self.parameters:
+            used = False
+            for l in self.structure:
+                if (
+                    l.condition.findall(
+                        lambda x: isinstance(x, expr.Variable) and (x.identifier == p.identifier)
+                    )
+                    or l.first.findall(
+                        lambda x: isinstance(x, expr.Variable) and (x.identifier == p.identifier)
+                    )
+                    or l.size.findall(
+                        lambda x: isinstance(x, expr.Variable) and (x.identifier == p.identifier)
+                    )
+                ):
+                    used = True
+                    break
+            if not used:
+                self.error.extend(
+                    [
+                        (
+                            f'parameter "{p.identifier}" not used',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            p.identifier.location,
+                        )
+                    ],
+                )
 
     def __prove_conflicting_conditions(self) -> None:
         proofs = expr.ParallelProofs(self.__workers)

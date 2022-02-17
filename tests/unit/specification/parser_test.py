@@ -2728,6 +2728,8 @@ def test_parse_error_name_conflict_between_parameters() -> None:
                type M (P : T; P : T) is
                   message
                      F : T;
+                     B : Opaque
+                        with Size => P * 8;
                   end message;
             end Test;
         """,

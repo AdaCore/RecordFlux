@@ -5,7 +5,7 @@ from copy import deepcopy
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from rflx import typing_ as rty
+from rflx import expression as expr, typing_ as rty
 from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
     FALSE,
@@ -56,6 +56,7 @@ from rflx.model import (
     UnprovenMessage,
 )
 from rflx.model.message import ByteOrder
+from rflx.specification import parser
 from tests.data.models import (
     ENUMERATION,
     ETHERNET_FRAME,
@@ -222,6 +223,14 @@ M_PARAM_PARAM_REF = UnprovenMessage(
     ],
     {Field("P2"): MODULAR_INTEGER, Field("PNR"): deepcopy(M_PARAM_NO_REF)},
 )
+
+
+def assert_error_string(string: str, regex: str) -> None:
+    assert " model: error: " in regex
+    p = parser.Parser()
+    with pytest.raises(RecordFluxError, match=regex):
+        p.parse_string(string)
+        p.create_model()
 
 
 def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
@@ -3629,7 +3638,8 @@ def test_message_str() -> None:
             Link(INITIAL, Field("L")),
             Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
             Link(Field("L"), Field("P"), condition=LessEqual(Variable("L"), Number(100))),
-            Link(Field("P"), FINAL),
+            Link(Field("P"), Field("Q"), condition=Equal(Variable("A"), expr.TRUE)),
+            Link(Field("Q"), FINAL),
             Link(Field("O"), FINAL),
         ],
         {
@@ -3637,6 +3647,7 @@ def test_message_str() -> None:
             Field("L"): MODULAR_INTEGER,
             Field("O"): MODULAR_INTEGER,
             Field("P"): MODULAR_INTEGER,
+            Field("Q"): MODULAR_INTEGER,
         },
     )
     assert_equal(
@@ -3651,7 +3662,10 @@ def test_message_str() -> None:
                            if L <= 100;
                      O : Modular
                         then null;
-                     P : Modular;
+                     P : Modular
+                        then Q
+                           if A = True;
+                     Q : Modular;
                   end message"""
         ),
     )
@@ -3736,4 +3750,23 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
         r' of "P::M"'
         r"$",
+    )
+
+
+def test_message_error_unused_parameter() -> None:
+    assert_error_string(
+        """
+            package Test is
+               type T is mod 2 ** 8;
+               type M1 (P : Boolean) is
+                  message
+                    F : T;
+                  end message;
+               type M2 is
+                  message
+                     F : M1 (P => Blubber);
+                  end message;
+            end Test;
+        """,
+        r'^<stdin>:4:25: model: error: parameter "P" not used',
     )
