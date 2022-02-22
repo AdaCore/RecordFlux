@@ -162,10 +162,10 @@ class ParserGenerator:
                                         [
                                             Mod(
                                                 Sub(
-                                                    Number(8),
-                                                    Mod(Variable("Last"), Number(8)),
+                                                    Size(const.TYPES_BYTE),
+                                                    Mod(Variable("Last"), Size(const.TYPES_BYTE)),
                                                 ),
-                                                Number(8),
+                                                Size(const.TYPES_BYTE),
                                             )
                                         ],
                                     ),
@@ -244,6 +244,17 @@ class ParserGenerator:
             ),
         )
 
+        last = Mul(
+            Div(
+                Add(
+                    Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
+                    Size(const.TYPES_BYTE),
+                    -Number(1),
+                ),
+                Size(const.TYPES_BYTE),
+            ),
+            Size(const.TYPES_BYTE),
+        )
         set_cursors_statements = [
             *(
                 [
@@ -277,19 +288,9 @@ class ParserGenerator:
                 if len(message.fields) > 1
                 else []
             ),
-            Assignment(
-                Variable("Ctx.Verified_Last"),
-                Mul(
-                    Div(
-                        Add(
-                            Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
-                            Number(7),
-                        ),
-                        Number(8),
-                    ),
-                    Number(8),
-                ),
-            ),
+            # Improve provability of context predicate
+            PragmaStatement("Assert", [Equal(Mod(last, Size(const.TYPES_BYTE)), Number(0))]),
+            Assignment(Variable("Ctx.Verified_Last"), last),
             PragmaStatement(
                 "Assert",
                 [

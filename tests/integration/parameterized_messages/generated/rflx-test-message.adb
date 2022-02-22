@@ -197,7 +197,8 @@ is
                and Field_Condition (Ctx, Value)
             then
                pragma Assert ((if Fld = F_Data or Fld = F_Extension then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
-               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + 7) / 8) * 8;
+               pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
+               Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                if Fld = F_Data then
