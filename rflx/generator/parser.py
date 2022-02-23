@@ -318,25 +318,33 @@ class ParserGenerator:
                     # ISSUE: Componolit/RecordFlux#664
                     # The provability of the context predicate is increased by splitting the
                     # assignment into multiple statements.
-                    IfStatement(
+                    ForIn(
+                        "F",
+                        Variable("Field"),
                         [
-                            (
-                                Equal(Variable("Fld"), Variable(f.affixed_name)),
+                            IfStatement(
                                 [
-                                    Assignment(
-                                        Indexed(
-                                            Variable("Ctx.Cursors"),
-                                            Call("Successor", [Variable("Ctx"), Variable("Fld")]),
-                                        ),
-                                        NamedAggregate(
-                                            ("State", Variable("S_Invalid")),
-                                            ("Predecessor", Variable("Fld")),
-                                        ),
+                                    (
+                                        Equal(Variable("Fld"), Variable("F")),
+                                        [
+                                            Assignment(
+                                                Indexed(
+                                                    Variable("Ctx.Cursors"),
+                                                    Call(
+                                                        "Successor",
+                                                        [Variable("Ctx"), Variable("Fld")],
+                                                    ),
+                                                ),
+                                                NamedAggregate(
+                                                    ("State", Variable("S_Invalid")),
+                                                    ("Predecessor", Variable("Fld")),
+                                                ),
+                                            )
+                                        ],
                                     )
-                                ],
+                                ]
                             )
-                            for f in message.fields
-                        ]
+                        ],
                     )
                 ]
                 if len(message.fields) > 1
