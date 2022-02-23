@@ -1,3 +1,4 @@
+MEMCACHED ?= --memcached-server=localhost:11211
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
 bin = obj/ping
@@ -15,7 +16,7 @@ test_spark: $(bin)
 build: $(bin)
 
 prove: $(src)
-	gnatprove -Pping --memcached-server=localhost:11211
+	gnatprove -Pping $(MEMCACHED)
 
 generate: $(src)
 

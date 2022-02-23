@@ -155,7 +155,11 @@ def assert_provable_code(
                 f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
             )
 
-    gnatprove = ["gnatprove", "-Ptest", "--memcached-server=localhost:11211"]
+    memcached = os.getenv("MEMCACHED")
+    if memcached is None:
+        gnatprove = ["gnatprove", "-Ptest", "--memcached-server=localhost:11211"]
+    else:
+        gnatprove = ["gnatprove", "-Ptest"] + ([memcached] if memcached else [])
 
     if units:
         for unit in units:

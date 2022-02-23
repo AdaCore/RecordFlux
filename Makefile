@@ -1,5 +1,6 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
+MEMCACHED ?= --memcached-server=localhost:11211
 
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv
 
@@ -115,17 +116,17 @@ test_installation:
 prove: prove_tests prove_python_tests prove_apps
 
 prove_tests:
-	$(MAKE) -C tests/spark prove
+	$(MAKE) MEMCACHED=$(MEMCACHED) -C tests/spark prove
 
 prove_tests_cvc4:
-	$(MAKE) -C tests/spark prove_cvc4
+	$(MAKE) MEMCACHED=$(MEMCACHED) -C tests/spark prove_cvc4
 
 prove_python_tests:
-	$(PYTEST) -m "verification and not hypothesis" tests
+	MEMCACHED=$(MEMCACHED) $(PYTEST) -m "verification and not hypothesis" tests
 
 prove_apps:
-	$(MAKE) -C examples/apps/ping prove
-	$(MAKE) -C examples/apps/dhcp_client prove
+	$(MAKE) MEMCACHED=$(MEMCACHED) -C examples/apps/ping prove
+	$(MAKE) MEMCACHED=$(MEMCACHED) -C examples/apps/dhcp_client prove
 
 install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
