@@ -10,14 +10,20 @@ is
 
    use type RFLX.TLV.Tag;
 
-   procedure Start (Ctx : in out Context'Class) with
+   procedure Start (Ctx : in out Context'Class; Message_Tag : in out TLV.Tag; Tag : in out TLV.Tag) with
      Pre =>
-       Initialized (Ctx),
+       Ctx.P.Slots.Slot_Ptr_1 = null
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_3 = null
+       and Ctx.P.Slots.Slot_Ptr_4 /= null
+       and Ctx.P.Slots.Slot_Ptr_5 /= null,
      Post =>
-       Initialized (Ctx)
+       Ctx.P.Slots.Slot_Ptr_1 = null
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_3 = null
+       and Ctx.P.Slots.Slot_Ptr_4 /= null
+       and Ctx.P.Slots.Slot_Ptr_5 /= null
    is
-      Message_Tag : TLV.Tag;
-      Tag : TLV.Tag;
       RFLX_Exception : Boolean := False;
    begin
       if
@@ -138,6 +144,18 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+   end Start;
+
+   procedure Start (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      Message_Tag : TLV.Tag;
+      Tag : TLV.Tag;
+   begin
+      Start (Ctx, Message_Tag, Tag);
    end Start;
 
    procedure Reply (Ctx : in out Context'Class) with

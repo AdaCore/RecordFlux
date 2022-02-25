@@ -106,7 +106,7 @@ private
       and not TLV.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
-   function Initialized (Ctx : Context'Class) return Boolean is
+   function Global_Initialized (Ctx : Context'Class) return Boolean is
      (TLV.Messages.Has_Buffer (Ctx.P.Messages_Ctx)
       and then Ctx.P.Messages_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Messages_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
@@ -115,7 +115,10 @@ private
       and then Ctx.P.Tags_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then TLV.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 8095
+      and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 8095);
+
+   function Initialized (Ctx : Context'Class) return Boolean is
+     (Global_Initialized (Ctx)
       and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
    function Active (Ctx : Context'Class) return Boolean is

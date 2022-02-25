@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from itertools import zip_longest
 from typing import Dict, List, Optional, Sequence
@@ -59,7 +61,7 @@ class NumberedSlotInfo(SlotInfo):
     global_: bool
 
 
-class AllocatorGenerator:
+class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def __init__(self, session: Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
@@ -68,10 +70,12 @@ class AllocatorGenerator:
         self._allocation_slots: Dict[Location, int] = {}
         self._unit_part = UnitPart()
         self._integration = integration
+
         global_slots: List[SlotInfo] = self._allocate_global_slots()
         local_slots: List[SlotInfo] = self._allocate_local_slots()
         numbered_slots: List[NumberedSlotInfo] = []
         count = 1
+
         for slot in global_slots:
             numbered_slots.append(NumberedSlotInfo(slot.size, slot.locations, count, global_=True))
             count += 1
@@ -81,7 +85,10 @@ class AllocatorGenerator:
         for slot in numbered_slots:
             for location in slot.locations:
                 self._allocation_slots[location] = slot.slot_id
+
         self._create(numbered_slots)
+
+        self._numbered_slots = numbered_slots
 
     @property
     def unit_identifier(self) -> ID:
@@ -107,6 +114,12 @@ class AllocatorGenerator:
             if isinstance(d, decl.VariableDeclaration)
             and isinstance(d.type_, (rty.Message, rty.Sequence))
         )
+
+    def get_global_slot_ptrs(self) -> list[ID]:
+        return [self._slot_name(s.slot_id) for s in self._numbered_slots if s.global_]
+
+    def get_local_slot_ptrs(self) -> list[ID]:
+        return [self._slot_name(s.slot_id) for s in self._numbered_slots if not s.global_]
 
     def get_slot_ptr(self, location: Optional[Location]) -> ID:
         assert location is not None

@@ -97,10 +97,13 @@ private
      (not Universal.Message.Has_Buffer (Ctx.P.M_Ctx)
       and B.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
-   function Initialized (Ctx : Context'Class) return Boolean is
+   function Global_Initialized (Ctx : Context'Class) return Boolean is
      (Universal.Message.Has_Buffer (Ctx.P.M_Ctx)
       and then Ctx.P.M_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.M_Ctx.Buffer_Last = RFLX_Types.Index'First + 2047
+      and then Ctx.P.M_Ctx.Buffer_Last = RFLX_Types.Index'First + 2047);
+
+   function Initialized (Ctx : Context'Class) return Boolean is
+     (Global_Initialized (Ctx)
       and then B.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
    function Active (Ctx : Context'Class) return Boolean is
