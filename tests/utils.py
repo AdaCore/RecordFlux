@@ -156,10 +156,10 @@ def assert_provable_code(
             )
 
     memcached = os.getenv("MEMCACHED")
-    if memcached is None:
-        gnatprove = ["gnatprove", "-Ptest", "--memcached-server=localhost:11211"]
+    if memcached:
+        gnatprove = ["gnatprove", "-Ptest", f"--memcached-server={memcached}"]
     else:
-        gnatprove = ["gnatprove", "-Ptest"] + ([memcached] if memcached else [])
+        gnatprove = ["gnatprove", "-Ptest"]
 
     if units:
         for unit in units:
