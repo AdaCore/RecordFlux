@@ -1,4 +1,3 @@
-MEMCACHED ?= --memcached-server=localhost:11211
 project := test
 ifdef TEST
 	test_bin := build/test/test_$(TEST)
@@ -28,10 +27,10 @@ build_strict: $(test_files)
 	gprbuild -P$(project) -Xgnat=$(GNAT) -Xmode=strict
 
 prove: $(proof_sessions) $(test_files)
-	gnatprove -P$(project) -Xtest=$(TEST) $(MEMCACHED) $(GNATPROVE_ARGS)
+	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
 
 prove_cvc4: $(test_files)
-	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(MEMCACHED) $(GNATPROVE_ARGS)
+	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
 
 clean:
 	gprclean -P$(project)

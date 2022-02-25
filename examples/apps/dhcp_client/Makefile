@@ -1,4 +1,3 @@
-MEMCACHED ?= --memcached-server=localhost:11211
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx-dhcp_client.ads
 bin = obj/dhcp_client
@@ -12,7 +11,7 @@ test: $(bin)
 build: $(bin)
 
 prove: $(src)
-	gnatprove -Pdhcp_client $(MEMCACHED)
+	gnatprove -Pdhcp_client
 
 generate: $(src)
 

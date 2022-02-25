@@ -2,6 +2,7 @@ abstract project Defaults is
 
    type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
    Mode : Build_Mode := external ("mode", "asserts_enabled");
+   Memcached := external ("MEMCACHED", "");
 
    Compiler_Variant := external ("gnat", "");
 
@@ -35,6 +36,14 @@ abstract project Defaults is
       when others =>
    end case;
 
+   Memcached_Switch := "";
+   case Memcached is
+      when "" =>
+         null;
+      when others =>
+         Memcached_Switch := "--memcached-server=" & Memcached;
+   end case;
+
    Proof_Switches :=
    (
       "--prover=z3,cvc4,altergo",
@@ -47,7 +56,8 @@ abstract project Defaults is
       --  "--proof-warnings",
       "--no-axiom-guard",
       "--counterexamples=off",
-      "-j0"
+      "-j0",
+      Memcached_Switch
    );
 
    Builder_Switches :=
