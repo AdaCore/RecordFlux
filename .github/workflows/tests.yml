@@ -5,6 +5,9 @@ on:
   schedule:
     - cron:  '0 2 * * *'
 
+env:
+    MEMCACHED: localhost:11211
+
 jobs:
   skip_check_general:
     name: Skip Check General
@@ -603,8 +606,6 @@ jobs:
         echo "stats" | nc -q 1 localhost 11211
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      env:
-          MEMCACHED: localhost:11211
       run: |
         make prove_tests TEST=${{ matrix.test }}
 
@@ -779,8 +780,6 @@ jobs:
         echo "stats" | nc -q 1 localhost 11211
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
-      env:
-          MEMCACHED: localhost:11211
       run: |
         make -C examples/apps/${{ matrix.app }} prove
 
