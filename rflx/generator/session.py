@@ -351,8 +351,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         unit = UnitPart()
         unit += self._create_abstract_functions(self._session.parameters.values())
         unit += self._create_uninitialized_function(composite_globals, is_global)
-        unit += self._create_initialized_function(composite_globals, is_global)
-        unit += self._create_states(self._session, is_global)
+        unit += self._create_global_initialized_function(composite_globals, is_global)
+        unit += self._create_initialized_function(composite_globals)
+        unit += self._create_states(self._session, composite_globals, is_global)
         unit += self._create_active_function(self._session)
         unit += self._create_initialize_procedure(
             self._session,
@@ -664,20 +665,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _create_initialized_function(
+    def _create_global_initialized_function(
         self, composite_globals: Sequence[decl.VariableDeclaration], is_global: Callable[[ID], bool]
     ) -> UnitPart:
+        if not composite_globals:
+            return UnitPart()
+
+        self._session_context.used_types.append(const.TYPES_INDEX)
+
         specification = FunctionSpecification(
-            "Initialized",
+            "Global_Initialized",
             "Boolean",
-            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context'Class")],
+            [Parameter(["Ctx"], "Context'Class")],
         )
-        if composite_globals:
-            self._session_context.used_types.append(const.TYPES_INDEX)
+
         return UnitPart(
-            [
-                SubprogramDeclaration(specification),
-            ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
@@ -703,8 +705,33 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 ),
                             ]
                         ],
+                    ),
+                ),
+            ],
+        )
+
+    def _create_initialized_function(
+        self, composite_globals: Sequence[decl.VariableDeclaration]
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Initialized",
+            "Boolean",
+            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context'Class")],
+        )
+        return UnitPart(
+            [
+                SubprogramDeclaration(specification),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    AndThen(
                         *(
                             [
+                                Call(
+                                    ID("Global_Initialized"),
+                                    [Variable("Ctx")],
+                                ),
                                 Call(
                                     ID(self._allocator.unit_identifier * "Global_Allocated"),
                                     [Variable("Ctx.P.Slots")],
@@ -712,40 +739,149 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ]
                             if composite_globals
                             else []
-                        ),
+                        )
                     ),
                 ),
             ],
         )
 
-    def _create_states(self, session: model.Session, is_global: Callable[[ID], bool]) -> UnitPart:
+    def _create_states(
+        self,
+        session: model.Session,
+        composite_globals: Sequence[decl.VariableDeclaration],
+        is_global: Callable[[ID], bool],
+    ) -> UnitPart:
         unit_body: List[Declaration] = []
 
         for state in session.states:
             if not state.is_null:
+                parameters = []
+                invariant = []
+                slots = []
+
+                for d in state.declarations.values():
+                    if isinstance(d, decl.VariableDeclaration):
+                        if isinstance(d.type_, (rty.Integer, rty.Enumeration)):
+                            parameters.append(
+                                InOutParameter(
+                                    [ID(d.identifier)], self._ada_type(d.type_.identifier)
+                                )
+                            )
+                        elif isinstance(d.type_, (rty.Message, rty.Sequence)):
+                            identifier = context_id(d.identifier, is_global)
+                            type_identifier = self._ada_type(d.type_.identifier)
+                            parameters.append(
+                                InOutParameter(
+                                    [identifier],
+                                    type_identifier * "Context",
+                                )
+                            )
+                            invariant.extend(
+                                [
+                                    *(
+                                        [Call("Global_Initialized", [Variable("Ctx")])]
+                                        if composite_globals
+                                        else []
+                                    ),
+                                    Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
+                                    Equal(
+                                        Variable(identifier * "Buffer_First"),
+                                        First(self._prefix * const.TYPES_INDEX),
+                                    ),
+                                    Equal(
+                                        Variable(identifier * "Buffer_Last"),
+                                        Add(
+                                            First(self._prefix * const.TYPES_INDEX),
+                                            Number(
+                                                self._allocator.get_size(
+                                                    d.identifier, state.identifier
+                                                )
+                                                - 1
+                                            ),
+                                        ),
+                                    ),
+                                    Equal(
+                                        Variable(
+                                            "Ctx.P.Slots" * self._allocator.get_slot_ptr(d.location)
+                                        ),
+                                        Variable("null"),
+                                    ),
+                                ]
+                            )
+                            slots.append(self._allocator.get_slot_ptr(d.location))
+                            self._session_context.used_types_body.append(const.TYPES_BYTES_PTR)
+                        else:
+                            fail(
+                                f'declaration "{d.identifier}" not yet supported',
+                                Subsystem.GENERATOR,
+                                location=d.location,
+                            )
+
+                invariant.extend(
+                    [
+                        *[
+                            Equal(
+                                Variable("Ctx.P.Slots" * s),
+                                Variable("null"),
+                            )
+                            for s in self._allocator.get_global_slot_ptrs()
+                        ],
+                        *[
+                            NotEqual(
+                                Variable("Ctx.P.Slots" * s),
+                                Variable("null"),
+                            )
+                            for s in self._allocator.get_local_slot_ptrs()
+                            if s not in slots
+                        ],
+                    ]
+                )
+
                 evaluated_declarations = self._evaluate_declarations(
                     state.declarations.values(), is_global
                 )
-                actions = [
-                    s
-                    for a in state.actions
-                    for s in self._state_action(
-                        state.identifier,
-                        a,
-                        ExceptionHandler(
-                            self._session_context.state_exception,
-                            state,
-                            evaluated_declarations.finalization,
-                        ),
-                        is_global,
-                    )
+                statements = [
+                    *[
+                        s
+                        for a in state.actions
+                        for s in self._state_action(
+                            state.identifier,
+                            a,
+                            ExceptionHandler(
+                                self._session_context.state_exception,
+                                state,
+                                [],
+                            ),
+                            is_global,
+                        )
+                    ],
+                    *self._determine_next_state(state.transitions, is_global),
                 ]
-                if state.identifier in self._session_context.state_exception:
-                    evaluated_declarations.global_declarations.append(
-                        ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)
-                    )
 
                 unit_body += [
+                    *(
+                        [
+                            SubprogramBody(
+                                ProcedureSpecification(
+                                    ID(state.identifier),
+                                    [
+                                        InOutParameter(["Ctx"], "Context'Class"),
+                                        *parameters,
+                                    ],
+                                ),
+                                [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
+                                if state.identifier in self._session_context.state_exception
+                                else [],
+                                statements,
+                                [
+                                    Precondition(And(*invariant)),
+                                    Postcondition(And(*invariant)),
+                                ],
+                            )
+                        ]
+                        if parameters
+                        else []
+                    ),
                     SubprogramBody(
                         ProcedureSpecification(
                             ID(state.identifier),
@@ -759,34 +895,18 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         ],
                         [
                             *evaluated_declarations.initialization,
-                            *actions,
                             *(
-                                [
-                                    IfStatement(
+                                statements
+                                if not parameters
+                                else [
+                                    CallStatement(
+                                        ID(state.identifier),
                                         [
-                                            (
-                                                t.condition.substituted(
-                                                    self._substitution(is_global)
-                                                ).ada_expr(),
-                                                [
-                                                    Assignment(
-                                                        "Ctx.P.Next_State",
-                                                        Variable(f"S_{t.target}"),
-                                                    )
-                                                ],
-                                            )
-                                            for t in state.transitions[:-1]
-                                        ],
-                                        [
-                                            Assignment(
-                                                "Ctx.P.Next_State",
-                                                Variable(f"S_{state.transitions[-1].target}"),
-                                            )
+                                            Variable("Ctx"),
+                                            *[Variable(p.identifiers[0]) for p in parameters],
                                         ],
                                     )
                                 ]
-                                if state.transitions
-                                else []
                             ),
                             *evaluated_declarations.finalization,
                         ],
@@ -794,10 +914,40 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Precondition(Call("Initialized", [Variable("Ctx")])),
                             Postcondition(Call("Initialized", [Variable("Ctx")])),
                         ],
-                    )
+                    ),
                 ]
 
         return UnitPart(body=unit_body)
+
+    def _determine_next_state(
+        self, transitions: Sequence[model.Transition], is_global: Callable[[ID], bool]
+    ) -> list[Statement]:
+        return (
+            [
+                IfStatement(
+                    [
+                        (
+                            t.condition.substituted(self._substitution(is_global)).ada_expr(),
+                            [
+                                Assignment(
+                                    "Ctx.P.Next_State",
+                                    Variable(f"S_{t.target}"),
+                                )
+                            ],
+                        )
+                        for t in transitions[:-1]
+                    ],
+                    [
+                        Assignment(
+                            "Ctx.P.Next_State",
+                            Variable(f"S_{transitions[-1].target}"),
+                        )
+                    ],
+                )
+            ]
+            if transitions
+            else []
+        )
 
     @staticmethod
     def _create_active_function(session: model.Session) -> UnitPart:

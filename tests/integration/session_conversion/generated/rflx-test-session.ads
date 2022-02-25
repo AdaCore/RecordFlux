@@ -119,13 +119,16 @@ private
       and not Universal.Option.Has_Buffer (Ctx.P.Inner_Message_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
-   function Initialized (Ctx : Context'Class) return Boolean is
+   function Global_Initialized (Ctx : Context'Class) return Boolean is
      (Universal.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Universal.Option.Has_Buffer (Ctx.P.Inner_Message_Ctx)
       and then Ctx.P.Inner_Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Inner_Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Ctx.P.Inner_Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
+
+   function Initialized (Ctx : Context'Class) return Boolean is
+     (Global_Initialized (Ctx)
       and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
    function Active (Ctx : Context'Class) return Boolean is

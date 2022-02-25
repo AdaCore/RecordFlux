@@ -37,7 +37,6 @@ is
      Post =>
        Initialized (Ctx)
    is
-      RFLX_Exception : Boolean := False;
    begin
       declare
          MT : Universal.Message_Type;

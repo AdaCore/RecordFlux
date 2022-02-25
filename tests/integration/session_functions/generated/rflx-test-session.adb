@@ -31,14 +31,14 @@ is
       end if;
    end Start;
 
-   procedure Process (Ctx : in out Context'Class) with
+   procedure Process (Ctx : in out Context'Class; Valid : in out Test.Result; Message_Type : in out Universal.Option_Type) with
      Pre =>
-       Initialized (Ctx),
+       Ctx.P.Slots.Slot_Ptr_1 = null
+       and Ctx.P.Slots.Slot_Ptr_2 = null,
      Post =>
-       Initialized (Ctx)
+       Ctx.P.Slots.Slot_Ptr_1 = null
+       and Ctx.P.Slots.Slot_Ptr_2 = null
    is
-      Valid : Test.Result;
-      Message_Type : Universal.Option_Type;
    begin
       Get_Message_Type (Ctx, Message_Type);
       Valid_Message (Ctx, Message_Type, True, Valid);
@@ -61,6 +61,18 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+   end Process;
+
+   procedure Process (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      Valid : Test.Result;
+      Message_Type : Universal.Option_Type;
+   begin
+      Process (Ctx, Valid, Message_Type);
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with

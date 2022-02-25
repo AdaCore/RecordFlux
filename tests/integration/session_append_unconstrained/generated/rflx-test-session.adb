@@ -8,32 +8,33 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.RFLX_Types.Bit_Length;
 
-   procedure Start (Ctx : in out Context'Class) with
+   procedure Start (Ctx : in out Context'Class; Options_Ctx : in out Universal.Options.Context) with
      Pre =>
-       Initialized (Ctx),
+       Global_Initialized (Ctx)
+       and Universal.Options.Has_Buffer (Options_Ctx)
+       and Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+       and Options_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_1 = null,
      Post =>
-       Initialized (Ctx)
+       Global_Initialized (Ctx)
+       and Universal.Options.Has_Buffer (Options_Ctx)
+       and Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+       and Options_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_1 = null
    is
-      Options_Ctx : Universal.Options.Context;
       RFLX_Exception : Boolean := False;
-      Options_Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Options_Buffer := Ctx.P.Slots.Slot_Ptr_2;
-      pragma Warnings (Off, "unused assignment");
-      Ctx.P.Slots.Slot_Ptr_2 := null;
-      pragma Warnings (On, "unused assignment");
-      Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 32
       then
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       declare
@@ -53,10 +54,6 @@ is
       end;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       if
@@ -64,10 +61,6 @@ is
          or Universal.Options.Available_Space (Options_Ctx) < 40
       then
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       declare
@@ -87,10 +80,6 @@ is
       end;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       if
@@ -98,10 +87,6 @@ is
          or Universal.Options.Available_Space (Options_Ctx) < 8
       then
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       declare
@@ -124,29 +109,34 @@ is
                Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
             else
                Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-               Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-               pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-               Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
                return;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-            Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-            pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-            Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
             return;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
-         pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := Options_Buffer;
          return;
       end if;
       Ctx.P.Next_State := S_Reply;
+   end Start;
+
+   procedure Start (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      Options_Ctx : Universal.Options.Context;
+      Options_Buffer : RFLX_Types.Bytes_Ptr;
+   begin
+      Options_Buffer := Ctx.P.Slots.Slot_Ptr_2;
+      pragma Warnings (Off, "unused assignment");
+      Ctx.P.Slots.Slot_Ptr_2 := null;
+      pragma Warnings (On, "unused assignment");
+      Universal.Options.Initialize (Options_Ctx, Options_Buffer);
+      Start (Ctx, Options_Ctx);
       pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Options.Take_Buffer (Options_Ctx, Options_Buffer);
       pragma Warnings (On, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");

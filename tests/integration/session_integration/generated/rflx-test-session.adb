@@ -12,6 +12,8 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    procedure Start (Ctx : in out Context'Class) with
      Pre =>
        Initialized (Ctx),
@@ -65,6 +67,40 @@ is
       Ctx.P.Next_State := S_Next;
    end Reply;
 
+   procedure Next (Ctx : in out Context'Class; M_Ctx : in out Universal.Message.Context) with
+     Pre =>
+       Global_Initialized (Ctx)
+       and Universal.Message.Has_Buffer (M_Ctx)
+       and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+       and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_1 = null,
+     Post =>
+       Global_Initialized (Ctx)
+       and Universal.Message.Has_Buffer (M_Ctx)
+       and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+       and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
+       and Ctx.P.Slots.Slot_Ptr_2 = null
+       and Ctx.P.Slots.Slot_Ptr_1 = null
+   is
+   begin
+      if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= 32 then
+         Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 32 - 1);
+         Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
+         Universal.Message.Set_Length (M_Ctx, 1);
+         if Universal.Message.Valid_Length (M_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+            Universal.Message.Set_Data (M_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
+         else
+            Ctx.P.Next_State := S_Terminated;
+            return;
+         end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         return;
+      end if;
+      Ctx.P.Next_State := S_Terminated;
+   end Next;
+
    procedure Next (Ctx : in out Context'Class) with
      Pre =>
        Initialized (Ctx),
@@ -79,29 +115,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
-      if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= 32 then
-         Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 32 - 1);
-         Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
-         Universal.Message.Set_Length (M_Ctx, 1);
-         if Universal.Message.Valid_Length (M_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-            Universal.Message.Set_Data (M_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-            Universal.Message.Take_Buffer (M_Ctx, M_Buffer);
-            pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-            Ctx.P.Slots.Slot_Ptr_2 := M_Buffer;
-            return;
-         end if;
-      else
-         Ctx.P.Next_State := S_Terminated;
-         pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Universal.Message.Take_Buffer (M_Ctx, M_Buffer);
-         pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-         Ctx.P.Slots.Slot_Ptr_2 := M_Buffer;
-         return;
-      end if;
-      Ctx.P.Next_State := S_Terminated;
+      Next (Ctx, M_Ctx);
       pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (M_Ctx, M_Buffer);
       pragma Warnings (On, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");

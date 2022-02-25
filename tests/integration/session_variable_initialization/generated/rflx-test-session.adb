@@ -21,13 +21,12 @@ is
       Ctx.P.Next_State := S_Process;
    end Start;
 
-   procedure Process (Ctx : in out Context'Class) with
+   procedure Process (Ctx : in out Context'Class; Local : in out Universal.Value) with
      Pre =>
-       Initialized (Ctx),
+       Ctx.P.Slots.Slot_Ptr_1 = null,
      Post =>
-       Initialized (Ctx)
+       Ctx.P.Slots.Slot_Ptr_1 = null
    is
-      Local : Universal.Value := 2;
    begin
       if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
          Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
@@ -50,6 +49,17 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+   end Process;
+
+   procedure Process (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      Local : Universal.Value := 2;
+   begin
+      Process (Ctx, Local);
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
