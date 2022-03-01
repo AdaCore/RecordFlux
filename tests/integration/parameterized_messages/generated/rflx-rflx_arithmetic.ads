@@ -9,8 +9,10 @@ is
 
    --  Express that V contains at most Bits non-zero bits, in the least
    --  significant part (the rest is zero).
+   pragma Warnings (Off, "postcondition does not mention function result");
    function Fits_Into (V : U64; Bits : Natural) return Boolean
-     is (if Bits < U64'Size then V < 2 ** Bits);
+   is (if Bits < U64'Size then V < 2 ** Bits)
+     with Post => True;
 
    --  Express that V contains (U64'Size - Bits) leading zero bits, then (Bits -
    --  Lower) bits of data, then Lower bits of zeros.
@@ -19,7 +21,9 @@ is
    function Fits_Into_Upper (V : U64; Bits, Lower : Natural) return Boolean
    is (if Bits < U64'Size then V <= 2 ** Bits - 2 ** Lower
        elsif Lower > 0 and then Lower < U64'Size then V <= U64'Last - 2 ** Lower + 1)
-     with Pre => Bits <= U64'Size and then Lower <= Bits;
+     with Pre => Bits <= U64'Size and then Lower <= Bits,
+          Post => True;
+   pragma Warnings (On, "postcondition does not mention function result");
 
    --  V is assumed to contain Bits bits of data. Add the Amount bits contained
    --  in Data by shifting V to the left and adding Data. The result contains
