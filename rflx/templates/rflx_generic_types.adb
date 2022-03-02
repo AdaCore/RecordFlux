@@ -40,21 +40,25 @@ is
 
    use {prefix}RFLX_Arithmetic;
 
-   procedure Get_Index_Offset (First, Last : Long_Integer; Off : Offset; Value_Size : Positive;
-                               RME_Index : out Index; LME_Index : out Index; RME_Size : out Natural; LME_Size : out Natural)
+   procedure Get_Index_Offset
+      (First, Last : Long_Integer;
+       Off         : Offset;
+       Value_Size  : Positive;
+       RME_Index   : out Index;
+       LME_Index   : out Index;
+       RME_Size    : out Natural;
+       LME_Size    : out Natural)
      with
        Pre =>
        (Value_Size in 1 .. U64'Size
         and then Last >= Long_Integer (Index'First) and then Last <= Long_Integer (Index'Last)
         and then First >= Long_Integer (Index'First) and then First <= Long_Integer (Index'Last)
-        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Long_Integer (Last - First + 1)
-       ),
+        and then Long_Integer ((Natural (Off) + Value_Size - 1) / Byte'Size) < Long_Integer (Last - First + 1)),
        Post =>
          (RME_Index = Index (Last - Long_Integer (Off) / Byte'Size)
           and then LME_Index = Index (Last - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size)
           and then RME_Size = Byte'Size - Natural (Off)
           and then LME_Size = (Natural (Off) + Value_Size + Byte'Size - 1) mod Byte'Size + 1)
-
    is
    begin
       RME_Index := Index (Last - Long_Integer (Off) / Byte'Size);
@@ -92,6 +96,19 @@ is
       Result : U64 := 0;
 
    begin
+      --  This function simply iterates over all data bytes that contain
+      --  relevant data, from most significant to least significant, and adds
+      --  them up in Result, shifting the Result before the addition as needed
+      --  (see helper function Shift_Add).
+
+      --  We track the number of bits that are contained in Result to bound the
+      --  current value of Result by 2 ** (number of bits). At the end of the
+      --  function, the number of bits should be Value_Size.
+
+      --  We start with the most significant byte. In network-byte order this
+      --  is the rightmost byte. We need to take into account the case where
+      --  this is the only byte.
+
       Get_Index_Offset (Long_Integer (Data'First), Long_Integer (Data'Last), Off, Value_Size, RME_Index, LME_Index, RME_Size, LME_Size);
       LME_Offset := Byte'Size - LME_Size;
 
@@ -168,6 +185,10 @@ is
       Result : U64 := 0;
 
    begin
+      --  This function is identical in structure to the U64_Extract function.
+      --  See the comments there for more details. However, in little endian we
+      --  traverse the relevant bytes in the opposite order.
+
       Get_Index_Offset (Long_Integer (Data'First), Long_Integer (Data'Last), Off, Value_Size, RME_Index, LME_Index, RME_Size, LME_Size);
 
       declare
@@ -319,7 +340,6 @@ is
          end case;
       end if;
    end U64_Insert;
-   --  --
 
    function Extract
       (Buffer : Bytes_Ptr;
