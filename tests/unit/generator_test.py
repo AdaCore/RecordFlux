@@ -1748,6 +1748,10 @@ end;
             "P.M.Reset (X_Ctx);",
         ),
         (
+            stmt.Reset("X", type_=rty.Sequence("P::S", rty.Integer("A"))),
+            "P.S.Reset (X_Ctx);",
+        ),
+        (
             stmt.Read("X", expr.Variable("Y", type_=rty.Message("P::M"))),
             "P.M.Verify_Message (Y_Ctx);",
         ),

@@ -42,6 +42,8 @@ package Test is
          Message_2 := Universal::Message'(Message_Type => Universal::MT_Options,
                                           Length => Message_Options'Size / 8,
                                           Options => Message_Options);
+         -- §S-S-A-RS-V
+         Message_Options'Reset;
       transition
          goto Send_1 -- §S-S-T-N
       exception
