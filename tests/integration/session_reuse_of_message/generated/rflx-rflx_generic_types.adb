@@ -203,6 +203,10 @@ is
       end loop;
 
       pragma Assert (LME_Size < U64'Size);
+      pragma Assert (if LME_Index + 1 <= RME_Index - 1 then Fits_Into (Result, Natural (RME_Index - LME_Index) * Byte'Size - RME_Offset));
+      pragma Assert (if LME_Index + 1 > RME_Index - 1 then Fits_Into (Result, Natural (RME_Index - LME_Index) * Byte'Size - RME_Offset));
+      pragma Assert (Value_Size - LME_Size = Natural (RME_Index - LME_Index) * Byte'Size - RME_Offset);
+      pragma Assert (Fits_Into (Result, Value_Size - LME_Size));
       Result :=
         Shift_Add (Result,
                    Mask_Upper (Byte'Pos (Data (LME_Index)), LME_Size),
