@@ -127,6 +127,9 @@ is
 
       --  We now add the relevant bits from the last byte.
       pragma Assert (RME_Size in 1 .. U64'Size);
+      pragma Assert (if LME_Index + 1 <= RME_Index - 1 then Fits_Into (Result, Natural (RME_Index - LME_Index) * Byte'Size - LME_Offset));
+      pragma Assert (if LME_Index + 1 > RME_Index - 1 then Fits_Into (Result, Natural (RME_Index - LME_Index) * Byte'Size - LME_Offset));
+      pragma Assert (Value_Size - RME_Size = Natural (RME_Index - LME_Index) * Byte'Size - LME_Offset);
       pragma Assert (Fits_Into (Result, Value_Size - RME_Size));
       declare
          Bits_To_Read : constant U64 :=
