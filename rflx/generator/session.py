@@ -2954,7 +2954,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         reset: stmt.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(reset.type_, rty.Message)
+        assert isinstance(reset.type_, (rty.Message, rty.Sequence))
 
         target_type = ID(reset.type_.identifier)
         target_context = context_id(reset.identifier, is_global)

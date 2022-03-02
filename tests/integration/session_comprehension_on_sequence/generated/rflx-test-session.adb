@@ -397,6 +397,7 @@ is
          Ctx.P.Slots.Slot_Ptr_6 := Message_Options_Buffer;
          return;
       end if;
+      Universal.Options.Reset (Message_Options_Ctx);
       Ctx.P.Next_State := S_Send_1;
       pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
