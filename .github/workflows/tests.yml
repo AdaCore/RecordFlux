@@ -712,9 +712,7 @@ jobs:
       matrix:
         app:
           - ping
-          # ISSUE: Componolit/Recordflux#926
-          # Temporarily disable this test as it is too slow for the CI.
-          #- dhcp_client
+          - dhcp_client
     env:
       python-version: 3.7
     steps:
