@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.Universal.Message_Type;
 
    use type RFLX.Universal.Length;
@@ -19,6 +21,8 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -29,17 +33,21 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Start;
 
-   procedure Process (Ctx : in out Context'Class; Valid : in out Test.Result; Message_Type : in out Universal.Option_Type) with
+   procedure Process (Ctx : in out Context'Class) with
      Pre =>
-       Ctx.P.Slots.Slot_Ptr_1 = null
-       and Ctx.P.Slots.Slot_Ptr_2 = null,
+       Initialized (Ctx),
      Post =>
-       Ctx.P.Slots.Slot_Ptr_1 = null
-       and Ctx.P.Slots.Slot_Ptr_2 = null
+       Initialized (Ctx)
    is
+      Valid : Test.Result;
+      Message_Type : Universal.Option_Type;
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Get_Message_Type (Ctx, Message_Type);
       Valid_Message (Ctx, Message_Type, True, Valid);
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
@@ -54,25 +62,18 @@ is
          end;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null);
+         goto Finalize_Process;
       end if;
       if Valid = M_Valid then
          Ctx.P.Next_State := S_Reply;
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-   end Process;
-
-   procedure Process (Ctx : in out Context'Class) with
-     Pre =>
-       Initialized (Ctx),
-     Post =>
-       Initialized (Ctx)
-   is
-      Valid : Test.Result;
-      Message_Type : Universal.Option_Type;
-   begin
-      Process (Ctx, Valid, Message_Type);
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -82,7 +83,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

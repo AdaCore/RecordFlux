@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.Universal.Message_Type;
 
    use type RFLX.Universal.Length;
@@ -19,6 +21,7 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -29,6 +32,7 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -38,6 +42,7 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
@@ -46,13 +51,17 @@ is
             Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          else
             Ctx.P.Next_State := S_Terminated;
-            return;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+            goto Finalize_Process;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+         goto Finalize_Process;
       end if;
       Ctx.P.Next_State := S_Reply;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -62,7 +71,9 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is
