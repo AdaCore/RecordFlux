@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.Universal.Value;
 
    use type RFLX.RFLX_Types.Bit_Length;
@@ -17,39 +19,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       Ctx.P.Next_State := S_Process;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
    end Start;
-
-   procedure Process (Ctx : in out Context'Class; Local : in out Universal.Value) with
-     Pre =>
-       Ctx.P.Slots.Slot_Ptr_1 = null,
-     Post =>
-       Ctx.P.Slots.Slot_Ptr_1 = null
-   is
-   begin
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-         Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
-      else
-         Ctx.P.Next_State := S_Terminated;
-         return;
-      end if;
-      Ctx.P.Global := Local + 20;
-      if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
-         Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
-         Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
-         Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Value'Size / 8));
-         Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
-      else
-         Ctx.P.Next_State := S_Terminated;
-         return;
-      end if;
-      if Local < Ctx.P.Global then
-         Ctx.P.Next_State := S_Reply;
-      else
-         Ctx.P.Next_State := S_Terminated;
-      end if;
-   end Process;
 
    procedure Process (Ctx : in out Context'Class) with
      Pre =>
@@ -59,7 +33,32 @@ is
    is
       Local : Universal.Value := 2;
    begin
-      Process (Ctx, Local);
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
+         Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+         goto Finalize_Process;
+      end if;
+      Ctx.P.Global := Local + 20;
+      if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
+         Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
+         Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
+         Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Value'Size / 8));
+         Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+         goto Finalize_Process;
+      end if;
+      if Local < Ctx.P.Global then
+         Ctx.P.Next_State := S_Reply;
+      else
+         Ctx.P.Next_State := S_Terminated;
+      end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -69,7 +68,9 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

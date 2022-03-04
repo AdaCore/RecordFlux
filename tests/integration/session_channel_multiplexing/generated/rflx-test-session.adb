@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.RFLX_Types.Bit_Length;
 
    procedure Start (Ctx : in out Context'Class) with
@@ -15,6 +17,8 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Universal.Message.Verify_Message (Ctx.P.Message_1_Ctx);
       Universal.Message.Verify_Message (Ctx.P.Message_2_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0 then
@@ -24,6 +28,8 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Start;
 
    procedure Reply_1 (Ctx : in out Context'Class) with
@@ -33,7 +39,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Ctx.P.Next_State := S_Start;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply_1;
 
    procedure Reply_2 (Ctx : in out Context'Class) with
@@ -43,7 +53,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Ctx.P.Next_State := S_Start;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply_2;
 
    procedure Initialize (Ctx : in out Context'Class) is

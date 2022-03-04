@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.RFLX_Types.Bit_Length;
 
    procedure Start (Ctx : in out Context'Class) with
@@ -15,8 +17,12 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Universal.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -26,6 +32,8 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       if
          Universal.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Universal.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -58,25 +66,38 @@ is
                      end;
                   else
                      Ctx.P.Next_State := S_Terminated;
-                     return;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                                    and Ctx.P.Slots.Slot_Ptr_2 = null);
+                     goto Finalize_Process;
                   end if;
                else
                   Ctx.P.Next_State := S_Terminated;
-                  return;
+                  pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                                 and Ctx.P.Slots.Slot_Ptr_2 = null);
+                  goto Finalize_Process;
                end if;
             else
                Ctx.P.Next_State := S_Terminated;
-               return;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                              and Ctx.P.Slots.Slot_Ptr_2 = null);
+               goto Finalize_Process;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            return;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                           and Ctx.P.Slots.Slot_Ptr_2 = null);
+            goto Finalize_Process;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null);
+         goto Finalize_Process;
       end if;
       Ctx.P.Next_State := S_Reply;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -86,7 +107,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

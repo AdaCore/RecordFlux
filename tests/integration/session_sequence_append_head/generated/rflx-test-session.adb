@@ -6,32 +6,38 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.RFLX_Types.Bit_Length;
 
    use type RFLX.TLV.Tag;
 
-   procedure Start (Ctx : in out Context'Class; Message_Tag : in out TLV.Tag; Tag : in out TLV.Tag) with
+   procedure Start (Ctx : in out Context'Class) with
      Pre =>
-       Ctx.P.Slots.Slot_Ptr_1 = null
-       and Ctx.P.Slots.Slot_Ptr_2 = null
-       and Ctx.P.Slots.Slot_Ptr_3 = null
-       and Ctx.P.Slots.Slot_Ptr_4 /= null
-       and Ctx.P.Slots.Slot_Ptr_5 /= null,
+       Initialized (Ctx),
      Post =>
-       Ctx.P.Slots.Slot_Ptr_1 = null
-       and Ctx.P.Slots.Slot_Ptr_2 = null
-       and Ctx.P.Slots.Slot_Ptr_3 = null
-       and Ctx.P.Slots.Slot_Ptr_4 /= null
-       and Ctx.P.Slots.Slot_Ptr_5 /= null
+       Initialized (Ctx)
    is
+      Message_Tag : TLV.Tag;
+      Tag : TLV.Tag;
       RFLX_Exception : Boolean := False;
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 /= null
+                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
       if
          not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx)
          or TLV.Messages.Available_Space (Ctx.P.Messages_Ctx) < 32
       then
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       declare
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
@@ -50,14 +56,24 @@ is
       end;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if
          not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx)
          or TLV.Tags.Available_Space (Ctx.P.Tags_Ctx) < TLV.Tag'Size
       then
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       TLV.Tags.Append_Element (Ctx.P.Tags_Ctx, TLV.Msg_Error);
       if TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
@@ -110,21 +126,41 @@ is
          end;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if
          TLV.Tags.Valid (Ctx.P.Tags_Ctx)
@@ -134,7 +170,12 @@ is
          Tag := TLV.Tags.Head (Ctx.P.Tags_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 /= null
+                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         goto Finalize_Start;
       end if;
       if
          Message_Tag = TLV.Msg_Data
@@ -144,18 +185,12 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-   end Start;
-
-   procedure Start (Ctx : in out Context'Class) with
-     Pre =>
-       Initialized (Ctx),
-     Post =>
-       Initialized (Ctx)
-   is
-      Message_Tag : TLV.Tag;
-      Tag : TLV.Tag;
-   begin
-      Start (Ctx, Message_Tag, Tag);
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 /= null
+                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
+      <<Finalize_Start>>
    end Start;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -165,7 +200,17 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 /= null
+                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 /= null
+                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

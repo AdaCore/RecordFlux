@@ -7,6 +7,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.Universal.Message_Type;
 
    use type RFLX.RFLX_Types.Bit_Length;
@@ -18,6 +20,8 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -27,6 +31,8 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -36,14 +42,21 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
          Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null);
+         goto Finalize_Process;
       end if;
       Ctx.P.Next_State := S_Reply;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -53,7 +66,11 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
       Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

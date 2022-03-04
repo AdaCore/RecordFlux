@@ -6,6 +6,8 @@ package body RFLX.Test.Session with
   SPARK_Mode
 is
 
+   use type RFLX.RFLX_Types.Bytes_Ptr;
+
    use type RFLX.RFLX_Types.Bit_Length;
 
    procedure Start (Ctx : in out Context'Class) with
@@ -15,12 +17,20 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       Messages.Msg_LE_Nested.Verify_Message (Ctx.P.In_Msg_Ctx);
       if Messages.Msg_LE_Nested.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy;
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
    end Start;
 
    procedure Copy (Ctx : in out Context'Class) with
@@ -30,6 +40,10 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 1 >= 64 then
          Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 64 - 1);
          if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
@@ -38,17 +52,34 @@ is
                Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
             else
                Ctx.P.Next_State := S_Terminated;
-               return;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                              and Ctx.P.Slots.Slot_Ptr_2 = null
+                              and Ctx.P.Slots.Slot_Ptr_3 = null
+                              and Ctx.P.Slots.Slot_Ptr_4 = null);
+               goto Finalize_Copy;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            return;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                           and Ctx.P.Slots.Slot_Ptr_2 = null
+                           and Ctx.P.Slots.Slot_Ptr_3 = null
+                           and Ctx.P.Slots.Slot_Ptr_4 = null);
+            goto Finalize_Copy;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 = null);
+         goto Finalize_Copy;
       end if;
       Ctx.P.Next_State := S_Reply;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      <<Finalize_Copy>>
    end Copy;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -58,7 +89,15 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       Ctx.P.Next_State := S_Read2;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
    end Reply;
 
    procedure Read2 (Ctx : in out Context'Class) with
@@ -68,12 +107,20 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       Messages.Msg_LE.Verify_Message (Ctx.P.In_Msg2_Ctx);
       if Messages.Msg_LE.Byte_Size (Ctx.P.In_Msg2_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy2;
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
    end Read2;
 
    procedure Copy2 (Ctx : in out Context'Class) with
@@ -83,6 +130,10 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First) + 1 >= 64 then
          Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First) + 64 - 1);
          if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
@@ -91,17 +142,34 @@ is
                Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
             else
                Ctx.P.Next_State := S_Terminated;
-               return;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                              and Ctx.P.Slots.Slot_Ptr_2 = null
+                              and Ctx.P.Slots.Slot_Ptr_3 = null
+                              and Ctx.P.Slots.Slot_Ptr_4 = null);
+               goto Finalize_Copy2;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            return;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                           and Ctx.P.Slots.Slot_Ptr_2 = null
+                           and Ctx.P.Slots.Slot_Ptr_3 = null
+                           and Ctx.P.Slots.Slot_Ptr_4 = null);
+            goto Finalize_Copy2;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         return;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null
+                        and Ctx.P.Slots.Slot_Ptr_3 = null
+                        and Ctx.P.Slots.Slot_Ptr_4 = null);
+         goto Finalize_Copy2;
       end if;
       Ctx.P.Next_State := S_Reply2;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      <<Finalize_Copy2>>
    end Copy2;
 
    procedure Reply2 (Ctx : in out Context'Class) with
@@ -111,7 +179,15 @@ is
        Initialized (Ctx)
    is
    begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
       Ctx.P.Next_State := S_Start;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null
+                     and Ctx.P.Slots.Slot_Ptr_3 = null
+                     and Ctx.P.Slots.Slot_Ptr_4 = null);
    end Reply2;
 
    procedure Initialize (Ctx : in out Context'Class) is
