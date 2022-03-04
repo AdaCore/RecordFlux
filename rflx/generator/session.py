@@ -48,12 +48,14 @@ from rflx.ada import (
     First,
     FunctionSpecification,
     GenericProcedureInstantiation,
+    GotoStatement,
     Greater,
     GreaterEqual,
     IfStatement,
     In,
     Indexed,
     InOutParameter,
+    Label,
     Last,
     Length,
     Less,
@@ -78,7 +80,6 @@ from rflx.ada import (
     PrivateType,
     ProcedureSpecification,
     RecordType,
-    ReturnStatement,
     Selected,
     Size,
     SizeAspect,
@@ -155,7 +156,7 @@ class ExceptionHandler:
                 Variable(f"S_{self.state.exception_transition.target}"),
             ),
             *self.finalization,
-            ReturnStatement(),
+            GotoStatement(f"Finalize_{self.state.identifier}"),
         ]
 
     def execute_deferred(self) -> Sequence[Statement]:
@@ -751,6 +752,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         composite_globals: Sequence[decl.VariableDeclaration],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
+        if self._allocator.get_global_slot_ptrs() or self._allocator.get_local_slot_ptrs():
+            self._session_context.used_types_body.append(const.TYPES_BYTES_PTR)
+
         unit_body: List[Declaration] = []
 
         for state in session.states:
@@ -760,62 +764,52 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 slots = []
 
                 for d in state.declarations.values():
-                    if isinstance(d, decl.VariableDeclaration):
-                        if isinstance(d.type_, (rty.Integer, rty.Enumeration)):
-                            parameters.append(
-                                InOutParameter(
-                                    [ID(d.identifier)], self._ada_type(d.type_.identifier)
-                                )
+                    assert isinstance(d, decl.VariableDeclaration)
+                    if isinstance(d.type_, (rty.Integer, rty.Enumeration)):
+                        parameters.append(
+                            InOutParameter([ID(d.identifier)], self._ada_type(d.type_.identifier))
+                        )
+                    else:
+                        assert isinstance(d.type_, (rty.Message, rty.Sequence))
+                        identifier = context_id(d.identifier, is_global)
+                        type_identifier = self._ada_type(d.type_.identifier)
+                        parameters.append(
+                            InOutParameter(
+                                [identifier],
+                                type_identifier * "Context",
                             )
-                        elif isinstance(d.type_, (rty.Message, rty.Sequence)):
-                            identifier = context_id(d.identifier, is_global)
-                            type_identifier = self._ada_type(d.type_.identifier)
-                            parameters.append(
-                                InOutParameter(
-                                    [identifier],
-                                    type_identifier * "Context",
-                                )
-                            )
-                            invariant.extend(
-                                [
-                                    *(
-                                        [Call("Global_Initialized", [Variable("Ctx")])]
-                                        if composite_globals
-                                        else []
-                                    ),
-                                    Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
-                                    Equal(
-                                        Variable(identifier * "Buffer_First"),
+                        )
+                        invariant.extend(
+                            [
+                                *(
+                                    [Call("Global_Initialized", [Variable("Ctx")])]
+                                    if composite_globals
+                                    else []
+                                ),
+                                Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
+                                Equal(
+                                    Variable(identifier * "Buffer_First"),
+                                    First(self._prefix * const.TYPES_INDEX),
+                                ),
+                                Equal(
+                                    Variable(identifier * "Buffer_Last"),
+                                    Add(
                                         First(self._prefix * const.TYPES_INDEX),
-                                    ),
-                                    Equal(
-                                        Variable(identifier * "Buffer_Last"),
-                                        Add(
-                                            First(self._prefix * const.TYPES_INDEX),
-                                            Number(
-                                                self._allocator.get_size(
-                                                    d.identifier, state.identifier
-                                                )
-                                                - 1
-                                            ),
+                                        Number(
+                                            self._allocator.get_size(d.identifier, state.identifier)
+                                            - 1
                                         ),
                                     ),
-                                    Equal(
-                                        Variable(
-                                            "Ctx.P.Slots" * self._allocator.get_slot_ptr(d.location)
-                                        ),
-                                        Variable("null"),
+                                ),
+                                Equal(
+                                    Variable(
+                                        "Ctx.P.Slots" * self._allocator.get_slot_ptr(d.location)
                                     ),
-                                ]
-                            )
-                            slots.append(self._allocator.get_slot_ptr(d.location))
-                            self._session_context.used_types_body.append(const.TYPES_BYTES_PTR)
-                        else:
-                            fail(
-                                f'declaration "{d.identifier}" not yet supported',
-                                Subsystem.GENERATOR,
-                                location=d.location,
-                            )
+                                    Variable("null"),
+                                ),
+                            ]
+                        )
+                        slots.append(self._allocator.get_slot_ptr(d.location))
 
                 invariant.extend(
                     [
@@ -850,7 +844,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ExceptionHandler(
                                 self._session_context.state_exception,
                                 state,
-                                [],
+                                [PragmaStatement("Assert", [And(*invariant)])],
                             ),
                             is_global,
                         )
@@ -859,29 +853,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ]
 
                 unit_body += [
-                    *(
-                        [
-                            SubprogramBody(
-                                ProcedureSpecification(
-                                    ID(state.identifier),
-                                    [
-                                        InOutParameter(["Ctx"], "Context'Class"),
-                                        *parameters,
-                                    ],
-                                ),
-                                [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
-                                if state.identifier in self._session_context.state_exception
-                                else [],
-                                statements,
-                                [
-                                    Precondition(And(*invariant)),
-                                    Postcondition(And(*invariant)),
-                                ],
-                            )
-                        ]
-                        if parameters
-                        else []
-                    ),
                     SubprogramBody(
                         ProcedureSpecification(
                             ID(state.identifier),
@@ -892,23 +863,32 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         [
                             *evaluated_declarations.global_declarations,
                             *evaluated_declarations.initialization_declarations,
+                            *(
+                                [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
+                                if state.identifier in self._session_context.state_exception
+                                else []
+                            ),
                         ],
                         [
                             *evaluated_declarations.initialization,
+                            PragmaStatement("Assert", [And(*invariant)]),
+                            *statements,
+                            PragmaStatement("Assert", [And(*invariant)]),
                             *(
-                                statements
-                                if not parameters
-                                else [
-                                    CallStatement(
-                                        ID(state.identifier),
-                                        [
-                                            Variable("Ctx"),
-                                            *[Variable(p.identifiers[0]) for p in parameters],
-                                        ],
-                                    )
-                                ]
+                                [Label(f"Finalize_{state.identifier}")]
+                                if state.has_exceptions
+                                else []
                             ),
                             *evaluated_declarations.finalization,
+                            *(
+                                [
+                                    PragmaStatement(
+                                        "Assert", [Call("Global_Initialized", [Variable("Ctx")])]
+                                    )
+                                ]
+                                if evaluated_declarations.finalization
+                                else []
+                            ),
                         ],
                         aspects=[
                             Precondition(Call("Initialized", [Variable("Ctx")])),

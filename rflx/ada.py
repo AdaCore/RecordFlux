@@ -1656,6 +1656,22 @@ class ExitStatement(Statement):
         return "exit when " + indent_next(str(self.expression), 7) + ";"
 
 
+class GotoStatement(Statement):
+    def __init__(self, label: StrID) -> None:
+        self.label = ID(label)
+
+    def __str__(self) -> str:
+        return f"goto {self.label};"
+
+
+class Label(Statement):
+    def __init__(self, identifier: StrID) -> None:
+        self.identifier = ID(identifier)
+
+    def __str__(self) -> str:
+        return f"<<{self.identifier}>>"
+
+
 class IfStatement(Statement):
     def __init__(
         self,
