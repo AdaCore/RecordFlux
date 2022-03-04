@@ -1112,13 +1112,13 @@ begin
    if RFLX_Exception then
       Ctx.P.Next_State := S_E;
       pragma Finalization;
-      return;
+      goto Finalize_S;
    end if;
 end;
 if RFLX_Exception then
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
@@ -1268,7 +1268,7 @@ end;
 if RFLX_Exception then
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
@@ -1339,7 +1339,7 @@ end;
 if RFLX_Exception then
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
@@ -1449,13 +1449,13 @@ if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_I
       Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
-      return;
+      goto Finalize_S;
    end if;
 else
    Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
@@ -1522,19 +1522,19 @@ then
          Ada.Text_IO.Put_Line ("Error: invalid message field size for ""Y'Opaque""\");
          Ctx.P.Next_State := S_E;
          pragma Finalization;
-         return;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
-      return;
+      goto Finalize_S;
    end if;
 else
    Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""\");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
@@ -1648,43 +1648,43 @@ then
                      Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Data""\");
                      Ctx.P.Next_State := S_E;
                      pragma Finalization;
-                     return;
+                     goto Finalize_S;
                   end if;
                else
                   Ada.Text_IO.Put_Line ("Error: invalid message field size for ""Y.Data""\");
                   Ctx.P.Next_State := S_E;
                   pragma Finalization;
-                  return;
+                  goto Finalize_S;
                end if;
             else
                Ada.Text_IO.Put_Line ("Error: access to invalid next message field for ""Y.Data""\");
                Ctx.P.Next_State := S_E;
                pragma Finalization;
-               return;
+               goto Finalize_S;
             end if;
          else
             Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Length""\");
             Ctx.P.Next_State := S_E;
             pragma Finalization;
-            return;
+            goto Finalize_S;
          end if;
       else
          Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Message_Type""\");
          Ctx.P.Next_State := S_E;
          pragma Finalization;
-         return;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
-      return;
+      goto Finalize_S;
    end if;
 else
    Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""\");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
-   return;
+   goto Finalize_S;
 end if;
 """[
                 1:-1
