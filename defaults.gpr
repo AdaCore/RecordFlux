@@ -3,6 +3,7 @@ abstract project Defaults is
    type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
    Mode : Build_Mode := external ("mode", "asserts_enabled");
    Memcached := external ("MEMCACHED", "");
+   Procs := external ("GNATPROVE_PROCS", "");
 
    Compiler_Variant := external ("gnat", "");
 
@@ -44,6 +45,14 @@ abstract project Defaults is
          Memcached_Switch := "--memcached-server=" & Memcached;
    end case;
 
+   Procs_Switch := "";
+   case Procs is
+      when "" =>
+         Procs_Switch := "-j 0";
+      when others =>
+         Procs_Switch := "-j " & Procs;
+   end case;
+
    Proof_Switches :=
    (
       "--prover=z3,cvc4,altergo",
@@ -56,7 +65,7 @@ abstract project Defaults is
       --  "--proof-warnings",
       "--no-axiom-guard",
       "--counterexamples=off",
-      "-j0",
+      Procs_Switch,
       Memcached_Switch
    );
 

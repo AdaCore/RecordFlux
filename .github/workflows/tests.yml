@@ -715,6 +715,9 @@ jobs:
           - dhcp_client
     env:
       python-version: 3.7
+      # SPARK requires more than the available 7 GB of RAM for proving the DHCP client, if multiple
+      # processes are used.
+      GNATPROVE_PROCS: 1
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
