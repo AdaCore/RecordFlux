@@ -30,6 +30,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Tag, F_Code_Destination_Unreachable, F_Code_Redirect, F_Code_Time_Exceeded, F_Code_Zero, F_Checksum, F_Gateway_Internet_Address, F_Identifier, F_Pointer, F_Unused_32, F_Sequence_Number, F_Unused_24, F_Originate_Timestamp, F_Data, F_Receive_Timestamp, F_Transmit_Timestamp, F_Final);
 
    subtype Field is Virtual_Field range F_Tag .. F_Transmit_Timestamp;
@@ -592,7 +594,8 @@ is
        and Predecessor (Ctx, F_Code_Destination_Unreachable) = Predecessor (Ctx, F_Code_Destination_Unreachable)'Old
        and Valid_Next (Ctx, F_Code_Destination_Unreachable) = Valid_Next (Ctx, F_Code_Destination_Unreachable)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old;
+       and (for all F in Field range F_Tag .. F_Tag =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect) with
      Pre =>
@@ -628,8 +631,8 @@ is
        and Predecessor (Ctx, F_Code_Redirect) = Predecessor (Ctx, F_Code_Redirect)'Old
        and Valid_Next (Ctx, F_Code_Redirect) = Valid_Next (Ctx, F_Code_Redirect)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old;
+       and (for all F in Field range F_Tag .. F_Code_Destination_Unreachable =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded) with
      Pre =>
@@ -664,9 +667,8 @@ is
        and Predecessor (Ctx, F_Code_Time_Exceeded) = Predecessor (Ctx, F_Code_Time_Exceeded)'Old
        and Valid_Next (Ctx, F_Code_Time_Exceeded) = Valid_Next (Ctx, F_Code_Time_Exceeded)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old;
+       and (for all F in Field range F_Tag .. F_Code_Redirect =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero) with
      Pre =>
@@ -699,10 +701,8 @@ is
        and Predecessor (Ctx, F_Code_Zero) = Predecessor (Ctx, F_Code_Zero)'Old
        and Valid_Next (Ctx, F_Code_Zero) = Valid_Next (Ctx, F_Code_Zero)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old;
+       and (for all F in Field range F_Tag .. F_Code_Time_Exceeded =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum) with
      Pre =>
@@ -760,11 +760,8 @@ is
        and Predecessor (Ctx, F_Checksum) = Predecessor (Ctx, F_Checksum)'Old
        and Valid_Next (Ctx, F_Checksum) = Valid_Next (Ctx, F_Checksum)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old;
+       and (for all F in Field range F_Tag .. F_Code_Zero =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address) with
      Pre =>
@@ -797,12 +794,8 @@ is
        and Valid_Next (Ctx, F_Gateway_Internet_Address) = Valid_Next (Ctx, F_Gateway_Internet_Address)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old;
+       and (for all F in Field range F_Tag .. F_Checksum =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier) with
      Pre =>
@@ -834,13 +827,8 @@ is
        and Valid_Next (Ctx, F_Identifier) = Valid_Next (Ctx, F_Identifier)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old;
+       and (for all F in Field range F_Tag .. F_Gateway_Internet_Address =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer) with
      Pre =>
@@ -871,14 +859,8 @@ is
        and Valid_Next (Ctx, F_Pointer) = Valid_Next (Ctx, F_Pointer)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old;
+       and (for all F in Field range F_Tag .. F_Identifier =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32) with
      Pre =>
@@ -907,15 +889,8 @@ is
        and Valid_Next (Ctx, F_Unused_32) = Valid_Next (Ctx, F_Unused_32)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old;
+       and (for all F in Field range F_Tag .. F_Pointer =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number) with
      Pre =>
@@ -956,16 +931,8 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Get_Identifier (Ctx) = Get_Identifier (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old
-       and Context_Cursor (Ctx, F_Unused_32) = Context_Cursor (Ctx, F_Unused_32)'Old;
+       and (for all F in Field range F_Tag .. F_Unused_32 =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24) with
      Pre =>
@@ -993,17 +960,8 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Get_Pointer (Ctx) = Get_Pointer (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old
-       and Context_Cursor (Ctx, F_Unused_32) = Context_Cursor (Ctx, F_Unused_32)'Old
-       and Context_Cursor (Ctx, F_Sequence_Number) = Context_Cursor (Ctx, F_Sequence_Number)'Old;
+       and (for all F in Field range F_Tag .. F_Sequence_Number =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
      Pre =>
@@ -1032,18 +990,8 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Get_Identifier (Ctx) = Get_Identifier (Ctx)'Old
        and Get_Sequence_Number (Ctx) = Get_Sequence_Number (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old
-       and Context_Cursor (Ctx, F_Unused_32) = Context_Cursor (Ctx, F_Unused_32)'Old
-       and Context_Cursor (Ctx, F_Sequence_Number) = Context_Cursor (Ctx, F_Sequence_Number)'Old
-       and Context_Cursor (Ctx, F_Unused_24) = Context_Cursor (Ctx, F_Unused_24)'Old;
+       and (for all F in Field range F_Tag .. F_Unused_24 =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
      Pre =>
@@ -1071,20 +1019,8 @@ is
        and Get_Identifier (Ctx) = Get_Identifier (Ctx)'Old
        and Get_Sequence_Number (Ctx) = Get_Sequence_Number (Ctx)'Old
        and Get_Originate_Timestamp (Ctx) = Get_Originate_Timestamp (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old
-       and Context_Cursor (Ctx, F_Unused_32) = Context_Cursor (Ctx, F_Unused_32)'Old
-       and Context_Cursor (Ctx, F_Sequence_Number) = Context_Cursor (Ctx, F_Sequence_Number)'Old
-       and Context_Cursor (Ctx, F_Unused_24) = Context_Cursor (Ctx, F_Unused_24)'Old
-       and Context_Cursor (Ctx, F_Originate_Timestamp) = Context_Cursor (Ctx, F_Originate_Timestamp)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old;
+       and (for all F in Field range F_Tag .. F_Data =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
      Pre =>
@@ -1111,21 +1047,8 @@ is
        and Get_Sequence_Number (Ctx) = Get_Sequence_Number (Ctx)'Old
        and Get_Originate_Timestamp (Ctx) = Get_Originate_Timestamp (Ctx)'Old
        and Get_Receive_Timestamp (Ctx) = Get_Receive_Timestamp (Ctx)'Old
-       and Context_Cursor (Ctx, F_Tag) = Context_Cursor (Ctx, F_Tag)'Old
-       and Context_Cursor (Ctx, F_Code_Destination_Unreachable) = Context_Cursor (Ctx, F_Code_Destination_Unreachable)'Old
-       and Context_Cursor (Ctx, F_Code_Redirect) = Context_Cursor (Ctx, F_Code_Redirect)'Old
-       and Context_Cursor (Ctx, F_Code_Time_Exceeded) = Context_Cursor (Ctx, F_Code_Time_Exceeded)'Old
-       and Context_Cursor (Ctx, F_Code_Zero) = Context_Cursor (Ctx, F_Code_Zero)'Old
-       and Context_Cursor (Ctx, F_Checksum) = Context_Cursor (Ctx, F_Checksum)'Old
-       and Context_Cursor (Ctx, F_Gateway_Internet_Address) = Context_Cursor (Ctx, F_Gateway_Internet_Address)'Old
-       and Context_Cursor (Ctx, F_Identifier) = Context_Cursor (Ctx, F_Identifier)'Old
-       and Context_Cursor (Ctx, F_Pointer) = Context_Cursor (Ctx, F_Pointer)'Old
-       and Context_Cursor (Ctx, F_Unused_32) = Context_Cursor (Ctx, F_Unused_32)'Old
-       and Context_Cursor (Ctx, F_Sequence_Number) = Context_Cursor (Ctx, F_Sequence_Number)'Old
-       and Context_Cursor (Ctx, F_Unused_24) = Context_Cursor (Ctx, F_Unused_24)'Old
-       and Context_Cursor (Ctx, F_Originate_Timestamp) = Context_Cursor (Ctx, F_Originate_Timestamp)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Receive_Timestamp) = Context_Cursor (Ctx, F_Receive_Timestamp)'Old;
+       and (for all F in Field range F_Tag .. F_Receive_Timestamp =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Data_Empty (Ctx : in out Context) with
      Pre =>
@@ -1241,6 +1164,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -2291,5 +2219,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.ICMP.Message;

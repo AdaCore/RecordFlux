@@ -30,6 +30,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Source_Port, F_Destination_Port, F_Length, F_Checksum, F_Payload, F_Final);
 
    subtype Field is Virtual_Field range F_Source_Port .. F_Payload;
@@ -479,7 +481,8 @@ is
        and Predecessor (Ctx, F_Destination_Port) = Predecessor (Ctx, F_Destination_Port)'Old
        and Valid_Next (Ctx, F_Destination_Port) = Valid_Next (Ctx, F_Destination_Port)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
-       and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old;
+       and (for all F in Field range F_Source_Port .. F_Source_Port =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) with
      Pre =>
@@ -505,8 +508,8 @@ is
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
-       and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old
-       and Context_Cursor (Ctx, F_Destination_Port) = Context_Cursor (Ctx, F_Destination_Port)'Old;
+       and (for all F in Field range F_Source_Port .. F_Destination_Port =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) with
      Pre =>
@@ -532,9 +535,8 @@ is
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Context_Cursor (Ctx, F_Source_Port) = Context_Cursor (Ctx, F_Source_Port)'Old
-       and Context_Cursor (Ctx, F_Destination_Port) = Context_Cursor (Ctx, F_Destination_Port)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old;
+       and (for all F in Field range F_Source_Port .. F_Length =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Payload_Empty (Ctx : in out Context) with
      Pre =>
@@ -648,6 +650,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -969,5 +976,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.UDP.Datagram;

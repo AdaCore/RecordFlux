@@ -811,13 +811,17 @@ class ForSomeIn(QuantifiedExpr):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr):
+    def __init__(self, lower: Expr, upper: Expr, type_identifier: StrID = None):
         super().__init__()
         self.lower = lower
         self.upper = upper
+        self.type_id = type_identifier
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self.lower} .. {self.upper}")
+        if self.type_id is None:
+            self._str = intern(f"{self.lower} .. {self.upper}")
+        else:
+            self._str = intern(f"{self.type_id} range {self.lower} .. {self.upper}")
 
     @property
     def precedence(self) -> Precedence:

@@ -33,6 +33,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Message_Type, F_Length, F_Data, F_Option_Types, F_Options, F_Value, F_Values, F_Final);
 
    subtype Field is Virtual_Field range F_Message_Type .. F_Values;
@@ -520,7 +522,8 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
-       and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old;
+       and (for all F in Field range F_Message_Type .. F_Message_Type =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Universal.Value) with
      Pre =>
@@ -544,11 +547,8 @@ is
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Option_Types) = Context_Cursor (Ctx, F_Option_Types)'Old
-       and Context_Cursor (Ctx, F_Options) = Context_Cursor (Ctx, F_Options)'Old;
+       and (for all F in Field range F_Message_Type .. F_Options =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Data_Empty (Ctx : in out Context) with
      Pre =>
@@ -922,14 +922,12 @@ is
        and Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
        and Path_Condition (Ctx, F_Option_Types) = Path_Condition (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, F_Option_Types)'Old
-       and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old,
+       and (for all F in Field range F_Message_Type .. F_Data =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Option_Types) =>
-           Context_Cursor (Ctx, F_Options) = Context_Cursor (Ctx, F_Options)'Old
-           and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
-           and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old,
+           (for all F in Field range F_Options .. F_Values =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
            Invalid (Ctx, F_Options)
            and Invalid (Ctx, F_Value)
@@ -962,14 +960,12 @@ is
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, F_Options)'Old
-       and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Option_Types) = Context_Cursor (Ctx, F_Option_Types)'Old,
+       and (for all F in Field range F_Message_Type .. F_Option_Types =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Options) =>
-           Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
-           and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old,
+           (for all F in Field range F_Value .. F_Values =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
            Invalid (Ctx, F_Value)
            and Invalid (Ctx, F_Values));
@@ -1001,12 +997,8 @@ is
        and Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
        and Path_Condition (Ctx, F_Values) = Path_Condition (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, F_Values)'Old
-       and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Option_Types) = Context_Cursor (Ctx, F_Option_Types)'Old
-       and Context_Cursor (Ctx, F_Options) = Context_Cursor (Ctx, F_Options)'Old
-       and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old,
+       and (for all F in Field range F_Message_Type .. F_Value =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Values) =>
            True,
@@ -1124,6 +1116,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -1615,5 +1612,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.Universal.Message;

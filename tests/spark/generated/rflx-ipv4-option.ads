@@ -33,6 +33,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Copied, F_Option_Class, F_Option_Number, F_Option_Length, F_Option_Data, F_Final);
 
    subtype Field is Virtual_Field range F_Copied .. F_Option_Data;
@@ -482,7 +484,8 @@ is
        and Predecessor (Ctx, F_Option_Class) = Predecessor (Ctx, F_Option_Class)'Old
        and Valid_Next (Ctx, F_Option_Class) = Valid_Next (Ctx, F_Option_Class)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
-       and Context_Cursor (Ctx, F_Copied) = Context_Cursor (Ctx, F_Copied)'Old;
+       and (for all F in Field range F_Copied .. F_Copied =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) with
      Pre =>
@@ -512,8 +515,8 @@ is
        and Valid_Next (Ctx, F_Option_Number) = Valid_Next (Ctx, F_Option_Number)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
-       and Context_Cursor (Ctx, F_Copied) = Context_Cursor (Ctx, F_Copied)'Old
-       and Context_Cursor (Ctx, F_Option_Class) = Context_Cursor (Ctx, F_Option_Class)'Old;
+       and (for all F in Field range F_Copied .. F_Option_Class =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) with
      Pre =>
@@ -553,9 +556,8 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Context_Cursor (Ctx, F_Copied) = Context_Cursor (Ctx, F_Copied)'Old
-       and Context_Cursor (Ctx, F_Option_Class) = Context_Cursor (Ctx, F_Option_Class)'Old
-       and Context_Cursor (Ctx, F_Option_Number) = Context_Cursor (Ctx, F_Option_Number)'Old;
+       and (for all F in Field range F_Copied .. F_Option_Number =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Option_Data_Empty (Ctx : in out Context) with
      Pre =>
@@ -669,6 +671,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -1038,5 +1045,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.IPv4.Option;
