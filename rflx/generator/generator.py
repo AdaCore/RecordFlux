@@ -377,6 +377,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_use_type_clause(
             composite_fields, self.__serializer.requires_set_procedure(message)
         )
+        unit += self.__create_allow_unevaluated_use_of_old()
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
         unit += self.__create_cursor_type(message)
@@ -456,7 +457,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_update_procedures(message, sequence_fields)
         unit += self.__create_cursor_function()
         unit += self.__create_cursors_function()
+        unit += self.__create_cursors_index_function()
         unit += self.__create_structure(message)
+
+    @staticmethod
+    def __create_allow_unevaluated_use_of_old() -> UnitPart:
+        return UnitPart(
+            [Pragma("Unevaluated_Use_Of_Old", [Variable("Allow")])],
+        )
 
     @staticmethod
     def __create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -> UnitPart:
@@ -2976,18 +2984,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                 Variable(f.affixed_name),
                                             ],
                                         ),
-                                        *[
-                                            Call(
-                                                "Context_Cursor",
-                                                [
-                                                    Variable("Ctx"),
-                                                    Variable(p.affixed_name),
-                                                ],
-                                            )
-                                            for p in message.predecessors(f)
-                                        ],
                                     ]
                                 ],
+                                *common.context_cursor_unchanged(message, f, predecessors=True),
                             )
                         ),
                         ContractCases(
@@ -2997,27 +2996,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
                                 And(
-                                    *[
-                                        Equal(
-                                            Call(
-                                                "Context_Cursor",
-                                                [
-                                                    Variable("Ctx"),
-                                                    Variable(s.affixed_name),
-                                                ],
-                                            ),
-                                            Old(
-                                                Call(
-                                                    "Context_Cursor",
-                                                    [
-                                                        Variable("Ctx"),
-                                                        Variable(s.affixed_name),
-                                                    ],
-                                                )
-                                            ),
-                                        )
-                                        for s in message.successors(f)
-                                    ]
+                                    *common.context_cursor_unchanged(message, f, predecessors=False)
                                 ),
                             ),
                             (
@@ -3411,6 +3390,28 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             ],
             [],
             [ExpressionFunctionDeclaration(specification, Variable("Ctx.Cursors"))],
+        )
+
+    @staticmethod
+    def __create_cursors_index_function() -> UnitPart:
+        specification = FunctionSpecification(
+            "Context_Cursors_Index",
+            "Field_Cursor",
+            [Parameter(["Cursors"], "Field_Cursors"), Parameter(["Fld"], "Field")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification, [Annotate("GNATprove", "Inline_For_Proof"), Ghost()]
+                )
+            ],
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification, Indexed(Variable("Cursors"), Variable("Fld"))
+                )
+            ],
         )
 
     def __create_structure(self, message: Message) -> UnitPart:

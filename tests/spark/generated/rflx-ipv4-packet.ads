@@ -34,6 +34,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Version, F_IHL, F_DSCP, F_ECN, F_Total_Length, F_Identification, F_Flag_R, F_Flag_DF, F_Flag_MF, F_Fragment_Offset, F_TTL, F_Protocol, F_Header_Checksum, F_Source, F_Destination, F_Options, F_Payload, F_Final);
 
    subtype Field is Virtual_Field range F_Version .. F_Payload;
@@ -571,7 +573,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_IHL) = Predecessor (Ctx, F_IHL)'Old
        and Valid_Next (Ctx, F_IHL) = Valid_Next (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old;
+       and (for all F in Field range F_Version .. F_Version =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) with
      Pre =>
@@ -608,8 +611,8 @@ is
        and Predecessor (Ctx, F_DSCP) = Predecessor (Ctx, F_DSCP)'Old
        and Valid_Next (Ctx, F_DSCP) = Valid_Next (Ctx, F_DSCP)'Old
        and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old;
+       and (for all F in Field range F_Version .. F_IHL =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) with
      Pre =>
@@ -646,9 +649,8 @@ is
        and Valid_Next (Ctx, F_ECN) = Valid_Next (Ctx, F_ECN)'Old
        and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
        and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old;
+       and (for all F in Field range F_Version .. F_DSCP =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) with
      Pre =>
@@ -688,10 +690,8 @@ is
        and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
        and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
        and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old;
+       and (for all F in Field range F_Version .. F_ECN =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) with
      Pre =>
@@ -728,11 +728,8 @@ is
        and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
        and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
        and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old;
+       and (for all F in Field range F_Version .. F_Total_Length =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -772,12 +769,8 @@ is
        and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
        and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
        and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old;
+       and (for all F in Field range F_Version .. F_Identification =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -814,13 +807,8 @@ is
        and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
        and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
        and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old;
+       and (for all F in Field range F_Version .. F_Flag_R =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) with
      Pre =>
@@ -857,14 +845,8 @@ is
        and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
        and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
        and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old;
+       and (for all F in Field range F_Version .. F_Flag_DF =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) with
      Pre =>
@@ -901,15 +883,8 @@ is
        and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
        and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
        and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old;
+       and (for all F in Field range F_Version .. F_Flag_MF =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) with
      Pre =>
@@ -946,16 +921,8 @@ is
        and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
        and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
        and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old;
+       and (for all F in Field range F_Version .. F_Fragment_Offset =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) with
      Pre =>
@@ -992,17 +959,8 @@ is
        and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
        and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
        and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
-       and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old;
+       and (for all F in Field range F_Version .. F_TTL =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) with
      Pre =>
@@ -1039,18 +997,8 @@ is
        and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
        and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
-       and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
-       and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old;
+       and (for all F in Field range F_Version .. F_Protocol =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
@@ -1087,19 +1035,8 @@ is
        and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
-       and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
-       and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
-       and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old;
+       and (for all F in Field range F_Version .. F_Header_Checksum =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) with
      Pre =>
@@ -1136,20 +1073,8 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
-       and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
-       and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
-       and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
-       and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old;
+       and (for all F in Field range F_Version .. F_Source =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Options_Empty (Ctx : in out Context) with
      Pre =>
@@ -1439,24 +1364,12 @@ is
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, F_Options)'Old
-       and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old
-       and Context_Cursor (Ctx, F_IHL) = Context_Cursor (Ctx, F_IHL)'Old
-       and Context_Cursor (Ctx, F_DSCP) = Context_Cursor (Ctx, F_DSCP)'Old
-       and Context_Cursor (Ctx, F_ECN) = Context_Cursor (Ctx, F_ECN)'Old
-       and Context_Cursor (Ctx, F_Total_Length) = Context_Cursor (Ctx, F_Total_Length)'Old
-       and Context_Cursor (Ctx, F_Identification) = Context_Cursor (Ctx, F_Identification)'Old
-       and Context_Cursor (Ctx, F_Flag_R) = Context_Cursor (Ctx, F_Flag_R)'Old
-       and Context_Cursor (Ctx, F_Flag_DF) = Context_Cursor (Ctx, F_Flag_DF)'Old
-       and Context_Cursor (Ctx, F_Flag_MF) = Context_Cursor (Ctx, F_Flag_MF)'Old
-       and Context_Cursor (Ctx, F_Fragment_Offset) = Context_Cursor (Ctx, F_Fragment_Offset)'Old
-       and Context_Cursor (Ctx, F_TTL) = Context_Cursor (Ctx, F_TTL)'Old
-       and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
-       and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
-       and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
-       and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old,
+       and (for all F in Field range F_Version .. F_Destination =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
      Contract_Cases =>
        (Structural_Valid (Ctx, F_Options) =>
-           Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old,
+           (for all F in Field range F_Payload .. F_Payload =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
            (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1513,6 +1426,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -2087,5 +2005,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.IPv4.Packet;

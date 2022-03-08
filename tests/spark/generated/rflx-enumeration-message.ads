@@ -28,6 +28,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Priority, F_Final);
 
    subtype Field is Virtual_Field range F_Priority .. F_Priority;
@@ -400,6 +402,11 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
    type Structure is
       record
          Priority : RFLX.Enumeration.Priority;
@@ -632,5 +639,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.Enumeration.Message;

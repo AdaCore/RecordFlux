@@ -597,6 +597,57 @@ def valid_path_to_next_field_condition(
     ]
 
 
+def context_cursor_unchanged(
+    message: model.Message, field: model.Field, predecessors: bool
+) -> List[ada.Expr]:
+    lower: model.Field
+    upper: model.Field
+    if predecessors:
+        if len(message.predecessors(field)) == 0:
+            return []
+        lower = message.fields[0]
+        upper = message.fields[message.fields.index(field) - 1]
+    else:
+        if len(message.successors(field)) == 0:
+            return []
+        lower = message.fields[message.fields.index(field) + 1]
+        upper = message.fields[-1]
+    return [
+        ada.ForAllIn(
+            "F",
+            ada.ValueRange(
+                lower=ada.Variable(lower.affixed_name),
+                upper=ada.Variable(upper.affixed_name),
+                type_identifier=ada.ID("Field"),
+            ),
+            ada.Equal(
+                ada.Call(
+                    "Context_Cursors_Index",
+                    [
+                        ada.Call(
+                            "Context_Cursors",
+                            [ada.Variable("Ctx")],
+                        ),
+                        ada.Variable("F"),
+                    ],
+                ),
+                ada.Call(
+                    "Context_Cursors_Index",
+                    [
+                        ada.Old(
+                            ada.Call(
+                                "Context_Cursors",
+                                [ada.Variable("Ctx")],
+                            )
+                        ),
+                        ada.Variable("F"),
+                    ],
+                ),
+            ),
+        )
+    ]
+
+
 def sufficient_space_for_field_condition(field_name: ada.Name, size: ada.Expr = None) -> ada.Expr:
     if size is None:
         size = ada.Call("Field_Size", [ada.Variable("Ctx"), field_name])

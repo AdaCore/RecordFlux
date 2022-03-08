@@ -625,27 +625,7 @@ class SerializerGenerator:
                                     else []
                                 ),
                                 *self.public_setter_postconditions(message, f),
-                                *[
-                                    Equal(
-                                        Call(
-                                            "Context_Cursor",
-                                            [
-                                                Variable("Ctx"),
-                                                Variable(p.affixed_name),
-                                            ],
-                                        ),
-                                        Old(
-                                            Call(
-                                                "Context_Cursor",
-                                                [
-                                                    Variable("Ctx"),
-                                                    Variable(p.affixed_name),
-                                                ],
-                                            )
-                                        ),
-                                    )
-                                    for p in message.predecessors(f)
-                                ],
+                                *common.context_cursor_unchanged(message, f, predecessors=True),
                             )
                         ),
                     ],

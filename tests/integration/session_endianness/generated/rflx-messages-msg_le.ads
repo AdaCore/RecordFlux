@@ -28,6 +28,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_C, F_D, F_Final);
 
    subtype Field is Virtual_Field range F_C .. F_D;
@@ -418,7 +420,8 @@ is
        and Predecessor (Ctx, F_D) = Predecessor (Ctx, F_D)'Old
        and Valid_Next (Ctx, F_D) = Valid_Next (Ctx, F_D)'Old
        and Get_C (Ctx) = Get_C (Ctx)'Old
-       and Context_Cursor (Ctx, F_C) = Context_Cursor (Ctx, F_C)'Old;
+       and (for all F in Field range F_C .. F_C =>
+               Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
@@ -426,6 +429,11 @@ is
      Ghost;
 
    function Context_Cursors (Ctx : Context) return Field_Cursors with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -683,5 +691,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.Messages.Msg_LE;

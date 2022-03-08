@@ -31,6 +31,8 @@ is
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    type Virtual_Field is (F_Initial, F_Data, F_Extension, F_Final);
 
    subtype Field is Virtual_Field range F_Data .. F_Extension;
@@ -616,6 +618,11 @@ is
        (GNATprove, Inline_For_Proof),
      Ghost;
 
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
+     Annotate =>
+       (GNATprove, Inline_For_Proof),
+     Ghost;
+
 private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
@@ -855,5 +862,8 @@ private
 
    function Context_Cursors (Ctx : Context) return Field_Cursors is
      (Ctx.Cursors);
+
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
+     (Cursors (Fld));
 
 end RFLX.Test.Message;
