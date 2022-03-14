@@ -1,5 +1,7 @@
 package TLS_Handshake is
 
+   -- RFC 8446
+
    type Handshake_Type is
       (HT_CLIENT_HELLO           =>   1,
        HT_SERVER_HELLO           =>   2,

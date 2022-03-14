@@ -1,5 +1,7 @@
 package TLS_Record is
 
+   -- RFC 8446
+
    type Content_Type is
       (INVALID            =>  0,
        CHANGE_CIPHER_SPEC => 20,
