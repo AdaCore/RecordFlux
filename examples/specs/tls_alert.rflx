@@ -1,5 +1,7 @@
 package TLS_Alert is
 
+   -- RFC 8446
+
    type Alert_Level is (WARNING => 1, FATAL => 2) with Size => 8;
 
    type Alert_Description is
