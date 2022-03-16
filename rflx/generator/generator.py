@@ -26,6 +26,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    CaseExpr,
     ChoiceList,
     Component,
     Constrained,
@@ -382,6 +383,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_state_type()
         unit += self.__create_cursor_type(message)
         unit += self.__create_cursor_validation_functions()
+        unit += self.__create_is_direct_predecessor_function(message)
+        unit += self.__create_is_direct_successor_function(message)
         unit += self.__create_valid_context_function(message, composite_fields)
         unit += self.__create_context_type(message)
         unit += self.__create_field_dependent_type(message)
@@ -3296,6 +3299,74 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     ),
                 ),
             ],
+        )
+
+    def __create_is_direct_predecessor_function(self, message : Message) -> UnitPart:
+        specification = FunctionSpecification(
+            "Is_Direct_Predecessor",
+            "Boolean",
+            [
+                Parameter(["F1", "F2"], "Virtual_Field")
+            ]
+        )
+        definition : Expr = CaseExpr(
+            Variable("F1"),
+            [
+                (
+                    Variable(f.affixed_name),
+                    In(
+                        Variable("F2"),
+                        ChoiceList(*[f2.affixed_name for f2 in message.direct_predecessors(f)])
+                    )
+                    if len(message.direct_predecessors(f)) >= 1
+                    else FALSE
+                )
+                for f in [INITIAL] + list(message.fields) + [FINAL]
+            ]
+        )
+        return UnitPart(
+            [],
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    definition
+                )
+            ]
+        )
+
+    def __create_is_direct_successor_function(self, message : Message) -> UnitPart:
+        specification = FunctionSpecification(
+            "Is_Direct_Successor",
+            "Boolean",
+            [
+                Parameter(["F1", "F2"], "Virtual_Field")
+            ]
+        )
+        definition : Expr = CaseExpr(
+            Variable("F1"),
+            [
+                (
+                    Variable(f.affixed_name),
+                    In(
+                        Variable("F2"),
+                        ChoiceList(*[f2.affixed_name for f2 in message.direct_successors(f)])
+                    )
+                    if len(message.direct_successors(f)) >= 1
+                    else FALSE
+                )
+                for f in [INITIAL] + list(message.fields) + [FINAL]
+            ]
+        )
+        return UnitPart(
+            [],
+            [],
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    definition
+                )
+            ]
         )
 
     def __create_valid_context_function(

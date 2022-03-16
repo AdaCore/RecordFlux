@@ -420,40 +420,61 @@ def context_predicate(
         )
 
     def invalid_successors_invariant() -> ada.Expr:
-        return ada.AndThen(
-            *[
-                ada.If(
-                    [
-                        (
-                            ada.AndThen(
-                                *[
-                                    ada.Call(
-                                        "Invalid",
-                                        [
-                                            ada.Indexed(
-                                                ada.Variable("Cursors"),
-                                                ada.Variable(p.affixed_name),
+        return ada.ForAllIn(
+            "F",
+            ada.Variable("Field"),
+            ada.IfExpr(
+                [
+                    (
+                        ada.AndThen(
+                            ada.Not(
+                                ada.Call(
+                                    "Is_Direct_Successor",
+                                    [
+                                        ada.Variable(model.INITIAL.affixed_name),
+                                        ada.Variable("F")
+                                    ]
+                                )
+                            ),
+                            ada.ForAllIn(
+                                "FP",
+                                ada.Variable("Field"),
+                                ada.IfExpr(
+                                    [
+                                        (
+                                            ada.Call(
+                                                "Is_Direct_Predecessor",
+                                                [
+                                                    ada.Variable("F"),
+                                                    ada.Variable("FP"),
+                                                ]
+                                            ),
+                                            ada.Call(
+                                                "Invalid",
+                                                [
+                                                    ada.Indexed(
+                                                        ada.Variable("Cursors"),
+                                                        ada.Variable("FP")
+                                                    )
+                                                ]
                                             )
-                                        ],
-                                    )
-                                    for p in message.direct_predecessors(f)
-                                ]
-                            ),
-                            ada.Call(
-                                "Invalid",
-                                [
-                                    ada.Indexed(
-                                        ada.Variable("Cursors"),
-                                        ada.Variable(f.affixed_name),
-                                    )
-                                ],
-                            ),
+                                        )
+                                    ]
+                                )
+                            )
+                        ),
+                        ada.Call(
+                            "Invalid",
+                            [
+                                ada.Indexed(
+                                    ada.Variable("Cursors"),
+                                    ada.Variable("F")
+                                )
+                            ]
                         )
-                    ]
-                )
-                for f in message.fields
-                if f not in message.direct_successors(model.INITIAL)
-            ]
+                    )
+                ]
+            )
         )
 
     return ada.AndThen(
