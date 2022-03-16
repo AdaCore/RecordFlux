@@ -133,41 +133,8 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Version =>
-             Invalid (Ctx.Cursors (F_IHL)),
-          when F_IHL =>
-             Invalid (Ctx.Cursors (F_DSCP)),
-          when F_DSCP =>
-             Invalid (Ctx.Cursors (F_ECN)),
-          when F_ECN =>
-             Invalid (Ctx.Cursors (F_Total_Length)),
-          when F_Total_Length =>
-             Invalid (Ctx.Cursors (F_Identification)),
-          when F_Identification =>
-             Invalid (Ctx.Cursors (F_Flag_R)),
-          when F_Flag_R =>
-             Invalid (Ctx.Cursors (F_Flag_DF)),
-          when F_Flag_DF =>
-             Invalid (Ctx.Cursors (F_Flag_MF)),
-          when F_Flag_MF =>
-             Invalid (Ctx.Cursors (F_Fragment_Offset)),
-          when F_Fragment_Offset =>
-             Invalid (Ctx.Cursors (F_TTL)),
-          when F_TTL =>
-             Invalid (Ctx.Cursors (F_Protocol)),
-          when F_Protocol =>
-             Invalid (Ctx.Cursors (F_Header_Checksum)),
-          when F_Header_Checksum =>
-             Invalid (Ctx.Cursors (F_Source)),
-          when F_Source =>
-             Invalid (Ctx.Cursors (F_Destination)),
-          when F_Destination =>
-             Invalid (Ctx.Cursors (F_Options)),
-          when F_Options =>
-             Invalid (Ctx.Cursors (F_Payload)),
-          when F_Payload =>
-             True));
+     ((for all F in Field =>
+          (if Is_Direct_Successor (Fld, F) then Invalid (Ctx.Cursors (F)))));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null

@@ -179,40 +179,8 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Tag =>
-             Invalid (Ctx.Cursors (F_Code_Destination_Unreachable))
-             and Invalid (Ctx.Cursors (F_Code_Redirect))
-             and Invalid (Ctx.Cursors (F_Code_Time_Exceeded))
-             and Invalid (Ctx.Cursors (F_Code_Zero)),
-          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-             Invalid (Ctx.Cursors (F_Checksum)),
-          when F_Checksum =>
-             Invalid (Ctx.Cursors (F_Gateway_Internet_Address))
-             and Invalid (Ctx.Cursors (F_Identifier))
-             and Invalid (Ctx.Cursors (F_Pointer))
-             and Invalid (Ctx.Cursors (F_Unused_32)),
-          when F_Gateway_Internet_Address =>
-             Invalid (Ctx.Cursors (F_Data)),
-          when F_Identifier =>
-             Invalid (Ctx.Cursors (F_Sequence_Number)),
-          when F_Pointer =>
-             Invalid (Ctx.Cursors (F_Unused_24)),
-          when F_Unused_32 =>
-             Invalid (Ctx.Cursors (F_Data)),
-          when F_Sequence_Number =>
-             Invalid (Ctx.Cursors (F_Data))
-             and Invalid (Ctx.Cursors (F_Originate_Timestamp)),
-          when F_Unused_24 =>
-             Invalid (Ctx.Cursors (F_Data)),
-          when F_Originate_Timestamp =>
-             Invalid (Ctx.Cursors (F_Receive_Timestamp)),
-          when F_Data =>
-             True,
-          when F_Receive_Timestamp =>
-             Invalid (Ctx.Cursors (F_Transmit_Timestamp)),
-          when F_Transmit_Timestamp =>
-             True));
+     ((for all F in Field =>
+          (if Is_Direct_Successor (Fld, F) then Invalid (Ctx.Cursors (F)))));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null

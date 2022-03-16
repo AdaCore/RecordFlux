@@ -99,17 +99,8 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Length =>
-             Invalid (Ctx.Cursors (F_Modular_Vector)),
-          when F_Modular_Vector =>
-             Invalid (Ctx.Cursors (F_Range_Vector)),
-          when F_Range_Vector =>
-             Invalid (Ctx.Cursors (F_Enumeration_Vector)),
-          when F_Enumeration_Vector =>
-             Invalid (Ctx.Cursors (F_AV_Enumeration_Vector)),
-          when F_AV_Enumeration_Vector =>
-             True));
+     ((for all F in Field =>
+          (if Is_Direct_Successor (Fld, F) then Invalid (Ctx.Cursors (F)))));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null

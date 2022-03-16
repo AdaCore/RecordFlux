@@ -127,22 +127,8 @@ is
    pragma Warnings (On, "precondition is always False");
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
-          when F_Destination =>
-             Invalid (Ctx.Cursors (F_Source)),
-          when F_Source =>
-             Invalid (Ctx.Cursors (F_Type_Length_TPID)),
-          when F_Type_Length_TPID =>
-             Invalid (Ctx.Cursors (F_TPID))
-             and Invalid (Ctx.Cursors (F_Type_Length)),
-          when F_TPID =>
-             Invalid (Ctx.Cursors (F_TCI)),
-          when F_TCI =>
-             Invalid (Ctx.Cursors (F_Type_Length)),
-          when F_Type_Length =>
-             Invalid (Ctx.Cursors (F_Payload)),
-          when F_Payload =>
-             True));
+     ((for all F in Field =>
+          (if Is_Direct_Successor (Fld, F) then Invalid (Ctx.Cursors (F)))));
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
