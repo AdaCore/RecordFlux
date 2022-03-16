@@ -430,10 +430,7 @@ def context_predicate(
                             ada.Not(
                                 ada.Call(
                                     "Is_Direct_Successor",
-                                    [
-                                        ada.Variable(model.INITIAL.affixed_name),
-                                        ada.Variable("F")
-                                    ]
+                                    [ada.Variable(model.INITIAL.affixed_name), ada.Variable("F")],
                                 )
                             ),
                             ada.ForAllIn(
@@ -447,34 +444,27 @@ def context_predicate(
                                                 [
                                                     ada.Variable("F"),
                                                     ada.Variable("FP"),
-                                                ]
+                                                ],
                                             ),
                                             ada.Call(
                                                 "Invalid",
                                                 [
                                                     ada.Indexed(
-                                                        ada.Variable("Cursors"),
-                                                        ada.Variable("FP")
+                                                        ada.Variable("Cursors"), ada.Variable("FP")
                                                     )
-                                                ]
-                                            )
+                                                ],
+                                            ),
                                         )
                                     ]
-                                )
-                            )
+                                ),
+                            ),
                         ),
                         ada.Call(
-                            "Invalid",
-                            [
-                                ada.Indexed(
-                                    ada.Variable("Cursors"),
-                                    ada.Variable("F")
-                                )
-                            ]
-                        )
+                            "Invalid", [ada.Indexed(ada.Variable("Cursors"), ada.Variable("F"))]
+                        ),
                     )
                 ]
-            )
+            ),
         )
 
     return ada.AndThen(
