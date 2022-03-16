@@ -783,6 +783,48 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   function Is_Direct_Predecessor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             False,
+          when F_Destination =>
+             F2 in F_Initial,
+          when F_Source =>
+             F2 in F_Destination,
+          when F_Type_Length_TPID =>
+             F2 in F_Source,
+          when F_TPID =>
+             F2 in F_Type_Length_TPID,
+          when F_TCI =>
+             F2 in F_TPID,
+          when F_Type_Length =>
+             F2 in F_TCI | F_Type_Length_TPID,
+          when F_Payload =>
+             F2 in F_Type_Length,
+          when F_Final =>
+             F2 in F_Payload));
+
+   function Is_Direct_Successor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             F2 in F_Destination,
+          when F_Destination =>
+             F2 in F_Source,
+          when F_Source =>
+             F2 in F_Type_Length_TPID,
+          when F_Type_Length_TPID =>
+             F2 in F_TPID | F_Type_Length,
+          when F_TPID =>
+             F2 in F_TCI,
+          when F_TCI =>
+             F2 in F_Type_Length,
+          when F_Type_Length =>
+             F2 in F_Payload,
+          when F_Payload =>
+             F2 in F_Final,
+          when F_Final =>
+             False));
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -850,16 +892,13 @@ private
                              or (Valid (Cursors (F_Type_Length))
                                  and then Cursors (F_Payload).Predecessor = F_Type_Length
                                  and then Cursors (F_Type_Length).Value.Type_Length_Value >= 1536)))
-      and then ((if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Source)))
-                and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Type_Length_TPID)))
-                and then (if Invalid (Cursors (F_Type_Length_TPID)) then Invalid (Cursors (F_TPID)))
-                and then (if Invalid (Cursors (F_TPID)) then Invalid (Cursors (F_TCI)))
-                and then (if
-                             Invalid (Cursors (F_TCI))
-                             and then Invalid (Cursors (F_Type_Length_TPID))
-                          then
-                             Invalid (Cursors (F_Type_Length)))
-                and then (if Invalid (Cursors (F_Type_Length)) then Invalid (Cursors (F_Payload))))
+      and then (for all F in Field =>
+                   (if
+                       not Is_Direct_Successor (F_Initial, F)
+                       and then (for all FP in Field =>
+                                    (if Is_Direct_Predecessor (F, FP) then Invalid (Cursors (FP))))
+                    then
+                       Invalid (Cursors (F))))
       and then (if
                    Structural_Valid (Cursors (F_Destination))
                 then

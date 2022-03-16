@@ -507,6 +507,28 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   function Is_Direct_Predecessor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             False,
+          when F_A =>
+             F2 in F_Initial,
+          when F_B =>
+             F2 in F_A,
+          when F_Final =>
+             F2 in F_B));
+
+   function Is_Direct_Successor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             F2 in F_A,
+          when F_A =>
+             F2 in F_B,
+          when F_B =>
+             F2 in F_Final,
+          when F_Final =>
+             False));
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -541,7 +563,13 @@ private
                  then
                     (Valid (Cursors (F_A))
                      and then Cursors (F_B).Predecessor = F_A)))
-      and then ((if Invalid (Cursors (F_A)) then Invalid (Cursors (F_B))))
+      and then (for all F in Field =>
+                   (if
+                       not Is_Direct_Successor (F_Initial, F)
+                       and then (for all FP in Field =>
+                                    (if Is_Direct_Predecessor (F, FP) then Invalid (Cursors (FP))))
+                    then
+                       Invalid (Cursors (F))))
       and then (if
                    Structural_Valid (Cursors (F_A))
                 then

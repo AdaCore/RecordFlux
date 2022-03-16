@@ -1249,6 +1249,66 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   function Is_Direct_Predecessor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             False,
+          when F_Tag =>
+             F2 in F_Initial,
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             F2 in F_Tag,
+          when F_Checksum =>
+             F2 in F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero,
+          when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
+             F2 in F_Checksum,
+          when F_Sequence_Number =>
+             F2 in F_Identifier,
+          when F_Unused_24 =>
+             F2 in F_Pointer,
+          when F_Originate_Timestamp =>
+             F2 in F_Sequence_Number,
+          when F_Data =>
+             F2 in F_Gateway_Internet_Address | F_Sequence_Number | F_Unused_24 | F_Unused_32,
+          when F_Receive_Timestamp =>
+             F2 in F_Originate_Timestamp,
+          when F_Transmit_Timestamp =>
+             F2 in F_Receive_Timestamp,
+          when F_Final =>
+             F2 in F_Data | F_Sequence_Number | F_Transmit_Timestamp));
+
+   function Is_Direct_Successor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             F2 in F_Tag,
+          when F_Tag =>
+             F2 in F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero,
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             F2 in F_Checksum,
+          when F_Checksum =>
+             F2 in F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32,
+          when F_Gateway_Internet_Address =>
+             F2 in F_Data,
+          when F_Identifier =>
+             F2 in F_Sequence_Number,
+          when F_Pointer =>
+             F2 in F_Unused_24,
+          when F_Unused_32 =>
+             F2 in F_Data,
+          when F_Sequence_Number =>
+             F2 in F_Data | F_Final | F_Originate_Timestamp,
+          when F_Unused_24 =>
+             F2 in F_Data,
+          when F_Originate_Timestamp =>
+             F2 in F_Receive_Timestamp,
+          when F_Data =>
+             F2 in F_Final,
+          when F_Receive_Timestamp =>
+             F2 in F_Transmit_Timestamp,
+          when F_Transmit_Timestamp =>
+             F2 in F_Final,
+          when F_Final =>
+             False));
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1391,33 +1451,13 @@ private
                           then
                              (Valid (Cursors (F_Receive_Timestamp))
                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp)))
-      and then ((if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Destination_Unreachable)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Redirect)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Time_Exceeded)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Zero)))
-                and then (if
-                             Invalid (Cursors (F_Code_Destination_Unreachable))
-                             and then Invalid (Cursors (F_Code_Redirect))
-                             and then Invalid (Cursors (F_Code_Time_Exceeded))
-                             and then Invalid (Cursors (F_Code_Zero))
-                          then
-                             Invalid (Cursors (F_Checksum)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Gateway_Internet_Address)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Identifier)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Pointer)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Unused_32)))
-                and then (if Invalid (Cursors (F_Identifier)) then Invalid (Cursors (F_Sequence_Number)))
-                and then (if Invalid (Cursors (F_Pointer)) then Invalid (Cursors (F_Unused_24)))
-                and then (if Invalid (Cursors (F_Sequence_Number)) then Invalid (Cursors (F_Originate_Timestamp)))
-                and then (if
-                             Invalid (Cursors (F_Gateway_Internet_Address))
-                             and then Invalid (Cursors (F_Sequence_Number))
-                             and then Invalid (Cursors (F_Unused_24))
-                             and then Invalid (Cursors (F_Unused_32))
-                          then
-                             Invalid (Cursors (F_Data)))
-                and then (if Invalid (Cursors (F_Originate_Timestamp)) then Invalid (Cursors (F_Receive_Timestamp)))
-                and then (if Invalid (Cursors (F_Receive_Timestamp)) then Invalid (Cursors (F_Transmit_Timestamp))))
+      and then (for all F in Field =>
+                   (if
+                       not Is_Direct_Successor (F_Initial, F)
+                       and then (for all FP in Field =>
+                                    (if Is_Direct_Predecessor (F, FP) then Invalid (Cursors (FP))))
+                    then
+                       Invalid (Cursors (F))))
       and then (if
                    Structural_Valid (Cursors (F_Tag))
                 then

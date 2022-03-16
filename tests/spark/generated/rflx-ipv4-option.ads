@@ -734,6 +734,40 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   function Is_Direct_Predecessor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             False,
+          when F_Copied =>
+             F2 in F_Initial,
+          when F_Option_Class =>
+             F2 in F_Copied,
+          when F_Option_Number =>
+             F2 in F_Option_Class,
+          when F_Option_Length =>
+             F2 in F_Option_Number,
+          when F_Option_Data =>
+             F2 in F_Option_Length,
+          when F_Final =>
+             F2 in F_Option_Data | F_Option_Number));
+
+   function Is_Direct_Successor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             F2 in F_Copied,
+          when F_Copied =>
+             F2 in F_Option_Class,
+          when F_Option_Class =>
+             F2 in F_Option_Number,
+          when F_Option_Number =>
+             F2 in F_Final | F_Option_Length,
+          when F_Option_Length =>
+             F2 in F_Option_Data,
+          when F_Option_Data =>
+             F2 in F_Final,
+          when F_Final =>
+             False));
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -796,10 +830,13 @@ private
                                         or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
                                             and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
                                             and Cursors (F_Option_Number).Value.Option_Number_Value = 8)))))
-      and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
-                and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
-                and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
-                and then (if Invalid (Cursors (F_Option_Length)) then Invalid (Cursors (F_Option_Data))))
+      and then (for all F in Field =>
+                   (if
+                       not Is_Direct_Successor (F_Initial, F)
+                       and then (for all FP in Field =>
+                                    (if Is_Direct_Predecessor (F, FP) then Invalid (Cursors (FP))))
+                    then
+                       Invalid (Cursors (F))))
       and then (if
                    Structural_Valid (Cursors (F_Copied))
                 then

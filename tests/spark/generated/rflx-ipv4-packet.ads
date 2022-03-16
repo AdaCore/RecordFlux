@@ -1511,6 +1511,88 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   function Is_Direct_Predecessor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             False,
+          when F_Version =>
+             F2 in F_Initial,
+          when F_IHL =>
+             F2 in F_Version,
+          when F_DSCP =>
+             F2 in F_IHL,
+          when F_ECN =>
+             F2 in F_DSCP,
+          when F_Total_Length =>
+             F2 in F_ECN,
+          when F_Identification =>
+             F2 in F_Total_Length,
+          when F_Flag_R =>
+             F2 in F_Identification,
+          when F_Flag_DF =>
+             F2 in F_Flag_R,
+          when F_Flag_MF =>
+             F2 in F_Flag_DF,
+          when F_Fragment_Offset =>
+             F2 in F_Flag_MF,
+          when F_TTL =>
+             F2 in F_Fragment_Offset,
+          when F_Protocol =>
+             F2 in F_TTL,
+          when F_Header_Checksum =>
+             F2 in F_Protocol,
+          when F_Source =>
+             F2 in F_Header_Checksum,
+          when F_Destination =>
+             F2 in F_Source,
+          when F_Options =>
+             F2 in F_Destination,
+          when F_Payload =>
+             F2 in F_Options,
+          when F_Final =>
+             F2 in F_Payload));
+
+   function Is_Direct_Successor (F1, F2 : Virtual_Field) return Boolean is
+     ((case F1 is
+          when F_Initial =>
+             F2 in F_Version,
+          when F_Version =>
+             F2 in F_IHL,
+          when F_IHL =>
+             F2 in F_DSCP,
+          when F_DSCP =>
+             F2 in F_ECN,
+          when F_ECN =>
+             F2 in F_Total_Length,
+          when F_Total_Length =>
+             F2 in F_Identification,
+          when F_Identification =>
+             F2 in F_Flag_R,
+          when F_Flag_R =>
+             F2 in F_Flag_DF,
+          when F_Flag_DF =>
+             F2 in F_Flag_MF,
+          when F_Flag_MF =>
+             F2 in F_Fragment_Offset,
+          when F_Fragment_Offset =>
+             F2 in F_TTL,
+          when F_TTL =>
+             F2 in F_Protocol,
+          when F_Protocol =>
+             F2 in F_Header_Checksum,
+          when F_Header_Checksum =>
+             F2 in F_Source,
+          when F_Source =>
+             F2 in F_Destination,
+          when F_Destination =>
+             F2 in F_Options,
+          when F_Options =>
+             F2 in F_Payload,
+          when F_Payload =>
+             F2 in F_Final,
+          when F_Final =>
+             False));
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1622,22 +1704,13 @@ private
                           then
                              (Structural_Valid (Cursors (F_Options))
                               and then Cursors (F_Payload).Predecessor = F_Options)))
-      and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
-                and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
-                and then (if Invalid (Cursors (F_DSCP)) then Invalid (Cursors (F_ECN)))
-                and then (if Invalid (Cursors (F_ECN)) then Invalid (Cursors (F_Total_Length)))
-                and then (if Invalid (Cursors (F_Total_Length)) then Invalid (Cursors (F_Identification)))
-                and then (if Invalid (Cursors (F_Identification)) then Invalid (Cursors (F_Flag_R)))
-                and then (if Invalid (Cursors (F_Flag_R)) then Invalid (Cursors (F_Flag_DF)))
-                and then (if Invalid (Cursors (F_Flag_DF)) then Invalid (Cursors (F_Flag_MF)))
-                and then (if Invalid (Cursors (F_Flag_MF)) then Invalid (Cursors (F_Fragment_Offset)))
-                and then (if Invalid (Cursors (F_Fragment_Offset)) then Invalid (Cursors (F_TTL)))
-                and then (if Invalid (Cursors (F_TTL)) then Invalid (Cursors (F_Protocol)))
-                and then (if Invalid (Cursors (F_Protocol)) then Invalid (Cursors (F_Header_Checksum)))
-                and then (if Invalid (Cursors (F_Header_Checksum)) then Invalid (Cursors (F_Source)))
-                and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Destination)))
-                and then (if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Options)))
-                and then (if Invalid (Cursors (F_Options)) then Invalid (Cursors (F_Payload))))
+      and then (for all F in Field =>
+                   (if
+                       not Is_Direct_Successor (F_Initial, F)
+                       and then (for all FP in Field =>
+                                    (if Is_Direct_Predecessor (F, FP) then Invalid (Cursors (FP))))
+                    then
+                       Invalid (Cursors (F))))
       and then (if
                    Structural_Valid (Cursors (F_Version))
                 then
