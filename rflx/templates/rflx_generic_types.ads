@@ -44,6 +44,9 @@ is
                               "Bit_Length'Last must be equal to Length'Last * 8");
 
    subtype U64 is {prefix}RFLX_Arithmetic.U64;
+
+   use type U64;
+
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 
    function To_Index (Bit_Idx : Bit_Length) return Index is
@@ -68,38 +71,43 @@ is
 
    type Byte_Order is (High_Order_First, Low_Order_First);
 
-   generic
-      type Value is mod <>;
    function Extract
       (Buffer : Bytes_Ptr;
        First  : Index;
        Last   : Index;
        Off    : Offset;
-       BO     : Byte_Order) return Value
+       Size   : Positive;
+       BO     : Byte_Order) return U64
    with
      Pre =>
        (Buffer /= null
         and then First >= Buffer'First
         and then Last <= Buffer'Last
-        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length
-        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size <= Natural'Size
+        and then Size in 1 .. U64'Size
+        and then First <= Last
+        and then Last - First <= Index'Last - 1
+        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)
+        and then (Offset'Pos (Off) + Size - 1) / Byte'Size <= Natural'Size
         and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
 
-   generic
-      type Value is mod <>;
    procedure Insert
-      (Val    : Value;
+      (Val    : U64;
        Buffer : Bytes_Ptr;
        First  : Index;
        Last   : Index;
        Off    : Offset;
+       Size   : Positive;
        BO     : Byte_Order)
    with
      Pre =>
        (Buffer /= null
         and then First >= Buffer'First
         and then Last <= Buffer'Last
-        and then (Offset'Pos (Off) + Value'Size - 1) / Byte'Size < Buffer.all (First .. Last)'Length),
+        and then Size in 1 .. U64'Size
+        and then (if Size < U64'Size then Val < 2**Size)
+        and then First <= Last
+        and then Last - First <= Index'Last - 1
+        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
      Post =>
        (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
 

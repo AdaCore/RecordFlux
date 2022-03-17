@@ -540,6 +540,20 @@ def test_access_parameter() -> None:
     assert str(ada.AccessParameter("A", "B", constant=True)) == "A : access constant B"
 
 
+def test_generic_procedure_instantiation() -> None:
+    assert (
+        str(ada.GenericProcedureInstantiation("A", ada.ProcedureSpecification("B"), ["C", "D"]))
+        == "procedure A is new B (C, D);"
+    )
+
+
+def test_generic_function_instantiation() -> None:
+    assert (
+        str(ada.GenericFunctionInstantiation("A", ada.FunctionSpecification("B", "T"), ["C", "D"]))
+        == "function A is new B (C, D);"
+    )
+
+
 def test_subprogram_renaming_declaration() -> None:
     assert (
         str(ada.SubprogramRenamingDeclaration(ada.ProcedureSpecification("A"), "B"))

@@ -209,6 +209,19 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
     utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
 
+def test_64_bit_intger(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """
+           package Test is
+
+              type T is mod 2**64;
+
+           end Test;
+        """,
+        tmp_path,
+    )
+
+
 def test_message_fixed_size_sequence(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         """
@@ -452,6 +465,47 @@ def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
                           with Size => Length_2 * 256 + Length_1
                           if (Length_2 * 256 + Length_1) mod 8 = 0;
                     Payload : Opaque;
+                 end message;
+
+           end Test;
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_message_field_conditions_on_corresponding_fields(tmp_path: Path) -> None:
+    spec = """
+           package Test is
+
+              type T is mod 2 ** 8;
+
+              type M is
+                 message
+                    A : T
+                       if A = 1;
+                    B : Opaque
+                       with Size => A * 16
+                       if B = [2, 3] and B'Size = 16;
+                    C : T;
+                 end message;
+
+           end Test;
+        """
+    utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_message_field_conditions_on_subsequent_fields(tmp_path: Path) -> None:
+    spec = """
+           package Test is
+
+              type T is mod 2 ** 8;
+
+              type M is
+                 message
+                    A : T;
+                    B : Opaque
+                       with Size => A * 16;
+                    C : T
+                       if A = 1 and B = [2, 3] and B'Size = 16;
                  end message;
 
            end Test;

@@ -224,13 +224,13 @@ def test_substitution_relation_aggregate(
             expr.Variable("Value"),
             expr.TRUE,
             expr.Call("RFLX_Types::U64", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::U64", [expr.Call("To_Base", [expr.TRUE])]),
+            expr.Call("RFLX_Types::U64", [expr.Call("To_U64", [expr.TRUE])]),
         ),
         (
             expr.FALSE,
             expr.Variable("Value"),
             expr.Call("RFLX_Types::U64", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::U64", [expr.Call("To_Base", [expr.FALSE])]),
+            expr.Call("RFLX_Types::U64", [expr.Call("To_U64", [expr.FALSE])]),
         ),
     ],
 )
@@ -282,16 +282,6 @@ def test_prefixed_type_identifier() -> None:
     assert common.prefixed_type_identifier(ada.ID("Modular"), "P") == ada.ID("P.Modular")
     for t in BUILTIN_TYPES:
         assert common.prefixed_type_identifier(ada.ID(t), "P") == t.name
-
-
-def test_base_type_name() -> None:
-    assert common.base_type_name(models.MODULAR_INTEGER) == ada.ID("Modular")
-    assert common.base_type_name(models.RANGE_INTEGER) == ada.ID("Range_Integer_Base")
-
-
-def test_full_base_type_name() -> None:
-    assert common.full_base_type_name(models.MODULAR_INTEGER) == ada.ID("P.Modular")
-    assert common.full_base_type_name(models.RANGE_INTEGER) == ada.ID("P.Range_Integer_Base")
 
 
 DUMMY_SESSION = Session(
@@ -2581,31 +2571,30 @@ TEST_CASES = {
             "rflx-p.adb": "",
             "rflx-p.ads": """pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.P with
   SPARK_Mode
 is
 
-   type Range_Integer_Base is mod 2**8 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
-
    type Range_Integer is range 1 .. 100 with
      Size =>
        8;
 
-   function Valid (Val : RFLX.P.Range_Integer_Base) return Boolean is
+   use type RFLX.RFLX_Types.U64;
+
+   function Valid_Range_Integer (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function To_Base (Val : RFLX.P.Range_Integer) return RFLX.P.Range_Integer_Base is
-     (RFLX.P.Range_Integer_Base (Val));
+   function To_U64 (Val : RFLX.P.Range_Integer) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function To_Actual (Val : RFLX.P.Range_Integer_Base) return RFLX.P.Range_Integer is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.P.Range_Integer is
      (RFLX.P.Range_Integer (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_Range_Integer (Val);
 
 end RFLX.P;
 """,

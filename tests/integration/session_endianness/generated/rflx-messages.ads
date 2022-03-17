@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.Messages with
   SPARK_Mode
@@ -9,41 +10,29 @@ is
      Size =>
        32;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   use type RFLX.RFLX_Types.U64;
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function Valid_Integer (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 4294967295);
 
-   function Valid (Val : RFLX.Messages.Integer) return Boolean is
-     (True);
+   function To_U64 (Val : RFLX.Messages.Integer) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.Messages.Integer) return RFLX.Messages.Integer is
-     (Val);
-
-   function To_Actual (Val : RFLX.Messages.Integer) return RFLX.Messages.Integer is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Messages.Integer is
+     (RFLX.Messages.Integer (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type Enum_T_Base is mod 2**32;
+       Valid_Integer (Val);
 
    type Enum_T is (Enum_A, Enum_B, Enum_C, Enum_D, Enum_E, Enum_F, Enum_G) with
      Size =>
        32;
    for Enum_T use (Enum_A => 0, Enum_B => 1, Enum_C => 2, Enum_D => 4, Enum_E => 8, Enum_F => 16, Enum_G => 32);
 
-   function Valid (Val : RFLX.Messages.Enum_T_Base) return Boolean is
-     ((case Val is
-          when 0 | 1 | 2 | 4 | 8 | 16 | 32 =>
-             True,
-          when others =>
-             False));
+   function Valid_Enum_T (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val in 0 | 1 | 2 | 4 | 8 | 16 | 32);
 
-   function To_Base (Enum : RFLX.Messages.Enum_T) return RFLX.Messages.Enum_T_Base is
+   function To_U64 (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when Enum_A =>
              0,
@@ -62,7 +51,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.Messages.Enum_T_Base) return RFLX.Messages.Enum_T is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Messages.Enum_T is
      ((case Val is
           when 0 =>
              Enum_A,
@@ -82,7 +71,7 @@ is
              RFLX.Messages.Enum_T'Last))
     with
      Pre =>
-       Valid (Val);
+       Valid_Enum_T (Val);
 
    pragma Warnings (On, "unreachable branch");
 

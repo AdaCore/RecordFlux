@@ -10,6 +10,8 @@ is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
 
+   pragma Warnings (Off, """U64"" is already use-visible through previous use_type_clause");
+
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
    use type RFLX_Types.Bytes;
@@ -27,6 +29,8 @@ is
    use type RFLX_Types.Offset;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (On, """U64"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
@@ -53,44 +57,6 @@ is
        and Last < RFLX_Types.Bit_Index'Last
        and First rem RFLX_Types.Byte'Size = 1
        and Last rem RFLX_Types.Byte'Size = 0;
-
-   type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
-      record
-         case Fld is
-            when F_Initial | F_Data | F_Final =>
-               null;
-            when F_Tag =>
-               Tag_Value : RFLX.ICMP.Tag_Base;
-            when F_Code_Destination_Unreachable =>
-               Code_Destination_Unreachable_Value : RFLX.ICMP.Code_Destination_Unreachable_Base;
-            when F_Code_Redirect =>
-               Code_Redirect_Value : RFLX.ICMP.Code_Redirect_Base;
-            when F_Code_Time_Exceeded =>
-               Code_Time_Exceeded_Value : RFLX.ICMP.Code_Time_Exceeded_Base;
-            when F_Code_Zero =>
-               Code_Zero_Value : RFLX.ICMP.Code_Zero_Base;
-            when F_Checksum =>
-               Checksum_Value : RFLX.ICMP.Checksum;
-            when F_Gateway_Internet_Address =>
-               Gateway_Internet_Address_Value : RFLX.ICMP.Gateway_Internet_Address;
-            when F_Identifier =>
-               Identifier_Value : RFLX.ICMP.Identifier;
-            when F_Pointer =>
-               Pointer_Value : RFLX.ICMP.Pointer;
-            when F_Unused_32 =>
-               Unused_32_Value : RFLX.ICMP.Unused_32_Base;
-            when F_Sequence_Number =>
-               Sequence_Number_Value : RFLX.ICMP.Sequence_Number;
-            when F_Unused_24 =>
-               Unused_24_Value : RFLX.ICMP.Unused_24_Base;
-            when F_Originate_Timestamp =>
-               Originate_Timestamp_Value : RFLX.ICMP.Timestamp;
-            when F_Receive_Timestamp =>
-               Receive_Timestamp_Value : RFLX.ICMP.Timestamp;
-            when F_Transmit_Timestamp =>
-               Transmit_Timestamp_Value : RFLX.ICMP.Timestamp;
-         end case;
-      end record;
 
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
      Pre =>
@@ -279,6 +245,14 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
+   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        Valid_Predecessor (Ctx, Fld),
@@ -289,11 +263,11 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Val.Fld in Field'Range
-       and Valid_Predecessor (Ctx, Val.Fld),
+       and Valid_Predecessor (Ctx, Fld)
+       and Valid_Value (Fld, Val),
      Post =>
        True;
 
@@ -503,8 +477,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Tag)
-       and then Field_Condition (Ctx, (F_Tag, To_Base (Val)))
-       and then True
+       and then RFLX.ICMP.Valid_Tag (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Tag, To_U64 (Val))
        and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag),
      Post =>
        Has_Buffer (Ctx)
@@ -526,29 +500,29 @@ is
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
             then
                Predecessor (Ctx, F_Code_Destination_Unreachable) = F_Tag
                and Valid_Next (Ctx, F_Code_Destination_Unreachable))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
             then
                Predecessor (Ctx, F_Code_Redirect) = F_Tag
                and Valid_Next (Ctx, F_Code_Redirect))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
             then
                Predecessor (Ctx, F_Code_Time_Exceeded) = F_Tag
                and Valid_Next (Ctx, F_Code_Time_Exceeded))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
             then
                Predecessor (Ctx, F_Code_Zero) = F_Tag
                and Valid_Next (Ctx, F_Code_Zero))
@@ -564,8 +538,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Destination_Unreachable)
-       and then Field_Condition (Ctx, (F_Code_Destination_Unreachable, To_Base (Val)))
-       and then True
+       and then RFLX.ICMP.Valid_Code_Destination_Unreachable (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Code_Destination_Unreachable, To_U64 (Val))
        and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Size (Ctx, F_Code_Destination_Unreachable),
      Post =>
        Has_Buffer (Ctx)
@@ -602,8 +576,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Redirect)
-       and then Field_Condition (Ctx, (F_Code_Redirect, To_Base (Val)))
-       and then True
+       and then RFLX.ICMP.Valid_Code_Redirect (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Code_Redirect, To_U64 (Val))
        and then Available_Space (Ctx, F_Code_Redirect) >= Field_Size (Ctx, F_Code_Redirect),
      Post =>
        Has_Buffer (Ctx)
@@ -639,8 +613,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Time_Exceeded)
-       and then Field_Condition (Ctx, (F_Code_Time_Exceeded, To_Base (Val)))
-       and then True
+       and then RFLX.ICMP.Valid_Code_Time_Exceeded (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Code_Time_Exceeded, To_U64 (Val))
        and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Size (Ctx, F_Code_Time_Exceeded),
      Post =>
        Has_Buffer (Ctx)
@@ -675,8 +649,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Zero)
-       and then Field_Condition (Ctx, (F_Code_Zero, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Code_Zero (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Code_Zero, To_U64 (Val))
        and then Available_Space (Ctx, F_Code_Zero) >= Field_Size (Ctx, F_Code_Zero),
      Post =>
        Has_Buffer (Ctx)
@@ -709,8 +683,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Checksum)
-       and then Field_Condition (Ctx, (F_Checksum, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Checksum (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Checksum, To_U64 (Val))
        and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum),
      Post =>
        Has_Buffer (Ctx)
@@ -727,29 +701,29 @@ is
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
             then
                Predecessor (Ctx, F_Gateway_Internet_Address) = F_Checksum
                and Valid_Next (Ctx, F_Gateway_Internet_Address))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
             then
                Predecessor (Ctx, F_Identifier) = F_Checksum
                and Valid_Next (Ctx, F_Identifier))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
             then
                Predecessor (Ctx, F_Pointer) = F_Checksum
                and Valid_Next (Ctx, F_Pointer))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
             then
                Predecessor (Ctx, F_Unused_32) = F_Checksum
                and Valid_Next (Ctx, F_Unused_32))
@@ -768,8 +742,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Gateway_Internet_Address)
-       and then Field_Condition (Ctx, (F_Gateway_Internet_Address, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Gateway_Internet_Address (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Gateway_Internet_Address, To_U64 (Val))
        and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Size (Ctx, F_Gateway_Internet_Address),
      Post =>
        Has_Buffer (Ctx)
@@ -802,8 +776,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Identifier)
-       and then Field_Condition (Ctx, (F_Identifier, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Identifier (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Identifier, To_U64 (Val))
        and then Available_Space (Ctx, F_Identifier) >= Field_Size (Ctx, F_Identifier),
      Post =>
        Has_Buffer (Ctx)
@@ -835,8 +809,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Pointer)
-       and then Field_Condition (Ctx, (F_Pointer, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Pointer (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Pointer, To_U64 (Val))
        and then Available_Space (Ctx, F_Pointer) >= Field_Size (Ctx, F_Pointer),
      Post =>
        Has_Buffer (Ctx)
@@ -867,8 +841,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Unused_32)
-       and then Field_Condition (Ctx, (F_Unused_32, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Unused_32 (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Unused_32, To_U64 (Val))
        and then Available_Space (Ctx, F_Unused_32) >= Field_Size (Ctx, F_Unused_32),
      Post =>
        Has_Buffer (Ctx)
@@ -897,8 +871,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Sequence_Number)
-       and then Field_Condition (Ctx, (F_Sequence_Number, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Sequence_Number (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Sequence_Number, To_U64 (Val))
        and then Available_Space (Ctx, F_Sequence_Number) >= Field_Size (Ctx, F_Sequence_Number),
      Post =>
        Has_Buffer (Ctx)
@@ -911,14 +885,14 @@ is
        and Invalid (Ctx, F_Receive_Timestamp)
        and Invalid (Ctx, F_Transmit_Timestamp)
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
             then
                Predecessor (Ctx, F_Data) = F_Sequence_Number
                and Valid_Next (Ctx, F_Data))
        and (if
-               RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-               or RFLX_Types.U64 (To_Base (Get_Tag (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
+               RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+               or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
             then
                Predecessor (Ctx, F_Originate_Timestamp) = F_Sequence_Number
                and Valid_Next (Ctx, F_Originate_Timestamp))
@@ -939,8 +913,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Unused_24)
-       and then Field_Condition (Ctx, (F_Unused_24, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Unused_24 (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Unused_24, To_U64 (Val))
        and then Available_Space (Ctx, F_Unused_24) >= Field_Size (Ctx, F_Unused_24),
      Post =>
        Has_Buffer (Ctx)
@@ -968,8 +942,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Originate_Timestamp)
-       and then Field_Condition (Ctx, (F_Originate_Timestamp, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Timestamp (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Originate_Timestamp, To_U64 (Val))
        and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Size (Ctx, F_Originate_Timestamp),
      Post =>
        Has_Buffer (Ctx)
@@ -998,8 +972,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Receive_Timestamp)
-       and then Field_Condition (Ctx, (F_Receive_Timestamp, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Timestamp (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Receive_Timestamp, To_U64 (Val))
        and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Size (Ctx, F_Receive_Timestamp),
      Post =>
        Has_Buffer (Ctx)
@@ -1027,8 +1001,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Transmit_Timestamp)
-       and then Field_Condition (Ctx, (F_Transmit_Timestamp, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.ICMP.Valid_Timestamp (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Transmit_Timestamp, To_U64 (Val))
        and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Size (Ctx, F_Transmit_Timestamp),
      Post =>
        Has_Buffer (Ctx)
@@ -1055,7 +1029,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Field_Condition (Ctx, (Fld => F_Data))
+       and then Field_Condition (Ctx, F_Data, 0)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
        and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
@@ -1112,7 +1086,7 @@ is
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Data, Data'Length)
-       and then Field_Condition (Ctx, (Fld => F_Data)),
+       and then Field_Condition (Ctx, F_Data, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -1177,50 +1151,6 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
-     ((case Val.Fld is
-          when F_Tag =>
-             Valid (Val.Tag_Value),
-          when F_Code_Destination_Unreachable =>
-             Valid (Val.Code_Destination_Unreachable_Value),
-          when F_Code_Redirect =>
-             Valid (Val.Code_Redirect_Value),
-          when F_Code_Time_Exceeded =>
-             Valid (Val.Code_Time_Exceeded_Value),
-          when F_Code_Zero =>
-             Valid (Val.Code_Zero_Value),
-          when F_Checksum =>
-             Valid (Val.Checksum_Value),
-          when F_Gateway_Internet_Address =>
-             Valid (Val.Gateway_Internet_Address_Value),
-          when F_Identifier =>
-             Valid (Val.Identifier_Value),
-          when F_Pointer =>
-             Valid (Val.Pointer_Value),
-          when F_Unused_32 =>
-             Valid (Val.Unused_32_Value),
-          when F_Sequence_Number =>
-             Valid (Val.Sequence_Number_Value),
-          when F_Unused_24 =>
-             Valid (Val.Unused_24_Value),
-          when F_Originate_Timestamp =>
-             Valid (Val.Originate_Timestamp_Value),
-          when F_Data =>
-             True,
-          when F_Receive_Timestamp =>
-             Valid (Val.Receive_Timestamp_Value),
-          when F_Transmit_Timestamp =>
-             Valid (Val.Transmit_Timestamp_Value),
-          when F_Initial | F_Final =>
-             False))
-    with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          Predecessor : Virtual_Field := F_Final;
@@ -1228,13 +1158,11 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : Field_Dependent_Value := (Fld => F_Final);
+               Value : RFLX_Types.U64 := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
-      end record with
-     Dynamic_Predicate =>
-       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
+      end record;
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -1270,45 +1198,45 @@ private
       and then Last rem RFLX_Types.Byte'Size = 0
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
-      and then (for all F in Field'First .. Field'Last =>
+      and then (for all F in Field =>
                    (if
                        Structural_Valid (Cursors (F))
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Verified_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
-                       and Cursors (F).Value.Fld = F))
+                       and Valid_Value (F, Cursors (F).Value)))
       and then ((if
                     Structural_Valid (Cursors (F_Code_Destination_Unreachable))
                  then
                     (Valid (Cursors (F_Tag))
                      and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
-                     and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))))
+                     and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))))
                 and then (if
                              Structural_Valid (Cursors (F_Code_Redirect))
                           then
                              (Valid (Cursors (F_Tag))
                               and then Cursors (F_Code_Redirect).Predecessor = F_Tag
-                              and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))))
+                              and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))))
                 and then (if
                              Structural_Valid (Cursors (F_Code_Time_Exceeded))
                           then
                              (Valid (Cursors (F_Tag))
                               and then Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag
-                              and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))))
+                              and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))))
                 and then (if
                              Structural_Valid (Cursors (F_Code_Zero))
                           then
                              (Valid (Cursors (F_Tag))
                               and then Cursors (F_Code_Zero).Predecessor = F_Tag
-                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))))
+                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))))
                 and then (if
                              Structural_Valid (Cursors (F_Checksum))
                           then
@@ -1325,32 +1253,32 @@ private
                           then
                              (Valid (Cursors (F_Checksum))
                               and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                              and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))))
+                              and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))))
                 and then (if
                              Structural_Valid (Cursors (F_Identifier))
                           then
                              (Valid (Cursors (F_Checksum))
                               and then Cursors (F_Identifier).Predecessor = F_Checksum
-                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)))))
+                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)))))
                 and then (if
                              Structural_Valid (Cursors (F_Pointer))
                           then
                              (Valid (Cursors (F_Checksum))
                               and then Cursors (F_Pointer).Predecessor = F_Checksum
-                              and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))))
+                              and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))))
                 and then (if
                              Structural_Valid (Cursors (F_Unused_32))
                           then
                              (Valid (Cursors (F_Checksum))
                               and then Cursors (F_Unused_32).Predecessor = F_Checksum
-                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)))))
+                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)))))
                 and then (if
                              Structural_Valid (Cursors (F_Sequence_Number))
                           then
@@ -1366,8 +1294,8 @@ private
                           then
                              (Valid (Cursors (F_Sequence_Number))
                               and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                        or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)))))
+                              and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                        or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)))))
                 and then (if
                              Structural_Valid (Cursors (F_Data))
                           then
@@ -1375,8 +1303,8 @@ private
                               and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address)
                              or (Valid (Cursors (F_Sequence_Number))
                                  and then Cursors (F_Data).Predecessor = F_Sequence_Number
-                                 and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                           or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))))
+                                 and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                           or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))))
                              or (Valid (Cursors (F_Unused_24))
                                  and then Cursors (F_Data).Predecessor = F_Unused_24)
                              or (Valid (Cursors (F_Unused_32))
@@ -1421,27 +1349,27 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Tag))
                 then
-                   Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = RFLX.ICMP.Tag_Base'Size
+                   Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
                    and then Cursors (F_Tag).Predecessor = F_Initial
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Code_Destination_Unreachable))
-                                and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
+                                and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
                              then
-                                Cursors (F_Code_Destination_Unreachable).Last - Cursors (F_Code_Destination_Unreachable).First + 1 = RFLX.ICMP.Code_Destination_Unreachable_Base'Size
+                                Cursors (F_Code_Destination_Unreachable).Last - Cursors (F_Code_Destination_Unreachable).First + 1 = 8
                                 and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
                                 and then Cursors (F_Code_Destination_Unreachable).First = Cursors (F_Tag).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Checksum))
                                           then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
+                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
                                              and then Cursors (F_Checksum).Predecessor = F_Code_Destination_Unreachable
                                              and then Cursors (F_Checksum).First = Cursors (F_Code_Destination_Unreachable).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
                                                        then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
+                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
                                                           and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
                                                           and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1452,61 +1380,61 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)))
                                                        then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
+                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
                                                           and then Cursors (F_Identifier).Predecessor = F_Checksum
                                                           and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Sequence_Number))
                                                                     then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
+                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
                                                                        and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
                                                                        and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))
                                                                                  then
                                                                                     Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)))
                                                                                  then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
                                                                                     and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Receive_Timestamp))
                                                                                               then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
                                                                                                  and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
                                                                                                  and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Transmit_Timestamp))
                                                                                                            then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
                                                                                                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
                                                                                                               and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Pointer))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
                                                        then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
+                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
                                                           and then Cursors (F_Pointer).Predecessor = F_Checksum
                                                           and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Unused_24))
                                                                     then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
+                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
                                                                        and then Cursors (F_Unused_24).Predecessor = F_Pointer
                                                                        and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
                                                                        and then (if
@@ -1517,11 +1445,11 @@ private
                                                                                     and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)))
                                                        then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
+                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
                                                           and then Cursors (F_Unused_32).Predecessor = F_Checksum
                                                           and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1532,22 +1460,22 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
                    and then (if
                                 Structural_Valid (Cursors (F_Code_Redirect))
-                                and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+                                and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
                              then
-                                Cursors (F_Code_Redirect).Last - Cursors (F_Code_Redirect).First + 1 = RFLX.ICMP.Code_Redirect_Base'Size
+                                Cursors (F_Code_Redirect).Last - Cursors (F_Code_Redirect).First + 1 = 8
                                 and then Cursors (F_Code_Redirect).Predecessor = F_Tag
                                 and then Cursors (F_Code_Redirect).First = Cursors (F_Tag).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Checksum))
                                           then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
+                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
                                              and then Cursors (F_Checksum).Predecessor = F_Code_Redirect
                                              and then Cursors (F_Checksum).First = Cursors (F_Code_Redirect).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
                                                        then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
+                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
                                                           and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
                                                           and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1558,61 +1486,61 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)))
                                                        then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
+                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
                                                           and then Cursors (F_Identifier).Predecessor = F_Checksum
                                                           and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Sequence_Number))
                                                                     then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
+                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
                                                                        and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
                                                                        and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))
                                                                                  then
                                                                                     Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)))
                                                                                  then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
                                                                                     and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Receive_Timestamp))
                                                                                               then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
                                                                                                  and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
                                                                                                  and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Transmit_Timestamp))
                                                                                                            then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
                                                                                                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
                                                                                                               and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Pointer))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
                                                        then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
+                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
                                                           and then Cursors (F_Pointer).Predecessor = F_Checksum
                                                           and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Unused_24))
                                                                     then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
+                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
                                                                        and then Cursors (F_Unused_24).Predecessor = F_Pointer
                                                                        and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
                                                                        and then (if
@@ -1623,11 +1551,11 @@ private
                                                                                     and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)))
                                                        then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
+                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
                                                           and then Cursors (F_Unused_32).Predecessor = F_Checksum
                                                           and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1638,22 +1566,22 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
                    and then (if
                                 Structural_Valid (Cursors (F_Code_Time_Exceeded))
-                                and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
+                                and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
                              then
-                                Cursors (F_Code_Time_Exceeded).Last - Cursors (F_Code_Time_Exceeded).First + 1 = RFLX.ICMP.Code_Time_Exceeded_Base'Size
+                                Cursors (F_Code_Time_Exceeded).Last - Cursors (F_Code_Time_Exceeded).First + 1 = 8
                                 and then Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag
                                 and then Cursors (F_Code_Time_Exceeded).First = Cursors (F_Tag).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Checksum))
                                           then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
+                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
                                              and then Cursors (F_Checksum).Predecessor = F_Code_Time_Exceeded
                                              and then Cursors (F_Checksum).First = Cursors (F_Code_Time_Exceeded).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
                                                        then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
+                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
                                                           and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
                                                           and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1664,61 +1592,61 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)))
                                                        then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
+                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
                                                           and then Cursors (F_Identifier).Predecessor = F_Checksum
                                                           and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Sequence_Number))
                                                                     then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
+                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
                                                                        and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
                                                                        and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))
                                                                                  then
                                                                                     Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)))
                                                                                  then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
                                                                                     and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Receive_Timestamp))
                                                                                               then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
                                                                                                  and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
                                                                                                  and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Transmit_Timestamp))
                                                                                                            then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
                                                                                                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
                                                                                                               and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Pointer))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
                                                        then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
+                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
                                                           and then Cursors (F_Pointer).Predecessor = F_Checksum
                                                           and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Unused_24))
                                                                     then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
+                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
                                                                        and then Cursors (F_Unused_24).Predecessor = F_Pointer
                                                                        and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
                                                                        and then (if
@@ -1729,11 +1657,11 @@ private
                                                                                     and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)))
                                                        then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
+                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
                                                           and then Cursors (F_Unused_32).Predecessor = F_Checksum
                                                           and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1744,29 +1672,29 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
                    and then (if
                                 Structural_Valid (Cursors (F_Code_Zero))
-                                and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                          or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
+                                and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                          or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))
                              then
-                                Cursors (F_Code_Zero).Last - Cursors (F_Code_Zero).First + 1 = RFLX.ICMP.Code_Zero_Base'Size
+                                Cursors (F_Code_Zero).Last - Cursors (F_Code_Zero).First + 1 = 8
                                 and then Cursors (F_Code_Zero).Predecessor = F_Tag
                                 and then Cursors (F_Code_Zero).First = Cursors (F_Tag).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Checksum))
                                           then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = RFLX.ICMP.Checksum'Size
+                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
                                              and then Cursors (F_Checksum).Predecessor = F_Code_Zero
                                              and then Cursors (F_Checksum).First = Cursors (F_Code_Zero).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
                                                        then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = RFLX.ICMP.Gateway_Internet_Address'Size
+                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
                                                           and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
                                                           and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1777,61 +1705,61 @@ private
                                                                        and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)))
                                                        then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = RFLX.ICMP.Identifier'Size
+                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
                                                           and then Cursors (F_Identifier).Predecessor = F_Checksum
                                                           and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Sequence_Number))
                                                                     then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = RFLX.ICMP.Sequence_Number'Size
+                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
                                                                        and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
                                                                        and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)))
                                                                                  then
                                                                                     Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
                                                                                     and then Cursors (F_Data).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
                                                                        and then (if
                                                                                     Structural_Valid (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)))
+                                                                                    and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                                                                                              or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)))
                                                                                  then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
                                                                                     and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
                                                                                     and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
                                                                                     and then (if
                                                                                                  Structural_Valid (Cursors (F_Receive_Timestamp))
                                                                                               then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
                                                                                                  and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
                                                                                                  and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Transmit_Timestamp))
                                                                                                            then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = RFLX.ICMP.Timestamp'Size
+                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
                                                                                                               and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
                                                                                                               and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Pointer))
-                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
+                                                          and then RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
                                                        then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = RFLX.ICMP.Pointer'Size
+                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
                                                           and then Cursors (F_Pointer).Predecessor = F_Checksum
                                                           and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Unused_24))
                                                                     then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = RFLX.ICMP.Unused_24_Base'Size
+                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
                                                                        and then Cursors (F_Unused_24).Predecessor = F_Pointer
                                                                        and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
                                                                        and then (if
@@ -1842,11 +1770,11 @@ private
                                                                                     and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
                                              and then (if
                                                           Structural_Valid (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)))
+                                                          and then (RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                                                                    or RFLX_Types.U64 (Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)))
                                                        then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = RFLX.ICMP.Unused_32_Base'Size
+                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
                                                           and then Cursors (F_Unused_32).Predecessor = F_Checksum
                                                           and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
                                                           and then (if
@@ -1854,10 +1782,7 @@ private
                                                                     then
                                                                        Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
                                                                        and then Cursors (F_Data).Predecessor = F_Unused_32
-                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))))
-    with
-     Post =>
-       True;
+                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))));
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 
@@ -1893,6 +1818,39 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
+   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean is
+     ((case Fld is
+          when F_Tag =>
+             RFLX.ICMP.Valid_Tag (Val),
+          when F_Code_Destination_Unreachable =>
+             RFLX.ICMP.Valid_Code_Destination_Unreachable (Val),
+          when F_Code_Redirect =>
+             RFLX.ICMP.Valid_Code_Redirect (Val),
+          when F_Code_Time_Exceeded =>
+             RFLX.ICMP.Valid_Code_Time_Exceeded (Val),
+          when F_Code_Zero =>
+             RFLX.ICMP.Valid_Code_Zero (Val),
+          when F_Checksum =>
+             RFLX.ICMP.Valid_Checksum (Val),
+          when F_Gateway_Internet_Address =>
+             RFLX.ICMP.Valid_Gateway_Internet_Address (Val),
+          when F_Identifier =>
+             RFLX.ICMP.Valid_Identifier (Val),
+          when F_Pointer =>
+             RFLX.ICMP.Valid_Pointer (Val),
+          when F_Unused_32 =>
+             RFLX.ICMP.Valid_Unused_32 (Val),
+          when F_Sequence_Number =>
+             RFLX.ICMP.Valid_Sequence_Number (Val),
+          when F_Unused_24 =>
+             RFLX.ICMP.Valid_Unused_24 (Val),
+          when F_Originate_Timestamp =>
+             RFLX.ICMP.Valid_Timestamp (Val),
+          when F_Data =>
+             True,
+          when F_Receive_Timestamp | F_Transmit_Timestamp =>
+             RFLX.ICMP.Valid_Timestamp (Val)));
+
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial | F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero | F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 | F_Unused_24 | F_Originate_Timestamp | F_Data | F_Receive_Timestamp | F_Transmit_Timestamp | F_Final =>
@@ -1900,124 +1858,112 @@ private
           when F_Tag =>
              (case Fld is
                  when F_Code_Destination_Unreachable =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable)),
                  when F_Code_Redirect =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect)),
                  when F_Code_Time_Exceeded =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded)),
                  when F_Code_Zero =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)),
                  when others =>
                     False),
           when F_Checksum =>
              (case Fld is
                  when F_Gateway_Internet_Address =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect)),
                  when F_Identifier =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply)),
                  when F_Pointer =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem)),
                  when F_Unused_32 =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)),
                  when others =>
                     False),
           when F_Sequence_Number =>
              (case Fld is
                  when F_Data =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)),
                  when F_Originate_Timestamp =>
-                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)),
+                    RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)),
                  when others =>
                     False)));
 
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
-     ((case Val.Fld is
-          when F_Initial =>
-             True,
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean is
+     ((case Fld is
           when F_Tag =>
-             RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-             or RFLX_Types.U64 (Val.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request)),
+             Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request)),
           when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              True,
           when F_Checksum =>
-             RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Redirect))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Parameter_Problem))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Time_Exceeded))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Destination_Unreachable))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Source_Quench)),
+             RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench)),
           when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
              True,
           when F_Sequence_Number =>
-             RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Reply))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Echo_Request))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Msg))
-             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Timestamp_Reply)),
+             RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply)),
           when F_Unused_24 | F_Originate_Timestamp | F_Data | F_Receive_Timestamp | F_Transmit_Timestamp =>
-             True,
-          when F_Final =>
-             False));
+             True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      ((case Fld is
-          when F_Tag =>
-             RFLX.ICMP.Tag_Base'Size,
-          when F_Code_Destination_Unreachable =>
-             RFLX.ICMP.Code_Destination_Unreachable_Base'Size,
-          when F_Code_Redirect =>
-             RFLX.ICMP.Code_Redirect_Base'Size,
-          when F_Code_Time_Exceeded =>
-             RFLX.ICMP.Code_Time_Exceeded_Base'Size,
-          when F_Code_Zero =>
-             RFLX.ICMP.Code_Zero_Base'Size,
+          when F_Tag | F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             8,
           when F_Checksum =>
-             RFLX.ICMP.Checksum'Size,
+             16,
           when F_Gateway_Internet_Address =>
-             RFLX.ICMP.Gateway_Internet_Address'Size,
+             32,
           when F_Identifier =>
-             RFLX.ICMP.Identifier'Size,
+             16,
           when F_Pointer =>
-             RFLX.ICMP.Pointer'Size,
+             8,
           when F_Unused_32 =>
-             RFLX.ICMP.Unused_32_Base'Size,
+             32,
           when F_Sequence_Number =>
-             RFLX.ICMP.Sequence_Number'Size,
+             16,
           when F_Unused_24 =>
-             RFLX.ICMP.Unused_24_Base'Size,
+             24,
           when F_Originate_Timestamp =>
-             RFLX.ICMP.Timestamp'Size,
+             32,
           when F_Data =>
              (if
                  Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address
@@ -2025,8 +1971,8 @@ private
                  224
               elsif
                  Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
-                 and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Reply))
-                           or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Request)))
+                 and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.ICMP.Echo_Reply))
+                           or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.ICMP.Echo_Request)))
               then
                  RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
               elsif
@@ -2040,7 +1986,7 @@ private
               else
                  RFLX_Types.Unreachable),
           when F_Receive_Timestamp | F_Transmit_Timestamp =>
-             RFLX.ICMP.Timestamp'Size));
+             32));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Tag then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
@@ -2137,15 +2083,15 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Sequence_Number)
-          and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))))
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))))
       or Valid (Ctx, F_Transmit_Timestamp));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Sequence_Number)
-          and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Request))
-                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.U64 (To_Base (RFLX.ICMP.Information_Reply))))
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                    or RFLX_Types.U64 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))))
       or Valid (Ctx, F_Transmit_Timestamp));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
@@ -2153,56 +2099,56 @@ private
           Incomplete (Ctx, F)));
 
    function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag is
-     (To_Actual (Ctx.Cursors (F_Tag).Value.Tag_Value));
+     (To_Actual (Ctx.Cursors (F_Tag).Value));
 
    function Get_Code_Destination_Unreachable (Ctx : Context) return RFLX.ICMP.Code_Destination_Unreachable is
-     (To_Actual (Ctx.Cursors (F_Code_Destination_Unreachable).Value.Code_Destination_Unreachable_Value));
+     (To_Actual (Ctx.Cursors (F_Code_Destination_Unreachable).Value));
 
    function Get_Code_Redirect (Ctx : Context) return RFLX.ICMP.Code_Redirect is
-     (To_Actual (Ctx.Cursors (F_Code_Redirect).Value.Code_Redirect_Value));
+     (To_Actual (Ctx.Cursors (F_Code_Redirect).Value));
 
    function Get_Code_Time_Exceeded (Ctx : Context) return RFLX.ICMP.Code_Time_Exceeded is
-     (To_Actual (Ctx.Cursors (F_Code_Time_Exceeded).Value.Code_Time_Exceeded_Value));
+     (To_Actual (Ctx.Cursors (F_Code_Time_Exceeded).Value));
 
    function Get_Code_Zero (Ctx : Context) return RFLX.ICMP.Code_Zero is
-     (To_Actual (Ctx.Cursors (F_Code_Zero).Value.Code_Zero_Value));
+     (To_Actual (Ctx.Cursors (F_Code_Zero).Value));
 
    function Get_Checksum (Ctx : Context) return RFLX.ICMP.Checksum is
-     (To_Actual (Ctx.Cursors (F_Checksum).Value.Checksum_Value));
+     (To_Actual (Ctx.Cursors (F_Checksum).Value));
 
    function Get_Gateway_Internet_Address (Ctx : Context) return RFLX.ICMP.Gateway_Internet_Address is
-     (To_Actual (Ctx.Cursors (F_Gateway_Internet_Address).Value.Gateway_Internet_Address_Value));
+     (To_Actual (Ctx.Cursors (F_Gateway_Internet_Address).Value));
 
    function Get_Identifier (Ctx : Context) return RFLX.ICMP.Identifier is
-     (To_Actual (Ctx.Cursors (F_Identifier).Value.Identifier_Value));
+     (To_Actual (Ctx.Cursors (F_Identifier).Value));
 
    function Get_Pointer (Ctx : Context) return RFLX.ICMP.Pointer is
-     (To_Actual (Ctx.Cursors (F_Pointer).Value.Pointer_Value));
+     (To_Actual (Ctx.Cursors (F_Pointer).Value));
 
    function Get_Unused_32 (Ctx : Context) return RFLX.ICMP.Unused_32 is
-     (To_Actual (Ctx.Cursors (F_Unused_32).Value.Unused_32_Value));
+     (To_Actual (Ctx.Cursors (F_Unused_32).Value));
 
    function Get_Sequence_Number (Ctx : Context) return RFLX.ICMP.Sequence_Number is
-     (To_Actual (Ctx.Cursors (F_Sequence_Number).Value.Sequence_Number_Value));
+     (To_Actual (Ctx.Cursors (F_Sequence_Number).Value));
 
    function Get_Unused_24 (Ctx : Context) return RFLX.ICMP.Unused_24 is
-     (To_Actual (Ctx.Cursors (F_Unused_24).Value.Unused_24_Value));
+     (To_Actual (Ctx.Cursors (F_Unused_24).Value));
 
    function Get_Originate_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
-     (To_Actual (Ctx.Cursors (F_Originate_Timestamp).Value.Originate_Timestamp_Value));
+     (To_Actual (Ctx.Cursors (F_Originate_Timestamp).Value));
 
    function Get_Receive_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
-     (To_Actual (Ctx.Cursors (F_Receive_Timestamp).Value.Receive_Timestamp_Value));
+     (To_Actual (Ctx.Cursors (F_Receive_Timestamp).Value));
 
    function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp is
-     (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value.Transmit_Timestamp_Value));
+     (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      ((if
           Fld = F_Data
           and then Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
-          and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Reply))
-                    or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value.Tag_Value) = RFLX_Types.Bit_Length (To_Base (RFLX.ICMP.Echo_Request)))
+          and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.ICMP.Echo_Reply))
+                    or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.ICMP.Echo_Request)))
        then
           Size <= Available_Space (Ctx, Fld)
        else

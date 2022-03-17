@@ -78,13 +78,11 @@ from rflx.ada import (
     PackageUnit,
     Parameter,
     Postcondition,
-    Pow,
     Pragma,
     PragmaStatement,
     Precondition,
     PrivateType,
     ProcedureSpecification,
-    Range,
     RangeSubtype,
     RangeType,
     RecordType,
@@ -137,6 +135,7 @@ from rflx.model import (
     Sequence,
     Session,
     Type,
+    is_builtin_type,
 )
 
 from . import common, const
@@ -380,11 +379,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_allow_unevaluated_use_of_old()
         unit += self.__create_field_type(message)
         unit += self.__create_state_type()
-        unit += self.__create_cursor_type(message)
+        unit += self.__create_cursor_type()
         unit += self.__create_cursor_validation_functions()
         unit += self.__create_valid_context_function(message, composite_fields)
         unit += self.__create_context_type(message)
-        unit += self.__create_field_dependent_type(message)
         unit += self.__create_initialize_procedure(message)
         unit += self.__create_restricted_initialize_procedure(message)
         unit += self.__create_initialized_function(message)
@@ -402,6 +400,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         unit += self.__create_message_last_function()
         unit += self.__create_written_last_function()
         unit += self.__create_message_data_procedure()
+        unit += self.__create_valid_value_function(message, scalar_fields)
         unit += self.__create_path_condition_function(message)
         unit += self.__create_field_condition_function(message)
         unit += self.__create_field_size_function(message, scalar_fields, composite_fields)
@@ -417,14 +416,12 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         if composite_fields:
             unit += self.__create_equal_function(scalar_fields, composite_fields)
         unit += self.__create_reset_dependent_fields_procedure(message)
-        if (
-            (scalar_fields and composite_fields)
-            or any(message.is_possibly_empty(f) for f in composite_fields)
-            or sequence_fields
+        if self.__requires_composite_field_function(
+            message, scalar_fields, composite_fields, sequence_fields
         ):
             unit += self.__create_composite_field_function(scalar_fields, composite_fields)
 
-        unit += self.__parser.create_internal_functions(message, scalar_fields)
+        unit += self.__parser.create_get_function(message, scalar_fields, composite_fields)
         unit += self.__parser.create_verify_procedure(message, scalar_fields, composite_fields)
         unit += self.__parser.create_verify_message_procedure(message)
         unit += self.__parser.create_present_function()
@@ -464,6 +461,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
     def __create_allow_unevaluated_use_of_old() -> UnitPart:
         return UnitPart(
             [Pragma("Unevaluated_Use_Of_Old", [Variable("Allow")])],
+            [Pragma("Unevaluated_Use_Of_Old", [Variable("Allow")])],
         )
 
     @staticmethod
@@ -473,6 +471,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 Pragma(
                     "Warnings",
                     [Variable("Off"), String('use clause for type "U64" * has no effect')],
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("Off"),
+                        String('"U64" is already use-visible through previous use_type_clause'),
+                    ],
                 ),
                 Pragma(
                     "Warnings",
@@ -498,6 +503,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     [
                         Variable("On"),
                         String('"LENGTH" is already use-visible through previous use_type_clause'),
+                    ],
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("On"),
+                        String('"U64" is already use-visible through previous use_type_clause'),
                     ],
                 ),
                 Pragma(
@@ -537,7 +549,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     @staticmethod
-    def __create_cursor_type(message: Message) -> UnitPart:
+    def __create_cursor_type() -> UnitPart:
         discriminants = [Discriminant(["State"], "Cursor_State", Variable("S_Invalid"))]
 
         return UnitPart(
@@ -546,37 +558,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 PrivateType("Field_Cursors", aspects=[DefaultInitialCondition(FALSE)]),
             ],
             private=[
-                # WORKAROUND: Componolit/Workarounds#47
-                Pragma(
-                    "Warnings",
-                    [Variable("Off"), String("postcondition does not mention function result")],
-                ),
-                ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        "Valid_Value", "Boolean", [Parameter(["Val"], "Field_Dependent_Value")]
-                    ),
-                    Case(
-                        Variable("Val.Fld"),
-                        [
-                            (
-                                Variable(f.affixed_name),
-                                Call("Valid", [Variable(f"Val.{f.name}_Value")])
-                                if isinstance(t, Scalar)
-                                else TRUE,
-                            )
-                            for f, t in message.field_types.items()
-                        ]
-                        + [
-                            (Variable(INITIAL.affixed_name), FALSE),
-                            (Variable(FINAL.affixed_name), FALSE),
-                        ],
-                    ),
-                    [Postcondition(TRUE)],
-                ),
-                Pragma(
-                    "Warnings",
-                    [Variable("On"), String("postcondition does not mention function result")],
-                ),
                 RecordType(
                     "Field_Cursor",
                     [
@@ -605,8 +586,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     ),
                                     Component(
                                         "Value",
-                                        "Field_Dependent_Value",
-                                        NamedAggregate(("Fld", Variable(FINAL.affixed_name))),
+                                        const.TYPES_U64,
+                                        Number(0),
                                     ),
                                 ],
                             ),
@@ -615,23 +596,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             ),
                         ],
                     ),
-                    [
-                        DynamicPredicate(
-                            If(
-                                [
-                                    (
-                                        Or(
-                                            Equal(Variable("State"), Variable("S_Valid")),
-                                            Equal(
-                                                Variable("State"), Variable("S_Structural_Valid")
-                                            ),
-                                        ),
-                                        Call("Valid_Value", [Variable("Field_Cursor.Value")]),
-                                    )
-                                ]
-                            )
-                        )
-                    ],
                 ),
                 ArrayType("Field_Cursors", "Virtual_Field", "Field_Cursor"),
             ],
@@ -750,88 +714,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     ],
                 )
             ],
-        )
-
-    def __create_field_dependent_type(self, message: Message) -> UnitPart:
-        null_fields = []
-        variants = []
-        construction_functions = []
-
-        for f, t in message.field_types.items():
-            if isinstance(t, Composite) and not common.is_compared_to_aggregate(f, message):
-                null_fields.append(f)
-            elif isinstance(t, Scalar):
-                variants.append(
-                    Variant(
-                        [Variable(f.affixed_name)],
-                        [
-                            Component(
-                                f"{f.name}_Value", self.__prefix * common.full_base_type_name(t)
-                            )
-                        ],
-                    )
-                )
-            else:
-                assert isinstance(t, Composite)
-                length = expr.Div(message.field_size(f), expr.Number(8)).simplified()
-                assert isinstance(length, expr.Number)
-                variants.append(
-                    Variant(
-                        [Variable(f.affixed_name)],
-                        [
-                            Component(
-                                f"{f.name}_Value",
-                                Slice(
-                                    Variable(const.TYPES_BYTES),
-                                    First(const.TYPES_INDEX),
-                                    Add(
-                                        First(const.TYPES_INDEX),
-                                        expr.Sub(length, expr.Number(1)).simplified().ada_expr(),
-                                    ),
-                                ),
-                            )
-                        ],
-                    )
-                )
-                # ISSUE: Componolit/Workarounds#35
-                # Prevent a GNAT bug by moving the construction of the record type from the
-                # precondition into a function, if the construction involves an array type.
-                construction_functions.append(
-                    ExpressionFunctionDeclaration(
-                        FunctionSpecification(
-                            f"Construct_{f.name}_Value",
-                            "Field_Dependent_Value",
-                            [Parameter(["Data"], const.TYPES_BYTES)],
-                        ),
-                        NamedAggregate(
-                            ("Fld", Variable(f.affixed_name)),
-                            (f"{f.name}_Value", Variable("Data")),
-                        ),
-                        [
-                            Precondition(Equal(Length("Data"), length.ada_expr())),
-                        ],
-                    )
-                )
-
-        return UnitPart(
-            [
-                RecordType(
-                    "Field_Dependent_Value",
-                    [],
-                    [Discriminant(["Fld"], "Virtual_Field", Variable(INITIAL.affixed_name))],
-                    VariantPart(
-                        "Fld",
-                        [
-                            Variant(
-                                [Variable(f.affixed_name) for f in (INITIAL, *null_fields, FINAL)],
-                                [NullComponent()],
-                            ),
-                            *variants,
-                        ],
-                    ),
-                ),
-                *construction_functions,
-            ]
         )
 
     @staticmethod
@@ -1683,6 +1565,60 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             ],
         )
 
+    def __create_valid_value_function(
+        self, message: Message, scalar_fields: ty.Mapping[Field, Scalar]
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Valid_Value",
+            "Boolean",
+            [
+                Parameter(["Fld" if scalar_fields else "Unused_Fld"], "Field"),
+                Parameter(["Val" if scalar_fields else "Unused_Val"], const.TYPES_U64),
+            ],
+        )
+
+        return UnitPart(
+            [
+                # WORKAROUND: Componolit/Workarounds#47
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String("postcondition does not mention function result")],
+                ),
+                SubprogramDeclaration(
+                    specification,
+                    [Postcondition(TRUE)],
+                ),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String("postcondition does not mention function result")],
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (
+                                Variable(f.affixed_name),
+                                Call(
+                                    f"Valid_{t.name}"
+                                    if is_builtin_type(t.identifier)
+                                    else ID(self.__prefix * t.package * f"Valid_{t.name}"),
+                                    [Variable("Val")],
+                                )
+                                if isinstance(t, Scalar)
+                                else TRUE,
+                            )
+                            for f, t in message.field_types.items()
+                        ],
+                    )
+                    if scalar_fields
+                    else TRUE,
+                ),
+            ],
+        )
+
     def __create_path_condition_function(self, message: Message) -> UnitPart:
         """Check if the condition at the incoming link to the field is valid."""
 
@@ -1774,47 +1710,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         scalar_fields: ty.Mapping[Field, Type],
         composite_fields: ty.Sequence[Field],
     ) -> UnitPart:
-        def size(field: Field, message: Message) -> Expr:
-            def substituted(expression: expr.Expr) -> Expr:
-                return (
-                    expression.substituted(
-                        common.substitution(
-                            message, self.__prefix, target_type=const.TYPES_BIT_LENGTH
-                        )
-                    )
-                    .simplified()
-                    .ada_expr()
-                )
-
-            field_type = message.field_types[field]
-
-            if isinstance(field_type, Scalar):
-                return Size(self.__prefix * common.full_base_type_name(field_type))
-
-            links = message.incoming(field)
-
-            if len(links) == 1:
-                return substituted(links[0].size)
-
-            return If(
-                [
-                    (
-                        AndThen(
-                            Equal(
-                                Selected(
-                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"
-                                ),
-                                Variable(l.source.affixed_name),
-                            ),
-                            *([substituted(l.condition)] if l.condition != expr.TRUE else []),
-                        ),
-                        substituted(l.size),
-                    )
-                    for l in links
-                ],
-                const.UNREACHABLE,
-            )
-
         specification = FunctionSpecification(
             "Field_Size",
             const.TYPES_BIT_LENGTH,
@@ -1870,7 +1765,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     specification,
                     Case(
                         Variable("Fld"),
-                        [(Variable(f.affixed_name), size(f, message)) for f in message.fields],
+                        [
+                            (
+                                Variable(f.affixed_name),
+                                common.conditional_field_size(f, message, self.__prefix),
+                            )
+                            for f in message.fields
+                        ],
                     ),
                 )
             ],
@@ -2048,7 +1949,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     def __create_field_condition_function(self, message: Message) -> UnitPart:
-        """Check if the condition at any outgoing link of the field is valid."""
+        """
+        Check if the condition at any outgoing link of the field is valid.
+
+        All values and sizes of predecessor fields are taken from the message context. The value
+        or size of the respective field must be passed as argument `Val`, `Agg` or `Size`. This is
+        required to be able to check the field condition as precondition on setter functions.
+
+        The parameters `Val`, `Agg` and `Size` are only added, if required.
+        """
 
         def condition(field: Field, message: Message) -> Expr:
             c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
@@ -2071,37 +1980,45 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
                 }
             )
-            if field not in (INITIAL, FINAL):
-                if isinstance(message.field_types[field], Scalar):
-                    c = c.substituted(
-                        lambda x: expr.Call(
-                            const.TYPES_U64, [expr.Variable(rid.ID("Val") * f"{field.name}_Value")]
-                        )
-                        if x == expr.Variable(field.name)
-                        else x
-                    )
-                elif isinstance(
-                    message.field_types[field], Composite
-                ) and common.is_compared_to_aggregate(field, message):
-                    c = c.substituted(
-                        lambda x: expr.Variable(rid.ID("Val") * f"{field.name}_Value")
-                        if x == expr.Variable(field.name)
-                        else x
-                    )
+            if isinstance(message.field_types[field], Scalar):
+                c = c.substituted(
+                    lambda x: expr.Variable("Val") if x == expr.Variable(field.name) else x
+                )
+            elif isinstance(
+                message.field_types[field], Composite
+            ) and common.has_aggregate_dependent_condition(message, field):
+                c = c.substituted(
+                    lambda x: expr.Variable("Agg") if x == expr.Variable(field.name) else x
+                )
             return (
                 c.substituted(common.substitution(message, self.__prefix)).simplified().ada_expr()
             )
 
-        parameters = [Parameter(["Ctx"], "Context"), Parameter(["Val"], "Field_Dependent_Value")]
-
-        if common.size_dependent_condition(message):
-            parameters.append(Parameter(["Size"], const.TYPES_BIT_LENGTH, Number(0)))
+        parameters = [
+            Parameter(["Ctx"], "Context"),
+            Parameter(["Fld"], "Field"),
+            *(
+                [Parameter(["Val"], const.TYPES_U64)]
+                if common.has_value_dependent_condition(message)
+                else []
+            ),
+            *(
+                [Parameter(["Agg"], const.TYPES_BYTES)]
+                if common.has_aggregate_dependent_condition(message)
+                else []
+            ),
+            *(
+                [Parameter(["Size"], const.TYPES_BIT_LENGTH, Number(0))]
+                if common.has_size_dependent_condition(message)
+                else []
+            ),
+        ]
 
         specification = FunctionSpecification("Field_Condition", "Boolean", parameters)
 
         return UnitPart(
             [
-                # WORKAROUND Compolonit/Workarounds#47
+                # WORKAROUND Componolit/Workarounds#47
                 Pragma(
                     "Warnings",
                     [Variable("Off"), String("postcondition does not mention function result")],
@@ -2112,8 +2029,12 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         Precondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                In(Variable("Val.Fld"), Range("Field")),
-                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
+                                Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
+                                *(
+                                    [Call("Valid_Value", [Variable("Fld"), Variable("Val")])]
+                                    if common.has_value_dependent_condition(message)
+                                    else []
+                                ),
                             )
                         ),
                         Postcondition(TRUE),
@@ -2128,11 +2049,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ExpressionFunctionDeclaration(
                     specification,
                     Case(
-                        Variable("Val.Fld"),
-                        [
-                            (Variable(f.affixed_name), condition(f, message))
-                            for f in message.all_fields
-                        ],
+                        Variable("Fld"),
+                        [(Variable(f.affixed_name), condition(f, message)) for f in message.fields],
                     ),
                 )
             ],
@@ -2860,6 +2778,19 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     @staticmethod
+    def __requires_composite_field_function(
+        message: Message,
+        scalar_fields: ty.Mapping[Field, Scalar],
+        composite_fields: ty.Sequence[Field],
+        sequence_fields: ty.Mapping[Field, Sequence],
+    ) -> bool:
+        return bool(
+            (scalar_fields and composite_fields)
+            or any(message.is_possibly_empty(f) for f in composite_fields)
+            or sequence_fields
+        )
+
+    @staticmethod
     def __create_composite_field_function(
         scalar_fields: ty.Mapping[Field, Type], composite_fields: ty.Sequence[Field]
     ) -> UnitPart:
@@ -2916,26 +2847,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                     Number(0),
                                 ),
                                 byte_aligned_field(f),
-                                Call(
-                                    "Field_Condition",
-                                    [
-                                        Variable("Ctx"),
-                                        NamedAggregate(("Fld", Variable(f.affixed_name))),
-                                    ]
-                                    + (
-                                        [
-                                            Call(
-                                                "Field_Size",
-                                                [
-                                                    Variable("Ctx"),
-                                                    Variable(f.affixed_name),
-                                                ],
-                                            ),
-                                        ]
-                                        if common.size_dependent_condition(message)
-                                        else []
-                                    ),
-                                ),
+                                common.field_condition_call(message, f),
                                 common.sufficient_space_for_field_condition(
                                     Variable(f.affixed_name)
                                 ),
@@ -3037,7 +2949,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                         "Invalid",
                                         [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
-                                    common.initialize_field_statements(message, f),
+                                    common.initialize_field_statements(f),
                                 )
                             ]
                         ),
@@ -3338,7 +3250,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ExpressionFunctionDeclaration(
                     specification,
                     common.context_predicate(message, composite_fields, self.__prefix),
-                    [Postcondition(TRUE)],
                 ),
                 Pragma(
                     "Warnings",
@@ -3653,7 +3564,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                             f"Set_{link.target.identifier}",
                             [Variable("Ctx"), Variable(f"Struct.{link.target.identifier}")],
                         )
-                        if common.is_compared_to_aggregate(link.target, message):
+                        if common.has_aggregate_dependent_condition(message, link.target):
                             dependent_statements = [set_field]
                             statements.append(
                                 IfStatement(
@@ -3662,7 +3573,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                             common.field_condition_call(
                                                 message,
                                                 link.target,
-                                                Variable(f"Struct.{link.target.identifier}"),
+                                                aggregate=Variable(
+                                                    f"Struct.{link.target.identifier}"
+                                                ),
                                             ),
                                             dependent_statements,
                                         )
@@ -3798,9 +3711,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             unit += self.__create_copy_refined_field_procedure(refinement, condition_fields)
 
     def __create_type(self, field_type: Type, message_package: ID) -> None:
+        assert field_type.package != BUILTINS_PACKAGE
+
         unit = self._units[message_package]
 
-        assert field_type.package != BUILTINS_PACKAGE
+        assert isinstance(unit, PackageUnit)
+
+        if isinstance(field_type, (Integer, Enumeration)):
+            unit.declaration_context.append(WithClause(self.__prefix * const.TYPES))
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
@@ -3842,7 +3760,22 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
     def __integer_functions(self, integer: Integer) -> UnitPart:
         specification: ty.List[Declaration] = []
 
-        constraints = expr.And(*integer.constraints("Val")).simplified()
+        constraints = (
+            expr.And(
+                *(
+                    [expr.GreaterEqual(expr.Variable("Val"), integer.first)]
+                    if integer.first.simplified() != expr.Number(0)
+                    else []
+                ),
+                *(
+                    [expr.LessEqual(expr.Variable("Val"), integer.last)]
+                    if integer.last.simplified() != expr.Number(2 ** 64 - 1)
+                    else []
+                ),
+            ).simplified()
+            if integer.first.simplified() != integer.last.simplified()
+            else expr.Equal(expr.Variable("Val"), integer.first.simplified())
+        )
 
         if constraints == expr.TRUE:
             specification.extend(
@@ -3854,6 +3787,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     ),
                 ]
             )
+        else:
+            specification.append(UseTypeClause(self.__prefix * const.TYPES_U64))
 
         specification.append(self.__type_validation_function(integer, constraints.ada_expr()))
 
@@ -3873,24 +3808,19 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         return UnitPart(specification)
 
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
-        incomplete = len(enum.literals) < 2 ** int(enum.size)
+        incomplete = len(enum.literals) < 2 ** 64
 
         specification: ty.List[Declaration] = []
 
         enum_value = Variable("Val")
 
-        validation_expression: Expr
-        if enum.always_valid:
-            validation_expression = expr.And(*enum.constraints("Val")).simplified().ada_expr()
-        else:
-            validation_cases: ty.List[ty.Tuple[Expr, Expr]] = []
-            validation_cases.extend(
-                (value.ada_expr(), Variable("True")) for value in enum.literals.values()
+        validation_expression = (
+            TRUE
+            if enum.always_valid
+            else In(
+                Variable("Val"), ChoiceList(*[value.ada_expr() for value in enum.literals.values()])
             )
-            if incomplete:
-                validation_cases.append((Variable("others"), Variable("False")))
-
-            validation_expression = Case(enum_value, validation_cases)
+        )
 
         if enum.always_valid:
             specification.extend(
@@ -3917,8 +3847,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         specification.append(
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_Base",
-                    self.__prefix * common.full_base_type_name(enum),
+                    "To_U64",
+                    self.__prefix * const.TYPES_U64,
                     [
                         Parameter(
                             ["Enum"],
@@ -3941,9 +3871,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         conversion_function = FunctionSpecification(
             "To_Actual",
             self.__prefix * ID(enum.identifier),
-            [Parameter(["Val"], self.__prefix * common.full_base_type_name(enum))],
+            [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
         )
-        precondition = Precondition(Call("Valid", [Variable("Val")]))
+        precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: ty.List[ty.Tuple[Expr, Expr]] = []
 
         if enum.always_valid:
@@ -3975,12 +3905,12 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "To_Base",
-                        self.__prefix * common.full_base_type_name(enum),
+                        "To_U64",
+                        self.__prefix * const.TYPES_U64,
                         [Parameter(["Val"], self.__prefix * ID(enum.identifier))],
                     ),
                     If(
-                        [(Variable("Val.Known"), Call("To_Base", [Variable("Val.Enum")]))],
+                        [(Variable("Val.Known"), Call("To_U64", [Variable("Val.Enum")]))],
                         Variable("Val.Raw"),
                     ),
                 )
@@ -3988,12 +3918,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         else:
             conversion_cases.extend(
-                (value.ada_expr(), Variable(ID(key))) for key, value in enum.literals.items()
+                [
+                    *[
+                        (value.ada_expr(), Variable(ID(key)))
+                        for key, value in enum.literals.items()
+                    ],
+                    *(
+                        [(Variable("others"), Last(self.__prefix * ID(enum.identifier)))]
+                        if incomplete
+                        else []
+                    ),
+                ]
             )
-            if incomplete:
-                conversion_cases.append(
-                    (Variable("others"), Last(self.__prefix * ID(enum.identifier)))
-                )
 
             specification.extend(
                 [
@@ -4415,9 +4351,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
-                "Valid",
+                f"Valid_{scalar_type.name}",
                 "Boolean",
-                [Parameter(["Val"], self.__prefix * common.full_base_type_name(scalar_type))],
+                [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
             ),
             validation_expression,
         )
@@ -4426,24 +4362,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_Base",
-                    self.__prefix * common.full_base_type_name(integer),
+                    "To_U64",
+                    self.__prefix * const.TYPES_U64,
                     [Parameter(["Val"], self.__prefix * ID(integer.identifier))],
                 ),
-                Call(self.__prefix * common.full_base_type_name(integer), [Variable("Val")])
-                if isinstance(integer, RangeInteger)
-                else Variable("Val"),
+                Call(self.__prefix * const.TYPES_U64, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
                     self.__prefix * ID(integer.identifier),
-                    [Parameter(["Val"], self.__prefix * common.full_base_type_name(integer))],
+                    [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
                 ),
-                Call(self.__prefix * ID(integer.identifier), [Variable("Val")])
-                if isinstance(integer, RangeInteger)
-                else Variable("Val"),
-                [Precondition(Call("Valid", [Variable("Val")]))],
+                Call(self.__prefix * ID(integer.identifier), [Variable("Val")]),
+                [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
             ),
         ]
 
@@ -4530,11 +4462,6 @@ def modular_types(integer: ModularInteger) -> ty.List[Declaration]:
 
 def range_types(integer: RangeInteger) -> ty.List[Declaration]:
     return [
-        ModularType(
-            common.base_type_name(integer),
-            Pow(Number(2), integer.size_expr.ada_expr()),
-            [Annotate("GNATprove", "No_Wrap_Around")],
-        ),
         RangeType(
             integer.name,
             integer.first_expr.ada_expr(),
@@ -4547,9 +4474,6 @@ def range_types(integer: RangeInteger) -> ty.List[Declaration]:
 def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
     types: ty.List[Declaration] = []
 
-    types.append(
-        ModularType(common.base_type_name(enum), Pow(Number(2), enum.size_expr.ada_expr()))
-    )
     types.append(
         EnumerationType(
             common.enum_name(enum) if enum.always_valid else enum.name,
@@ -4567,7 +4491,7 @@ def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
                     "Known",
                     [
                         Variant([TRUE], [Component("Enum", common.enum_name(enum))]),
-                        Variant([FALSE], [Component("Raw", common.base_type_name(enum))]),
+                        Variant([FALSE], [Component("Raw", const.TYPES_U64)]),
                     ],
                 ),
             )

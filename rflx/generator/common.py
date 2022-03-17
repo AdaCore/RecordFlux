@@ -1,9 +1,10 @@
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
 from rflx import ada, expression as expr, identifier as rid, model
-from rflx.const import BUILTINS_PACKAGE
 
 from . import const
+
+EMPTY_ARRAY = ada.NamedAggregate((ada.ValueRange(ada.Number(1), ada.Number(0)), ada.Number(0)))
 
 
 def substitution(
@@ -41,8 +42,7 @@ def substitution(
             ):
                 field = model.Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
-            if field and len(field.identifier.parts) == 1 and aggregate:
-                assert field in message.fields
+            if field and field in message.fields and len(field.identifier.parts) == 1 and aggregate:
                 if embedded:
                     return expression.__class__(
                         expr.Indexed(
@@ -98,7 +98,7 @@ def substitution(
                 other = expression.left
             if boolean_literal and other:
                 return expression.__class__(
-                    other, type_conversion(expr.Call("To_Base", [boolean_literal]))
+                    other, type_conversion(expr.Call("To_U64", [boolean_literal]))
                 )
 
         def field_value(field: model.Field) -> expr.Expr:
@@ -109,7 +109,7 @@ def substitution(
                     expr.Variable(rid.ID("Ctx") * "Cursors" if not embedded else "Cursors"),
                     expr.Variable(field.affixed_name),
                 ),
-                rid.ID("Value") * f"{field.name}_Value",
+                "Value",
             )
 
         if isinstance(expression, expr.Relation):
@@ -179,8 +179,8 @@ def substitution_facts(
     def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
         if isinstance(parameter_type, model.Enumeration):
             if embedded:
-                return expr.Call("To_Base", [expr.Variable(parameter.name)])
-            return expr.Call("To_Base", [expr.Variable("Ctx" * parameter.identifier)])
+                return expr.Call("To_U64", [expr.Variable(parameter.name)])
+            return expr.Call("To_U64", [expr.Variable("Ctx" * parameter.identifier)])
         if isinstance(parameter_type, model.Scalar):
             if embedded:
                 return expr.Variable(parameter.name)
@@ -191,19 +191,17 @@ def substitution_facts(
     def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
         if isinstance(field_type, model.Enumeration):
             if public:
-                return expr.Call(
-                    "To_Base", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
-                )
+                return expr.Call("To_U64", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                rid.ID("Value") * f"{field.name}_Value",
+                "Value",
             )
         if isinstance(field_type, model.Scalar):
             if public:
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
-                rid.ID("Value") * f"{field.name}_Value",
+                "Value",
             )
         if isinstance(field_type, model.Composite):
             return expr.Variable(field.name)
@@ -229,14 +227,14 @@ def substitution_facts(
             for f, t in message.field_types.items()
         },
         **{
-            expr.Variable(l): type_conversion(expr.Call("To_Base", [expr.Variable(l)]))
+            expr.Variable(l): type_conversion(expr.Call("To_U64", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         **{
             expr.Variable(t.package * l): type_conversion(
-                expr.Call("To_Base", [expr.Variable(prefix * t.package * l)])
+                expr.Call("To_U64", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
@@ -267,7 +265,7 @@ def message_structure_invariant(
     field_type = message.types[target]
     condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
     size = (
-        expr.Size(prefix * full_base_type_name(field_type))
+        field_type.size
         if isinstance(field_type, model.Scalar)
         else link.size.substituted(
             substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH)
@@ -363,6 +361,58 @@ def message_structure_invariant(
 def context_predicate(
     message: model.Message, composite_fields: Sequence[model.Field], prefix: str
 ) -> ada.Expr:
+    def cursors_invariant() -> ada.Expr:
+        return ada.ForAllIn(
+            "F",
+            ada.Variable("Field"),
+            ada.If(
+                [
+                    (
+                        ada.Call(
+                            "Structural_Valid",
+                            [ada.Indexed(ada.Variable("Cursors"), ada.Variable("F"))],
+                        ),
+                        ada.And(
+                            ada.GreaterEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
+                                ),
+                                ada.Variable("First"),
+                            ),
+                            ada.LessEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
+                                ),
+                                ada.Variable("Verified_Last"),
+                            ),
+                            ada.LessEqual(
+                                ada.Selected(
+                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
+                                ),
+                                ada.Add(
+                                    ada.Selected(
+                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                                        "Last",
+                                    ),
+                                    ada.Number(1),
+                                ),
+                            ),
+                            ada.Call(
+                                "Valid_Value",
+                                [
+                                    ada.Variable("F"),
+                                    ada.Selected(
+                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                                        "Value",
+                                    ),
+                                ],
+                            ),
+                        ),
+                    )
+                ]
+            ),
+        )
+
     def valid_predecessors_invariant() -> ada.Expr:
         return ada.AndThen(
             *[
@@ -479,56 +529,7 @@ def context_predicate(
             ada.Rem(ada.Variable("Verified_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)
         ),
         ada.Equal(ada.Rem(ada.Variable("Written_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
-        ada.ForAllIn(
-            "F",
-            ada.ValueRange(ada.First("Field"), ada.Last("Field")),
-            ada.If(
-                [
-                    (
-                        ada.Call(
-                            "Structural_Valid",
-                            [ada.Indexed(ada.Variable("Cursors"), ada.Variable("F"))],
-                        ),
-                        ada.And(
-                            ada.GreaterEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
-                                ),
-                                ada.Variable("First"),
-                            ),
-                            ada.LessEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
-                                ),
-                                ada.Variable("Verified_Last"),
-                            ),
-                            ada.LessEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
-                                ),
-                                ada.Add(
-                                    ada.Selected(
-                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
-                                        "Last",
-                                    ),
-                                    ada.Number(1),
-                                ),
-                            ),
-                            ada.Equal(
-                                ada.Selected(
-                                    ada.Selected(
-                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
-                                        "Value",
-                                    ),
-                                    "Fld",
-                                ),
-                                ada.Variable("F"),
-                            ),
-                        ),
-                    )
-                ]
-            ),
-        ),
+        cursors_invariant(),
         valid_predecessors_invariant(),
         invalid_successors_invariant(),
         message_structure_invariant(message, prefix, embedded=True),
@@ -655,15 +656,8 @@ def sufficient_space_for_field_condition(field_name: ada.Name, size: ada.Expr = 
 
 
 def initialize_field_statements(
-    message: model.Message, field: model.Field, reset_written_last: bool = False
+    field: model.Field, reset_written_last: bool = False
 ) -> Sequence[ada.Statement]:
-    comparison_to_aggregate = is_compared_to_aggregate(field, message)
-
-    if comparison_to_aggregate:
-        size = message.field_size(field)
-        assert isinstance(size, expr.Number)
-        aggregate_size = int(size) // 8
-
     return [
         ada.CallStatement(
             "Reset_Dependent_Fields",
@@ -707,22 +701,7 @@ def initialize_field_statements(
                 ("State", ada.Variable("S_Structural_Valid")),
                 ("First", ada.Variable("First")),
                 ("Last", ada.Variable("Last")),
-                (
-                    "Value",
-                    ada.NamedAggregate(
-                        ("Fld", ada.Variable(field.affixed_name)),
-                        *(
-                            [
-                                (
-                                    f"{field.identifier}_Value",
-                                    ada.Aggregate(*([ada.Number(0)] * aggregate_size)),
-                                )
-                            ]
-                            if comparison_to_aggregate
-                            else []
-                        ),
-                    ),
-                ),
+                ("Value", ada.Number(0)),
                 (
                     "Predecessor",
                     ada.Selected(
@@ -769,33 +748,26 @@ def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declar
 
 
 def field_condition_call(
-    message: model.Message, field: model.Field, value: ada.Expr, size: ada.Expr = None
+    message: model.Message,
+    field: model.Field,
+    value: ada.Expr = None,
+    aggregate: ada.Expr = None,
+    size: ada.Expr = None,
 ) -> ada.Expr:
+    if value is None:
+        value = ada.Number(0)
+    if aggregate is None:
+        aggregate = EMPTY_ARRAY
     if size is None:
-        size = ada.Call(
-            "Field_Size",
-            [
-                ada.Variable("Ctx"),
-                ada.Variable(field.affixed_name),
-            ],
-        )
+        size = ada.Call("Field_Size", [ada.Variable("Ctx"), ada.Variable(field.affixed_name)])
     return ada.Call(
         "Field_Condition",
         [
             ada.Variable("Ctx"),
-            ada.Call(
-                f"Construct_{field.identifier}_Value", [value]
-            )  # ISSUE: Componolit/Workarounds#35
-            if is_compared_to_aggregate(field, message)
-            else ada.NamedAggregate(
-                ("Fld", ada.Variable(field.affixed_name)),
-                *(
-                    [(f"{field.identifier}_Value", value)]
-                    if isinstance(message.types[field], model.Scalar)
-                    else []
-                ),
-            ),
-            *([size] if size_dependent_condition(message, field) else []),
+            ada.Variable(field.affixed_name),
+            *([value] if has_value_dependent_condition(message) else []),
+            *([aggregate] if has_aggregate_dependent_condition(message) else []),
+            *([size] if has_size_dependent_condition(message, field) else []),
         ],
     )
 
@@ -812,23 +784,6 @@ def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
         return type_identifier.name
 
     return prefix * type_identifier
-
-
-def base_type_name(scalar_type: model.Scalar) -> ada.ID:
-    if isinstance(scalar_type, model.ModularInteger):
-        return ada.ID(scalar_type.name)
-
-    return ada.ID(scalar_type.name + "_Base")
-
-
-def full_base_type_name(scalar_type: model.Scalar) -> ada.ID:
-    if scalar_type.package == BUILTINS_PACKAGE:
-        return const.BUILTIN_TYPES_PACKAGE * scalar_type.name + "_Base"
-
-    if isinstance(scalar_type, model.ModularInteger):
-        return ada.ID(scalar_type.identifier)
-
-    return ada.ID(scalar_type.identifier + "_Base")
 
 
 def enum_name(enum_type: model.Enumeration) -> ada.ID:
@@ -851,26 +806,45 @@ def contains_function_name(
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
-def size_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+def has_value_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+    links = message.outgoing(field) if field else message.structure
+    fields = [field] if field else message.fields
+    return any(
+        r
+        for l in links
+        for r in l.condition.findall(lambda x: isinstance(x, expr.Relation))
+        if isinstance(r, expr.Relation)
+        and not r.findall(lambda x: isinstance(x, expr.Aggregate))
+        and r.findall(
+            lambda x: isinstance(x, expr.Variable)
+            and any(x.identifier == f.identifier for f in fields)
+        )
+    )
+
+
+def has_aggregate_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+    links = message.outgoing(field) if field else message.structure
+    fields = [field] if field else message.fields
+    return any(
+        r
+        for l in links
+        for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
+        if isinstance(r, (expr.Equal, expr.NotEqual))
+        and r.findall(lambda x: isinstance(x, expr.Aggregate))
+        and any(
+            r.left == expr.Variable(f.identifier) or r.right == expr.Variable(f.identifier)
+            for f in fields
+        )
+    )
+
+
+def has_size_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
     links = message.outgoing(field) if field else message.structure
     return any(
         size in field_sizes
         for link in links
         for size in link.condition.findall(lambda x: isinstance(x, expr.Size))
-    )
-
-
-def is_compared_to_aggregate(field: model.Field, message: model.Message) -> bool:
-    return any(
-        r
-        for l in message.structure
-        for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
-        if isinstance(r, (expr.Equal, expr.NotEqual))
-        and any(r.findall(lambda x: isinstance(x, expr.Aggregate)))
-        and (
-            r.left == expr.Variable(field.identifier) or r.right == expr.Variable(field.identifier)
-        )
     )
 
 
@@ -922,16 +896,10 @@ def create_sequence_instantiation(
             prefix * const.SCALAR_SEQUENCE_PACKAGE,
             [
                 element_type_identifier,
-                prefix
-                * element_type_package
-                * (
-                    base_type_name(element_type)
-                    if not isinstance(element_type, model.ModularInteger)
-                    else element_type.name
-                ),
-                prefix * element_type_package * "Valid",
+                str(element_type.size),
+                prefix * element_type_package * f"Valid_{element_type.name}",
                 prefix * element_type_package * "To_Actual",
-                prefix * element_type_package * "To_Base",
+                prefix * element_type_package * "To_U64",
             ],
         )
     else:
@@ -978,4 +946,45 @@ def unchanged_cursor_before_or_invalid(
                 else []
             ),
         ),
+    )
+
+
+def conditional_field_size(field: model.Field, message: model.Message, prefix: str) -> ada.Expr:
+    def substituted(expression: expr.Expr) -> ada.Expr:
+        return (
+            expression.substituted(
+                substitution(message, prefix, target_type=const.TYPES_BIT_LENGTH)
+            )
+            .simplified()
+            .ada_expr()
+        )
+
+    field_type = message.field_types[field]
+
+    if isinstance(field_type, model.Scalar):
+        return field_type.size.ada_expr()
+
+    links = message.incoming(field)
+
+    if len(links) == 1:
+        return substituted(links[0].size)
+
+    return ada.If(
+        [
+            (
+                ada.AndThen(
+                    ada.Equal(
+                        ada.Selected(
+                            ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable("Fld")),
+                            "Predecessor",
+                        ),
+                        ada.Variable(l.source.affixed_name),
+                    ),
+                    *([substituted(l.condition)] if l.condition != expr.TRUE else []),
+                ),
+                substituted(l.size),
+            )
+            for l in links
+        ],
+        const.UNREACHABLE,
     )
