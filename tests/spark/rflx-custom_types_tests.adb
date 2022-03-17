@@ -4,8 +4,8 @@ package body RFLX.Custom_Types_Tests is
 
    overriding
    function Name (T : Test) return AUnit.Message_String is
-      pragma Unreferenced (T);
    begin
+      pragma Unreferenced (T);
       return AUnit.Format ("Custom_Types");
    end Name;
 
@@ -21,16 +21,11 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**6 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
+      pragma Warnings (Off, "package ""Types"" is not referenced");
+
       package Types is new RFLX.RFLX_Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
 
-      type Value is mod 2**14;
-
-      pragma Warnings (Off, "* ""*"" is not referenced");
-
-      function Extract is new Types.Extract (Value);
-      procedure Insert is new Types.Insert (Value);
-
-      pragma Warnings (On, "* ""*"" is not referenced");
+      pragma Warnings (On, "package ""Types"" is not referenced");
    begin
       null;
    end Test_Index_6_Modular;
@@ -47,16 +42,11 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**18 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
+      pragma Warnings (Off, "package ""Types"" is not referenced");
+
       package Types is new RFLX.RFLX_Generic_Types (Index, Byte, Bytes, Bytes_Ptr, Length, Bit_Length);
 
-      type Value is mod 2**14;
-
-      pragma Warnings (Off, "* ""*"" is not referenced");
-
-      function Extract is new Types.Extract (Value);
-      procedure Insert is new Types.Insert (Value);
-
-      pragma Warnings (On, "* ""*"" is not referenced");
+      pragma Warnings (On, "package ""Types"" is not referenced");
    begin
       null;
    end Test_Index_18_Range;
@@ -72,16 +62,11 @@ package body RFLX.Custom_Types_Tests is
       type Length is range 0 .. 2**60 - 1;
       type Bit_Length is range 0 .. Length'Last * 8;
 
+      pragma Warnings (Off, "package ""Types"" is not referenced");
+
       package Types is new RFLX.RFLX_Generic_Types (Index, Character, Characters, Characters_Ptr, Length, Bit_Length);
 
-      pragma Warnings (Off, "* ""*"" is not referenced");
-
-      type Value is mod 2**14;
-
-      function Extract is new Types.Extract (Value);
-      procedure Insert is new Types.Insert (Value);
-
-      pragma Warnings (On, "* ""*"" is not referenced");
+      pragma Warnings (On, "package ""Types"" is not referenced");
    begin
       null;
    end Test_Index_60_Enum;

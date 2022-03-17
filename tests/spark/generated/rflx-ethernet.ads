@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.Ethernet with
   SPARK_Mode
@@ -9,88 +10,67 @@ is
      Size =>
        48;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   use type RFLX.RFLX_Types.U64;
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function Valid_Address (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 281474976710655);
 
-   function Valid (Val : RFLX.Ethernet.Address) return Boolean is
-     (True);
+   function To_U64 (Val : RFLX.Ethernet.Address) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
-     (Val);
-
-   function To_Actual (Val : RFLX.Ethernet.Address) return RFLX.Ethernet.Address is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Ethernet.Address is
+     (RFLX.Ethernet.Address (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type Type_Length_Base is mod 2**16 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
+       Valid_Address (Val);
 
    type Type_Length is range 46 .. 2**16 - 1 with
      Size =>
        16;
 
-   function Valid (Val : RFLX.Ethernet.Type_Length_Base) return Boolean is
-     (Val >= 46);
+   function Valid_Type_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val >= 46
+      and Val <= 65535);
 
-   function To_Base (Val : RFLX.Ethernet.Type_Length) return RFLX.Ethernet.Type_Length_Base is
-     (RFLX.Ethernet.Type_Length_Base (Val));
+   function To_U64 (Val : RFLX.Ethernet.Type_Length) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function To_Actual (Val : RFLX.Ethernet.Type_Length_Base) return RFLX.Ethernet.Type_Length is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Ethernet.Type_Length is
      (RFLX.Ethernet.Type_Length (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type TPID_Base is mod 2**16 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
+       Valid_Type_Length (Val);
 
    type TPID is range 16#8100# .. 16#8100# with
      Size =>
        16;
 
-   function Valid (Val : RFLX.Ethernet.TPID_Base) return Boolean is
+   function Valid_TPID (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val = 16#8100#);
 
-   function To_Base (Val : RFLX.Ethernet.TPID) return RFLX.Ethernet.TPID_Base is
-     (RFLX.Ethernet.TPID_Base (Val));
+   function To_U64 (Val : RFLX.Ethernet.TPID) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function To_Actual (Val : RFLX.Ethernet.TPID_Base) return RFLX.Ethernet.TPID is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Ethernet.TPID is
      (RFLX.Ethernet.TPID (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_TPID (Val);
 
    type TCI is mod 2**16 with
      Size =>
        16;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   function Valid_TCI (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 65535);
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function To_U64 (Val : RFLX.Ethernet.TCI) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function Valid (Val : RFLX.Ethernet.TCI) return Boolean is
-     (True);
-
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
-     (Val);
-
-   function To_Actual (Val : RFLX.Ethernet.TCI) return RFLX.Ethernet.TCI is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Ethernet.TCI is
+     (RFLX.Ethernet.TCI (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_TCI (Val);
 
 end RFLX.Ethernet;

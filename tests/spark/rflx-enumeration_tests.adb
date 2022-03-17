@@ -64,7 +64,7 @@ package body RFLX.Enumeration_Tests is
          if Prio.Known then
             Assert (False, "Invalid Priority.Known");
          else
-            Assert (Prio.Raw'Image, Enumeration.Priority_Base'Image (5), "Unexpected Priority");
+            Assert (Prio.Raw'Image, Natural'Image (5), "Unexpected Priority");
          end if;
       else
          Assert (False, "Invalid Priority");

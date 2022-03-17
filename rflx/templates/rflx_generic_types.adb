@@ -346,36 +346,28 @@ is
        First  : Index;
        Last   : Index;
        Off    : Offset;
-       BO     : Byte_Order) return Value
+       Size   : Positive;
+       BO     : Byte_Order) return U64
    is
-      pragma Compile_Time_Error ((if Value'Size = 64 then
-                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
-                                 else
-                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
-                                 "Value must cover entire value range");
    begin
       if BO = High_Order_First then
-         return Value (U64_Extract (Buffer, First, Last, Off, Value'Size));
+         return U64_Extract (Buffer, First, Last, Off, Size);
       else
-         return Value (U64_Extract_LE (Buffer, First, Last, Off, Value'Size));
+         return U64_Extract_LE (Buffer, First, Last, Off, Size);
       end if;
    end Extract;
 
    procedure Insert
-      (Val    : Value;
+      (Val    : U64;
        Buffer : Bytes_Ptr;
        First  : Index;
        Last   : Index;
        Off    : Offset;
+       Size   : Positive;
        BO     : Byte_Order)
    is
-      pragma Compile_Time_Error ((if Value'Size = 64 then
-                                    U64 (Value'First) /= U64'First or U64 (Value'Last) /= U64'Last
-                                 else
-                                    U64 (Value'Last) - U64 (Value'First) /= U64 (2**Value'Size) - 1),
-                                 "Value must cover entire value range");
    begin
-      U64_Insert (U64 (Val), Buffer, First, Last, Off, Value'Size, BO);
+      U64_Insert (Val, Buffer, First, Last, Off, Size, BO);
    end Insert;
 
 end {prefix}RFLX_Generic_Types;

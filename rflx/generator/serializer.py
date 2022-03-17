@@ -22,12 +22,10 @@ from rflx.ada import (
     ExpressionFunctionDeclaration,
     FormalSubprogramDeclaration,
     FunctionSpecification,
-    GenericProcedureInstantiation,
     Greater,
     GreaterEqual,
     If,
     IfStatement,
-    In,
     Indexed,
     InOutParameter,
     Length,
@@ -52,7 +50,6 @@ from rflx.ada import (
     Statement,
     String,
     Sub,
-    Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
     UnitPart,
@@ -61,7 +58,18 @@ from rflx.ada import (
     Variable,
 )
 from rflx.const import BUILTINS_PACKAGE
-from rflx.model import FINAL, ByteOrder, Enumeration, Field, Message, Opaque, Scalar, Sequence, Type
+from rflx.model import (
+    FINAL,
+    ByteOrder,
+    Enumeration,
+    Field,
+    Message,
+    Opaque,
+    Scalar,
+    Sequence,
+    Type,
+    is_builtin_type,
+)
 
 from . import common, const
 
@@ -69,20 +77,6 @@ from . import common, const
 class SerializerGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
-
-    def insert_function(self, type_identifier: ID) -> Subprogram:
-        return GenericProcedureInstantiation(
-            "Insert",
-            ProcedureSpecification(
-                const.TYPES * "Insert",
-                [
-                    Parameter(["Val"], type_identifier),
-                    InOutParameter(["Buffer"], const.TYPES_BYTES),
-                    Parameter(["Offset"], const.TYPES_OFFSET),
-                ],
-            ),
-            [common.prefixed_type_identifier(type_identifier, self.prefix)],
-        )
 
     def create_valid_size_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
@@ -234,7 +228,8 @@ class SerializerGenerator:
                 "Set",
                 [
                     InOutParameter(["Ctx"], "Context"),
-                    Parameter(["Val"], "Field_Dependent_Value"),
+                    Parameter(["Fld"], "Field"),
+                    Parameter(["Val"], const.TYPES_U64),
                     Parameter(["Size"], const.TYPES_BIT_LENGTH),
                     Parameter(["State_Valid"], "Boolean"),
                     OutParameter(["Buffer_First"], const.TYPES_INDEX),
@@ -249,7 +244,7 @@ class SerializerGenerator:
 
         def set_context_cursor(field_type: CursorState) -> Assignment:
             return Assignment(
-                Indexed(Variable("Ctx.Cursors"), Variable("Val.Fld")),
+                Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                 NamedAggregate(
                     (
                         "State",
@@ -265,7 +260,7 @@ class SerializerGenerator:
                         Selected(
                             Indexed(
                                 Variable("Ctx.Cursors"),
-                                Variable("Val.Fld"),
+                                Variable("Fld"),
                             ),
                             "Predecessor",
                         ),
@@ -284,18 +279,18 @@ class SerializerGenerator:
                     [
                         CallStatement(
                             "Reset_Dependent_Fields",
-                            [Variable("Ctx"), Variable("Val.Fld")],
+                            [Variable("Ctx"), Variable("Fld")],
                         ),
                         Assignment(
                             "First",
-                            Call("Field_First", [Variable("Ctx"), Variable("Val.Fld")]),
+                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                         ),
                         Assignment(
                             "Last",
                             Add(
                                 Call(
                                     "Field_First",
-                                    [Variable("Ctx"), Variable("Val.Fld")],
+                                    [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 Variable("Size"),
                                 -Number(1),
@@ -325,6 +320,27 @@ class SerializerGenerator:
                             Call(const.TYPES_TO_INDEX, [Variable("Last")]),
                         ),
                         *self._update_last(),
+                        # Improve provability of context predicate
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                Equal(
+                                    Variable("Size"),
+                                    Case(
+                                        Variable("Fld"),
+                                        [
+                                            (
+                                                Variable(f.affixed_name),
+                                                common.conditional_field_size(
+                                                    f, message, self.prefix
+                                                ),
+                                            )
+                                            for f in message.fields
+                                        ],
+                                    ),
+                                )
+                            ],
+                        ),
                         IfStatement(
                             [
                                 (
@@ -339,12 +355,12 @@ class SerializerGenerator:
                                 Variable("Ctx.Cursors"),
                                 Call(
                                     "Successor",
-                                    [Variable("Ctx"), Variable("Val.Fld")],
+                                    [Variable("Ctx"), Variable("Fld")],
                                 ),
                             ),
                             NamedAggregate(
                                 ("State", Variable("S_Invalid")),
-                                ("Predecessor", Variable("Val.Fld")),
+                                ("Predecessor", Variable("Fld")),
                             ),
                         ),
                     ],
@@ -352,18 +368,17 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 Call("Has_Buffer", [Variable("Ctx")]),
-                                In(Variable("Val.Fld"), Variable("Field")),
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
-                                Call("Valid_Value", [Variable("Val")]),
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Valid_Value", [Variable("Fld"), Variable("Val")]),
                                 Call(
                                     "Valid_Size",
-                                    [Variable("Ctx"), Variable("Val.Fld"), Variable("Size")],
+                                    [Variable("Ctx"), Variable("Fld"), Variable("Size")],
                                 ),
                                 LessEqual(
                                     Variable("Size"),
                                     Call(
                                         "Available_Space",
-                                        [Variable("Ctx"), Variable("Val.Fld")],
+                                        [Variable("Ctx"), Variable("Fld")],
                                     ),
                                 ),
                                 *(
@@ -371,7 +386,7 @@ class SerializerGenerator:
                                         If(
                                             [
                                                 (
-                                                    Call("Composite_Field", [Variable("Val.Fld")]),
+                                                    Call("Composite_Field", [Variable("Fld")]),
                                                     Equal(
                                                         Mod(
                                                             Variable("Size"), Size(const.TYPES_BYTE)
@@ -391,13 +406,13 @@ class SerializerGenerator:
                             )
                         ),
                         Postcondition(
-                            And(
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Val.Fld")]),
+                            AndThen(
+                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                                 *(
                                     [
                                         Call(
                                             "Invalid_Successor",
-                                            [Variable("Ctx"), Variable("Val.Fld")],
+                                            [Variable("Ctx"), Variable("Fld")],
                                         )
                                     ]
                                     if len(message.fields) > 1
@@ -410,7 +425,7 @@ class SerializerGenerator:
                                         [
                                             Call(
                                                 "Field_First",
-                                                [Variable("Ctx"), Variable("Val.Fld")],
+                                                [Variable("Ctx"), Variable("Fld")],
                                             )
                                         ],
                                     ),
@@ -423,7 +438,7 @@ class SerializerGenerator:
                                             Add(
                                                 Call(
                                                     "Field_First",
-                                                    [Variable("Ctx"), Variable("Val.Fld")],
+                                                    [Variable("Ctx"), Variable("Fld")],
                                                 ),
                                                 Variable("Size"),
                                                 -Number(1),
@@ -445,7 +460,7 @@ class SerializerGenerator:
                                                                 "Field_First",
                                                                 [
                                                                     Variable("Ctx"),
-                                                                    Variable("Val.Fld"),
+                                                                    Variable("Fld"),
                                                                 ],
                                                             ),
                                                             Variable("Size"),
@@ -468,10 +483,14 @@ class SerializerGenerator:
                                         Variable("Ctx.First"),
                                         Variable("Ctx.Last"),
                                         Call("Has_Buffer", [Variable("Ctx")]),
-                                        Call("Predecessor", [Variable("Ctx"), Variable("Val.Fld")]),
-                                        Call("Field_First", [Variable("Ctx"), Variable("Val.Fld")]),
+                                        Call("Predecessor", [Variable("Ctx"), Variable("Fld")]),
+                                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
+                                GreaterEqual(
+                                    Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
+                                    Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                                ),
                                 If(
                                     [
                                         (
@@ -481,16 +500,14 @@ class SerializerGenerator:
                                             ),
                                             Call(
                                                 "Valid",
-                                                [Variable("Ctx"), Variable("Val.Fld")],
+                                                [Variable("Ctx"), Variable("Fld")],
                                             ),
                                         )
                                     ],
-                                    Call(
-                                        "Structural_Valid", [Variable("Ctx"), Variable("Val.Fld")]
-                                    ),
+                                    Call("Structural_Valid", [Variable("Ctx"), Variable("Fld")]),
                                 ),
                                 Case(
-                                    Variable("Val.Fld"),
+                                    Variable("Fld"),
                                     [
                                         (
                                             Variable(f.affixed_name),
@@ -504,7 +521,7 @@ class SerializerGenerator:
                                                             ),
                                                             Call(
                                                                 "To_Actual",
-                                                                [Variable(f"Val.{f.name}_Value")],
+                                                                [Variable("Val")],
                                                             ),
                                                         )
                                                     ]
@@ -533,7 +550,7 @@ class SerializerGenerator:
                                                                             "Field_Last",
                                                                             [
                                                                                 Variable("Ctx"),
-                                                                                Variable("Val.Fld"),
+                                                                                Variable("Fld"),
                                                                             ],
                                                                         ),
                                                                     ),
@@ -546,11 +563,17 @@ class SerializerGenerator:
                                                 ),
                                             ),
                                         )
-                                        for f in message.all_fields
+                                        for f in message.fields
                                     ],
                                 ),
-                                common.unchanged_cursor_before_or_invalid(
-                                    Variable("Val.Fld"), loop_entry=False, or_invalid=False
+                                *(
+                                    [
+                                        common.unchanged_cursor_before_or_invalid(
+                                            Variable("Fld"), loop_entry=False, or_invalid=False
+                                        )
+                                    ]
+                                    if len(message.fields) > 1
+                                    else []
                                 ),
                             )
                         ),
@@ -588,18 +611,14 @@ class SerializerGenerator:
                             AndThen(
                                 *self.setter_preconditions(f),
                                 Call(
-                                    "Field_Condition",
-                                    [
-                                        Variable("Ctx"),
-                                        Aggregate(
-                                            Variable(f.affixed_name),
-                                            Call("To_Base", [Variable("Val")]),
-                                        ),
-                                    ],
+                                    f"Valid_{t.name}"
+                                    if is_builtin_type(t.identifier)
+                                    else ID(self.prefix * t.package * f"Valid_{t.name}"),
+                                    [Call("To_U64", [Variable("Val")])],
                                 ),
-                                Call("Valid", [Call("To_Base", [Variable("Val")])])
-                                if not isinstance(t, Enumeration)
-                                else TRUE,
+                                common.field_condition_call(
+                                    message, f, value=Call("To_U64", [Variable("Val")])
+                                ),
                                 common.sufficient_space_for_field_condition(
                                     Variable(f.affixed_name)
                                 ),
@@ -637,25 +656,22 @@ class SerializerGenerator:
                     specification(f, t),
                     [
                         ObjectDeclaration(
-                            ["Field_Value"],
-                            "Field_Dependent_Value",
-                            Aggregate(
-                                Variable(f.affixed_name),
-                                Call("To_Base", [Variable("Val")]),
-                            ),
+                            ["Value"],
+                            const.TYPES_U64,
+                            Call("To_U64", [Variable("Val")]),
                             constant=True,
                         ),
                         ObjectDeclaration(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
                         ObjectDeclaration(["Offset"], const.TYPES_OFFSET),
-                        self.insert_function(common.full_base_type_name(t)),
                     ],
                     [
                         CallStatement(
                             "Set",
                             [
                                 Variable("Ctx"),
-                                Variable("Field_Value"),
-                                Call("Field_Size", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                Variable(f.affixed_name),
+                                Variable("Value"),
+                                t.size.ada_expr(),
                                 TRUE,
                                 Variable("Buffer_First"),
                                 Variable("Buffer_Last"),
@@ -663,13 +679,14 @@ class SerializerGenerator:
                             ],
                         ),
                         CallStatement(
-                            "Insert",
+                            const.TYPES * "Insert",
                             [
-                                Variable(f"Field_Value.{f.name}_Value"),
+                                Variable("Value"),
                                 Variable("Ctx.Buffer"),
                                 Variable("Buffer_First"),
                                 Variable("Buffer_Last"),
                                 Variable("Offset"),
+                                t.size.ada_expr(),
                                 Variable(
                                     const.TYPES_HIGH_ORDER_FIRST
                                     if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
@@ -730,7 +747,6 @@ class SerializerGenerator:
                 SubprogramBody(
                     specification(f),
                     [
-                        ObjectDeclaration(["Unused_First", "Unused_Last"], const.TYPES_BIT_INDEX),
                         ObjectDeclaration(
                             ["Unused_Buffer_First", "Unused_Buffer_Last"], const.TYPES_INDEX
                         ),
@@ -741,7 +757,8 @@ class SerializerGenerator:
                             "Set",
                             [
                                 Variable("Ctx"),
-                                NamedAggregate(("Fld", Variable(f.affixed_name))),
+                                Variable(f.affixed_name),
+                                Number(0),
                                 Number(0),
                                 TRUE,
                                 Variable("Unused_Buffer_First"),
@@ -776,7 +793,9 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f),
-                                *self.composite_setter_field_condition_precondition(message, f),
+                                *self.composite_setter_field_condition_precondition(
+                                    message, f, empty=True
+                                ),
                                 *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
@@ -853,7 +872,8 @@ class SerializerGenerator:
                             "Set",
                             [
                                 Variable("Ctx"),
-                                NamedAggregate(("Fld", Variable(f.affixed_name))),
+                                Variable(f.affixed_name),
+                                Number(0),
                                 Variable("Size"),
                                 TRUE,
                                 Variable("Buffer_First"),
@@ -1227,9 +1247,7 @@ class SerializerGenerator:
                                 "Assert",
                                 [Equal(Mod(Variable("Last"), Size(const.TYPES_BYTE)), Number(0))],
                             ),
-                            *common.initialize_field_statements(
-                                message, f, reset_written_last=True
-                            ),
+                            *common.initialize_field_statements(f, reset_written_last=True),
                         ],
                         [
                             Precondition(
@@ -1422,8 +1440,8 @@ class SerializerGenerator:
             common.field_condition_call(
                 message,
                 field,
-                Variable("Data"),
-                None if empty else Call(const.TYPES_TO_BIT_LENGTH, [Length("Data")]),
+                aggregate=None if empty else Variable("Data"),
+                size=None if empty else Call(const.TYPES_TO_BIT_LENGTH, [Length("Data")]),
             ),
         ]
 

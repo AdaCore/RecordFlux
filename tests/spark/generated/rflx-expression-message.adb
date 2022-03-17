@@ -5,6 +5,8 @@ package body RFLX.Expression.Message with
   SPARK_Mode
 is
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Written_Last);
@@ -141,26 +143,8 @@ is
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
-   function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld),
-     Post =>
-       Get_Field_Value'Result.Fld = Fld
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
-      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
-      Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last);
-   begin
-      return ((case Fld is
-                  when F_Payload =>
-                     (Fld => F_Payload, Payload_Value => Ctx.Buffer.all (Buffer_First .. Buffer_Last))));
-   end Get_Field_Value;
-
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : Field_Dependent_Value;
+      Value : RFLX_Types.U64;
    begin
       if
          Has_Buffer (Ctx)
@@ -169,10 +153,10 @@ is
          and then Path_Condition (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
-            Value := Get_Field_Value (Ctx, Fld);
+            Value := 0;
             if
-               Valid_Value (Value)
-               and Field_Condition (Ctx, Value)
+               Valid_Value (Fld, Value)
+               and then Field_Condition (Ctx, Fld, Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, Fld)) .. RFLX_Types.To_Index (Field_Last (Ctx, Fld))))
             then
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
@@ -244,7 +228,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Payload, Payload_Value => (0, 0)), Predecessor => Ctx.Cursors (F_Payload).Predecessor);
+      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload_Private;
 
@@ -279,7 +263,7 @@ is
    procedure To_Context (Struct : Structure; Ctx : in out Context) is
    begin
       Reset (Ctx);
-      if Field_Condition (Ctx, Construct_Payload_Value (Struct.Payload)) then
+      if Field_Condition (Ctx, F_Payload, Struct.Payload) then
          Set_Payload (Ctx, Struct.Payload);
       end if;
    end To_Context;

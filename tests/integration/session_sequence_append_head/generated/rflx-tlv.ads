@@ -1,25 +1,20 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.TLV with
   SPARK_Mode
 is
-
-   type Tag_Base is mod 2**8;
 
    type Tag is (Msg_Data, Msg_Error) with
      Size =>
        8;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
 
-   function Valid (Val : RFLX.TLV.Tag_Base) return Boolean is
-     ((case Val is
-          when 1 | 3 =>
-             True,
-          when others =>
-             False));
+   function Valid_Tag (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val in 1 | 3);
 
-   function To_Base (Enum : RFLX.TLV.Tag) return RFLX.TLV.Tag_Base is
+   function To_U64 (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when Msg_Data =>
              1,
@@ -28,7 +23,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.TLV.Tag_Base) return RFLX.TLV.Tag is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.TLV.Tag is
      ((case Val is
           when 1 =>
              Msg_Data,
@@ -38,7 +33,7 @@ is
              RFLX.TLV.Tag'Last))
     with
      Pre =>
-       Valid (Val);
+       Valid_Tag (Val);
 
    pragma Warnings (On, "unreachable branch");
 
@@ -46,24 +41,18 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   use type RFLX.RFLX_Types.U64;
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 65535);
 
-   function Valid (Val : RFLX.TLV.Length) return Boolean is
-     (True);
+   function To_U64 (Val : RFLX.TLV.Length) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
-     (Val);
-
-   function To_Actual (Val : RFLX.TLV.Length) return RFLX.TLV.Length is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.TLV.Length is
+     (RFLX.TLV.Length (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_Length (Val);
 
 end RFLX.TLV;

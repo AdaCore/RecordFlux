@@ -1,11 +1,10 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.Enumeration with
   SPARK_Mode
 is
-
-   type Priority_Base is mod 2**8;
 
    type Priority_Enum is (Low, Medium, High) with
      Size =>
@@ -18,7 +17,7 @@ is
             when True =>
                Enum : Priority_Enum;
             when False =>
-               Raw : Priority_Base;
+               Raw : RFLX_Types.U64;
          end case;
       end record;
 
@@ -26,14 +25,14 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Enumeration.Priority_Base) return Boolean is
+   function Valid_Priority (Val : RFLX.RFLX_Types.U64) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.Enumeration.Priority_Base is
+   function To_U64 (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when Low =>
              1,
@@ -45,7 +44,7 @@ is
    function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.Enumeration.Priority_Base) return RFLX.Enumeration.Priority is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Enumeration.Priority is
      ((case Val is
           when 1 =>
              (True, Low),
@@ -57,9 +56,9 @@ is
              (False, Val)))
     with
      Pre =>
-       Valid (Val);
+       Valid_Priority (Val);
 
-   function To_Base (Val : RFLX.Enumeration.Priority) return RFLX.Enumeration.Priority_Base is
-     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
+   function To_U64 (Val : RFLX.Enumeration.Priority) return RFLX.RFLX_Types.U64 is
+     ((if Val.Known then To_U64 (Val.Enum) else Val.Raw));
 
 end RFLX.Enumeration;

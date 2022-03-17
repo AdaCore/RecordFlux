@@ -345,7 +345,7 @@ package body RFLX.Sequence_Tests is
             I := I + 1;
          end loop;
 
-         Assert (Sequence.Range_Vector.Size (Sequence_Context) = 2 * Sequence.Range_Integer_Base'Size, "Invalid size");
+         Assert (Sequence.Range_Vector.Size (Sequence_Context) = 2 * Sequence.Range_Integer'Size, "Invalid size");
          Assert (Sequence.Range_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
          Assert (Sequence.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
@@ -400,7 +400,7 @@ package body RFLX.Sequence_Tests is
          end loop;
 
          Assert (Sequence.Enumeration_Vector.Size (Sequence_Context)'Image,
-                 Natural'Image (2 * Sequence.Enumeration_Base'Size),
+                 Natural'Image (2 * Sequence.Enumeration'Size),
                  "Invalid size");
          Assert (Sequence.Enumeration_Vector.Head (Sequence_Context)'Image, Sequence.One'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
@@ -457,7 +457,7 @@ package body RFLX.Sequence_Tests is
             I := I + 1;
          end loop;
 
-         Assert (Sequence.AV_Enumeration_Vector.Size (Sequence_Context) = 2 * Sequence.AV_Enumeration_Base'Size,
+         Assert (Sequence.AV_Enumeration_Vector.Size (Sequence_Context) = 2 * Sequence.AV_Enumeration_Enum'Size,
                  "Invalid size");
          Assert (Sequence.AV_Enumeration_Vector.Head (Sequence_Context).Known, "Unknown head element");
          Assert (Sequence.AV_Enumeration_Vector.Head (Sequence_Context).Enum'Image, Sequence.AV_One'Image,
@@ -544,7 +544,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Range_Vector.Append_Element (Range_Vector_Context, 2);
 
       Assert (Sequence.Range_Vector.Size (Range_Vector_Context)'Image,
-              Natural (2 * Sequence.Range_Integer_Base'Size)'Image,
+              Natural (2 * Sequence.Range_Integer'Size)'Image,
               "Invalid size");
       Assert (Sequence.Range_Vector.Head (Range_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
       Assert (not Sequence.Range_Vector.Has_Element (Range_Vector_Context), "Invalid acceptance of further element");
@@ -570,7 +570,7 @@ package body RFLX.Sequence_Tests is
       Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.Two);
 
       Assert (Sequence.Enumeration_Vector.Size (Enumeration_Vector_Context)'Image,
-              Natural (2 * Sequence.Enumeration_Base'Size)'Image,
+              Natural (2 * Sequence.Enumeration'Size)'Image,
               "Invalid size");
       Assert (Sequence.Enumeration_Vector.Head (Enumeration_Vector_Context)'Image, Sequence.One'Image,
               "Invalid head element");
@@ -601,7 +601,7 @@ package body RFLX.Sequence_Tests is
                                                      Sequence.To_Actual (Sequence.AV_Two));
 
       Assert (Sequence.AV_Enumeration_Vector.Size (AV_Enumeration_Vector_Context)'Image,
-              Natural (2 * Sequence.AV_Enumeration_Base'Size)'Image,
+              Natural (2 * Sequence.AV_Enumeration_Enum'Size)'Image,
               "Invalid size");
       Assert (Sequence.AV_Enumeration_Vector.Head (AV_Enumeration_Vector_Context).Known, "Unknown head element");
       Assert (Sequence.AV_Enumeration_Vector.Head (AV_Enumeration_Vector_Context).Enum'Image, Sequence.AV_One'Image,

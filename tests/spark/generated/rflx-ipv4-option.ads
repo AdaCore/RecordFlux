@@ -13,6 +13,8 @@ is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
 
+   pragma Warnings (Off, """U64"" is already use-visible through previous use_type_clause");
+
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
    use type RFLX_Types.Bytes;
@@ -30,6 +32,8 @@ is
    use type RFLX_Types.Offset;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (On, """U64"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""U64"" * has no effect");
 
@@ -56,22 +60,6 @@ is
        and Last < RFLX_Types.Bit_Index'Last
        and First rem RFLX_Types.Byte'Size = 1
        and Last rem RFLX_Types.Byte'Size = 0;
-
-   type Field_Dependent_Value (Fld : Virtual_Field := F_Initial) is
-      record
-         case Fld is
-            when F_Initial | F_Option_Data | F_Final =>
-               null;
-            when F_Copied =>
-               Copied_Value : RFLX.RFLX_Builtin_Types.Boolean_Base;
-            when F_Option_Class =>
-               Option_Class_Value : RFLX.IPv4.Option_Class_Base;
-            when F_Option_Number =>
-               Option_Number_Value : RFLX.IPv4.Option_Number;
-            when F_Option_Length =>
-               Option_Length_Value : RFLX.IPv4.Option_Length_Base;
-         end case;
-      end record;
 
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
      Pre =>
@@ -260,6 +248,14 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
+   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        Valid_Predecessor (Ctx, Fld),
@@ -270,11 +266,11 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Val.Fld in Field'Range
-       and Valid_Predecessor (Ctx, Val.Fld),
+       and Valid_Predecessor (Ctx, Fld)
+       and Valid_Value (Fld, Val),
      Post =>
        True;
 
@@ -440,8 +436,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Copied)
-       and then Field_Condition (Ctx, (F_Copied, To_Base (Val)))
-       and then True
+       and then Valid_Boolean (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Copied, To_U64 (Val))
        and then Available_Space (Ctx, F_Copied) >= Field_Size (Ctx, F_Copied),
      Post =>
        Has_Buffer (Ctx)
@@ -465,8 +461,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Class)
-       and then Field_Condition (Ctx, (F_Option_Class, To_Base (Val)))
-       and then True
+       and then RFLX.IPv4.Valid_Option_Class (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Option_Class, To_U64 (Val))
        and then Available_Space (Ctx, F_Option_Class) >= Field_Size (Ctx, F_Option_Class),
      Post =>
        Has_Buffer (Ctx)
@@ -492,8 +488,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Number)
-       and then Field_Condition (Ctx, (F_Option_Number, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.IPv4.Valid_Option_Number (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Option_Number, To_U64 (Val))
        and then Available_Space (Ctx, F_Option_Number) >= Field_Size (Ctx, F_Option_Number),
      Post =>
        Has_Buffer (Ctx)
@@ -523,8 +519,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Length)
-       and then Field_Condition (Ctx, (F_Option_Length, To_Base (Val)))
-       and then Valid (To_Base (Val))
+       and then RFLX.IPv4.Valid_Option_Length (To_U64 (Val))
+       and then Field_Condition (Ctx, F_Option_Length, To_U64 (Val))
        and then Available_Space (Ctx, F_Option_Length) >= Field_Size (Ctx, F_Option_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -532,17 +528,17 @@ is
        and Get_Option_Length (Ctx) = Val
        and Invalid (Ctx, F_Option_Data)
        and (if
-               (RFLX_Types.U64 (To_Base (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
+               (RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
                 and Get_Option_Number (Ctx) = 4)
-               or (RFLX_Types.U64 (To_Base (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+               or (RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
                    and (Get_Option_Number (Ctx) = 9
                         or Get_Option_Number (Ctx) = 3
                         or Get_Option_Number (Ctx) = 7))
                or (Get_Option_Length (Ctx) = 11
-                   and RFLX_Types.U64 (To_Base (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                   and RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
                    and Get_Option_Number (Ctx) = 2)
                or (Get_Option_Length (Ctx) = 4
-                   and RFLX_Types.U64 (To_Base (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
+                   and RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
                    and Get_Option_Number (Ctx) = 8)
             then
                Predecessor (Ctx, F_Option_Data) = F_Option_Length
@@ -564,7 +560,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Data)
-       and then Field_Condition (Ctx, (Fld => F_Option_Data))
+       and then Field_Condition (Ctx, F_Option_Data, 0)
        and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
        and then Field_First (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 1
        and then Field_Last (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 0
@@ -619,7 +615,7 @@ is
        and then Field_Last (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Option_Data, Data'Length)
-       and then Field_Condition (Ctx, (Fld => F_Option_Data)),
+       and then Field_Condition (Ctx, F_Option_Data, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Data)
@@ -684,28 +680,6 @@ private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Value (Val : Field_Dependent_Value) return Boolean is
-     ((case Val.Fld is
-          when F_Copied =>
-             Valid (Val.Copied_Value),
-          when F_Option_Class =>
-             Valid (Val.Option_Class_Value),
-          when F_Option_Number =>
-             Valid (Val.Option_Number_Value),
-          when F_Option_Length =>
-             Valid (Val.Option_Length_Value),
-          when F_Option_Data =>
-             True,
-          when F_Initial | F_Final =>
-             False))
-    with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          Predecessor : Virtual_Field := F_Final;
@@ -713,13 +687,11 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : Field_Dependent_Value := (Fld => F_Final);
+               Value : RFLX_Types.U64 := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
-      end record with
-     Dynamic_Predicate =>
-       (if State = S_Valid or State = S_Structural_Valid then Valid_Value (Field_Cursor.Value));
+      end record;
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
@@ -755,14 +727,14 @@ private
       and then Last rem RFLX_Types.Byte'Size = 0
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
-      and then (for all F in Field'First .. Field'Last =>
+      and then (for all F in Field =>
                    (if
                        Structural_Valid (Cursors (F))
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Verified_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
-                       and Cursors (F).Value.Fld = F))
+                       and Valid_Value (F, Cursors (F).Value)))
       and then ((if
                     Structural_Valid (Cursors (F_Option_Class))
                  then
@@ -778,24 +750,24 @@ private
                           then
                              (Valid (Cursors (F_Option_Number))
                               and then Cursors (F_Option_Length).Predecessor = F_Option_Number
-                              and then Cursors (F_Option_Number).Value.Option_Number_Value > 1))
+                              and then Cursors (F_Option_Number).Value > 1))
                 and then (if
                              Structural_Valid (Cursors (F_Option_Data))
                           then
                              (Valid (Cursors (F_Option_Length))
                               and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                              and then ((RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                                         and Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                                        or (RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                            and (Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                                                 or Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                                                 or Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                                        or (Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                                            and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                            and Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                                        or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                                            and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                            and Cursors (F_Option_Number).Value.Option_Number_Value = 8)))))
+                              and then ((RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
+                                         and Cursors (F_Option_Number).Value = 4)
+                                        or (RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                            and (Cursors (F_Option_Number).Value = 9
+                                                 or Cursors (F_Option_Number).Value = 3
+                                                 or Cursors (F_Option_Number).Value = 7))
+                                        or (Cursors (F_Option_Length).Value = 11
+                                            and RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                            and Cursors (F_Option_Number).Value = 2)
+                                        or (Cursors (F_Option_Length).Value = 4
+                                            and RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                            and Cursors (F_Option_Number).Value = 8)))))
       and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
                 and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
                 and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
@@ -803,49 +775,46 @@ private
       and then (if
                    Structural_Valid (Cursors (F_Copied))
                 then
-                   Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = RFLX.RFLX_Builtin_Types.Boolean_Base'Size
+                   Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = 1
                    and then Cursors (F_Copied).Predecessor = F_Initial
                    and then Cursors (F_Copied).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Option_Class))
                              then
-                                Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = RFLX.IPv4.Option_Class_Base'Size
+                                Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = 2
                                 and then Cursors (F_Option_Class).Predecessor = F_Copied
                                 and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1
                                 and then (if
                                              Structural_Valid (Cursors (F_Option_Number))
                                           then
-                                             Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = RFLX.IPv4.Option_Number'Size
+                                             Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = 5
                                              and then Cursors (F_Option_Number).Predecessor = F_Option_Class
                                              and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1
                                              and then (if
                                                           Structural_Valid (Cursors (F_Option_Length))
-                                                          and then Cursors (F_Option_Number).Value.Option_Number_Value > 1
+                                                          and then Cursors (F_Option_Number).Value > 1
                                                        then
-                                                          Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = RFLX.IPv4.Option_Length_Base'Size
+                                                          Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = 8
                                                           and then Cursors (F_Option_Length).Predecessor = F_Option_Number
                                                           and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Option_Data))
-                                                                       and then ((RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-                                                                                  and Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-                                                                                 or (RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                                                                     and (Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                                                                                          or Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                                                                                          or Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-                                                                                 or (Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                                                                                     and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                                                                     and Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-                                                                                 or (Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                                                                                     and RFLX_Types.U64 (Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                                                                                     and Cursors (F_Option_Number).Value.Option_Number_Value = 8))
+                                                                       and then ((RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
+                                                                                  and Cursors (F_Option_Number).Value = 4)
+                                                                                 or (RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                                                                     and (Cursors (F_Option_Number).Value = 9
+                                                                                          or Cursors (F_Option_Number).Value = 3
+                                                                                          or Cursors (F_Option_Number).Value = 7))
+                                                                                 or (Cursors (F_Option_Length).Value = 11
+                                                                                     and RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                                                                     and Cursors (F_Option_Number).Value = 2)
+                                                                                 or (Cursors (F_Option_Length).Value = 4
+                                                                                     and RFLX_Types.U64 (Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                                                                                     and Cursors (F_Option_Number).Value = 8))
                                                                     then
-                                                                       Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8
+                                                                       Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
                                                                        and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                                                                       and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))))
-    with
-     Post =>
-       True;
+                                                                       and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))));
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 
@@ -881,64 +850,75 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
+   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean is
+     ((case Fld is
+          when F_Copied =>
+             Valid_Boolean (Val),
+          when F_Option_Class =>
+             RFLX.IPv4.Valid_Option_Class (Val),
+          when F_Option_Number =>
+             RFLX.IPv4.Valid_Option_Number (Val),
+          when F_Option_Length =>
+             RFLX.IPv4.Valid_Option_Length (Val),
+          when F_Option_Data =>
+             True));
+
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Ctx.Cursors (Fld).Predecessor is
           when F_Initial | F_Copied | F_Option_Class | F_Option_Data | F_Final =>
              True,
           when F_Option_Number =>
-             Ctx.Cursors (F_Option_Number).Value.Option_Number_Value > 1,
+             Ctx.Cursors (F_Option_Number).Value > 1,
           when F_Option_Length =>
-             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-              and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-             or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-             or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 11
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-             or (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value = 4
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8)));
+             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
+              and Ctx.Cursors (F_Option_Number).Value = 4)
+             or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and (Ctx.Cursors (F_Option_Number).Value = 9
+                      or Ctx.Cursors (F_Option_Number).Value = 3
+                      or Ctx.Cursors (F_Option_Number).Value = 7))
+             or (Ctx.Cursors (F_Option_Length).Value = 11
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value = 2)
+             or (Ctx.Cursors (F_Option_Length).Value = 4
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value = 8)));
 
-   function Field_Condition (Ctx : Context; Val : Field_Dependent_Value) return Boolean is
-     ((case Val.Fld is
-          when F_Initial | F_Copied | F_Option_Class =>
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean is
+     ((case Fld is
+          when F_Copied | F_Option_Class =>
              True,
           when F_Option_Number =>
-             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-              and RFLX_Types.U64 (Val.Option_Number_Value) = 1)
-             or RFLX_Types.U64 (Val.Option_Number_Value) > 1,
+             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+              and Val = 1)
+             or Val > 1,
           when F_Option_Length =>
-             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Debugging_And_Measurement))
-              and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 4)
-             or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 9
-                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 3
-                      or Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 7))
-             or (RFLX_Types.U64 (Val.Option_Length_Value) = 11
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 2)
-             or (RFLX_Types.U64 (Val.Option_Length_Value) = 4
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 8),
+             (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
+              and Ctx.Cursors (F_Option_Number).Value = 4)
+             or (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and (Ctx.Cursors (F_Option_Number).Value = 9
+                      or Ctx.Cursors (F_Option_Number).Value = 3
+                      or Ctx.Cursors (F_Option_Number).Value = 7))
+             or (Val = 11
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value = 2)
+             or (Val = 4
+                 and RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                 and Ctx.Cursors (F_Option_Number).Value = 8),
           when F_Option_Data =>
-             True,
-          when F_Final =>
-             False));
+             True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      ((case Fld is
           when F_Copied =>
-             RFLX.RFLX_Builtin_Types.Boolean_Base'Size,
+             1,
           when F_Option_Class =>
-             RFLX.IPv4.Option_Class_Base'Size,
+             2,
           when F_Option_Number =>
-             RFLX.IPv4.Option_Number'Size,
+             5,
           when F_Option_Length =>
-             RFLX.IPv4.Option_Length_Base'Size,
+             8,
           when F_Option_Data =>
-             (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value) - 2) * 8));
+             (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value) - 2) * 8));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Copied then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
@@ -1006,30 +986,30 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)));
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                    and Ctx.Cursors (F_Option_Number).Value = 1)));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value) = RFLX_Types.U64 (To_Base (RFLX.IPv4.Control))
-                    and Ctx.Cursors (F_Option_Number).Value.Option_Number_Value = 1)));
+          and then (RFLX_Types.U64 (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                    and Ctx.Cursors (F_Option_Number).Value = 1)));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>
           Incomplete (Ctx, F)));
 
    function Get_Copied (Ctx : Context) return Boolean is
-     (To_Actual (Ctx.Cursors (F_Copied).Value.Copied_Value));
+     (To_Actual (Ctx.Cursors (F_Copied).Value));
 
    function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class is
-     (To_Actual (Ctx.Cursors (F_Option_Class).Value.Option_Class_Value));
+     (To_Actual (Ctx.Cursors (F_Option_Class).Value));
 
    function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number is
-     (To_Actual (Ctx.Cursors (F_Option_Number).Value.Option_Number_Value));
+     (To_Actual (Ctx.Cursors (F_Option_Number).Value));
 
    function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length is
-     (To_Actual (Ctx.Cursors (F_Option_Length).Value.Option_Length_Value));
+     (To_Actual (Ctx.Cursors (F_Option_Length).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      (Size = Field_Size (Ctx, Fld))

@@ -14,7 +14,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => Element_Base_Type'First, Next_Element => Element_Base_Type'First);
+      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => {prefix}RFLX_Types.U64'First, Next_Element => {prefix}RFLX_Types.U64'First);
       Buffer := null;
    end Initialize;
 
@@ -40,14 +40,13 @@ is
    end Copy;
 
    procedure Next (Ctx : in out Context) is
-      Last_Bit     : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + Element_Base_Type'Size;
+      Last_Bit     : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
       Buffer_Last  : constant RFLX_Types.Index := RFLX_Types.To_Index (Last_Bit);
       Offset       : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
-      function Extract is new RFLX_Types.Extract (Element_Base_Type);
    begin
       if Buffer_First >= Ctx.Buffer'First and Buffer_Last <= Ctx.Buffer'Last and Buffer_First <= Buffer_Last then
-         Ctx.Next_Element := Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
+         Ctx.Next_Element := Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
          if Valid_Element (Ctx) then
             if Size (Ctx) = 0 then
                Ctx.First_Element := Ctx.Next_Element;
@@ -56,7 +55,7 @@ is
             Ctx.State := S_Invalid;
          end if;
       end if;
-      Ctx.Sequence_Last := Ctx.Sequence_Last + Element_Base_Type'Size;
+      Ctx.Sequence_Last := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
    end Next;
 
    function Get_Element (Ctx : Context) return Element_Type is
@@ -70,19 +69,18 @@ is
       First    : RFLX_Types.Index;
       Last     : RFLX_Types.Index;
       Offset   : RFLX_Types.Offset;
-      procedure Insert is new RFLX_Types.Insert (Element_Base_Type);
    begin
-      Last_Bit := Ctx.Sequence_Last + Element_Base_Type'Size;
+      Last_Bit := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
       First := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (To_Base (Value), Ctx.Buffer, First, Last, Offset, RFLX_Types.High_Order_First);
+         Insert (To_U64 (Value), Ctx.Buffer, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then
-         Ctx.First_Element := To_Base (Value);
+         Ctx.First_Element := To_U64 (Value);
       end if;
-      Ctx.Sequence_Last := Ctx.Sequence_Last + Element_Base_Type'Size;
+      Ctx.Sequence_Last := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
    end Append_Element;
 
 end {prefix}RFLX_Scalar_Sequence;

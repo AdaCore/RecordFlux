@@ -5,6 +5,8 @@ package body RFLX.Messages.Msg with
   SPARK_Mode
 is
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Written_Last);
@@ -148,31 +150,27 @@ is
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
-   function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.U64 with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld),
-     Post =>
-       Get_Field_Value'Result.Fld = Fld
+       and then Sufficient_Buffer_Length (Ctx, Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
       Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last);
       Offset : constant RFLX_Types.Offset := RFLX_Types.Offset ((RFLX_Types.Byte'Size - Last mod RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size);
-      function Extract is new RFLX_Types.Extract (RFLX.Messages.Integer);
-      function Extract is new RFLX_Types.Extract (RFLX.Messages.Enum_T_Base);
+      Size : constant Positive := (case Fld is
+          when F_A | F_B =>
+             32);
+      Byte_Order : constant RFLX_Types.Byte_Order := RFLX_Types.High_Order_First;
    begin
-      return ((case Fld is
-                  when F_A =>
-                     (Fld => F_A, A_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First)),
-                  when F_B =>
-                     (Fld => F_B, B_Value => Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First))));
-   end Get_Field_Value;
+      return RFLX_Types.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
+   end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : Field_Dependent_Value;
+      Value : RFLX_Types.U64;
    begin
       if
          Has_Buffer (Ctx)
@@ -181,10 +179,10 @@ is
          and then Path_Condition (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
-            Value := Get_Field_Value (Ctx, Fld);
+            Value := Get (Ctx, Fld);
             if
-               Valid_Value (Value)
-               and Field_Condition (Ctx, Value)
+               Valid_Value (Fld, Value)
+               and then Field_Condition (Ctx, Fld)
             then
                pragma Assert ((if Fld = F_B then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
@@ -212,55 +210,50 @@ is
       end loop;
    end Verify_Message;
 
-   procedure Set (Ctx : in out Context; Val : Field_Dependent_Value; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Val.Fld in Field
-       and then Valid_Next (Ctx, Val.Fld)
-       and then Valid_Value (Val)
-       and then Valid_Size (Ctx, Val.Fld, Size)
-       and then Size <= Available_Space (Ctx, Val.Fld)
+       and then Valid_Next (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Size (Ctx, Fld, Size)
+       and then Size <= Available_Space (Ctx, Fld)
        and then State_Valid,
      Post =>
-       Valid_Next (Ctx, Val.Fld)
-       and Invalid_Successor (Ctx, Val.Fld)
-       and Buffer_First = RFLX_Types.To_Index (Field_First (Ctx, Val.Fld))
-       and Buffer_Last = RFLX_Types.To_Index (Field_First (Ctx, Val.Fld) + Size - 1)
-       and Offset = RFLX_Types.Offset ((RFLX_Types.Byte'Size - (Field_First (Ctx, Val.Fld) + Size - 1) mod RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
-       and Predecessor (Ctx, Val.Fld) = Predecessor (Ctx, Val.Fld)'Old
-       and Field_First (Ctx, Val.Fld) = Field_First (Ctx, Val.Fld)'Old
-       and (if State_Valid and Size > 0 then Valid (Ctx, Val.Fld) else Structural_Valid (Ctx, Val.Fld))
-       and (case Val.Fld is
-               when F_Initial =>
-                  (Predecessor (Ctx, F_A) = F_Initial
-                   and Valid_Next (Ctx, F_A)),
-               when F_A =>
-                  Get_A (Ctx) = To_Actual (Val.A_Value)
-                  and (Predecessor (Ctx, F_B) = F_A
-                       and Valid_Next (Ctx, F_B)),
-               when F_B =>
-                  Get_B (Ctx) = To_Actual (Val.B_Value)
-                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Val.Fld)),
-               when F_Final =>
-                  True)
-       and (for all F in Field =>
-               (if F < Val.Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
+       Valid_Next (Ctx, Fld)
+       and then Invalid_Successor (Ctx, Fld)
+       and then Buffer_First = RFLX_Types.To_Index (Field_First (Ctx, Fld))
+       and then Buffer_Last = RFLX_Types.To_Index (Field_First (Ctx, Fld) + Size - 1)
+       and then Offset = RFLX_Types.Offset ((RFLX_Types.Byte'Size - (Field_First (Ctx, Fld) + Size - 1) mod RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       and then Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
+       and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Structural_Valid (Ctx, Fld))
+       and then (case Fld is
+                    when F_A =>
+                       Get_A (Ctx) = To_Actual (Val)
+                       and (Predecessor (Ctx, F_B) = F_A
+                            and Valid_Next (Ctx, F_B)),
+                    when F_B =>
+                       Get_B (Ctx) = To_Actual (Val)
+                       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (for all F in Field =>
+                    (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
       First : RFLX_Types.Bit_Index;
       Last : RFLX_Types.Bit_Length;
    begin
-      Reset_Dependent_Fields (Ctx, Val.Fld);
-      First := Field_First (Ctx, Val.Fld);
-      Last := Field_First (Ctx, Val.Fld) + Size - 1;
+      Reset_Dependent_Fields (Ctx, Fld);
+      First := Field_First (Ctx, Fld);
+      Last := Field_First (Ctx, Fld) + Size - 1;
       Offset := RFLX_Types.Offset ((RFLX_Types.Byte'Size - Last mod RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size);
       Buffer_First := RFLX_Types.To_Index (First);
       Buffer_Last := RFLX_Types.To_Index (Last);
@@ -268,32 +261,33 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
+      pragma Assert (Size = (case Fld is
+                         when F_A | F_B =>
+                            32));
       if State_Valid then
-         Ctx.Cursors (Val.Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Val.Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else
-         Ctx.Cursors (Val.Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Val.Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
-      Ctx.Cursors (Successor (Ctx, Val.Fld)) := (State => S_Invalid, Predecessor => Val.Fld);
+      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
    procedure Set_A (Ctx : in out Context; Val : RFLX.Messages.Integer) is
-      Field_Value : constant Field_Dependent_Value := (F_A, To_Base (Val));
+      Value : constant RFLX_Types.U64 := To_U64 (Val);
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
-      procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Integer);
    begin
-      Set (Ctx, Field_Value, Field_Size (Ctx, F_A), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.A_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
+      Set (Ctx, F_A, Value, 32, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
    end Set_A;
 
    procedure Set_B (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
-      Field_Value : constant Field_Dependent_Value := (F_B, To_Base (Val));
+      Value : constant RFLX_Types.U64 := To_U64 (Val);
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
-      procedure Insert is new RFLX_Types.Insert (RFLX.Messages.Enum_T_Base);
    begin
-      Set (Ctx, Field_Value, Field_Size (Ctx, F_B), True, Buffer_First, Buffer_Last, Offset);
-      Insert (Field_Value.B_Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, RFLX_Types.High_Order_First);
+      Set (Ctx, F_B, Value, 32, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
    end Set_B;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

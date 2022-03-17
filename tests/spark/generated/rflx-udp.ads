@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.UDP with
   SPARK_Mode
@@ -9,68 +10,51 @@ is
      Size =>
        16;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   use type RFLX.RFLX_Types.U64;
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function Valid_Port (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 65535);
 
-   function Valid (Val : RFLX.UDP.Port) return Boolean is
-     (True);
+   function To_U64 (Val : RFLX.UDP.Port) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
-     (Val);
-
-   function To_Actual (Val : RFLX.UDP.Port) return RFLX.UDP.Port is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.UDP.Port is
+     (RFLX.UDP.Port (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type Length_Base is mod 2**16 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
+       Valid_Port (Val);
 
    type Length is range 8 .. 2**16 - 1 with
      Size =>
        16;
 
-   function Valid (Val : RFLX.UDP.Length_Base) return Boolean is
-     (Val >= 8);
+   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val >= 8
+      and Val <= 65535);
 
-   function To_Base (Val : RFLX.UDP.Length) return RFLX.UDP.Length_Base is
-     (RFLX.UDP.Length_Base (Val));
+   function To_U64 (Val : RFLX.UDP.Length) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function To_Actual (Val : RFLX.UDP.Length_Base) return RFLX.UDP.Length is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.UDP.Length is
      (RFLX.UDP.Length (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_Length (Val);
 
    type Checksum is mod 2**16 with
      Size =>
        16;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   function Valid_Checksum (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 65535);
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function To_U64 (Val : RFLX.UDP.Checksum) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function Valid (Val : RFLX.UDP.Checksum) return Boolean is
-     (True);
-
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
-     (Val);
-
-   function To_Actual (Val : RFLX.UDP.Checksum) return RFLX.UDP.Checksum is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.UDP.Checksum is
+     (RFLX.UDP.Checksum (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_Checksum (Val);
 
 end RFLX.UDP;

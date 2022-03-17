@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.Sequence with
   SPARK_Mode
@@ -9,86 +10,62 @@ is
      Size =>
        8;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   use type RFLX.RFLX_Types.U64;
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 255);
 
-   function Valid (Val : RFLX.Sequence.Length) return Boolean is
-     (True);
+   function To_U64 (Val : RFLX.Sequence.Length) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.Sequence.Length) return RFLX.Sequence.Length is
-     (Val);
-
-   function To_Actual (Val : RFLX.Sequence.Length) return RFLX.Sequence.Length is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Sequence.Length is
+     (RFLX.Sequence.Length (Val))
     with
      Pre =>
-       Valid (Val);
+       Valid_Length (Val);
 
    type Modular_Integer is mod 2**16 with
      Size =>
        16;
 
-   pragma Warnings (Off, "unused variable ""Val""");
+   function Valid_Modular_Integer (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 65535);
 
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   function To_U64 (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function Valid (Val : RFLX.Sequence.Modular_Integer) return Boolean is
-     (True);
-
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
-
-   function To_Base (Val : RFLX.Sequence.Modular_Integer) return RFLX.Sequence.Modular_Integer is
-     (Val);
-
-   function To_Actual (Val : RFLX.Sequence.Modular_Integer) return RFLX.Sequence.Modular_Integer is
-     (Val)
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Sequence.Modular_Integer is
+     (RFLX.Sequence.Modular_Integer (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type Range_Integer_Base is mod 2**8 with
-     Annotate =>
-       (GNATprove, No_Wrap_Around);
+       Valid_Modular_Integer (Val);
 
    type Range_Integer is range 1 .. 100 with
      Size =>
        8;
 
-   function Valid (Val : RFLX.Sequence.Range_Integer_Base) return Boolean is
+   function Valid_Range_Integer (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function To_Base (Val : RFLX.Sequence.Range_Integer) return RFLX.Sequence.Range_Integer_Base is
-     (RFLX.Sequence.Range_Integer_Base (Val));
+   function To_U64 (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
 
-   function To_Actual (Val : RFLX.Sequence.Range_Integer_Base) return RFLX.Sequence.Range_Integer is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Sequence.Range_Integer is
      (RFLX.Sequence.Range_Integer (Val))
     with
      Pre =>
-       Valid (Val);
-
-   type Enumeration_Base is mod 2**8;
+       Valid_Range_Integer (Val);
 
    type Enumeration is (Zero, One, Two) with
      Size =>
        8;
    for Enumeration use (Zero => 0, One => 1, Two => 2);
 
-   function Valid (Val : RFLX.Sequence.Enumeration_Base) return Boolean is
-     ((case Val is
-          when 0 | 1 | 2 =>
-             True,
-          when others =>
-             False));
+   function Valid_Enumeration (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val in 0 | 1 | 2);
 
-   function To_Base (Enum : RFLX.Sequence.Enumeration) return RFLX.Sequence.Enumeration_Base is
+   function To_U64 (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when Zero =>
              0,
@@ -99,7 +76,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.Sequence.Enumeration_Base) return RFLX.Sequence.Enumeration is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Sequence.Enumeration is
      ((case Val is
           when 0 =>
              Zero,
@@ -111,11 +88,9 @@ is
              RFLX.Sequence.Enumeration'Last))
     with
      Pre =>
-       Valid (Val);
+       Valid_Enumeration (Val);
 
    pragma Warnings (On, "unreachable branch");
-
-   type AV_Enumeration_Base is mod 2**8;
 
    type AV_Enumeration_Enum is (AV_Zero, AV_One, AV_Two) with
      Size =>
@@ -128,7 +103,7 @@ is
             when True =>
                Enum : AV_Enumeration_Enum;
             when False =>
-               Raw : AV_Enumeration_Base;
+               Raw : RFLX_Types.U64;
          end case;
       end record;
 
@@ -136,14 +111,14 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Sequence.AV_Enumeration_Base) return Boolean is
+   function Valid_AV_Enumeration (Val : RFLX.RFLX_Types.U64) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration_Base is
+   function To_U64 (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when AV_Zero =>
              0,
@@ -155,7 +130,7 @@ is
    function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.Sequence.AV_Enumeration_Base) return RFLX.Sequence.AV_Enumeration is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Sequence.AV_Enumeration is
      ((case Val is
           when 0 =>
              (True, AV_Zero),
@@ -167,9 +142,9 @@ is
              (False, Val)))
     with
      Pre =>
-       Valid (Val);
+       Valid_AV_Enumeration (Val);
 
-   function To_Base (Val : RFLX.Sequence.AV_Enumeration) return RFLX.Sequence.AV_Enumeration_Base is
-     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
+   function To_U64 (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.U64 is
+     ((if Val.Known then To_U64 (Val.Enum) else Val.Raw));
 
 end RFLX.Sequence;

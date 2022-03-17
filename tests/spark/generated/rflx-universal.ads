@@ -1,11 +1,10 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types;
 
 package RFLX.Universal with
   SPARK_Mode
 is
-
-   type Option_Type_Base is mod 2**8;
 
    type Option_Type_Enum is (OT_Null, OT_Data) with
      Size =>
@@ -18,7 +17,7 @@ is
             when True =>
                Enum : Option_Type_Enum;
             when False =>
-               Raw : Option_Type_Base;
+               Raw : RFLX_Types.U64;
          end case;
       end record;
 
@@ -26,14 +25,14 @@ is
 
    pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
 
-   function Valid (Val : RFLX.Universal.Option_Type_Base) return Boolean is
+   function Valid_Option_Type (Val : RFLX.RFLX_Types.U64) return Boolean is
      (True);
 
    pragma Warnings (On, "formal parameter ""Val"" is not referenced");
 
    pragma Warnings (On, "unused variable ""Val""");
 
-   function To_Base (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.Universal.Option_Type_Base is
+   function To_U64 (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is
           when OT_Null =>
              0,
@@ -43,7 +42,7 @@ is
    function To_Actual (Enum : Option_Type_Enum) return RFLX.Universal.Option_Type is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.Universal.Option_Type_Base) return RFLX.Universal.Option_Type is
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Universal.Option_Type is
      ((case Val is
           when 0 =>
              (True, OT_Null),
@@ -53,9 +52,9 @@ is
              (False, Val)))
     with
      Pre =>
-       Valid (Val);
+       Valid_Option_Type (Val);
 
-   function To_Base (Val : RFLX.Universal.Option_Type) return RFLX.Universal.Option_Type_Base is
-     ((if Val.Known then To_Base (Val.Enum) else Val.Raw));
+   function To_U64 (Val : RFLX.Universal.Option_Type) return RFLX.RFLX_Types.U64 is
+     ((if Val.Known then To_U64 (Val.Enum) else Val.Raw));
 
 end RFLX.Universal;

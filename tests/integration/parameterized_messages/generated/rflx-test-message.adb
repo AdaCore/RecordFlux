@@ -5,6 +5,8 @@ package body RFLX.Test.Message with
   SPARK_Mode
 is
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Length, Extended, Written_Last);
@@ -82,11 +84,11 @@ is
      ((case Fld is
           when F_Data =>
              (if
-                 RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True))
+                 RFLX_Types.U64 (To_U64 (Ctx.Extended)) = RFLX_Types.U64 (To_U64 (True))
               then
                  F_Extension
               elsif
-                 RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (False))
+                 RFLX_Types.U64 (To_U64 (Ctx.Extended)) = RFLX_Types.U64 (To_U64 (False))
               then
                  F_Final
               else
@@ -165,24 +167,8 @@ is
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
-   function Get_Field_Value (Ctx : Context; Fld : Field) return Field_Dependent_Value with
-     Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld),
-     Post =>
-       Get_Field_Value'Result.Fld = Fld
-   is
-   begin
-      return ((case Fld is
-                  when F_Data =>
-                     (Fld => F_Data),
-                  when F_Extension =>
-                     (Fld => F_Extension)));
-   end Get_Field_Value;
-
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : Field_Dependent_Value;
+      Value : RFLX_Types.U64;
    begin
       if
          Has_Buffer (Ctx)
@@ -191,10 +177,10 @@ is
          and then Path_Condition (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
-            Value := Get_Field_Value (Ctx, Fld);
+            Value := 0;
             if
-               Valid_Value (Value)
-               and Field_Condition (Ctx, Value)
+               Valid_Value (Fld, Value)
+               and then Field_Condition (Ctx, Fld)
             then
                pragma Assert ((if Fld = F_Data or Fld = F_Extension then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
@@ -281,7 +267,7 @@ is
        and Ctx.Verified_Last = Field_Last (Ctx, F_Data)
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.U64 (To_Base (Ctx.Extended)) = RFLX_Types.U64 (To_Base (True))
+               RFLX_Types.U64 (To_U64 (Ctx.Extended)) = RFLX_Types.U64 (To_U64 (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))
@@ -302,7 +288,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Data), Predecessor => Ctx.Cursors (F_Data).Predecessor);
+      Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Initialize_Data_Private;
 
@@ -341,7 +327,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Extension) := (State => S_Structural_Valid, First => First, Last => Last, Value => (Fld => F_Extension), Predecessor => Ctx.Cursors (F_Extension).Predecessor);
+      Ctx.Cursors (F_Extension) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Extension).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Extension)) := (State => S_Invalid, Predecessor => F_Extension);
    end Initialize_Extension_Private;
 

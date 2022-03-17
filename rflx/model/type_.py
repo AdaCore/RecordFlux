@@ -149,7 +149,8 @@ class ModularInteger(Integer):
                 expr.GreaterEqual(expr.Variable(name), expr.Number(0), location=self.location),
                 expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
-        return [expr.TRUE]
+
+        raise NotImplementedError
 
 
 class RangeInteger(Integer):
@@ -308,23 +309,7 @@ class RangeInteger(Integer):
                 expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
 
-        if self.first.simplified() == self.last.simplified():
-            return [expr.Equal(expr.Variable(name), self.first)]
-
-        c: expr.Expr = expr.TRUE
-        if self.first.simplified() != self.base_first.simplified():
-            c = expr.GreaterEqual(expr.Variable(name), self.first)
-        if self.last.simplified() != self.base_last.simplified():
-            c = expr.And(c, expr.LessEqual(expr.Variable(name), self.last))
-        return [c.simplified()]
-
-    @property
-    def base_first(self) -> expr.Expr:
-        return expr.Number(0)
-
-    @property
-    def base_last(self) -> expr.Expr:
-        return expr.Sub(expr.Pow(expr.Number(2), self.size), expr.Number(1))
+        raise NotImplementedError
 
 
 class Enumeration(Scalar):
@@ -508,7 +493,8 @@ class Enumeration(Scalar):
             )
             result.append(expr.Equal(expr.Size(name), self.size, self.location))
             return result
-        return [expr.TRUE]
+
+        raise NotImplementedError
 
 
 class Composite(Type):

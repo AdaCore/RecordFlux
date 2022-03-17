@@ -3,21 +3,29 @@ with RFLX.RFLX_Types;
 
 generic
    type Element_Type is private;
-   type Element_Base_Type is mod <>;
-   with function Valid (Element : Element_Base_Type) return Boolean;
-   with function To_Actual (Element : Element_Base_Type) return Element_Type;
-   with function To_Base (Element : Element_Type) return Element_Base_Type;
+   Element_Size : Positive;
+   with function Valid (Element : RFLX.RFLX_Types.U64) return Boolean;
+   with function To_Actual (Element : RFLX.RFLX_Types.U64) return Element_Type;
+   with function To_U64 (Element : Element_Type) return RFLX.RFLX_Types.U64;
 package RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
 
    pragma Annotate (GNATprove, Terminating, RFLX_Scalar_Sequence);
 
+   use type RFLX_Types.Bytes_Ptr;
+
+   use type RFLX_Types.Index;
+
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   use type RFLX_Types.Bytes_Ptr, RFLX_Types.Index, RFLX_Types.Length, RFLX_Types.Bit_Index;
+   use type RFLX_Types.Length;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
+
+   use type RFLX_Types.Bit_Index;
+
+   use type RFLX_Types.U64;
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
@@ -110,7 +118,7 @@ is
         and then Has_Element (Ctx)),
      Post =>
        (Has_Buffer (Ctx)
-        and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + Element_Base_Type'Size
+        and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + RFLX.RFLX_Types.Bit_Index (Element_Size)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old
@@ -132,18 +140,19 @@ is
    function Head (Ctx : Context) return Element_Type with
      Pre =>
        (Valid (Ctx)
-        and then Sequence_Last (Ctx) >= Ctx.First + Element_Base_Type'Size - 1);
+        and then Sequence_Last (Ctx) >= Ctx.First + RFLX.RFLX_Types.Bit_Index (Element_Size) - 1);
 
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
      Pre =>
        (Has_Buffer (Ctx)
         and then Valid (Ctx)
-        and then Valid (To_Base (Value))
-        and then Available_Space (Ctx) >= Element_Base_Type'Size),
+        and then Valid (To_U64 (Value))
+        and then (if Element_Size < 64 then To_U64 (Value) < 2**Element_Size)
+        and then Available_Space (Ctx) >= RFLX.RFLX_Types.Bit_Index (Element_Size)),
      Post =>
        (Has_Buffer (Ctx)
         and Valid (Ctx)
-        and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + Element_Base_Type'Size
+        and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + RFLX.RFLX_Types.Bit_Index (Element_Size)
         and Ctx.Buffer_First = Ctx.Buffer_First'Old
         and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
         and Ctx.First = Ctx.First'Old
@@ -176,8 +185,8 @@ private
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer        : RFLX_Types.Bytes_Ptr := null;
          State         : Context_State := S_Valid;
-         First_Element : Element_Base_Type := Element_Base_Type'First;
-         Next_Element  : Element_Base_Type := Element_Base_Type'First;
+         First_Element : RFLX.RFLX_Types.U64 := RFLX.RFLX_Types.U64'First;
+         Next_Element  : RFLX.RFLX_Types.U64 := RFLX.RFLX_Types.U64'First;
       end record with
      Dynamic_Predicate =>
        ((if Buffer /= null then
@@ -194,7 +203,7 @@ private
         and (if Sequence_Last > First - 1 and State = S_Valid then Valid (First_Element)));
 
    function Has_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Ctx.Last - Ctx.Sequence_Last >= Element_Base_Type'Size);
+     (Ctx.State = S_Valid and Ctx.Last - Ctx.Sequence_Last >= RFLX.RFLX_Types.Bit_Index (Element_Size));
 
    function Valid_Element (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid and Valid (Ctx.Next_Element));

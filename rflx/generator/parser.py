@@ -1,6 +1,6 @@
 # pylint: disable = too-many-lines
 
-from typing import List, Mapping, Sequence, Tuple
+from typing import Mapping, Sequence
 
 import rflx.expression as expr
 from rflx.ada import (
@@ -13,6 +13,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    ChoiceList,
     Div,
     Equal,
     Expr,
@@ -22,19 +23,21 @@ from rflx.ada import (
     FormalSubprogramDeclaration,
     ForSomeIn,
     FunctionSpecification,
-    GenericFunctionInstantiation,
     Ghost,
     GreaterEqual,
     If,
     IfStatement,
+    In,
     Indexed,
     InOutParameter,
+    Last,
     Length,
     Less,
     LessEqual,
     Mod,
     Mul,
     NamedAggregate,
+    Not,
     Number,
     ObjectDeclaration,
     Old,
@@ -53,13 +56,11 @@ from rflx.ada import (
     Slice,
     String,
     Sub,
-    Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
     UnitPart,
     Variable,
 )
-from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE
 from rflx.model import FINAL, ByteOrder, Composite, Field, Message, Scalar, Type
 
@@ -70,72 +71,34 @@ class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    def extract_function(self, type_identifier: ID) -> Subprogram:
-        return GenericFunctionInstantiation(
-            "Extract",
-            FunctionSpecification(
-                const.TYPES * "Extract",
-                type_identifier,
-                [
-                    Parameter(["Buffer"], const.TYPES_BYTES),
-                    Parameter(["Offset"], const.TYPES_OFFSET),
-                ],
-            ),
-            [common.prefixed_type_identifier(type_identifier, self.prefix)],
-        )
-
-    def create_internal_functions(
-        self, message: Message, scalar_fields: Mapping[Field, Type]
+    @staticmethod
+    def create_get_function(
+        message: Message,
+        scalar_fields: Mapping[Field, Scalar],
+        composite_fields: Sequence[Field],
     ) -> UnitPart:
-        def result(field: Field, message: Message) -> NamedAggregate:
-            aggregate: List[Tuple[str, Expr]] = [("Fld", Variable(field.affixed_name))]
-            if isinstance(message.field_types[field], Scalar):
-                aggregate.append(
-                    (
-                        f"{field.name}_Value",
-                        Call(
-                            "Extract",
-                            [
-                                Variable("Ctx.Buffer"),
-                                Variable("Buffer_First"),
-                                Variable("Buffer_Last"),
-                                Variable("Offset"),
-                                Variable(
-                                    const.TYPES_HIGH_ORDER_FIRST
-                                    if message.byte_order[field] == ByteOrder.HIGH_ORDER_FIRST
-                                    else const.TYPES_LOW_ORDER_FIRST
-                                ),
-                            ],
-                        ),
-                    )
-                )
-            elif isinstance(
-                message.field_types[field], Composite
-            ) and common.is_compared_to_aggregate(field, message):
-                aggregate.append(
-                    (
-                        f"{field.name}_Value",
-                        Slice(
-                            Variable("Ctx.Buffer.all"),
-                            Variable("Buffer_First"),
-                            Variable("Buffer_Last"),
-                        ),
-                    )
-                )
-            return NamedAggregate(*aggregate)
+        if not scalar_fields:
+            return UnitPart()
 
         comparison_to_aggregate = any(
-            (isinstance(t, Composite) and common.is_compared_to_aggregate(f, message))
+            (isinstance(t, Composite) and common.has_aggregate_dependent_condition(message, f))
             for f, t in message.field_types.items()
         )
+
+        big_endian_fields = [
+            f for f in scalar_fields if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
+        ]
+        little_endian_fields = [
+            f for f in scalar_fields if message.byte_order[f] == ByteOrder.LOW_ORDER_FIRST
+        ]
 
         return UnitPart(
             [],
             [
                 SubprogramBody(
                     FunctionSpecification(
-                        "Get_Field_Value",
-                        "Field_Dependent_Value",
+                        "Get",
+                        const.TYPES_U64,
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     [
@@ -152,47 +115,85 @@ class ParserGenerator:
                             Call(const.TYPES_TO_INDEX, [Variable("Last")]),
                             constant=True,
                         ),
-                        *(
-                            [
-                                ObjectDeclaration(
-                                    ["Offset"],
-                                    const.TYPES_OFFSET,
-                                    Call(
-                                        const.TYPES_OFFSET,
-                                        [
-                                            Mod(
-                                                Sub(
-                                                    Size(const.TYPES_BYTE),
-                                                    Mod(Variable("Last"), Size(const.TYPES_BYTE)),
-                                                ),
-                                                Size(const.TYPES_BYTE),
-                                            )
-                                        ],
-                                    ),
-                                    constant=True,
-                                )
-                            ]
-                            if scalar_fields
-                            else []
+                        ObjectDeclaration(
+                            ["Offset"],
+                            const.TYPES_OFFSET,
+                            Call(
+                                const.TYPES_OFFSET,
+                                [
+                                    Mod(
+                                        Sub(
+                                            Size(const.TYPES_BYTE),
+                                            Mod(Variable("Last"), Size(const.TYPES_BYTE)),
+                                        ),
+                                        Size(const.TYPES_BYTE),
+                                    )
+                                ],
+                            ),
+                            constant=True,
                         ),
-                        *unique(
-                            self.extract_function(common.full_base_type_name(t))
-                            for t in message.field_types.values()
-                            if isinstance(t, Scalar)
+                        ObjectDeclaration(
+                            ["Size"],
+                            "Positive",
+                            Case(
+                                Variable("Fld"),
+                                [
+                                    *[
+                                        (Variable(f.affixed_name), t.size.ada_expr())
+                                        for f, t in scalar_fields.items()
+                                    ],
+                                    *(
+                                        [(Variable("others"), Last("Positive"))]
+                                        if composite_fields
+                                        else []
+                                    ),
+                                ],
+                            ),
+                            constant=True,
+                        ),
+                        ObjectDeclaration(
+                            ["Byte_Order"],
+                            const.TYPES_BYTE_ORDER,
+                            If(
+                                [
+                                    (
+                                        In(
+                                            Variable("Fld"),
+                                            ChoiceList(
+                                                *[
+                                                    Variable(f.affixed_name)
+                                                    for f in big_endian_fields
+                                                ]
+                                            ),
+                                        ),
+                                        Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                    )
+                                ],
+                                Variable(const.TYPES_LOW_ORDER_FIRST),
+                            )
+                            if big_endian_fields and little_endian_fields
+                            else Variable(const.TYPES_HIGH_ORDER_FIRST)
+                            if big_endian_fields
+                            else Variable(const.TYPES_LOW_ORDER_FIRST),
+                            constant=True,
                         ),
                     ]
                     if scalar_fields or comparison_to_aggregate
                     else [],
                     [
                         ReturnStatement(
-                            Case(
-                                Variable("Fld"),
+                            Call(
+                                const.TYPES * "Extract",
                                 [
-                                    (Variable(f.affixed_name), result(f, message))
-                                    for f in message.fields
+                                    Variable("Ctx.Buffer"),
+                                    Variable("Buffer_First"),
+                                    Variable("Buffer_Last"),
+                                    Variable("Offset"),
+                                    Variable("Size"),
+                                    Variable("Byte_Order"),
                                 ],
-                            )
-                        )
+                            ),
+                        ),
                     ],
                     [
                         Precondition(
@@ -202,12 +203,11 @@ class ParserGenerator:
                                 Call(
                                     "Sufficient_Buffer_Length", [Variable("Ctx"), Variable("Fld")]
                                 ),
-                            )
-                        ),
-                        Postcondition(
-                            Equal(
-                                Selected(Result("Get_Field_Value"), "Fld"),
-                                Variable("Fld"),
+                                *(
+                                    [Not(Call("Composite_Field", [Variable("Fld")]))]
+                                    if composite_fields
+                                    else []
+                                ),
                             )
                         ),
                     ],
@@ -225,19 +225,37 @@ class ParserGenerator:
             "Verify", [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
         )
 
-        valid_field_condition = And(
+        valid_field_condition = AndThen(
             Call(
                 "Valid_Value",
-                [Variable("Value")],
+                [Variable("Fld"), Variable("Value")],
             ),
             Call(
                 "Field_Condition",
                 [
                     Variable("Ctx"),
-                    Variable("Value"),
+                    Variable("Fld"),
+                    *([Variable("Value")] if common.has_value_dependent_condition(message) else []),
+                    *(
+                        [
+                            Slice(
+                                Variable("Ctx.Buffer.all"),
+                                Call(
+                                    const.TYPES_TO_INDEX,
+                                    [Call("Field_First", [Variable("Ctx"), Variable("Fld")])],
+                                ),
+                                Call(
+                                    const.TYPES_TO_INDEX,
+                                    [Call("Field_Last", [Variable("Ctx"), Variable("Fld")])],
+                                ),
+                            )
+                        ]
+                        if common.has_aggregate_dependent_condition(message)
+                        else []
+                    ),
                     *(
                         [Call("Field_Size", [Variable("Ctx"), Variable("Fld")])]
-                        if common.size_dependent_condition(message)
+                        if common.has_size_dependent_condition(message)
                         else []
                     ),
                 ],
@@ -372,7 +390,7 @@ class ParserGenerator:
             [
                 SubprogramBody(
                     specification,
-                    [ObjectDeclaration(["Value"], "Field_Dependent_Value")],
+                    [ObjectDeclaration(["Value"], const.TYPES_U64)],
                     [
                         IfStatement(
                             [
@@ -399,10 +417,36 @@ class ParserGenerator:
                                                     [
                                                         Assignment(
                                                             "Value",
-                                                            Call(
-                                                                "Get_Field_Value",
-                                                                [Variable("Ctx"), Variable("Fld")],
-                                                            ),
+                                                            If(
+                                                                [
+                                                                    (
+                                                                        Call(
+                                                                            "Composite_Field",
+                                                                            [
+                                                                                Variable("Fld"),
+                                                                            ],
+                                                                        ),
+                                                                        Number(0),
+                                                                    )
+                                                                ],
+                                                                Call(
+                                                                    "Get",
+                                                                    [
+                                                                        Variable("Ctx"),
+                                                                        Variable("Fld"),
+                                                                    ],
+                                                                ),
+                                                            )
+                                                            if scalar_fields and composite_fields
+                                                            else Call(
+                                                                "Get",
+                                                                [
+                                                                    Variable("Ctx"),
+                                                                    Variable("Fld"),
+                                                                ],
+                                                            )
+                                                            if scalar_fields
+                                                            else Number(0),
                                                         ),
                                                         IfStatement(
                                                             [
@@ -736,12 +780,7 @@ class ParserGenerator:
         def result(field: Field) -> Expr:
             return Call(
                 "To_Actual",
-                [
-                    Selected(
-                        Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
-                        f"Value.{field.name}_Value",
-                    )
-                ],
+                [Selected(Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)), "Value")],
             )
 
         return UnitPart(
