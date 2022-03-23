@@ -559,18 +559,16 @@ class ParserGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    And(
-                        Or(
-                            *[
-                                Equal(
-                                    Selected(
-                                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"
-                                    ),
-                                    Variable(s),
-                                )
-                                for s in ("S_Valid", "S_Structural_Valid")
-                            ]
-                        )
+                    Or(
+                        *[
+                            Equal(
+                                Selected(
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"
+                                ),
+                                Variable(s),
+                            )
+                            for s in ("S_Valid", "S_Structural_Valid")
+                        ]
                     ),
                 )
             ],
