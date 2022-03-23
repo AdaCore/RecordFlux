@@ -1531,7 +1531,7 @@ then
       goto Finalize_S;
    end if;
 else
-   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""\");
+   Ada.Text_IO.Put_Line ("Error: unexpected size");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
@@ -1615,8 +1615,8 @@ if
    Universal.Message.Size (Y_Ctx) <= 32768
    and then Universal.Message.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0
 then
-   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1 >= Universal.Message.Get_Length (Y_Ctx) * 8 + 24 then
-      Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + (Universal.Message.Get_Length (Y_Ctx) * 8 + 24) - 1);
+   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx)) * 8 + 24 then
+      Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + (RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx)) * 8 + 24) - 1);
       if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Message_Type) then
          Universal.Message.Set_Message_Type (X_Ctx, Universal.Message.Get_Message_Type (Y_Ctx));
          if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Length) then
@@ -1681,7 +1681,7 @@ then
       goto Finalize_S;
    end if;
 else
-   Ada.Text_IO.Put_Line ("Error: unexpected size of ""Y""\");
+   Ada.Text_IO.Put_Line ("Error: unexpected size");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
@@ -2234,6 +2234,7 @@ def test_session_append_error(
             append,
             ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
             lambda x: False,
+            ID("State"),
         )
 
 
