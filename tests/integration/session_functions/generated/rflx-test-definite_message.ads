@@ -809,8 +809,8 @@ private
       and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
    function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
-     ((Ctx.Cursors (Fld).State = S_Valid
-       or Ctx.Cursors (Fld).State = S_Structural_Valid));
+     (Ctx.Cursors (Fld).State = S_Valid
+      or Ctx.Cursors (Fld).State = S_Structural_Valid);
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
