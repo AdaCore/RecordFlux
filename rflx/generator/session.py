@@ -1895,7 +1895,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             )
 
         elif isinstance(action, stmt.Append):
-            result = self._append(action, exception_handler, is_global)
+            result = self._append(action, exception_handler, is_global, state)
 
         elif isinstance(action, stmt.Extend):
             fail(
@@ -2344,19 +2344,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
         size = self._message_size(message_aggregate)
-        size_variables = [
-            v for v in size.variables() if isinstance(v.type_, (rty.Message, rty.Sequence))
-        ]
-        required_space = (
-            size.substituted(self._substitution(is_global))
-            .substituted(
-                lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
-                if (isinstance(x, expr.Variable) and isinstance(x.type_, rty.AnyInteger))
-                or (isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE)
-                else x
-            )
-            .ada_expr()
-        )
+        required_space, required_space_precondition = self._required_space(size, is_global, state)
         target_type = ID(message_aggregate.type_.identifier)
         target_context = context_id(target, is_global)
         parameter_values = [
@@ -2409,29 +2397,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             *exception_handler.execute_deferred(),
         ]
 
-        if size_variables:
-            expressions = " or ".join(f'"{v}"' for v in size_variables)
+        if required_space_precondition:
             return [
                 self._if(
-                    AndThen(
-                        *[
-                            e
-                            for v in size_variables
-                            if isinstance(v.type_, (rty.Message, rty.Sequence))
-                            for s in [
-                                expr.Size(v).substituted(self._substitution(is_global)).ada_expr()
-                            ]
-                            for e in [
-                                LessEqual(
-                                    s,
-                                    Number(self._allocator.get_size(v.identifier, state) * 8),
-                                ),
-                                Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
-                            ]
-                        ]
-                    ),
+                    required_space_precondition,
                     assign_to_message_aggregate,
-                    f"unexpected size of {expressions}",
+                    "unexpected size",
                     exception_handler,
                 )
             ]
@@ -2955,40 +2926,62 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         append: stmt.Append,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: rid.ID,
     ) -> Sequence[Statement]:
         assert isinstance(append.type_, rty.Sequence)
 
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
-        def check(sequence_type: ID, required_space: Expr) -> Statement:
-            return IfStatement(
-                [
-                    (
-                        Or(
-                            Not(
-                                Call(
-                                    sequence_type * "Has_Element",
-                                    [Variable(sequence_context)],
+        def check(
+            sequence_type: ID, required_space: Expr, precondition: Expr = None
+        ) -> list[Statement]:
+            return [
+                *(
+                    [
+                        IfStatement(
+                            [
+                                (
+                                    Not(precondition),
+                                    [
+                                        *self._debug_output("Error: unexpected size"),
+                                        *exception_handler.execute(),
+                                    ],
                                 )
-                            ),
-                            Less(
-                                Call(
-                                    sequence_type * "Available_Space",
-                                    [Variable(sequence_context)],
+                            ]
+                        )
+                    ]
+                    if precondition
+                    else []
+                ),
+                IfStatement(
+                    [
+                        (
+                            Or(
+                                Not(
+                                    Call(
+                                        sequence_type * "Has_Element",
+                                        [Variable(sequence_context)],
+                                    )
                                 ),
-                                required_space,
+                                Less(
+                                    Call(
+                                        sequence_type * "Available_Space",
+                                        [Variable(sequence_context)],
+                                    ),
+                                    required_space,
+                                ),
                             ),
-                        ),
-                        [
-                            *self._debug_output(
-                                "Error: insufficient space for appending to sequence"
-                                f' "{sequence_context}"'
-                            ),
-                            *exception_handler.execute(),
-                        ],
-                    )
-                ]
-            )
+                            [
+                                *self._debug_output(
+                                    "Error: insufficient space for appending to sequence"
+                                    f' "{sequence_context}"'
+                                ),
+                                *exception_handler.execute(),
+                            ],
+                        )
+                    ]
+                ),
+            ]
 
         if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
             assert isinstance(append.parameter, expr.Variable)
@@ -2998,7 +2991,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             element_type = ID(append.type_.element.identifier)
 
             return [
-                check(sequence_type, Size(element_type)),
+                *check(sequence_type, Size(element_type)),
                 CallStatement(
                     sequence_type * "Append_Element",
                     [Variable(sequence_context), append.parameter.ada_expr()],
@@ -3014,17 +3007,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             self._session_context.referenced_types_body.append(element_type)
 
             if isinstance(append.parameter, expr.MessageAggregate):
-                required_space = (
-                    self._message_size(append.parameter)
-                    .substituted(self._substitution(is_global))
-                    .ada_expr()
+                required_space, required_space_precondition = self._required_space(
+                    self._message_size(append.parameter), is_global, state
                 )
             else:
                 _unsupported_expression(append.parameter, "in Append statement")
 
             with exception_handler.local() as local_exception_handler:
                 return [
-                    check(sequence_type, required_space),
+                    *check(sequence_type, required_space, required_space_precondition),
                     Declare(
                         [ObjectDeclaration([element_context], element_type * "Context")],
                         [
@@ -3100,6 +3091,36 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message = self._model_type(message_aggregate.identifier)
         assert isinstance(message, model.Message)
         return message.size({model.Field(f): v for f, v in message_aggregate.field_values.items()})
+
+    def _required_space(
+        self, size: expr.Expr, is_global: Callable[[ID], bool], state: rid.ID
+    ) -> tuple[Expr, Optional[Expr]]:
+        required_space = (
+            size.substituted(
+                lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
+                if (isinstance(x, expr.Variable) and isinstance(x.type_, rty.AnyInteger))
+                or (isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE)
+                else x
+            )
+            .substituted(self._substitution(is_global))
+            .ada_expr()
+        )
+        # ISSUE: Componolit/RecordFlux#691
+        # Validity of fields accessed in `size` must be checked before access.
+        precondition = [
+            e
+            for v in size.variables()
+            if isinstance(v.type_, (rty.Message, rty.Sequence))
+            for s in [expr.Size(v).substituted(self._substitution(is_global)).ada_expr()]
+            for e in [
+                LessEqual(
+                    s,
+                    Number(self._allocator.get_size(v.identifier, state) * 8),
+                ),
+                Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
+            ]
+        ]
+        return (required_space, AndThen(*precondition) if precondition else None)
 
     def _substitution(self, is_global: Callable[[ID], bool]) -> Callable[[expr.Expr], expr.Expr]:
         # pylint: disable = too-many-statements
