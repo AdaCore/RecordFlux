@@ -153,7 +153,7 @@ class EnumType:
         self.type_name = type_name
         self.enum_literals = enum_literals
         self.type_size = type_size
-        self.always_valid = always_valid and len(self.enum_literals) < 2 ** self.type_size
+        self.always_valid = always_valid and len(self.enum_literals) < 2**self.type_size
 
     def __str__(self) -> str:
         formatted_enum_literals = ",\n".join(str(r) for r in self.enum_literals)
