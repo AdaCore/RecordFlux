@@ -94,7 +94,7 @@ class ModularInteger(Integer):
 
         modulus_int = int(modulus_num)
 
-        if modulus_int > 2 ** 64:
+        if modulus_int > 2**64:
             self.error.extend(
                 [
                     (
@@ -192,7 +192,7 @@ class RangeInteger(Integer):
                 ],
             )
             return
-        if int(last_num) >= 2 ** 63:
+        if int(last_num) >= 2**63:
             self.error.extend(
                 [
                     (
@@ -378,7 +378,7 @@ class Enumeration(Scalar):
         if self.literals.values():
             min_literal_value = min(map(int, self.literals.values()))
             max_literal_value = max(map(int, self.literals.values()))
-            if min_literal_value < 0 or max_literal_value > 2 ** 63 - 1:
+            if min_literal_value < 0 or max_literal_value > 2**63 - 1:
                 self.error.extend(
                     [
                         (

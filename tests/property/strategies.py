@@ -90,7 +90,7 @@ def range_integers(
     align_to_8: int = 0,
 ) -> RangeInteger:
     size = draw(sizes(multiple_of_8, align_to_8))
-    max_value = min(2 ** size - 1, 2 ** 63 - 1)
+    max_value = min(2**size - 1, 2**63 - 1)
     first = draw(st.integers(min_value=0, max_value=max_value))
     last = draw(st.integers(min_value=first, max_value=max_value))
     return RangeInteger(
@@ -116,12 +116,12 @@ def enumerations(
             st.tuples(
                 literal_identifiers(),
                 st.builds(
-                    expr.Number, st.integers(min_value=0, max_value=min(2 ** size - 1, 2 ** 63 - 1))
+                    expr.Number, st.integers(min_value=0, max_value=min(2**size - 1, 2**63 - 1))
                 ),
             ),
             unique_by=(lambda x: x[0], lambda x: x[1]),  # type: ignore[no-any-return]
             min_size=1,
-            max_size=2 ** size,
+            max_size=2**size,
         )
     )
 
@@ -129,7 +129,7 @@ def enumerations(
         next(unique_identifiers),
         literals,
         expr.Number(size),
-        draw(st.booleans()) if len(literals) < 2 ** size else False,
+        draw(st.booleans()) if len(literals) < 2**size else False,
     )
 
 
@@ -195,7 +195,7 @@ def messages(
         target_type: ty.Optional[Type]
 
     def size(pair: FieldPair) -> expr.Expr:
-        max_size = 2 ** 29 - 1
+        max_size = 2**29 - 1
         if isinstance(pair.target_type, (Opaque, Sequence)):
             if isinstance(pair.source_type, Integer):
                 if pair.source_type.last.value <= max_size:

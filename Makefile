@@ -32,7 +32,7 @@ check_isort:
 	isort --check --diff $(python-packages) ide/gnatstudio
 
 check_flake8:
-	flake8 $(python-packages) ide/gnatstudio
+	pflake8 $(python-packages) ide/gnatstudio
 
 check_pylint:
 	pylint $(python-packages)

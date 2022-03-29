@@ -186,15 +186,12 @@ class ChannelAttributeStatement(AttributeStatement):
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameters = [self.parameter.substituted(typify_variable)]
-        return (
-            rty.check_type(
-                statement_type,
-                self._expected_channel_type(),
-                self.location,
-                f'channel "{self.identifier}"',
-            )
-            + self.parameter.check_type_instance(rty.Message)
-        )
+        return rty.check_type(
+            statement_type,
+            self._expected_channel_type(),
+            self.location,
+            f'channel "{self.identifier}"',
+        ) + self.parameter.check_type_instance(rty.Message)
 
     @property
     def parameter(self) -> Expr:

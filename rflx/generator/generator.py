@@ -3769,7 +3769,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ),
                 *(
                     [expr.LessEqual(expr.Variable("Val"), integer.last)]
-                    if integer.last.simplified() != expr.Number(2 ** 64 - 1)
+                    if integer.last.simplified() != expr.Number(2**64 - 1)
                     else []
                 ),
             ).simplified()
@@ -3808,7 +3808,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         return UnitPart(specification)
 
     def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
-        incomplete = len(enum.literals) < 2 ** 64
+        incomplete = len(enum.literals) < 2**64
 
         specification: ty.List[Declaration] = []
 

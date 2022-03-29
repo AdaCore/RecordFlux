@@ -386,7 +386,7 @@ def test_message_value_is_valid_opaque_field(
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1000)
     assert tlv_message_value._is_valid_composite_field("Value")
-    ethernet_frame_value.set("Destination", 2 ** 48 - 1)
+    ethernet_frame_value.set("Destination", 2**48 - 1)
     ethernet_frame_value.set("Source", 0)
     ethernet_frame_value.set("Type_Length_TPID", 1501)
     assert not ethernet_frame_value._is_valid_composite_field("Payload")
@@ -470,7 +470,7 @@ def test_message_value_parse_from_bitstring_invalid(tlv_message_value: MessageVa
 
 
 def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
-    ethernet_frame_value.set("Destination", 2 ** 48 - 1)
+    ethernet_frame_value.set("Destination", 2**48 - 1)
     ethernet_frame_value.set("Source", 0)
     ethernet_frame_value.set("Type_Length_TPID", 1501)
     with pytest.raises(
@@ -487,7 +487,7 @@ def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
 
 def test_integer_value_mod() -> None:
     # pylint: disable=pointless-statement
-    modtype = ModularInteger("Test::Int", expr.Number(2 ** 16))
+    modtype = ModularInteger("Test::Int", expr.Number(2**16))
     modvalue = IntegerValue(modtype)
     assert not modvalue.initialized
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
@@ -501,7 +501,7 @@ def test_integer_value_mod() -> None:
     with pytest.raises(
         PyRFLXError, match=r"^pyrflx: error: value 65536 not in type range 0 .. 65535$"
     ):
-        modvalue.assign(2 ** 16)
+        modvalue.assign(2**16)
     with pytest.raises(
         PyRFLXError, match=r"^pyrflx: error: value -1 not in type range 0 .. 65535$"
     ):
@@ -658,7 +658,7 @@ def test_opaque_value_eq(enum_value: EnumValue) -> None:
     ev = enum_value
     rangetype = RangeInteger("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
     rv = IntegerValue(rangetype)
-    modtype = ModularInteger("Test::Int", expr.Number(2 ** 16))
+    modtype = ModularInteger("Test::Int", expr.Number(2**16))
     mv = IntegerValue(modtype)
     mv2 = IntegerValue(modtype)
     assert ov == ov
