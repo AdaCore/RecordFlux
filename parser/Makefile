@@ -76,7 +76,7 @@ $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz: $(DISTDIR)/gdbinit.py disttools
 
 $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py language/rflx_ast.py
 	$(VERBOSE)pip3 install --upgrade -r requirements.txt
-	$(VERBOSE)python3 -m virtualenv -p python3 $(DISTDIR)/.venv
+	$(VERBOSE)python3 -m venv $(DISTDIR)/.venv
 	$(VERBOSE)$(DISTDIR)/.venv/bin/python -m pip --quiet install contrib/langkit
 	$(VERBOSE)PYTHONPATH=$(PWD) $(DISTDIR)/.venv/bin/python language/generate.py $(DISTDIR) $(VERSION)
 	$(VERBOSE)cp -a $(PWD)/contrib/langkit $(DISTDIR)/
