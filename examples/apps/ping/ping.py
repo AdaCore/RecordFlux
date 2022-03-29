@@ -54,7 +54,7 @@ def ping(target: str) -> None:
             create_request(0, int(ipaddress.IPv4Address(target_ip)), seq),
             (target, 0),
         )
-        seq = (seq + 1) % 2 ** 16
+        seq = (seq + 1) % 2**16
 
         receiving = True
         while receiving:

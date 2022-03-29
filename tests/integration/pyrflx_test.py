@@ -55,7 +55,7 @@ def test_ethernet_final(ethernet_frame_value: MessageValue) -> None:
 
 
 def test_ethernet_802_3(ethernet_frame_value: MessageValue) -> None:
-    ethernet_frame_value.set("Destination", 2 ** 48 - 1)
+    ethernet_frame_value.set("Destination", 2**48 - 1)
     ethernet_frame_value.set("Source", 0)
     ethernet_frame_value.set("Type_Length_TPID", 46)
     ethernet_frame_value.set("Type_Length", 46)
@@ -116,7 +116,7 @@ def test_tls_invalid_outgoing(tls_record_value: MessageValue) -> None:
         match=r"^pyrflx: error: none of the field conditions .* for field Length"
         " have been met by the assigned value: 16385$",
     ):
-        tls_record_value.set("Length", 2 ** 14 + 1)
+        tls_record_value.set("Length", 2**14 + 1)
 
 
 def test_tls_invalid_path(tls_alert_value: MessageValue) -> None:

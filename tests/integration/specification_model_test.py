@@ -755,7 +755,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
         p.parse(test_spec)
         p.create_model()
     else:
-        regex = re.compile(fr"^test.rfi:0:0: parser: error: {match_error}$", re.DOTALL)
+        regex = re.compile(rf"^test.rfi:0:0: parser: error: {match_error}$", re.DOTALL)
         with pytest.raises(RecordFluxError, match=regex):
             p.parse(test_spec)
             p.create_model()

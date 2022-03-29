@@ -688,7 +688,7 @@ class Number(Expr):
 
     def __pow__(self, other: object) -> "Number":
         if isinstance(other, Number):
-            return Number(self.value ** other.value)
+            return Number(self.value**other.value)
         return NotImplemented
 
     def __mod__(self, other: object) -> "Number":
@@ -926,7 +926,7 @@ class Pow(MathBinExpr):
         left = self.left.simplified()
         right = self.right.simplified()
         if isinstance(left, Number) and isinstance(right, Number):
-            return left ** right
+            return left**right
         return Pow(left, right)
 
     @property
@@ -942,7 +942,7 @@ class Pow(MathBinExpr):
         right = self.right.z3expr()
         if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
             raise Z3TypeError("exponentiating non-arithmetic terms")
-        return left ** right
+        return left**right
 
 
 class Mod(MathBinExpr):

@@ -25,8 +25,8 @@ class Benchmark:
         self.__icmp = self.__pyrflx.package("ICMP")
         print(f"Loaded in {perf_counter() - start} seconds")
 
-    def generate(self, count: int = 2 ** 16) -> Generator[bytes, None, None]:
-        if count > 2 ** 16:
+    def generate(self, count: int = 2**16) -> Generator[bytes, None, None]:
+        if count > 2**16:
             raise ValueError
         for ident in range(0, count):
             msg = self.__icmp.new_message("Message")

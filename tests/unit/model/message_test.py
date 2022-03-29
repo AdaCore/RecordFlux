@@ -1455,7 +1455,7 @@ def test_invalid_type_condition_range_high() -> None:
 def test_invalid_type_condition_modular_upper() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(2 ** 16 + 1))),
+        Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(2**16 + 1))),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -2700,97 +2700,73 @@ def test_size() -> None:
     assert NULL_MESSAGE.size() == Number(0)
     assert FIXED_SIZE_MESSAGE.size() == Number(200)
     assert TLV_MESSAGE.size({Field("Tag"): Variable("Msg_Error")}) == Number(8)
-    assert (
-        TLV_MESSAGE.size(
-            {
-                Field("Tag"): Variable("Msg_Data"),
-                Field("Length"): Number(4),
-                Field("Value"): Aggregate(*[Number(0)] * 4),
-            }
-        )
-        == Number(56)
-    )
-    assert (
-        TLV_MESSAGE.size(
-            {
-                Field("Tag"): Variable("Msg_Data"),
-                Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
-                Field("Value"): Aggregate(*[Number(0)] * 3),
-            }
-        )
-        == Number(48)
-    )
-    assert (
-        TLV_MESSAGE.size(
-            {
-                Field("Tag"): Variable("Msg_Data"),
-                Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
-                Field("Value"): Variable("Z"),
-            }
-        )
-        == Add(Size("Z"), Number(24))
-    )
-    assert (
-        TLV_MESSAGE.size(
-            {
-                Field("Tag"): Variable("TLV::Msg_Data"),
-                Field("Length"): Div(Size("Msg_Data"), Number(8)),
-                Field("Value"): Opaque("Msg_Data"),
-            }
-        )
-        == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
-    )
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("Msg_Data"),
+            Field("Length"): Number(4),
+            Field("Value"): Aggregate(*[Number(0)] * 4),
+        }
+    ) == Number(56)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("Msg_Data"),
+            Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
+            Field("Value"): Aggregate(*[Number(0)] * 3),
+        }
+    ) == Number(48)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("Msg_Data"),
+            Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
+            Field("Value"): Variable("Z"),
+        }
+    ) == Add(Size("Z"), Number(24))
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("TLV::Msg_Data"),
+            Field("Length"): Div(Size("Msg_Data"), Number(8)),
+            Field("Value"): Opaque("Msg_Data"),
+        }
+    ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
 
-    assert (
-        ETHERNET_FRAME.size(
-            {
-                Field("Destination"): Number(0),
-                Field("Source"): Number(0),
-                Field("Type_Length_TPID"): Number(46),
-                Field("Type_Length"): Number(46),
-                Field("Payload"): Aggregate(*[Number(0)] * 46),
-            }
-        )
-        == Number(480)
-    )
-    assert (
-        ETHERNET_FRAME.size(
-            {
-                Field("Destination"): Number(0),
-                Field("Source"): Number(0),
-                Field("Type_Length_TPID"): Number(0x8100),
-                Field("TPID"): Number(0x8100),
-                Field("TCI"): Number(0),
-                Field("Type_Length"): Number(46),
-                Field("Payload"): Aggregate(*[Number(0)] * 46),
-            }
-        )
-        == Number(512)
-    )
-    assert (
-        ETHERNET_FRAME.size(
-            {
-                Field("Destination"): Number(0),
-                Field("Source"): Number(0),
-                Field("Type_Length_TPID"): Number(1536),
-                Field("Type_Length"): Number(1536),
-                Field("Payload"): Aggregate(*[Number(0)] * 46),
-            }
-        )
-        == Number(480)
-    )
-    assert (
-        ETHERNET_FRAME.size(
-            {
-                Field("Destination"): Number(0),
-                Field("Source"): Number(0),
-                Field("Type_Length_TPID"): Number(1536),
-                Field("Type_Length"): Number(1536),
-                Field("Payload"): Variable("Payload"),
-            }
-        )
-        == Add(Size("Payload"), Number(112))
-    )
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(46),
+            Field("Type_Length"): Number(46),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        }
+    ) == Number(480)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(0x8100),
+            Field("TPID"): Number(0x8100),
+            Field("TCI"): Number(0),
+            Field("Type_Length"): Number(46),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        }
+    ) == Number(512)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(1536),
+            Field("Type_Length"): Number(1536),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        }
+    ) == Number(480)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(1536),
+            Field("Type_Length"): Number(1536),
+            Field("Payload"): Variable("Payload"),
+        }
+    ) == Add(Size("Payload"), Number(112))
 
 
 def test_size_error() -> None:
@@ -2831,8 +2807,8 @@ def test_size_error() -> None:
 def test_max_size() -> None:
     assert NULL_MESSAGE.max_size() == Number(0)
     assert FIXED_SIZE_MESSAGE.max_size() == Number(8 + 3 * 64)
-    assert TLV_MESSAGE.max_size() == Number(8 + 16 + (2 ** 16 - 1) * 8)
-    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2 ** 8 - 1) * 8 + 3 * 16)
+    assert TLV_MESSAGE.max_size() == Number(8 + 16 + (2**16 - 1) * 8)
+    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2**8 - 1) * 8 + 3 * 16)
 
 
 def test_max_size_error() -> None:
@@ -2854,7 +2830,7 @@ def test_max_field_sizes() -> None:
     assert TLV_MESSAGE.max_field_sizes() == {
         Field("Tag"): Number(8),
         Field("Length"): Number(16),
-        Field("Value"): Number((2 ** 16 - 1) * 8),
+        Field("Value"): Number((2**16 - 1) * 8),
     }
 
 

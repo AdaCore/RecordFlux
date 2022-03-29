@@ -102,7 +102,7 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     regex = re.compile(
         (
             "^test.rfi:0:0: parser: error: 1 validation error for "
-            fr"IntegrationFile.*{match_error} \([^()]*\)$"
+            rf"IntegrationFile.*{match_error} \([^()]*\)$"
         ),
         re.DOTALL,
     )
@@ -157,10 +157,10 @@ def test_load_integration_file(
     test_rfi.write_text(content)
     integration = Integration()
     error = RecordFluxError()
-    regex = fr"^{test_rfi}:{line}:{column}: parser: error: "
+    regex = rf"^{test_rfi}:{line}:{column}: parser: error: "
     for elt in error_msg:
         regex += elt
-        regex += fr'.*in "{test_rfi}", line [0-9]+, column [0-9]+.*'
+        regex += rf'.*in "{test_rfi}", line [0-9]+, column [0-9]+.*'
     regex += "$"
     compiled_regex = re.compile(regex, re.DOTALL)
     with pytest.raises(RecordFluxError, match=compiled_regex):

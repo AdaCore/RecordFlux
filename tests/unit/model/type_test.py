@@ -56,7 +56,7 @@ def test_modular_size() -> None:
 
 
 def test_modular_value_count() -> None:
-    assert ModularInteger("P::T", Pow(Number(2), Number(32))).value_count == Number(2 ** 32)
+    assert ModularInteger("P::T", Pow(Number(2), Number(32))).value_count == Number(2**32)
 
 
 def test_modular_first() -> None:
@@ -66,7 +66,7 @@ def test_modular_first() -> None:
 
 def test_modular_last() -> None:
     mod = ModularInteger("P::T", Pow(Number(2), Number(32)))
-    assert mod.last == Number(2 ** 32 - 1)
+    assert mod.last == Number(2**32 - 1)
 
 
 def test_modular_invalid_modulus_power_of_two() -> None:
@@ -120,7 +120,7 @@ def test_range_last() -> None:
     integer = RangeInteger(
         "P::T", Pow(Number(2), Number(4)), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)
     )
-    assert integer.last == Number(2 ** 32 - 1)
+    assert integer.last == Number(2**32 - 1)
     assert integer.last_expr == Sub(Pow(Number(2), Number(32)), Number(1))
 
 
@@ -229,7 +229,7 @@ def test_enumeration_value_count() -> None:
             always_valid=True,
             location=Location((34, 3)),
         ).value_count,
-        Number(2 ** 32),
+        Number(2**32),
     )
 
 
@@ -250,7 +250,7 @@ def test_enumeration_invalid_literal_value() -> None:
     assert_type_error(
         Enumeration(
             "P::T",
-            [("A", Number(2 ** 63))],
+            [("A", Number(2**63))],
             Number(64),
             always_valid=False,
             location=Location((10, 5)),
@@ -355,12 +355,12 @@ def test_enumeration_str() -> None:
         Enumeration(
             "P::T",
             [
-                ("A", Number(2 ** 2)),
-                ("B", Number(2 ** 3)),
-                ("C", Number(2 ** 4)),
-                ("D", Number(2 ** 5)),
-                ("E", Number(2 ** 6)),
-                ("F", Number(2 ** 7)),
+                ("A", Number(2**2)),
+                ("B", Number(2**3)),
+                ("C", Number(2**4)),
+                ("D", Number(2**5)),
+                ("E", Number(2**6)),
+                ("F", Number(2**7)),
             ],
             Pow(Number(2), Number(8)),
             always_valid=True,
