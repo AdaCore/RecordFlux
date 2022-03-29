@@ -42,7 +42,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt', '.config/python-style/setup.cfg') }}
     - name: Install toolchain
       uses: ada-actions/toolchain@ce2020
       with:
@@ -85,7 +85,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt', '.config/python-style/setup.cfg') }}
     - name: Install toolchain
       uses: ada-actions/toolchain@ce2020
       with:
