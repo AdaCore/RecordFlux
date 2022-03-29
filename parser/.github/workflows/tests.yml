@@ -37,7 +37,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('requirements.txt', 'disttools/setup.py', '.config/python-style/setup.cfg') }}
     - name: Install GNAT Community
       uses: ada-actions/toolchain@ce2020
       with:
@@ -83,7 +83,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '*.cfg', '*.ini', '.pylintrc', '.flake8') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('requirements.txt', 'disttools/setup.py', '.config/python-style/setup.cfg') }}
     - name: Install GNAT Community
       if: ${{ matrix.gnat-distrib == 'community' }}
       uses: ada-actions/toolchain@ce2020

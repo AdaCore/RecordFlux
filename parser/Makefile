@@ -28,7 +28,7 @@ check_isort:
 	isort --check --diff $(python-packages)
 
 check_flake8:
-	flake8 $(python-packages)
+	pflake8 $(python-packages)
 
 check_pylint:
 	pylint $(python-packages)
