@@ -41,7 +41,8 @@ is
          pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
          goto Finalize_Process;
       end if;
-      Ctx.P.Global := Local + 20;
+      Ctx.P.Uninitialized_Global := Local;
+      Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);

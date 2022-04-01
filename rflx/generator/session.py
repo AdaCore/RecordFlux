@@ -477,7 +477,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [
                         Component("Next_State", "State", Variable(f"S_{initial_state}")),
                         *[
-                            Component(identifier, type_identifier, expression)
+                            Component(
+                                identifier,
+                                type_identifier,
+                                expression
+                                if expression is not None or type_identifier.name == ID("Context")
+                                else First(type_identifier),
+                            )
                             for identifier, (
                                 type_identifier,
                                 expression,

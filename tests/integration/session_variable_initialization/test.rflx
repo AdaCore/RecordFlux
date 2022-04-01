@@ -9,6 +9,7 @@ package Test is
       Final => Terminated
    is
       Global : Universal::Value := 11; -- §S-D-V-T-SC, §S-D-V-E-L
+      Uninitialized_Global : Universal::Value; -- §S-D-V-T-SC, §S-D-V-E-N
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
@@ -22,7 +23,8 @@ package Test is
          Local : Universal::Value := 2; -- §S-S-D-V-T-SC, §S-S-D-V-E-L
       begin
          Local := Local + Message.Value; -- §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-S, §S-S-A-A-V, §S-E-S-V
-         Global := Local + 20; -- §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-V
+         Uninitialized_Global := Local; -- §S-S-A-A-V
+         Global := Uninitialized_Global + 20; -- §S-S-A-A-ME, §S-S-A-A-L, §S-S-A-A-V
          -- §S-S-A-A-MA
          Message := Universal::Message'(Message_Type => Universal::MT_Value,
                                         Length => Universal::Value'Size / 8,
