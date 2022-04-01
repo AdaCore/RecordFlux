@@ -396,7 +396,9 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+     Post =>
+       Equal (Ctx, F_Payload, Data);
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
@@ -491,6 +493,7 @@ is
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Payload, Data'Length)
+       and then Available_Space (Ctx, F_Payload) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Payload),
      Post =>
        Has_Buffer (Ctx)
@@ -502,7 +505,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Equal (Ctx, F_Payload, Data);
 
    generic
       with procedure Process_Payload (Payload : out RFLX_Types.Bytes);
@@ -552,18 +556,24 @@ is
          Payload : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 254);
       end record;
 
+   function Valid_Structure (Unused_Struct : Structure) return Boolean;
+
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       and then Structural_Valid_Message (Ctx),
+     Post =>
+       Valid_Structure (Struct);
 
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
-       not Ctx'Constrained
+       Valid_Structure (Struct)
+       and then not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1 >= 2048,
      Post =>
        Has_Buffer (Ctx)
+       and Structural_Valid_Message (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
@@ -783,5 +793,8 @@ private
 
    function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
      (Cursors (Fld));
+
+   function Valid_Structure (Unused_Struct : Structure) return Boolean is
+     (True);
 
 end RFLX.Sequence.Inner_Message;

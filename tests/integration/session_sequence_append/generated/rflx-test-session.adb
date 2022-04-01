@@ -95,7 +95,7 @@ is
                         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                           (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
                            and then Universal.Option.Structural_Valid (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
-                           and then Length >= RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
+                           and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
                         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                           Pre =>
                             RFLX_Process_Data_Pre (Data'Length)

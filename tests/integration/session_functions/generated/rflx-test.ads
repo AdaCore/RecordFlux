@@ -11,6 +11,8 @@ is
        2;
    for Result use (M_Valid => 0, M_Invalid => 1);
 
+   use type RFLX.RFLX_Types.U64;
+
    function Valid_Result (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val in 0 | 1);
 

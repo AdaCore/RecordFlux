@@ -11,6 +11,8 @@ is
        8;
    for Message_Type use (MT_Null => 0, MT_Data => 1, MT_Value => 2, MT_Values => 3, MT_Option_Types => 4, MT_Options => 5, MT_Unconstrained_Data => 6, MT_Unconstrained_Options => 7);
 
+   use type RFLX.RFLX_Types.U64;
+
    function Valid_Message_Type (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val in 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7);
 
@@ -65,8 +67,6 @@ is
      Size =>
        16;
 
-   use type RFLX.RFLX_Types.U64;
-
    function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val <= 65535);
 
@@ -110,16 +110,11 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "unused variable ""Val""");
-
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
-
    function Valid_Option_Type (Val : RFLX.RFLX_Types.U64) return Boolean is
-     (True);
+     (Val < 2**8);
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
+   function Valid_Option_Type (Val : Option_Type) return Boolean is
+     ((if Val.Known then True else Valid_Option_Type (Val.Raw) and Val.Raw not in 0 | 1));
 
    function To_U64 (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is

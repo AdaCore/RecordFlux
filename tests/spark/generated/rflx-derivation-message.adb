@@ -403,12 +403,13 @@ is
    end Initialize_Value;
 
    procedure Set_Value (Ctx : in out Context; Data : RFLX_Types.Bytes) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Value);
-      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Value));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
       Initialize_Value_Private (Ctx, Data'Length);
+      pragma Assert (Buffer_Last = RFLX_Types.To_Index (Field_Last (Ctx, F_Value)));
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
+      pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Value)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Value))) = Data);
    end Set_Value;
 
    procedure Generic_Set_Value (Ctx : in out Context; Length : RFLX_Types.Length) is

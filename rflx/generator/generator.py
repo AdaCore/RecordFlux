@@ -32,7 +32,6 @@ from rflx.ada import (
     ContextItem,
     ContractCases,
     Declaration,
-    Declare,
     DefaultInitialCondition,
     Depends,
     Discriminant,
@@ -67,6 +66,7 @@ from rflx.ada import (
     NamedAggregate,
     Not,
     NotEqual,
+    NotIn,
     NullComponent,
     Number,
     ObjectDeclaration,
@@ -78,6 +78,7 @@ from rflx.ada import (
     PackageUnit,
     Parameter,
     Postcondition,
+    Pow,
     Pragma,
     PragmaStatement,
     Precondition,
@@ -3326,16 +3327,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     def __create_structure(self, message: Message) -> UnitPart:
+        if not message.is_definite:
+            return UnitPart()
+
         unit = UnitPart()
         unit += self.__create_structure_type(message)
+        unit += self.__create_valid_structure_function(message)
         unit += self.__create_to_structure_procedure(message)
         unit += self.__create_to_context_procedure(message)
         return unit
 
     def __create_structure_type(self, message: Message) -> UnitPart:
-        if not message.is_definite:
-            return UnitPart()
-
         assert len(message.paths(FINAL)) == 1
 
         components = []
@@ -3373,7 +3375,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         ),
                     )
                 else:
-                    return UnitPart()
+                    assert False
 
                 components.append(Component(ID(link.target.identifier), component_type))
 
@@ -3383,11 +3385,84 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             ]
         )
 
+    def __create_valid_structure_function(self, message: Message) -> UnitPart:
+        assert len(message.paths(FINAL)) == 1
+
+        valid_values = [
+            Call(
+                ID(self.__prefix * t.package * f"Valid_{t.name}"),
+                [
+                    Variable(ID("Struct" * f.identifier)),
+                ],
+            )
+            for f, t in message.types.items()
+            if isinstance(t, Enumeration) and t.always_valid
+        ]
+        conditions = [
+            condition
+            for path in message.paths(FINAL)
+            for link in path
+            for condition in [
+                link.condition.substituted(
+                    # ISSUE: Componolit/RecordFlux#276
+                    mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
+                )
+                .substituted(
+                    lambda x: expr.Size(expr.Variable("Struct" * x.prefix.identifier))
+                    if isinstance(x, expr.Size)
+                    and isinstance(x.prefix, expr.Variable)
+                    and Field(x.prefix.identifier) in message.fields
+                    else x
+                )
+                .substituted(
+                    lambda x: expr.Call(
+                        "To_U64",
+                        [expr.Variable("Struct" * x.identifier)],
+                    )
+                    if isinstance(x, expr.Variable)
+                    and Field(x.identifier) in message.fields
+                    and isinstance(message.types[Field(x.identifier)], Scalar)
+                    else expr.Variable("Struct" * x.identifier)
+                    if isinstance(x, expr.Variable)
+                    and Field(x.identifier) in message.fields
+                    and isinstance(message.types[Field(x.identifier)], Opaque)
+                    else x
+                )
+                .substituted(common.substitution(message, self.__prefix))
+                .simplified()
+                .ada_expr()
+            ]
+            if condition != TRUE
+        ]
+
+        specification = FunctionSpecification(
+            "Valid_Structure",
+            "Boolean",
+            [
+                Parameter(
+                    ["Struct" if bool([*valid_values, *conditions]) else "Unused_Struct"],
+                    "Structure",
+                )
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [],
+                )
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    AndThen(*[*valid_values, *conditions]),
+                ),
+            ],
+        )
+
     @staticmethod
     def __create_to_structure_procedure(message: Message) -> UnitPart:
-        if not message.is_definite:
-            return UnitPart()
-
         assert len(message.paths(FINAL)) == 1
 
         statements: ty.List[Statement] = []
@@ -3407,14 +3482,57 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         )
                     )
                 elif isinstance(type_, Opaque):
-                    statements.append(
-                        CallStatement(
-                            f"Get_{link.target.identifier}",
-                            [Variable("Ctx"), Variable(f"Struct.{link.target.identifier}")],
-                        )
+                    statements.extend(
+                        [
+                            Assignment(
+                                Variable(f"Struct.{link.target.identifier}"),
+                                NamedAggregate(
+                                    (
+                                        "others",
+                                        Number(0),
+                                    )
+                                ),
+                            ),
+                            CallStatement(
+                                f"Get_{link.target.identifier}",
+                                [
+                                    Variable("Ctx"),
+                                    Slice(
+                                        Variable(f"Struct.{link.target.identifier}"),
+                                        First(f"Struct.{link.target.identifier}"),
+                                        Add(
+                                            First(f"Struct.{link.target.identifier}"),
+                                            Call(
+                                                const.TYPES_INDEX,
+                                                [
+                                                    Add(
+                                                        Call(
+                                                            const.TYPES_TO_LENGTH,
+                                                            [
+                                                                Call(
+                                                                    "Field_Size",
+                                                                    [
+                                                                        Variable("Ctx"),
+                                                                        Variable(
+                                                                            link.target.affixed_name
+                                                                        ),
+                                                                    ],
+                                                                )
+                                                            ],
+                                                        ),
+                                                        Number(1),
+                                                    )
+                                                ],
+                                            ),
+                                            -Number(2),
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ]
                     )
                 else:
-                    return UnitPart()
+                    assert False
 
         specification = ProcedureSpecification(
             "To_Structure",
@@ -3432,6 +3550,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                 Call("Structural_Valid_Message", [Variable("Ctx")]),
                             )
                         ),
+                        Postcondition(
+                            Call("Valid_Structure", [Variable("Struct")]),
+                        ),
                     ],
                 )
             ],
@@ -3442,9 +3563,6 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
     @staticmethod
     def __create_to_context_procedure(message: Message) -> UnitPart:
-        if not message.is_definite:
-            return UnitPart()
-
         assert len(message.paths(FINAL)) == 1
 
         body: ty.List[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
@@ -3458,30 +3576,27 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 type_ = message.field_types[link.target]
 
                 if isinstance(type_, (Scalar, Opaque)):
-                    if isinstance(type_, Enumeration) and type_.always_valid:
-                        dependent_statements: ty.List[Statement] = [
-                            CallStatement(
-                                f"Set_{link.target.identifier}",
-                                [
-                                    Variable("Ctx"),
-                                    Variable(f"Struct.{link.target.identifier}.Enum"),
-                                ],
+                    if isinstance(type_, Opaque) and link.size.variables():
+                        size = (
+                            link.size.substituted(
+                                lambda x: expr.Size(expr.Variable("Struct" * x.prefix.identifier))
+                                if isinstance(x, expr.Size)
+                                and isinstance(x.prefix, expr.Variable)
+                                and Field(x.prefix.identifier) in message.fields
+                                else x
                             )
-                        ]
-                        statements.append(
-                            IfStatement(
-                                [
-                                    (
-                                        Variable(f"Struct.{link.target.identifier}.Known"),
-                                        dependent_statements,
-                                    )
-                                ]
+                            .substituted(
+                                lambda x: expr.Call(
+                                    const.TYPES_BIT_LENGTH,
+                                    [expr.Variable("Struct" * x.identifier)],
+                                )
+                                if isinstance(x, expr.Variable)
+                                and Field(x.identifier) in message.fields
+                                else x
                             )
+                            .ada_expr()
                         )
-                        statements = dependent_statements
-                    elif isinstance(type_, Opaque) and link.size.variables():
-                        field_size = f"{link.target.identifier}_Size"
-                        dependent_statements = [
+                        statements.append(
                             CallStatement(
                                 f"Set_{link.target.identifier}",
                                 [
@@ -3495,10 +3610,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                                 const.TYPES_INDEX,
                                                 [
                                                     Add(
-                                                        Call(
-                                                            const.TYPES_TO_LENGTH,
-                                                            [Variable(field_size)],
-                                                        ),
+                                                        Call(const.TYPES_TO_LENGTH, [size]),
                                                         Number(1),
                                                     )
                                                 ],
@@ -3507,86 +3619,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                                         ),
                                     ),
                                 ],
-                            )
-                        ]
-                        statements.append(
-                            Declare(
-                                [
-                                    ObjectDeclaration(
-                                        [field_size],
-                                        const.TYPES_BIT_LENGTH,
-                                        link.size.substituted(
-                                            lambda x: expr.Size(
-                                                expr.Variable("Struct" * x.prefix.identifier)
-                                            )
-                                            if isinstance(x, expr.Size)
-                                            and isinstance(x.prefix, expr.Variable)
-                                            and Field(x.prefix.identifier) in message.fields
-                                            else x
-                                        )
-                                        .substituted(
-                                            lambda x: expr.Call(
-                                                const.TYPES_BIT_LENGTH,
-                                                [expr.Variable("Struct" * x.identifier)],
-                                            )
-                                            if isinstance(x, expr.Variable)
-                                            and Field(x.identifier) in message.fields
-                                            else x
-                                        )
-                                        .ada_expr(),
-                                        constant=True,
-                                    )
-                                ],
-                                [
-                                    IfStatement(
-                                        [
-                                            (
-                                                Equal(
-                                                    Variable(field_size),
-                                                    Call(
-                                                        "Field_Size",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(link.target.affixed_name),
-                                                        ],
-                                                    ),
-                                                ),
-                                                dependent_statements,
-                                            )
-                                        ]
-                                    )
-                                ],
-                            )
+                            ),
                         )
-                        statements = dependent_statements
                     else:
                         set_field = CallStatement(
                             f"Set_{link.target.identifier}",
                             [Variable("Ctx"), Variable(f"Struct.{link.target.identifier}")],
                         )
-                        if common.has_aggregate_dependent_condition(message, link.target):
-                            dependent_statements = [set_field]
-                            statements.append(
-                                IfStatement(
-                                    [
-                                        (
-                                            common.field_condition_call(
-                                                message,
-                                                link.target,
-                                                aggregate=Variable(
-                                                    f"Struct.{link.target.identifier}"
-                                                ),
-                                            ),
-                                            dependent_statements,
-                                        )
-                                    ]
-                                )
-                            )
-                            statements = dependent_statements
-                        else:
-                            statements.append(set_field)
+                        statements.append(set_field)
                 else:
-                    return UnitPart()
+                    assert False
 
         specification = ProcedureSpecification(
             "To_Context",
@@ -3602,6 +3644,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     [
                         Precondition(
                             AndThen(
+                                Call("Valid_Structure", [Variable("Struct")]),
                                 Not(Constrained("Ctx")),
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 GreaterEqual(
@@ -3623,6 +3666,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         Postcondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
+                                Call("Structural_Valid_Message", [Variable("Ctx")]),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
@@ -3790,7 +3834,9 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         else:
             specification.append(UseTypeClause(self.__prefix * const.TYPES_U64))
 
-        specification.append(self.__type_validation_function(integer, constraints.ada_expr()))
+        specification.append(
+            self.__type_validation_function(integer.name, "Val", constraints.ada_expr())
+        )
 
         if constraints == expr.TRUE:
             specification.extend(
@@ -3812,36 +3858,48 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
 
         specification: ty.List[Declaration] = []
 
-        enum_value = Variable("Val")
-
         validation_expression = (
-            TRUE
+            (
+                Less(Variable("Val"), Pow(Number(2), enum.size.ada_expr()))
+                if enum.size.simplified() != expr.Number(64)
+                else TRUE
+            )
             if enum.always_valid
             else In(
                 Variable("Val"), ChoiceList(*[value.ada_expr() for value in enum.literals.values()])
             )
         )
 
-        if enum.always_valid:
-            specification.extend(
-                [
-                    Pragma("Warnings", [Variable("Off"), String('unused variable "Val"')]),
-                    Pragma(
-                        "Warnings",
-                        [Variable("Off"), String('formal parameter "Val" is not referenced')],
-                    ),
-                ]
+        if validation_expression != TRUE:
+            specification.append(UseTypeClause(self.__prefix * const.TYPES_U64))
+
+        specification.append(
+            self.__type_validation_function(
+                enum.name,
+                "Val" if validation_expression != TRUE else "Unused_Val",
+                validation_expression,
             )
-        specification.append(self.__type_validation_function(enum, validation_expression))
+        )
+
         if enum.always_valid:
-            specification.extend(
-                [
-                    Pragma(
-                        "Warnings",
-                        [Variable("On"), String('formal parameter "Val" is not referenced')],
+            specification.append(
+                ExpressionFunctionDeclaration(
+                    FunctionSpecification(
+                        f"Valid_{enum.name}",
+                        "Boolean",
+                        [Parameter(["Val"], enum.name)],
                     ),
-                    Pragma("Warnings", [Variable("On"), String('unused variable "Val"')]),
-                ]
+                    If(
+                        [(Variable("Val.Known"), TRUE)],
+                        And(
+                            Call(f"Valid_{enum.name}", [Variable("Val.Raw")]),
+                            NotIn(
+                                Variable("Val.Raw"),
+                                ChoiceList(*[value.ada_expr() for value in enum.literals.values()]),
+                            ),
+                        ),
+                    ),
+                )
             )
 
         specification.append(
@@ -3935,7 +3993,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 [
                     Pragma("Warnings", [Variable("Off"), String("unreachable branch")]),
                     ExpressionFunctionDeclaration(
-                        conversion_function, Case(enum_value, conversion_cases), [precondition]
+                        conversion_function, Case(Variable("Val"), conversion_cases), [precondition]
                     ),
                     Pragma("Warnings", [Variable("On"), String("unreachable branch")]),
                 ]
@@ -4278,7 +4336,26 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         ),
                         CallStatement(
                             pdu_identifier * f"Get_{refinement.field.name}",
-                            [Variable(pdu_context), Variable("Buffer.all")],
+                            [
+                                Variable(pdu_context),
+                                Slice(
+                                    Variable("Buffer.all"),
+                                    First("Buffer"),
+                                    Add(
+                                        First("Buffer"),
+                                        Call(
+                                            const.TYPES_INDEX,
+                                            [
+                                                Call(
+                                                    const.TYPES_TO_LENGTH,
+                                                    [Variable("Size")],
+                                                ),
+                                            ],
+                                        ),
+                                        -Number(1),
+                                    ),
+                                ),
+                            ],
                         ),
                         CallStatement(
                             sdu_identifier * "Initialize",
@@ -4347,13 +4424,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         )
 
     def __type_validation_function(
-        self, scalar_type: Scalar, validation_expression: Expr
+        self, type_name: str, enum_value: str, validation_expression: Expr
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
-                f"Valid_{scalar_type.name}",
+                f"Valid_{type_name}",
                 "Boolean",
-                [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
+                [Parameter([enum_value], self.__prefix * const.TYPES_U64)],
             ),
             validation_expression,
         )

@@ -107,16 +107,11 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "unused variable ""Val""");
-
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
-
    function Valid_AV_Enumeration (Val : RFLX.RFLX_Types.U64) return Boolean is
-     (True);
+     (Val < 2**8);
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
+   function Valid_AV_Enumeration (Val : AV_Enumeration) return Boolean is
+     ((if Val.Known then True else Valid_AV_Enumeration (Val.Raw) and Val.Raw not in 0 | 1 | 2));
 
    function To_U64 (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is

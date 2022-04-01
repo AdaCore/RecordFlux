@@ -11,6 +11,8 @@ is
        8;
    for Tag use (Echo_Reply => 0, Destination_Unreachable => 3, Source_Quench => 4, Redirect => 5, Echo_Request => 8, Time_Exceeded => 11, Parameter_Problem => 12, Timestamp_Msg => 13, Timestamp_Reply => 14, Information_Request => 15, Information_Reply => 16);
 
+   use type RFLX.RFLX_Types.U64;
+
    function Valid_Tag (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val in 0 | 8 | 3 | 11 | 12 | 4 | 5 | 13 | 14 | 15 | 16);
 
@@ -193,8 +195,6 @@ is
    type Code_Zero is range 0 .. 0 with
      Size =>
        8;
-
-   use type RFLX.RFLX_Types.U64;
 
    function Valid_Code_Zero (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val = 0);

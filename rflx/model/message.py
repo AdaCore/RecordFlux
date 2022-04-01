@@ -901,18 +901,25 @@ class Message(AbstractMessage):
         """
         Return true if the message has an explicit size, no optional fields and no parameters.
 
-        Messages with a First or Last attribute in a size aspect are not yet supported and
-        therefore considered as not definite.
+        Messages with a First or Last attribute in a condition or size aspect are not yet supported
+        and therefore considered as not definite. This is also the case for messages containing
+        sequences.
         """
         return (
             len(self.paths(FINAL)) <= 1
             and not self.has_implicit_size
+            and all(
+                not l.condition.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
+                for l in self.structure
+                for v in l.condition.variables()
+            )
             and all(
                 not l.size.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
                 for l in self.structure
                 for v in l.size.variables()
             )
             and not self.parameters
+            and not any(isinstance(t, mty.Sequence) for t in self.types.values())
         )
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:

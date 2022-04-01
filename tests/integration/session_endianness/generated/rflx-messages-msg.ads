@@ -443,18 +443,24 @@ is
          B : RFLX.Messages.Enum_T;
       end record;
 
+   function Valid_Structure (Unused_Struct : Structure) return Boolean;
+
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       and then Structural_Valid_Message (Ctx),
+     Post =>
+       Valid_Structure (Struct);
 
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
-       not Ctx'Constrained
+       Valid_Structure (Struct)
+       and then not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1 >= 64,
      Post =>
        Has_Buffer (Ctx)
+       and Structural_Valid_Message (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
@@ -675,5 +681,8 @@ private
 
    function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
      (Cursors (Fld));
+
+   function Valid_Structure (Unused_Struct : Structure) return Boolean is
+     (True);
 
 end RFLX.Messages.Msg;

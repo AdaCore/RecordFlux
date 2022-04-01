@@ -322,6 +322,36 @@ is
       RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
    end Set_Message_Type;
 
+   procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Message_Type)
+       and then RFLX.Universal.Valid_Option_Type (Val)
+       and then Field_Condition (Ctx, F_Message_Type)
+       and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, F_Message_Type)
+       and Get_Message_Type (Ctx) = Val
+       and Invalid (Ctx, F_Data)
+       and (Predecessor (Ctx, F_Data) = F_Message_Type
+            and Valid_Next (Ctx, F_Data))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
+       and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
+   is
+      Value : constant RFLX_Types.U64 := To_U64 (Val);
+      Buffer_First, Buffer_Last : RFLX_Types.Index;
+      Offset : RFLX_Types.Offset;
+   begin
+      Set (Ctx, F_Message_Type, Value, 8, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+   end Set_Message_Type;
+
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
@@ -361,12 +391,13 @@ is
    end Initialize_Data;
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
-      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Data));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
       Initialize_Data_Private (Ctx, Data'Length);
+      pragma Assert (Buffer_Last = RFLX_Types.To_Index (Field_Last (Ctx, F_Data)));
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
+      pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Data)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Data))) = Data);
    end Set_Data;
 
    procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
@@ -381,16 +412,15 @@ is
    procedure To_Structure (Ctx : Context; Struct : out Structure) is
    begin
       Struct.Message_Type := Get_Message_Type (Ctx);
-      Get_Data (Ctx, Struct.Data);
+      Struct.Data := (others => 0);
+      Get_Data (Ctx, Struct.Data (Struct.Data'First .. Struct.Data'First + RFLX_Types.Index (RFLX_Types.To_Length (Field_Size (Ctx, F_Data)) + 1) - 2));
    end To_Structure;
 
    procedure To_Context (Struct : Structure; Ctx : in out Context) is
    begin
       Reset (Ctx);
-      if Struct.Message_Type.Known then
-         Set_Message_Type (Ctx, Struct.Message_Type.Enum);
-         Set_Data (Ctx, Struct.Data);
-      end if;
+      Set_Message_Type (Ctx, Struct.Message_Type);
+      Set_Data (Ctx, Struct.Data);
    end To_Context;
 
 end RFLX.Fixed_Size.Simple_Message;

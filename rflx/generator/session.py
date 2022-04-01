@@ -2717,13 +2717,20 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
             )
             post_call.append(
-                CallStatement(
-                    ID(type_identifier) * "To_Context",
+                self._if(
+                    Call(ID(type_identifier) * "Valid_Structure", [Variable(target_id)]),
                     [
-                        Variable(target_id),
-                        Variable(context_id(target, is_global)),
+                        CallStatement(
+                            ID(type_identifier) * "To_Context",
+                            [
+                                Variable(target_id),
+                                Variable(context_id(target, is_global)),
+                            ],
+                        ),
                     ],
-                ),
+                    f'"{call_expr.identifier}" returned an invalid message',
+                    exception_handler,
+                )
             )
 
         arguments: list[expr.Expr] = []
@@ -3820,7 +3827,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         Variable(message_type * f"F_{message_field}"),
                     ],
                 ),
-                GreaterEqual(
+                Equal(
                     Variable("Length"),
                     Call(
                         const.TYPES_TO_LENGTH,
@@ -3883,7 +3890,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         Variable(message_context),
                     ],
                 ),
-                GreaterEqual(
+                Equal(
                     Variable("Length"),
                     Call(
                         message_type * "Byte_Size",

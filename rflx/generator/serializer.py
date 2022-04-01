@@ -585,10 +585,16 @@ class SerializerGenerator:
     def create_scalar_setter_procedures(
         self, message: Message, scalar_fields: Mapping[Field, Scalar]
     ) -> UnitPart:
-        def specification(field: Field, field_type: Type) -> ProcedureSpecification:
+        def specification(
+            field: Field, field_type: Type, use_enum_records_directly: bool = False
+        ) -> ProcedureSpecification:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
-            elif isinstance(field_type, Enumeration) and field_type.always_valid:
+            elif (
+                isinstance(field_type, Enumeration)
+                and field_type.always_valid
+                and not use_enum_records_directly
+            ):
                 type_identifier = common.prefixed_type_identifier(
                     common.full_enum_name(field_type), self.prefix
                 )
@@ -602,101 +608,130 @@ class SerializerGenerator:
                 [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_identifier)],
             )
 
+        def precondition(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> Precondition:
+            return Precondition(
+                AndThen(
+                    *self.setter_preconditions(field),
+                    Call(
+                        f"Valid_{field_type.name}"
+                        if is_builtin_type(field_type.identifier)
+                        else ID(self.prefix * field_type.package * f"Valid_{field_type.name}"),
+                        [
+                            Variable("Val")
+                            if use_enum_records_directly
+                            else Call("To_U64", [Variable("Val")])
+                        ],
+                    ),
+                    common.field_condition_call(
+                        message, field, value=Call("To_U64", [Variable("Val")])
+                    ),
+                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
+                )
+            )
+
+        def postcondition(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> Postcondition:
+            return Postcondition(
+                And(
+                    Call("Has_Buffer", [Variable("Ctx")]),
+                    Call(
+                        "Valid",
+                        [Variable("Ctx"), Variable(field.affixed_name)],
+                    ),
+                    *(
+                        [
+                            Equal(
+                                Call(f"Get_{field.name}", [Variable("Ctx")]),
+                                Aggregate(TRUE, Variable("Val"))
+                                if isinstance(field_type, Enumeration)
+                                and field_type.always_valid
+                                and not use_enum_records_directly
+                                else Variable("Val"),
+                            )
+                        ]
+                        if int(field_type.value_count) > 1
+                        else []
+                    ),
+                    *self.public_setter_postconditions(message, field),
+                    *common.context_cursor_unchanged(message, field, predecessors=True),
+                )
+            )
+
+        def body(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> SubprogramBody:
+            return SubprogramBody(
+                specification(field, field_type, use_enum_records_directly),
+                [
+                    ObjectDeclaration(
+                        ["Value"],
+                        const.TYPES_U64,
+                        Call("To_U64", [Variable("Val")]),
+                        constant=True,
+                    ),
+                    ObjectDeclaration(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
+                    ObjectDeclaration(["Offset"], const.TYPES_OFFSET),
+                ],
+                [
+                    CallStatement(
+                        "Set",
+                        [
+                            Variable("Ctx"),
+                            Variable(field.affixed_name),
+                            Variable("Value"),
+                            field_type.size.ada_expr(),
+                            TRUE,
+                            Variable("Buffer_First"),
+                            Variable("Buffer_Last"),
+                            Variable("Offset"),
+                        ],
+                    ),
+                    CallStatement(
+                        const.TYPES * "Insert",
+                        [
+                            Variable("Value"),
+                            Variable("Ctx.Buffer"),
+                            Variable("Buffer_First"),
+                            Variable("Buffer_Last"),
+                            Variable("Offset"),
+                            field_type.size.ada_expr(),
+                            Variable(
+                                const.TYPES_HIGH_ORDER_FIRST
+                                if message.byte_order[field] == ByteOrder.HIGH_ORDER_FIRST
+                                else const.TYPES_LOW_ORDER_FIRST
+                            ),
+                        ],
+                    ),
+                ],
+                [
+                    precondition(field, field_type, use_enum_records_directly),
+                    postcondition(field, field_type, use_enum_records_directly),
+                ]
+                if use_enum_records_directly
+                else [],
+            )
+
         return UnitPart(
             [
                 SubprogramDeclaration(
                     specification(f, t),
                     [
-                        Precondition(
-                            AndThen(
-                                *self.setter_preconditions(f),
-                                Call(
-                                    f"Valid_{t.name}"
-                                    if is_builtin_type(t.identifier)
-                                    else ID(self.prefix * t.package * f"Valid_{t.name}"),
-                                    [Call("To_U64", [Variable("Val")])],
-                                ),
-                                common.field_condition_call(
-                                    message, f, value=Call("To_U64", [Variable("Val")])
-                                ),
-                                common.sufficient_space_for_field_condition(
-                                    Variable(f.affixed_name)
-                                ),
-                            )
-                        ),
-                        Postcondition(
-                            And(
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                Call(
-                                    "Valid",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
-                                ),
-                                *(
-                                    [
-                                        Equal(
-                                            Call(f"Get_{f.name}", [Variable("Ctx")]),
-                                            Aggregate(TRUE, Variable("Val"))
-                                            if isinstance(t, Enumeration) and t.always_valid
-                                            else Variable("Val"),
-                                        )
-                                    ]
-                                    if int(t.value_count) > 1
-                                    else []
-                                ),
-                                *self.public_setter_postconditions(message, f),
-                                *common.context_cursor_unchanged(message, f, predecessors=True),
-                            )
-                        ),
+                        precondition(f, t),
+                        postcondition(f, t),
                     ],
                 )
                 for f, t in scalar_fields.items()
             ],
             [
-                SubprogramBody(
-                    specification(f, t),
-                    [
-                        ObjectDeclaration(
-                            ["Value"],
-                            const.TYPES_U64,
-                            Call("To_U64", [Variable("Val")]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
-                        ObjectDeclaration(["Offset"], const.TYPES_OFFSET),
-                    ],
-                    [
-                        CallStatement(
-                            "Set",
-                            [
-                                Variable("Ctx"),
-                                Variable(f.affixed_name),
-                                Variable("Value"),
-                                t.size.ada_expr(),
-                                TRUE,
-                                Variable("Buffer_First"),
-                                Variable("Buffer_Last"),
-                                Variable("Offset"),
-                            ],
-                        ),
-                        CallStatement(
-                            const.TYPES * "Insert",
-                            [
-                                Variable("Value"),
-                                Variable("Ctx.Buffer"),
-                                Variable("Buffer_First"),
-                                Variable("Buffer_Last"),
-                                Variable("Offset"),
-                                t.size.ada_expr(),
-                                Variable(
-                                    const.TYPES_HIGH_ORDER_FIRST
-                                    if message.byte_order[f] == ByteOrder.HIGH_ORDER_FIRST
-                                    else const.TYPES_LOW_ORDER_FIRST
-                                ),
-                            ],
-                        ),
-                    ],
-                )
-                for f, t in scalar_fields.items()
+                *[body(f, t) for f, t in scalar_fields.items()],
+                *[
+                    body(f, t, use_enum_records_directly=True)
+                    for f, t in scalar_fields.items()
+                    if message.is_definite and isinstance(t, Enumeration) and t.always_valid
+                ],
             ],
         )
 
@@ -921,6 +956,10 @@ class SerializerGenerator:
                                         Length("Data"),
                                     ],
                                 ),
+                                common.sufficient_space_for_field_condition(
+                                    Variable(f.affixed_name),
+                                    Mul(Length("Data"), Size(const.TYPES_BYTE)),
+                                ),
                                 *self.composite_setter_field_condition_precondition(message, f),
                             )
                         ),
@@ -928,6 +967,14 @@ class SerializerGenerator:
                             And(
                                 *self.composite_setter_postconditions(f),
                                 *self.public_setter_postconditions(message, f),
+                                Call(
+                                    "Equal",
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(f.affixed_name),
+                                        Variable("Data"),
+                                    ],
+                                ),
                             )
                         ),
                     ],
@@ -940,15 +987,12 @@ class SerializerGenerator:
                     specification(f),
                     [
                         ObjectDeclaration(
-                            ["First"],
-                            const.TYPES_BIT_INDEX,
-                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
                             ["Buffer_First"],
                             const.TYPES_INDEX,
-                            Call(const.TYPES_TO_INDEX, [Variable("First")]),
+                            Call(
+                                const.TYPES_TO_INDEX,
+                                [Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)])],
+                            ),
                             constant=True,
                         ),
                         ObjectDeclaration(
@@ -962,6 +1006,23 @@ class SerializerGenerator:
                         CallStatement(
                             f"Initialize_{f.name}_Private", [Variable("Ctx"), Length("Data")]
                         ),
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                Equal(
+                                    Variable("Buffer_Last"),
+                                    Call(
+                                        const.TYPES_TO_INDEX,
+                                        [
+                                            Call(
+                                                "Field_Last",
+                                                [Variable("Ctx"), Variable(f.affixed_name)],
+                                            )
+                                        ],
+                                    ),
+                                )
+                            ],
+                        ),
                         Assignment(
                             Slice(
                                 Selected(Variable("Ctx.Buffer"), "all"),
@@ -969,6 +1030,36 @@ class SerializerGenerator:
                                 Variable("Buffer_Last"),
                             ),
                             Variable("Data"),
+                        ),
+                        # Improve provability of `Equal` in postcondition
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                Equal(
+                                    Slice(
+                                        Selected(Variable("Ctx.Buffer"), "all"),
+                                        Call(
+                                            const.TYPES_TO_INDEX,
+                                            [
+                                                Call(
+                                                    "Field_First",
+                                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                                )
+                                            ],
+                                        ),
+                                        Call(
+                                            const.TYPES_TO_INDEX,
+                                            [
+                                                Call(
+                                                    "Field_Last",
+                                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                                )
+                                            ],
+                                        ),
+                                    ),
+                                    Variable("Data"),
+                                ),
+                            ],
                         ),
                     ],
                 )
