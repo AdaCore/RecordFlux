@@ -209,12 +209,21 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
     utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
 
-def test_64_bit_intger(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "type_definition",
+    [
+        "mod 2 ** 64",
+        "range 2 ** 8 .. 2 ** 48 with Size => 64",
+        "(A, B, C) with Size => 64",
+        "(A, B, C) with Always_Valid, Size => 64",
+    ],
+)
+def test_64_bit_types(type_definition: str, tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
-        """
+        f"""
            package Test is
 
-              type T is mod 2**64;
+              type T is {type_definition};
 
            end Test;
         """,
@@ -432,6 +441,7 @@ def test_refinement_with_self(tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.verification
 def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
     spec = """
            package Test is
@@ -441,7 +451,8 @@ def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
               type Message is
                  message
                     Flag : Boolean;
-                    Length : Length;
+                    Length : Length
+                       if Length > 0;
                     Data : Opaque
                        with Size => Length * 8;
                  end message;
@@ -449,6 +460,7 @@ def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
            end Test;
         """
     utils.assert_compilable_code_string(spec, tmp_path)
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
 
 
 def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
@@ -569,7 +581,7 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
     spec = """
         package Test is
 
-           type Length is range 0 .. 2**24 - 1 with Size => 32;
+           type Length is range 0 .. 2**14 - 1 with Size => 32;
 
            type Packet is
               message

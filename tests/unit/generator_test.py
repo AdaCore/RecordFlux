@@ -1073,7 +1073,7 @@ begin
                   function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                     (Universal.Option.Has_Buffer (C_Ctx)
                      and then Universal.Option.Structural_Valid_Message (C_Ctx)
-                     and then Length >= Universal.Option.Byte_Size (C_Ctx));
+                     and then Length = Universal.Option.Byte_Size (C_Ctx));
                   procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                     Pre =>
                       RFLX_Process_Data_Pre (Data'Length)
@@ -1160,11 +1160,21 @@ begin
             X : Universal.Message.Structure;
          begin
             F (Ctx, A, B, C, X);
-            Universal.Message.To_Context (X, X_Ctx);
+            if Universal.Message.Valid_Structure (X) then
+               Universal.Message.To_Context (X, X_Ctx);
+            else
+               Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
+               RFLX_Exception := True;
+            end if;
          end;
       end;
    end;
 end;
+if RFLX_Exception then
+   Ctx.P.Next_State := S_E;
+   pragma Finalization;
+   goto Finalize_S;
+end if;
 """[
                 1:-1
             ],
@@ -1496,7 +1506,7 @@ then
             function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
               (Universal.Option.Has_Buffer (Y_Ctx)
                and then Universal.Option.Structural_Valid_Message (Y_Ctx)
-               and then Length >= Universal.Option.Byte_Size (Y_Ctx));
+               and then Length = Universal.Option.Byte_Size (Y_Ctx));
             procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
               Pre =>
                 RFLX_Process_Data_Pre (Data'Length)
@@ -1621,7 +1631,7 @@ then
                         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                           (Universal.Message.Has_Buffer (RFLX_Y_Ctx_Tmp)
                            and then Universal.Message.Structural_Valid (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)
-                           and then Length >= RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));
+                           and then Length = RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));
                         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                           Pre =>
                             RFLX_Process_Data_Pre (Data'Length)
@@ -1727,7 +1737,14 @@ declare
 begin
    Universal.Message.To_Structure (A_Ctx, A);
    F (Ctx, A, X);
-   Universal.Option.To_Context (X, X_Ctx);
+   if Universal.Option.Valid_Structure (X) then
+      Universal.Option.To_Context (X, X_Ctx);
+   else
+      Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
+   end if;
 end;
 """[
                 1:-1

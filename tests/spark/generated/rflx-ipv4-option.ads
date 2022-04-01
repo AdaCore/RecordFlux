@@ -412,7 +412,9 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Option_Data)
        and then Valid_Next (Ctx, F_Option_Data)
-       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data)),
+     Post =>
+       Equal (Ctx, F_Option_Data, Data);
 
    generic
       with procedure Process_Option_Data (Option_Data : RFLX_Types.Bytes);
@@ -615,6 +617,7 @@ is
        and then Field_Last (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Option_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Option_Data, Data'Length)
+       and then Available_Space (Ctx, F_Option_Data) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Option_Data, 0),
      Post =>
        Has_Buffer (Ctx)
@@ -629,7 +632,8 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Equal (Ctx, F_Option_Data, Data);
 
    generic
       with procedure Process_Option_Data (Option_Data : out RFLX_Types.Bytes);

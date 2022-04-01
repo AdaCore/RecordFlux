@@ -24,7 +24,6 @@ from rflx.ada import (
     ForSomeIn,
     FunctionSpecification,
     Ghost,
-    GreaterEqual,
     If,
     IfStatement,
     In,
@@ -931,7 +930,7 @@ class ParserGenerator:
                                     "Valid_Next",
                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                 ),
-                                GreaterEqual(
+                                Equal(
                                     Length("Data"),
                                     Call(
                                         const.TYPES_TO_LENGTH,
@@ -947,7 +946,17 @@ class ParserGenerator:
                                     ),
                                 ),
                             )
-                        )
+                        ),
+                        Postcondition(
+                            Call(
+                                "Equal",
+                                [
+                                    Variable("Ctx"),
+                                    Variable(f.affixed_name),
+                                    Variable("Data"),
+                                ],
+                            )
+                        ),
                     ],
                 )
                 for f in opaque_fields

@@ -50,7 +50,7 @@ is
                         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                           (Test.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
                            and then Test.Message.Structural_Valid (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)
-                           and then Length >= RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                           and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
                         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                           Pre =>
                             RFLX_Process_Data_Pre (Data'Length)

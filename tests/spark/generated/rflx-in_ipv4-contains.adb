@@ -24,7 +24,7 @@ is
       pragma Warnings (Off, """UDP_Datagram_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.UDP.Datagram.Take_Buffer (UDP_Datagram_SDU_Context, Buffer);
       pragma Warnings (On, """UDP_Datagram_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
-      RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all);
+      RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all (Buffer'First .. Buffer'First + RFLX_Types.Index (RFLX_Types.To_Length (Size)) - 1));
       RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 
@@ -47,7 +47,7 @@ is
       pragma Warnings (Off, """ICMP_Message_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.ICMP.Message.Take_Buffer (ICMP_Message_SDU_Context, Buffer);
       pragma Warnings (On, """ICMP_Message_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
-      RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all);
+      RFLX.IPv4.Packet.Get_Payload (IPv4_Packet_PDU_Context, Buffer.all (Buffer'First .. Buffer'First + RFLX_Types.Index (RFLX_Types.To_Length (Size)) - 1));
       RFLX.ICMP.Message.Initialize (ICMP_Message_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 

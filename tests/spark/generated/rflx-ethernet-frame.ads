@@ -417,7 +417,9 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Payload)
        and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+     Post =>
+       Equal (Ctx, F_Payload, Data);
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
@@ -656,6 +658,7 @@ is
        and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Payload, Data'Length)
+       and then Available_Space (Ctx, F_Payload) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Payload, 0, RFLX_Types.To_Bit_Length (Data'Length)),
      Post =>
        Has_Buffer (Ctx)
@@ -670,7 +673,8 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
-       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old;
+       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
+       and Equal (Ctx, F_Payload, Data);
 
    generic
       with procedure Process_Payload (Payload : out RFLX_Types.Bytes);

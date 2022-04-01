@@ -11,6 +11,8 @@ is
        8;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
 
+   use type RFLX.RFLX_Types.U64;
+
    function Valid_Tag (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val in 1 | 3);
 
@@ -40,8 +42,6 @@ is
    type Length is mod 2**16 with
      Size =>
        16;
-
-   use type RFLX.RFLX_Types.U64;
 
    function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
      (Val <= 65535);

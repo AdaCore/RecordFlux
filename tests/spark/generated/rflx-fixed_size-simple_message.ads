@@ -265,10 +265,11 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld),
+       and Valid_Predecessor (Ctx, Fld)
+       and Valid_Value (Fld, Val),
      Post =>
        True;
 
@@ -398,7 +399,9 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Data)
        and then Valid_Next (Ctx, F_Data)
-       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Data));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data)),
+     Post =>
+       Equal (Ctx, F_Data, Data);
 
    generic
       with procedure Process_Data (Data : RFLX_Types.Bytes);
@@ -423,15 +426,19 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Message_Type)
        and then RFLX.Universal.Valid_Option_Type (To_U64 (Val))
-       and then Field_Condition (Ctx, F_Message_Type)
+       and then Field_Condition (Ctx, F_Message_Type, To_U64 (Val))
        and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Message_Type)
        and Get_Message_Type (Ctx) = (True, Val)
        and Invalid (Ctx, F_Data)
-       and (Predecessor (Ctx, F_Data) = F_Message_Type
-            and Valid_Next (Ctx, F_Data))
+       and (if
+               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+               or RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data))
+            then
+               Predecessor (Ctx, F_Data) = F_Message_Type
+               and Valid_Next (Ctx, F_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -470,7 +477,8 @@ is
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Data, Data'Length)
-       and then Field_Condition (Ctx, F_Data),
+       and then Available_Space (Ctx, F_Data) >= Data'Length * RFLX_Types.Byte'Size
+       and then Field_Condition (Ctx, F_Data, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -481,7 +489,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old;
+       and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Equal (Ctx, F_Data, Data);
 
    generic
       with procedure Process_Data (Data : out RFLX_Types.Bytes);
@@ -531,18 +540,24 @@ is
          Data : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 2);
       end record;
 
+   function Valid_Structure (Struct : Structure) return Boolean;
+
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
        Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       and then Structural_Valid_Message (Ctx),
+     Post =>
+       Valid_Structure (Struct);
 
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
-       not Ctx'Constrained
+       Valid_Structure (Struct)
+       and then not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1 >= 32,
      Post =>
        Has_Buffer (Ctx)
+       and Structural_Valid_Message (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
@@ -609,7 +624,9 @@ private
                     Structural_Valid (Cursors (F_Data))
                  then
                     (Valid (Cursors (F_Message_Type))
-                     and then Cursors (F_Data).Predecessor = F_Message_Type)))
+                     and then Cursors (F_Data).Predecessor = F_Message_Type
+                     and then (RFLX_Types.U64 (Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+                               or RFLX_Types.U64 (Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data))))))
       and then ((if Invalid (Cursors (F_Message_Type)) then Invalid (Cursors (F_Data))))
       and then (if
                    Structural_Valid (Cursors (F_Message_Type))
@@ -619,6 +636,8 @@ private
                    and then Cursors (F_Message_Type).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Data))
+                                and then (RFLX_Types.U64 (Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+                                          or RFLX_Types.U64 (Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data)))
                              then
                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 24
                                 and then Cursors (F_Data).Predecessor = F_Message_Type
@@ -666,11 +685,19 @@ private
              True));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial | F_Data | F_Final =>
+             True,
+          when F_Message_Type =>
+             RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+             or RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data))));
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64) return Boolean is
      ((case Fld is
-          when F_Message_Type | F_Data =>
+          when F_Message_Type =>
+             Val = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+             or Val = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data)),
+          when F_Data =>
              True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
@@ -762,5 +789,10 @@ private
 
    function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
      (Cursors (Fld));
+
+   function Valid_Structure (Struct : Structure) return Boolean is
+     (RFLX.Universal.Valid_Option_Type (Struct.Message_Type)
+      and then (To_U64 (Struct.Message_Type) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Null))
+                or To_U64 (Struct.Message_Type) = RFLX_Types.U64 (To_U64 (RFLX.Universal.OT_Data))));
 
 end RFLX.Fixed_Size.Simple_Message;

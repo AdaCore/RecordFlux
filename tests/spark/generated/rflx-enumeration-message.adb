@@ -250,6 +250,34 @@ is
       RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
    end Set_Priority;
 
+   procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, F_Priority)
+       and then RFLX.Enumeration.Valid_Priority (Val)
+       and then Field_Condition (Ctx, F_Priority)
+       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, F_Priority)
+       and Get_Priority (Ctx) = Val
+       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Priority))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Predecessor (Ctx, F_Priority) = Predecessor (Ctx, F_Priority)'Old
+       and Valid_Next (Ctx, F_Priority) = Valid_Next (Ctx, F_Priority)'Old
+   is
+      Value : constant RFLX_Types.U64 := To_U64 (Val);
+      Buffer_First, Buffer_Last : RFLX_Types.Index;
+      Offset : RFLX_Types.Offset;
+   begin
+      Set (Ctx, F_Priority, Value, 8, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+   end Set_Priority;
+
    procedure To_Structure (Ctx : Context; Struct : out Structure) is
    begin
       Struct.Priority := Get_Priority (Ctx);
@@ -258,9 +286,7 @@ is
    procedure To_Context (Struct : Structure; Ctx : in out Context) is
    begin
       Reset (Ctx);
-      if Struct.Priority.Known then
-         Set_Priority (Ctx, Struct.Priority.Enum);
-      end if;
+      Set_Priority (Ctx, Struct.Priority);
    end To_Context;
 
 end RFLX.Enumeration.Message;

@@ -9,6 +9,7 @@ from rflx.expression import (
     Mul,
     NotEqual,
     Number,
+    Or,
     Pow,
     Size,
     Sub,
@@ -475,6 +476,12 @@ FIXED_SIZE_MESSAGE = Message(
         Link(
             Field("Message_Type"),
             Field("Data"),
+            condition=Or(
+                Equal(Variable("Message_Type"), Variable("Universal.MT_Null")),
+                Equal(Variable("Message_Type"), Variable("Universal.MT_Data")),
+                Equal(Variable("Message_Type"), Variable("Universal.MT_Values")),
+                Equal(Variable("Message_Type"), Variable("Universal.MT_Options")),
+            ),
             size=Number(64),
         ),
         Link(
@@ -506,6 +513,10 @@ FIXED_SIZE_SIMPLE_MESSAGE = Message(
         Link(
             Field("Message_Type"),
             Field("Data"),
+            condition=Or(
+                Equal(Variable("Message_Type"), Variable("Universal.OT_Null")),
+                Equal(Variable("Message_Type"), Variable("Universal.OT_Data")),
+            ),
             size=Number(24),
         ),
         Link(

@@ -24,7 +24,7 @@ is
       pragma Warnings (Off, """IPv4_Packet_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
       RFLX.IPv4.Packet.Take_Buffer (IPv4_Packet_SDU_Context, Buffer);
       pragma Warnings (On, """IPv4_Packet_SDU_Context"" is set by ""Take_Buffer"" but not used after the call");
-      RFLX.Ethernet.Frame.Get_Payload (Ethernet_Frame_PDU_Context, Buffer.all);
+      RFLX.Ethernet.Frame.Get_Payload (Ethernet_Frame_PDU_Context, Buffer.all (Buffer'First .. Buffer'First + RFLX_Types.Index (RFLX_Types.To_Length (Size)) - 1));
       RFLX.IPv4.Packet.Initialize (IPv4_Packet_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 

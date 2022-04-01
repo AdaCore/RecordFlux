@@ -21,16 +21,13 @@ is
          end case;
       end record;
 
-   pragma Warnings (Off, "unused variable ""Val""");
-
-   pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+   use type RFLX.RFLX_Types.U64;
 
    function Valid_Priority (Val : RFLX.RFLX_Types.U64) return Boolean is
-     (True);
+     (Val < 2**8);
 
-   pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-   pragma Warnings (On, "unused variable ""Val""");
+   function Valid_Priority (Val : Priority) return Boolean is
+     ((if Val.Known then True else Valid_Priority (Val.Raw) and Val.Raw not in 1 | 4 | 7));
 
    function To_U64 (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.RFLX_Types.U64 is
      ((case Enum is

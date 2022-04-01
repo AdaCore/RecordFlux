@@ -504,12 +504,13 @@ is
    end Initialize_Payload;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
-      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
+      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Payload));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
       Initialize_Payload_Private (Ctx, Data'Length);
+      pragma Assert (Buffer_Last = RFLX_Types.To_Index (Field_Last (Ctx, F_Payload)));
       Ctx.Buffer.all (Buffer_First .. Buffer_Last) := Data;
+      pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Payload)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Payload))) = Data);
    end Set_Payload;
 
    procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) is

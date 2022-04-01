@@ -388,7 +388,9 @@ is
        Has_Buffer (Ctx)
        and then Structural_Valid (Ctx, F_Data)
        and then Valid_Next (Ctx, F_Data)
-       and then Data'Length >= RFLX_Types.To_Length (Field_Size (Ctx, F_Data));
+       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data)),
+     Post =>
+       Equal (Ctx, F_Data, Data);
 
    generic
       with procedure Process_Data (Data : RFLX_Types.Bytes);
@@ -461,6 +463,7 @@ is
        and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Data, Data'Length)
+       and then Available_Space (Ctx, F_Data) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Data),
      Post =>
        Has_Buffer (Ctx)
@@ -471,7 +474,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Equal (Ctx, F_Data, Data);
 
    generic
       with procedure Process_Data (Data : out RFLX_Types.Bytes);

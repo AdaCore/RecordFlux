@@ -58,7 +58,14 @@ is
          begin
             Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2));
             Create_Message (Ctx, Message_Type, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2), Fixed_Size_Message);
-            Fixed_Size.Simple_Message.To_Context (Fixed_Size_Message, Ctx.P.Fixed_Size_Message_Ctx);
+            if Fixed_Size.Simple_Message.Valid_Structure (Fixed_Size_Message) then
+               Fixed_Size.Simple_Message.To_Context (Fixed_Size_Message, Ctx.P.Fixed_Size_Message_Ctx);
+            else
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                              and Ctx.P.Slots.Slot_Ptr_2 = null);
+               goto Finalize_Process;
+            end if;
          end;
       else
          Ctx.P.Next_State := S_Terminated;

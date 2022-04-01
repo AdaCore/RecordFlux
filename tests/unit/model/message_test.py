@@ -60,6 +60,7 @@ from tests.data.models import (
     ENUMERATION,
     ETHERNET_FRAME,
     FIXED_SIZE_MESSAGE,
+    FIXED_SIZE_SIMPLE_MESSAGE,
     MESSAGE,
     MODULAR_INTEGER,
     NULL_MESSAGE,
@@ -2690,10 +2691,11 @@ def test_has_implicit_size() -> None:
 
 def test_is_definite() -> None:
     assert NULL_MESSAGE.is_definite
-    assert FIXED_SIZE_MESSAGE.is_definite
+    assert FIXED_SIZE_SIMPLE_MESSAGE.is_definite
+    assert not FIXED_SIZE_MESSAGE.is_definite
     assert not TLV_MESSAGE.is_definite
     assert not ETHERNET_FRAME.is_definite
-    assert SEQUENCE_MESSAGE.is_definite
+    assert not SEQUENCE_MESSAGE.is_definite
 
 
 def test_size() -> None:
