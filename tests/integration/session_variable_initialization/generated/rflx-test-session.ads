@@ -108,6 +108,7 @@ private
       record
          Next_State : State := S_Start;
          Global : Universal.Value := 11;
+         Uninitialized_Global : Universal.Value := Universal.Value'First;
          Message_Ctx : Universal.Message.Context;
          Slots : Test.Session_Allocator.Slots;
          Memory : Test.Session_Allocator.Memory;
