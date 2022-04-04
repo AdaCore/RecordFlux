@@ -20,9 +20,15 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Start_Invariant);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -33,8 +39,7 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Start_Invariant);
    end Start;
 
    procedure Prepare_Message (Ctx : in out Context'Class) with
@@ -43,9 +48,15 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Prepare_Message_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Prepare_Message_Invariant);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
@@ -54,19 +65,16 @@ is
             Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                           and Ctx.P.Slots.Slot_Ptr_2 /= null);
+            pragma Assert (Prepare_Message_Invariant);
             goto Finalize_Prepare_Message;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 /= null);
+         pragma Assert (Prepare_Message_Invariant);
          goto Finalize_Prepare_Message;
       end if;
       Ctx.P.Next_State := S_Reply;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Prepare_Message_Invariant);
       <<Finalize_Prepare_Message>>
    end Prepare_Message;
 
@@ -76,12 +84,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Reply_Invariant);
       Ctx.P.Next_State := S_Next;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Reply_Invariant);
    end Reply;
 
    procedure Next (Ctx : in out Context'Class) with
@@ -92,18 +105,24 @@ is
    is
       M_Ctx : Universal.Message.Context;
       M_Buffer : RFLX_Types.Bytes_Ptr;
+      function Next_Invariant return Boolean is
+        (Global_Initialized (Ctx)
+         and Universal.Message.Has_Buffer (M_Ctx)
+         and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+         and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
       M_Buffer := Ctx.P.Slots.Slot_Ptr_2;
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
-      pragma Assert (Global_Initialized (Ctx)
-                     and Universal.Message.Has_Buffer (M_Ctx)
-                     and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                     and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Next_Invariant);
       if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
@@ -112,31 +131,16 @@ is
             Universal.Message.Set_Data (M_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Global_Initialized (Ctx)
-                           and Universal.Message.Has_Buffer (M_Ctx)
-                           and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                           and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
-                           and Ctx.P.Slots.Slot_Ptr_2 = null
-                           and Ctx.P.Slots.Slot_Ptr_1 = null);
+            pragma Assert (Next_Invariant);
             goto Finalize_Next;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Global_Initialized (Ctx)
-                        and Universal.Message.Has_Buffer (M_Ctx)
-                        and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                        and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_1 = null);
+         pragma Assert (Next_Invariant);
          goto Finalize_Next;
       end if;
       Ctx.P.Next_State := S_Terminated;
-      pragma Assert (Global_Initialized (Ctx)
-                     and Universal.Message.Has_Buffer (M_Ctx)
-                     and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                     and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Next_Invariant);
       <<Finalize_Next>>
       pragma Warnings (Off, """M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (M_Ctx, M_Buffer);

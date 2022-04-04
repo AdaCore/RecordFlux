@@ -20,23 +20,25 @@ is
    is
       Message_Tag : TLV.Tag;
       Tag : TLV.Tag;
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 /= null
+         and Ctx.P.Slots.Slot_Ptr_5 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
       RFLX_Exception : Boolean := False;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 /= null
-                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
+      pragma Assert (Start_Invariant);
       if
          not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx)
          or TLV.Messages.Available_Space (Ctx.P.Messages_Ctx) < 32
       then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       declare
@@ -56,11 +58,7 @@ is
       end;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if
@@ -68,11 +66,7 @@ is
          or TLV.Tags.Available_Space (Ctx.P.Tags_Ctx) < TLV.Tag'Size
       then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       TLV.Tags.Append_Element (Ctx.P.Tags_Ctx, TLV.Msg_Error);
@@ -126,40 +120,24 @@ is
          end;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if
@@ -170,11 +148,7 @@ is
          Tag := TLV.Tags.Head (Ctx.P.Tags_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 /= null
-                        and Ctx.P.Slots.Slot_Ptr_5 /= null);
+         pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
       if
@@ -185,11 +159,7 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 /= null
-                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
+      pragma Assert (Start_Invariant);
       <<Finalize_Start>>
    end Start;
 
@@ -199,18 +169,20 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 /= null
+         and Ctx.P.Slots.Slot_Ptr_5 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 /= null
-                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
+      pragma Assert (Reply_Invariant);
       Ctx.P.Next_State := S_Terminated;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 /= null
-                     and Ctx.P.Slots.Slot_Ptr_5 /= null);
+      pragma Assert (Reply_Invariant);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

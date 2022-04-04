@@ -27,6 +27,7 @@ from rflx.ada import (
     Add,
     And,
     AndThen,
+    Annotate,
     Assignment,
     Call,
     CallStatement,
@@ -48,6 +49,7 @@ from rflx.ada import (
     First,
     FunctionSpecification,
     GenericProcedureInstantiation,
+    Ghost,
     GotoStatement,
     Greater,
     GreaterEqual,
@@ -850,7 +852,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ExceptionHandler(
                                 self._session_context.state_exception,
                                 state,
-                                [PragmaStatement("Assert", [And(*invariant)])],
+                                [
+                                    PragmaStatement(
+                                        "Assert", [Call(f"{state.identifier}_Invariant")]
+                                    )
+                                ],
                             ),
                             is_global,
                         )
@@ -869,6 +875,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         [
                             *evaluated_declarations.global_declarations,
                             *evaluated_declarations.initialization_declarations,
+                            ExpressionFunctionDeclaration(
+                                FunctionSpecification(f"{state.identifier}_Invariant", "Boolean"),
+                                And(*invariant),
+                                [Annotate("GNATprove", "Inline_For_Proof"), Ghost()],
+                            ),
                             *(
                                 [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
                                 if state.identifier in self._session_context.state_exception
@@ -877,9 +888,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         ],
                         [
                             *evaluated_declarations.initialization,
-                            PragmaStatement("Assert", [And(*invariant)]),
+                            PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
                             *statements,
-                            PragmaStatement("Assert", [And(*invariant)]),
+                            PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
                             *(
                                 [Label(f"Finalize_{state.identifier}")]
                                 if state.has_exceptions
