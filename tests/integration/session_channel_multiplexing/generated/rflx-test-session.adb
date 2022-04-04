@@ -16,9 +16,15 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Start_Invariant);
       Universal.Message.Verify_Message (Ctx.P.Message_1_Ctx);
       Universal.Message.Verify_Message (Ctx.P.Message_2_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0 then
@@ -28,8 +34,7 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Start_Invariant);
    end Start;
 
    procedure Reply_1 (Ctx : in out Context'Class) with
@@ -38,12 +43,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_1_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_1_Invariant);
       Ctx.P.Next_State := S_Start;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_1_Invariant);
    end Reply_1;
 
    procedure Reply_2 (Ctx : in out Context'Class) with
@@ -52,12 +62,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_2_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_2_Invariant);
       Ctx.P.Next_State := S_Start;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_2_Invariant);
    end Reply_2;
 
    procedure Initialize (Ctx : in out Context'Class) is

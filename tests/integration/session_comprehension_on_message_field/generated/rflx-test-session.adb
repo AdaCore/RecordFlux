@@ -23,10 +23,16 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Start_Invariant);
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -36,9 +42,7 @@ is
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Start_Invariant);
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -49,6 +53,18 @@ is
    is
       Option_Types_Ctx : Universal.Option_Types.Context;
       Option_Types_Buffer : RFLX_Types.Bytes_Ptr;
+      function Process_Invariant return Boolean is
+        (Global_Initialized (Ctx)
+         and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
+         and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+         and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
       RFLX_Exception : Boolean := False;
    begin
       Option_Types_Buffer := Ctx.P.Slots.Slot_Ptr_2;
@@ -56,13 +72,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
-      pragma Assert (Global_Initialized (Ctx)
-                     and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                     and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                     and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Process_Invariant);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
@@ -125,35 +135,17 @@ is
          end;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Global_Initialized (Ctx)
-                        and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                        and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                        and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 /= null);
+         pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Global_Initialized (Ctx)
-                        and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                        and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                        and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 /= null);
+         pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Global_Initialized (Ctx)
-                        and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                        and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                        and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 /= null);
+         pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if
@@ -168,45 +160,21 @@ is
                Universal.Message.Set_Option_Types (Ctx.P.Message_Ctx, Option_Types_Ctx);
             else
                Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Global_Initialized (Ctx)
-                              and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                              and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                              and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                              and Ctx.P.Slots.Slot_Ptr_2 = null
-                              and Ctx.P.Slots.Slot_Ptr_1 = null
-                              and Ctx.P.Slots.Slot_Ptr_3 /= null);
+               pragma Assert (Process_Invariant);
                goto Finalize_Process;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Global_Initialized (Ctx)
-                           and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                           and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                           and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                           and Ctx.P.Slots.Slot_Ptr_2 = null
-                           and Ctx.P.Slots.Slot_Ptr_1 = null
-                           and Ctx.P.Slots.Slot_Ptr_3 /= null);
+            pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Global_Initialized (Ctx)
-                        and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                        and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                        and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 /= null);
+         pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       Ctx.P.Next_State := S_Reply;
-      pragma Assert (Global_Initialized (Ctx)
-                     and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
-                     and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-                     and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Process_Invariant);
       <<Finalize_Process>>
       pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
@@ -221,14 +189,18 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Reply_Invariant);
       Ctx.P.Next_State := S_Terminated;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 /= null
-                     and Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Reply_Invariant);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

@@ -16,13 +16,18 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Start_Invariant);
       Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Start_Invariant);
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -31,9 +36,15 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Process_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Process_Invariant);
       if
          Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -65,37 +76,31 @@ is
                      end;
                   else
                      Ctx.P.Next_State := S_Terminated;
-                     pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                                    and Ctx.P.Slots.Slot_Ptr_2 = null);
+                     pragma Assert (Process_Invariant);
                      goto Finalize_Process;
                   end if;
                else
                   Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                                 and Ctx.P.Slots.Slot_Ptr_2 = null);
+                  pragma Assert (Process_Invariant);
                   goto Finalize_Process;
                end if;
             else
                Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                              and Ctx.P.Slots.Slot_Ptr_2 = null);
+               pragma Assert (Process_Invariant);
                goto Finalize_Process;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                           and Ctx.P.Slots.Slot_Ptr_2 = null);
+            pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null);
+         pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       Ctx.P.Next_State := S_Reply;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Process_Invariant);
       <<Finalize_Process>>
    end Process;
 
@@ -105,12 +110,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_Invariant);
       Ctx.P.Next_State := S_Terminated;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Reply_Invariant);
    end Reply;
 
    procedure Initialize (Ctx : in out Context'Class) is

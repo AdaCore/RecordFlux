@@ -16,21 +16,24 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Start_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Start_Invariant);
       Messages.Msg_LE_Nested.Verify_Message (Ctx.P.In_Msg_Ctx);
       if Messages.Msg_LE_Nested.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy;
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Start_Invariant);
    end Start;
 
    procedure Copy (Ctx : in out Context'Class) with
@@ -39,11 +42,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Copy_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Copy_Invariant);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 1 >= 64 then
          Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg_Ctx.Buffer_First) + 64 - 1);
          if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
@@ -52,33 +61,21 @@ is
                Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
             else
                Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                              and Ctx.P.Slots.Slot_Ptr_2 = null
-                              and Ctx.P.Slots.Slot_Ptr_3 = null
-                              and Ctx.P.Slots.Slot_Ptr_4 = null);
+               pragma Assert (Copy_Invariant);
                goto Finalize_Copy;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                           and Ctx.P.Slots.Slot_Ptr_2 = null
-                           and Ctx.P.Slots.Slot_Ptr_3 = null
-                           and Ctx.P.Slots.Slot_Ptr_4 = null);
+            pragma Assert (Copy_Invariant);
             goto Finalize_Copy;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 = null);
+         pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
       Ctx.P.Next_State := S_Reply;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Copy_Invariant);
       <<Finalize_Copy>>
    end Copy;
 
@@ -88,16 +85,19 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Reply_Invariant);
       Ctx.P.Next_State := S_Read2;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Reply_Invariant);
    end Reply;
 
    procedure Read2 (Ctx : in out Context'Class) with
@@ -106,21 +106,24 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Read2_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Read2_Invariant);
       Messages.Msg_LE.Verify_Message (Ctx.P.In_Msg2_Ctx);
       if Messages.Msg_LE.Byte_Size (Ctx.P.In_Msg2_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy2;
       else
          Ctx.P.Next_State := S_Terminated;
       end if;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Read2_Invariant);
    end Read2;
 
    procedure Copy2 (Ctx : in out Context'Class) with
@@ -129,11 +132,17 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Copy2_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Copy2_Invariant);
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First) + 1 >= 64 then
          Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Out_Msg2_Ctx.Buffer_First) + 64 - 1);
          if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
@@ -142,33 +151,21 @@ is
                Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
             else
                Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                              and Ctx.P.Slots.Slot_Ptr_2 = null
-                              and Ctx.P.Slots.Slot_Ptr_3 = null
-                              and Ctx.P.Slots.Slot_Ptr_4 = null);
+               pragma Assert (Copy2_Invariant);
                goto Finalize_Copy2;
             end if;
          else
             Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                           and Ctx.P.Slots.Slot_Ptr_2 = null
-                           and Ctx.P.Slots.Slot_Ptr_3 = null
-                           and Ctx.P.Slots.Slot_Ptr_4 = null);
+            pragma Assert (Copy2_Invariant);
             goto Finalize_Copy2;
          end if;
       else
          Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                        and Ctx.P.Slots.Slot_Ptr_2 = null
-                        and Ctx.P.Slots.Slot_Ptr_3 = null
-                        and Ctx.P.Slots.Slot_Ptr_4 = null);
+         pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
       Ctx.P.Next_State := S_Reply2;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Copy2_Invariant);
       <<Finalize_Copy2>>
    end Copy2;
 
@@ -178,16 +175,19 @@ is
      Post =>
        Initialized (Ctx)
    is
+      function Reply2_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_4 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
    begin
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Reply2_Invariant);
       Ctx.P.Next_State := S_Start;
-      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
-                     and Ctx.P.Slots.Slot_Ptr_2 = null
-                     and Ctx.P.Slots.Slot_Ptr_3 = null
-                     and Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Reply2_Invariant);
    end Reply2;
 
    procedure Initialize (Ctx : in out Context'Class) is
