@@ -215,6 +215,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
 
+            log.info("Generating %s", t.identifier)
+
             if t.package not in self._units:
                 self.__create_unit(ID(t.package), terminating=False)
 
@@ -244,6 +246,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 assert False, f'unexpected type "{type(t).__name__}"'
 
         for s in model.sessions:
+            log.info("Generating %s", s.identifier)
+
             if s.package not in self._units:
                 self.__create_unit(ID(s.package), terminating=False)
 
