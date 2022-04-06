@@ -351,6 +351,7 @@ class Variable(Name):
 
 TRUE = Variable("True")
 FALSE = Variable("False")
+NULL = Variable("null")
 
 
 class Attribute(Name):
