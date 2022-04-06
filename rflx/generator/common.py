@@ -1,10 +1,57 @@
+# pylint: disable = too-many-lines
+
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
-from rflx import ada, expression as expr, identifier as rid, model
+from rflx import expression as expr, identifier as rid, model
+from rflx.ada import (
+    ID,
+    TRUE,
+    Add,
+    And,
+    AndThen,
+    Assignment,
+    Call,
+    CallStatement,
+    ContextItem,
+    Declaration,
+    Equal,
+    Expr,
+    First,
+    ForAllIn,
+    GenericPackageInstantiation,
+    GreaterEqual,
+    If,
+    IfExpr,
+    Indexed,
+    Last,
+    Less,
+    LessEqual,
+    LoopEntry,
+    Max,
+    Name,
+    NamedAggregate,
+    NotEqual,
+    Number,
+    ObjectDeclaration,
+    Old,
+    Or,
+    Parameter,
+    PragmaStatement,
+    Rem,
+    Selected,
+    Size,
+    Statement,
+    String,
+    Sub,
+    Update,
+    ValueRange,
+    Variable,
+    WithClause,
+)
 
 from . import const
 
-EMPTY_ARRAY = ada.NamedAggregate((ada.ValueRange(ada.Number(1), ada.Number(0)), ada.Number(0)))
+EMPTY_ARRAY = NamedAggregate((ValueRange(Number(1), Number(0)), Number(0)))
 
 
 def substitution(
@@ -12,7 +59,7 @@ def substitution(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ada.ID] = const.TYPES_U64,
+    target_type: Optional[ID] = const.TYPES_U64,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
@@ -140,7 +187,7 @@ def substitution_facts(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ada.ID] = const.TYPES_U64,
+    target_type: Optional[ID] = const.TYPES_U64,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
@@ -247,7 +294,7 @@ def substitution_facts(
 
 def message_structure_invariant(
     message: model.Message, prefix: str, link: model.Link = None, embedded: bool = False
-) -> ada.Expr:
+) -> Expr:
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
@@ -259,8 +306,8 @@ def message_structure_invariant(
     source = link.source
     target = link.target
 
-    if target is model.FINAL:
-        return ada.TRUE
+    if target == model.FINAL:
+        return TRUE
 
     field_type = message.types[target]
     condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
@@ -294,64 +341,60 @@ def message_structure_invariant(
         message_structure_invariant(message, prefix, l, embedded) for l in message.outgoing(target)
     ]
 
-    return ada.If(
+    return If(
         [
             (
-                ada.AndThen(
-                    ada.Call(
+                AndThen(
+                    Call(
                         "Structural_Valid",
-                        [
-                            ada.Indexed(
-                                prefixed("Cursors").ada_expr(), ada.Variable(target.affixed_name)
-                            )
-                        ],
+                        [Indexed(prefixed("Cursors").ada_expr(), Variable(target.affixed_name))],
                     ),
                     *([condition.ada_expr()] if condition != expr.TRUE else []),
                 ),
-                ada.AndThen(
-                    ada.Equal(
-                        ada.Add(
-                            ada.Sub(
-                                ada.Selected(
-                                    ada.Indexed(
+                AndThen(
+                    Equal(
+                        Add(
+                            Sub(
+                                Selected(
+                                    Indexed(
                                         prefixed("Cursors").ada_expr(),
-                                        ada.Variable(target.affixed_name),
+                                        Variable(target.affixed_name),
                                     ),
                                     "Last",
                                 ),
-                                ada.Selected(
-                                    ada.Indexed(
+                                Selected(
+                                    Indexed(
                                         prefixed("Cursors").ada_expr(),
-                                        ada.Variable(target.affixed_name),
+                                        Variable(target.affixed_name),
                                     ),
                                     "First",
                                 ),
                             ),
-                            ada.Number(1),
+                            Number(1),
                         ),
                         size.ada_expr(),
                     ),
-                    ada.Equal(
-                        ada.Selected(
-                            ada.Indexed(
+                    Equal(
+                        Selected(
+                            Indexed(
                                 prefixed("Cursors").ada_expr(),
-                                ada.Variable(target.affixed_name),
+                                Variable(target.affixed_name),
                             ),
                             "Predecessor",
                         ),
-                        ada.Variable(source.affixed_name),
+                        Variable(source.affixed_name),
                     ),
-                    ada.Equal(
-                        ada.Selected(
-                            ada.Indexed(
+                    Equal(
+                        Selected(
+                            Indexed(
                                 prefixed("Cursors").ada_expr(),
-                                ada.Variable(target.affixed_name),
+                                Variable(target.affixed_name),
                             ),
                             "First",
                         ),
                         first.ada_expr(),
                     ),
-                    *[i for i in invariant if i != ada.TRUE],
+                    *[i for i in invariant if i != TRUE],
                 ),
             )
         ]
@@ -360,49 +403,43 @@ def message_structure_invariant(
 
 def context_predicate(
     message: model.Message, composite_fields: Sequence[model.Field], prefix: str
-) -> ada.Expr:
-    def cursors_invariant() -> ada.Expr:
-        return ada.ForAllIn(
+) -> Expr:
+    def cursors_invariant() -> Expr:
+        return ForAllIn(
             "F",
-            ada.Variable("Field"),
-            ada.If(
+            Variable("Field"),
+            If(
                 [
                     (
-                        ada.Call(
+                        Call(
                             "Structural_Valid",
-                            [ada.Indexed(ada.Variable("Cursors"), ada.Variable("F"))],
+                            [Indexed(Variable("Cursors"), Variable("F"))],
                         ),
-                        ada.And(
-                            ada.GreaterEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
-                                ),
-                                ada.Variable("First"),
+                        And(
+                            GreaterEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                                Variable("First"),
                             ),
-                            ada.LessEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "Last"
-                                ),
-                                ada.Variable("Verified_Last"),
+                            LessEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
+                                Variable("Verified_Last"),
                             ),
-                            ada.LessEqual(
-                                ada.Selected(
-                                    ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")), "First"
-                                ),
-                                ada.Add(
-                                    ada.Selected(
-                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                            LessEqual(
+                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                                Add(
+                                    Selected(
+                                        Indexed(Variable("Cursors"), Variable("F")),
                                         "Last",
                                     ),
-                                    ada.Number(1),
+                                    Number(1),
                                 ),
                             ),
-                            ada.Call(
+                            Call(
                                 "Valid_Value",
                                 [
-                                    ada.Variable("F"),
-                                    ada.Selected(
-                                        ada.Indexed(ada.Variable("Cursors"), ada.Variable("F")),
+                                    Variable("F"),
+                                    Selected(
+                                        Indexed(Variable("Cursors"), Variable("F")),
                                         "Value",
                                     ),
                                 ],
@@ -413,22 +450,22 @@ def context_predicate(
             ),
         )
 
-    def valid_predecessors_invariant() -> ada.Expr:
-        return ada.AndThen(
+    def valid_predecessors_invariant() -> Expr:
+        return AndThen(
             *[
-                ada.If(
+                If(
                     [
                         (
-                            ada.Call(
+                            Call(
                                 "Structural_Valid",
                                 [
-                                    ada.Indexed(
-                                        ada.Variable("Cursors"),
-                                        ada.Variable(f.affixed_name),
+                                    Indexed(
+                                        Variable("Cursors"),
+                                        Variable(f.affixed_name),
                                     )
                                 ],
                             ),
-                            ada.Or(
+                            Or(
                                 *[
                                     expr.AndThen(
                                         expr.Call(
@@ -469,32 +506,32 @@ def context_predicate(
             ]
         )
 
-    def invalid_successors_invariant() -> ada.Expr:
-        return ada.AndThen(
+    def invalid_successors_invariant() -> Expr:
+        return AndThen(
             *[
-                ada.If(
+                If(
                     [
                         (
-                            ada.AndThen(
+                            AndThen(
                                 *[
-                                    ada.Call(
+                                    Call(
                                         "Invalid",
                                         [
-                                            ada.Indexed(
-                                                ada.Variable("Cursors"),
-                                                ada.Variable(p.affixed_name),
+                                            Indexed(
+                                                Variable("Cursors"),
+                                                Variable(p.affixed_name),
                                             )
                                         ],
                                     )
                                     for p in message.direct_predecessors(f)
                                 ]
                             ),
-                            ada.Call(
+                            Call(
                                 "Invalid",
                                 [
-                                    ada.Indexed(
-                                        ada.Variable("Cursors"),
-                                        ada.Variable(f.affixed_name),
+                                    Indexed(
+                                        Variable("Cursors"),
+                                        Variable(f.affixed_name),
                                     )
                                 ],
                             ),
@@ -506,29 +543,27 @@ def context_predicate(
             ]
         )
 
-    return ada.AndThen(
-        ada.If(
+    return AndThen(
+        If(
             [
                 (
-                    ada.NotEqual(ada.Variable("Buffer"), ada.Variable("null")),
-                    ada.And(
-                        ada.Equal(ada.First("Buffer"), ada.Variable("Buffer_First")),
-                        ada.Equal(ada.Last("Buffer"), ada.Variable("Buffer_Last")),
+                    NotEqual(Variable("Buffer"), Variable("null")),
+                    And(
+                        Equal(First("Buffer"), Variable("Buffer_First")),
+                        Equal(Last("Buffer"), Variable("Buffer_Last")),
                     ),
                 )
             ]
         ),
         public_context_predicate(),
-        ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Verified_Last")),
-        ada.LessEqual(ada.Sub(ada.Variable("First"), ada.Number(1)), ada.Variable("Written_Last")),
-        ada.LessEqual(ada.Variable("Verified_Last"), ada.Variable("Written_Last")),
-        ada.LessEqual(ada.Variable("Written_Last"), ada.Variable("Last")),
-        ada.Equal(ada.Rem(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
-        ada.Equal(ada.Rem(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
-        ada.Equal(
-            ada.Rem(ada.Variable("Verified_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)
-        ),
-        ada.Equal(ada.Rem(ada.Variable("Written_Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+        LessEqual(Sub(Variable("First"), Number(1)), Variable("Verified_Last")),
+        LessEqual(Sub(Variable("First"), Number(1)), Variable("Written_Last")),
+        LessEqual(Variable("Verified_Last"), Variable("Written_Last")),
+        LessEqual(Variable("Written_Last"), Variable("Last")),
+        Equal(Rem(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+        Equal(Rem(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
+        Equal(Rem(Variable("Verified_Last"), Size(const.TYPES_BYTE)), Number(0)),
+        Equal(Rem(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)),
         cursors_invariant(),
         valid_predecessors_invariant(),
         invalid_successors_invariant(),
@@ -536,59 +571,55 @@ def context_predicate(
     )
 
 
-def public_context_predicate() -> ada.Expr:
-    return ada.And(
-        ada.GreaterEqual(
-            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("First")]), ada.Variable("Buffer_First")
-        ),
-        ada.LessEqual(
-            ada.Call(const.TYPES_TO_INDEX, [ada.Variable("Last")]), ada.Variable("Buffer_Last")
-        ),
-        ada.Less(ada.Variable("Buffer_Last"), ada.Last(const.TYPES_INDEX)),
-        ada.LessEqual(ada.Variable("First"), ada.Add(ada.Variable("Last"), ada.Number(1))),
-        ada.Less(ada.Variable("Last"), ada.Last(const.TYPES_BIT_INDEX)),
-        ada.Equal(ada.Rem(ada.Variable("First"), ada.Size(const.TYPES_BYTE)), ada.Number(1)),
-        ada.Equal(ada.Rem(ada.Variable("Last"), ada.Size(const.TYPES_BYTE)), ada.Number(0)),
+def public_context_predicate() -> Expr:
+    return And(
+        GreaterEqual(Call(const.TYPES_TO_INDEX, [Variable("First")]), Variable("Buffer_First")),
+        LessEqual(Call(const.TYPES_TO_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
+        Less(Variable("Buffer_Last"), Last(const.TYPES_INDEX)),
+        LessEqual(Variable("First"), Add(Variable("Last"), Number(1))),
+        Less(Variable("Last"), Last(const.TYPES_BIT_INDEX)),
+        Equal(Rem(Variable("First"), Size(const.TYPES_BYTE)), Number(1)),
+        Equal(Rem(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
     )
 
 
-def context_invariant(message: model.Message) -> Sequence[ada.Expr]:
+def context_invariant(message: model.Message) -> Sequence[Expr]:
     return [
-        ada.Equal(e, ada.Old(e))
+        Equal(e, Old(e))
         for e in [
-            ada.Variable("Ctx.Buffer_First"),
-            ada.Variable("Ctx.Buffer_Last"),
-            ada.Variable("Ctx.First"),
-            ada.Variable("Ctx.Last"),
-            *[ada.Variable("Ctx" * ada.ID(p.name)) for p in message.parameters],
+            Variable("Ctx.Buffer_First"),
+            Variable("Ctx.Buffer_Last"),
+            Variable("Ctx.First"),
+            Variable("Ctx.Last"),
+            *[Variable("Ctx" * ID(p.name)) for p in message.parameters],
         ]
     ]
 
 
 def valid_path_to_next_field_condition(
     message: model.Message, field: model.Field, prefix: str
-) -> Sequence[ada.Expr]:
+) -> Sequence[Expr]:
     return [
-        ada.If(
+        If(
             [
                 (
                     l.condition.substituted(substitution(message, public=True, prefix=prefix))
                     .simplified()
                     .ada_expr(),
-                    ada.And(
-                        ada.Equal(
-                            ada.Call(
+                    And(
+                        Equal(
+                            Call(
                                 "Predecessor",
-                                [ada.Variable("Ctx"), ada.Variable(l.target.affixed_name)],
+                                [Variable("Ctx"), Variable(l.target.affixed_name)],
                             ),
-                            ada.Variable(field.affixed_name),
+                            Variable(field.affixed_name),
                         ),
-                        ada.Call(
+                        Call(
                             "Valid_Next",
-                            [ada.Variable("Ctx"), ada.Variable(l.target.affixed_name)],
+                            [Variable("Ctx"), Variable(l.target.affixed_name)],
                         )
                         if l.target != model.FINAL
-                        else ada.TRUE,
+                        else TRUE,
                     ),
                 )
             ]
@@ -600,7 +631,7 @@ def valid_path_to_next_field_condition(
 
 def context_cursor_unchanged(
     message: model.Message, field: model.Field, predecessors: bool
-) -> List[ada.Expr]:
+) -> List[Expr]:
     lower: model.Field
     upper: model.Field
     if predecessors:
@@ -614,34 +645,34 @@ def context_cursor_unchanged(
         lower = message.fields[message.fields.index(field) + 1]
         upper = message.fields[-1]
     return [
-        ada.ForAllIn(
+        ForAllIn(
             "F",
-            ada.ValueRange(
-                lower=ada.Variable(lower.affixed_name),
-                upper=ada.Variable(upper.affixed_name),
-                type_identifier=ada.ID("Field"),
+            ValueRange(
+                lower=Variable(lower.affixed_name),
+                upper=Variable(upper.affixed_name),
+                type_identifier=ID("Field"),
             ),
-            ada.Equal(
-                ada.Call(
+            Equal(
+                Call(
                     "Context_Cursors_Index",
                     [
-                        ada.Call(
+                        Call(
                             "Context_Cursors",
-                            [ada.Variable("Ctx")],
+                            [Variable("Ctx")],
                         ),
-                        ada.Variable("F"),
+                        Variable("F"),
                     ],
                 ),
-                ada.Call(
+                Call(
                     "Context_Cursors_Index",
                     [
-                        ada.Old(
-                            ada.Call(
+                        Old(
+                            Call(
                                 "Context_Cursors",
-                                [ada.Variable("Ctx")],
+                                [Variable("Ctx")],
                             )
                         ),
-                        ada.Variable("F"),
+                        Variable("F"),
                     ],
                 ),
             ),
@@ -649,99 +680,99 @@ def context_cursor_unchanged(
     ]
 
 
-def sufficient_space_for_field_condition(field_name: ada.Name, size: ada.Expr = None) -> ada.Expr:
+def sufficient_space_for_field_condition(field_name: Name, size: Expr = None) -> Expr:
     if size is None:
-        size = ada.Call("Field_Size", [ada.Variable("Ctx"), field_name])
-    return ada.GreaterEqual(ada.Call("Available_Space", [ada.Variable("Ctx"), field_name]), size)
+        size = Call("Field_Size", [Variable("Ctx"), field_name])
+    return GreaterEqual(Call("Available_Space", [Variable("Ctx"), field_name]), size)
 
 
 def initialize_field_statements(
     field: model.Field, reset_written_last: bool = False
-) -> Sequence[ada.Statement]:
+) -> Sequence[Statement]:
     return [
-        ada.CallStatement(
+        CallStatement(
             "Reset_Dependent_Fields",
-            [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
+            [Variable("Ctx"), Variable(field.affixed_name)],
         ),
         # ISSUE: Componolit/RecordFlux#868
-        ada.PragmaStatement(
+        PragmaStatement(
             "Warnings",
             [
-                ada.Variable("Off"),
-                ada.String("attribute Update is an obsolescent feature"),
+                Variable("Off"),
+                String("attribute Update is an obsolescent feature"),
             ],
         ),
-        ada.Assignment(
+        Assignment(
             "Ctx",
-            ada.Update(
+            Update(
                 "Ctx",
-                ("Verified_Last", ada.Variable("Last")),
+                ("Verified_Last", Variable("Last")),
                 (
                     "Written_Last",
-                    ada.Variable("Last")
+                    Variable("Last")
                     if reset_written_last
-                    else ada.Max(
+                    else Max(
                         const.TYPES_BIT_LENGTH,
-                        ada.Variable("Ctx.Written_Last"),
-                        ada.Variable("Last"),
+                        Variable("Ctx.Written_Last"),
+                        Variable("Last"),
                     ),
                 ),
             ),
         ),
-        ada.PragmaStatement(
+        PragmaStatement(
             "Warnings",
             [
-                ada.Variable("On"),
-                ada.String("attribute Update is an obsolescent feature"),
+                Variable("On"),
+                String("attribute Update is an obsolescent feature"),
             ],
         ),
-        ada.Assignment(
-            ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable(field.affixed_name)),
-            ada.NamedAggregate(
-                ("State", ada.Variable("S_Structural_Valid")),
-                ("First", ada.Variable("First")),
-                ("Last", ada.Variable("Last")),
-                ("Value", ada.Number(0)),
+        Assignment(
+            Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
+            NamedAggregate(
+                ("State", Variable("S_Structural_Valid")),
+                ("First", Variable("First")),
+                ("Last", Variable("Last")),
+                ("Value", Number(0)),
                 (
                     "Predecessor",
-                    ada.Selected(
-                        ada.Indexed(
-                            ada.Variable("Ctx.Cursors"),
-                            ada.Variable(field.affixed_name),
+                    Selected(
+                        Indexed(
+                            Variable("Ctx.Cursors"),
+                            Variable(field.affixed_name),
                         ),
                         "Predecessor",
                     ),
                 ),
             ),
         ),
-        ada.Assignment(
-            ada.Indexed(
-                ada.Variable("Ctx.Cursors"),
-                ada.Call(
+        Assignment(
+            Indexed(
+                Variable("Ctx.Cursors"),
+                Call(
                     "Successor",
-                    [ada.Variable("Ctx"), ada.Variable(field.affixed_name)],
+                    [Variable("Ctx"), Variable(field.affixed_name)],
                 ),
             ),
-            ada.NamedAggregate(
-                ("State", ada.Variable("S_Invalid")),
-                ("Predecessor", ada.Variable(field.affixed_name)),
+            NamedAggregate(
+                ("State", Variable("S_Invalid")),
+                ("Predecessor", Variable(field.affixed_name)),
             ),
         ),
     ]
 
 
-def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declaration]:
+def field_bit_location_declarations(field_name: Name) -> Sequence[Declaration]:
     return [
-        ada.ObjectDeclaration(
+        ObjectDeclaration(
             ["First"],
             const.TYPES_BIT_INDEX,
-            ada.Call("Field_First", [ada.Variable("Ctx"), field_name]),
+            Call("Field_First", [Variable("Ctx"), field_name]),
             constant=True,
         ),
-        ada.ObjectDeclaration(
+        ObjectDeclaration(
             ["Last"],
             const.TYPES_BIT_INDEX,
-            ada.Call("Field_Last", [ada.Variable("Ctx"), field_name]),
+            Call("Field_Last", [Variable("Ctx"), field_name]),
             constant=True,
         ),
     ]
@@ -750,21 +781,21 @@ def field_bit_location_declarations(field_name: ada.Name) -> Sequence[ada.Declar
 def field_condition_call(
     message: model.Message,
     field: model.Field,
-    value: ada.Expr = None,
-    aggregate: ada.Expr = None,
-    size: ada.Expr = None,
-) -> ada.Expr:
+    value: Expr = None,
+    aggregate: Expr = None,
+    size: Expr = None,
+) -> Expr:
     if value is None:
-        value = ada.Number(0)
+        value = Number(0)
     if aggregate is None:
         aggregate = EMPTY_ARRAY
     if size is None:
-        size = ada.Call("Field_Size", [ada.Variable("Ctx"), ada.Variable(field.affixed_name)])
-    return ada.Call(
+        size = Call("Field_Size", [Variable("Ctx"), Variable(field.affixed_name)])
+    return Call(
         "Field_Condition",
         [
-            ada.Variable("Ctx"),
-            ada.Variable(field.affixed_name),
+            Variable("Ctx"),
+            Variable(field.affixed_name),
             *([value] if has_value_dependent_condition(message) else []),
             *([aggregate] if has_aggregate_dependent_condition(message) else []),
             *([size] if has_size_dependent_condition(message, field) else []),
@@ -772,30 +803,30 @@ def field_condition_call(
     )
 
 
-def ada_type_identifier(type_identifier: rid.ID) -> ada.ID:
+def ada_type_identifier(type_identifier: rid.ID) -> ID:
     if model.is_builtin_type(type_identifier):
-        return ada.ID(type_identifier.name)
+        return ID(type_identifier.name)
 
-    return ada.ID(type_identifier)
+    return ID(type_identifier)
 
 
-def prefixed_type_identifier(type_identifier: ada.ID, prefix: str) -> ada.ID:
+def prefixed_type_identifier(type_identifier: ID, prefix: str) -> ID:
     if model.is_builtin_type(type_identifier):
         return type_identifier.name
 
     return prefix * type_identifier
 
 
-def enum_name(enum_type: model.Enumeration) -> ada.ID:
-    return ada.ID(enum_type.name + "_Enum")
+def enum_name(enum_type: model.Enumeration) -> ID:
+    return ID(enum_type.name + "_Enum")
 
 
-def full_enum_name(enum_type: model.Enumeration) -> ada.ID:
-    return ada.ID(enum_type.identifier + "_Enum")
+def full_enum_name(enum_type: model.Enumeration) -> ID:
+    return ID(enum_type.identifier + "_Enum")
 
 
-def sequence_name(message: model.Message, field: model.Field) -> ada.ID:
-    return ada.ID(message.types[field].identifier)
+def sequence_name(message: model.Message, field: model.Field) -> ID:
+    return ID(message.types[field].identifier)
 
 
 def contains_function_name(
@@ -852,22 +883,22 @@ def create_sequence_instantiation(
     sequence_type: model.Sequence,
     prefix: str = "",
     flat: bool = False,
-) -> Tuple[List[ada.ContextItem], ada.GenericPackageInstantiation]:
+) -> Tuple[List[ContextItem], GenericPackageInstantiation]:
     element_type = sequence_type.element_type
-    element_type_package = ada.ID(element_type.package.name)
+    element_type_package = ID(element_type.package.name)
 
-    sequence_context: List[ada.ContextItem] = []
-    sequence_package: ada.GenericPackageInstantiation
+    sequence_context: List[ContextItem] = []
+    sequence_package: GenericPackageInstantiation
     if isinstance(element_type, model.Message):
-        element_type_identifier = ada.ID(
+        element_type_identifier = ID(
             element_type.identifier.flat if flat else prefix * element_type.identifier
         )
         sequence_context = [
-            ada.WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
-            *([] if flat else [ada.WithClause(element_type_identifier)]),
+            WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
+            *([] if flat else [WithClause(element_type_identifier)]),
         ]
-        sequence_package = ada.GenericPackageInstantiation(
-            ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
+        sequence_package = GenericPackageInstantiation(
+            ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.MESSAGE_SEQUENCE_PACKAGE,
             [
                 element_type_identifier * "Context",
@@ -882,17 +913,17 @@ def create_sequence_instantiation(
             ],
         )
     elif isinstance(element_type, model.Scalar):
-        element_type_identifier = ada.ID(prefix * element_type.identifier)
+        element_type_identifier = ID(prefix * element_type.identifier)
         sequence_context = [
-            ada.WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
+            WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
             *(
-                [ada.WithClause(prefix * element_type_package)]
+                [WithClause(prefix * element_type_package)]
                 if element_type_package != sequence_type.package
                 else []
             ),
         ]
-        sequence_package = ada.GenericPackageInstantiation(
-            ada.ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
+        sequence_package = GenericPackageInstantiation(
+            ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.SCALAR_SEQUENCE_PACKAGE,
             [
                 element_type_identifier,
@@ -909,36 +940,36 @@ def create_sequence_instantiation(
 
 
 def unchanged_cursor_before_or_invalid(
-    limit: ada.Expr, loop_entry: bool, or_invalid: bool = True
-) -> ada.Expr:
-    return ada.ForAllIn(
+    limit: Expr, loop_entry: bool, or_invalid: bool = True
+) -> Expr:
+    return ForAllIn(
         "F",
-        ada.Variable("Field"),
-        ada.IfExpr(
+        Variable("Field"),
+        IfExpr(
             [
                 (
-                    ada.Less(ada.Variable("F"), limit),
-                    ada.Equal(
-                        ada.Indexed(
-                            ada.Variable("Ctx.Cursors"),
-                            ada.Variable("F"),
+                    Less(Variable("F"), limit),
+                    Equal(
+                        Indexed(
+                            Variable("Ctx.Cursors"),
+                            Variable("F"),
                         ),
-                        ada.Indexed(
-                            ada.LoopEntry(ada.Variable("Ctx.Cursors"))
+                        Indexed(
+                            LoopEntry(Variable("Ctx.Cursors"))
                             if loop_entry
-                            else ada.Old(ada.Variable("Ctx.Cursors")),
-                            ada.Variable("F"),
+                            else Old(Variable("Ctx.Cursors")),
+                            Variable("F"),
                         ),
                     ),
                 )
             ],
             *(
                 [
-                    ada.Call(
+                    Call(
                         "Invalid",
                         [
-                            ada.Variable("Ctx"),
-                            ada.Variable("F"),
+                            Variable("Ctx"),
+                            Variable("F"),
                         ],
                     )
                 ]
@@ -949,8 +980,8 @@ def unchanged_cursor_before_or_invalid(
     )
 
 
-def conditional_field_size(field: model.Field, message: model.Message, prefix: str) -> ada.Expr:
-    def substituted(expression: expr.Expr) -> ada.Expr:
+def conditional_field_size(field: model.Field, message: model.Message, prefix: str) -> Expr:
+    def substituted(expression: expr.Expr) -> Expr:
         return (
             expression.substituted(
                 substitution(message, prefix, target_type=const.TYPES_BIT_LENGTH)
@@ -969,16 +1000,16 @@ def conditional_field_size(field: model.Field, message: model.Message, prefix: s
     if len(links) == 1:
         return substituted(links[0].size)
 
-    return ada.If(
+    return If(
         [
             (
-                ada.AndThen(
-                    ada.Equal(
-                        ada.Selected(
-                            ada.Indexed(ada.Variable("Ctx.Cursors"), ada.Variable("Fld")),
+                AndThen(
+                    Equal(
+                        Selected(
+                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
                             "Predecessor",
                         ),
-                        ada.Variable(l.source.affixed_name),
+                        Variable(l.source.affixed_name),
                     ),
                     *([substituted(l.condition)] if l.condition != expr.TRUE else []),
                 ),
@@ -987,4 +1018,62 @@ def conditional_field_size(field: model.Field, message: model.Message, prefix: s
             for l in links
         ],
         const.UNREACHABLE,
+    )
+
+
+def message_parameters(message: model.Message) -> List[Parameter]:
+    return [
+        Parameter([p.name], ada_type_identifier(t.identifier))
+        for p, t in message.parameter_types.items()
+    ]
+
+
+def initialize_conditions(message: model.Message) -> Sequence[Expr]:
+    return [
+        *[
+            Equal(
+                Variable("Ctx" * ID(p.name)),
+                Variable(p.name),
+            )
+            for p, t in message.parameter_types.items()
+        ],
+        Call("Initialized", [Variable("Ctx")]),
+    ]
+
+
+def context_cursors_initialization(message: model.Message) -> Expr:
+    return NamedAggregate(
+        (
+            message.fields[0].affixed_name,
+            NamedAggregate(
+                ("State", Variable("S_Invalid")),
+                (
+                    "Predecessor",
+                    Variable(model.INITIAL.affixed_name),
+                ),
+            ),
+        ),
+        (
+            "others",
+            NamedAggregate(
+                ("State", Variable("S_Invalid")),
+                (
+                    "Predecessor",
+                    Variable(model.FINAL.affixed_name),
+                ),
+            ),
+        ),
+    )
+
+
+def byte_aligned_field(field: model.Field) -> Expr:
+    return Equal(
+        Rem(
+            Call(
+                "Field_First",
+                [Variable("Ctx"), Variable(field.affixed_name)],
+            ),
+            Size(const.TYPES_BYTE),
+        ),
+        Number(1),
     )

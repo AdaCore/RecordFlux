@@ -260,6 +260,7 @@ def generate(args: argparse.Namespace) -> None:
         model,
         integration,
         args.prefix,
+        workers=args.workers,
         reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
         debug=args.debug,
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
