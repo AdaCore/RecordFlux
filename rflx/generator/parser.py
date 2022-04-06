@@ -335,33 +335,18 @@ class ParserGenerator:
                     # ISSUE: Componolit/RecordFlux#664
                     # The provability of the context predicate is increased by splitting the
                     # assignment into multiple statements.
-                    ForIn(
-                        "F",
-                        Variable("Field"),
-                        [
-                            IfStatement(
-                                [
-                                    (
-                                        Equal(Variable("Fld"), Variable("F")),
-                                        [
-                                            Assignment(
-                                                Indexed(
-                                                    Variable("Ctx.Cursors"),
-                                                    Call(
-                                                        "Successor",
-                                                        [Variable("Ctx"), Variable("Fld")],
-                                                    ),
-                                                ),
-                                                NamedAggregate(
-                                                    ("State", Variable("S_Invalid")),
-                                                    ("Predecessor", Variable("Fld")),
-                                                ),
-                                            )
-                                        ],
-                                    )
-                                ]
-                            )
-                        ],
+                    Assignment(
+                        Indexed(
+                            Variable("Ctx.Cursors"),
+                            Call(
+                                "Successor",
+                                [Variable("Ctx"), Variable("Fld")],
+                            ),
+                        ),
+                        NamedAggregate(
+                            ("State", Variable("S_Invalid")),
+                            ("Predecessor", Variable("Fld")),
+                        ),
                     )
                 ]
                 if len(message.fields) > 1
