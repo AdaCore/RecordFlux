@@ -400,7 +400,7 @@ class ValidationResult:
         }
         if self.parsed_message.valid_message:
             output["parsed"] = self.parsed_message.bytestring.hex()
-        output["parsed field values"] = self.parsed_message.as_json()
+        output["parsed fields"] = self.parsed_message.as_json()
         if self.parser_error is not None:
             output["error"] = self.parser_error
 

@@ -700,20 +700,28 @@ class MessageValue(TypeValue):
                 messages.append(typeval.nested_message)
         return messages
 
-    def as_json(self) -> ty.Dict[str, object]:
-        result: ty.Dict[str, object] = {}
+    def as_json(self) -> ty.Dict[str, ty.Dict[str, object]]:
+        result: ty.Dict[str, ty.Dict[str, object]] = {}
         for field_name in self.valid_fields:
+            field: ty.Dict[str, object] = {}
             field_value = self.get(field_name)
             if isinstance(field_value, MessageValue):
-                result[field_name] = field_value.bytestring.hex()
+                field["value"] = field_value.bytestring.hex()
             elif isinstance(field_value, bytes):
-                result[field_name] = field_value.hex()
+                field["value"] = field_value.hex()
             elif isinstance(field_value, (int, str)):
-                result[field_name] = field_value
+                field["value"] = field_value
             elif isinstance(field_value, list):
-                result[field_name] = [f.as_json() for f in field_value]
+                field["value"] = [f.as_json() for f in field_value]
             else:
                 raise NotImplementedError(f"Unsupported: {type(field_value)}")
+            first = self.__simplified(self._fields[field_name].first)
+            assert isinstance(first, Number)
+            field["first"] = first.value
+            last = self.__simplified(self._fields[field_name].last)
+            assert isinstance(last, Number)
+            field["last"] = last.value
+            result[field_name] = field
         return result
 
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
