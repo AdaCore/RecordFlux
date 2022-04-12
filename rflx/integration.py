@@ -87,14 +87,15 @@ class Integration:
                 self._validate_globals(package, integration, session, error)
                 self._validate_states(package, integration, session, error)
 
-    def get_size(self, session: ID, variable: ID, state: Optional[ID]) -> int:
+    def get_size(self, session: ID, variable: Optional[ID], state: Optional[ID]) -> int:
         """
         Return the requested buffer size for a variable of a given session and state.
 
-        If state is None, the variable is assumed to be a global
-        variable. If no specific buffer size was requested for the variable,
-        return the default buffer size for the session, if present, or the
-        default buffer size for RecordFlux.
+        If state is None, the variable is assumed to be a global variable. If variable is None or no
+        specific buffer size was requested for the variable, return the default buffer size for the
+        session, if present, or the default buffer size for RecordFlux.
+
+        The returned size is in bytes.
         """
         integration_package = str(session.parent).lower()
         if integration_package not in self._packages:
@@ -105,8 +106,12 @@ class Integration:
             return self.defaultsize
 
         buffer_size = self._packages[integration_package].session[session_name].buffer_size
-        variable_name = str(variable.name)
         default_size = self.defaultsize if buffer_size.default is None else buffer_size.default
+
+        if variable is None:
+            return default_size
+
+        variable_name = str(variable.name)
         if state is None:
             if buffer_size.global_ is not None and variable_name in buffer_size.global_:
                 return buffer_size.global_[variable_name]

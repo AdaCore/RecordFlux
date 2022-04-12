@@ -15,16 +15,16 @@ is
    procedure Create_Message
       (Ctx          : in out Context;
        Message_Type :        RFLX.Universal.Option_Type;
+       Length       :        RFLX.Test.Length;
        Data         :        RFLX.RFLX_Types.Bytes;
-       Result       :    out RFLX.Fixed_Size.Simple_Message.Structure)
+       Result       :    out RFLX.Test.Definite_Message.Structure)
    is
+      use type RFLX.RFLX_Types.Index;
    begin
       Result.Message_Type := Message_Type;
-      if Result.Data'Length = Data'Length then
-         Result.Data := Data;
-      else
-         Result.Data := (others => 0);
-      end if;
+      Result.Length := Length;
+      Result.Data := (others => 0);
+      Result.Data (Result.Data'First .. Result.Data'First + Data'Length - 1) := Data;
    end Create_Message;
 
    overriding

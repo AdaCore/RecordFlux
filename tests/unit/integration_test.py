@@ -129,6 +129,7 @@ def test_rfi_get_size() -> None:
     # pylint: disable = protected-access
     integration._add_integration_object(Path("p.rfi"), session_object, error)
     error.propagate()
+    assert integration.get_size(ID("P::S"), None, None) == 1024
     assert integration.get_size(ID("P::S"), ID("x"), ID("S")) == 1024
     assert integration.get_size(ID("P::S"), ID("x"), ID("S")) == 1024
     assert integration.get_size(ID("P::S"), ID("x"), None) == 1024

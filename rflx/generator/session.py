@@ -2703,7 +2703,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        pre_call = []
+        pre_call: list[Statement] = []
         post_call = []
         local_declarations = []
         target_id = variable_id(target, is_global)
@@ -2793,7 +2793,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(4095),
+                                    Number(self._allocator.get_size() - 1),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -2832,6 +2832,85 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ),
                 )
                 arguments.append(argument)
+            elif (
+                isinstance(a, expr.Opaque)
+                and isinstance(a.prefix, expr.Variable)
+                and isinstance(a.prefix.type_, rty.Message)
+            ):
+                argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
+                argument_length = f"{argument_name}_Length"
+                argument = expr.Slice(
+                    expr.Variable(argument_name),
+                    expr.First(const.TYPES_INDEX),
+                    expr.Add(
+                        expr.First(const.TYPES_INDEX),
+                        expr.Call(
+                            const.TYPES_INDEX,
+                            [expr.Add(expr.Variable(argument_length), expr.Number(1))],
+                        ),
+                        -expr.Number(2),
+                    ),
+                )
+                type_identifier = self._ada_type(a.prefix.type_.identifier)
+                message_context = context_id(a.prefix.identifier, is_global)
+                local_declarations.extend(
+                    [
+                        # ISSUE: Componolit/RecordFlux#917
+                        # The use of intermediate buffers should be removed.
+                        ObjectDeclaration(
+                            [argument_name],
+                            Slice(
+                                Variable(const.TYPES_BYTES),
+                                First(const.TYPES_INDEX),
+                                Add(
+                                    First(const.TYPES_INDEX),
+                                    Number(self._allocator.get_size() - 1),
+                                ),
+                            ),
+                            NamedAggregate(("others", Number(0))),
+                        ),
+                        ObjectDeclaration(
+                            [argument_length],
+                            const.TYPES_LENGTH,
+                            Call(
+                                type_identifier * "Byte_Size",
+                                [
+                                    Variable(message_context),
+                                ],
+                            ),
+                            constant=True,
+                        ),
+                    ]
+                )
+                pre_call.extend(
+                    [
+                        self._raise_exception_if(
+                            Not(
+                                Call(
+                                    type_identifier * "Structural_Valid_Message",
+                                    [Variable(message_context)],
+                                )
+                            ),
+                            f'invalid message "{message_context}"',
+                            exception_handler,
+                        ),
+                        CallStatement(
+                            type_identifier * "Message_Data",
+                            [
+                                Variable(message_context),
+                                argument.ada_expr(),
+                            ],
+                        ),
+                    ]
+                )
+                arguments.append(argument)
+            elif (
+                isinstance(a, expr.Variable)
+                and isinstance(a.type_, rty.Enumeration)
+                and a.type_.always_valid
+                and a.identifier in self._session.literals
+            ):
+                arguments.append(expr.NamedAggregate(("Known", expr.TRUE), ("Enum", a)))
             else:
                 arguments.append(a)
 
@@ -3541,6 +3620,24 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             )
         )
         return nested
+
+    def _raise_exception_if(
+        self,
+        condition: Expr,
+        error_message: str,
+        exception_handler: ExceptionHandler,
+    ) -> IfStatement:
+        return IfStatement(
+            [
+                (
+                    condition,
+                    [
+                        *self._debug_output(f"Error: {error_message}"),
+                        *exception_handler.execute(),
+                    ],
+                ),
+            ]
+        )
 
     @staticmethod
     def _exit_on_deferred_exception() -> ExitStatement:

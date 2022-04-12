@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
@@ -199,6 +201,10 @@ class AbstractSession(BasicDeclaration):
             f"   Initial => {self.initial},\n   Final => {self.final}\n"
             f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
+
+    @property
+    def literals(self) -> Mapping[ID, mty.Type]:
+        return self._literals
 
     def _resolve_function_calls(self) -> None:
         """

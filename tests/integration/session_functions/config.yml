@@ -7,6 +7,10 @@ sequence: |
   Write Channel: 1 0 3 0 1 2
   State: Start
   State: Process
-  Read Channel: 1 0 1 2
+  Read Channel: 1 3 0 1 2
   State: Reply
-prove:
+  State: Process_2
+  Read Channel: 1 6 1 0 3 0 1 2
+  State: Reply_2
+# ISSUE: Componolit/RecordFlux#691
+# prove:

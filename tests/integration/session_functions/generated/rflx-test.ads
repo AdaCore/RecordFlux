@@ -39,4 +39,20 @@ is
 
    pragma Warnings (On, "unreachable branch");
 
+   type Length is range 0 .. 2**8 - 1 with
+     Size =>
+       8;
+
+   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+     (Val <= 255);
+
+   function To_U64 (Val : RFLX.Test.Length) return RFLX.RFLX_Types.U64 is
+     (RFLX.RFLX_Types.U64 (Val));
+
+   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Test.Length is
+     (RFLX.Test.Length (Val))
+    with
+     Pre =>
+       Valid_Length (Val);
+
 end RFLX.Test;
