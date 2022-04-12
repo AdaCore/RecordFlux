@@ -350,6 +350,14 @@ def session_main(
             ),
             ada.CallStatement("Ada.Text_IO.New_Line"),
         ],
+        aspects=[
+            ada.Precondition(
+                ada.AndThen(
+                    ada.Equal(ada.First("Prefix"), ada.Number(1)),
+                    ada.LessEqual(ada.Length("Prefix"), ada.Number(1000)),
+                )
+            )
+        ],
     )
 
     read_procedure = ada.SubprogramBody(
