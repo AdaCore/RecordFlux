@@ -45,21 +45,30 @@ is
    is
       Valid : Test.Result;
       Message_Type : Universal.Option_Type;
+      Length : Test.Length;
    begin
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
       Get_Message_Type (Ctx, Message_Type);
       Valid_Message (Ctx, Message_Type, True, Valid);
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Length := Test.Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) / 8);
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                        and Ctx.P.Slots.Slot_Ptr_2 = null);
+         goto Finalize_Process;
+      end if;
+      if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
-            Fixed_Size_Message : Fixed_Size.Simple_Message.Structure;
-            RFLX_Create_Message_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
-            RFLX_Create_Message_Arg_1_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
+            Definite_Message : Test.Definite_Message.Structure;
+            RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+            RFLX_Create_Message_Arg_2_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
          begin
-            Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2));
-            Create_Message (Ctx, Message_Type, RFLX_Create_Message_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_1_Message_Length) - 2), Fixed_Size_Message);
-            if Fixed_Size.Simple_Message.Valid_Structure (Fixed_Size_Message) then
-               Fixed_Size.Simple_Message.To_Context (Fixed_Size_Message, Ctx.P.Fixed_Size_Message_Ctx);
+            Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2));
+            Create_Message (Ctx, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
+            if Test.Definite_Message.Valid_Structure (Definite_Message) then
+               Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
@@ -92,14 +101,67 @@ is
    begin
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Process_2;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
    end Reply;
 
+   procedure Process_2 (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      Length : Test.Length;
+   begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      Length := Test.Length (Universal.Message.Size (Ctx.P.Message_Ctx) / 8);
+      declare
+         Definite_Message : Test.Definite_Message.Structure;
+         RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         RFLX_Create_Message_Arg_2_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Ctx.P.Message_Ctx);
+      begin
+         if not Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                           and Ctx.P.Slots.Slot_Ptr_2 = null);
+            goto Finalize_Process_2;
+         end if;
+         Universal.Message.Message_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2));
+         Create_Message (Ctx, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2), Definite_Message);
+         if Test.Definite_Message.Valid_Structure (Definite_Message) then
+            Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+         else
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                           and Ctx.P.Slots.Slot_Ptr_2 = null);
+            goto Finalize_Process_2;
+         end if;
+      end;
+      Ctx.P.Next_State := S_Reply_2;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      <<Finalize_Process_2>>
+   end Process_2;
+
+   procedure Reply_2 (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+   begin
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+      Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
+                     and Ctx.P.Slots.Slot_Ptr_2 = null);
+   end Reply_2;
+
    procedure Initialize (Ctx : in out Context'Class) is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
-      Fixed_Size_Message_Buffer : RFLX_Types.Bytes_Ptr;
+      Definite_Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       Test.Session_Allocator.Initialize (Ctx.P.Slots, Ctx.P.Memory);
       Message_Buffer := Ctx.P.Slots.Slot_Ptr_1;
@@ -107,26 +169,26 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Ctx.P.Message_Ctx, Message_Buffer);
-      Fixed_Size_Message_Buffer := Ctx.P.Slots.Slot_Ptr_2;
+      Definite_Message_Buffer := Ctx.P.Slots.Slot_Ptr_2;
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
-      Fixed_Size.Simple_Message.Initialize (Ctx.P.Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
+      Test.Definite_Message.Initialize (Ctx.P.Definite_Message_Ctx, Definite_Message_Buffer);
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
    procedure Finalize (Ctx : in out Context'Class) is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
-      Fixed_Size_Message_Buffer : RFLX_Types.Bytes_Ptr;
+      Definite_Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
-      pragma Warnings (Off, """Ctx.P.Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Fixed_Size.Simple_Message.Take_Buffer (Ctx.P.Fixed_Size_Message_Ctx, Fixed_Size_Message_Buffer);
-      pragma Warnings (On, """Ctx.P.Fixed_Size_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Ctx.P.Slots.Slot_Ptr_2 := Fixed_Size_Message_Buffer;
+      pragma Warnings (Off, """Ctx.P.Definite_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Test.Definite_Message.Take_Buffer (Ctx.P.Definite_Message_Ctx, Definite_Message_Buffer);
+      pragma Warnings (On, """Ctx.P.Definite_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Ctx.P.Slots.Slot_Ptr_2 := Definite_Message_Buffer;
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
       Ctx.P.Next_State := S_Terminated;
    end Finalize;
@@ -141,7 +203,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Process_2 | S_Reply_2 | S_Terminated =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -155,6 +217,10 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
+         when S_Process_2 =>
+            Process_2 (Ctx);
+         when S_Reply_2 =>
+            Reply_2 (Ctx);
          when S_Terminated =>
             null;
       end case;
@@ -162,7 +228,7 @@ is
    end Tick;
 
    function In_IO_State (Ctx : Context'Class) return Boolean is
-     (Ctx.P.Next_State in S_Start | S_Reply);
+     (Ctx.P.Next_State in S_Start | S_Reply | S_Reply_2);
 
    procedure Run (Ctx : in out Context'Class) is
    begin
@@ -189,14 +255,14 @@ is
       begin
          Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
       end Read;
-      procedure Fixed_Size_Simple_Message_Read is new Fixed_Size.Simple_Message.Generic_Read (Read, Read_Pre);
+      procedure Test_Definite_Message_Read is new Test.Definite_Message.Generic_Read (Read, Read_Pre);
    begin
       Buffer := (others => 0);
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
-               when S_Reply =>
-                  Fixed_Size_Simple_Message_Read (Ctx.P.Fixed_Size_Message_Ctx);
+               when S_Reply | S_Reply_2 =>
+                  Test_Definite_Message_Read (Ctx.P.Definite_Message_Ctx);
                when others =>
                   null;
             end case;

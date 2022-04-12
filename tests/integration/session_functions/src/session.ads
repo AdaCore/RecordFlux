@@ -2,7 +2,7 @@ pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 with RFLX.RFLX_Types;
 with RFLX.Universal;
-with RFLX.Fixed_Size.Simple_Message;
+with RFLX.Test.Definite_Message;
 with RFLX.Test.Session;
 
 package Session with
@@ -24,8 +24,9 @@ is
    procedure Create_Message
       (Ctx          : in out Context;
        Message_Type :        RFLX.Universal.Option_Type;
+       Length       :        RFLX.Test.Length;
        Data         :        RFLX.RFLX_Types.Bytes;
-       Result       :    out RFLX.Fixed_Size.Simple_Message.Structure);
+       Result       :    out RFLX.Test.Definite_Message.Structure);
 
    overriding
    procedure Valid_Message

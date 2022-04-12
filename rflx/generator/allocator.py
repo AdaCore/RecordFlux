@@ -126,7 +126,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
         slot_id: int = self._allocation_slots[location]
         return self._slot_name(slot_id)
 
-    def get_size(self, variable: rid.ID, state: Optional[rid.ID] = None) -> int:
+    def get_size(self, variable: Optional[rid.ID] = None, state: Optional[rid.ID] = None) -> int:
         return self._integration.get_size(self._session.identifier, variable, state)
 
     @staticmethod

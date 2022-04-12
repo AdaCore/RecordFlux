@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Fixed_Size.Simple_Message with
+package body RFLX.Test.Definite_Message with
   SPARK_Mode
 is
 
@@ -83,6 +83,8 @@ is
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
           when F_Message_Type =>
+             F_Length,
+          when F_Length =>
              F_Data,
           when F_Data =>
              F_Final))
@@ -97,6 +99,8 @@ is
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Message_Type =>
+             Invalid (Ctx.Cursors (F_Length)),
+          when F_Length =>
              Invalid (Ctx.Cursors (F_Data)),
           when F_Data =>
              True));
@@ -174,7 +178,7 @@ is
       Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last);
       Offset : constant RFLX_Types.Offset := RFLX_Types.Offset ((RFLX_Types.Byte'Size - Last mod RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size);
       Size : constant Positive := (case Fld is
-          when F_Message_Type =>
+          when F_Message_Type | F_Length =>
              8,
           when others =>
              Positive'Last);
@@ -276,7 +280,11 @@ is
        and then (case Fld is
                     when F_Message_Type =>
                        Get_Message_Type (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Data) = F_Message_Type
+                       and (Predecessor (Ctx, F_Length) = F_Message_Type
+                            and Valid_Next (Ctx, F_Length)),
+                    when F_Length =>
+                       Get_Length (Ctx) = To_Actual (Val)
+                       and (Predecessor (Ctx, F_Data) = F_Length
                             and Valid_Next (Ctx, F_Data)),
                     when F_Data =>
                        (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
@@ -297,10 +305,10 @@ is
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       pragma Assert (Size = (case Fld is
-                         when F_Message_Type =>
+                         when F_Message_Type | F_Length =>
                             8,
                          when F_Data =>
-                            24));
+                            RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8));
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else
@@ -318,6 +326,15 @@ is
       RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
    end Set_Message_Type;
 
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.Test.Length) is
+      Value : constant RFLX_Types.U64 := To_U64 (Val);
+      Buffer_First, Buffer_Last : RFLX_Types.Index;
+      Offset : RFLX_Types.Offset;
+   begin
+      Set (Ctx, F_Length, Value, 8, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+   end Set_Length;
+
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type) with
      Pre =>
        not Ctx'Constrained
@@ -330,9 +347,10 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Message_Type)
        and Get_Message_Type (Ctx) = Val
+       and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Data)
-       and (Predecessor (Ctx, F_Data) = F_Message_Type
-            and Valid_Next (Ctx, F_Data))
+       and (Predecessor (Ctx, F_Length) = F_Message_Type
+            and Valid_Next (Ctx, F_Length))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -347,6 +365,13 @@ is
       Set (Ctx, F_Message_Type, Value, 8, True, Buffer_First, Buffer_Last, Offset);
       RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
    end Set_Message_Type;
+
+   procedure Set_Data_Empty (Ctx : in out Context) is
+      Unused_Buffer_First, Unused_Buffer_Last : RFLX_Types.Index;
+      Unused_Offset : RFLX_Types.Offset;
+   begin
+      Set (Ctx, F_Data, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
+   end Set_Data_Empty;
 
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
@@ -368,6 +393,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -408,6 +434,7 @@ is
    procedure To_Structure (Ctx : Context; Struct : out Structure) is
    begin
       Struct.Message_Type := Get_Message_Type (Ctx);
+      Struct.Length := Get_Length (Ctx);
       Struct.Data := (others => 0);
       Get_Data (Ctx, Struct.Data (Struct.Data'First .. Struct.Data'First + RFLX_Types.Index (RFLX_Types.To_Length (Field_Size (Ctx, F_Data)) + 1) - 2));
    end To_Structure;
@@ -416,7 +443,8 @@ is
    begin
       Reset (Ctx);
       Set_Message_Type (Ctx, Struct.Message_Type);
-      Set_Data (Ctx, Struct.Data);
+      Set_Length (Ctx, Struct.Length);
+      Set_Data (Ctx, Struct.Data (Struct.Data'First .. Struct.Data'First + RFLX_Types.Index (RFLX_Types.To_Length (RFLX_Types.Bit_Length (Struct.Length) * 8) + 1) - 2));
    end To_Context;
 
-end RFLX.Fixed_Size.Simple_Message;
+end RFLX.Test.Definite_Message;
