@@ -48,11 +48,11 @@ In the following, the complete process of specifying a message, generating code,
 
 The following sample specification describes a protocol `TLV` with one message type `Message` consisting of three fields:
 
-- A field `Tag` of 2 bit length,
-- a field `Value_Length` of 14 bit length, and
-- a field `Value`, whose length is specified by the value in `Value_Length`.
+- A field `Tag` of 8 bit length,
+- a field `Length` of 16 bit length, and
+- a field `Value`, whose length is specified by the value in `Length`.
 
-The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In case `Tag` has a value of `1` the fields `Value_Length` and `Value` follow. `Message` contains only the `Tag` field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
+The `Tag` can have two valid values: `1` (`Msg_Data`) and `3` (`Msg_Error`). In case `Tag` has a value of `1` the fields `Length` and `Value` follow. `Message` contains only the `Tag` field, if the value of `Tag` is `3`. All other values of `Tag` lead to an invalid message.
 
 The structure of messages is often non-linear because of optional fields. For this reason the specification uses a graph-based representation. The order of fields is defined by then clauses. Then clauses are also used to state conditions and aspects of the following field. A more detailed description can be found in the [Language Reference](doc/Language-Reference.adoc#message-types).
 
@@ -117,19 +117,19 @@ Creating /tmp/generated/rflx.ads
 
 All scalar types defined in the specification are represented by a similar Ada type in the generated code. For `TLV` the following types are defined in the package `RFLX.TLV`:
 
-- `type Tag is (Msg_Data, Msg_Error) with Size => 2`
+- `type Tag is (Msg_Data, Msg_Error) with Size => 8`
 - `for Tag use (Msg_Data => 1, Msg_Error => 3);`
-- `type Length is mod 2**14`
+- `type Length is mod 2**16`
 
 All types and subprograms related to `Message` can be found in the package `RFLX.TLV.Message`:
 
 - `type Context`
     - Stores buffer and internal state
-- `procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0)`
     - Initialize context with buffer
-- `procedure Initialize (Ctx : out Context; Buffer : in out Types.Bytes_Ptr; First, Last : Types.Bit_Index)`
+- `procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0)`
     - Initialize context with buffer and explicit bounds
-- `procedure Take_Buffer (Ctx : in out Context; Buffer : out Types.Bytes_Ptr)`
+- `procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)`
     - Get buffer and remove it from context (note: buffer cannot put back into context, thus further verification of message is not possible after this action)
 - `function Has_Buffer (Ctx : Context) return Boolean`
     - Check if context contains buffer (i.e. non-null pointer)
@@ -155,7 +155,7 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Get value of `Tag` field
 - `function Get_Length (Ctx : Context) return Length_Type`
     - Get value of `Length` field
-- `generic with procedure Process_Value (Value : Types.Bytes); procedure Get_Value (Ctx : Context)`
+- `generic with procedure Process_Value (Value : RFLX_Types.Bytes); procedure Get_Value (Ctx : Context)`
     - Access content of `Value` field
 - `function Valid_Next (Ctx : Context; Fld : Field) return Boolean`
     - Check if field is potential next field
@@ -163,11 +163,11 @@ All types and subprograms related to `Message` can be found in the package `RFLX
     - Set value of `Tag` field
 - `procedure Set_Length (Ctx : in out Context; Value : Length)`
     - Set value of `Length` field
-- `procedure Set_Value_Empty (Ctx : in out Context; Value : Types.Bytes)`
+- `procedure Set_Value_Empty (Ctx : in out Context; Value : RFLX_Types.Bytes)`
     - Set empty `Value` field
-- `procedure Set_Value (Ctx : in out Context; Value : Types.Bytes)`
+- `procedure Set_Value (Ctx : in out Context; Value : RFLX_Types.Bytes)`
     - Set content of `Value` field
-- `generic with procedure Process_Value (Value : out Types.Bytes); procedure Generic_Set_Value (Ctx : in out Context)`
+- `generic with procedure Process_Value (Value : out RFLX_Types.Bytes); procedure Generic_Set_Value (Ctx : in out Context)`
     - Set content of `Value` field
 - `procedure Initialize_Value (Ctx : in out Context)`
     - Initialize `Value` field (precondition to switch context for generating contained message)
@@ -183,7 +183,7 @@ procedure Main is
    Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
    Context : RFLX.TLV.Message.Context;
 begin
-   RFLX.TLV.Message.Initialize (Context, Buffer);
+   RFLX.TLV.Message.Initialize (Context, Buffer, RFLX.RFLX_Types.To_Last_Bit_Index (Buffer'Last));
    RFLX.TLV.Message.Verify_Message (Context);
    if RFLX.TLV.Message.Structural_Valid_Message (Context) then
       case RFLX.TLV.Message.Get_Tag (Context) is
