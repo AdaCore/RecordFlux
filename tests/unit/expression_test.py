@@ -1081,6 +1081,26 @@ def test_relation_simplified() -> None:
         Equal(Add(Number(1), Number(1)), Add(Number(1), Number(1))).simplified(),
         TRUE,
     )
+    assert_equal(Equal(String("Foo Bar"), String("Foo Bar")).simplified(), TRUE)
+    assert_equal(
+        Equal(String("Foo"), Aggregate(Number(70), Number(111), Number(111))).simplified(), TRUE
+    )
+    assert_equal(
+        Equal(
+            Aggregate(Number(0), Number(1), Number(2)), Aggregate(Number(0), Number(1), Number(2))
+        ).simplified(),
+        TRUE,
+    )
+    assert_equal(
+        Equal(
+            Aggregate(Number(1), Number(2), Number(3)), Aggregate(Number(4), Number(5), Number(6))
+        ).simplified(),
+        FALSE,
+    )
+    assert_equal(Equal(Number(0), Aggregate(Number(0), Number(1), Number(2))).simplified(), FALSE)
+    assert_equal(Equal(Aggregate(Number(0), Number(1), Number(2)), Number(0)).simplified(), FALSE)
+    assert_equal(NotEqual(Number(4), Aggregate(Number(0), Number(1), Number(2))).simplified(), TRUE)
+    assert_equal(NotEqual(Number(0), Aggregate(Number(0), Number(1), Number(2))).simplified(), TRUE)
     assert Equal(TRUE, TRUE).simplified() == TRUE
     assert Equal(TRUE, FALSE).simplified() == FALSE
     assert NotEqual(TRUE, TRUE).simplified() == FALSE
@@ -1571,6 +1591,12 @@ def test_string_variables() -> None:
 
 def test_string_simplified() -> None:
     assert String("Test").simplified() == String("Test")
+
+
+def test_string_substituted() -> None:
+    assert String("Test").substituted(
+        lambda x: String("TestSub") if x == String("Test") else x
+    ) == String("TestSub")
 
 
 def test_string_elements() -> None:

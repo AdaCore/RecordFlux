@@ -29,6 +29,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/parameterized.rflx",
             f"{SPEC_DIR}/endianness.rflx",
             f"{SPEC_DIR}/low_order.rflx",
+            f"{SPEC_DIR}/aggregate_in_relation.rflx",
         ],
         skip_model_verification=True,
     )
@@ -235,5 +236,10 @@ def fixture_endianness_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
 
 
 @pytest.fixture(name="low_order_package", scope="session")
-def fixure_low_order_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+def fixture_low_order_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_.package("Low_Order")
+
+
+@pytest.fixture(name="aggregate_in_relation_package", scope="session")
+def fixture_aggregate_in_relation_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_.package("Aggregate_In_Relation")
