@@ -78,6 +78,7 @@ def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
         "Message_Type_Size_Condition",
         "Always_Valid_Aspect",
         "Low_Order",
+        "Aggregate_In_Relation",
     }
 
 
@@ -1515,3 +1516,24 @@ def test_low_order(low_order_package: Package) -> None:
 
     assert m1.valid_message
     assert m1.bytestring == b"\x01\x00"
+
+
+def test_aggregate_in_relation_invalid(aggregate_in_relation_package: Package) -> None:
+    msg = aggregate_in_relation_package.new_message("Aggregate_In_Relation_Msg")
+    with pytest.raises(
+        PyRFLXError,
+        match=(
+            "^"
+            "pyrflx: error: Bitstring representing the message is too short"
+            " - stopped while parsing field: Fld_B"
+            "$"
+        ),
+    ):
+        msg.parse(b"\xAA\xAA")
+
+
+def test_aggregate_in_relation_valid(aggregate_in_relation_package: Package) -> None:
+    msg = aggregate_in_relation_package.new_message("Aggregate_In_Relation_Msg")
+    msg.parse(b"\xAA\xAA\xBB\xCC\xCC\xDD")
+    assert msg.bytestring == b"\xAA\xAA\xBB\xCC\xCC\xDD"
+    assert msg.valid_message

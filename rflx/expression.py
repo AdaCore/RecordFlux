@@ -1604,6 +1604,15 @@ class Aggregate(Expr):
     def length(self) -> Expr:
         return Number(len(self.elements))
 
+    def to_bytes(self) -> bytes:
+        if not all((isinstance(element, Number) for element in self.elements)):
+            return NotImplemented
+        return b"".join(
+            element.value.to_bytes((element.value.bit_length() + 7) // 8, "big")
+            for element in self.elements
+            if isinstance(element, Number)
+        )
+
     def ada_expr(self) -> ada.Expr:
         return ada.Aggregate(*[e.ada_expr() for e in self.elements])
 
@@ -1710,8 +1719,19 @@ class Relation(BinExpr):
         }
         if (relation_operator, left, right) in mapping:
             return mapping[(relation_operator, left, right)]
-        if isinstance(left, Number) and isinstance(right, Number):
-            return TRUE if relation_operator(left, right) else FALSE
+        if isinstance(left, (Number, Aggregate)) and isinstance(right, (Number, Aggregate)):
+            left_number = (
+                Number(int.from_bytes(left.to_bytes(), "big"))
+                if isinstance(left, Aggregate)
+                else left
+            )
+            right_number = (
+                Number(int.from_bytes(right.to_bytes(), "big"))
+                if isinstance(right, Aggregate)
+                else right
+            )
+            assert isinstance(left_number, Number) and isinstance(right_number, Number)
+            return TRUE if relation_operator(left_number, right_number) else FALSE
         return self.__class__(left, right)
 
     @property
