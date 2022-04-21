@@ -297,7 +297,7 @@ A sequence type represents a list of similar elements.
 
 *Static Semantics*
 
-A sequence consists of a number of elements with similar type. Scalar types as well as message types can be used as element type. When a sequence is used in a message type, its bit length has to be specified by a size aspect.
+A sequence consists of a number of elements with the same type. Scalar types as well as message types can be used as element type.
 
 // Sequence of scalars [§T-S-S]
 // Sequence of messages [§T-S-M]
