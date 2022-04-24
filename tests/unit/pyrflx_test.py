@@ -1520,6 +1520,6 @@ def test_low_order(low_order_package: Package) -> None:
 
 def test_aggregate_in_relation_valid(aggregate_in_relation_package: Package) -> None:
     msg = aggregate_in_relation_package.new_message("Aggregate_In_Relation_Msg")
-    msg.parse(b"\xAA\xAA\xBB\xCC\xCC\xDD")
-    assert msg.bytestring == b"\xAA\xAA\xBB\xCC\xCC\xDD"
+    msg.parse(b"\xAA\xAA\xBB\xCC\xCC\xAA\xAA")
+    assert msg.bytestring == b"\xAA\xAA\xBB\xCC\xCC\xAA\xAA"
     assert msg.valid_message

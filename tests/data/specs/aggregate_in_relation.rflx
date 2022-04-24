@@ -26,7 +26,10 @@ package Aggregate_In_Relation is
                if Fld_C = [16#CC#, 16#CC#]
             then null
                if Fld_C /= [16#CC#, 16#CC#];
-         Fld_D : D;
+         Fld_D : Opaque
+            with Size => 16
+            then null
+               if Fld_D = Fld_A;
       end message;
 
 end Aggregate_In_Relation;
