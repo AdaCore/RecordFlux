@@ -364,8 +364,15 @@ def test_sequence_message_serialization(
     message_sequence_value.set("Sequence_Field", sequence)
     assert message_sequence_value.valid_message
     assert message_sequence_value.as_json() == {
-        "Length": 2,
-        "Sequence_Field": [{"Byte": 5}, {"Byte": 6}],
+        "Length": {"first": 0, "last": 7, "value": 2},
+        "Sequence_Field": {
+            "first": 8,
+            "last": 23,
+            "value": [
+                {"Byte": {"first": 0, "last": 7, "value": 5}},
+                {"Byte": {"first": 0, "last": 7, "value": 6}},
+            ],
+        },
     }
 
 
@@ -374,4 +381,8 @@ def test_tlv_message_serialization(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Length", 3)
     tlv_message_value.set("Value", b"abc")
     assert tlv_message_value.valid_message
-    assert tlv_message_value.as_json() == {"Length": 3, "Tag": "Msg_Data", "Value": "616263"}
+    assert tlv_message_value.as_json() == {
+        "Length": {"first": 8, "last": 23, "value": 3},
+        "Tag": {"first": 0, "last": 7, "value": "Msg_Data"},
+        "Value": {"first": 24, "last": 47, "value": "616263"},
+    }
