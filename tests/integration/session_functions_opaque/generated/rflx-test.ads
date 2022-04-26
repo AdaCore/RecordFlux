@@ -10,15 +10,15 @@ is
      Size =>
        32;
 
-   use type RFLX.RFLX_Types.U64;
+   use type RFLX.RFLX_Types.S63;
 
-   function Valid_Size (Val : RFLX.RFLX_Types.U64) return Boolean is
+   function Valid_Size (Val : RFLX.RFLX_Types.S63) return Boolean is
      (Val <= 4294967295);
 
-   function To_U64 (Val : RFLX.Test.Size) return RFLX.RFLX_Types.U64 is
-     (RFLX.RFLX_Types.U64 (Val));
+   function To_S63 (Val : RFLX.Test.Size) return RFLX.RFLX_Types.S63 is
+     (RFLX.RFLX_Types.S63 (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Test.Size is
+   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Test.Size is
      (RFLX.Test.Size (Val))
     with
      Pre =>

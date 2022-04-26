@@ -120,11 +120,11 @@ class ModularInteger(Integer):
 
         modulus_int = int(modulus_num)
 
-        if modulus_int > 2**64:
+        if modulus_int > 2**63:
             self.error.extend(
                 [
                     (
-                        f'modulus of "{self.name}" exceeds limit (2**64)',
+                        f'modulus of "{self.name}" exceeds limit (2**63)',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         modulus.location,
@@ -283,11 +283,11 @@ class RangeInteger(Integer):
                     )
                 ],
             )
-        if int(size_num) > 64:
+        if int(size_num) > 63:
             self.error.extend(
                 [
                     (
-                        f'size of "{self.name}" exceeds limit (2**64)',
+                        f'size of "{self.name}" exceeds limit (2**63)',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
@@ -427,11 +427,11 @@ class Enumeration(Scalar):
                         )
                     ],
                 )
-        if int(size_num) > 64:
+        if int(size_num) > 63:
             self.error.extend(
                 [
                     (
-                        f'size of "{self.name}" exceeds limit (2**64)',
+                        f'size of "{self.name}" exceeds limit (2**63)',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,

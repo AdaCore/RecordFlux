@@ -21,7 +21,7 @@ package body RFLX.Ethernet_Tests is
    Payload_Length : RFLX_Builtin_Types.Length;
 
    procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes)
-   with Annotate => (GNATprove, Terminating);
+   with Annotate => (GNATprove, Always_Return);
 
    procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes)
    is

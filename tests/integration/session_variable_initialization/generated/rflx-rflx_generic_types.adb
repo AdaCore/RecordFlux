@@ -358,6 +358,18 @@ is
       end if;
    end Extract;
 
+   function Extract
+      (Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       Size   : Positive;
+       BO     : Byte_Order) return S63
+   is
+   begin
+      return S63 (U64'(Extract (Buffer, First, Last, Off, Size, BO)));
+   end Extract;
+
    procedure Insert
       (Val    : U64;
        Buffer : Bytes_Ptr;
@@ -369,6 +381,20 @@ is
    is
    begin
       U64_Insert (Val, Buffer, First, Last, Off, Size, BO);
+   end Insert;
+
+   procedure Insert
+      (Val    : S63;
+       Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       Size   : Positive;
+       BO     : Byte_Order)
+   is
+   begin
+      Lemma_Size (Val, Size);
+      Insert (U64 (Val), Buffer, First, Last, Off, Size, BO);
    end Insert;
 
 end RFLX.RFLX_Generic_Types;

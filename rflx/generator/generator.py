@@ -719,7 +719,7 @@ class Generator:
                 ),
                 *(
                     [expr.LessEqual(expr.Variable("Val"), integer.last)]
-                    if integer.last.simplified() != expr.Number(2**64 - 1)
+                    if integer.last.simplified() != expr.Number(2**63 - 1)
                     else []
                 ),
             ).simplified()
@@ -738,7 +738,7 @@ class Generator:
                 ]
             )
         else:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_U64))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_S63))
 
         specification.append(
             self._type_validation_function(integer.name, "Val", constraints.ada_expr())
@@ -760,14 +760,14 @@ class Generator:
         return UnitPart(specification)
 
     def _enumeration_functions(self, enum: Enumeration) -> UnitPart:
-        incomplete = len(enum.literals) < 2**64
+        incomplete = len(enum.literals) < 2**63
 
         specification: ty.List[Declaration] = []
 
         validation_expression = (
             (
                 Less(Variable("Val"), Pow(Number(2), enum.size.ada_expr()))
-                if enum.size.simplified() != expr.Number(64)
+                if enum.size.simplified() != expr.Number(63)
                 else TRUE
             )
             if enum.always_valid
@@ -777,7 +777,7 @@ class Generator:
         )
 
         if validation_expression != TRUE:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_U64))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_S63))
 
         specification.append(
             self._type_validation_function(
@@ -811,8 +811,8 @@ class Generator:
         specification.append(
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_U64",
-                    self._prefix * const.TYPES_U64,
+                    "To_S63",
+                    self._prefix * const.TYPES_S63,
                     [
                         Parameter(
                             ["Enum"],
@@ -835,7 +835,7 @@ class Generator:
         conversion_function = FunctionSpecification(
             "To_Actual",
             self._prefix * ID(enum.identifier),
-            [Parameter(["Val"], self._prefix * const.TYPES_U64)],
+            [Parameter(["Val"], self._prefix * const.TYPES_S63)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: ty.List[ty.Tuple[Expr, Expr]] = []
@@ -869,17 +869,16 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "To_U64",
-                        self._prefix * const.TYPES_U64,
+                        "To_S63",
+                        self._prefix * const.TYPES_S63,
                         [Parameter(["Val"], self._prefix * ID(enum.identifier))],
                     ),
                     If(
-                        [(Variable("Val.Known"), Call("To_U64", [Variable("Val.Enum")]))],
+                        [(Variable("Val.Known"), Call("To_S63", [Variable("Val.Enum")]))],
                         Variable("Val.Raw"),
                     ),
                 )
             )
-
         else:
             conversion_cases.extend(
                 [
@@ -1313,7 +1312,7 @@ class Generator:
             FunctionSpecification(
                 f"Valid_{type_name}",
                 "Boolean",
-                [Parameter([enum_value], self._prefix * const.TYPES_U64)],
+                [Parameter([enum_value], self._prefix * const.TYPES_S63)],
             ),
             validation_expression,
         )
@@ -1322,17 +1321,17 @@ class Generator:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_U64",
-                    self._prefix * const.TYPES_U64,
+                    "To_S63",
+                    self._prefix * const.TYPES_S63,
                     [Parameter(["Val"], self._prefix * ID(integer.identifier))],
                 ),
-                Call(self._prefix * const.TYPES_U64, [Variable("Val")]),
+                Call(self._prefix * const.TYPES_S63, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
                     self._prefix * ID(integer.identifier),
-                    [Parameter(["Val"], self._prefix * const.TYPES_U64)],
+                    [Parameter(["Val"], self._prefix * const.TYPES_S63)],
                 ),
                 Call(self._prefix * ID(integer.identifier), [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
@@ -1444,7 +1443,7 @@ def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
                     "Known",
                     [
                         Variant([TRUE], [Component("Enum", common.enum_name(enum))]),
-                        Variant([FALSE], [Component("Raw", const.TYPES_U64)]),
+                        Variant([FALSE], [Component("Raw", const.TYPES_S63)]),
                     ],
                 ),
             )

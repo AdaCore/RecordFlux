@@ -66,7 +66,7 @@ def substitution(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ID] = const.TYPES_U64,
+    target_type: Optional[ID] = const.TYPES_S63,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
@@ -152,7 +152,7 @@ def substitution(
                 other = expression.left
             if boolean_literal and other:
                 return expression.__class__(
-                    other, type_conversion(expr.Call("To_U64", [boolean_literal]))
+                    other, type_conversion(expr.Call("To_S63", [boolean_literal]))
                 )
 
         def field_value(field: model.Field) -> expr.Expr:
@@ -194,7 +194,7 @@ def substitution_facts(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ID] = const.TYPES_U64,
+    target_type: Optional[ID] = const.TYPES_S63,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
@@ -233,8 +233,8 @@ def substitution_facts(
     def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
         if isinstance(parameter_type, model.Enumeration):
             if embedded:
-                return expr.Call("To_U64", [expr.Variable(parameter.name)])
-            return expr.Call("To_U64", [expr.Variable("Ctx" * parameter.identifier)])
+                return expr.Call("To_S63", [expr.Variable(parameter.name)])
+            return expr.Call("To_S63", [expr.Variable("Ctx" * parameter.identifier)])
         if isinstance(parameter_type, model.Scalar):
             if embedded:
                 return expr.Variable(parameter.name)
@@ -245,7 +245,7 @@ def substitution_facts(
     def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
         if isinstance(field_type, model.Enumeration):
             if public:
-                return expr.Call("To_U64", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])])
+                return expr.Call("To_S63", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 "Value",
@@ -281,14 +281,14 @@ def substitution_facts(
             for f, t in message.field_types.items()
         },
         **{
-            expr.Variable(l): type_conversion(expr.Call("To_U64", [expr.Variable(l)]))
+            expr.Variable(l): type_conversion(expr.Call("To_S63", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         **{
             expr.Variable(t.package * l): type_conversion(
-                expr.Call("To_U64", [expr.Variable(prefix * t.package * l)])
+                expr.Call("To_S63", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
@@ -937,7 +937,7 @@ def create_sequence_instantiation(
                 str(element_type.size),
                 prefix * element_type_package * f"Valid_{element_type.name}",
                 prefix * element_type_package * "To_Actual",
-                prefix * element_type_package * "To_U64",
+                prefix * element_type_package * "To_S63",
             ],
         )
     else:

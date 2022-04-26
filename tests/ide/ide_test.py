@@ -57,7 +57,7 @@ def test_multiple_errors() -> None:
             f'{path}:19:9: model: error: size of "Range4" contains variable',
             f'{path}:22:9: model: error: size of "Range5" too small',
             f'{path}:25:27: parser: error: undefined element type "RFLX_Invalid::Undef"',
-            f'{path}:28:18: model: error: modulus of "S" exceeds limit (2**64)',
+            f'{path}:28:18: model: error: modulus of "S" exceeds limit (2**63)',
             f'{path}:31:9: model: error: modulus of "T" not power of two',
             f'{path}:34:9: model: error: modulus of "Mod3" contains variable',
             f'{path}:47:28: model: error: duplicate literal "E2_2"',

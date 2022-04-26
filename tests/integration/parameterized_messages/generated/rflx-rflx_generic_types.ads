@@ -70,6 +70,8 @@ is
 
    use type U64;
 
+   subtype S63 is RFLX.RFLX_Arithmetic.S63;
+
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 
    function To_Index (Bit_Idx : Bit_Length) return Index is
@@ -89,6 +91,9 @@ is
 
    function To_Last_Bit_Index (Idx : Length) return Bit_Length is
      ((Bit_Length (Idx) - 1) * 8 + 8);
+
+   function Fits_Into (V : U64; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
+   function Fits_Into (V : S63; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
 
    type Offset is mod 8;
 
@@ -111,7 +116,30 @@ is
         and then Last - First <= Index'Last - 1
         and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)
         and then (Offset'Pos (Off) + Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1);
+        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1),
+    Post =>
+       (if Size < U64'Size then Extract'Result < 2**Size);
+
+   function Extract
+      (Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       Size   : Positive;
+       BO     : Byte_Order) return S63
+   with
+     Pre =>
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then Size in 1 .. 63
+        and then First <= Last
+        and then Last - First <= Index'Last - 1
+        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)
+        and then (Offset'Pos (Off) + Size - 1) / Byte'Size <= Natural'Size
+        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1),
+    Post =>
+       (U64 (Extract'Result) < 2**Size);
 
    procedure Insert
       (Val    : U64;
@@ -127,7 +155,28 @@ is
         and then First >= Buffer'First
         and then Last <= Buffer'Last
         and then Size in 1 .. U64'Size
-        and then (if Size < U64'Size then Val < 2**Size)
+        and then Fits_Into (Val, Size)
+        and then First <= Last
+        and then Last - First <= Index'Last - 1
+        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
+     Post =>
+       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
+
+   procedure Insert
+      (Val    : S63;
+       Buffer : Bytes_Ptr;
+       First  : Index;
+       Last   : Index;
+       Off    : Offset;
+       Size   : Positive;
+       BO     : Byte_Order)
+   with
+     Pre =>
+       (Buffer /= null
+        and then First >= Buffer'First
+        and then Last <= Buffer'Last
+        and then Size in 1 .. 63
+        and then Fits_Into (Val, Size)
         and then First <= Last
         and then Last - First <= Index'Last - 1
         and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
@@ -141,5 +190,7 @@ is
    function Unreachable return Bit_Length is (0) with Pre => False;
 
    function Unreachable return Length is (0) with Pre => False;
+
+   procedure Lemma_Size (Val : S63; Size : Positive) renames RFLX.RFLX_Arithmetic.Lemma_Size;
 
 end RFLX.RFLX_Generic_Types;
