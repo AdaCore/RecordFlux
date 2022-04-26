@@ -11,12 +11,12 @@ is
        2;
    for Result use (M_Valid => 0, M_Invalid => 1);
 
-   use type RFLX.RFLX_Types.U64;
+   use type RFLX.RFLX_Types.S63;
 
-   function Valid_Result (Val : RFLX.RFLX_Types.U64) return Boolean is
+   function Valid_Result (Val : RFLX.RFLX_Types.S63) return Boolean is
      (Val in 0 | 1);
 
-   function To_U64 (Enum : RFLX.Test.Result) return RFLX.RFLX_Types.U64 is
+   function To_S63 (Enum : RFLX.Test.Result) return RFLX.RFLX_Types.S63 is
      ((case Enum is
           when M_Valid =>
              0,
@@ -25,7 +25,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Test.Result is
+   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Test.Result is
      ((case Val is
           when 0 =>
              M_Valid,
@@ -43,13 +43,13 @@ is
      Size =>
        8;
 
-   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+   function Valid_Length (Val : RFLX.RFLX_Types.S63) return Boolean is
      (Val <= 255);
 
-   function To_U64 (Val : RFLX.Test.Length) return RFLX.RFLX_Types.U64 is
-     (RFLX.RFLX_Types.U64 (Val));
+   function To_S63 (Val : RFLX.Test.Length) return RFLX.RFLX_Types.S63 is
+     (RFLX.RFLX_Types.S63 (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.Test.Length is
+   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Test.Length is
      (RFLX.Test.Length (Val))
     with
      Pre =>

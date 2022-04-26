@@ -8,9 +8,9 @@ package RFLX.Ethernet.Frame with
     (GNATprove, Always_Return)
 is
 
-   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+   pragma Warnings (Off, "use clause for type ""S63"" * has no effect");
 
-   pragma Warnings (Off, """U64"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -24,15 +24,15 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.U64;
+   use type RFLX_Types.S63;
 
    use type RFLX_Types.Offset;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """U64"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
+   pragma Warnings (On, "use clause for type ""S63"" * has no effect");
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
@@ -239,7 +239,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean with
      Post =>
        True;
 
@@ -257,7 +257,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length := 0) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length := 0) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
        and Valid_Predecessor (Ctx, Fld)
@@ -444,8 +444,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
-       and then RFLX.Ethernet.Valid_Address (To_U64 (Val))
-       and then Field_Condition (Ctx, F_Destination, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_Address (To_S63 (Val))
+       and then Field_Condition (Ctx, F_Destination, To_S63 (Val))
        and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
      Post =>
        Has_Buffer (Ctx)
@@ -472,8 +472,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
-       and then RFLX.Ethernet.Valid_Address (To_U64 (Val))
-       and then Field_Condition (Ctx, F_Source, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_Address (To_S63 (Val))
+       and then Field_Condition (Ctx, F_Source, To_S63 (Val))
        and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
      Post =>
        Has_Buffer (Ctx)
@@ -502,8 +502,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length_TPID)
-       and then RFLX.Ethernet.Valid_Type_Length (To_U64 (Val))
-       and then Field_Condition (Ctx, F_Type_Length_TPID, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_Type_Length (To_S63 (Val))
+       and then Field_Condition (Ctx, F_Type_Length_TPID, To_S63 (Val))
        and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID),
      Post =>
        Has_Buffer (Ctx)
@@ -540,8 +540,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TPID)
-       and then RFLX.Ethernet.Valid_TPID (To_U64 (Val))
-       and then Field_Condition (Ctx, F_TPID, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_TPID (To_S63 (Val))
+       and then Field_Condition (Ctx, F_TPID, To_S63 (Val))
        and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID),
      Post =>
        Has_Buffer (Ctx)
@@ -569,8 +569,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TCI)
-       and then RFLX.Ethernet.Valid_TCI (To_U64 (Val))
-       and then Field_Condition (Ctx, F_TCI, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_TCI (To_S63 (Val))
+       and then Field_Condition (Ctx, F_TCI, To_S63 (Val))
        and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI),
      Post =>
        Has_Buffer (Ctx)
@@ -598,8 +598,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length)
-       and then RFLX.Ethernet.Valid_Type_Length (To_U64 (Val))
-       and then Field_Condition (Ctx, F_Type_Length, To_U64 (Val))
+       and then RFLX.Ethernet.Valid_Type_Length (To_S63 (Val))
+       and then Field_Condition (Ctx, F_Type_Length, To_S63 (Val))
        and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -740,7 +740,7 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : RFLX_Types.U64 := 0;
+               Value : RFLX_Types.S63 := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
@@ -949,7 +949,7 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean is
+   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean is
      ((case Fld is
           when F_Destination | F_Source =>
              RFLX.Ethernet.Valid_Address (Val),
@@ -984,7 +984,7 @@ private
                  when others =>
                     False)));
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length := 0) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length := 0) return Boolean is
      ((case Fld is
           when F_Destination | F_Source =>
              True,
@@ -997,8 +997,8 @@ private
              Val <= 1500
              or Val >= 1536,
           when F_Payload =>
-             RFLX_Types.U64 (Size) / 8 >= 46
-             and RFLX_Types.U64 (Size) / 8 <= 1500));
+             RFLX_Types.S63 (Size) / 8 >= 46
+             and RFLX_Types.S63 (Size) / 8 <= 1500));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      ((case Fld is
@@ -1108,13 +1108,13 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Payload)
-      and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
+      and then (RFLX_Types.S63 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                and RFLX_Types.S63 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload)
-      and then (RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                and RFLX_Types.U64 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
+      and then (RFLX_Types.S63 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+                and RFLX_Types.S63 (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

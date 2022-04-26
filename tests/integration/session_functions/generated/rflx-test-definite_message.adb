@@ -154,7 +154,7 @@ is
    function Composite_Field (Fld : Field) return Boolean is
      (Fld in F_Data);
 
-   function Get (Ctx : Context; Fld : Field) return RFLX_Types.U64 with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.S63 with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -177,7 +177,7 @@ is
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : RFLX_Types.U64;
+      Value : RFLX_Types.S63;
    begin
       if
          Invalid (Ctx.Cursors (Fld))
@@ -238,7 +238,7 @@ is
       Process_Data (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Data;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -305,7 +305,7 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -313,8 +313,8 @@ is
        and then Valid_Value (Fld, Val)
        and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
-       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.S63'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -345,17 +345,18 @@ is
       Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
       Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Lemma_Size (Val, Positive (Size));
       RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_U64 (Val));
+      Set_Scalar (Ctx, F_Message_Type, To_S63 (Val));
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Test.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_U64 (Val));
+      Set_Scalar (Ctx, F_Length, To_S63 (Val));
    end Set_Length;
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type) with
@@ -382,7 +383,7 @@ is
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
    is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_U64 (Val));
+      Set_Scalar (Ctx, F_Message_Type, To_S63 (Val));
    end Set_Message_Type;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

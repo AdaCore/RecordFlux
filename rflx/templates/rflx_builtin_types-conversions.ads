@@ -34,4 +34,30 @@ is
      Pre =>
        Valid_Boolean (Val);
 
+   function Valid_Boolean (Val : {prefix}RFLX_Arithmetic.S63) return Boolean is
+     (case Val is
+         when 0 | 1 =>
+            True,
+         when others =>
+            False);
+
+   function To_S63 (Enum : Boolean) return {prefix}RFLX_Arithmetic.S63 is
+     (case Enum is
+         when False =>
+            0,
+         when True =>
+            1);
+
+   function To_Actual (Val : {prefix}RFLX_Arithmetic.S63) return Boolean is
+     (case Val is
+         when 0 =>
+            False,
+         when 1 =>
+            True,
+         when others =>
+            False)
+    with
+     Pre =>
+       Valid_Boolean (Val);
+
 end {prefix}RFLX_Builtin_Types.Conversions;

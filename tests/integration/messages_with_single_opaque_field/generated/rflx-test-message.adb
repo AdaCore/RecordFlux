@@ -131,7 +131,7 @@ is
      (True);
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : RFLX_Types.U64;
+      Value : RFLX_Types.S63;
    begin
       if
          Invalid (Ctx.Cursors (Fld))
@@ -186,7 +186,7 @@ is
       Process_Data (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Data;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)

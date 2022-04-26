@@ -86,7 +86,7 @@ def test_modular_invalid_modulus_variable() -> None:
 def test_modular_invalid_modulus_limit() -> None:
     assert_type_error(
         ModularInteger("P::T", Pow(Number(2), Number(128), Location((55, 3)))),
-        r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*64\)$',
+        r'^<stdin>:55:3: model: error: modulus of "T" exceeds limit \(2\*\*63\)$',
     )
 
 
@@ -183,7 +183,7 @@ def test_range_invalid_size_exceeds_limit() -> None:
     # ISSUE: Componolit/RecordFlux#238
     assert_type_error(
         RangeInteger("P::T", Number(0), Number(256), Number(128), Location((50, 3))),
-        r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+        r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',
     )
 
 
@@ -256,7 +256,8 @@ def test_enumeration_invalid_literal_value() -> None:
             location=Location((10, 5)),
         ),
         r'^<stdin>:10:5: model: error: enumeration value of "T"'
-        r" outside of permitted range \(0 .. 2\*\*63 - 1\)$",
+        r" outside of permitted range \(0 .. 2\*\*63 - 1\)\n"
+        r'<stdin>:10:5: model: error: size of "T" exceeds limit \(2\*\*63\)$',
     )
 
 
@@ -278,7 +279,7 @@ def test_enumeration_invalid_size_exceeds_limit() -> None:
             always_valid=False,
             location=Location((8, 20)),
         ),
-        r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*64\)$',
+        r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*63\)$',
     )
 
 

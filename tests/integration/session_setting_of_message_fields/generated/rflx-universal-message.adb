@@ -73,45 +73,45 @@ is
      ((case Fld is
           when F_Message_Type =>
              (if
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
               then
                  F_Data
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Null))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Null))
               then
                  F_Final
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Null))
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
+                 and RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Null))
+                 and RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
               then
                  F_Length
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
               then
                  F_Options
               else
                  F_Initial),
           when F_Length =>
              (if
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Data))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Data))
               then
                  F_Data
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Option_Types))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Option_Types))
               then
                  F_Option_Types
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Options))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Options))
               then
                  F_Options
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Value))
-                 and RFLX_Types.U64 (Ctx.Cursors (F_Length).Value) = Universal.Value'Size / 8
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Value))
+                 and RFLX_Types.S63 (Ctx.Cursors (F_Length).Value) = Universal.Value'Size / 8
               then
                  F_Value
               elsif
-                 RFLX_Types.U64 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Values))
+                 RFLX_Types.S63 (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Values))
               then
                  F_Values
               else
@@ -201,7 +201,7 @@ is
    function Composite_Field (Fld : Field) return Boolean is
      (Fld in F_Data | F_Option_Types | F_Options | F_Values);
 
-   function Get (Ctx : Context; Fld : Field) return RFLX_Types.U64 with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.S63 with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -228,7 +228,7 @@ is
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : RFLX_Types.U64;
+      Value : RFLX_Types.S63;
    begin
       if
          Invalid (Ctx.Cursors (Fld))
@@ -297,7 +297,7 @@ is
       Process_Data (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Data;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -328,19 +328,19 @@ is
                     when F_Message_Type =>
                        Get_Message_Type (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
                             then
                                Predecessor (Ctx, F_Data) = F_Message_Type
                                and Valid_Next (Ctx, F_Data))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
-                               and RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Null))
-                               and RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
+                               and RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Null))
+                               and RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
                             then
                                Predecessor (Ctx, F_Length) = F_Message_Type
                                and Valid_Next (Ctx, F_Length))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
                             then
                                Predecessor (Ctx, F_Options) = F_Message_Type
                                and Valid_Next (Ctx, F_Options))
@@ -348,28 +348,28 @@ is
                     when F_Length =>
                        Get_Length (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Data))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Data))
                             then
                                Predecessor (Ctx, F_Data) = F_Length
                                and Valid_Next (Ctx, F_Data))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Option_Types))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Option_Types))
                             then
                                Predecessor (Ctx, F_Option_Types) = F_Length
                                and Valid_Next (Ctx, F_Option_Types))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Options))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Options))
                             then
                                Predecessor (Ctx, F_Options) = F_Length
                                and Valid_Next (Ctx, F_Options))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Value))
-                               and RFLX_Types.U64 (Get_Length (Ctx)) = Universal.Value'Size / 8
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Value))
+                               and RFLX_Types.S63 (Get_Length (Ctx)) = Universal.Value'Size / 8
                             then
                                Predecessor (Ctx, F_Value) = F_Length
                                and Valid_Next (Ctx, F_Value))
                        and (if
-                               RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Values))
+                               RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Values))
                             then
                                Predecessor (Ctx, F_Values) = F_Length
                                and Valid_Next (Ctx, F_Values)),
@@ -404,12 +404,12 @@ is
                          when F_Data =>
                             (if
                                 Ctx.Cursors (Fld).Predecessor = F_Length
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.Universal.MT_Data))
+                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_S63 (RFLX.Universal.MT_Data))
                              then
                                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8
                              elsif
                                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
                              then
                                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
                              else
@@ -419,12 +419,12 @@ is
                          when F_Options =>
                             (if
                                 Ctx.Cursors (Fld).Predecessor = F_Length
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.Universal.MT_Options))
+                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_S63 (RFLX.Universal.MT_Options))
                              then
                                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8
                              elsif
                                 Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
+                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
                              then
                                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
                              else
@@ -441,7 +441,7 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -449,8 +449,8 @@ is
        and then Valid_Value (Fld, Val)
        and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
-       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.S63'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -459,19 +459,19 @@ is
                when F_Message_Type =>
                   Get_Message_Type (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
                        then
                           Predecessor (Ctx, F_Data) = F_Message_Type
                           and Valid_Next (Ctx, F_Data))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
-                          and RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Null))
-                          and RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) /= RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Data))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
+                          and RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Null))
+                          and RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) /= RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Data))
                        then
                           Predecessor (Ctx, F_Length) = F_Message_Type
                           and Valid_Next (Ctx, F_Length))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Unconstrained_Options))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Unconstrained_Options))
                        then
                           Predecessor (Ctx, F_Options) = F_Message_Type
                           and Valid_Next (Ctx, F_Options))
@@ -479,28 +479,28 @@ is
                when F_Length =>
                   Get_Length (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Data))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Data))
                        then
                           Predecessor (Ctx, F_Data) = F_Length
                           and Valid_Next (Ctx, F_Data))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Option_Types))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Option_Types))
                        then
                           Predecessor (Ctx, F_Option_Types) = F_Length
                           and Valid_Next (Ctx, F_Option_Types))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Options))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Options))
                        then
                           Predecessor (Ctx, F_Options) = F_Length
                           and Valid_Next (Ctx, F_Options))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Value))
-                          and RFLX_Types.U64 (Get_Length (Ctx)) = Universal.Value'Size / 8
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Value))
+                          and RFLX_Types.S63 (Get_Length (Ctx)) = Universal.Value'Size / 8
                        then
                           Predecessor (Ctx, F_Value) = F_Length
                           and Valid_Next (Ctx, F_Value))
                   and (if
-                          RFLX_Types.U64 (To_U64 (Get_Message_Type (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.Universal.MT_Values))
+                          RFLX_Types.S63 (To_S63 (Get_Message_Type (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.Universal.MT_Values))
                        then
                           Predecessor (Ctx, F_Values) = F_Length
                           and Valid_Next (Ctx, F_Values)),
@@ -526,22 +526,23 @@ is
       Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
       Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Lemma_Size (Val, Positive (Size));
       RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Message_Type) is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_U64 (Val));
+      Set_Scalar (Ctx, F_Message_Type, To_S63 (Val));
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_U64 (Val));
+      Set_Scalar (Ctx, F_Length, To_S63 (Val));
    end Set_Length;
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Universal.Value) is
    begin
-      Set_Scalar (Ctx, F_Value, To_U64 (Val));
+      Set_Scalar (Ctx, F_Value, To_S63 (Val));
    end Set_Value;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

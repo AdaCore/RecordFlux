@@ -4,9 +4,9 @@ with RFLX.RFLX_Types;
 generic
    type Element_Type is private;
    Element_Size : Positive;
-   with function Valid (Element : RFLX.RFLX_Types.U64) return Boolean;
-   with function To_Actual (Element : RFLX.RFLX_Types.U64) return Element_Type;
-   with function To_U64 (Element : Element_Type) return RFLX.RFLX_Types.U64;
+   with function Valid (Element : RFLX.RFLX_Types.S63) return Boolean;
+   with function To_Actual (Element : RFLX.RFLX_Types.S63) return Element_Type;
+   with function To_S63 (Element : Element_Type) return RFLX.RFLX_Types.S63;
 package RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
@@ -25,7 +25,7 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.U64;
+   use type RFLX_Types.S63;
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
@@ -146,8 +146,8 @@ is
      Pre =>
        (Has_Buffer (Ctx)
         and then Valid (Ctx)
-        and then Valid (To_U64 (Value))
-        and then (if Element_Size < 64 then To_U64 (Value) < 2**Element_Size)
+        and then Valid (To_S63 (Value))
+        and then (if Element_Size < 64 then To_S63 (Value) < 2**Element_Size)
         and then Available_Space (Ctx) >= RFLX.RFLX_Types.Bit_Index (Element_Size)),
      Post =>
        (Has_Buffer (Ctx)
@@ -191,8 +191,8 @@ private
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer        : RFLX_Types.Bytes_Ptr := null;
          State         : Context_State := S_Valid;
-         First_Element : RFLX.RFLX_Types.U64 := RFLX.RFLX_Types.U64'First;
-         Next_Element  : RFLX.RFLX_Types.U64 := RFLX.RFLX_Types.U64'First;
+         First_Element : RFLX.RFLX_Types.S63 := RFLX.RFLX_Types.S63'First;
+         Next_Element  : RFLX.RFLX_Types.S63 := RFLX.RFLX_Types.S63'First;
       end record with
      Dynamic_Predicate =>
        ((if Buffer /= null then

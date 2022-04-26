@@ -214,13 +214,13 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "type_definition",
     [
-        "mod 2 ** 64",
-        "range 2 ** 8 .. 2 ** 48 with Size => 64",
-        "(A, B, C) with Size => 64",
-        "(A, B, C) with Always_Valid, Size => 64",
+        "mod 2 ** 63",
+        "range 2 ** 8 .. 2 ** 48 with Size => 63",
+        "(A, B, C) with Size => 63",
+        "(A, B, C) with Always_Valid, Size => 63",
     ],
 )
-def test_64_bit_types(type_definition: str, tmp_path: Path) -> None:
+def test_63_bit_types(type_definition: str, tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         f"""
            package Test is
@@ -246,7 +246,7 @@ def test_message_fixed_size_sequence(tmp_path: Path) -> None:
                  message
                     null
                        then A
-                          with Size => 64;
+                          with Size => 63;
                     A : S;
                  end message;
 

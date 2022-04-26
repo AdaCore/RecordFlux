@@ -146,7 +146,7 @@ def test_invalid_modular_type() -> None:
                type T is mod 2**128;
             end Test;
         """,
-        r'^<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*64\)',
+        r'^<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*63\)',
     )
 
 
@@ -353,7 +353,7 @@ def test_model_errors_in_type_and_session() -> None:
             end Test;
         """,
         r"^"
-        r'<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*64\)\n'
+        r'<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*63\)\n'
         r"<stdin>:5:16: model: error: empty states\n"
         r'<stdin>:7:30: model: error: initial state "A" does not exist in "Test::S"\n'
         r'<stdin>:8:28: model: error: final state "A" does not exist in "Test::S"'

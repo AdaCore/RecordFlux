@@ -11,12 +11,12 @@ is
        8;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
 
-   use type RFLX.RFLX_Types.U64;
+   use type RFLX.RFLX_Types.S63;
 
-   function Valid_Tag (Val : RFLX.RFLX_Types.U64) return Boolean is
+   function Valid_Tag (Val : RFLX.RFLX_Types.S63) return Boolean is
      (Val in 1 | 3);
 
-   function To_U64 (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.U64 is
+   function To_S63 (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.S63 is
      ((case Enum is
           when Msg_Data =>
              1,
@@ -25,7 +25,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.TLV.Tag is
+   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.TLV.Tag is
      ((case Val is
           when 1 =>
              Msg_Data,
@@ -43,13 +43,13 @@ is
      Size =>
        16;
 
-   function Valid_Length (Val : RFLX.RFLX_Types.U64) return Boolean is
+   function Valid_Length (Val : RFLX.RFLX_Types.S63) return Boolean is
      (Val <= 65535);
 
-   function To_U64 (Val : RFLX.TLV.Length) return RFLX.RFLX_Types.U64 is
-     (RFLX.RFLX_Types.U64 (Val));
+   function To_S63 (Val : RFLX.TLV.Length) return RFLX.RFLX_Types.S63 is
+     (RFLX.RFLX_Types.S63 (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.TLV.Length is
+   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.TLV.Length is
      (RFLX.TLV.Length (Val))
     with
      Pre =>

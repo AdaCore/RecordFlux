@@ -62,7 +62,7 @@ abstract project Defaults is
 
    Proof_Switches :=
    (
-      "--prover=z3,cvc4,altergo",
+      "--prover=z3,cvc4,altergo,colibri",
       "--steps=0",
       "--timeout=180",
       "--memlimit=2000",

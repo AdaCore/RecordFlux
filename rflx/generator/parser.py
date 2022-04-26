@@ -96,7 +96,7 @@ class ParserGenerator:
                 SubprogramBody(
                     FunctionSpecification(
                         "Get",
-                        const.TYPES_U64,
+                        const.TYPES_S63,
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
                     [
@@ -371,7 +371,7 @@ class ParserGenerator:
             [
                 SubprogramBody(
                     specification,
-                    [ObjectDeclaration(["Value"], const.TYPES_U64)],
+                    [ObjectDeclaration(["Value"], const.TYPES_S63)],
                     [
                         IfStatement(
                             [

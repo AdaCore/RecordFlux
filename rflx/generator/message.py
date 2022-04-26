@@ -111,13 +111,13 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
         [
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('use clause for type "U64" * has no effect')],
+                [Variable("Off"), String('use clause for type "S63" * has no effect')],
             ),
             Pragma(
                 "Warnings",
                 [
                     Variable("Off"),
-                    String('"U64" is already use-visible through previous use_type_clause'),
+                    String('"S63" is already use-visible through previous use_type_clause'),
                 ],
             ),
             Pragma(
@@ -135,7 +135,7 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                     const.TYPES_LENGTH,
                     const.TYPES_INDEX,
                     const.TYPES_BIT_INDEX,
-                    const.TYPES_U64,
+                    const.TYPES_S63,
                     *([const.TYPES_OFFSET] if offset else []),
                 ]
             ],
@@ -150,12 +150,12 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                 "Warnings",
                 [
                     Variable("On"),
-                    String('"U64" is already use-visible through previous use_type_clause'),
+                    String('"S63" is already use-visible through previous use_type_clause'),
                 ],
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('use clause for type "U64" * has no effect')],
+                [Variable("On"), String('use clause for type "S63" * has no effect')],
             ),
         ]
     )
@@ -234,7 +234,7 @@ def create_cursor_type() -> UnitPart:
                                 ),
                                 Component(
                                     "Value",
-                                    const.TYPES_U64,
+                                    const.TYPES_S63,
                                     Number(0),
                                 ),
                             ],
@@ -1296,7 +1296,7 @@ def create_valid_value_function(
         "Boolean",
         [
             Parameter(["Fld" if scalar_fields else "Unused_Fld"], "Field"),
-            Parameter(["Val" if scalar_fields else "Unused_Val"], const.TYPES_U64),
+            Parameter(["Val" if scalar_fields else "Unused_Val"], const.TYPES_S63),
         ],
     )
 
@@ -1516,7 +1516,7 @@ def create_field_first_function(message: Message, prefix: str) -> UnitPart:
 
     def first(link: Link, message: Message) -> tuple[Expr, Expr]:
         def substituted(
-            expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_U64
+            expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_S63
         ) -> Expr:
             return (
                 expression.substituted(
@@ -1678,9 +1678,9 @@ def create_field_condition_function(message: Message, prefix: str) -> UnitPart:
         c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
         c = c.substituted(
             mapping={
-                expr.Size(field.name): expr.Call(const.TYPES_U64, [expr.Variable("Size")]),
+                expr.Size(field.name): expr.Call(const.TYPES_S63, [expr.Variable("Size")]),
                 expr.Last(field.name): expr.Call(
-                    const.TYPES_U64,
+                    const.TYPES_S63,
                     [
                         expr.Call(
                             "Field_Last",
@@ -1711,7 +1711,7 @@ def create_field_condition_function(message: Message, prefix: str) -> UnitPart:
         Parameter(["Ctx"], "Context"),
         Parameter(["Fld"], "Field"),
         *(
-            [Parameter(["Val"], const.TYPES_U64)]
+            [Parameter(["Val"], const.TYPES_S63)]
             if common.has_value_dependent_condition(message)
             else []
         ),
@@ -3058,7 +3058,7 @@ def _create_sufficient_buffer_length_function(message: Message, prefix: str) -> 
                 specification,
                 GreaterEqual(
                     Call(
-                        const.TYPES_U64,
+                        const.TYPES_S63,
                         [
                             Add(
                                 Call(
@@ -3199,13 +3199,13 @@ def _struct_substitution(
 
             if isinstance(field_type, Enumeration):
                 return expr.Call(
-                    "To_U64",
+                    "To_S63",
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 
             if isinstance(field_type, Scalar):
                 return expr.Call(
-                    const.TYPES_U64,
+                    const.TYPES_S63,
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 

@@ -62,4 +62,17 @@ is
       return A + B;
    end Add;
 
+   procedure Lemma_Size (Val : S63; Size : Positive) is
+   begin
+      if Size < S63'Size then
+         pragma Assert (Val < 2 ** Size);
+         pragma Assert (U64 (Val) < 2 ** Size);
+         pragma Assert (Fits_Into (U64 (Val), Size));
+      else
+         pragma Assert (Size = 63);
+         pragma Assert (U64 (Val) < 2 ** 63);
+         pragma Assert (Fits_Into (U64 (Val), Size));
+      end if;
+   end Lemma_Size;
+
 end RFLX.RFLX_Arithmetic;

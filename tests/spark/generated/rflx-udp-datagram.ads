@@ -8,9 +8,9 @@ package RFLX.UDP.Datagram with
     (GNATprove, Always_Return)
 is
 
-   pragma Warnings (Off, "use clause for type ""U64"" * has no effect");
+   pragma Warnings (Off, "use clause for type ""S63"" * has no effect");
 
-   pragma Warnings (Off, """U64"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -24,15 +24,15 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.U64;
+   use type RFLX_Types.S63;
 
    use type RFLX_Types.Offset;
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """U64"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, "use clause for type ""U64"" * has no effect");
+   pragma Warnings (On, "use clause for type ""S63"" * has no effect");
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
@@ -239,7 +239,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean with
      Post =>
        True;
 
@@ -435,7 +435,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source_Port)
-       and then RFLX.UDP.Valid_Port (To_U64 (Val))
+       and then RFLX.UDP.Valid_Port (To_S63 (Val))
        and then Field_Condition (Ctx, F_Source_Port)
        and then Available_Space (Ctx, F_Source_Port) >= Field_Size (Ctx, F_Source_Port),
      Post =>
@@ -461,7 +461,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination_Port)
-       and then RFLX.UDP.Valid_Port (To_U64 (Val))
+       and then RFLX.UDP.Valid_Port (To_S63 (Val))
        and then Field_Condition (Ctx, F_Destination_Port)
        and then Available_Space (Ctx, F_Destination_Port) >= Field_Size (Ctx, F_Destination_Port),
      Post =>
@@ -489,7 +489,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
-       and then RFLX.UDP.Valid_Length (To_U64 (Val))
+       and then RFLX.UDP.Valid_Length (To_S63 (Val))
        and then Field_Condition (Ctx, F_Length)
        and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
@@ -517,7 +517,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Checksum)
-       and then RFLX.UDP.Valid_Checksum (To_U64 (Val))
+       and then RFLX.UDP.Valid_Checksum (To_S63 (Val))
        and then Field_Condition (Ctx, F_Checksum)
        and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum),
      Post =>
@@ -707,7 +707,7 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : RFLX_Types.U64 := 0;
+               Value : RFLX_Types.S63 := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
@@ -850,7 +850,7 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.U64) return Boolean is
+   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean is
      ((case Fld is
           when F_Source_Port | F_Destination_Port =>
              RFLX.UDP.Valid_Port (Val),
@@ -981,6 +981,6 @@ private
      (True);
 
    function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean is
-     (RFLX_Types.U64 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= (RFLX_Types.U64 (Struct.Length) - 8) * 8 + 64);
+     (RFLX_Types.S63 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= (RFLX_Types.S63 (Struct.Length) - 8) * 8 + 64);
 
 end RFLX.UDP.Datagram;

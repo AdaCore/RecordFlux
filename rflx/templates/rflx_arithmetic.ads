@@ -7,11 +7,18 @@ is
    type U64 is mod 2**64 with
      Annotate => (GNATprove, No_Wrap_Around);
 
+   type S63 is range 0 .. 2 ** 63 - 1;
+
    --  Express that V contains at most Bits non-zero bits, in the least
    --  significant part (the rest is zero).
    pragma Warnings (Off, "postcondition does not mention function result");
    function Fits_Into (V : U64; Bits : Natural) return Boolean
    is (if Bits < U64'Size then V < 2 ** Bits)
+     with Post => True;
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+   function Fits_Into (V : S63; Bits : Natural) return Boolean
+   is (if Bits < S63'Size then V < 2 ** Bits)
      with Post => True;
 
    --  Express that V contains (U64'Size - Bits) leading zero bits, then (Bits -
@@ -81,5 +88,10 @@ is
        and then Fits_Into (B, Lower_Bits),
      Post => Add'Result = A + B and Fits_Into (Add'Result, Total_Bits),
      Global => null;
+
+   procedure Lemma_Size (Val : S63; Size : Positive)
+   with Ghost,
+      Pre => Size in 1 .. 63 and then Fits_Into (Val, Size),
+      Post => Fits_Into (U64 (Val), Size);
 
 end {prefix}RFLX_Arithmetic;

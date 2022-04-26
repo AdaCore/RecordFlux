@@ -32,7 +32,6 @@ from rflx.ada import (
     InlineAlways,
     InOutParameter,
     Length,
-    Less,
     LessEqual,
     Mod,
     Mul,
@@ -44,7 +43,6 @@ from rflx.ada import (
     OutParameter,
     Parameter,
     Postcondition,
-    Pow,
     Pragma,
     PragmaStatement,
     Precondition,
@@ -234,7 +232,7 @@ class SerializerGenerator:
                 [
                     InOutParameter(["Ctx"], "Context"),
                     Parameter(["Fld"], "Field"),
-                    Parameter(["Val"], const.TYPES_U64),
+                    Parameter(["Val"], const.TYPES_S63),
                     Parameter(["Size"], const.TYPES_BIT_LENGTH),
                     Parameter(["State_Valid"], "Boolean"),
                     OutParameter(["Buffer_First"], const.TYPES_INDEX),
@@ -570,11 +568,11 @@ class SerializerGenerator:
                         [
                             Variable("Val")
                             if use_enum_records_directly
-                            else Call("To_U64", [Variable("Val")])
+                            else Call("To_S63", [Variable("Val")])
                         ],
                     ),
                     common.field_condition_call(
-                        message, field, value=Call("To_U64", [Variable("Val")])
+                        message, field, value=Call("To_S63", [Variable("Val")])
                     ),
                     common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                 )
@@ -621,7 +619,7 @@ class SerializerGenerator:
                         [
                             Variable("Ctx"),
                             Variable(field.affixed_name),
-                            Call("To_U64", [Variable("Val")]),
+                            Call("To_S63", [Variable("Val")]),
                         ],
                     ),
                 ],
@@ -665,7 +663,7 @@ class SerializerGenerator:
                         [
                             InOutParameter(["Ctx"], "Context"),
                             Parameter(["Fld"], "Field"),
-                            Parameter(["Val"], const.TYPES_U64),
+                            Parameter(["Val"], const.TYPES_S63),
                         ],
                     ),
                     [
@@ -690,6 +688,13 @@ class SerializerGenerator:
                                 Variable("Buffer_First"),
                                 Variable("Buffer_Last"),
                                 Variable("Offset"),
+                            ],
+                        ),
+                        CallStatement(
+                            const.TYPES * "Lemma_Size",
+                            [
+                                Variable("Val"),
+                                Call("Positive", [Variable("Size")]),
                             ],
                         ),
                         CallStatement(
@@ -744,34 +749,21 @@ class SerializerGenerator:
                                 common.sufficient_space_for_field_condition(Variable("Fld")),
                                 In(
                                     Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                                    ValueRange(Number(1), Size(const.TYPES_U64)),
+                                    ValueRange(Number(1), Size(const.TYPES_S63)),
                                 ),
-                                If(
+                                Call(
+                                    const.TYPES * "Fits_Into",
                                     [
-                                        (
-                                            Less(
+                                        Variable("Val"),
+                                        Call(
+                                            "Natural",
+                                            [
                                                 Call(
                                                     "Field_Size", [Variable("Ctx"), Variable("Fld")]
-                                                ),
-                                                Size(const.TYPES_U64),
-                                            ),
-                                            Less(
-                                                Variable("Val"),
-                                                Pow(
-                                                    Number(2),
-                                                    Call(
-                                                        "Natural",
-                                                        [
-                                                            Call(
-                                                                "Field_Size",
-                                                                [Variable("Ctx"), Variable("Fld")],
-                                                            )
-                                                        ],
-                                                    ),
-                                                ),
-                                            ),
-                                        )
-                                    ]
+                                                )
+                                            ],
+                                        ),
+                                    ],
                                 ),
                             )
                         ),
