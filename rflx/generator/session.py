@@ -2153,7 +2153,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             )
 
         if isinstance(expression, expr.Call):
-            return self._assign_to_call(target, expression, exception_handler, is_global)
+            return self._assign_to_call(target, expression, exception_handler, is_global, state)
 
         if isinstance(expression, expr.Conversion):
             return self._assign_to_conversion(target, expression, exception_handler, is_global)
@@ -2702,6 +2702,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         call_expr: expr.Call,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: rid.ID,
     ) -> Sequence[Statement]:
         pre_call: list[Statement] = []
         post_call = []
@@ -2793,7 +2794,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(self._allocator.get_size() - 1),
+                                    Number(
+                                        self._allocator.get_size(a.prefix.identifier, state) - 1
+                                    ),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -2864,7 +2867,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(self._allocator.get_size() - 1),
+                                    Number(
+                                        self._allocator.get_size(a.prefix.identifier, state) - 1
+                                    ),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
