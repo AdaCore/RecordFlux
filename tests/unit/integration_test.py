@@ -121,7 +121,18 @@ def test_rfi_get_size() -> None:
     session_object = {
         "Session": {
             "S": {
-                "Buffer_Size": {"Default": 1024, "Global": {"y": 2048}, "Local": {"S": {"y": 8192}}}
+                "Buffer_Size": {
+                    "Default": 1024,
+                    "Global": {
+                        "Y": 2048,
+                        "Z": 512,
+                    },
+                    "Local": {
+                        "S": {
+                            "Y": 8192,
+                        }
+                    },
+                }
             }
         }
     }
@@ -130,12 +141,14 @@ def test_rfi_get_size() -> None:
     integration._add_integration_object(Path("p.rfi"), session_object, error)
     error.propagate()
     assert integration.get_size(ID("P::S"), None, None) == 1024
-    assert integration.get_size(ID("P::S"), ID("x"), ID("S")) == 1024
-    assert integration.get_size(ID("P::S"), ID("x"), ID("S")) == 1024
-    assert integration.get_size(ID("P::S"), ID("x"), None) == 1024
-    assert integration.get_size(ID("P::S2"), ID("x"), None) == 4096
-    assert integration.get_size(ID("P::S"), ID("y"), None) == 2048
-    assert integration.get_size(ID("P::S"), ID("y"), ID("S")) == 8192
+    assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 1024
+    assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 1024
+    assert integration.get_size(ID("P::S"), ID("X"), None) == 1024
+    assert integration.get_size(ID("P::S2"), ID("X"), None) == 4096
+    assert integration.get_size(ID("P::S"), ID("Y"), None) == 2048
+    assert integration.get_size(ID("P::S"), ID("Y"), ID("S")) == 8192
+    assert integration.get_size(ID("P::S"), ID("Z"), None) == 512
+    assert integration.get_size(ID("P::S"), ID("Z"), ID("S")) == 512
 
 
 @pytest.mark.parametrize(
