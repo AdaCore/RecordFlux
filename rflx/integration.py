@@ -124,6 +124,10 @@ class Integration:
             and variable_name in buffer_size.local_[state_name]
         ):
             return buffer_size.local_[state_name][variable_name]
+
+        if buffer_size.global_ is not None and variable_name in buffer_size.global_:
+            return buffer_size.global_[variable_name]
+
         return default_size
 
     def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
