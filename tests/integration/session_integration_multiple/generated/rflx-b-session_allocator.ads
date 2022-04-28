@@ -7,7 +7,7 @@ use type RFLX.RFLX_Types.Bytes_Ptr;
 package RFLX.B.Session_Allocator with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    type Memory is

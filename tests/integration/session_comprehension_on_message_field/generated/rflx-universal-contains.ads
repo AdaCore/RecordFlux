@@ -7,7 +7,7 @@ with RFLX.Universal.Option;
 package RFLX.Universal.Contains with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    use type RFLX_Types.Index;

@@ -15,7 +15,7 @@ package {prefix}RFLX_Message_Sequence with
   SPARK_Mode
 is
 
-   pragma Annotate (GNATprove, Terminating, RFLX_Message_Sequence);
+   pragma Annotate (GNATprove, Always_Return, RFLX_Message_Sequence);
 
    pragma Unevaluated_Use_Of_Old (Allow);
 

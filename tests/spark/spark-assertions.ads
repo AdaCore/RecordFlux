@@ -1,7 +1,8 @@
 with RFLX.RFLX_Builtin_Types;
 
 package SPARK.Assertions with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate => (GNATprove, Terminating)
 is
 
    use type RFLX.RFLX_Builtin_Types.Bytes;

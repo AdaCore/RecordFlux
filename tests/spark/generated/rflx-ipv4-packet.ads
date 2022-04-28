@@ -9,7 +9,7 @@ with RFLX.IPv4.Options;
 package RFLX.IPv4.Packet with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");

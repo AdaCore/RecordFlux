@@ -316,7 +316,7 @@ class Generator:
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
-                    *([Annotate("GNATprove", "Terminating")] if terminating else []),
+                    *([Annotate("GNATprove", "Always_Return")] if terminating else []),
                     *aspects,
                 ],
             ),
