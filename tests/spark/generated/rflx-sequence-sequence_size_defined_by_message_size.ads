@@ -6,7 +6,7 @@ with RFLX.Sequence.Modular_Vector;
 package RFLX.Sequence.Sequence_Size_Defined_By_Message_Size with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");

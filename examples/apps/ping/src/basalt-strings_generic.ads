@@ -12,7 +12,7 @@
 package Basalt.Strings_Generic with
    SPARK_Mode,
    Pure,
-   Annotate => (GNATprove, Terminating)
+   Annotate => (GNATprove, Always_Return)
 is
 
    type Residue_Class_Ring is new Integer range 0 .. 16;

@@ -6,7 +6,7 @@ with RFLX.Sequence.Inner_Messages;
 package RFLX.Sequence.Messages_Message with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");

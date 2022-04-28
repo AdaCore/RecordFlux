@@ -6,7 +6,7 @@ package RFLX.RFLX_Builtin_Types.Conversions with
   SPARK_Mode
 is
 
-   pragma Annotate (GNATprove, Terminating, Conversions);
+   pragma Annotate (GNATprove, Always_Return, Conversions);
 
    function Valid_Boolean (Val : RFLX.RFLX_Arithmetic.U64) return Boolean is
      (case Val is

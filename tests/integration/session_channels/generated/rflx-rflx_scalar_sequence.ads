@@ -11,7 +11,7 @@ package RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
 
-   pragma Annotate (GNATprove, Terminating, RFLX_Scalar_Sequence);
+   pragma Annotate (GNATprove, Always_Return, RFLX_Scalar_Sequence);
 
    use type RFLX_Types.Bytes_Ptr;
 

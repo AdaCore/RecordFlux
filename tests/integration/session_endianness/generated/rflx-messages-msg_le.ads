@@ -5,7 +5,7 @@ with RFLX.RFLX_Types;
 package RFLX.Messages.Msg_LE with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    pragma Warnings (Off, "use clause for type ""U64"" * has no effect");

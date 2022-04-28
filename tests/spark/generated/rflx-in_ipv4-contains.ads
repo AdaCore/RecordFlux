@@ -10,7 +10,7 @@ with RFLX.ICMP.Message;
 package RFLX.In_IPv4.Contains with
   SPARK_Mode,
   Annotate =>
-    (GNATprove, Terminating)
+    (GNATprove, Always_Return)
 is
 
    use type RFLX_Types.Index;
