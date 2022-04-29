@@ -12,6 +12,7 @@ from rflx.expression import (
     TRUE,
     UNDEFINED,
     Add,
+    Aggregate,
     And,
     Attribute,
     Expr,
@@ -1161,6 +1162,8 @@ class MessageValue(TypeValue):
                     expr_tuple.evaluated_expression.lower.value,
                     expr_tuple.evaluated_expression.upper.value,
                 )
+            elif isinstance(expr_tuple.evaluated_expression, Aggregate):
+                arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.to_bytes()
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
@@ -1360,15 +1363,13 @@ class MessageValue(TypeValue):
                 if self._fields[expression.identifier.flat].set:
                     exp_value = self._fields[expression.identifier.flat].typeval.value
                     if isinstance(exp_value, bytes):
-                        return Number(int.from_bytes(exp_value, "big"))
+                        return Aggregate(*[Number(b) for b in exp_value])
                     if (
                         isinstance(exp_value, list)
                         and len(exp_value) > 0
                         and isinstance(exp_value[0], IntegerValue)
                     ):
-                        return Number(
-                            int.from_bytes(b"".join([bytes(v.bitstring) for v in exp_value]), "big")
-                        )
+                        return Aggregate(*[Number(e.value) for e in exp_value])
                     return NotImplemented
             return expression
 

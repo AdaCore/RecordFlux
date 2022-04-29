@@ -1570,6 +1570,20 @@ class Aggregate(Expr):
         super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
         self.elements = list(elements)
 
+    def __eq__(self, other: object) -> bool:
+        if (
+            isinstance(other, Aggregate)
+            and all((isinstance(v, Number) for v in self.elements))
+            and all((isinstance(v, Number) for v in other.elements))
+        ):
+            return [v.value for v in self.elements if isinstance(v, Number)] == [
+                v.value for v in other.elements if isinstance(v, Number)
+            ]
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.elements))
+
     def _update_str(self) -> None:
         self._str = intern("[" + ", ".join(map(str, self.elements)) + "]")
 
@@ -1719,19 +1733,10 @@ class Relation(BinExpr):
         }
         if (relation_operator, left, right) in mapping:
             return mapping[(relation_operator, left, right)]
-        if isinstance(left, (Number, Aggregate)) and isinstance(right, (Number, Aggregate)):
-            left_number = (
-                Number(int.from_bytes(left.to_bytes(), "big"))
-                if isinstance(left, Aggregate)
-                else left
-            )
-            right_number = (
-                Number(int.from_bytes(right.to_bytes(), "big"))
-                if isinstance(right, Aggregate)
-                else right
-            )
-            assert isinstance(left_number, Number) and isinstance(right_number, Number)
-            return TRUE if relation_operator(left_number, right_number) else FALSE
+        if isinstance(left, Number) and isinstance(right, Number):
+            return TRUE if relation_operator(left, right) else FALSE
+        if isinstance(left, Aggregate) and isinstance(right, Aggregate):
+            return TRUE if relation_operator(left, right) else FALSE
         return self.__class__(left, right)
 
     @property
