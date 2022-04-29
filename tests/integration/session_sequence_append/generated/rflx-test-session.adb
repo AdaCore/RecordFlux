@@ -27,6 +27,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_sequence_append/test.rflx:16:10
       Universal.Option.Verify_Message (Ctx.P.Option_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -60,6 +61,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_sequence_append/test.rflx:25:10
       if
          not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
           and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0)
@@ -127,6 +129,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_sequence_append/test.rflx:29:10
       if
          Universal.Options.Size (Options_Ctx) <= 32768
          and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -178,6 +181,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_sequence_append/test.rflx:40:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

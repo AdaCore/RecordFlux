@@ -25,6 +25,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/parameterized_messages/test.rflx:30:10
       Test.Message.Reset (Ctx.P.M_R_Ctx, Length => 2, Extended => Ctx.P.Extended);
       Ctx.P.Next_State := S_Receive;
       pragma Assert (Start_Invariant);
@@ -45,6 +46,7 @@ is
         Ghost;
    begin
       pragma Assert (Receive_Invariant);
+      --  tests/integration/parameterized_messages/test.rflx:38:10
       Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
       if Test.Message.Structural_Valid_Message (Ctx.P.M_R_Ctx) then
          Ctx.P.Next_State := S_Process;
@@ -70,6 +72,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/parameterized_messages/test.rflx:49:10
       if
          Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -131,6 +134,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/parameterized_messages/test.rflx:50:10
       Length := Ctx.P.M_S_Ctx.Length;
       if Length = Ctx.P.M_R_Ctx.Length then
          Ctx.P.Next_State := S_Reply;
@@ -156,6 +160,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/parameterized_messages/test.rflx:62:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

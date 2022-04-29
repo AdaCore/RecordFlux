@@ -57,7 +57,7 @@ def get_config(feature: str) -> Config:
 
 def create_model(feature: str) -> Tuple[Model, Integration]:
     parser = Parser()
-    parser.parse(Path(__file__).parent / feature / "test.rflx")
+    parser.parse(Path("tests/integration") / feature / "test.rflx")
     return parser.create_model(), parser.get_integration()
 
 

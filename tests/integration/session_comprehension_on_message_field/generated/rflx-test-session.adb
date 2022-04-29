@@ -33,6 +33,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -73,6 +74,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:27:10
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
@@ -148,6 +150,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:29:10
       if
          Universal.Option_Types.Size (Option_Types_Ctx) <= 32768
          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -199,6 +202,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:40:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

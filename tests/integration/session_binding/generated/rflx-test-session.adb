@@ -28,6 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_binding/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -56,6 +57,7 @@ is
       RFLX_Exception : Boolean := False;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_binding/test.rflx:26:10
       declare
          MT : Universal.Message_Type;
       begin
@@ -108,6 +110,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_binding/test.rflx:38:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

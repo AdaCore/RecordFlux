@@ -36,6 +36,7 @@ from rflx.ada import (
     ChoiceList,
     ClassPostcondition,
     ClassPrecondition,
+    CommentStatement,
     Component,
     Constrained,
     ContextItem,
@@ -1968,7 +1969,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 location=action.location,
             )
 
-        return [*result, *exception_handler.execute_deferred()]
+        return [
+            CommentStatement(str(action.location)),
+            *result,
+            *exception_handler.execute_deferred(),
+        ]
 
     def _declare(  # pylint: disable = too-many-arguments, too-many-branches
         self,

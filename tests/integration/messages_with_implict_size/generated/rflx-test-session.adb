@@ -25,6 +25,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/messages_with_implict_size/test.rflx:16:10
       Universal.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -45,6 +46,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/messages_with_implict_size/test.rflx:24:10
       if
          Universal.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Universal.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -120,6 +122,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/messages_with_implict_size/test.rflx:33:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

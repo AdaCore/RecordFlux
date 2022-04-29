@@ -25,7 +25,9 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_channel_multiplexing/test.rflx:18:10
       Universal.Message.Verify_Message (Ctx.P.Message_1_Ctx);
+      --  tests/integration/session_channel_multiplexing/test.rflx:19:10
       Universal.Message.Verify_Message (Ctx.P.Message_2_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply_1;
@@ -52,6 +54,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_1_Invariant);
+      --  tests/integration/session_channel_multiplexing/test.rflx:30:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_1_Invariant);
    end Reply_1;
@@ -71,6 +74,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
+      --  tests/integration/session_channel_multiplexing/test.rflx:37:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;

@@ -24,6 +24,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_channels/test.rflx:16:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply;
@@ -47,6 +48,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_channels/test.rflx:25:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_Invariant);
    end Reply;

@@ -25,6 +25,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/messages_with_single_opaque_field/test.rflx:19:10
       Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -45,6 +46,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/messages_with_single_opaque_field/test.rflx:27:10
       if
          Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -119,6 +121,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/messages_with_single_opaque_field/test.rflx:36:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

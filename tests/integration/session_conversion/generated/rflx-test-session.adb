@@ -28,6 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_conversion/test.rflx:16:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -55,6 +56,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_conversion/test.rflx:26:10
       if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
          Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
@@ -83,6 +85,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_conversion/test.rflx:35:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;
