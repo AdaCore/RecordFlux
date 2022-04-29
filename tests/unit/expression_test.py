@@ -1098,22 +1098,6 @@ def test_relation_simplified() -> None:
         ).simplified(),
         FALSE,
     )
-    assert_equal(
-        Equal(Number(0), Aggregate(Number(0), Number(1), Number(2))).simplified(),
-        FALSE,
-    )
-    assert_equal(
-        Equal(Aggregate(Number(0), Number(1), Number(2)), Number(0)).simplified(),
-        FALSE,
-    )
-    assert_equal(
-        NotEqual(Number(4), Aggregate(Number(0), Number(1), Number(2))).simplified(),
-        TRUE,
-    )
-    assert_equal(
-        NotEqual(Number(0), Aggregate(Number(0), Number(1), Number(2))).simplified(),
-        TRUE,
-    )
     assert Equal(TRUE, TRUE).simplified() == TRUE
     assert Equal(TRUE, FALSE).simplified() == FALSE
     assert NotEqual(TRUE, TRUE).simplified() == FALSE
