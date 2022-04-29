@@ -24,6 +24,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_minimal/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Reply;
@@ -47,6 +48,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_minimal/test.rflx:24:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

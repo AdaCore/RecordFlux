@@ -39,6 +39,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_append_unconstrained/test.rflx:17:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 32
@@ -67,6 +68,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_append_unconstrained/test.rflx:19:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 40
@@ -95,6 +97,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_append_unconstrained/test.rflx:21:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 8
@@ -112,6 +115,7 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      --  tests/integration/session_append_unconstrained/test.rflx:23:10
       if
          Universal.Options.Size (Options_Ctx) <= 32768
          and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -161,6 +165,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_append_unconstrained/test.rflx:32:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

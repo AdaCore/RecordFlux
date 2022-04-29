@@ -1687,6 +1687,15 @@ class Label(Statement):
         return f"<<{self.identifier}>>"
 
 
+class CommentStatement(Statement):
+    def __init__(self, comment: str) -> None:
+        assert "\n" not in comment
+        self.comment = comment
+
+    def __str__(self) -> str:
+        return f"--  {self.comment}"
+
+
 class IfStatement(Statement):
     def __init__(
         self,

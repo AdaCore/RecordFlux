@@ -28,6 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_simple/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -55,6 +56,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_simple/test.rflx:27:10
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
@@ -90,6 +92,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_simple/test.rflx:36:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

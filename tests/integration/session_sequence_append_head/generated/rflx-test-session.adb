@@ -33,6 +33,7 @@ is
       RFLX_Exception : Boolean := False;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_sequence_append_head/test.rflx:20:10
       if
          not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx)
          or TLV.Messages.Available_Space (Ctx.P.Messages_Ctx) < 32
@@ -61,6 +62,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_sequence_append_head/test.rflx:21:10
       if
          not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx)
          or TLV.Tags.Available_Space (Ctx.P.Tags_Ctx) < TLV.Tag'Size
@@ -70,6 +72,7 @@ is
          goto Finalize_Start;
       end if;
       TLV.Tags.Append_Element (Ctx.P.Tags_Ctx, TLV.Msg_Error);
+      --  tests/integration/session_sequence_append_head/test.rflx:22:10
       if TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
          declare
             RFLX_Copy_Messages_Ctx : TLV.Messages.Context;
@@ -133,6 +136,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_sequence_append_head/test.rflx:23:10
       if TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       else
@@ -140,6 +144,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_sequence_append_head/test.rflx:24:10
       if
          TLV.Tags.Valid (Ctx.P.Tags_Ctx)
          and then TLV.Tags.Has_Element (Ctx.P.Tags_Ctx)
@@ -181,6 +186,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_sequence_append_head/test.rflx:36:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

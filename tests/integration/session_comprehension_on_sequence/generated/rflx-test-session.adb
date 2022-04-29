@@ -35,6 +35,7 @@ is
       RFLX_Exception : Boolean := False;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:18:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 32
@@ -63,6 +64,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:20:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 8
@@ -80,6 +82,7 @@ is
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:22:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 40
@@ -156,6 +159,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Message_Options_Ctx, Message_Options_Buffer);
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:34:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -227,6 +231,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:36:10
       if
          Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -252,6 +257,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:40:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -331,6 +337,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:42:10
       if
          Universal.Options.Size (Message_Options_Ctx) <= 32768
          and then Universal.Options.Size (Message_Options_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -356,6 +363,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:46:10
       Universal.Options.Reset (Message_Options_Ctx);
       Ctx.P.Next_State := S_Send_1;
       pragma Assert (Process_Invariant);
@@ -391,6 +399,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_1_Invariant);
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:56:10
       Ctx.P.Next_State := S_Send_2;
       pragma Assert (Send_1_Invariant);
    end Send_1;
@@ -415,6 +424,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_2_Invariant);
+      --  tests/integration/session_comprehension_on_sequence/test.rflx:64:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Send_2_Invariant);
    end Send_2;

@@ -29,6 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_integration/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -57,6 +58,7 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Message_Invariant);
+      --  tests/integration/session_integration/test.rflx:26:10
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
@@ -93,6 +95,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_integration/test.rflx:36:10
       Ctx.P.Next_State := S_Next;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -123,6 +126,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
       pragma Assert (Next_Invariant);
+      --  tests/integration/session_integration/test.rflx:44:10
       if RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (M_Ctx, RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (M_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);

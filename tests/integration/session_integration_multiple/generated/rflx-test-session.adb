@@ -24,6 +24,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_integration_multiple/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.M_Ctx);
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Start_Invariant);

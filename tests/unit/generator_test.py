@@ -1040,6 +1040,7 @@ class UnknownStatement(stmt.Statement):
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 declare
    A : Universal.Message_Type;
 begin
@@ -1143,8 +1144,10 @@ end if;
                         "C": expr.Aggregate(),
                     },
                 ),
+                location=Location(start=(1, 1)),
             ),
             """
+--  <stdin>:1:1
 declare
    A : Universal.Message_Type;
 begin
@@ -1230,6 +1233,7 @@ end if;
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 declare
    A_Ctx : Universal.Message.Context;
    A_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1309,6 +1313,7 @@ end if;
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 declare
    A_Ctx : Universal.Message.Context;
    A_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1439,6 +1444,7 @@ end if;
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1 >= 24 then
    Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 24 - 1);
    Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
@@ -1493,6 +1499,7 @@ end if;
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 if
    Universal.Option.Size (Y_Ctx) <= 32768
    and then Universal.Option.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -1611,6 +1618,7 @@ end if;
             ),
             # pylint: disable = line-too-long
             """
+--  <stdin>:1:1
 if
    Universal.Message.Size (Y_Ctx) <= 32768
    and then Universal.Message.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -1704,8 +1712,10 @@ end if;
                         rty.Message("Universal::Message"),
                     ],
                 ),
+                location=Location(start=(1, 1)),
             ),
             """
+--  <stdin>:1:1
 declare
    A : Universal.Message.Structure;
 begin
@@ -1729,8 +1739,10 @@ end;
                         rty.Message("Universal::Message"),
                     ],
                 ),
+                location=Location(start=(1, 1)),
             ),
             """
+--  <stdin>:1:1
 declare
    X : Universal.Option.Structure;
    A : Universal.Message.Structure;
@@ -1758,24 +1770,41 @@ end;
                     expr.Variable("B", type_=rty.BOOLEAN),
                 ),
                 type_=rty.BOOLEAN,
+                location=Location(start=(1, 1)),
             ),
-            "X := A\nand then B;",
+            "--  <stdin>:1:1\nX := A\nand then B;",
         ),
         (
-            stmt.Reset("X", type_=rty.Message("P::M")),
-            "P.M.Reset (X_Ctx);",
+            stmt.Reset(
+                "X",
+                type_=rty.Message("P::M"),
+                location=Location(start=(1, 1)),
+            ),
+            "--  <stdin>:1:1\nP.M.Reset (X_Ctx);",
         ),
         (
-            stmt.Reset("X", type_=rty.Sequence("P::S", rty.Integer("A"))),
-            "P.S.Reset (X_Ctx);",
+            stmt.Reset(
+                "X",
+                type_=rty.Sequence("P::S", rty.Integer("A")),
+                location=Location(start=(1, 1)),
+            ),
+            "--  <stdin>:1:1\nP.S.Reset (X_Ctx);",
         ),
         (
-            stmt.Read("X", expr.Variable("Y", type_=rty.Message("P::M"))),
-            "P.M.Verify_Message (Y_Ctx);",
+            stmt.Read(
+                "X",
+                expr.Variable("Y", type_=rty.Message("P::M")),
+                location=Location(start=(1, 1)),
+            ),
+            "--  <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
         ),
         (
-            stmt.Write("X", expr.Variable("Y", type_=rty.Message("P::M"))),
-            "",
+            stmt.Write(
+                "X",
+                expr.Variable("Y", type_=rty.Message("P::M")),
+                location=Location(start=(1, 1)),
+            ),
+            "--  <stdin>:1:1",
         ),
     ],
 )

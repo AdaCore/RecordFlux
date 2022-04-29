@@ -26,6 +26,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
+      --  tests/integration/session_variable_initialization/test.rflx:17:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -46,6 +47,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      --  tests/integration/session_variable_initialization/test.rflx:25:10
       if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
          Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       else
@@ -53,8 +55,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      --  tests/integration/session_variable_initialization/test.rflx:26:10
       Ctx.P.Uninitialized_Global := Local;
+      --  tests/integration/session_variable_initialization/test.rflx:27:10
       Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
+      --  tests/integration/session_variable_initialization/test.rflx:29:10
       if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
          Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
          Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
@@ -88,6 +93,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
+      --  tests/integration/session_variable_initialization/test.rflx:42:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;
