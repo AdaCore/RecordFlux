@@ -1571,15 +1571,9 @@ class Aggregate(Expr):
         self.elements = list(elements)
 
     def __eq__(self, other: object) -> bool:
-        if (
-            isinstance(other, Aggregate)
-            and all((isinstance(v, Number) for v in self.elements))
-            and all((isinstance(v, Number) for v in other.elements))
-        ):
-            return [v.value for v in self.elements if isinstance(v, Number)] == [
-                v.value for v in other.elements if isinstance(v, Number)
-            ]
-        return super().__eq__(other)
+        if isinstance(other, Aggregate):
+            return self.elements == other.elements
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash(tuple(self.elements))
@@ -1617,15 +1611,6 @@ class Aggregate(Expr):
     @property
     def length(self) -> Expr:
         return Number(len(self.elements))
-
-    def to_bytes(self) -> bytes:
-        if not all((isinstance(element, Number) for element in self.elements)):
-            return NotImplemented
-        return b"".join(
-            element.value.to_bytes((element.value.bit_length() + 7) // 8, "big")
-            for element in self.elements
-            if isinstance(element, Number)
-        )
 
     def ada_expr(self) -> ada.Expr:
         return ada.Aggregate(*[e.ada_expr() for e in self.elements])
