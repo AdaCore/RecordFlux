@@ -1152,7 +1152,7 @@ class MessageValue(TypeValue):
                 f"no callable checksum function provided"
             )
 
-        arguments: ty.Dict[str, ty.Union[int, bytes, ty.Tuple[int, int]]] = {}
+        arguments: ty.Dict[str, ty.Union[int, bytes, ty.Tuple[int, int], ty.List[int]]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
                 assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
@@ -1163,7 +1163,11 @@ class MessageValue(TypeValue):
                     expr_tuple.evaluated_expression.upper.value,
                 )
             elif isinstance(expr_tuple.evaluated_expression, Aggregate):
-                arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.to_bytes()
+                arguments[str(expr_tuple.expression)] = [
+                    v.value
+                    for v in expr_tuple.evaluated_expression.elements
+                    if isinstance(v, Number)
+                ]
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
@@ -1370,7 +1374,7 @@ class MessageValue(TypeValue):
                         and isinstance(exp_value[0], IntegerValue)
                     ):
                         return Aggregate(*[Number(e.value) for e in exp_value])
-                    return NotImplemented
+                    raise NotImplementedError
             return expression
 
         return expr.substituted(func=subst).substituted(func=subst).simplified()
