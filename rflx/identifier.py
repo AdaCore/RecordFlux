@@ -15,7 +15,7 @@ class ID:
 
         if isinstance(identifier, str):
             self._parts = re.split(r"\.|::", identifier)
-        elif isinstance(identifier, list):
+        elif isinstance(identifier, Sequence):
             self._parts = identifier
         elif isinstance(identifier, ID):
             self._parts = list(identifier.parts)
