@@ -202,7 +202,7 @@ class AbstractMessage(mty.Type):
         for i, f in enumerate(field_list):
             if f != INITIAL:
                 fields += "\n" if fields else ""
-                fields += f"{f.name} : {self.types[f].name}"
+                fields += f"{f.name} : {self.types[f].identifier}"
             outgoing = self.outgoing(f)
             if not (
                 len(outgoing) == 1
