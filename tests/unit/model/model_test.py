@@ -162,13 +162,13 @@ def test_write_specification_files(tmp_path: Path) -> None:
     assert expected_path.read_text() == textwrap.dedent(
         """\
         package P is
-        
+
            type T is mod 256;
-        
+
            type M is
               message
                  Foo : P::T;
               end message;
-        
+
         end P;"""
     )

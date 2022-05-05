@@ -3622,14 +3622,14 @@ def test_message_str() -> None:
         multilinestr(
             """type M (A : Boolean) is
                   message
-                     L : Modular
+                     L : P::Modular
                         then O
                            if L > 100
                         then P
                            if L <= 100;
-                     O : Modular
+                     O : P::Modular
                         then null;
-                     P : Modular;
+                     P : P::Modular;
                   end message"""
         ),
     )

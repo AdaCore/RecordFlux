@@ -190,7 +190,9 @@ class AbstractMessage(mty.Type):
                 f"{p.identifier} : {type_identifier}"
                 for p, t in self.parameter_types.items()
                 for type_identifier in (
-                    t.name if mty.is_builtin_type(t.identifier) else t.identifier,
+                    t.name
+                    if mty.is_builtin_type(t.identifier) or mty.is_internal_type(t.identifier)
+                    else t.identifier,
                 )
             ]
         )
@@ -202,7 +204,14 @@ class AbstractMessage(mty.Type):
         for i, f in enumerate(field_list):
             if f != INITIAL:
                 fields += "\n" if fields else ""
-                fields += f"{f.name} : {self.types[f].identifier}"
+                f_ty = self.types[f]
+                f_ident: StrID = f_ty.identifier
+                f_ident = (
+                    f_ty.name
+                    if mty.is_builtin_type(f_ident) or mty.is_internal_type(f_ident)
+                    else f_ident
+                )
+                fields += f"{f.name} : {f_ident}"
             outgoing = self.outgoing(f)
             if not (
                 len(outgoing) == 1
