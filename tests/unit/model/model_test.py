@@ -1,3 +1,4 @@
+import textwrap
 from copy import copy
 from pathlib import Path
 from typing import Sequence
@@ -7,7 +8,16 @@ import pytest
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Number
 from rflx.identifier import ID
-from rflx.model import BUILTIN_TYPES, Enumeration, Model, ModularInteger, RangeInteger, Type
+from rflx.model import (
+    BUILTIN_TYPES,
+    Enumeration,
+    Message,
+    Model,
+    ModularInteger,
+    RangeInteger,
+    Type,
+)
+from rflx.model.message import FINAL, INITIAL, Field, Link
 from tests.data import models
 
 
@@ -144,7 +154,21 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 
 def test_write_specification_files(tmp_path: Path) -> None:
-    Model([ModularInteger("P::T", Number(256))]).write_specification_files(tmp_path)
+    t = ModularInteger("P::T", Number(256))
+    m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
+    Model([t, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
-    assert expected_path.read_text() == "package P is\n\n   type T is mod 256;\n\nend P;"
+    assert expected_path.read_text() == textwrap.dedent(
+        """\
+        package P is
+        
+           type T is mod 256;
+        
+           type M is
+              message
+                 Foo : P::T;
+              end message;
+        
+        end P;"""
+    )
