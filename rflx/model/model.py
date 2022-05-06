@@ -1,9 +1,8 @@
-from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Sequence, Union
+from typing import Dict, Sequence
 
 from rflx import const
-from rflx.common import Base, indent, verbose_repr
+from rflx.common import Base, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 from rflx.model.package import Package
@@ -46,11 +45,15 @@ class Model(Base):
         pkgs: Dict[ID, Package] = {}
         for ty in self.__types:
             if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
-                pkg = ty.package
-                pkgs.setdefault(pkg, Package(pkg)).types.append(ty)
+                pkg_name: ID = ty.package
+                pkg: Package = pkgs.setdefault(pkg_name, Package(pkg_name))
+                for dep in ty.dependencies:
+                    if dep.package != pkg_name:
+                        pkg.imports.append(dep.package)
+                pkg.types.append(ty)
         for sess in self.__sessions:
-            pkg = sess.package
-            pkgs.setdefault(pkg, Package(pkg)).sessions.append(sess)
+            pkg_name = sess.package
+            pkgs.setdefault(pkg_name, Package(pkg_name)).sessions.append(sess)
         return {id: str(pkg) for id, pkg in pkgs.items()}
 
     def write_specification_files(self, output_dir: Path) -> None:

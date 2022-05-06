@@ -37,9 +37,5 @@ class Package:
         return textwrap.indent(raw, " " * 3)
 
     def __str__(self) -> str:
-        return "\n\n".join(
-            filter(
-                None,
-                [self.imports_str, self.begin_str, self.types_str, self.sessions_str, self.end_str],
-            )
-        )
+        pieces = [self.imports_str, self.begin_str, self.types_str, self.sessions_str, self.end_str]
+        return "\n\n".join(filter(None, pieces))
