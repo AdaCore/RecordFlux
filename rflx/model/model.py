@@ -1,6 +1,6 @@
-from itertools import groupby
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Sequence
+from typing import Dict, List, Sequence, Union
 
 from rflx import const
 from rflx.common import Base, indent, verbose_repr
@@ -42,21 +42,21 @@ class Model(Base):
         return self.__sessions
 
     def create_specifications(self) -> Dict[ID, str]:
+        pkgs: Dict[ID, List[Union[type_.Type, session.Session]]] = defaultdict(list)
+        tys = [
+            t
+            for t in self.__types
+            if not type_.is_builtin_type(t.name) and not type_.is_internal_type(t.name)
+        ]
+        for ty in tys:
+            pkgs[ty.package].append(ty)
+        for sess in self.__sessions:
+            pkgs[sess.package].append(sess)
         return {
             package: f"package {package} is\n\n"
             + indent("\n\n".join(f"{d};" for d in declarations), 3)
             + f"\n\nend {package};"
-            for package, declarations in groupby(
-                [
-                    *[
-                        t
-                        for t in self.__types
-                        if not type_.is_builtin_type(t.name) and not type_.is_internal_type(t.name)
-                    ],
-                    *self.__sessions,
-                ],
-                lambda x: x.package,
-            )
+            for package, declarations in pkgs.items()
         }
 
     def write_specification_files(self, output_dir: Path) -> None:

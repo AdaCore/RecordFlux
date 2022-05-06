@@ -172,3 +172,43 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
         end P;"""
     )
+
+
+def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
+    t = ModularInteger("P::T", Number(256))
+    u = ModularInteger("Q::U", Number(65536))
+    links = [
+        Link(INITIAL, Field("Tango")),
+        Link(Field("Tango"), Field("Uniform")),
+        Link(Field("Uniform"), FINAL),
+    ]
+    fields = {Field("Tango"): t, Field("Uniform"): u}
+    m = Message("P::M", links, fields)
+    Model([t, u, m]).write_specification_files(tmp_path)
+    p_path = tmp_path / Path("p.rflx")
+    q_path = tmp_path / Path("q.rflx")
+    assert set(tmp_path.glob("*.rflx")) == {p_path, q_path}
+    assert p_path.read_text() == textwrap.dedent(
+        """\
+        with Q;
+
+        package P is
+
+           type T is mod 256;
+
+           type M is
+              message
+                 Tango : P::T;
+                 Uniform : Q::U;
+              end message;
+
+        end P;"""
+    )
+    assert q_path.read_text() == textwrap.dedent(
+        """\
+        package Q is
+
+           type U is mod 65536;
+
+        end P;"""
+    )
