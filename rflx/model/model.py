@@ -48,7 +48,11 @@ class Model(Base):
                 pkg_name: ID = ty.package
                 pkg: Package = pkgs.setdefault(pkg_name, Package(pkg_name))
                 for dep in ty.dependencies:
-                    if dep.package != pkg_name:
+                    if dep.package not in [
+                        pkg_name,
+                        const.BUILTINS_PACKAGE,
+                        const.INTERNAL_PACKAGE,
+                    ]:
                         pkg.imports.append(dep.package)
                 pkg.types.append(ty)
         for sess in self.__sessions:
