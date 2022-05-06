@@ -826,7 +826,7 @@ class ValueRange(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.LITERAL
 
 
 class Conversion(Expr):

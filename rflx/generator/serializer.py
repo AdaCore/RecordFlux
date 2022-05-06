@@ -15,6 +15,7 @@ from rflx.ada import (
     Call,
     CallStatement,
     Case,
+    ChoiceList,
     Constrained,
     Div,
     Equal,
@@ -26,9 +27,11 @@ from rflx.ada import (
     GreaterEqual,
     If,
     IfStatement,
+    In,
     Indexed,
     InOutParameter,
     Length,
+    Less,
     LessEqual,
     Mod,
     Mul,
@@ -40,6 +43,7 @@ from rflx.ada import (
     OutParameter,
     Parameter,
     Postcondition,
+    Pow,
     Pragma,
     PragmaStatement,
     Precondition,
@@ -506,66 +510,7 @@ class SerializerGenerator:
                                     ],
                                     Call("Structural_Valid", [Variable("Ctx"), Variable("Fld")]),
                                 ),
-                                Case(
-                                    Variable("Fld"),
-                                    [
-                                        (
-                                            Variable(f.affixed_name),
-                                            And(
-                                                *(
-                                                    [
-                                                        Equal(
-                                                            Call(
-                                                                f"Get_{f.name}",
-                                                                [Variable("Ctx")],
-                                                            ),
-                                                            Call(
-                                                                "To_Actual",
-                                                                [Variable("Val")],
-                                                            ),
-                                                        )
-                                                    ]
-                                                    if f in scalar_fields
-                                                    and int(scalar_fields[f].value_count) > 1
-                                                    else []
-                                                ),
-                                                *common.valid_path_to_next_field_condition(
-                                                    message, f, self.prefix
-                                                ),
-                                                *(
-                                                    [
-                                                        If(
-                                                            [
-                                                                (
-                                                                    Call(
-                                                                        "Structural_Valid_Message",
-                                                                        [Variable("Ctx")],
-                                                                    ),
-                                                                    Equal(
-                                                                        Call(
-                                                                            "Message_Last",
-                                                                            [Variable("Ctx")],
-                                                                        ),
-                                                                        Call(
-                                                                            "Field_Last",
-                                                                            [
-                                                                                Variable("Ctx"),
-                                                                                Variable("Fld"),
-                                                                            ],
-                                                                        ),
-                                                                    ),
-                                                                )
-                                                            ]
-                                                        )
-                                                    ]
-                                                    if f in message.direct_predecessors(FINAL)
-                                                    else []
-                                                ),
-                                            ),
-                                        )
-                                        for f in message.fields
-                                    ],
-                                ),
+                                self.scalar_setter_and_getter_relation(message, scalar_fields),
                                 *(
                                     [
                                         common.unchanged_cursor_before_or_invalid(
@@ -585,6 +530,176 @@ class SerializerGenerator:
     def create_scalar_setter_procedures(
         self, message: Message, scalar_fields: Mapping[Field, Scalar]
     ) -> UnitPart:
+        if not scalar_fields:
+            return UnitPart()
+
+        byte_orders = set(message.byte_order.values())
+        uniform_byte_order = byte_orders.pop() if len(byte_orders) == 1 else None
+
+        result = UnitPart(
+            body=[
+                SubprogramBody(
+                    ProcedureSpecification(
+                        "Set_Scalar",
+                        [
+                            InOutParameter(["Ctx"], "Context"),
+                            Parameter(["Fld"], "Field"),
+                            Parameter(["Val"], const.TYPES_U64),
+                        ],
+                    ),
+                    [
+                        ObjectDeclaration(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
+                        ObjectDeclaration(["Offset"], const.TYPES_OFFSET),
+                        ObjectDeclaration(
+                            ["Size"],
+                            const.TYPES_BIT_LENGTH,
+                            Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                            constant=True,
+                        ),
+                    ],
+                    [
+                        CallStatement(
+                            "Set",
+                            [
+                                Variable("Ctx"),
+                                Variable("Fld"),
+                                Variable("Val"),
+                                Variable("Size"),
+                                TRUE,
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
+                                Variable("Offset"),
+                            ],
+                        ),
+                        CallStatement(
+                            const.TYPES * "Insert",
+                            [
+                                Variable("Val"),
+                                Variable("Ctx.Buffer"),
+                                Variable("Buffer_First"),
+                                Variable("Buffer_Last"),
+                                Variable("Offset"),
+                                Call("Positive", [Variable("Size")]),
+                                Variable(
+                                    const.TYPES_HIGH_ORDER_FIRST
+                                    if uniform_byte_order == ByteOrder.HIGH_ORDER_FIRST
+                                    else const.TYPES_LOW_ORDER_FIRST
+                                )
+                                if uniform_byte_order
+                                else If(
+                                    [
+                                        (
+                                            In(
+                                                Variable("Fld"),
+                                                ChoiceList(
+                                                    *[
+                                                        Variable(f.affixed_name)
+                                                        for f, b in message.byte_order.items()
+                                                        if b == ByteOrder.LOW_ORDER_FIRST
+                                                    ]
+                                                ),
+                                            ),
+                                            Variable(const.TYPES_LOW_ORDER_FIRST),
+                                        ),
+                                    ],
+                                    Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                ),
+                            ],
+                        ),
+                    ],
+                    [
+                        Precondition(
+                            AndThen(
+                                *self.setter_preconditions("Fld"),
+                                Call("Valid_Value", [Variable("Fld"), Variable("Val")]),
+                                Call(
+                                    "Valid_Size",
+                                    [
+                                        Variable("Ctx"),
+                                        Variable("Fld"),
+                                        Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                                    ],
+                                ),
+                                common.sufficient_space_for_field_condition(Variable("Fld")),
+                                In(
+                                    Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
+                                    ValueRange(Number(1), Size(const.TYPES_U64)),
+                                ),
+                                If(
+                                    [
+                                        (
+                                            Less(
+                                                Call(
+                                                    "Field_Size", [Variable("Ctx"), Variable("Fld")]
+                                                ),
+                                                Size(const.TYPES_U64),
+                                            ),
+                                            Less(
+                                                Variable("Val"),
+                                                Pow(
+                                                    Number(2),
+                                                    Call(
+                                                        "Natural",
+                                                        [
+                                                            Call(
+                                                                "Field_Size",
+                                                                [Variable("Ctx"), Variable("Fld")],
+                                                            )
+                                                        ],
+                                                    ),
+                                                ),
+                                            ),
+                                        )
+                                    ]
+                                ),
+                            )
+                        ),
+                        Postcondition(
+                            And(
+                                Call("Has_Buffer", [Variable("Ctx")]),
+                                Call(
+                                    "Valid",
+                                    [Variable("Ctx"), Variable("Fld")],
+                                ),
+                                *(
+                                    [
+                                        Call(
+                                            "Invalid_Successor",
+                                            [Variable("Ctx"), Variable("Fld")],
+                                        )
+                                    ]
+                                    if len(message.fields) > 1
+                                    else []
+                                ),
+                                self.scalar_setter_and_getter_relation(message, scalar_fields),
+                                *(
+                                    [
+                                        common.unchanged_cursor_before_or_invalid(
+                                            Variable("Fld"), loop_entry=False, or_invalid=False
+                                        )
+                                    ]
+                                    if len(message.fields) > 1
+                                    else []
+                                ),
+                                *[
+                                    Equal(e, Old(e))
+                                    for e in [
+                                        Variable("Ctx.Buffer_First"),
+                                        Variable("Ctx.Buffer_Last"),
+                                        Variable("Ctx.First"),
+                                        Variable("Ctx.Last"),
+                                        Call("Has_Buffer", [Variable("Ctx")]),
+                                        Call("Predecessor", [Variable("Ctx"), Variable("Fld")]),
+                                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                    ]
+                                ],
+                            )
+                        ),
+                    ],
+                )
+            ],
+        )
+
         def specification(
             field: Field, field_type: Type, use_enum_records_directly: bool = False
         ) -> ProcedureSpecification:
@@ -613,7 +728,7 @@ class SerializerGenerator:
         ) -> Precondition:
             return Precondition(
                 AndThen(
-                    *self.setter_preconditions(field),
+                    *self.setter_preconditions(field.affixed_name),
                     Call(
                         f"Valid_{field_type.name}"
                         if is_builtin_type(field_type.identifier)
@@ -665,44 +780,14 @@ class SerializerGenerator:
         ) -> SubprogramBody:
             return SubprogramBody(
                 specification(field, field_type, use_enum_records_directly),
-                [
-                    ObjectDeclaration(
-                        ["Value"],
-                        const.TYPES_U64,
-                        Call("To_U64", [Variable("Val")]),
-                        constant=True,
-                    ),
-                    ObjectDeclaration(["Buffer_First", "Buffer_Last"], const.TYPES_INDEX),
-                    ObjectDeclaration(["Offset"], const.TYPES_OFFSET),
-                ],
+                [],
                 [
                     CallStatement(
-                        "Set",
+                        "Set_Scalar",
                         [
                             Variable("Ctx"),
                             Variable(field.affixed_name),
-                            Variable("Value"),
-                            field_type.size.ada_expr(),
-                            TRUE,
-                            Variable("Buffer_First"),
-                            Variable("Buffer_Last"),
-                            Variable("Offset"),
-                        ],
-                    ),
-                    CallStatement(
-                        const.TYPES * "Insert",
-                        [
-                            Variable("Value"),
-                            Variable("Ctx.Buffer"),
-                            Variable("Buffer_First"),
-                            Variable("Buffer_Last"),
-                            Variable("Offset"),
-                            field_type.size.ada_expr(),
-                            Variable(
-                                const.TYPES_HIGH_ORDER_FIRST
-                                if message.byte_order[field] == ByteOrder.HIGH_ORDER_FIRST
-                                else const.TYPES_LOW_ORDER_FIRST
-                            ),
+                            Call("To_U64", [Variable("Val")]),
                         ],
                     ),
                 ],
@@ -714,7 +799,7 @@ class SerializerGenerator:
                 else [],
             )
 
-        return UnitPart(
+        return result + UnitPart(
             [
                 SubprogramDeclaration(
                     specification(f, t),
@@ -749,7 +834,7 @@ class SerializerGenerator:
                         [
                             Precondition(
                                 AndThen(
-                                    *self.setter_preconditions(f),
+                                    *self.setter_preconditions(f.affixed_name),
                                     *self.composite_setter_field_condition_precondition(
                                         message, f, empty=True
                                     ),
@@ -827,7 +912,7 @@ class SerializerGenerator:
                     [
                         Precondition(
                             AndThen(
-                                *self.setter_preconditions(f),
+                                *self.setter_preconditions(f.affixed_name),
                                 *self.composite_setter_field_condition_precondition(
                                     message, f, empty=True
                                 ),
@@ -946,7 +1031,7 @@ class SerializerGenerator:
                     [
                         Precondition(
                             AndThen(
-                                *self.setter_preconditions(f),
+                                *self.setter_preconditions(f.affixed_name),
                                 *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
@@ -1101,7 +1186,7 @@ class SerializerGenerator:
                     [
                         Precondition(
                             AndThen(
-                                *self.setter_preconditions(f),
+                                *self.setter_preconditions(f.affixed_name),
                                 *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
@@ -1239,7 +1324,7 @@ class SerializerGenerator:
                                 [
                                     Precondition(
                                         AndThen(
-                                            *self.setter_preconditions(f),
+                                            *self.setter_preconditions(f.affixed_name),
                                             *self.composite_setter_preconditions(f),
                                         )
                                     ),
@@ -1262,7 +1347,7 @@ class SerializerGenerator:
                                 [
                                     Precondition(
                                         AndThen(
-                                            *self.setter_preconditions(f),
+                                            *self.setter_preconditions(f.affixed_name),
                                             Call(
                                                 "Valid_Length",
                                                 [
@@ -1343,7 +1428,7 @@ class SerializerGenerator:
                         [
                             Precondition(
                                 AndThen(
-                                    *self.setter_preconditions(f),
+                                    *self.setter_preconditions(f.affixed_name),
                                     Call(
                                         "Valid_Length",
                                         [
@@ -1442,11 +1527,11 @@ class SerializerGenerator:
         )
 
     @staticmethod
-    def setter_preconditions(field: Field) -> List[Expr]:
+    def setter_preconditions(field_name: str) -> List[Expr]:
         return [
             Not(Constrained("Ctx")),
             Call("Has_Buffer", [Variable("Ctx")]),
-            Call("Valid_Next", [Variable("Ctx"), Variable(field.affixed_name)]),
+            Call("Valid_Next", [Variable("Ctx"), Variable(field_name)]),
         ]
 
     def private_setter_postconditions(self, message: Message, field: Field) -> List[Expr]:
@@ -1571,6 +1656,67 @@ class SerializerGenerator:
                 Number(0),
             ),
         ]
+
+    def scalar_setter_and_getter_relation(
+        self, message: Message, scalar_fields: Mapping[Field, Scalar]
+    ) -> Expr:
+        return Case(
+            Variable("Fld"),
+            [
+                (
+                    Variable(f.affixed_name),
+                    And(
+                        *(
+                            [
+                                Equal(
+                                    Call(
+                                        f"Get_{f.name}",
+                                        [Variable("Ctx")],
+                                    ),
+                                    Call(
+                                        "To_Actual",
+                                        [Variable("Val")],
+                                    ),
+                                )
+                            ]
+                            if f in scalar_fields and int(scalar_fields[f].value_count) > 1
+                            else []
+                        ),
+                        *common.valid_path_to_next_field_condition(message, f, self.prefix),
+                        *(
+                            [
+                                If(
+                                    [
+                                        (
+                                            Call(
+                                                "Structural_Valid_Message",
+                                                [Variable("Ctx")],
+                                            ),
+                                            Equal(
+                                                Call(
+                                                    "Message_Last",
+                                                    [Variable("Ctx")],
+                                                ),
+                                                Call(
+                                                    "Field_Last",
+                                                    [
+                                                        Variable("Ctx"),
+                                                        Variable("Fld"),
+                                                    ],
+                                                ),
+                                            ),
+                                        )
+                                    ]
+                                )
+                            ]
+                            if f in message.direct_predecessors(FINAL)
+                            else []
+                        ),
+                    ),
+                )
+                for f in message.fields
+            ],
+        )
 
     @staticmethod
     def _update_last(message: Message = None, field: Field = None) -> List[Statement]:
