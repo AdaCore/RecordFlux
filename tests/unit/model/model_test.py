@@ -210,5 +210,5 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
            type U is mod 65536;
 
-        end P;"""
+        end Q;"""
     )
