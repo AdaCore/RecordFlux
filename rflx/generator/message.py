@@ -1053,7 +1053,9 @@ def create_generic_read_procedure() -> UnitPart:
                     [Parameter(["Buffer"], const.TYPES_BYTES)],
                 ),
                 TRUE,
-                aspects=[Ghost()],
+                # ISSUE: Componolit/Workarounds#48
+                # Ghost entities are not allowed as formal generic parameters.
+                # aspects=[Ghost()],
             ),
             Pragma(
                 "Warnings",
@@ -1142,7 +1144,9 @@ def create_generic_write_procedure(message: Message) -> UnitPart:
                     ],
                 ),
                 TRUE,
-                aspects=[Ghost()],
+                # ISSUE: Componolit/Workarounds#48
+                # Ghost entities are not allowed as formal generic parameters.
+                # aspects=[Ghost()],
             ),
             Pragma(
                 "Warnings",
