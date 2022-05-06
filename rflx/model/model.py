@@ -6,6 +6,7 @@ from rflx import const
 from rflx.common import Base, indent, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
+from rflx.model.package import Package
 
 from . import message, session, type_
 
@@ -42,22 +43,15 @@ class Model(Base):
         return self.__sessions
 
     def create_specifications(self) -> Dict[ID, str]:
-        pkgs: Dict[ID, List[Union[type_.Type, session.Session]]] = defaultdict(list)
-        tys = [
-            t
-            for t in self.__types
-            if not type_.is_builtin_type(t.name) and not type_.is_internal_type(t.name)
-        ]
-        for ty in tys:
-            pkgs[ty.package].append(ty)
+        pkgs: Dict[ID, Package] = {}
+        for ty in self.__types:
+            if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
+                pkg = ty.package
+                pkgs.setdefault(pkg, Package(pkg)).types.append(ty)
         for sess in self.__sessions:
-            pkgs[sess.package].append(sess)
-        return {
-            package: f"package {package} is\n\n"
-            + indent("\n\n".join(f"{d};" for d in declarations), 3)
-            + f"\n\nend {package};"
-            for package, declarations in pkgs.items()
-        }
+            pkg = sess.package
+            pkgs.setdefault(pkg, Package(pkg)).sessions.append(sess)
+        return {id: str(pkg) for id, pkg in pkgs.items()}
 
     def write_specification_files(self, output_dir: Path) -> None:
         """
