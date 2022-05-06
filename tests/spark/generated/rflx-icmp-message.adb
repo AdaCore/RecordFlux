@@ -595,139 +595,231 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
+       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, Fld)
+       and Invalid_Successor (Ctx, Fld)
+       and (case Fld is
+               when F_Tag =>
+                  Get_Tag (Ctx) = To_Actual (Val)
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                       then
+                          Predecessor (Ctx, F_Code_Destination_Unreachable) = F_Tag
+                          and Valid_Next (Ctx, F_Code_Destination_Unreachable))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
+                       then
+                          Predecessor (Ctx, F_Code_Redirect) = F_Tag
+                          and Valid_Next (Ctx, F_Code_Redirect))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                       then
+                          Predecessor (Ctx, F_Code_Time_Exceeded) = F_Tag
+                          and Valid_Next (Ctx, F_Code_Time_Exceeded))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                       then
+                          Predecessor (Ctx, F_Code_Zero) = F_Tag
+                          and Valid_Next (Ctx, F_Code_Zero)),
+               when F_Code_Destination_Unreachable =>
+                  Get_Code_Destination_Unreachable (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Checksum) = F_Code_Destination_Unreachable
+                       and Valid_Next (Ctx, F_Checksum)),
+               when F_Code_Redirect =>
+                  Get_Code_Redirect (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Checksum) = F_Code_Redirect
+                       and Valid_Next (Ctx, F_Checksum)),
+               when F_Code_Time_Exceeded =>
+                  Get_Code_Time_Exceeded (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Checksum) = F_Code_Time_Exceeded
+                       and Valid_Next (Ctx, F_Checksum)),
+               when F_Code_Zero =>
+                  (Predecessor (Ctx, F_Checksum) = F_Code_Zero
+                   and Valid_Next (Ctx, F_Checksum)),
+               when F_Checksum =>
+                  Get_Checksum (Ctx) = To_Actual (Val)
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Redirect))
+                       then
+                          Predecessor (Ctx, F_Gateway_Internet_Address) = F_Checksum
+                          and Valid_Next (Ctx, F_Gateway_Internet_Address))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Information_Request))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                       then
+                          Predecessor (Ctx, F_Identifier) = F_Checksum
+                          and Valid_Next (Ctx, F_Identifier))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Parameter_Problem))
+                       then
+                          Predecessor (Ctx, F_Pointer) = F_Checksum
+                          and Valid_Next (Ctx, F_Pointer))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Time_Exceeded))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Destination_Unreachable))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Source_Quench))
+                       then
+                          Predecessor (Ctx, F_Unused_32) = F_Checksum
+                          and Valid_Next (Ctx, F_Unused_32)),
+               when F_Gateway_Internet_Address =>
+                  Get_Gateway_Internet_Address (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Data) = F_Gateway_Internet_Address
+                       and Valid_Next (Ctx, F_Data)),
+               when F_Identifier =>
+                  Get_Identifier (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Sequence_Number) = F_Identifier
+                       and Valid_Next (Ctx, F_Sequence_Number)),
+               when F_Pointer =>
+                  Get_Pointer (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Unused_24) = F_Pointer
+                       and Valid_Next (Ctx, F_Unused_24)),
+               when F_Unused_32 =>
+                  (Predecessor (Ctx, F_Data) = F_Unused_32
+                   and Valid_Next (Ctx, F_Data)),
+               when F_Sequence_Number =>
+                  Get_Sequence_Number (Ctx) = To_Actual (Val)
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Reply))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Echo_Request))
+                       then
+                          Predecessor (Ctx, F_Data) = F_Sequence_Number
+                          and Valid_Next (Ctx, F_Data))
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Msg))
+                          or RFLX_Types.U64 (To_U64 (Get_Tag (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.ICMP.Timestamp_Reply))
+                       then
+                          Predecessor (Ctx, F_Originate_Timestamp) = F_Sequence_Number
+                          and Valid_Next (Ctx, F_Originate_Timestamp))
+                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+               when F_Unused_24 =>
+                  (Predecessor (Ctx, F_Data) = F_Unused_24
+                   and Valid_Next (Ctx, F_Data)),
+               when F_Originate_Timestamp =>
+                  Get_Originate_Timestamp (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Receive_Timestamp) = F_Originate_Timestamp
+                       and Valid_Next (Ctx, F_Receive_Timestamp)),
+               when F_Data =>
+                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+               when F_Receive_Timestamp =>
+                  Get_Receive_Timestamp (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Transmit_Timestamp) = F_Receive_Timestamp
+                       and Valid_Next (Ctx, F_Transmit_Timestamp)),
+               when F_Transmit_Timestamp =>
+                  Get_Transmit_Timestamp (Ctx) = To_Actual (Val)
+                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       and Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
+       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
+   is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
-      Set (Ctx, F_Tag, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+   end Set_Scalar;
+
+   procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) is
+   begin
+      Set_Scalar (Ctx, F_Tag, To_U64 (Val));
    end Set_Tag;
 
    procedure Set_Code_Destination_Unreachable (Ctx : in out Context; Val : RFLX.ICMP.Code_Destination_Unreachable) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Code_Destination_Unreachable, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Code_Destination_Unreachable, To_U64 (Val));
    end Set_Code_Destination_Unreachable;
 
    procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Code_Redirect, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Code_Redirect, To_U64 (Val));
    end Set_Code_Redirect;
 
    procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Code_Time_Exceeded, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Code_Time_Exceeded, To_U64 (Val));
    end Set_Code_Time_Exceeded;
 
    procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Code_Zero, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Code_Zero, To_U64 (Val));
    end Set_Code_Zero;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Checksum, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Checksum, To_U64 (Val));
    end Set_Checksum;
 
    procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Gateway_Internet_Address, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Gateway_Internet_Address, To_U64 (Val));
    end Set_Gateway_Internet_Address;
 
    procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Identifier, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Identifier, To_U64 (Val));
    end Set_Identifier;
 
    procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Pointer, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Pointer, To_U64 (Val));
    end Set_Pointer;
 
    procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Unused_32, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Unused_32, To_U64 (Val));
    end Set_Unused_32;
 
    procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Sequence_Number, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Sequence_Number, To_U64 (Val));
    end Set_Sequence_Number;
 
    procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Unused_24, Value, 24, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 24, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Unused_24, To_U64 (Val));
    end Set_Unused_24;
 
    procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Originate_Timestamp, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Originate_Timestamp, To_U64 (Val));
    end Set_Originate_Timestamp;
 
    procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Receive_Timestamp, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Receive_Timestamp, To_U64 (Val));
    end Set_Receive_Timestamp;
 
    procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Transmit_Timestamp, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Transmit_Timestamp, To_U64 (Val));
    end Set_Transmit_Timestamp;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

@@ -477,139 +477,182 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
+       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, Fld)
+       and Invalid_Successor (Ctx, Fld)
+       and (case Fld is
+               when F_Version =>
+                  (Predecessor (Ctx, F_IHL) = F_Version
+                   and Valid_Next (Ctx, F_IHL)),
+               when F_IHL =>
+                  Get_IHL (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_DSCP) = F_IHL
+                       and Valid_Next (Ctx, F_DSCP)),
+               when F_DSCP =>
+                  Get_DSCP (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_ECN) = F_DSCP
+                       and Valid_Next (Ctx, F_ECN)),
+               when F_ECN =>
+                  Get_ECN (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Total_Length) = F_ECN
+                       and Valid_Next (Ctx, F_Total_Length)),
+               when F_Total_Length =>
+                  Get_Total_Length (Ctx) = To_Actual (Val)
+                  and (if
+                          RFLX_Types.U64 (Get_Total_Length (Ctx)) >= RFLX_Types.U64 (Get_IHL (Ctx)) * 4
+                       then
+                          Predecessor (Ctx, F_Identification) = F_Total_Length
+                          and Valid_Next (Ctx, F_Identification)),
+               when F_Identification =>
+                  Get_Identification (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Flag_R) = F_Identification
+                       and Valid_Next (Ctx, F_Flag_R)),
+               when F_Flag_R =>
+                  Get_Flag_R (Ctx) = To_Actual (Val)
+                  and (if
+                          RFLX_Types.U64 (To_U64 (Get_Flag_R (Ctx))) = RFLX_Types.U64 (To_U64 (False))
+                       then
+                          Predecessor (Ctx, F_Flag_DF) = F_Flag_R
+                          and Valid_Next (Ctx, F_Flag_DF)),
+               when F_Flag_DF =>
+                  Get_Flag_DF (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Flag_MF) = F_Flag_DF
+                       and Valid_Next (Ctx, F_Flag_MF)),
+               when F_Flag_MF =>
+                  Get_Flag_MF (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Fragment_Offset) = F_Flag_MF
+                       and Valid_Next (Ctx, F_Fragment_Offset)),
+               when F_Fragment_Offset =>
+                  Get_Fragment_Offset (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_TTL) = F_Fragment_Offset
+                       and Valid_Next (Ctx, F_TTL)),
+               when F_TTL =>
+                  Get_TTL (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Protocol) = F_TTL
+                       and Valid_Next (Ctx, F_Protocol)),
+               when F_Protocol =>
+                  Get_Protocol (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Header_Checksum) = F_Protocol
+                       and Valid_Next (Ctx, F_Header_Checksum)),
+               when F_Header_Checksum =>
+                  Get_Header_Checksum (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Source) = F_Header_Checksum
+                       and Valid_Next (Ctx, F_Source)),
+               when F_Source =>
+                  Get_Source (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Destination) = F_Source
+                       and Valid_Next (Ctx, F_Destination)),
+               when F_Destination =>
+                  Get_Destination (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Options) = F_Destination
+                       and Valid_Next (Ctx, F_Options)),
+               when F_Options =>
+                  (Predecessor (Ctx, F_Payload) = F_Options
+                   and Valid_Next (Ctx, F_Payload)),
+               when F_Payload =>
+                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       and Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
+       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
+   is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
-      Set (Ctx, F_Version, Value, 4, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 4, RFLX_Types.High_Order_First);
+      Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+   end Set_Scalar;
+
+   procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) is
+   begin
+      Set_Scalar (Ctx, F_Version, To_U64 (Val));
    end Set_Version;
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_IHL, Value, 4, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 4, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_IHL, To_U64 (Val));
    end Set_IHL;
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_DSCP, Value, 6, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 6, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_DSCP, To_U64 (Val));
    end Set_DSCP;
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_ECN, Value, 2, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 2, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_ECN, To_U64 (Val));
    end Set_ECN;
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Total_Length, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Total_Length, To_U64 (Val));
    end Set_Total_Length;
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Identification, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Identification, To_U64 (Val));
    end Set_Identification;
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Flag_R, Value, 1, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 1, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Flag_R, To_U64 (Val));
    end Set_Flag_R;
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Flag_DF, Value, 1, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 1, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Flag_DF, To_U64 (Val));
    end Set_Flag_DF;
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Flag_MF, Value, 1, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 1, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Flag_MF, To_U64 (Val));
    end Set_Flag_MF;
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Fragment_Offset, Value, 13, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 13, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Fragment_Offset, To_U64 (Val));
    end Set_Fragment_Offset;
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_TTL, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_TTL, To_U64 (Val));
    end Set_TTL;
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Protocol, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Protocol, To_U64 (Val));
    end Set_Protocol;
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Header_Checksum, Value, 16, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 16, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Header_Checksum, To_U64 (Val));
    end Set_Header_Checksum;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Source, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Source, To_U64 (Val));
    end Set_Source;
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Destination, Value, 32, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 32, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Destination, To_U64 (Val));
    end Set_Destination;
 
    procedure Set_Options_Empty (Ctx : in out Context) is

@@ -317,22 +317,57 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
+       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, Fld)
+       and Invalid_Successor (Ctx, Fld)
+       and (case Fld is
+               when F_Message_Type =>
+                  Get_Message_Type (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Length) = F_Message_Type
+                       and Valid_Next (Ctx, F_Length)),
+               when F_Length =>
+                  Get_Length (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Data) = F_Length
+                       and Valid_Next (Ctx, F_Data)),
+               when F_Data =>
+                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       and Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
+       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
+   is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
-      Set (Ctx, F_Message_Type, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+   end Set_Scalar;
+
+   procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) is
+   begin
+      Set_Scalar (Ctx, F_Message_Type, To_U64 (Val));
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Test.Length) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Length, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Length, To_U64 (Val));
    end Set_Length;
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type) with
@@ -358,12 +393,8 @@ is
        and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
    is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Message_Type, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Message_Type, To_U64 (Val));
    end Set_Message_Type;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

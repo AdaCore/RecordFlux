@@ -393,40 +393,93 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Copied (Ctx : in out Context; Val : Boolean) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.U64) with
+     Pre =>
+       not Ctx'Constrained
+       and then Has_Buffer (Ctx)
+       and then Valid_Next (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.U64'Size
+       and then (if Field_Size (Ctx, Fld) < RFLX_Types.U64'Size then Val < 2**Natural (Field_Size (Ctx, Fld))),
+     Post =>
+       Has_Buffer (Ctx)
+       and Valid (Ctx, Fld)
+       and Invalid_Successor (Ctx, Fld)
+       and (case Fld is
+               when F_Copied =>
+                  Get_Copied (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Option_Class) = F_Copied
+                       and Valid_Next (Ctx, F_Option_Class)),
+               when F_Option_Class =>
+                  Get_Option_Class (Ctx) = To_Actual (Val)
+                  and (Predecessor (Ctx, F_Option_Number) = F_Option_Class
+                       and Valid_Next (Ctx, F_Option_Number)),
+               when F_Option_Number =>
+                  Get_Option_Number (Ctx) = To_Actual (Val)
+                  and (if
+                          Get_Option_Number (Ctx) > 1
+                       then
+                          Predecessor (Ctx, F_Option_Length) = F_Option_Number
+                          and Valid_Next (Ctx, F_Option_Length))
+                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+               when F_Option_Length =>
+                  Get_Option_Length (Ctx) = To_Actual (Val)
+                  and (if
+                          (RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Debugging_And_Measurement))
+                           and Get_Option_Number (Ctx) = 4)
+                          or (RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                              and (Get_Option_Number (Ctx) = 9
+                                   or Get_Option_Number (Ctx) = 3
+                                   or Get_Option_Number (Ctx) = 7))
+                          or (Get_Option_Length (Ctx) = 11
+                              and RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                              and Get_Option_Number (Ctx) = 2)
+                          or (Get_Option_Length (Ctx) = 4
+                              and RFLX_Types.U64 (To_U64 (Get_Option_Class (Ctx))) = RFLX_Types.U64 (To_U64 (RFLX.IPv4.Control))
+                              and Get_Option_Number (Ctx) = 8)
+                       then
+                          Predecessor (Ctx, F_Option_Data) = F_Option_Length
+                          and Valid_Next (Ctx, F_Option_Data)),
+               when F_Option_Data =>
+                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (for all F in Field =>
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
+       and Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and Ctx.First = Ctx.First'Old
+       and Ctx.Last = Ctx.Last'Old
+       and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       and Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
+       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
+   is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
+      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
    begin
-      Set (Ctx, F_Copied, Value, 1, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 1, RFLX_Types.High_Order_First);
+      Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
+      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+   end Set_Scalar;
+
+   procedure Set_Copied (Ctx : in out Context; Val : Boolean) is
+   begin
+      Set_Scalar (Ctx, F_Copied, To_U64 (Val));
    end Set_Copied;
 
    procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Option_Class, Value, 2, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 2, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Option_Class, To_U64 (Val));
    end Set_Option_Class;
 
    procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Option_Number, Value, 5, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 5, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Option_Number, To_U64 (Val));
    end Set_Option_Number;
 
    procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) is
-      Value : constant RFLX_Types.U64 := To_U64 (Val);
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Option_Length, Value, 8, True, Buffer_First, Buffer_Last, Offset);
-      RFLX_Types.Insert (Value, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, 8, RFLX_Types.High_Order_First);
+      Set_Scalar (Ctx, F_Option_Length, To_U64 (Val));
    end Set_Option_Length;
 
    procedure Set_Option_Data_Empty (Ctx : in out Context) is
