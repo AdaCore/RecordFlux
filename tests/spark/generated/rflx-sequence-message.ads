@@ -180,9 +180,7 @@ is
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Always_Valid (Buffer : RFLX_Types.Bytes) return Boolean is
-     (True)
-    with
-     Ghost;
+     (True);
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -198,9 +196,7 @@ is
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Always_Valid (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
-     (True)
-    with
-     Ghost;
+     (True);
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
