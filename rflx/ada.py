@@ -1114,6 +1114,16 @@ class Import(Aspect):
         return ""
 
 
+class InlineAlways(Aspect):
+    @property
+    def mark(self) -> str:
+        return "Inline_Always"
+
+    @property
+    def definition(self) -> str:
+        return ""
+
+
 class Annotate(Aspect):
     def __init__(self, *args: str) -> None:
         assert len(args) > 0

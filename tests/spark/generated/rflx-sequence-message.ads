@@ -392,7 +392,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -416,6 +419,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Modular_Vector_Empty (Ctx : in out Context) with
      Pre =>

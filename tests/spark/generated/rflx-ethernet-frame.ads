@@ -434,7 +434,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -462,6 +465,7 @@ is
        and Valid_Next (Ctx, F_Destination) = Valid_Next (Ctx, F_Destination)'Old;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -491,6 +495,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -528,6 +533,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -556,6 +562,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -584,6 +591,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -617,6 +625,8 @@ is
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
        and (for all F in Field range F_Destination .. F_TCI =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Initialize_Payload (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>

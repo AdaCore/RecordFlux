@@ -470,7 +470,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -532,6 +535,7 @@ is
        and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old;
 
    procedure Set_Code_Destination_Unreachable (Ctx : in out Context; Val : RFLX.ICMP.Code_Destination_Unreachable) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -570,6 +574,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -607,6 +612,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -643,6 +649,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -677,6 +684,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -736,6 +744,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -770,6 +779,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -803,6 +813,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -835,6 +846,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -865,6 +877,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -907,6 +920,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -936,6 +950,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -966,6 +981,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -995,6 +1011,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -1021,6 +1038,8 @@ is
        and Get_Receive_Timestamp (Ctx) = Get_Receive_Timestamp (Ctx)'Old
        and (for all F in Field range F_Tag .. F_Receive_Timestamp =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Data_Empty (Ctx : in out Context) with
      Pre =>

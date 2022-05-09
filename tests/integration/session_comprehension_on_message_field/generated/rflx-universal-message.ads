@@ -425,7 +425,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Message_Type) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -469,6 +472,7 @@ is
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -522,6 +526,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Universal.Value) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -545,6 +550,8 @@ is
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and (for all F in Field range F_Message_Type .. F_Options =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Data_Empty (Ctx : in out Context) with
      Pre =>

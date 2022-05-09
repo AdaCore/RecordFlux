@@ -474,7 +474,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -511,6 +514,7 @@ is
        and Valid_Next (Ctx, F_Version) = Valid_Next (Ctx, F_Version)'Old;
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -549,6 +553,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -587,6 +592,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -625,6 +631,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -666,6 +673,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -704,6 +712,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -745,6 +754,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -783,6 +793,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -821,6 +832,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -859,6 +871,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -897,6 +910,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -935,6 +949,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -973,6 +988,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -1011,6 +1027,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -1047,6 +1064,8 @@ is
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and (for all F in Field range F_Version .. F_Source =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Options_Empty (Ctx : in out Context) with
      Pre =>

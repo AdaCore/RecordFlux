@@ -373,7 +373,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_C (Ctx : in out Context; Val : RFLX.Messages.Integer) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -396,6 +399,7 @@ is
        and Valid_Next (Ctx, F_C) = Valid_Next (Ctx, F_C)'Old;
 
    procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Enum_T) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -417,6 +421,8 @@ is
        and Get_C (Ctx) = Get_C (Ctx)'Old
        and (for all F in Field range F_C .. F_C =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

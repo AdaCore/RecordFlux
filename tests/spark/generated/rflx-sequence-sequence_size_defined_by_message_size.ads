@@ -389,7 +389,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -410,6 +413,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Header) = Predecessor (Ctx, F_Header)'Old
        and Valid_Next (Ctx, F_Header) = Valid_Next (Ctx, F_Header)'Old;
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Vector_Empty (Ctx : in out Context) with
      Pre =>
