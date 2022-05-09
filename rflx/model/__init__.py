@@ -36,7 +36,7 @@ from .type_ import (  # noqa: F401
     Scalar as Scalar,
     Sequence as Sequence,
     Type as Type,
+    internal_type_identifier as internal_type_identifier,
     is_builtin_type as is_builtin_type,
     is_internal_type as is_internal_type,
-    qualified_type_identifier as qualified_type_identifier,
 )

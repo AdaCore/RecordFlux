@@ -238,11 +238,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if model.is_builtin_type(identifier):
             return ID(identifier.name)
 
-        return ID(model.qualified_type_identifier(identifier, self._session.package))
+        return ID(model.internal_type_identifier(identifier, self._session.package))
 
     def _model_type(self, identifier: rid.ID) -> model.Type:
         return self._session.types[
-            model.qualified_type_identifier(identifier, self._session.package)
+            model.internal_type_identifier(identifier, self._session.package)
         ]
 
     def _create(self) -> None:

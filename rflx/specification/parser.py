@@ -259,7 +259,7 @@ def create_sequence(
     filename: Path,
 ) -> model.Type:
     assert isinstance(sequence, lang.SequenceTypeDef)
-    element_identifier = model.qualified_type_identifier(
+    element_identifier = model.internal_type_identifier(
         create_id(sequence.f_element_type, filename), identifier.parent
     )
 
@@ -507,9 +507,7 @@ def create_variable_decl(
     )
     return decl.VariableDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(
-            create_id(declaration.f_type_identifier, filename), package
-        ),
+        model.internal_type_identifier(create_id(declaration.f_type_identifier, filename), package),
         initializer,
         location=node_location(declaration, filename),
     )
@@ -521,7 +519,7 @@ def create_private_type_decl(
     assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
         model.Private(
-            model.qualified_type_identifier(create_id(declaration.f_identifier, filename), package),
+            model.internal_type_identifier(create_id(declaration.f_identifier, filename), package),
             location=node_location(declaration, filename),
         )
     )
@@ -558,9 +556,7 @@ def create_renaming_decl(
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
         create_id(declaration.f_identifier, filename),
-        model.qualified_type_identifier(
-            create_id(declaration.f_type_identifier, filename), package
-        ),
+        model.internal_type_identifier(create_id(declaration.f_type_identifier, filename), package),
         selected,
         location=node_location(declaration, filename),
     )
@@ -578,7 +574,7 @@ def create_function_decl(
             arguments.append(
                 decl.Argument(
                     create_id(p.f_identifier, filename),
-                    model.qualified_type_identifier(
+                    model.internal_type_identifier(
                         create_id(p.f_type_identifier, filename), package
                     ),
                 )
@@ -586,7 +582,7 @@ def create_function_decl(
     return decl.FunctionDeclaration(
         create_id(declaration.f_identifier, filename),
         arguments,
-        model.qualified_type_identifier(
+        model.internal_type_identifier(
             create_id(declaration.f_return_type_identifier, filename), package
         ),
         location=node_location(declaration, filename),
@@ -868,7 +864,7 @@ def create_message_types(
             for field in fields.f_fields
         ),
     ):
-        qualified_type_identifier = model.qualified_type_identifier(
+        qualified_type_identifier = model.internal_type_identifier(
             create_id(type_identifier, filename), identifier.parent
         )
         field_type = next((t for t in types if t.identifier == qualified_type_identifier), None)
@@ -1207,7 +1203,7 @@ def create_derived_message(
     # pylint: disable=too-many-arguments
     assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(derivation.f_base, filename)
-    base_name = model.qualified_type_identifier(base_id, identifier.parent)
+    base_name = model.internal_type_identifier(base_id, identifier.parent)
 
     base_types: Sequence[model.Type] = [t for t in types if t.identifier == base_name]
 
@@ -1346,7 +1342,7 @@ def create_refinement(
 ) -> model.Refinement:
     messages = {t.identifier: t for t in types if isinstance(t, model.Message)}
 
-    pdu = model.qualified_type_identifier(create_id(refinement.f_pdu, filename), package)
+    pdu = model.internal_type_identifier(create_id(refinement.f_pdu, filename), package)
     if pdu not in messages:
         fail(
             f'undefined type "{pdu}" in refinement',
@@ -1355,7 +1351,7 @@ def create_refinement(
             node_location(refinement, filename),
         )
 
-    sdu = model.qualified_type_identifier(create_id(refinement.f_sdu, filename), package)
+    sdu = model.internal_type_identifier(create_id(refinement.f_sdu, filename), package)
     if sdu not in messages:
         fail(
             f'undefined type "{sdu}" in refinement of "{pdu}"',
@@ -1639,7 +1635,7 @@ class Parser:
 
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, lang.TypeDecl):
-                identifier = model.qualified_type_identifier(
+                identifier = model.internal_type_identifier(
                     create_id(t.f_identifier, filename), package_id
                 )
                 try:

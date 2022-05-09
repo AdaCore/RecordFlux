@@ -416,7 +416,7 @@ class Session(AbstractSession):
             self.__reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeDeclaration):
-                type_identifier = mty.qualified_type_identifier(k, self.package)
+                type_identifier = mty.internal_type_identifier(k, self.package)
                 if type_identifier in self.types:
                     self.error.extend(
                         [(f'type "{k}" shadows type', Subsystem.MODEL, Severity.ERROR, d.location)],
@@ -424,7 +424,7 @@ class Session(AbstractSession):
                 self.types[type_identifier] = d.type_definition
 
             elif isinstance(d, decl.TypeCheckableDeclaration):
-                type_identifier = mty.qualified_type_identifier(d.type_identifier, self.package)
+                type_identifier = mty.internal_type_identifier(d.type_identifier, self.package)
                 if type_identifier in self.types:
                     self.error.extend(
                         d.check_type(
@@ -438,7 +438,7 @@ class Session(AbstractSession):
 
                 if isinstance(d, decl.FunctionDeclaration):
                     for a in d.arguments:
-                        type_identifier = mty.qualified_type_identifier(
+                        type_identifier = mty.internal_type_identifier(
                             a.type_identifier, self.package
                         )
                         if type_identifier in self.types:
@@ -643,7 +643,7 @@ class Session(AbstractSession):
                         if isinstance(t, Refinement) and t.sdu.identifier == identifier
                     ]
             if isinstance(expression, expr.MessageAggregate):
-                type_identifier = mty.qualified_type_identifier(identifier, self.package)
+                type_identifier = mty.internal_type_identifier(identifier, self.package)
                 if type_identifier in self.types:
                     expression.type_ = self.types[type_identifier].type_
 
