@@ -47,7 +47,7 @@ class Model(Base):
             if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
                 pkg_name: ID = ty.package
                 pkg: Package = pkgs.setdefault(pkg_name, Package(pkg_name))
-                for dep in ty.dependencies:
+                for dep in ty.direct_dependencies:
                     if dep.package not in [
                         pkg_name,
                         const.BUILTINS_PACKAGE,
@@ -62,9 +62,7 @@ class Model(Base):
 
     def write_specification_files(self, output_dir: Path) -> None:
         """
-        Write corresponding specification files into given directory.
-
-        Limitation: Potentially necessary with-clauses are not generated.
+        Write corresponding specification files (one per package) into given directory.
         """
         for package, specification in self.create_specifications().items():
             (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)

@@ -17,6 +17,17 @@ class Type(BasicDeclaration):
         return rty.Undefined()
 
     @property
+    def direct_dependencies(self) -> ty.List["Type"]:
+        """
+        Return a list consisting of the type and all the types on which the
+        type directly depends.
+
+        The dependencies are not determined recursively, i.e. the dependencies
+        of dependencies are not considered.
+        """
+        return [self]
+
+    @property
     def dependencies(self) -> ty.List["Type"]:
         """
         Return a list consisting of the type and all types on which the type depends.
@@ -24,6 +35,19 @@ class Type(BasicDeclaration):
         The dependencies are determined recursively.
         """
         return [self]
+
+    @property
+    def qualified_identifier(self) -> ID:
+        """
+        Return the
+        """
+        # TODO: Handle name collision with `type_.qualified_type_identifier`.
+        identifier = self.identifier
+        return (
+            ID(self.name, location=identifier.location)
+            if is_builtin_type(identifier) or is_internal_type(identifier)
+            else identifier
+        )
 
 
 class Scalar(Type):
@@ -591,7 +615,7 @@ class Sequence(Composite):
         return verbose_repr(self, ["identifier", "element_type"])
 
     def __str__(self) -> str:
-        return f"type {self.name} is sequence of {self.element_type.name}"
+        return f"type {self.name} is sequence of {self.element_type.qualified_identifier}"
 
     @property
     def type_(self) -> rty.Type:
@@ -600,6 +624,10 @@ class Sequence(Composite):
     @property
     def element_size(self) -> expr.Expr:
         return expr.Size(self.element_type.name)
+
+    @property
+    def direct_dependencies(self) -> ty.List["Type"]:
+        return [self, self.element_type]
 
     @property
     def dependencies(self) -> ty.List["Type"]:
