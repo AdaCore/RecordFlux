@@ -377,7 +377,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_X_A (Ctx : in out Context; Val : RFLX.Messages.Integer) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -401,6 +404,7 @@ is
        and Valid_Next (Ctx, F_X_A) = Valid_Next (Ctx, F_X_A)'Old;
 
    procedure Set_X_B (Ctx : in out Context; Val : RFLX.Messages.Enum_T) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -426,6 +430,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Y (Ctx : in out Context; Val : RFLX.Messages.Enum_T) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -448,6 +453,8 @@ is
        and Get_X_B (Ctx) = Get_X_B (Ctx)'Old
        and (for all F in Field range F_X_A .. F_X_B =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

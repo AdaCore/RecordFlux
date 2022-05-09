@@ -7,21 +7,24 @@ abstract project Defaults is
 
    Compiler_Variant := external ("gnat", "");
 
-   GNATVI := "-gnatVi";  --  ISSUE: Componolit/Workarounds#43
-   GNATVO := "-gnatVo";  --  ISSUE: Componolit/Workarounds#23
-   GNATEV := "-gnateV";  --  ISSUE: Componolit/Workarounds#22
+   GNATVI := "-gnatVi";
+   GNATVO := "-gnatVo";
+   GNATEV := "-gnateV";
+   GNATA  := "-gnata";
 
    case Compiler_Variant is
       when "community2020" =>
-         GNATVI := "";
+         GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
+         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
       when "pro20.2" =>
-         GNATVI := "";
-         GNATVO := "";
-         GNATEV := "";
+         GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
+         GNATVO := "";  --  ISSUE: Componolit/Workarounds#23
+         GNATEV := "";  --  ISSUE: Componolit/Workarounds#22
+         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+      when "pro23.0w-20220508" =>
       when others =>
+         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
    end case;
-
-   GNATA := "-gnata";
 
    case Mode is
       when "strict" | "optimized" =>

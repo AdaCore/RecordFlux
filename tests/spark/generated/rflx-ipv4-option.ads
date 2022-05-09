@@ -429,7 +429,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Copied (Ctx : in out Context; Val : Boolean) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -455,6 +458,7 @@ is
        and Valid_Next (Ctx, F_Copied) = Valid_Next (Ctx, F_Copied)'Old;
 
    procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -482,6 +486,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -513,6 +518,7 @@ is
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
    procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -552,6 +558,8 @@ is
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
        and (for all F in Field range F_Copied .. F_Option_Number =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Option_Data_Empty (Ctx : in out Context) with
      Pre =>

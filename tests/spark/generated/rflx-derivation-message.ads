@@ -420,7 +420,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -448,6 +451,7 @@ is
        and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -471,6 +475,8 @@ is
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and (for all F in Field range F_Tag .. F_Tag =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Set_Value_Empty (Ctx : in out Context) with
      Pre =>

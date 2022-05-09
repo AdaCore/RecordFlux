@@ -29,6 +29,7 @@ from rflx.ada import (
     IfStatement,
     In,
     Indexed,
+    InlineAlways,
     InOutParameter,
     Length,
     Less,
@@ -533,11 +534,131 @@ class SerializerGenerator:
         if not scalar_fields:
             return UnitPart()
 
+        def specification(
+            field: Field, field_type: Type, use_enum_records_directly: bool = False
+        ) -> ProcedureSpecification:
+            if field_type.package == BUILTINS_PACKAGE:
+                type_identifier = ID(field_type.name)
+            elif (
+                isinstance(field_type, Enumeration)
+                and field_type.always_valid
+                and not use_enum_records_directly
+            ):
+                type_identifier = common.prefixed_type_identifier(
+                    common.full_enum_name(field_type), self.prefix
+                )
+            else:
+                type_identifier = common.prefixed_type_identifier(
+                    ID(field_type.identifier), self.prefix
+                )
+
+            return ProcedureSpecification(
+                f"Set_{field.name}",
+                [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_identifier)],
+            )
+
+        def precondition(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> Precondition:
+            return Precondition(
+                AndThen(
+                    *self.setter_preconditions(field.affixed_name),
+                    Call(
+                        f"Valid_{field_type.name}"
+                        if is_builtin_type(field_type.identifier)
+                        else ID(self.prefix * field_type.package * f"Valid_{field_type.name}"),
+                        [
+                            Variable("Val")
+                            if use_enum_records_directly
+                            else Call("To_U64", [Variable("Val")])
+                        ],
+                    ),
+                    common.field_condition_call(
+                        message, field, value=Call("To_U64", [Variable("Val")])
+                    ),
+                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
+                )
+            )
+
+        def postcondition(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> Postcondition:
+            return Postcondition(
+                And(
+                    Call("Has_Buffer", [Variable("Ctx")]),
+                    Call(
+                        "Valid",
+                        [Variable("Ctx"), Variable(field.affixed_name)],
+                    ),
+                    *(
+                        [
+                            Equal(
+                                Call(f"Get_{field.name}", [Variable("Ctx")]),
+                                Aggregate(TRUE, Variable("Val"))
+                                if isinstance(field_type, Enumeration)
+                                and field_type.always_valid
+                                and not use_enum_records_directly
+                                else Variable("Val"),
+                            )
+                        ]
+                        if int(field_type.value_count) > 1
+                        else []
+                    ),
+                    *self.public_setter_postconditions(message, field),
+                    *common.context_cursor_unchanged(message, field, predecessors=True),
+                )
+            )
+
+        def body(
+            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+        ) -> SubprogramBody:
+            return SubprogramBody(
+                specification(field, field_type, use_enum_records_directly),
+                [],
+                [
+                    CallStatement(
+                        "Set_Scalar",
+                        [
+                            Variable("Ctx"),
+                            Variable(field.affixed_name),
+                            Call("To_U64", [Variable("Val")]),
+                        ],
+                    ),
+                ],
+                [
+                    precondition(field, field_type, use_enum_records_directly),
+                    postcondition(field, field_type, use_enum_records_directly),
+                ]
+                if use_enum_records_directly
+                else [],
+            )
+
         byte_orders = set(message.byte_order.values())
         uniform_byte_order = byte_orders.pop() if len(byte_orders) == 1 else None
 
-        result = UnitPart(
-            body=[
+        return UnitPart(
+            [
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String('aspect "*" not enforced on inlined subprogram "*"')],
+                ),
+                *[
+                    SubprogramDeclaration(
+                        specification(f, t),
+                        [
+                            InlineAlways(),
+                            precondition(f, t),
+                            postcondition(f, t),
+                        ],
+                    )
+                    for f, t in scalar_fields.items()
+                ],
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String('aspect "*" not enforced on inlined subprogram "*"')],
+                ),
+            ],
+            [
                 SubprogramBody(
                     ProcedureSpecification(
                         "Set_Scalar",
@@ -696,121 +817,7 @@ class SerializerGenerator:
                             )
                         ),
                     ],
-                )
-            ],
-        )
-
-        def specification(
-            field: Field, field_type: Type, use_enum_records_directly: bool = False
-        ) -> ProcedureSpecification:
-            if field_type.package == BUILTINS_PACKAGE:
-                type_identifier = ID(field_type.name)
-            elif (
-                isinstance(field_type, Enumeration)
-                and field_type.always_valid
-                and not use_enum_records_directly
-            ):
-                type_identifier = common.prefixed_type_identifier(
-                    common.full_enum_name(field_type), self.prefix
-                )
-            else:
-                type_identifier = common.prefixed_type_identifier(
-                    ID(field_type.identifier), self.prefix
-                )
-
-            return ProcedureSpecification(
-                f"Set_{field.name}",
-                [InOutParameter(["Ctx"], "Context"), Parameter(["Val"], type_identifier)],
-            )
-
-        def precondition(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
-        ) -> Precondition:
-            return Precondition(
-                AndThen(
-                    *self.setter_preconditions(field.affixed_name),
-                    Call(
-                        f"Valid_{field_type.name}"
-                        if is_builtin_type(field_type.identifier)
-                        else ID(self.prefix * field_type.package * f"Valid_{field_type.name}"),
-                        [
-                            Variable("Val")
-                            if use_enum_records_directly
-                            else Call("To_U64", [Variable("Val")])
-                        ],
-                    ),
-                    common.field_condition_call(
-                        message, field, value=Call("To_U64", [Variable("Val")])
-                    ),
-                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
-                )
-            )
-
-        def postcondition(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
-        ) -> Postcondition:
-            return Postcondition(
-                And(
-                    Call("Has_Buffer", [Variable("Ctx")]),
-                    Call(
-                        "Valid",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    *(
-                        [
-                            Equal(
-                                Call(f"Get_{field.name}", [Variable("Ctx")]),
-                                Aggregate(TRUE, Variable("Val"))
-                                if isinstance(field_type, Enumeration)
-                                and field_type.always_valid
-                                and not use_enum_records_directly
-                                else Variable("Val"),
-                            )
-                        ]
-                        if int(field_type.value_count) > 1
-                        else []
-                    ),
-                    *self.public_setter_postconditions(message, field),
-                    *common.context_cursor_unchanged(message, field, predecessors=True),
-                )
-            )
-
-        def body(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
-        ) -> SubprogramBody:
-            return SubprogramBody(
-                specification(field, field_type, use_enum_records_directly),
-                [],
-                [
-                    CallStatement(
-                        "Set_Scalar",
-                        [
-                            Variable("Ctx"),
-                            Variable(field.affixed_name),
-                            Call("To_U64", [Variable("Val")]),
-                        ],
-                    ),
-                ],
-                [
-                    precondition(field, field_type, use_enum_records_directly),
-                    postcondition(field, field_type, use_enum_records_directly),
-                ]
-                if use_enum_records_directly
-                else [],
-            )
-
-        return result + UnitPart(
-            [
-                SubprogramDeclaration(
-                    specification(f, t),
-                    [
-                        precondition(f, t),
-                        postcondition(f, t),
-                    ],
-                )
-                for f, t in scalar_fields.items()
-            ],
-            [
+                ),
                 *[body(f, t) for f, t in scalar_fields.items()],
                 *[
                     body(f, t, use_enum_records_directly=True)

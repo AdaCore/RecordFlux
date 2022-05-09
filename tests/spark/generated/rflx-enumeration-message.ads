@@ -369,7 +369,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -388,6 +391,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Priority) = Predecessor (Ctx, F_Priority)'Old
        and Valid_Next (Ctx, F_Priority) = Valid_Next (Ctx, F_Priority)'Old;
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

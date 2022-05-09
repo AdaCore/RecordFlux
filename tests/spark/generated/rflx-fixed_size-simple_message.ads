@@ -416,7 +416,10 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
+
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) with
+     Inline_Always,
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -441,6 +444,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old;
+
+   pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
    procedure Initialize_Data (Ctx : in out Context) with
      Pre =>
