@@ -32,7 +32,7 @@ abstract project Defaults is
    Global_Configuration_Pragmas := "defaults_backward_compatible.adc";
 
    case Compiler_Variant is
-      when "pro23.0w-20220202" | "pro23.0" | "pro23.1" | "pro23.2" =>
+      when "pro23.0w-20220508" | "pro23.0" | "pro23.1" | "pro23.2" =>
          Global_Configuration_Pragmas := "defaults.adc";
       when others =>
    end case;

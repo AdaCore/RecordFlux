@@ -265,7 +265,7 @@ jobs:
           - gnat-distrib: "pro"
             gnat-version: "22.0"
           - gnat-distrib: "pro"
-            gnat-version: "23.0w-20220202"
+            gnat-version: "23.0w-20220508"
           - gnat-distrib: "fsf"
     env:
       python-version: 3.7
@@ -356,8 +356,8 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       python-version: 3.7
-      gnat-version: "23.0w-20220202"
-      GNAT: "pro23.0w-20220202"
+      gnat-version: "23.0w-20220508"
+      GNAT: "pro23.0w-20220508"
     steps:
       - uses: actions/checkout@v2
         if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
