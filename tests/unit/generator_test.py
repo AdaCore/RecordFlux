@@ -1751,6 +1751,17 @@ end;
             ],
         ),
         (
+            stmt.Assignment(
+                "X",
+                expr.And(
+                    expr.Variable("A", type_=rty.BOOLEAN),
+                    expr.Variable("B", type_=rty.BOOLEAN),
+                ),
+                type_=rty.BOOLEAN,
+            ),
+            "X := A\nand then B;",
+        ),
+        (
             stmt.Reset("X", type_=rty.Message("P::M")),
             "P.M.Reset (X_Ctx);",
         ),
