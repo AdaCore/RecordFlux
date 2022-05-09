@@ -13,37 +13,21 @@ env:
     MEMCACHED: localhost:11211
 
 jobs:
-  skip_check_all:
-    name: Skip Check
-    continue-on-error: false
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
-        with:
-          concurrent_skipping: same_content
-          do_not_skip: '["pull_request", "schedule"]'
-
   skip_check_general:
     name: Skip Check General
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths_ignore: '["*.gpr", "examples/**", "tests/spark/**"]'
 
   checks:
     name: Checks
     needs: skip_check_general
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -112,7 +96,7 @@ jobs:
   installation:
     name: Installation
     needs: skip_check_general
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }} && ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
+    if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -141,15 +125,13 @@ jobs:
 
   skip_check_python:
     name: Skip Check Python
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths: '["rflx/**", "tests/**"]'
           paths_ignore: '["tests/spark/**"]'
@@ -157,7 +139,6 @@ jobs:
   tests_python:
     name: Tests
     needs: skip_check_python
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -254,22 +235,19 @@ jobs:
 
   skip_check_compilation:
     name: Skip Check Compilation
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths: '["defaults.gpr", "examples/apps/**", "rflx/**", "tests/**"]'
 
   compilation:
     name: Compilation
     needs: skip_check_compilation
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -375,8 +353,6 @@ jobs:
 
   binary_size:
     name: Binary size
-    needs: skip_check_apps
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     env:
       python-version: 3.7
@@ -498,22 +474,18 @@ jobs:
 
   skip_check_spark:
     name: Skip Check SPARK
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths: '["*.gpr", "tests/spark/**"]'
 
   runtime_compatibility:
     name: Runtime compatibility
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -551,7 +523,6 @@ jobs:
   verification_spark:
     name: Verification
     needs: skip_check_spark
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -644,22 +615,19 @@ jobs:
 
   skip_check_apps:
     name: Skip Check Apps
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths: '["defaults.gpr", "examples/apps/**", "rflx/**"]'
 
   tests_apps:
     name: App Tests
     needs: skip_check_apps
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -738,7 +706,6 @@ jobs:
   verification_apps:
     name: App Verification
     needs: skip_check_apps
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -823,22 +790,19 @@ jobs:
 
   skip_check_specs:
     name: Skip Check Specs
-    needs: skip_check_all
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
     steps:
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v4.0.0
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
           paths: '["defaults.gpr", "examples/specs/**", "rflx/**"]'
 
   tests_specs:
     name: Specification Tests
     needs: skip_check_specs
-    if: ${{ needs.skip_check_all.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
