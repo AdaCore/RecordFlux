@@ -189,7 +189,7 @@ class AbstractMessage(mty.Type):
             [
                 f"{parameter_field.identifier} : {parameter_type_identifier}"
                 for parameter_field, parameter_type in self.parameter_types.items()
-                for parameter_type_identifier in (parameter_type.qualified_identifier)
+                for parameter_type_identifier in (parameter_type.qualified_identifier,)
             ]
         )
         if parameters:

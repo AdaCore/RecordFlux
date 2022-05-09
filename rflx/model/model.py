@@ -61,9 +61,7 @@ class Model(Base):
         return {id: str(pkg) for id, pkg in pkgs.items()}
 
     def write_specification_files(self, output_dir: Path) -> None:
-        """
-        Write corresponding specification files (one per package) into given directory.
-        """
+        """Write corresponding specification files (one per package) into given directory."""
         for package, specification in self.create_specifications().items():
             (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)
 

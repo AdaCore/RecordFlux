@@ -19,8 +19,7 @@ class Type(BasicDeclaration):
     @property
     def direct_dependencies(self) -> ty.List["Type"]:
         """
-        Return a list consisting of the type and all the types on which the
-        type directly depends.
+        Return a list consisting of the type and all the types on which the type directly depends.
 
         The dependencies are not determined recursively, i.e. the dependencies
         of dependencies are not considered.
@@ -39,9 +38,12 @@ class Type(BasicDeclaration):
     @property
     def qualified_identifier(self) -> ID:
         """
-        Return the
+        Return the qualified identifier of this type.
+
+        The qualified identifier of a type is defined as its complete package
+        path followed by the type name, or just the type name if the type is
+        builtin or internal.
         """
-        # TODO: Handle name collision with `type_.qualified_type_identifier`.
         identifier = self.identifier
         return (
             ID(self.name, location=identifier.location)
@@ -704,7 +706,14 @@ def is_builtin_type(identifier: StrID) -> bool:
     )
 
 
-def qualified_type_identifier(identifier: ID, package: ID = None) -> ID:
+def internal_type_identifier(identifier: ID, package: ID = None) -> ID:
+    """
+    Return the internal identifier of a type.
+
+    The internal identifier is defined as its complete package path
+    (`__BUILTINS__` for builtin types, and `__INTERNAL__` for internal types)
+    followed by the type name.
+    """
     if is_builtin_type(identifier):
         return ID(const.BUILTINS_PACKAGE * identifier.name, location=identifier.location)
 
