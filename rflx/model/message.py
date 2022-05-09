@@ -187,13 +187,9 @@ class AbstractMessage(mty.Type):
 
         parameters = "; ".join(
             [
-                f"{p.identifier} : {type_identifier}"
-                for p, t in self.parameter_types.items()
-                for type_identifier in (
-                    t.name
-                    if mty.is_builtin_type(t.identifier) or mty.is_internal_type(t.identifier)
-                    else t.identifier,
-                )
+                f"{parameter_field.identifier} : {parameter_type_identifier}"
+                for parameter_field, parameter_type in self.parameter_types.items()
+                for parameter_type_identifier in (parameter_type.qualified_identifier)
             ]
         )
         if parameters:
@@ -201,18 +197,12 @@ class AbstractMessage(mty.Type):
 
         fields = ""
         field_list = [INITIAL, *self.fields]
-        for i, f in enumerate(field_list):
-            if f != INITIAL:
+        for i, field in enumerate(field_list):
+            if field != INITIAL:
                 fields += "\n" if fields else ""
-                f_ty = self.types[f]
-                f_ident: StrID = f_ty.identifier
-                f_ident = (
-                    f_ty.name
-                    if mty.is_builtin_type(f_ident) or mty.is_internal_type(f_ident)
-                    else f_ident
-                )
-                fields += f"{f.name} : {f_ident}"
-            outgoing = self.outgoing(f)
+                field_type_identifier = self.types[field].qualified_identifier
+                fields += f"{field.name} : {field_type_identifier}"
+            outgoing = self.outgoing(field)
             if not (
                 len(outgoing) == 1
                 and outgoing[0].condition == expr.TRUE
@@ -220,13 +210,17 @@ class AbstractMessage(mty.Type):
                 and outgoing[0].first == expr.UNDEFINED
                 and (i >= len(field_list) - 1 or field_list[i + 1] == outgoing[0].target)
             ):
-                if f == INITIAL:
+                if field == INITIAL:
                     fields += "null"
                 fields += "\n" + indent("\n".join(str(o) for o in outgoing), 3)
             if fields:
                 fields += ";"
 
         return f"type {self.name}{parameters} is\n   message\n{indent(fields, 6)}\n   end message"
+
+    @property
+    def direct_dependencies(self) -> List[mty.Type]:
+        return [self, *self.__types.values()]
 
     @property
     def dependencies(self) -> List[mty.Type]:

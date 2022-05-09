@@ -18,6 +18,7 @@ from rflx.model import (
     Type,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link
+from rflx.model.type_ import Sequence as MSequence
 from tests.data import models
 
 
@@ -155,8 +156,9 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 def test_write_specification_files(tmp_path: Path) -> None:
     t = ModularInteger("P::T", Number(256))
+    v = MSequence("P::V", element_type=t)
     m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
-    Model([t, m]).write_specification_files(tmp_path)
+    Model([t, v, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
     assert expected_path.read_text() == textwrap.dedent(
@@ -164,6 +166,8 @@ def test_write_specification_files(tmp_path: Path) -> None:
         package P is
 
            type T is mod 256;
+
+           type V is sequence of P::T;
 
            type M is
               message
@@ -176,39 +180,51 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     t = ModularInteger("P::T", Number(256))
-    u = ModularInteger("Q::U", Number(65536))
+    u = MSequence("Q::U", element_type=t)
+    v = ModularInteger("R::V", Number(65536))
     links = [
-        Link(INITIAL, Field("Tango")),
-        Link(Field("Tango"), Field("Uniform")),
+        Link(INITIAL, Field("Victor")),
+        Link(Field("Victor"), Field("Uniform")),
         Link(Field("Uniform"), FINAL),
     ]
-    fields = {Field("Tango"): t, Field("Uniform"): u}
-    m = Message("P::M", links, fields)
-    Model([t, u, m]).write_specification_files(tmp_path)
-    p_path = tmp_path / Path("p.rflx")
-    q_path = tmp_path / Path("q.rflx")
-    assert set(tmp_path.glob("*.rflx")) == {p_path, q_path}
+    fields = {Field("Victor"): v, Field("Uniform"): u}
+    m = Message("R::M", links, fields)
+    Model([t, v, m, u]).write_specification_files(tmp_path)
+    p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
+    assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
     assert p_path.read_text() == textwrap.dedent(
         """\
-        with Q;
-
         package P is
 
            type T is mod 256;
-
-           type M is
-              message
-                 Tango : P::T;
-                 Uniform : Q::U;
-              end message;
 
         end P;"""
     )
     assert q_path.read_text() == textwrap.dedent(
         """\
+        with P;
+
         package Q is
 
-           type U is mod 65536;
+           type U is sequence of P::T;
 
         end Q;"""
+    )
+    assert r_path.read_text() == textwrap.dedent(
+        """\
+        with Q;
+
+        package R is
+
+           type V is mod 65536;
+
+           type M is
+              message
+                 Victor : R::V
+                    then Uniform
+                       with Size => Message'Last - Victor'Last;
+                 Uniform : Q::U;
+              end message;
+
+        end R;"""
     )
