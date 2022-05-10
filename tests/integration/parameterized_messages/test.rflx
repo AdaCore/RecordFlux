@@ -22,11 +22,12 @@ package Test is
    is
       M_R : Message;
       M_S : Message;
+      Extended : Boolean := False;
    begin
       state Start
       is
       begin
-         M_R'Reset (Length => 2, Extended => False);
+         M_R'Reset (Length => 2, Extended => Extended);
       transition
          goto Receive
       end Start;
