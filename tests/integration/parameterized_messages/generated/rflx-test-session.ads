@@ -111,6 +111,7 @@ private
          Next_State : State := S_Start;
          M_R_Ctx : Test.Message.Context;
          M_S_Ctx : Test.Message.Context;
+         Extended : Boolean := False;
          Slots : Test.Session_Allocator.Slots;
          Memory : Test.Session_Allocator.Memory;
       end record;

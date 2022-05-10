@@ -3207,8 +3207,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return []
 
-    @staticmethod
     def _reset(
+        self,
         reset: stmt.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -3220,7 +3220,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             CallStatement(
                 target_type * "Reset",
                 [Variable(target_context)],
-                {ID(n): e.ada_expr() for n, e in reset.associations.items()},
+                {
+                    ID(n): e.substituted(self._substitution(is_global)).ada_expr()
+                    for n, e in reset.associations.items()
+                },
             ),
         ]
 

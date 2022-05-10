@@ -19,7 +19,7 @@ is
    begin
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
-      Test.Message.Reset (Ctx.P.M_R_Ctx, Length => 2, Extended => False);
+      Test.Message.Reset (Ctx.P.M_R_Ctx, Length => 2, Extended => Ctx.P.Extended);
       Ctx.P.Next_State := S_Receive;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
@@ -175,6 +175,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (Ctx.P.M_S_Ctx, M_S_Buffer, Length => Test.Length'First, Extended => Boolean'First);
+      Ctx.P.Extended := False;
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
