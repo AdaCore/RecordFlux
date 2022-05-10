@@ -25,6 +25,7 @@ class Statement(Base):
 
     @abstractmethod
     def variables(self) -> Sequence[Variable]:
+        """Return all referenced variables in the statement."""
         raise NotImplementedError
 
 
@@ -168,7 +169,10 @@ class Reset(AttributeStatement):
         )
 
     def variables(self) -> Sequence[Variable]:
-        return [Variable(self.identifier)]
+        return [
+            Variable(self.identifier),
+            *[v for e in self.associations.values() for v in e.variables()],
+        ]
 
 
 class ChannelAttributeStatement(AttributeStatement):
