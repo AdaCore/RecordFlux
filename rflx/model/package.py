@@ -1,7 +1,8 @@
 import textwrap
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Set
 
+from rflx import const
 from rflx.identifier import ID
 
 from . import session, type_
@@ -10,13 +11,18 @@ from . import session, type_
 @dataclass
 class Package:
     name: ID
-    imports: List[ID] = field(default_factory=list)
+    imports: Set[ID] = field(default_factory=set)
     types: List[type_.Type] = field(default_factory=list)
     sessions: List[session.Session] = field(default_factory=list)
 
     @property
     def imports_str(self) -> str:
-        return "\n".join(f"with {i};" for i in self.imports)
+        explicit_imports = self.imports - {
+            self.name,
+            const.BUILTINS_PACKAGE,
+            const.INTERNAL_PACKAGE,
+        }
+        return "\n".join(f"with {i};" for i in sorted(explicit_imports))
 
     @property
     def begin_str(self) -> str:

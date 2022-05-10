@@ -181,6 +181,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     t = ModularInteger("P::T", Number(256))
     u = mty.Sequence("Q::U", element_type=t)
+    u1 = mty.Sequence("Q::U1", element_type=t)
     v = ModularInteger("R::V", Number(65536))
     links = [
         Link(INITIAL, Field("Victor")),
@@ -189,7 +190,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     ]
     fields = {Field("Victor"): v, Field("Uniform"): u}
     m = Message("R::M", links, fields)
-    Model([t, v, m, u]).write_specification_files(tmp_path)
+    Model([t, v, u1, m, u]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
     assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
     assert p_path.read_text() == textwrap.dedent(
@@ -205,6 +206,8 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
         with P;
 
         package Q is
+
+           type U1 is sequence of P::T;
 
            type U is sequence of P::T;
 

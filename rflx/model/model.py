@@ -46,14 +46,8 @@ class Model(Base):
         for ty in self.__types:
             if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
                 pkg_name: ID = ty.package
-                pkg: Package = pkgs.setdefault(pkg_name, Package(pkg_name))
-                for dep in ty.direct_dependencies:
-                    if dep.package not in [
-                        pkg_name,
-                        const.BUILTINS_PACKAGE,
-                        const.INTERNAL_PACKAGE,
-                    ]:
-                        pkg.imports.append(dep.package)
+                pkg = pkgs.setdefault(pkg_name, Package(pkg_name))
+                pkg.imports |= {dep.package for dep in ty.direct_dependencies}
                 pkg.types.append(ty)
         for sess in self.__sessions:
             pkg_name = sess.package
