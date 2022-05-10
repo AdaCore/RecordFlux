@@ -89,7 +89,10 @@ is
      Pre =>
        Initialized (Ctx);
 
-   function Write_Buffer_Size (Unused_Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length;
+   function Write_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length with
+     Pre =>
+       Initialized (Ctx)
+       and then Needs_Data (Ctx, Chan);
 
    procedure Write (Ctx : in out Context'Class; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
      Pre =>
@@ -163,9 +166,13 @@ private
                  when others =>
                     False)));
 
-   function Write_Buffer_Size (Unused_Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
+   function Write_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
      ((case Chan is
           when C_C =>
-             4096));
+             (case Ctx.P.Next_State is
+                 when S_Receive =>
+                    Test.Message.Buffer_Length (Ctx.P.M_R_Ctx),
+                 when others =>
+                    RFLX_Types.Unreachable)));
 
 end RFLX.Test.Session;
