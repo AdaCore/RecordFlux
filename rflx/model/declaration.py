@@ -36,6 +36,7 @@ class Declaration(Base):
 
     @abstractmethod
     def variables(self) -> Sequence[Variable]:
+        """Return all referenced variables in the declaration."""
         raise NotImplementedError
 
 
