@@ -84,4 +84,9 @@ begin
       end loop;
       DHCP_Client_Session.Run (Ctx);
    end loop;
+   pragma Warnings (Off, "statement has no effect");
+   pragma Warnings (Off, """Ctx"" is set by ""Finalize"" but not used after the call");
+   DHCP_Client_Session.Finalize (Ctx);
+   pragma Warnings (On, "statement has no effect");
+   pragma Warnings (On, """Ctx"" is set by ""Finalize"" but not used after the call");
 end DHCP_Client;

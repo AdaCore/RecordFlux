@@ -383,6 +383,29 @@ def session_main(
                     ada.CallStatement(session_package * "Run", [ada.Variable("Ctx")]),
                 ],
             ),
+            ada.PragmaStatement(
+                "Warnings",
+                [ada.Variable("Off"), ada.String("statement has no effect")],
+            ),
+            ada.PragmaStatement(
+                "Warnings",
+                [
+                    ada.Variable("Off"),
+                    ada.String('"Ctx" is set by "Finalize" but not used after the call'),
+                ],
+            ),
+            ada.CallStatement(session_package * "Finalize", [ada.Variable("Ctx")]),
+            ada.PragmaStatement(
+                "Warnings",
+                [ada.Variable("On"), ada.String("statement has no effect")],
+            ),
+            ada.PragmaStatement(
+                "Warnings",
+                [
+                    ada.Variable("On"),
+                    ada.String('"Ctx" is set by "Finalize" but not used after the call'),
+                ],
+            ),
         ],
     )
 
