@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pytest
 
+import rflx.model.type_ as mty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Number
 from rflx.identifier import ID
@@ -18,7 +19,6 @@ from rflx.model import (
     Type,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link
-from rflx.model.type_ import Sequence as MSequence
 from tests.data import models
 
 
@@ -156,7 +156,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 def test_write_specification_files(tmp_path: Path) -> None:
     t = ModularInteger("P::T", Number(256))
-    v = MSequence("P::V", element_type=t)
+    v = mty.Sequence("P::V", element_type=t)
     m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
     Model([t, v, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
@@ -180,7 +180,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     t = ModularInteger("P::T", Number(256))
-    u = MSequence("Q::U", element_type=t)
+    u = mty.Sequence("Q::U", element_type=t)
     v = ModularInteger("R::V", Number(65536))
     links = [
         Link(INITIAL, Field("Victor")),
