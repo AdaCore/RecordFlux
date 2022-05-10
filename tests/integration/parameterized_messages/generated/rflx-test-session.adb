@@ -50,6 +50,7 @@ is
      Post =>
        Initialized (Ctx)
    is
+      Length : Test.Length;
    begin
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
@@ -120,7 +121,12 @@ is
                         and Ctx.P.Slots.Slot_Ptr_2 = null);
          goto Finalize_Process;
       end if;
-      Ctx.P.Next_State := S_Reply;
+      Length := Ctx.P.M_S_Ctx.Length;
+      if Length = Ctx.P.M_R_Ctx.Length then
+         Ctx.P.Next_State := S_Reply;
+      else
+         Ctx.P.Next_State := S_Error;
+      end if;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null
                      and Ctx.P.Slots.Slot_Ptr_2 = null);
       <<Finalize_Process>>

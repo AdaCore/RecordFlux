@@ -43,10 +43,14 @@ package Test is
 
       state Process
       is
+         Length : Length;
       begin
          M_S := Message'(Length => M_R.Length, Extended => True, Data => M_R.Data, Extension => [3, 4]);
+         Length := M_S.Length;
       transition
          goto Reply
+            if Length = M_R.Length
+         goto Error
       exception
          goto Error
       end Process;

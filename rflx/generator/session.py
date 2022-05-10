@@ -2327,6 +2327,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             isinstance(selected.type_, (rty.AnyInteger, rty.Enumeration))
             or selected.type_ == rty.OPAQUE
         ):
+            if selector in selected.prefix.type_.parameter_types:
+                return [
+                    Assignment(
+                        Variable(variable_id(target, is_global)),
+                        Variable(message_context * selector),
+                    )
+                ]
+
             return [
                 self._if(
                     Call(
