@@ -386,7 +386,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if has_reads:
             unit += self._create_needs_data_function(channel_reads)
-            unit += self._create_write_buffer_size_function(channel_reads)
+            unit += self._create_write_buffer_size_function(channel_reads, is_global)
             unit += self._create_write_procedure(channel_reads, is_global)
 
         return (
@@ -1397,17 +1397,31 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     @staticmethod
     def _create_write_buffer_size_function(
-        channel_reads: dict[rid.ID, list[ChannelAccess]]
+        channel_reads: dict[rid.ID, list[ChannelAccess]],
+        is_global: Callable[[ID], bool],
     ) -> UnitPart:
         specification = FunctionSpecification(
             "Write_Buffer_Size",
             const.TYPES_LENGTH,
-            [Parameter(["Unused_Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [
+                Parameter(["Ctx"], "Context'Class"),
+                Parameter(["Chan"], "Channel"),
+            ],
         )
 
         return UnitPart(
             [
-                SubprogramDeclaration(specification),
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                Call("Initialized", [Variable("Ctx")]),
+                                Call("Needs_Data", [Variable("Ctx"), Variable("Chan")]),
+                            )
+                        ),
+                    ],
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -1415,10 +1429,27 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     Case(
                         Variable("Chan"),
                         [
-                            # ISSUE: Componolit/RecordFlux#895
-                            # Size of correspondig buffer must be returned instead of constant
-                            # value.
-                            (Variable(f"C_{channel}"), Number(4096) if reads else Number(0))
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("Ctx.P.Next_State"),
+                                    [
+                                        *[
+                                            (
+                                                Variable(f"S_{read.state}"),
+                                                Call(
+                                                    read.message_type * "Buffer_Length",
+                                                    [Variable(context_id(read.message, is_global))],
+                                                ),
+                                            )
+                                            for read in reads
+                                        ],
+                                        (Variable("others"), const.UNREACHABLE),
+                                    ],
+                                )
+                                if reads
+                                else Number(0),
+                            )
                             for channel, reads in channel_reads.items()
                         ],
                     ),

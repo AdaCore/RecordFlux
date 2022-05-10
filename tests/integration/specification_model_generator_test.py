@@ -747,3 +747,42 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+@pytest.mark.parametrize(
+    "mode, action",
+    [
+        ("Readable", "Read"),
+        ("Writable", "Write"),
+    ],
+)
+def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
+    spec = f"""
+        package Test is
+
+           type Message is
+              message
+                 Data : Opaque;
+              end message;
+
+           generic
+              Channel : Channel with {mode};
+           session Session with
+              Initial => Init,
+              Final => Terminated
+           is
+             Message : Message;
+           begin
+              state Init is
+              begin
+                Channel'{action} (Message);
+              transition
+                 goto Terminated
+              end Init;
+
+              state Terminated is null state;
+           end Session;
+
+        end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)
