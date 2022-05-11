@@ -327,16 +327,20 @@ is
        and Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
+     Pre =>
+       Has_Buffer (Ctx),
      Post =>
-       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
    procedure Verify_Message (Ctx : in out Context) with
+     Pre =>
+       Has_Buffer (Ctx),
      Post =>
-       Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
+       Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

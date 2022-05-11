@@ -318,8 +318,7 @@ is
       Value : RFLX_Types.U64;
    begin
       if
-         Has_Buffer (Ctx)
-         and then Invalid (Ctx.Cursors (Fld))
+         Invalid (Ctx.Cursors (Fld))
          and then Valid_Predecessor (Ctx, Fld)
          and then Path_Condition (Ctx, Fld)
       then
