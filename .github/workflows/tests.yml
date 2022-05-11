@@ -156,6 +156,9 @@ jobs:
             python-version: 3.7
           - target: "python_optimized"
             python-version: 3.7
+    env:
+      gnat-version: "23.0w-20220508"
+      GNAT: "pro23.0w-20220508"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
@@ -178,19 +181,14 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
-    - name: Cache GNAT Community
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
-      uses: actions/cache@v2
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
+    - name: Install GNAT Pro
+      uses: ./.github/actions/install_gnat_pro
+      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install GNAT Community
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
-      uses: ada-actions/toolchain@ce2021
-      with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
+        version: ${{ env.gnat-version }}
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
@@ -638,9 +636,13 @@ jobs:
           - 3.9
         gnat-distrib:
           - "community"
+        gnat-version:
+          - "2021"
         include:
           - python-version: 3.7
             gnat-distrib: "fsf"
+    env:
+      GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}

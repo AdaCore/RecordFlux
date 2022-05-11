@@ -16,14 +16,18 @@ abstract project Defaults is
       when "community2020" =>
          GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
          GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+      when "community2021" =>
+         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
       when "pro20.2" =>
          GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
          GNATVO := "";  --  ISSUE: Componolit/Workarounds#23
          GNATEV := "";  --  ISSUE: Componolit/Workarounds#22
          GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
-      when "pro23.0w-20220508" =>
-      when others =>
+      when "pro21.2" | "pro22.0" =>
          GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+      when "fsf" =>
+         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+      when others =>
    end case;
 
    case Mode is
