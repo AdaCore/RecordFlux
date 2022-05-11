@@ -39,7 +39,6 @@ from rflx.ada import (
     Not,
     Number,
     ObjectDeclaration,
-    Old,
     Or,
     OutParameter,
     Parameter,
@@ -359,12 +358,10 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
+                        Precondition(Call("Has_Buffer", [Variable("Ctx")])),
                         Postcondition(
                             And(
-                                Equal(
-                                    Call("Has_Buffer", [Variable("Ctx")]),
-                                    Old(Call("Has_Buffer", [Variable("Ctx")])),
-                                ),
+                                Call("Has_Buffer", [Variable("Ctx")]),
                                 *common.context_invariant(message),
                             )
                         ),
@@ -380,7 +377,6 @@ class ParserGenerator:
                             [
                                 (
                                     AndThen(
-                                        Call("Has_Buffer", [Variable("Ctx")]),
                                         Call(
                                             "Invalid",
                                             [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))],
@@ -498,12 +494,10 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
+                        Precondition(Call("Has_Buffer", [Variable("Ctx")])),
                         Postcondition(
                             And(
-                                Equal(
-                                    Call("Has_Buffer", [Variable("Ctx")]),
-                                    Old(Call("Has_Buffer", [Variable("Ctx")])),
-                                ),
+                                Call("Has_Buffer", [Variable("Ctx")]),
                                 *common.context_invariant(message),
                             )
                         ),
