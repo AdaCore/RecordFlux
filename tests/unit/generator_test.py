@@ -478,7 +478,16 @@ def test_session_create_abstract_functions_error(
             True,
             EvaluatedDeclaration(
                 global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
-                initialization=[ada.Assignment("Ctx.P.X", ada.Conversion("T", ada.Number(1)))],
+                initialization=[
+                    ada.CallStatement(
+                        "P.S_Allocator.Initialize",
+                        [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
+                    ),
+                    ada.Assignment("Ctx.P.X", ada.Conversion("T", ada.Number(1))),
+                ],
+                finalization=[
+                    ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
+                ],
             ),
         ),
         (
@@ -628,10 +637,9 @@ def test_session_evaluate_declarations(
     declaration: decl.BasicDeclaration, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
-    # pylint: disable=protected-access
+    # pylint: disable = protected-access
     allocator._allocation_slots[Location(start=(1, 1))] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
-    # pylint: disable = protected-access
     assert (
         session_generator._evaluate_declarations(
             [declaration], is_global=lambda x: False, session_global=session_global
@@ -1811,9 +1819,8 @@ end;
 def test_session_state_action(action: stmt.Statement, expected: str) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=True)
-    # pylint: disable=protected-access
-    allocator._allocation_slots[Location(start=(1, 1))] = 1
     # pylint: disable = protected-access
+    allocator._allocation_slots[Location(start=(1, 1))] = 1
     assert (
         "\n".join(
             str(s)

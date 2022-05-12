@@ -497,7 +497,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 Component("Slots", self._allocator.unit_identifier * "Slots"),
                                 Component("Memory", self._allocator.unit_identifier * "Memory"),
                             ]
-                            if global_variables
+                            if self._allocator.required
                             else []
                         ),
                     ],
@@ -726,7 +726,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         specification = FunctionSpecification(
             "Initialized",
             "Boolean",
-            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context'Class")],
+            [
+                Parameter(
+                    ["Ctx" if composite_globals or self._allocator.required else "Unused_Ctx"],
+                    "Context'Class",
+                )
+            ],
         )
         return UnitPart(
             [
@@ -736,20 +741,28 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
-                        *(
-                            [
-                                Call(
-                                    ID("Global_Initialized"),
-                                    [Variable("Ctx")],
-                                ),
-                                Call(
-                                    ID(self._allocator.unit_identifier * "Global_Allocated"),
-                                    [Variable("Ctx.P.Slots")],
-                                ),
-                            ]
-                            if composite_globals
-                            else []
-                        )
+                        *[
+                            *(
+                                [
+                                    Call(
+                                        ID("Global_Initialized"),
+                                        [Variable("Ctx")],
+                                    ),
+                                ]
+                                if composite_globals
+                                else []
+                            ),
+                            *(
+                                [
+                                    Call(
+                                        ID(self._allocator.unit_identifier * "Global_Allocated"),
+                                        [Variable("Ctx.P.Slots")],
+                                    ),
+                                ]
+                                if self._allocator.required
+                                else []
+                            ),
+                        ]
                     ),
                 ),
             ],
@@ -904,7 +917,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                         "Assert", [Call("Global_Initialized", [Variable("Ctx")])]
                                     )
                                 ]
-                                if evaluated_declarations.finalization
+                                if composite_globals and evaluated_declarations.finalization
                                 else []
                             ),
                         ],
@@ -1908,7 +1921,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     location=declaration.location,
                 )
 
-        if session_global and has_composite_declarations:
+        if session_global and self._allocator.required:
             result.initialization.insert(
                 0,
                 CallStatement(
@@ -2896,6 +2909,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 and isinstance(a.prefix, expr.Variable)
                 and isinstance(a.prefix.type_, rty.Message)
             ):
+                self._session_context.used_types_body.append(const.TYPES_LENGTH)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
                 argument_length = f"{argument_name}_Length"
                 argument = expr.Slice(

@@ -108,12 +108,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
 
     @property
     def required(self) -> bool:
-        return any(
-            True
-            for d in self._session.declarations.values()
-            if isinstance(d, decl.VariableDeclaration)
-            and isinstance(d.type_, (rty.Message, rty.Sequence))
-        )
+        return bool(self._allocation_slots)
 
     def get_global_slot_ptrs(self) -> list[ID]:
         return [self._slot_name(s.slot_id) for s in self._numbered_slots if s.global_]
