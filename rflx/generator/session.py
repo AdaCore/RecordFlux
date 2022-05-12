@@ -2805,8 +2805,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         arguments: list[expr.Expr] = []
 
-        for i, a in enumerate(call_expr.args):
-            if not isinstance(a, (expr.Number, expr.Variable, expr.Selected, expr.String)) and not (
+        assert len(call_expr.args) == len(call_expr.argument_types)
+
+        for i, (a, t) in enumerate(zip(call_expr.args, call_expr.argument_types)):
+            if not isinstance(
+                a, (expr.Number, expr.Variable, expr.Selected, expr.Size, expr.String)
+            ) and not (
                 isinstance(a, expr.Opaque)
                 and isinstance(a.prefix, expr.Variable)
                 and a.type_ == rty.OPAQUE
@@ -2987,7 +2991,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ):
                 arguments.append(expr.NamedAggregate(("Known", expr.TRUE), ("Enum", a)))
             else:
-                arguments.append(a)
+                arguments.append(
+                    expr.Call(t.identifier, [a])
+                    if isinstance(t, rty.Integer) and not a.type_.is_compatible_strong(t)
+                    else a
+                )
 
         call = [
             CallStatement(

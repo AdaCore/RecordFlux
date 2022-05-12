@@ -2182,6 +2182,7 @@ def test_session_state_action_error(
                         location=Location((10, 20)),
                     ),
                 ],
+                argument_types=[rty.Integer("C")],
             ),
             RecordFluxError,
             r"Call with undefined type as function argument not yet supported",
