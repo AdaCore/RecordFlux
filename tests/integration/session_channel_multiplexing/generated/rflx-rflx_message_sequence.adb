@@ -71,4 +71,13 @@ is
       end if;
    end Update;
 
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
+   begin
+      if Data'Length > 0 then
+         Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Sequence_Last));
+      else
+         Data := Ctx.Buffer.all (1 .. 0);
+      end if;
+   end Data;
+
 end RFLX.RFLX_Message_Sequence;

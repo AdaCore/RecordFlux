@@ -73,10 +73,10 @@ is
        else
           RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Verified_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
 
-   procedure Message_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
    begin
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
-   end Message_Data;
+   end Data;
 
    pragma Warnings (Off, "precondition is always False");
 

@@ -199,6 +199,12 @@ is
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+     Pre =>
+       (Has_Buffer (Ctx)
+        and then Valid (Ctx)
+        and then Data'Length = Byte_Size (Ctx));
+
 private
 
    pragma Warnings (Off, "use clause for package * has no effect");

@@ -2134,9 +2134,9 @@ def create_written_last_function() -> UnitPart:
     )
 
 
-def create_message_data_procedure() -> UnitPart:
+def create_data_procedure() -> UnitPart:
     specification = ProcedureSpecification(
-        "Message_Data",
+        "Data",
         [Parameter(["Ctx"], "Context"), OutParameter(["Data"], const.TYPES_BYTES)],
     )
 

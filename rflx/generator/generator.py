@@ -380,7 +380,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
             self._executor.submit(message_generator.create_byte_size_function),
             self._executor.submit(message_generator.create_message_last_function),
             self._executor.submit(message_generator.create_written_last_function),
-            self._executor.submit(message_generator.create_message_data_procedure),
+            self._executor.submit(message_generator.create_data_procedure),
             self._executor.submit(
                 message_generator.create_valid_value_function, message, scalar_fields, self.__prefix
             ),
