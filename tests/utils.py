@@ -250,59 +250,82 @@ def session_main(
                         "Loop_Invariant",
                         [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
                     ),
-                    ada.ForIn(
-                        "C",
-                        ada.Range(session_package * "Channel"),
+                    *(
                         [
-                            ada.PragmaStatement(
-                                "Loop_Invariant",
-                                [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
-                            ),
-                            *(
+                            ada.ForIn(
+                                "C",
+                                ada.Range(session_package * "Channel"),
                                 [
-                                    ada.IfStatement(
+                                    ada.PragmaStatement(
+                                        "Loop_Invariant",
                                         [
-                                            (
-                                                ada.Call(
-                                                    session_package * "Has_Data",
-                                                    [ada.Variable("Ctx"), ada.Variable("C")],
-                                                ),
+                                            ada.Call(
+                                                session_package * "Initialized",
+                                                [ada.Variable("Ctx")],
+                                            )
+                                        ],
+                                    ),
+                                    *(
+                                        [
+                                            ada.IfStatement(
                                                 [
-                                                    ada.CallStatement(
-                                                        "Read",
-                                                        [ada.Variable("Ctx"), ada.Variable("C")],
-                                                    ),
-                                                ],
+                                                    (
+                                                        ada.Call(
+                                                            session_package * "Has_Data",
+                                                            [
+                                                                ada.Variable("Ctx"),
+                                                                ada.Variable("C"),
+                                                            ],
+                                                        ),
+                                                        [
+                                                            ada.CallStatement(
+                                                                "Read",
+                                                                [
+                                                                    ada.Variable("Ctx"),
+                                                                    ada.Variable("C"),
+                                                                ],
+                                                            ),
+                                                        ],
+                                                    )
+                                                ]
                                             )
                                         ]
-                                    )
-                                ]
-                                if output_channels
-                                else []
-                            ),
-                            *(
-                                [
-                                    ada.IfStatement(
+                                        if output_channels
+                                        else []
+                                    ),
+                                    *(
                                         [
-                                            (
-                                                ada.Call(
-                                                    session_package * "Needs_Data",
-                                                    [ada.Variable("Ctx"), ada.Variable("C")],
-                                                ),
+                                            ada.IfStatement(
                                                 [
-                                                    ada.CallStatement(
-                                                        "Write",
-                                                        [ada.Variable("Ctx"), ada.Variable("C")],
-                                                    ),
-                                                ],
+                                                    (
+                                                        ada.Call(
+                                                            session_package * "Needs_Data",
+                                                            [
+                                                                ada.Variable("Ctx"),
+                                                                ada.Variable("C"),
+                                                            ],
+                                                        ),
+                                                        [
+                                                            ada.CallStatement(
+                                                                "Write",
+                                                                [
+                                                                    ada.Variable("Ctx"),
+                                                                    ada.Variable("C"),
+                                                                ],
+                                                            ),
+                                                        ],
+                                                    )
+                                                ]
                                             )
                                         ]
-                                    )
-                                ]
-                                if input_channels
-                                else []
-                            ),
-                        ],
+                                        if input_channels
+                                        else []
+                                    ),
+                                ],
+                            )
+                        ]
+                        if input_channels or output_channels
+                        else []
                     ),
                     ada.CallStatement(session_package * "Run", [ada.Variable("Ctx")]),
                 ],
@@ -637,15 +660,21 @@ def session_main(
         ),
         [
             *const.CONFIGURATION_PRAGMAS,
-            ada.WithClause("Ada.Text_IO"),
-            ada.WithClause("RFLX" * const.TYPES),
+            *(
+                [
+                    ada.WithClause("Ada.Text_IO"),
+                    ada.WithClause("RFLX" * const.TYPES),
+                ]
+                if input_channels or output_channels
+                else []
+            ),
             ada.WithClause(session_package),
             ada.WithClause("Session"),
         ],
         ada.PackageBody(
             "Lib",
             [
-                print_procedure,
+                *([print_procedure] if input_channels or output_channels else []),
                 *([read_procedure] if output_channels else []),
                 *(
                     [

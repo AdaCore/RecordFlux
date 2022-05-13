@@ -1259,7 +1259,7 @@ class Opaque(Attribute):
         self.type_ = rty.OPAQUE
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Message)
+        return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
 
 class Val(Attribute):

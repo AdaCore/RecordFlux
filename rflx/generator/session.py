@@ -2911,7 +2911,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             elif (
                 isinstance(a, expr.Opaque)
                 and isinstance(a.prefix, expr.Variable)
-                and isinstance(a.prefix.type_, rty.Message)
+                and isinstance(a.prefix.type_, (rty.Message, rty.Sequence))
             ):
                 self._session_context.used_types_body.append(const.TYPES_LENGTH)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
@@ -2966,7 +2966,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         self._raise_exception_if(
                             Not(
                                 Call(
-                                    type_identifier * "Structural_Valid_Message",
+                                    type_identifier
+                                    * (
+                                        "Structural_Valid_Message"
+                                        if isinstance(a.prefix.type_, rty.Message)
+                                        else "Valid"
+                                    ),
                                     [Variable(message_context)],
                                 )
                             ),
@@ -2974,7 +2979,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             exception_handler,
                         ),
                         CallStatement(
-                            type_identifier * "Message_Data",
+                            type_identifier * "Data",
                             [
                                 Variable(message_context),
                                 argument.ada_expr(),
@@ -3159,19 +3164,20 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
 
         if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
-            assert isinstance(append.parameter, expr.Variable)
+            if isinstance(append.parameter, (expr.Variable, expr.Number)):
+                sequence_type = ID(append.type_.identifier)
+                sequence_context = context_id(append.identifier, is_global)
+                element_type = ID(append.type_.element.identifier)
 
-            sequence_type = ID(append.type_.identifier)
-            sequence_context = context_id(append.identifier, is_global)
-            element_type = ID(append.type_.element.identifier)
+                return [
+                    *check(sequence_type, Size(element_type)),
+                    CallStatement(
+                        sequence_type * "Append_Element",
+                        [Variable(sequence_context), append.parameter.ada_expr()],
+                    ),
+                ]
 
-            return [
-                *check(sequence_type, Size(element_type)),
-                CallStatement(
-                    sequence_type * "Append_Element",
-                    [Variable(sequence_context), append.parameter.ada_expr()],
-                ),
-            ]
+            _unsupported_expression(append.parameter, "in Append statement")
 
         if isinstance(append.type_.element, rty.Message):
             sequence_type = ID(append.type_.identifier)
@@ -3461,7 +3467,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     if (
                         isinstance(expression.prefix.type_, rty.AnyInteger)
                         or (
-                            isinstance(expression.prefix.type_, (rty.Sequence, rty.Aggregate))
+                            isinstance(expression.prefix.type_, rty.Aggregate)
                             and isinstance(expression.prefix.type_.element, rty.AnyInteger)
                         )
                         or (
@@ -3503,14 +3509,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
 
             if isinstance(expression, expr.Opaque):
+                assert expression.type_ == rty.OPAQUE
                 if isinstance(expression.prefix, expr.Variable):
-                    assert expression.type_ == rty.OPAQUE
-                    assert isinstance(expression.prefix.type_, rty.Message)
-                    message_type = ID(expression.prefix.type_.identifier)
-                    message_context = context_id(expression.prefix.identifier, is_global)
-                    return expr.Call(
-                        message_type * "Message_Data", [expr.Variable(message_context)]
-                    )
+                    if isinstance(expression.prefix.type_, (rty.Message, rty.Sequence)):
+                        type_ = ID(expression.prefix.type_.identifier)
+                        context = context_id(expression.prefix.identifier, is_global)
+                        return expr.Call(type_ * "Data", [expr.Variable(context)])
 
                 _unsupported_expression(expression.prefix, "in Opaque attribute")
 
@@ -4085,7 +4089,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ),
             get_statements=[
                 CallStatement(
-                    message_type * "Message_Data",
+                    message_type * "Data",
                     [
                         Variable(message_context),
                         Variable("Data"),

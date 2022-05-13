@@ -1088,7 +1088,7 @@ begin
                       RFLX_Process_Data_Pre (Data'Length)
                   is
                   begin
-                     Universal.Option.Message_Data (C_Ctx, Data);
+                     Universal.Option.Data (C_Ctx, Data);
                   end RFLX_Process_Data;
                   procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
                begin
@@ -1527,7 +1527,7 @@ then
                 RFLX_Process_Data_Pre (Data'Length)
             is
             begin
-               Universal.Option.Message_Data (Y_Ctx, Data);
+               Universal.Option.Data (Y_Ctx, Data);
             end RFLX_Process_Data;
             procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
          begin
@@ -2274,6 +2274,15 @@ def test_session_assign_error(
             FatalError,
             r"unexpected element type undefined type in Append statement",
         ),
+        (
+            stmt.Append(
+                "L",
+                expr.Call("X", type_=rty.Integer("A"), location=Location((10, 20))),
+                type_=rty.Sequence("B", rty.Integer("A")),
+            ),
+            RecordFluxError,
+            r'Call with integer type "A" \(undefined\) in Append statement not yet supported',
+        ),
     ],
 )
 def test_session_append_error(
@@ -2453,7 +2462,7 @@ def test_session_write_error(
         ),
         (
             expr.Opaque(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Call("P::M::Message_Data", [expr.Variable("X_Ctx")]),
+            expr.Call("P::M::Data", [expr.Variable("X_Ctx")]),
         ),
     ],
 )
@@ -2482,6 +2491,11 @@ def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> Non
             expr.Opaque(expr.Call("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
             RecordFluxError,
             r"Call with integer type in Opaque attribute not yet supported",
+        ),
+        (
+            expr.Opaque(expr.Variable("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
+            RecordFluxError,
+            r"Variable with integer type in Opaque attribute not yet supported",
         ),
     ],
 )
