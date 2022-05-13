@@ -309,14 +309,6 @@ DUMMY_SESSION = Session(
                             ada.OutParameter(["RFLX_Result"], "Boolean"),
                         ],
                     ),
-                    aspects=[
-                        ada.ClassPrecondition(
-                            ada.And(
-                                ada.Call("Initialized", [ada.Variable("Ctx")]),
-                            )
-                        ),
-                        ada.ClassPostcondition(ada.Call("Initialized", [ada.Variable("Ctx")])),
-                    ],
                     abstract=True,
                 ),
             ],
@@ -348,14 +340,6 @@ DUMMY_SESSION = Session(
                             ada.OutParameter(["RFLX_Result"], "T.Structure"),
                         ],
                     ),
-                    aspects=[
-                        ada.ClassPrecondition(
-                            ada.And(
-                                ada.Call("Initialized", [ada.Variable("Ctx")]),
-                            )
-                        ),
-                        ada.ClassPostcondition(ada.Call("Initialized", [ada.Variable("Ctx")])),
-                    ],
                     abstract=True,
                 ),
             ],

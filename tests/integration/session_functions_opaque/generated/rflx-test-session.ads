@@ -17,11 +17,7 @@ is
          P : Private_Context;
       end record;
 
-   procedure Check_Size (Ctx : in out Context; Size : RFLX.Test.Size; Data : RFLX_Types.Bytes; RFLX_Result : out Boolean) is abstract with
-     Pre'Class =>
-       Initialized (Ctx),
-     Post'Class =>
-       Initialized (Ctx);
+   procedure Check_Size (Ctx : in out Context; Size : RFLX.Test.Size; Data : RFLX_Types.Bytes; RFLX_Result : out Boolean) is abstract;
 
    function Uninitialized (Unused_Ctx : Context'Class) return Boolean;
 
