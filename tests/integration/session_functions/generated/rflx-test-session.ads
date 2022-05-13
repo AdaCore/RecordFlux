@@ -28,22 +28,11 @@ is
 
    procedure Get_Message_Type (Ctx : in out Context; RFLX_Result : out RFLX.Universal.Option_Type) is abstract with
      Pre'Class =>
-       Initialized (Ctx)
-       and not RFLX_Result'Constrained,
-     Post'Class =>
-       Initialized (Ctx);
+       not RFLX_Result'Constrained;
 
-   procedure Create_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure) is abstract with
-     Pre'Class =>
-       Initialized (Ctx),
-     Post'Class =>
-       Initialized (Ctx);
+   procedure Create_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure) is abstract;
 
-   procedure Valid_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result) is abstract with
-     Pre'Class =>
-       Initialized (Ctx),
-     Post'Class =>
-       Initialized (Ctx);
+   procedure Valid_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result) is abstract;
 
    function Uninitialized (Ctx : Context'Class) return Boolean;
 

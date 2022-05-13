@@ -34,7 +34,6 @@ from rflx.ada import (
     Case,
     CaseStatement,
     ChoiceList,
-    ClassPostcondition,
     ClassPrecondition,
     CommentStatement,
     Component,
@@ -616,20 +615,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ID(function.identifier),
                     procedure_parameters,
                 ),
-                [
-                    ClassPrecondition(
-                        And(
-                            Call("Initialized", [Variable("Ctx")]),
-                            *(
-                                [Not(Constrained("RFLX_Result"))]
-                                if isinstance(function.type_, rty.Enumeration)
-                                and function.type_.always_valid
-                                else []
-                            ),
-                        )
-                    ),
-                    ClassPostcondition(Call("Initialized", [Variable("Ctx")])),
-                ],
+                [ClassPrecondition(Not(Constrained("RFLX_Result")))]
+                if isinstance(function.type_, rty.Enumeration) and function.type_.always_valid
+                else [],
                 abstract=True,
             )
         ]
@@ -2809,7 +2797,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         for i, (a, t) in enumerate(zip(call_expr.args, call_expr.argument_types)):
             if not isinstance(
-                a, (expr.Number, expr.Variable, expr.Selected, expr.Size, expr.String)
+                a,
+                (expr.Number, expr.Variable, expr.Selected, expr.Size, expr.String, expr.Aggregate),
             ) and not (
                 isinstance(a, expr.Opaque)
                 and isinstance(a.prefix, expr.Variable)
