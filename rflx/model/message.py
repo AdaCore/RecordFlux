@@ -104,6 +104,7 @@ class MessageState(Base):
     field_types: Mapping[Field, mty.Type] = {}
     definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
     path_condition: Optional[Mapping[Field, expr.Expr]] = None
+    has_unreachable = False
 
 
 @invariant(lambda self: valid_message_field_types(self))
@@ -128,7 +129,6 @@ class AbstractMessage(mty.Type):
         self.structure = sorted(structure)
 
         self.__types = types
-        self.__has_unreachable = False
         self.__paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
         self._checksums = checksums or {}
 
@@ -145,9 +145,9 @@ class AbstractMessage(mty.Type):
 
         try:
             if not state and (structure or types):
-                self.__validate()
+                self._state.has_unreachable = self.__validate()
                 self.__normalize()
-                fields = self.__compute_topological_sorting()
+                fields = self.__compute_topological_sorting(self._state.has_unreachable)
                 if fields:
                     self._state.field_types = {f: self.__types[f] for f in fields}
                     self._state.parameter_types = {
@@ -159,7 +159,11 @@ class AbstractMessage(mty.Type):
                 self._byte_order = {f: byte_order for f in self.fields}
             else:
                 assert all(f in byte_order for f in self.fields)
-                assert all(f in self.fields for f in byte_order)
+                assert (
+                    all(f in self.fields for f in byte_order)
+                    if not self._state.has_unreachable
+                    else True
+                )
                 self._byte_order = byte_order
         except RecordFluxError:
             pass
@@ -466,7 +470,7 @@ class AbstractMessage(mty.Type):
             expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
         ]
 
-    def __validate(self) -> None:
+    def __validate(self) -> bool:
         type_fields = {*self.__types.keys(), INITIAL, FINAL}
         structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
 
@@ -476,8 +480,10 @@ class AbstractMessage(mty.Type):
 
         self.error.propagate()
 
-        self._validate_structure(structure_fields)
+        has_unreachable = self._validate_structure(structure_fields)
         self._validate_link_aspects()
+
+        return has_unreachable
 
     def _validate_types(self, type_fields: Set[Field], structure_fields: Set[Field]) -> None:
         parameters = self.__types.keys() - structure_fields
@@ -579,13 +585,15 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
-    def _validate_structure(self, structure_fields: Set[Field]) -> None:
+    def _validate_structure(self, structure_fields: Set[Field]) -> bool:
+        has_unreachable = False
+
         for f in structure_fields:
             for l in self.structure:
                 if f in (INITIAL, l.target):
                     break
             else:
-                self.__has_unreachable = True
+                has_unreachable = True
                 self.error.extend(
                     [
                         (
@@ -623,6 +631,8 @@ class AbstractMessage(mty.Type):
                         ],
                     ]
                 )
+
+        return has_unreachable
 
     def _validate_link_aspects(self) -> None:
         for link in self.structure:
@@ -734,7 +744,7 @@ class AbstractMessage(mty.Type):
                             location=link.location,
                         )
 
-    def __compute_topological_sorting(self) -> Optional[Tuple[Field, ...]]:
+    def __compute_topological_sorting(self, has_unreachable: bool) -> Optional[Tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
         result: Tuple[Field, ...] = ()
         fields = [INITIAL]
@@ -746,7 +756,7 @@ class AbstractMessage(mty.Type):
                 visited.add(e)
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
-        if not self.__has_unreachable and set(self.structure) - visited:
+        if not has_unreachable and set(self.structure) - visited:
             self.error.extend(
                 [
                     (
