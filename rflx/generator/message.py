@@ -2024,24 +2024,13 @@ def create_size_function() -> UnitPart:
                 ],
             )
         ],
-        [
+        private=[
             ExpressionFunctionDeclaration(
                 specification,
-                If(
-                    [
-                        (
-                            Equal(
-                                Variable("Ctx.Verified_Last"),
-                                Sub(Variable("Ctx.First"), Number(1)),
-                            ),
-                            Number(0),
-                        )
-                    ],
-                    Add(
-                        Variable("Ctx.Verified_Last"),
-                        -Variable("Ctx.First"),
-                        Number(1),
-                    ),
+                Add(
+                    Variable("Ctx.Verified_Last"),
+                    -Variable("Ctx.First"),
+                    Number(1),
                 ),
             )
         ],
@@ -2057,38 +2046,12 @@ def create_byte_size_function() -> UnitPart:
         [
             SubprogramDeclaration(
                 specification,
-                [
-                    Postcondition(
-                        Equal(
-                            Result("Byte_Size"),
-                            Call(const.TYPES_TO_LENGTH, [Call("Size", [Variable("Ctx")])]),
-                        )
-                    ),
-                ],
             )
         ],
-        [
+        private=[
             ExpressionFunctionDeclaration(
                 specification,
-                If(
-                    [
-                        (
-                            Equal(
-                                Variable("Ctx.Verified_Last"),
-                                Sub(Variable("Ctx.First"), Number(1)),
-                            ),
-                            Number(0),
-                        )
-                    ],
-                    Indexed(
-                        Variable(const.TYPES_LENGTH),
-                        Add(
-                            Call(const.TYPES_TO_INDEX, [Variable("Ctx.Verified_Last")]),
-                            -Call(const.TYPES_TO_INDEX, [Variable("Ctx.First")]),
-                            Number(1),
-                        ),
-                    ),
-                ),
+                Call(const.TYPES_TO_LENGTH, [Call("Size", [Variable("Ctx")])]),
             )
         ],
     )

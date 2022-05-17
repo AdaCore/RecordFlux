@@ -224,9 +224,7 @@ is
      Post =>
        Size'Result rem RFLX_Types.Byte'Size = 0;
 
-   function Byte_Size (Ctx : Context) return RFLX_Types.Length with
-     Post =>
-       Byte_Size'Result = RFLX_Types.To_Length (Size (Ctx));
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
@@ -737,6 +735,12 @@ private
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length is
      (Ctx.Buffer'Length);
+
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length is
+     (Ctx.Verified_Last - Ctx.First + 1);
+
+   function Byte_Size (Ctx : Context) return RFLX_Types.Length is
+     (RFLX_Types.To_Length (Size (Ctx)));
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Verified_Last);
