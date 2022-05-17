@@ -62,17 +62,6 @@ is
       Ctx.Written_Last := RFLX_Types.Bit_Index'Max (Ctx.Written_Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1));
    end Generic_Write;
 
-   function Size (Ctx : Context) return RFLX_Types.Bit_Length is
-     ((if Ctx.Verified_Last = Ctx.First - 1 then 0 else Ctx.Verified_Last - Ctx.First + 1));
-
-   function Byte_Size (Ctx : Context) return RFLX_Types.Length is
-     ((if
-          Ctx.Verified_Last = Ctx.First - 1
-       then
-          0
-       else
-          RFLX_Types.Length (RFLX_Types.To_Index (Ctx.Verified_Last) - RFLX_Types.To_Index (Ctx.First) + 1)));
-
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
    begin
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
