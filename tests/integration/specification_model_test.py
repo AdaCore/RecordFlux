@@ -503,6 +503,34 @@ def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
     )
 
 
+def test_invalid_message_with_unreachable_field_after_merging() -> None:
+    assert_error_string(
+        """
+           package Test is
+
+              type T is range 0 .. 3 with Size => 8;
+
+              type I is
+                 message
+                    A : T;
+                 end message;
+
+              type O is
+                 message
+                    C : I
+                       then null
+                          if C_A /= 4
+                       then D
+                          if C_A = 4;
+                    D : T;
+                 end message;
+
+           end Test;
+        """,
+        r'^<stdin>:18:21: model: error: unreachable field "D" in "Test::O"$',
+    )
+
+
 def test_dependency_order() -> None:
     p = parser.Parser()
     p.parse(Path(f"{SPEC_DIR}/in_p1.rflx"))
