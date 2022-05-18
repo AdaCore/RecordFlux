@@ -49,7 +49,7 @@ is
       function Check_Message_Invariant return Boolean is
         (Universal.Message.Has_Buffer (Message_Ctx)
          and Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Message_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
@@ -117,7 +117,7 @@ is
       function Check_Message_Sequence_Invariant return Boolean is
         (Universal.Options.Has_Buffer (Message_Sequence_Ctx)
          and Message_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Message_Sequence_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Message_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
@@ -198,7 +198,7 @@ is
       function Check_Scalar_Sequence_Invariant return Boolean is
         (Universal.Values.Has_Buffer (Scalar_Sequence_Ctx)
          and Scalar_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Scalar_Sequence_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Scalar_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
