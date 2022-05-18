@@ -131,12 +131,12 @@ is
         (Global_Initialized (Ctx)
          and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
          and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8095
+         and Option_Types_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 8095
          and Ctx.P.Slots.Slot_Ptr_4 = null
          and Global_Initialized (Ctx)
          and Universal.Options.Has_Buffer (Message_Options_Ctx)
          and Message_Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Message_Options_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Message_Options_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_7 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null

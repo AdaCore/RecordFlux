@@ -809,7 +809,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     Variable(identifier * "Buffer_First"),
                                     First(self._prefix * const.TYPES_INDEX),
                                 ),
-                                Equal(
+                                # Due to the reuse of allocation slots, `Buffer_Last` can be greater
+                                # then the actual required size.
+                                GreaterEqual(
                                     Variable(identifier * "Buffer_Last"),
                                     Add(
                                         First(self._prefix * const.TYPES_INDEX),

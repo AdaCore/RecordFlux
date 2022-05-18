@@ -24,7 +24,7 @@ is
         (Global_Initialized (Ctx)
          and Universal.Options.Has_Buffer (Options_Ctx)
          and Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Options_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Options_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with

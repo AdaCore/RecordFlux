@@ -59,7 +59,7 @@ is
         (Global_Initialized (Ctx)
          and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
          and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Option_Types_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 4095
+         and Option_Types_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_3 /= null

@@ -112,7 +112,7 @@ is
         (Global_Initialized (Ctx)
          and Universal.Message.Has_Buffer (M_Ctx)
          and M_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and M_Ctx.Buffer_Last = RFLX.RFLX_Types.Index'First + 8191
+         and M_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 8191
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
