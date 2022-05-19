@@ -1395,18 +1395,7 @@ class MessageValue(TypeValue):
                 assert isinstance(expr, (ValueRange, Attribute, Variable))
                 self.parameters.append(ExpressionTuple(expr))
 
-    @dataclass
     class Field(Base):
-        typeval: TypeValue
-        __first: Expr
-        __last: Expr
-        name_variable: Variable
-        name_first: First
-        name_last: Last
-        name_size: Size
-        prev: str
-        next: str
-
         def __init__(
             self,
             t: TypeValue,
@@ -1419,14 +1408,16 @@ class MessageValue(TypeValue):
             # pylint: disable=too-many-arguments
             assert name or (name_variable and name_first and name_last and name_size)
             self.typeval = t
-            self.__is_scalar = isinstance(self.typeval, ScalarValue)
-            self.first: Expr = UNDEFINED
             self.name_variable = name_variable if name_variable else Variable(name)
             self.name_first = name_first if name_first else First(name)
             self.name_last = name_last if name_last else Last(name)
             self.name_size = name_size if name_size else Size(name)
             self.prev = ""
             self.next = ""
+
+            self.__is_scalar = isinstance(self.typeval, ScalarValue)
+            self.__first: Expr = UNDEFINED
+            self.__last: Expr = UNDEFINED
 
         def _last(self) -> Expr:
             if self.first == UNDEFINED:
