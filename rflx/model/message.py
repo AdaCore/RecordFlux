@@ -2397,5 +2397,5 @@ def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
     return {
         f.left: f.right
         for f in facts
-        if isinstance(f, (expr.Equal, expr.GreaterEqual)) and isinstance(f.left, expr.Name)
+        if isinstance(f, expr.Equal) and isinstance(f.left, expr.Name)
     }
