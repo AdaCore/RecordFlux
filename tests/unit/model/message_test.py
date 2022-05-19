@@ -2726,24 +2726,24 @@ def test_is_definite() -> None:
 def test_size() -> None:
     assert NULL_MESSAGE.size() == Number(0)
     assert FIXED_SIZE_MESSAGE.size() == Number(200)
-    assert TLV_MESSAGE.size({Field("Tag"): Variable("Msg_Error")}) == Number(8)
+    assert TLV_MESSAGE.size({Field("Tag"): Variable("TLV::Msg_Error")}) == Number(8)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("Msg_Data"),
+            Field("Tag"): Variable("TLV::Msg_Data"),
             Field("Length"): Number(4),
             Field("Value"): Aggregate(*[Number(0)] * 4),
         }
     ) == Number(56)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("Msg_Data"),
+            Field("Tag"): Variable("TLV::Msg_Data"),
             Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
             Field("Value"): Aggregate(*[Number(0)] * 3),
         }
     ) == Number(48)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("Msg_Data"),
+            Field("Tag"): Variable("TLV::Msg_Data"),
             Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
             Field("Value"): Variable("Z"),
         }
