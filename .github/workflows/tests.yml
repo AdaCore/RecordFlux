@@ -184,7 +184,7 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
+      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
         version: ${{ env.gnat-version }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
