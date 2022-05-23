@@ -264,8 +264,8 @@ class Expr(DBC, Base):
 
 
 class Not(Expr):
-    def __init__(self, expr: Expr) -> None:
-        super().__init__(rty.BOOLEAN)
+    def __init__(self, expr: Expr, location: Location = None) -> None:
+        super().__init__(rty.BOOLEAN, location)
         self.expr = expr
 
     def _update_str(self) -> None:
@@ -277,12 +277,30 @@ class Not(Expr):
     def __neg__(self) -> Expr:
         return self.expr
 
-    def variables(self) -> List["Variable"]:
-        return self.expr.variables()
-
     @property
     def precedence(self) -> Precedence:
         return Precedence.HIGHEST_PRECEDENCE_OPERATOR
+
+    def variables(self) -> List["Variable"]:
+        return self.expr.variables()
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *self.expr.findall(match),
+        ]
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Not):
+            return expr.__class__(
+                expr.expr.substituted(func),
+                location=expr.location,
+            )
+        return expr
 
     def simplified(self) -> Expr:
         for relation, inverse_relation in [
