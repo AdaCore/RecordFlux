@@ -25,6 +25,7 @@ from rflx.expression import (
     LessEqual,
     Mod,
     Mul,
+    Not,
     NotEqual,
     Number,
     Opaque,
@@ -1274,6 +1275,30 @@ def test_exclusive_with_size_valid() -> None:
             Field("F2"),
             Field("F3"),
             condition=And(Equal(Size("F2"), Number(32)), Greater(Variable("F1"), Number(80))),
+        ),
+        Link(Field("F3"), FINAL),
+    ]
+    types = {
+        Field("F1"): MODULAR_INTEGER,
+        Field("F2"): OPAQUE,
+        Field("F3"): MODULAR_INTEGER,
+    }
+    Message("P::M", structure, types)
+
+
+def test_exclusive_with_size_valid_and_not() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), size=Number(32)),
+        Link(
+            Field("F2"),
+            FINAL,
+            condition=And(Equal(Size("F2"), Number(32)), Less(Variable("F1"), Number(50))),
+        ),
+        Link(
+            Field("F2"),
+            Field("F3"),
+            condition=And(Equal(Size("F2"), Number(32)), Not(Less(Variable("F1"), Number(80)))),
         ),
         Link(Field("F3"), FINAL),
     ]
