@@ -153,6 +153,23 @@ def test_not_neg() -> None:
     assert y != -y
 
 
+def test_not_findall() -> None:
+    assert Not(Variable("X")).findall(lambda x: isinstance(x, Variable)) == [Variable("X")]
+
+
+def test_not_substituted() -> None:
+    assert_equal(
+        Not(Variable("X")).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        Not(Variable("P_X")),
+    )
+    assert_equal(
+        Not(Variable("X")).substituted(lambda x: Variable("Y") if x == Not(Variable("X")) else x),
+        Variable("Y"),
+    )
+
+
 def test_not_simplified() -> None:
     assert_equal(
         Not(Less(Variable("X"), Variable("Y"))).simplified(),
@@ -1391,7 +1408,7 @@ def test_quantified_expression_str() -> None:
 @pytest.mark.parametrize("expression", [ForAllOf, ForAllIn, ForSomeIn])
 def test_quantified_expression_ada_expr(expression: Callable[[str, Expr, Expr], Expr]) -> None:
     result = expression("X", Variable("Y"), Variable("Z")).ada_expr()
-    result = expected = getattr(ada, expression.__name__)("X", ada.Variable("Y"), ada.Variable("Z"))
+    expected = getattr(ada, expression.__name__)("X", ada.Variable("Y"), ada.Variable("Z"))
     assert result == expected
 
 
