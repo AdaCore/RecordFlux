@@ -2652,10 +2652,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
         target_id = ID(target)
+        target_context = context_id(target_id, is_global)
         sequence_type_id = ID(comprehension.sequence.type_.identifier)
         iterator_id = ID(comprehension.iterator)
 
         sequence_element_type = comprehension.sequence.type_.element
+
+        reset_target = CallStatement(
+            ID(target_type.identifier) * "Reset", [Variable(target_context)]
+        )
 
         if isinstance(sequence_element_type, rty.Message):
             iterator_type_id = ID(sequence_element_type.identifier)
@@ -2664,6 +2669,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 sequence_id = ID(rid.ID(f"{comprehension.sequence}"))
                 with exception_handler.local() as local_exception_handler:
                     return [
+                        reset_target,
                         self._declare_sequence_copy(
                             sequence_id,
                             sequence_type_id,
@@ -2710,6 +2716,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
                 with exception_handler.local() as local_exception_handler:
                     return [
+                        reset_target,
                         self._if_structural_valid_message(
                             message_type,
                             context_id(message_id, is_global),
