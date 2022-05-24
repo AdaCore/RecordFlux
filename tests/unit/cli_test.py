@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import Callable
@@ -6,7 +8,7 @@ import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
 import rflx.specification
-from rflx import cli, validator
+from rflx import cli, generator, validator
 from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
 from rflx.pyrflx import PyRFLXError
 from tests.const import SPEC_DIR
@@ -131,6 +133,37 @@ def test_main_generate_non_existent_directory() -> None:
     assert 'cli: error: directory not found: "non-existent directory"' in str(
         cli.main(["rflx", "generate", "-d", "non-existent directory", SPEC_FILE])
     )
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        ([], generator.Debug.NONE),
+        (["--debug", "built-in"], generator.Debug.BUILTIN),
+        (["--debug", "external"], generator.Debug.EXTERNAL),
+    ],
+)
+def test_main_generate_debug(
+    args: list[str], expected: generator.Debug, monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    result = []
+
+    def generator_mock(  # pylint: disable = too-many-arguments, unused-argument
+        self: object,
+        model: object,
+        integration: object,
+        prefix: str,
+        workers: int,
+        reproducible: bool,
+        debug: generator.Debug,
+        ignore_unsupported_checksum: bool,
+    ) -> None:
+        result.append(debug)
+
+    monkeypatch.setattr(generator.Generator, "__init__", generator_mock)
+    monkeypatch.setattr(generator.Generator, "write_files", lambda x: None)
+    cli.main(["rflx", "generate", "-d", str(tmp_path), *args, SPEC_FILE])
+    assert result == [expected]
 
 
 def test_main_graph(tmp_path: Path) -> None:

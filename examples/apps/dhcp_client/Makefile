@@ -22,7 +22,7 @@ binary_size: $(bin-optimized)
 	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 172000
 
 $(src): $(specs)
-	rflx generate -d generated --debug $^
+	rflx generate -d generated --debug built-in $^
 
 $(bin): $(src) $(wildcard src/*) $(wildcard generated/*)
 	gprbuild -Pdhcp_client -Xgnat=$(GNAT) -Xmode=asserts_enabled

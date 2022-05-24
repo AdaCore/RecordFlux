@@ -1,7 +1,9 @@
+import textwrap
 from pathlib import Path
 
 import pytest
 
+from rflx.generator import Debug
 from rflx.integration import Integration
 from rflx.specification import Parser
 from tests import utils
@@ -786,3 +788,73 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+@pytest.mark.parametrize(
+    "debug, expected",
+    [
+        (Debug.NONE, ""),
+        (Debug.BUILTIN, "State: A\nState: B\nState: C\n"),
+        (Debug.EXTERNAL, "XState: A\nXState: B\nXState: C\n"),
+    ],
+)
+def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Path) -> None:
+    spec = """
+        package Test is
+
+           generic
+           session Session with
+              Initial => A,
+              Final => D
+           is
+           begin
+              state A is
+              begin
+              transition
+                 goto B
+              end A;
+
+              state B is
+              begin
+              transition
+                 goto C
+              end B;
+
+              state C is
+              begin
+              transition
+                 goto D
+              end C;
+
+              state D is null state;
+           end Session;
+
+        end Test;
+    """
+    parser = Parser()
+    parser.parse_string(spec)
+    model = parser.create_model()
+    integration = parser.get_integration()
+
+    for filename, content in utils.session_main().items():
+        (tmp_path / filename).write_text(content)
+
+    (tmp_path / "rflx-rflx_debug.adb").write_text(
+        textwrap.dedent(
+            """\
+            with Ada.Text_IO;
+
+            package body RFLX.RFLX_Debug with
+               SPARK_Mode
+            is
+
+               procedure Print (Message : String) is
+               begin
+                  Ada.Text_IO.Put_Line ("X" & Message);
+               end Print;
+
+            end RFLX.RFLX_Debug;"""
+        )
+    )
+
+    assert utils.assert_executable_code(model, integration, tmp_path, debug=debug) == expected

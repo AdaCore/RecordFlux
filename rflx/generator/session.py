@@ -102,7 +102,7 @@ from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Location, Subsystem, fail, fatal_fail
 from rflx.model import declaration as decl, statement as stmt
 
-from . import const
+from . import common, const
 from .allocator import AllocatorGenerator
 
 
@@ -206,7 +206,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         session: model.Session,
         allocator: AllocatorGenerator,
         prefix: str = "",
-        debug: bool = False,
+        debug: common.Debug = common.Debug.NONE,
     ) -> None:
         self._session = session
         self._prefix = prefix
@@ -262,7 +262,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
         body_context: List[ContextItem] = [
-            *([WithClause("Ada.Text_IO")] if self._debug else []),
+            *(
+                [
+                    WithClause(self._prefix * ID("RFLX_Debug"))
+                    if self._debug == common.Debug.EXTERNAL
+                    else WithClause("Ada.Text_IO")
+                ]
+                if self._debug != common.Debug.NONE
+                else []
+            ),
         ]
 
         for referenced_types, context in [
@@ -4636,7 +4644,18 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return expr.Conversion(target_type.identifier, expression)
 
     def _debug_output(self, string: str) -> List[CallStatement]:
-        return [CallStatement("Ada.Text_IO.Put_Line", [String(string)])] if self._debug else []
+        return (
+            [
+                CallStatement(
+                    self._prefix * ID("RFLX_Debug.Print")
+                    if self._debug == common.Debug.EXTERNAL
+                    else "Ada.Text_IO.Put_Line",
+                    [String(string)],
+                )
+            ]
+            if self._debug != common.Debug.NONE
+            else []
+        )
 
 
 def copy_id(identifier: ID) -> ID:

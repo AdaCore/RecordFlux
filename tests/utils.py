@@ -12,7 +12,7 @@ import pytest
 from rflx import ada
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
-from rflx.generator import Generator, const
+from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
@@ -87,15 +87,16 @@ def assert_compilable_code_string(
     assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix)
 
 
-def assert_compilable_code(
+def assert_compilable_code(  # pylint: disable = too-many-arguments
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
     main: str = None,
     prefix: str = None,
+    debug: Debug = Debug.BUILTIN,
     mode: str = "strict",
 ) -> None:
-    _create_files(tmp_path, model, integration, main, prefix)
+    _create_files(tmp_path, model, integration, main, prefix, debug)
 
     p = subprocess.run(
         ["gprbuild", "-Ptest", f"-Xmode={mode}", f"-Xgnat={os.getenv('GNAT', '')}"],
@@ -110,9 +111,16 @@ def assert_compilable_code(
 
 
 def assert_executable_code(
-    model: Model, integration: Integration, tmp_path: pathlib.Path, main: str, prefix: str = None
+    model: Model,
+    integration: Integration,
+    tmp_path: pathlib.Path,
+    main: str = "main.adb",
+    prefix: str = None,
+    debug: Debug = Debug.BUILTIN,
 ) -> str:
-    assert_compilable_code(model, integration, tmp_path, main, prefix, mode="asserts_enabled")
+    assert_compilable_code(
+        model, integration, tmp_path, main, prefix, debug, mode="asserts_enabled"
+    )
 
     p = subprocess.run(
         ["./" + main.split(".")[0]],
@@ -170,6 +178,7 @@ def _create_files(
     integration: Integration,
     main: str = None,
     prefix: str = None,
+    debug: Debug = Debug.BUILTIN,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     shutil.copy("defaults.adc", tmp_path)
@@ -213,7 +222,7 @@ def _create_files(
         model,
         integration,
         prefix if prefix is not None else "RFLX",
-        debug=True,
+        debug=debug,
         ignore_unsupported_checksum=True,
     )
     generator.write_units(tmp_path)

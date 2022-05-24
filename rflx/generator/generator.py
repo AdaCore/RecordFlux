@@ -122,7 +122,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         prefix: str = "",
         workers: int = 1,
         reproducible: bool = False,
-        debug: bool = False,
+        debug: common.Debug = common.Debug.NONE,
         ignore_unsupported_checksum: bool = False,
     ) -> None:
         self.__prefix = str(ID(prefix)) if prefix else ""
@@ -139,6 +139,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         assert self.__template_dir.is_dir(), "template directory not found"
 
         self.__generate(model, integration)
+
+    def write_files(
+        self, directory: Path, library_files: bool = True, top_level_package: bool = True
+    ) -> None:
+        self.write_units(directory)
+        if library_files:
+            self.write_library_files(directory)
+        if top_level_package:
+            self.write_top_level_package(directory)
 
     def write_library_files(self, directory: Path) -> None:
         for template_filename in const.LIBRARY_FILES:
@@ -158,6 +167,34 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                         if "  --  ISSUE" not in l
                     ]
                 ),
+            )
+
+        if self.__debug == common.Debug.EXTERNAL:
+            debug_package_id = self.__prefix * ID("RFLX_Debug")
+            create_file(
+                directory / f"{file_name(str(debug_package_id))}.ads",
+                self.__license_header()
+                + PackageUnit(
+                    [],
+                    PackageDeclaration(
+                        debug_package_id,
+                        [
+                            SubprogramDeclaration(
+                                ProcedureSpecification(
+                                    "Print",
+                                    [
+                                        Parameter(["Message"], "String"),
+                                    ],
+                                )
+                            )
+                        ],
+                        aspects=[
+                            SparkMode(),
+                        ],
+                    ),
+                    [],
+                    PackageBody(debug_package_id),
+                ).ads,
             )
 
     def write_top_level_package(self, directory: Path) -> None:

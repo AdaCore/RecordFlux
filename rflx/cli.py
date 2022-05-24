@@ -13,7 +13,7 @@ from pkg_resources import get_distribution
 
 from rflx import __version__
 from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
-from rflx.generator import Generator
+from rflx.generator import Debug, Generator
 from rflx.graph import Graph
 from rflx.identifier import ID
 from rflx.integration import Integration
@@ -77,8 +77,9 @@ def main(argv: List[str]) -> Union[int, str]:
     )
     parser_generate.add_argument(
         "--debug",
+        default=None,
+        choices=["built-in", "external"],
         help="enable adding of debug output to generated code",
-        action="store_true",
     )
     parser_generate.add_argument(
         "--ignore-unsupported-checksum",
@@ -262,14 +263,18 @@ def generate(args: argparse.Namespace) -> None:
         args.prefix,
         workers=args.workers,
         reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
-        debug=args.debug,
+        debug=Debug.BUILTIN
+        if args.debug == "built-in"
+        else Debug.EXTERNAL
+        if args.debug == "external"
+        else Debug.NONE,
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
     )
-    generator.write_units(args.output_directory)
-    if not args.no_library:
-        generator.write_library_files(args.output_directory)
-    if args.prefix == DEFAULT_PREFIX:
-        generator.write_top_level_package(args.output_directory)
+    generator.write_files(
+        args.output_directory,
+        library_files=not args.no_library,
+        top_level_package=args.prefix == DEFAULT_PREFIX,
+    )
 
 
 def parse(
