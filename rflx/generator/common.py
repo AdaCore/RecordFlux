@@ -1,5 +1,6 @@
 # pylint: disable = too-many-lines
 
+import enum
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
 from rflx import expression as expr, identifier as rid, model
@@ -52,6 +53,12 @@ from rflx.ada import (
 from . import const
 
 EMPTY_ARRAY = NamedAggregate((ValueRange(Number(1), Number(0)), Number(0)))
+
+
+class Debug(enum.Enum):
+    NONE = enum.auto()
+    BUILTIN = enum.auto()
+    EXTERNAL = enum.auto()
 
 
 def substitution(
