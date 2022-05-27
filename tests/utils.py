@@ -67,6 +67,55 @@ def assert_type_error(instance: Type, regex: str) -> None:
         instance.error.propagate()
 
 
+def assert_equal_code_specs(
+    spec_files: Iterable[Union[str, pathlib.Path]],
+    expected_dir: pathlib.Path,
+    tmp_path: pathlib.Path,
+    accept_extra_files: bool = False,
+) -> None:
+    parser = Parser()
+
+    for spec_file in spec_files:
+        parser.parse(pathlib.Path(spec_file))
+
+    assert_equal_code(
+        parser.create_model(), parser.get_integration(), expected_dir, tmp_path, accept_extra_files
+    )
+
+
+def assert_equal_code(
+    model: Model,
+    integration: Integration,
+    expected_dir: pathlib.Path,
+    tmp_path: pathlib.Path,
+    accept_extra_files: bool = False,
+) -> None:
+    Generator(
+        "RFLX",
+        reproducible=True,
+        ignore_unsupported_checksum=True,
+    ).generate(model, integration, tmp_path)
+
+    generated_files = list(tmp_path.glob("*"))
+    generated_files.sort(key=lambda x: x.name)
+
+    expected_files = list(expected_dir.glob("*"))
+    expected_files.sort(key=lambda x: x.name)
+
+    if accept_extra_files:
+        assert {f.name for f in generated_files} <= {
+            f.name for f in expected_files
+        }, "missing files"
+    else:
+        assert [f.name for f in generated_files] == [
+            f.name for f in expected_files
+        ], "unexpected or missing files"
+    for generated in generated_files:
+        assert (
+            generated.read_text() == (expected_dir / generated.name).read_text()
+        ), f"mismatch in {generated.name}"
+
+
 def assert_compilable_code_specs(
     spec_files: Iterable[Union[str, pathlib.Path]], tmp_path: pathlib.Path, prefix: str = None
 ) -> None:
@@ -218,16 +267,11 @@ def _create_files(
         )
     )
 
-    generator = Generator(
-        model,
-        integration,
+    Generator(
         prefix if prefix is not None else "RFLX",
         debug=debug,
         ignore_unsupported_checksum=True,
-    )
-    generator.write_units(tmp_path)
-    generator.write_library_files(tmp_path)
-    generator.write_top_level_package(tmp_path)
+    ).generate(model, integration, tmp_path)
 
 
 def session_main(

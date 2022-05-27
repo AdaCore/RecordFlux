@@ -257,9 +257,7 @@ def generate(args: argparse.Namespace) -> None:
         args.files, args.no_verification, args.workers, args.integration_files_dir
     )
 
-    generator = Generator(
-        model,
-        integration,
+    Generator(
         args.prefix,
         workers=args.workers,
         reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
@@ -269,8 +267,9 @@ def generate(args: argparse.Namespace) -> None:
         if args.debug == "external"
         else Debug.NONE,
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
-    )
-    generator.write_files(
+    ).generate(
+        model,
+        integration,
         args.output_directory,
         library_files=not args.no_library,
         top_level_package=args.prefix == DEFAULT_PREFIX,

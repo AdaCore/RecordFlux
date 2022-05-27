@@ -114,11 +114,9 @@ from .session import SessionGenerator
 log = logging.getLogger(__name__)
 
 
-class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arguments
+class Generator:  # pylint: disable = too-many-instance-attributes
     def __init__(
         self,
-        model: Model,
-        integration: Integration,
         prefix: str = "",
         workers: int = 1,
         reproducible: bool = False,
@@ -138,18 +136,27 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
         self.__template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
         assert self.__template_dir.is_dir(), "template directory not found"
 
-        self.__generate(model, integration)
+    def generate(
+        self,
+        model: Model,
+        integration: Integration,
+        directory: Path,
+        library_files: bool = True,
+        top_level_package: bool = True,
+    ) -> None:
+        self._generate(model, integration)
+        self._write_files(directory, library_files, top_level_package)
 
-    def write_files(
+    def _write_files(
         self, directory: Path, library_files: bool = True, top_level_package: bool = True
     ) -> None:
-        self.write_units(directory)
+        self._write_units(directory)
         if library_files:
-            self.write_library_files(directory)
+            self._write_library_files(directory)
         if top_level_package:
-            self.write_top_level_package(directory)
+            self._write_top_level_package(directory)
 
-    def write_library_files(self, directory: Path) -> None:
+    def _write_library_files(self, directory: Path) -> None:
         for template_filename in const.LIBRARY_FILES:
             self.__check_template_file(template_filename)
 
@@ -197,14 +204,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                 ).ads,
             )
 
-    def write_top_level_package(self, directory: Path) -> None:
+    def _write_top_level_package(self, directory: Path) -> None:
         if self.__prefix:
             create_file(
                 Path(directory) / Path(file_name(self.__prefix) + ".ads"),
                 self.__license_header() + f"package {self.__prefix} is\n\nend {self.__prefix};",
             )
 
-    def write_units(self, directory: Path) -> None:
+    def _write_units(self, directory: Path) -> None:
         for unit in self._units.values():
             create_file(directory / Path(unit.name + ".ads"), self.__license_header() + unit.ads)
 
@@ -213,7 +220,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes, too-many-arg
                     directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
                 )
 
-    def __generate(self, model: Model, integration: Integration) -> None:
+    def _generate(self, model: Model, integration: Integration) -> None:
         for t in model.types:
             if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue

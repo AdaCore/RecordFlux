@@ -1,37 +1,19 @@
 import itertools
 from pathlib import Path
-from typing import Sequence
 
 import pytest
 
 from rflx import expression as expr, pyrflx
-from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.pyrflx import PyRFLXError
-from rflx.specification import Parser
 from tests.const import CAPTURED_DIR, GENERATED_DIR, SPEC_DIR
+from tests.utils import assert_equal_code_specs
 
 
-def assert_equal_code(spec_files: Sequence[Path]) -> None:
-    parser = Parser()
-
-    for spec_file in spec_files:
-        parser.parse(Path(spec_file))
-
-    model = parser.create_model()
-
-    generator = Generator(model, parser.get_integration(), "RFLX", reproducible=True)
-
-    for unit in generator._units.values():  # pylint: disable=protected-access
-        filename = GENERATED_DIR / f"{unit.name}.ads"
-        assert unit.ads == filename.read_text(encoding="utf-8"), filename
-        if unit.adb:
-            filename = GENERATED_DIR / f"{unit.name}.adb"
-            assert unit.adb == filename.read_text(encoding="utf-8"), filename
-
-
-def test_ethernet() -> None:
-    assert_equal_code([SPEC_DIR / "ethernet.rflx"])
+def test_ethernet(tmp_path: Path) -> None:
+    assert_equal_code_specs(
+        [SPEC_DIR / "ethernet.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+    )
 
 
 # rflx-ethernet-tests.adb
@@ -208,8 +190,10 @@ def test_ethernet_generating_ethernet_2_vlan_dynamic() -> None:
     pass  # not relevant for Python implementation, as it tests correct verification in SPARK
 
 
-def test_ipv4() -> None:
-    assert_equal_code([SPEC_DIR / "ipv4.rflx"])
+def test_ipv4(tmp_path: Path) -> None:
+    assert_equal_code_specs(
+        [SPEC_DIR / "ipv4.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+    )
 
 
 # rflx-ipv4-tests.adb
@@ -291,27 +275,35 @@ def test_ipv4_generating_ipv4_option_value(ipv4_option_value: pyrflx.MessageValu
     assert ipv4_option_value.valid_message
 
 
-def test_in_ethernet() -> None:
-    assert_equal_code(
+def test_in_ethernet(tmp_path: Path) -> None:
+    assert_equal_code_specs(
         [
             SPEC_DIR / "ethernet.rflx",
             SPEC_DIR / "ipv4.rflx",
             SPEC_DIR / "in_ethernet.rflx",
-        ]
+        ],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 
-def test_udp() -> None:
-    assert_equal_code([SPEC_DIR / "udp.rflx"])
+def test_udp(tmp_path: Path) -> None:
+    assert_equal_code_specs(
+        [SPEC_DIR / "udp.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+    )
 
 
-def test_in_ipv4() -> None:
-    assert_equal_code(
+def test_in_ipv4(tmp_path: Path) -> None:
+    assert_equal_code_specs(
         [
             SPEC_DIR / "ipv4.rflx",
             SPEC_DIR / "udp.rflx",
             SPEC_DIR / "in_ipv4.rflx",
-        ]
+        ],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 
@@ -391,8 +383,10 @@ def test_in_ipv4_generating_udp_in_ipv4_in_ethernet(
     assert ethernet_frame_value.bytestring == parsed_frame
 
 
-def test_tlv() -> None:
-    assert_equal_code([SPEC_DIR / "tlv.rflx"])
+def test_tlv(tmp_path: Path) -> None:
+    assert_equal_code_specs(
+        [SPEC_DIR / "tlv.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+    )
 
 
 # rflx-tlv-tests.adb
