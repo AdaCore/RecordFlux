@@ -8,13 +8,13 @@ from typing import Optional, Sequence, Tuple
 import pytest
 from ruamel.yaml.main import YAML
 
-from rflx.generator import Generator
 from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.utils import (
     assert_compilable_code,
+    assert_equal_code,
     assert_executable_code,
     assert_provable_code,
     session_main,
@@ -91,23 +91,7 @@ def test_equality(feature: str, tmp_path: Path) -> None:
         pytest.skip()
 
     model, integration = create_model(feature)
-    generator = Generator(
-        model, integration, "RFLX", reproducible=True, ignore_unsupported_checksum=True
-    )
-    generator.write_top_level_package(tmp_path)
-    generator.write_library_files(tmp_path)
-    generator.write_units(tmp_path)
-    generated_files = list(tmp_path.glob("*"))
-    expected_files = list(generated_dir.glob("*"))
-
-    generated_files.sort(key=lambda x: x.name)
-    expected_files.sort(key=lambda x: x.name)
-
-    assert [f.name for f in generated_files] == [
-        f.name for f in expected_files
-    ], "unexpected or missing units"
-    for generated, expected in zip(generated_files, expected_files):
-        assert generated.read_text() == expected.read_text(), f"mismatch in {generated.name}"
+    assert_equal_code(model, integration, generated_dir, tmp_path)
 
 
 @pytest.mark.compilation

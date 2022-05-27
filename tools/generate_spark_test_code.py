@@ -47,28 +47,22 @@ def main() -> int:
     parser.parse(*SPECIFICATION_FILES)
 
     for model in [parser.create_model(), *MODELS]:
-        generator = Generator(
-            model, Integration(), "RFLX", reproducible=True, ignore_unsupported_checksum=True
-        )
-        generator.write_units(OUTPUT_DIRECTORY)
-        generator.write_library_files(OUTPUT_DIRECTORY)
-        generator.write_top_level_package(OUTPUT_DIRECTORY)
+        Generator(
+            "RFLX",
+            reproducible=True,
+            ignore_unsupported_checksum=True,
+        ).generate(model, Integration(), OUTPUT_DIRECTORY)
 
     for feature_test in FEATURE_TESTS:
         output_directory = feature_test / "generated"
         output_directory.mkdir(exist_ok=True)
         parser = Parser()
         parser.parse(feature_test / "test.rflx")
-        generator = Generator(
-            parser.create_model(),
-            parser.get_integration(),
+        Generator(
             "RFLX",
             reproducible=True,
             ignore_unsupported_checksum=True,
-        )
-        generator.write_units(output_directory)
-        generator.write_library_files(output_directory)
-        generator.write_top_level_package(output_directory)
+        ).generate(parser.create_model(), parser.get_integration(), output_directory)
 
     return 0
 

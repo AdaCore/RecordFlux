@@ -148,10 +148,8 @@ def test_main_generate_debug(
 ) -> None:
     result = []
 
-    def generator_mock(  # pylint: disable = too-many-arguments, unused-argument
+    def generator_mock(  # pylint: disable = unused-argument
         self: object,
-        model: object,
-        integration: object,
         prefix: str,
         workers: int,
         reproducible: bool,
@@ -161,8 +159,12 @@ def test_main_generate_debug(
         result.append(debug)
 
     monkeypatch.setattr(generator.Generator, "__init__", generator_mock)
-    monkeypatch.setattr(generator.Generator, "write_files", lambda x: None)
-    cli.main(["rflx", "generate", "-d", str(tmp_path), *args, SPEC_FILE])
+    monkeypatch.setattr(
+        generator.Generator,
+        "generate",
+        lambda self, model, integration, directory, library_files, top_level_package: None,
+    )
+    assert cli.main(["rflx", "generate", "-d", str(tmp_path), *args, SPEC_FILE]) == 0
     assert result == [expected]
 
 

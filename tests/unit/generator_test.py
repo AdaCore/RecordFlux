@@ -1,8 +1,10 @@
 # pylint: disable = too-many-lines
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Tuple, Type
+from typing import Callable, Mapping, Sequence, Tuple, Type
 
 import pkg_resources
 import pytest
@@ -19,11 +21,6 @@ from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import (
     BUILTIN_TYPES,
-    FINAL,
-    INITIAL,
-    Field,
-    Link,
-    Message,
     Model,
     Session,
     State,
@@ -34,12 +31,7 @@ from rflx.model import (
 )
 from tests.const import GENERATED_DIR
 from tests.data import models
-from tests.utils import (
-    assert_compilable_code,
-    assert_equal,
-    assert_executable_code,
-    assert_provable_code,
-)
+from tests.utils import assert_compilable_code, assert_equal, assert_equal_code
 
 
 def units(generator: Generator) -> Mapping[str, str]:
@@ -51,29 +43,12 @@ def units(generator: Generator) -> Mapping[str, str]:
     return result
 
 
-def assert_specification(generator: Generator) -> None:
-    for unit in generator._units.values():  # pylint: disable=protected-access
-        assert unit.ads == (GENERATED_DIR / f"{unit.name}.ads").read_text(), unit.name
-
-
-def assert_body(generator: Generator) -> None:
-    for unit in generator._units.values():  # pylint: disable=protected-access
-        if unit.adb:
-            with open(f"{GENERATED_DIR}/{unit.name}.adb", "r", encoding="utf-8") as f:
-                assert unit.adb == f.read(), unit.name
-
-
-def generate(model: Model) -> Generator:
-    generator = Generator(model, Integration(), "RFLX", reproducible=True)
-    return generator
-
-
 def test_invalid_prefix() -> None:
     with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A..B"$'):
-        Generator(Model(), Integration(), "A..B")
+        Generator("A..B")
 
 
-def test_unsupported_checksum() -> None:
+def test_unsupported_checksum(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -81,71 +56,83 @@ def test_unsupported_checksum() -> None:
             r" \(consider --ignore-unsupported-checksum option\)$"
         ),
     ):
-        Generator(models.TLV_WITH_CHECKSUM_MODEL, Integration())
+        Generator().generate(models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path)
 
 
-def test_ignore_unsupported_checksum(capsys: CaptureFixture[str]) -> None:
-    Generator(models.TLV_WITH_CHECKSUM_MODEL, Integration(), ignore_unsupported_checksum=True)
+def test_ignore_unsupported_checksum(capsys: CaptureFixture[str], tmp_path: Path) -> None:
+    Generator(ignore_unsupported_checksum=True).generate(
+        models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path
+    )
     captured = capsys.readouterr()
     assert "generator: warning: unsupported checksum ignored" in captured.out
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_unexpected_type() -> None:
+def test_unexpected_type(tmp_path: Path) -> None:
     class TestType(mty.Type):
         pass
 
     with pytest.raises(AssertionError, match='unexpected type "TestType"'):
-        Generator(Model([TestType("P::T")]), Integration())
+        Generator().generate(Model([TestType("P::T")]), Integration(), tmp_path)
 
 
-def test_library_files(tmp_path: Path) -> None:
-    generator = Generator(Model(), Integration(), "RFLX", reproducible=True)
-    generator.write_library_files(tmp_path)
-    for filename in [f"rflx-{f}" for f in const.LIBRARY_FILES]:
-        assert (tmp_path / filename).read_text() == (GENERATED_DIR / filename).read_text(), filename
-
-
-def test_library_files_no_prefix(tmp_path: Path) -> None:
-    generator = Generator(Model(), Integration(), "", reproducible=True)
-    generator.write_library_files(tmp_path)
-    for filename in const.LIBRARY_FILES:
-        assert (tmp_path / filename).exists()
+@pytest.mark.parametrize(
+    "prefix, library_files, top_level_package, expected",
+    [
+        ("RFLX", True, True, ["rflx.ads", *[f"rflx-{f}" for f in const.LIBRARY_FILES]]),
+        ("RFLX", True, False, [f"rflx-{f}" for f in const.LIBRARY_FILES]),
+        ("RFLX", False, True, ["rflx.ads"]),
+        ("RFLX", False, False, []),
+        ("", True, True, const.LIBRARY_FILES),
+        ("", True, False, const.LIBRARY_FILES),
+        ("", False, True, []),
+        ("", False, False, []),
+    ],
+)
+def test_generate(
+    prefix: str, library_files: bool, top_level_package: bool, expected: list[str], tmp_path: Path
+) -> None:
+    Generator(prefix, reproducible=True).generate(
+        Model(), Integration(), tmp_path, library_files, top_level_package
+    )
+    for filename in expected:
+        if prefix:
+            assert (tmp_path / filename).read_text() == (
+                GENERATED_DIR / filename
+            ).read_text(), filename
+        else:
+            assert (tmp_path / filename).exists()
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_generate_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
-        generator = Generator(Model(), Integration())
-        generator.write_library_files(tmp_path)
+        Generator().generate(Model(), Integration(), tmp_path)
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
     with pytest.raises(AssertionError, match="^template file not found"):
-        generator = Generator(Model(), Integration())
-        generator.write_library_files(tmp_path)
+        Generator().generate(Model(), Integration(), tmp_path)
 
 
-def test_top_level_package(tmp_path: Path) -> None:
-    generator = Generator(Model(), Integration(), "RFLX", reproducible=True)
-    generator.write_top_level_package(tmp_path)
-
-    created_files = list(tmp_path.glob("*"))
-    assert created_files == [tmp_path / Path("rflx.ads")]
-
-    for created_file in created_files:
-        assert (
-            created_file.read_text() == (GENERATED_DIR / created_file.name).read_text()
-        ), created_file.name
-
-
-def test_top_level_package_no_prefix(tmp_path: Path) -> None:
-    generator = Generator(Model(), Integration(), "", reproducible=True)
-    generator.write_top_level_package(tmp_path)
-    assert list(tmp_path.glob("*")) == []
+@pytest.mark.parametrize(
+    "model",
+    [
+        models.NULL_MODEL,
+        models.TLV_MODEL,
+        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+        models.ETHERNET_MODEL,
+        models.ENUMERATION_MODEL,
+        models.SEQUENCE_MODEL,
+        models.EXPRESSION_MODEL,
+        models.DERIVATION_MODEL,
+    ],
+)
+def test_equality(model: Model, tmp_path: Path) -> None:
+    assert_equal_code(model, Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
 
 
 @pytest.mark.parametrize("embedded", [True, False])
@@ -2554,171 +2541,6 @@ def test_session_substitution_equality(
     assert (
         relation(right, left).substituted(session_generator._substitution(lambda x: False))
         == expected
-    )
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        models.NULL_MODEL,
-        models.TLV_MODEL,
-        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-        models.ETHERNET_MODEL,
-        models.ENUMERATION_MODEL,
-        models.SEQUENCE_MODEL,
-        models.EXPRESSION_MODEL,
-        models.DERIVATION_MODEL,
-    ],
-)
-def test_specification(model: Model) -> None:
-    generator = generate(model)
-    assert_specification(generator)
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        models.NULL_MODEL,
-        models.TLV_MODEL,
-        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-        models.ETHERNET_MODEL,
-        models.ENUMERATION_MODEL,
-        models.SEQUENCE_MODEL,
-        models.EXPRESSION_MODEL,
-        models.DERIVATION_MODEL,
-    ],
-)
-def test_body(model: Model) -> None:
-    generator = generate(model)
-    assert_body(generator)
-
-
-TLV_TAGS_MESSAGE = Message(
-    "TLV::Tags_Message",
-    [
-        Link(INITIAL, Field("Length")),
-        Link(
-            Field("Length"),
-            Field("Tags"),
-            size=expr.Mul(expr.Variable("Length"), expr.Number(8)),
-        ),
-        Link(Field("Tags"), FINAL),
-    ],
-    {
-        Field("Length"): models.TLV_LENGTH,
-        Field("Tags"): models.TLV_TAGS,
-    },
-    skip_proof=True,
-)
-
-
-@dataclass
-class GeneratorTestCase:
-    model: Model
-    expected_code: Optional[Mapping[str, str]] = None
-    complement: Optional[Mapping[str, str]] = None
-    expected_output: Optional[str] = None
-    spark_units: Optional[Sequence[str]] = None
-
-
-TEST_CASES = {
-    "empty_model": GeneratorTestCase(
-        Model([], []),
-        {},
-    ),
-    "scalar_type": GeneratorTestCase(
-        Model(
-            [models.RANGE_INTEGER],
-            [],
-        ),
-        expected_code={
-            "rflx-p.adb": "",
-            "rflx-p.ads": """pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
-pragma Warnings (Off, "redundant conversion");
-with RFLX.RFLX_Types;
-
-package RFLX.P with
-  SPARK_Mode
-is
-
-   type Range_Integer is range 1 .. 100 with
-     Size =>
-       8;
-
-   use type RFLX.RFLX_Types.U64;
-
-   function Valid_Range_Integer (Val : RFLX.RFLX_Types.U64) return Boolean is
-     (Val >= 1
-      and Val <= 100);
-
-   function To_U64 (Val : RFLX.P.Range_Integer) return RFLX.RFLX_Types.U64 is
-     (RFLX.RFLX_Types.U64 (Val));
-
-   function To_Actual (Val : RFLX.RFLX_Types.U64) return RFLX.P.Range_Integer is
-     (RFLX.P.Range_Integer (Val))
-    with
-     Pre =>
-       Valid_Range_Integer (Val);
-
-end RFLX.P;
-""",
-        },
-        spark_units=["rflx-p"],
-    ),
-}
-
-
-@pytest.mark.parametrize("test_case", TEST_CASES)
-def test_equality(test_case: str) -> None:
-    expected_code = TEST_CASES[test_case].expected_code
-    if not expected_code:
-        pytest.skip()
-    generator = generate(TEST_CASES[test_case].model)
-    result = units(generator)
-    assert set(result) == set(expected_code), "unexpected or missing units"
-    for filename, content in expected_code.items():
-        assert result[filename] == content, f"mismatch in {filename}"
-
-
-@pytest.mark.compilation
-@pytest.mark.parametrize("test_case", TEST_CASES)
-def test_compilability(test_case: str, tmp_path: Path) -> None:
-    if TEST_CASES[test_case].complement:
-        pytest.skip()
-    assert_compilable_code(TEST_CASES[test_case].model, Integration(), tmp_path)
-
-
-@pytest.mark.parametrize("test_case", TEST_CASES)
-def test_executability(test_case: str, tmp_path: Path) -> None:
-    complement = TEST_CASES[test_case].complement
-    if complement is None:
-        pytest.skip()
-    main = "main.adb"
-    assert main in complement
-    for filename, content in complement.items():
-        (tmp_path / filename).write_text(content)
-    output = assert_executable_code(TEST_CASES[test_case].model, Integration(), tmp_path, main=main)
-    assert output == TEST_CASES[test_case].expected_output
-
-
-@pytest.mark.verification
-@pytest.mark.parametrize("test_case", TEST_CASES)
-def test_provability(test_case: str, tmp_path: Path) -> None:
-    spark_units = TEST_CASES[test_case].spark_units
-    if spark_units is None:
-        pytest.skip()
-    complement = TEST_CASES[test_case].complement
-    main = "main.adb" if complement else None
-    if main and complement:
-        assert main in complement
-        for filename, content in complement.items():
-            (tmp_path / filename).write_text(content)
-    assert_provable_code(
-        TEST_CASES[test_case].model,
-        Integration(),
-        tmp_path,
-        main=main,
-        units=spark_units,
     )
 
 
