@@ -58,6 +58,7 @@ from rflx.model import (
 )
 from rflx.model.message import ByteOrder
 from tests.data.models import (
+    DEFINITE_MESSAGE,
     ENUMERATION,
     ETHERNET_FRAME,
     FIXED_SIZE_MESSAGE,
@@ -2717,6 +2718,7 @@ def test_has_implicit_size() -> None:
 def test_is_definite() -> None:
     assert NULL_MESSAGE.is_definite
     assert FIXED_SIZE_SIMPLE_MESSAGE.is_definite
+    assert DEFINITE_MESSAGE.is_definite
     assert not FIXED_SIZE_MESSAGE.is_definite
     assert not TLV_MESSAGE.is_definite
     assert not ETHERNET_FRAME.is_definite
@@ -2726,6 +2728,8 @@ def test_is_definite() -> None:
 def test_size() -> None:
     assert NULL_MESSAGE.size() == Number(0)
     assert FIXED_SIZE_MESSAGE.size() == Number(200)
+    assert DEFINITE_MESSAGE.size() == Add(Mul(Variable("Length"), Number(8)), Number(16))
+    assert DEFINITE_MESSAGE.size({Field("Length"): Number(8)}) == Number(80)
     assert TLV_MESSAGE.size({Field("Tag"): Variable("TLV::Msg_Error")}) == Number(8)
     assert TLV_MESSAGE.size(
         {

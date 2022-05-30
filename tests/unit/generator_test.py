@@ -33,6 +33,18 @@ from tests.const import GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_compilable_code, assert_equal, assert_equal_code
 
+MODELS = [
+    models.DERIVATION_MODEL,
+    models.ENUMERATION_MODEL,
+    models.ETHERNET_MODEL,
+    models.EXPRESSION_MODEL,
+    models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
+    models.NULL_MODEL,
+    models.SEQUENCE_MODEL,
+    models.TLV_MODEL,
+    Model(models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
+]
+
 
 def units(generator: Generator) -> Mapping[str, str]:
     result = {}
@@ -118,19 +130,7 @@ def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Pat
         Generator().generate(Model(), Integration(), tmp_path)
 
 
-@pytest.mark.parametrize(
-    "model",
-    [
-        models.NULL_MODEL,
-        models.TLV_MODEL,
-        models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-        models.ETHERNET_MODEL,
-        models.ENUMERATION_MODEL,
-        models.SEQUENCE_MODEL,
-        models.EXPRESSION_MODEL,
-        models.DERIVATION_MODEL,
-    ],
-)
+@pytest.mark.parametrize("model", MODELS)
 def test_equality(model: Model, tmp_path: Path) -> None:
     assert_equal_code(model, Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
 

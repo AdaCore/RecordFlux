@@ -2924,7 +2924,7 @@ def create_structure(message: Message, prefix: str) -> UnitPart:
     unit += _create_structure_type(message, prefix)
     unit += _create_valid_structure_function(message, prefix)
     unit += _create_to_structure_procedure(message)
-    unit += _create_to_context_procedure(message)
+    unit += _create_to_context_procedure(message, prefix)
     return unit
 
 
@@ -2997,27 +2997,7 @@ def _create_valid_structure_function(message: Message, prefix: str) -> UnitPart:
                 # ISSUE: Componolit/RecordFlux#276
                 mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             )
-            .substituted(
-                lambda x: expr.Size(expr.Variable("Struct" * x.prefix.identifier))
-                if isinstance(x, expr.Size)
-                and isinstance(x.prefix, expr.Variable)
-                and Field(x.prefix.identifier) in message.fields
-                else x
-            )
-            .substituted(
-                lambda x: expr.Call(
-                    "To_U64",
-                    [expr.Variable("Struct" * x.identifier)],
-                )
-                if isinstance(x, expr.Variable)
-                and Field(x.identifier) in message.fields
-                and isinstance(message.types[Field(x.identifier)], Scalar)
-                else expr.Variable("Struct" * x.identifier)
-                if isinstance(x, expr.Variable)
-                and Field(x.identifier) in message.fields
-                and isinstance(message.types[Field(x.identifier)], Opaque)
-                else x
-            )
+            .substituted(_struct_substitution(message))
             .substituted(common.substitution(message, prefix))
             .simplified()
             .ada_expr()
@@ -3152,7 +3132,40 @@ def _create_to_structure_procedure(message: Message) -> UnitPart:
     )
 
 
-def _create_to_context_procedure(message: Message) -> UnitPart:
+def _struct_substitution(
+    message: Message,
+) -> ty.Callable[[expr.Expr], expr.Expr]:
+    def func(expression: expr.Expr) -> expr.Expr:
+        if (
+            isinstance(expression, expr.Size)
+            and isinstance(expression.prefix, expr.Variable)
+            and Field(expression.prefix.identifier) in message.fields
+        ):
+            return expr.Size(expr.Variable("Struct" * expression.prefix.identifier))
+
+        if isinstance(expression, expr.Variable) and Field(expression.identifier) in message.fields:
+            field_type = message.types[Field(expression.identifier)]
+
+            if isinstance(field_type, Enumeration):
+                return expr.Call(
+                    "To_U64",
+                    [expr.Variable("Struct" * expression.identifier)],
+                )
+
+            if isinstance(field_type, Scalar):
+                return expr.Call(
+                    const.TYPES_U64,
+                    [expr.Variable("Struct" * expression.identifier)],
+                )
+
+            return expr.Variable("Struct" * expression.identifier)
+
+        return expression
+
+    return func
+
+
+def _create_to_context_procedure(message: Message, prefix: str) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     body: ty.List[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
@@ -3224,8 +3237,7 @@ def _create_to_context_procedure(message: Message) -> UnitPart:
         "To_Context",
         [Parameter(["Struct"], "Structure"), InOutParameter(["Ctx"], "Context")],
     )
-    message_size = message.max_size()
-    assert isinstance(message_size, expr.Number)
+    message_size = message.size()
 
     return UnitPart(
         [
@@ -3238,18 +3250,26 @@ def _create_to_context_procedure(message: Message) -> UnitPart:
                             Not(Constrained("Ctx")),
                             Call("Has_Buffer", [Variable("Ctx")]),
                             GreaterEqual(
-                                Add(
-                                    Call(
-                                        const.TYPES * "To_Last_Bit_Index",
-                                        [Variable("Ctx.Buffer_Last")],
-                                    ),
-                                    -Call(
-                                        const.TYPES * "To_First_Bit_Index",
-                                        [Variable("Ctx.Buffer_First")],
-                                    ),
-                                    Number(1),
+                                Call(
+                                    const.TYPES_U64,
+                                    [
+                                        Add(
+                                            Call(
+                                                const.TYPES * "To_Last_Bit_Index",
+                                                [Variable("Ctx.Buffer_Last")],
+                                            ),
+                                            -Call(
+                                                const.TYPES * "To_First_Bit_Index",
+                                                [Variable("Ctx.Buffer_First")],
+                                            ),
+                                            Number(1),
+                                        )
+                                    ],
                                 ),
-                                message_size.ada_expr(),
+                                message_size.substituted(_struct_substitution(message))
+                                .substituted(common.substitution(message, prefix))
+                                .simplified()
+                                .ada_expr(),
                             ),
                         )
                     ),

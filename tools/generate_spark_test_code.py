@@ -6,28 +6,16 @@ import logging
 import sys
 from pathlib import Path
 
-import tests.data.models
 from rflx.generator import Generator
 from rflx.integration import Integration
-from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import SPEC_DIR
+from tests.unit.generator_test import MODELS
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
 
 OUTPUT_DIRECTORY = Path("tests/spark/generated")
-
-MODELS = [
-    tests.data.models.EXPRESSION_MODEL,
-    tests.data.models.ENUMERATION_MODEL,
-    tests.data.models.SEQUENCE_MODEL,
-    tests.data.models.DERIVATION_MODEL,
-    tests.data.models.NULL_MODEL,
-    tests.data.models.TLV_MODEL,
-    tests.data.models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-    Model(tests.data.models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
-]
 
 SPECIFICATION_FILES = [
     SPEC_DIR / "ethernet.rflx",

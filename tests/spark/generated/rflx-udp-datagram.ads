@@ -687,7 +687,7 @@ is
        Valid_Structure (Struct)
        and then not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1 >= 524280,
+       and then RFLX_Types.U64 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= (RFLX_Types.U64 (Struct.Length) - 8) * 8 + 64,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid_Message (Ctx)

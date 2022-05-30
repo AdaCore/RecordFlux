@@ -1138,7 +1138,9 @@ class Attribute(Name):
         func = substitution(mapping or {}, func)
         expr = func(-self if self.negative else self)
         if isinstance(expr, Attribute):
-            expr = expr.__class__(expr.prefix.substituted(func))
+            prefix = expr.prefix.substituted(func)
+            if not isinstance(prefix, Attribute):
+                expr = expr.__class__(prefix)
         return -expr if self.negative else expr
 
     def simplified(self) -> Expr:
