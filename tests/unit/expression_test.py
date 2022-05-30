@@ -174,6 +174,13 @@ def test_not_simplified() -> None:
     assert_equal(Not(TRUE).simplified(), FALSE)
     assert_equal(Not(FALSE).simplified(), TRUE)
     assert_equal(Or(FALSE, Not(And(TRUE, FALSE)), EXPR).simplified(), TRUE)
+    assert_equal(And(TRUE, Not(Or(FALSE, TRUE)), EXPR).simplified(), FALSE)
+    assert_equal(
+        Not(
+            And(FALSE, Not(And(TRUE, FALSE))),
+        ).simplified(),
+        TRUE,
+    )
     assert_equal(
         Not(Less(Variable("X"), Variable("Y"))).simplified(),
         GreaterEqual(Variable("X"), Variable("Y")),

@@ -309,9 +309,13 @@ class Not(Expr):
             return TRUE
         # De Morgan's law
         if isinstance(self.expr, And):
-            return Or(*(Not(term.simplified()).simplified() for term in self.expr.terms))
+            return Or(
+                *(Not(term.simplified()).simplified() for term in self.expr.terms)
+            ).simplified()
         if isinstance(self.expr, Or):
-            return And(*(Not(term.simplified()).simplified() for term in self.expr.terms))
+            return And(
+                *(Not(term.simplified()).simplified() for term in self.expr.terms)
+            ).simplified()
         for relation, inverse_relation in [
             (Less, GreaterEqual),
             (LessEqual, Greater),
