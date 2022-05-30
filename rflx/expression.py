@@ -303,6 +303,15 @@ class Not(Expr):
         return expr
 
     def simplified(self) -> Expr:
+        if self.expr == TRUE:
+            return FALSE
+        if self.expr == FALSE:
+            return TRUE
+        # De Morgan's law
+        if isinstance(self.expr, And):
+            return Or(*(Not(term.simplified()).simplified() for term in self.expr.terms))
+        if isinstance(self.expr, Or):
+            return And(*(Not(term.simplified()).simplified() for term in self.expr.terms))
         for relation, inverse_relation in [
             (Less, GreaterEqual),
             (LessEqual, Greater),
