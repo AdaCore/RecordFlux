@@ -936,6 +936,15 @@ class Message(AbstractMessage):
         )
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
+        """
+        Determine the size of the message based on the given field values.
+
+        If the message is not definite, a value for each field on one message path is required.
+        The reason for this is that only for messages without optional fields the size can be
+        represented by a single mathematical expression, if no field values are given.
+
+        An exception is raised if no size can be determined.
+        """
         field_values = field_values if field_values else {}
 
         def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
@@ -979,10 +988,15 @@ class Message(AbstractMessage):
         failures = []
 
         for path in self.paths(FINAL):
-            if not self.has_fixed_size and fields != {
-                *self.parameters,
-                *(l.target for l in path if l.target != FINAL),
-            }:
+            if (
+                not self.is_definite
+                and not self.has_fixed_size
+                and fields
+                != {
+                    *self.parameters,
+                    *(l.target for l in path if l.target != FINAL),
+                }
+            ):
                 continue
             message_size = expr.Add(
                 *[

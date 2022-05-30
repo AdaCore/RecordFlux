@@ -530,6 +530,26 @@ FIXED_SIZE_SIMPLE_MESSAGE = Message(
     },
 )
 
+DEFINITE_MESSAGE = Message(
+    "Definite::Message",
+    [
+        Link(INITIAL, Field("Length")),
+        Link(
+            Field("Length"),
+            Field("Data"),
+            size=Mul(Variable("Length"), Number(8)),
+        ),
+        Link(
+            Field("Data"),
+            FINAL,
+        ),
+    ],
+    {
+        Field("Length"): UNIVERSAL_LENGTH,
+        Field("Data"): OPAQUE,
+    },
+)
+
 SESSION = Session(
     identifier="P::S",
     initial="A",
