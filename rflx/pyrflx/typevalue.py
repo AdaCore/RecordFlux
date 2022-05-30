@@ -19,6 +19,7 @@ from rflx.expression import (
     First,
     Last,
     Name,
+    Not,
     Number,
     Size,
     Sub,
@@ -1351,6 +1352,8 @@ class MessageValue(TypeValue):
         def subst(expression: Expr) -> Expr:
             if expression in {TRUE, FALSE}:
                 return expression
+            if isinstance(expression, Not):
+                return -expression
             if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
