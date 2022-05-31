@@ -3,23 +3,12 @@ from typing import List
 
 import pytest
 
-from rflx.expression import (
-    Add,
-    And,
-    First,
-    Last,
-    Not,
-    Number,
-    Or,
-    Size,
-    Sub,
-    ValidChecksum,
-    ValueRange,
-)
+from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidChecksum, ValueRange
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from tests.const import CAPTURED_DIR, SPEC_DIR
+from tests.data.models import TLV_WITH_NOT_OPERATOR_MODEL
 
 
 def test_ethernet_set_tltpid(ethernet_frame_value: MessageValue) -> None:
@@ -364,56 +353,6 @@ def test_no_verification_icmp_checksum(
     assert icmp_checksum_unv.bytestring == icmp_checksum_message_value.bytestring
 
 
-def test_no_verification_icmp_checksum_with_not_operator(
-    icmp_checksum_message_value: MessageValue, icmp_message: Message
-) -> None:
-    test_data = (
-        b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
-        b"\x4a\xfc\x0d\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17"
-        b"\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27"
-        b"\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37"
-    )
-    icmp_checksum_unv = MessageValue(
-        icmp_message.copy(
-            structure=[
-                Link(
-                    l.source,
-                    l.target,
-                    condition=Not(Or(Not(l.condition), Not(ValidChecksum("Checksum")))),
-                )
-                if l.target == FINAL
-                else l
-                for l in icmp_message.structure
-            ],
-            checksums={
-                ID("Checksum"): [
-                    ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
-                    Size("Checksum"),
-                    ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
-                ]
-            },
-        ),
-        skip_verification=True,
-    )
-    icmp_checksum_message_value.set_checksum_function({"Checksum": icmp_checksum_function})
-    icmp_checksum_message_value.set("Tag", "Echo_Request")
-    icmp_checksum_message_value.set("Code_Zero", 0)
-    icmp_checksum_message_value.set("Identifier", 5)
-    icmp_checksum_message_value.set("Sequence_Number", 1)
-    icmp_checksum_message_value.set("Data", test_data)
-    icmp_checksum_unv.set_checksum_function({"Checksum": icmp_checksum_function})
-    icmp_checksum_unv.set("Tag", "Echo_Request")
-    icmp_checksum_unv.set("Code_Zero", 0)
-    icmp_checksum_unv.set("Checksum", 0)
-    icmp_checksum_unv.set("Identifier", 5)
-    icmp_checksum_unv.set("Sequence_Number", 1)
-    icmp_checksum_unv.set("Data", test_data)
-    icmp_checksum_unv.update_checksums()
-    assert icmp_checksum_unv.valid_message
-    assert icmp_checksum_unv.get("Checksum") == icmp_checksum_message_value.get("Checksum")
-    assert icmp_checksum_unv.bytestring == icmp_checksum_message_value.bytestring
-
-
 def test_sequence_message_serialization(
     sequence_message_package: Package, message_sequence_value: MessageValue
 ) -> None:
@@ -448,3 +387,13 @@ def test_tlv_message_serialization(tlv_message_value: MessageValue) -> None:
         "Tag": {"first": 0, "last": 7, "value": "Msg_Data"},
         "Value": {"first": 24, "last": 47, "value": "616263"},
     }
+
+
+def test_tlv_message_with_not_operator() -> None:
+    model = PyRFLX(model=TLV_WITH_NOT_OPERATOR_MODEL)
+    pkg = model.package("TLV")
+    msg = pkg.new_message("Message_With_Not_Operator")
+    test_bytes = b"\x01\x00\x04\x00\x00\x00\x00"
+    msg.parse(test_bytes)
+    assert msg.valid_message
+    assert msg.bytestring == test_bytes
