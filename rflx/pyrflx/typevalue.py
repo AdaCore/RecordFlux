@@ -19,7 +19,6 @@ from rflx.expression import (
     First,
     Last,
     Name,
-    Not,
     Number,
     Size,
     Sub,
@@ -1345,15 +1344,13 @@ class MessageValue(TypeValue):
         # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
-    def __simplified(self, expr: Expr) -> Expr:
+    def __simplified(self, expr: Expr, max_iterations: int = 16) -> Expr:
         if expr in {TRUE, FALSE}:
             return expr
 
         def subst(expression: Expr) -> Expr:
             if expression in {TRUE, FALSE}:
                 return expression
-            if isinstance(expression, Not):
-                return -expression
             if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
@@ -1380,7 +1377,13 @@ class MessageValue(TypeValue):
                     raise NotImplementedError
             return expression
 
-        return expr.substituted(func=subst).substituted(func=subst).simplified()
+        res = expr
+        for _ in range(max_iterations):
+            res1 = res.substituted(func=subst).simplified()
+            if res == res1:
+                break
+            res = res1
+        return res
 
     class Checksum:
         def __init__(self, field_name: str, parameters: ty.Sequence[Expr]):
