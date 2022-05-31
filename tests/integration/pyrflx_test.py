@@ -4,6 +4,7 @@ from typing import List
 
 import pytest
 
+from rflx.error import FatalError
 from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidChecksum, ValueRange
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
@@ -403,12 +404,18 @@ def test_tlv_message_with_not_operator() -> None:
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_tlv_message_with_not_operator_exhausting() -> None:
     with pytest.raises(
-        AssertionError,
+        FatalError,
         match=re.escape(
-            "unresolved field conditions in "
-            "Message_With_Not_Operator_Exhausting.Tag: "
-            "not (not (not (not (not (not (not (not (not "
-            "(not (not (not (not (not (not (not (not True))))))))))))))))"
+            "failed to simplify complex expression `not (not (not (not "
+            "(not (not (not (not (not (not (not (not (not (not (not (not "
+            "(not (not (not (not (not (not (not (not (not (not (not (not "
+            "(not (not (not (not (not (not (not (Tag = TLV::Msg_Data))\n"
+            "                                 "
+            "or not (Tag = TLV::Msg_Error))))))))))))))))))))))))))))))))))` "
+            "after `16` iterations, best effort: "
+            "`not (not (not (not (not (not (not (not (not (not (not (not (not "
+            "(not (not (not (not (Tag = 1\n"
+            "                 or Tag /= 3)))))))))))))))))`"
         ),
     ):
         model = PyRFLX(model=TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL)

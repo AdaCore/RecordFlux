@@ -7,6 +7,7 @@ from typing_extensions import Protocol
 
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
+from rflx.error import Severity, Subsystem, fatal_fail
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -1383,6 +1384,16 @@ class MessageValue(TypeValue):
             if res == res1:
                 break
             res = res1
+        else:
+            fatal_fail(
+                f"failed to simplify complex expression `{expr}` "
+                f"after `{max_iterations}` iterations, "
+                f"best effort: `{res}`",
+                Subsystem.PYRFLX,
+                Severity.ERROR,
+                expr.location,
+            )
+
         return res
 
     class Checksum:
