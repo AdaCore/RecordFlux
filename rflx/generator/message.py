@@ -2924,7 +2924,8 @@ def create_structure(message: Message, prefix: str) -> UnitPart:
     unit += _create_structure_type(message, prefix)
     unit += _create_valid_structure_function(message, prefix)
     unit += _create_to_structure_procedure(message)
-    unit += _create_to_context_procedure(message, prefix)
+    unit += _create_sufficient_buffer_length_function(message, prefix)
+    unit += _create_to_context_procedure(message)
     return unit
 
 
@@ -3027,6 +3028,56 @@ def _create_valid_structure_function(message: Message, prefix: str) -> UnitPart:
             ExpressionFunctionDeclaration(
                 specification,
                 AndThen(*[*valid_values, *conditions]),
+            ),
+        ],
+    )
+
+
+def _create_sufficient_buffer_length_function(message: Message, prefix: str) -> UnitPart:
+    assert len(message.paths(FINAL)) == 1
+
+    specification = FunctionSpecification(
+        "Sufficient_Buffer_Length",
+        "Boolean",
+        [
+            Parameter(["Ctx"], "Context"),
+            Parameter(["Struct" if not message.has_fixed_size else "Unused_Struct"], "Structure"),
+        ],
+    )
+    message_size = message.size()
+
+    return UnitPart(
+        [
+            SubprogramDeclaration(
+                specification,
+                [],
+            )
+        ],
+        private=[
+            ExpressionFunctionDeclaration(
+                specification,
+                GreaterEqual(
+                    Call(
+                        const.TYPES_U64,
+                        [
+                            Add(
+                                Call(
+                                    const.TYPES * "To_Last_Bit_Index",
+                                    [Variable("Ctx.Buffer_Last")],
+                                ),
+                                -Call(
+                                    const.TYPES * "To_First_Bit_Index",
+                                    [Variable("Ctx.Buffer_First")],
+                                ),
+                                Number(1),
+                            )
+                        ],
+                    ),
+                    message_size.substituted(_struct_substitution(message))
+                    .substituted(common.substitution(message, prefix))
+                    .simplified()
+                    .ada_expr(),
+                ),
             ),
         ],
     )
@@ -3165,7 +3216,7 @@ def _struct_substitution(
     return func
 
 
-def _create_to_context_procedure(message: Message, prefix: str) -> UnitPart:
+def _create_to_context_procedure(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     body: ty.List[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
@@ -3237,7 +3288,6 @@ def _create_to_context_procedure(message: Message, prefix: str) -> UnitPart:
         "To_Context",
         [Parameter(["Struct"], "Structure"), InOutParameter(["Ctx"], "Context")],
     )
-    message_size = message.size()
 
     return UnitPart(
         [
@@ -3246,31 +3296,10 @@ def _create_to_context_procedure(message: Message, prefix: str) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call("Valid_Structure", [Variable("Struct")]),
                             Not(Constrained("Ctx")),
                             Call("Has_Buffer", [Variable("Ctx")]),
-                            GreaterEqual(
-                                Call(
-                                    const.TYPES_U64,
-                                    [
-                                        Add(
-                                            Call(
-                                                const.TYPES * "To_Last_Bit_Index",
-                                                [Variable("Ctx.Buffer_Last")],
-                                            ),
-                                            -Call(
-                                                const.TYPES * "To_First_Bit_Index",
-                                                [Variable("Ctx.Buffer_First")],
-                                            ),
-                                            Number(1),
-                                        )
-                                    ],
-                                ),
-                                message_size.substituted(_struct_substitution(message))
-                                .substituted(common.substitution(message, prefix))
-                                .simplified()
-                                .ada_expr(),
-                            ),
+                            Call("Valid_Structure", [Variable("Struct")]),
+                            Call("Sufficient_Buffer_Length", [Variable("Ctx"), Variable("Struct")]),
                         )
                     ),
                     Postcondition(

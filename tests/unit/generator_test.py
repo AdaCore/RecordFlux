@@ -1144,7 +1144,12 @@ begin
          begin
             F (Ctx, A, B, C, X);
             if Universal.Message.Valid_Structure (X) then
-               Universal.Message.To_Context (X, X_Ctx);
+               if Universal.Message.Sufficient_Buffer_Length (X_Ctx, X) then
+                  Universal.Message.To_Context (X, X_Ctx);
+               else
+                  Ada.Text_IO.Put_Line ("Error: insufficient space for converting message ""X""\");
+                  RFLX_Exception := True;
+               end if;
             else
                Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
                RFLX_Exception := True;
@@ -1730,7 +1735,14 @@ begin
    Universal.Message.To_Structure (A_Ctx, A);
    F (Ctx, A, X);
    if Universal.Option.Valid_Structure (X) then
-      Universal.Option.To_Context (X, X_Ctx);
+      if Universal.Option.Sufficient_Buffer_Length (X_Ctx, X) then
+         Universal.Option.To_Context (X, X_Ctx);
+      else
+         Ada.Text_IO.Put_Line ("Error: insufficient space for converting message ""X""\");
+         Ctx.P.Next_State := S_E;
+         pragma Finalization;
+         goto Finalize_S;
+      end if;
    else
       Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
       Ctx.P.Next_State := S_E;
