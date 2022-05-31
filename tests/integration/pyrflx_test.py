@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import List
 
@@ -8,7 +9,7 @@ from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from tests.const import CAPTURED_DIR, SPEC_DIR
-from tests.data.models import TLV_WITH_NOT_OPERATOR_MODEL
+from tests.data.models import TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL, TLV_WITH_NOT_OPERATOR_MODEL
 
 
 def test_ethernet_set_tltpid(ethernet_frame_value: MessageValue) -> None:
@@ -397,3 +398,21 @@ def test_tlv_message_with_not_operator() -> None:
     msg.parse(test_bytes)
     assert msg.valid_message
     assert msg.bytestring == test_bytes
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_tlv_message_with_not_operator_exhausting() -> None:
+    with pytest.raises(
+        AssertionError,
+        match=re.escape(
+            "unresolved field conditions in "
+            "Message_With_Not_Operator_Exhausting.Tag: "
+            "not (not (not (not (not (not (not (not (not "
+            "(not (not (not (not (not (not (not (not True))))))))))))))))"
+        ),
+    ):
+        model = PyRFLX(model=TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL)
+        pkg = model.package("TLV")
+        msg = pkg.new_message("Message_With_Not_Operator_Exhausting")
+        test_bytes = b"\x01\x00\x04\x00\x00\x00\x00"
+        msg.parse(test_bytes)
