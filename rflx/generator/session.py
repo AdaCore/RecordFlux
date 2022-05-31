@@ -2782,6 +2782,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         post_call = []
         local_declarations = []
         target_id = variable_id(target, is_global)
+        message_id = context_id(target, is_global)
 
         if isinstance(call_expr.type_, rty.Message):
             type_identifier = self._ada_type(call_expr.type_.identifier)
@@ -2795,13 +2796,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 self._if(
                     Call(ID(type_identifier) * "Valid_Structure", [Variable(target_id)]),
                     [
-                        CallStatement(
-                            ID(type_identifier) * "To_Context",
+                        self._if(
+                            Call(
+                                ID(type_identifier) * "Sufficient_Buffer_Length",
+                                [Variable(message_id), Variable(target_id)],
+                            ),
                             [
-                                Variable(target_id),
-                                Variable(context_id(target, is_global)),
+                                CallStatement(
+                                    ID(type_identifier) * "To_Context",
+                                    [
+                                        Variable(target_id),
+                                        Variable(message_id),
+                                    ],
+                                ),
                             ],
-                        ),
+                            f'insufficient space for converting message "{target}"',
+                            exception_handler,
+                        )
                     ],
                     f'"{call_expr.identifier}" returned an invalid message',
                     exception_handler,

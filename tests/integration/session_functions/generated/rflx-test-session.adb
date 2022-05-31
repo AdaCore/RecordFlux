@@ -83,7 +83,13 @@ is
             Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2));
             Create_Message (Ctx, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
             if Test.Definite_Message.Valid_Structure (Definite_Message) then
-               Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+               if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
+                  Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
+               end if;
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);
@@ -156,7 +162,13 @@ is
          Universal.Message.Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2));
          Create_Message (Ctx, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2), Definite_Message);
          if Test.Definite_Message.Valid_Structure (Definite_Message) then
-            Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+            if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
+               Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+            else
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Process_2_Invariant);
+               goto Finalize_Process_2;
+            end if;
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Assert (Process_2_Invariant);

@@ -606,12 +606,14 @@ is
      Post =>
        Valid_Structure (Struct);
 
+   function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean;
+
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
-       Valid_Structure (Struct)
-       and then not Ctx'Constrained
+       not Ctx'Constrained
        and then Has_Buffer (Ctx)
-       and then RFLX_Types.U64 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= RFLX_Types.U64 (Struct.Length) * 8 + 16,
+       and then Valid_Structure (Struct)
+       and then Sufficient_Buffer_Length (Ctx, Struct),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid_Message (Ctx)
@@ -863,5 +865,8 @@ private
 
    function Valid_Structure (Struct : Structure) return Boolean is
      (RFLX.Universal.Valid_Option_Type (Struct.Message_Type));
+
+   function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean is
+     (RFLX_Types.U64 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= RFLX_Types.U64 (Struct.Length) * 8 + 16);
 
 end RFLX.Test.Definite_Message;
