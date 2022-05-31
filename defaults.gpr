@@ -65,7 +65,7 @@ abstract project Defaults is
       "--prover=z3,cvc4,altergo",
       "--steps=0",
       "--timeout=180",
-      "--memlimit=1000",
+      "--memlimit=2000",
       "--checks-as-errors",
       "--warnings=error",
       --  ISSUE: Componolit/RecordFlux#670
