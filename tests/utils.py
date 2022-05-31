@@ -261,7 +261,7 @@ def _create_files(
 
                   package Prove is
                      for Proof_Switches ("Ada") use
-                        Defaults.Proof_Switches & ("--steps=0", "--timeout=90");
+                        Defaults.Proof_Switches & ("--steps=0", "--timeout=150");
                   end Prove;
                end Test;"""
         )
