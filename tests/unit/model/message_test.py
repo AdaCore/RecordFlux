@@ -1384,7 +1384,7 @@ def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
     types = {
         Field("F1"): RANGE_INTEGER,
     }
-    monkeypatch.setattr(Message, "_Message__prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1405,7 +1405,7 @@ def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
         Field("F1"): RANGE_INTEGER,
         Field("F2"): RANGE_INTEGER,
     }
-    monkeypatch.setattr(Message, "_Message__prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1806,7 +1806,7 @@ def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1839,7 +1839,7 @@ def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
         Field("F3"): MODULAR_INTEGER,
         Field("F4"): MODULAR_INTEGER,
     }
-    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,
@@ -1861,7 +1861,7 @@ def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
-    monkeypatch.setattr(Message, "_Message__verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
         types,

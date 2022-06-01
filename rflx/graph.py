@@ -16,38 +16,38 @@ log = logging.getLogger(__name__)
 
 class Graph:
     def __init__(self, data: Union[AbstractSession, Message]) -> None:
-        self.__data = copy(data)
-        if isinstance(self.__data, AbstractSession):
-            self.__degree = {s.identifier.name: len(s.transitions) for s in self.__data.states}
-            for s in self.__data.states:
-                for p in self.__data.states:
+        self._data = copy(data)
+        if isinstance(self._data, AbstractSession):
+            self._degree = {s.identifier.name: len(s.transitions) for s in self._data.states}
+            for s in self._data.states:
+                for p in self._data.states:
                     for t in p.transitions:
                         if t.target == s.identifier:
-                            self.__degree[s.identifier.name] += 1
+                            self._degree[s.identifier.name] += 1
 
-    def __target_size(self, link: Link) -> str:
-        assert isinstance(self.__data, Message)
-        return str(self.__data.field_size(link.target))
+    def _target_size(self, link: Link) -> str:
+        assert isinstance(self._data, Message)
+        return str(self._data.field_size(link.target))
 
-    def __edge_label(self, link: Link) -> str:
+    def _edge_label(self, link: Link) -> str:
         return "({cond},{sep1}{size},{sep2}{first})".format(  # pylint: disable = consider-using-f-string
             cond=str(link.condition) if link.condition != TRUE else "⊤",
             sep1=" " if link.condition == TRUE or link.size == UNDEFINED else "\n",
-            size=str(link.size) if link.size != UNDEFINED else self.__target_size(link),
+            size=str(link.size) if link.size != UNDEFINED else self._target_size(link),
             sep2=" " if link.first == UNDEFINED else "\n",
             first=str(link.first) if link.first != UNDEFINED else "⋆",
         )
 
     @property
     def get(self) -> Dot:
-        if isinstance(self.__data, Message):
-            return self.__get_message
-        if isinstance(self.__data, AbstractSession):
-            return self.__get_session
-        raise NotImplementedError(f"Unsupported data format {type(self.__data).__name__}")
+        if isinstance(self._data, Message):
+            return self._get_message
+        if isinstance(self._data, AbstractSession):
+            return self._get_session
+        raise NotImplementedError(f"Unsupported data format {type(self._data).__name__}")
 
     @classmethod
-    def __graph_with_defaults(cls, name: str) -> Dot:
+    def _graph_with_defaults(cls, name: str) -> Dot:
         """Return default pydot graph."""
 
         result = Dot(graph_name=f'"{name}"')
@@ -68,16 +68,16 @@ class Graph:
         )
         return result
 
-    def __add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
+    def _add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
 
-        assert isinstance(self.__data, AbstractSession)
+        assert isinstance(self._data, AbstractSession)
 
-        height = sqrt(self.__degree[state.identifier.name] + 1)
-        width = 1.3 * sqrt(self.__degree[state.identifier.name] + 1)
+        height = sqrt(self._degree[state.identifier.name] + 1)
+        width = 1.3 * sqrt(self._degree[state.identifier.name] + 1)
         variables_read: Counter[ID] = collections.Counter()
         variables_write: Counter[ID] = collections.Counter()
 
-        if state.identifier == self.__data.initial:
+        if state.identifier == self._data.initial:
             result.add_node(
                 Node(
                     name=str(state.identifier.name),
@@ -87,7 +87,7 @@ class Graph:
                     height=f"{height:.2f}",
                 )
             )
-        elif state.identifier == self.__data.final:
+        elif state.identifier == self._data.final:
             result.add_node(
                 Node(
                     name=str(state.identifier.name),
@@ -151,15 +151,15 @@ class Graph:
         variables.update(variables_write)
 
     @property
-    def __get_session(self) -> Dot:
+    def _get_session(self) -> Dot:
         """Return pydot graph representation of session."""
 
-        assert isinstance(self.__data, AbstractSession)
+        assert isinstance(self._data, AbstractSession)
 
         variables: Counter[ID] = collections.Counter()
-        result = self.__graph_with_defaults("Session")
-        for s in self.__data.states:
-            self.__add_state(s, result, variables)
+        result = self._graph_with_defaults("Session")
+        for s in self._data.states:
+            self._add_state(s, result, variables)
 
         for v, d in variables.items():
             height = sqrt(d + 1)
@@ -171,26 +171,26 @@ class Graph:
         return result
 
     @property
-    def __get_message(self) -> Dot:
+    def _get_message(self) -> Dot:
         """Return pydot graph representation of message."""
 
-        assert isinstance(self.__data, Message)
+        assert isinstance(self._data, Message)
 
-        if not self.__data.structure:
-            self.__data.structure = [Link(INITIAL, FINAL)]
+        if not self._data.structure:
+            self._data.structure = [Link(INITIAL, FINAL)]
 
-        result = self.__graph_with_defaults(self.__data.full_name)
+        result = self._graph_with_defaults(self._data.full_name)
         result.add_node(
             Node(name="Initial", fillcolor="#ffffff", shape="circle", width="0.5", label="")
         )
-        for f in self.__data.fields:
+        for f in self._data.fields:
             result.add_node(Node(name=f.name))
-        for i, l in enumerate(self.__data.structure):
+        for i, l in enumerate(self._data.structure):
             intermediate_node = f"intermediate_{i}"
             result.add_node(
                 Node(
                     name=intermediate_node,
-                    label=self.__edge_label(l),
+                    label=self._edge_label(l),
                     style="",
                     fontname="Fira Code",
                     fontcolor="#6f6f6f",

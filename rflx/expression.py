@@ -48,39 +48,39 @@ class Proof:
     def __init__(
         self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None, logic: str = "QF_NIA"
     ):
-        self.__expr = expr
-        self.__facts = facts or []
-        self.__result = ProofResult.UNSAT
-        self.__logic = logic
-        self.__unknown_reason: Optional[str] = None
+        self._expr = expr
+        self._facts = facts or []
+        self._result = ProofResult.UNSAT
+        self._logic = logic
+        self._unknown_reason: Optional[str] = None
 
-        solver = z3.SolverFor(self.__logic)
-        solver.add(self.__expr.z3expr())
-        for f in self.__facts:
+        solver = z3.SolverFor(self._logic)
+        solver.add(self._expr.z3expr())
+        for f in self._facts:
             solver.add(f.z3expr())
 
-        self.__result = ProofResult(solver.check())
-        if self.__result == ProofResult.UNKNOWN:
-            self.__unknown_reason = solver.reason_unknown()
+        self._result = ProofResult(solver.check())
+        if self._result == ProofResult.UNKNOWN:
+            self._unknown_reason = solver.reason_unknown()
 
     @property
     def result(self) -> ProofResult:
-        return self.__result
+        return self._result
 
     @property
     def error(self) -> List[Tuple[str, Optional[Location]]]:
-        assert self.__result != ProofResult.SAT
-        if self.__result == ProofResult.UNKNOWN:
-            assert self.__unknown_reason is not None
-            return [(self.__unknown_reason, None)]
-        solver = z3.SolverFor(self.__logic)
+        assert self._result != ProofResult.SAT
+        if self._result == ProofResult.UNKNOWN:
+            assert self._unknown_reason is not None
+            return [(self._unknown_reason, None)]
+        solver = z3.SolverFor(self._logic)
         solver.set(unsat_core=True)
-        facts = {f"H{index}": fact for index, fact in enumerate(self.__facts)}
+        facts = {f"H{index}": fact for index, fact in enumerate(self._facts)}
         for name, fact in facts.items():
             solver.assert_and_track(fact.z3expr(), name)
 
-        solver.assert_and_track(self.__expr.z3expr(), "goal")
-        facts["goal"] = self.__expr
+        solver.assert_and_track(self._expr.z3expr(), "goal")
+        facts["goal"] = self._expr
         result = solver.check()
         assert result == z3.unsat, f"result should be unsat (is {result})"
         return [
@@ -101,9 +101,9 @@ class ProofJob:
 
 class ParallelProofs:
     def __init__(self, workers: int) -> None:
-        self.__proofs: List[List[ProofJob]] = []
-        self.__current: List[ProofJob] = []
-        self.__workers = workers
+        self._proofs: List[List[ProofJob]] = []
+        self._current: List[ProofJob] = []
+        self._workers = workers
 
     def add(
         self,
@@ -115,12 +115,12 @@ class ParallelProofs:
         add_unsat: bool = False,
     ) -> None:
         # pylint: disable=too-many-arguments
-        self.__current.append(ProofJob(goal, facts, expected, error, negate, add_unsat))
+        self._current.append(ProofJob(goal, facts, expected, error, negate, add_unsat))
 
     def push(self) -> None:
-        if self.__current:
-            self.__proofs.append(copy(self.__current))
-            self.__current.clear()
+        if self._current:
+            self._proofs.append(copy(self._current))
+            self._current.clear()
 
     @staticmethod
     def check_proof(jobs: List[ProofJob]) -> RecordFluxError:
@@ -141,8 +141,8 @@ class ParallelProofs:
 
     def check(self, error: RecordFluxError) -> None:
         self.push()
-        with ProcessPoolExecutor(max_workers=self.__workers) as executor:
-            for e in executor.map(ParallelProofs.check_proof, self.__proofs):
+        with ProcessPoolExecutor(max_workers=self._workers) as executor:
+            for e in executor.map(ParallelProofs.check_proof, self._proofs):
                 error.extend(e)
         error.propagate()
 

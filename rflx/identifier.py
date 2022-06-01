@@ -62,29 +62,29 @@ class ID:
 
     def __add__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
-            return self.__class__(f"{self}{other}", self.__location(other))
+            return self.__class__(f"{self}{other}", self._location(other))
         return NotImplemented
 
     def __radd__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
-            return self.__class__(f"{other}{self}", self.__location(other))
+            return self.__class__(f"{other}{self}", self._location(other))
         return NotImplemented
 
     def __mul__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return self.__class__(self, self.__location(other))
-            return self.__class__(f"{self}{self._separator}{other}", self.__location(other))
+                return self.__class__(self, self._location(other))
+            return self.__class__(f"{self}{self._separator}{other}", self._location(other))
         return NotImplemented
 
     def __rmul__(self: Self, other: object) -> Self:
         if isinstance(other, (str, ID)):
             if str(other) == "":
-                return self.__class__(self, self.__location(other))
-            return self.__class__(f"{other}{self._separator}{self}", self.__location(other))
+                return self.__class__(self, self._location(other))
+            return self.__class__(f"{other}{self._separator}{self}", self._location(other))
         return NotImplemented
 
-    def __location(self, other: object) -> Optional[Location]:
+    def _location(self, other: object) -> Optional[Location]:
         if isinstance(other, str):
             return self.location
         if isinstance(other, ID):

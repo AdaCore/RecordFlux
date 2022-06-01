@@ -14,10 +14,10 @@ class Model(Base):
     def __init__(
         self, types: Sequence[type_.Type] = None, sessions: Sequence[session.Session] = None
     ) -> None:
-        self.__types = types or []
-        self.__sessions = sessions or []
+        self._types = types or []
+        self._sessions = sessions or []
 
-        self.__validate()
+        self._validate()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["types", "sessions"])
@@ -27,29 +27,29 @@ class Model(Base):
 
     @property
     def types(self) -> Sequence[type_.Type]:
-        return self.__types
+        return self._types
 
     @property
     def messages(self) -> Sequence[message.Message]:
-        return [m for m in self.__types if isinstance(m, message.Message)]
+        return [m for m in self._types if isinstance(m, message.Message)]
 
     @property
     def refinements(self) -> Sequence[message.Refinement]:
-        return [m for m in self.__types if isinstance(m, message.Refinement)]
+        return [m for m in self._types if isinstance(m, message.Refinement)]
 
     @property
     def sessions(self) -> Sequence[session.Session]:
-        return self.__sessions
+        return self._sessions
 
     def create_specifications(self) -> Dict[ID, str]:
         pkgs: Dict[ID, Package] = {}
-        for ty in self.__types:
+        for ty in self._types:
             if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
                 pkg_name: ID = ty.package
                 pkg = pkgs.setdefault(pkg_name, Package(pkg_name))
                 pkg.imports |= {dep.package for dep in ty.direct_dependencies}
                 pkg.types.append(ty)
-        for sess in self.__sessions:
+        for sess in self._sessions:
             pkg_name = sess.package
             pkgs.setdefault(pkg_name, Package(pkg_name)).sessions.append(sess)
         return {id: str(pkg) for id, pkg in pkgs.items()}
@@ -59,17 +59,17 @@ class Model(Base):
         for package, specification in self.create_specifications().items():
             (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)
 
-    def __validate(self) -> None:
-        error = self.__check_duplicates()
-        error += self.__check_conflicts()
+    def _validate(self) -> None:
+        error = self._check_duplicates()
+        error += self._check_conflicts()
         error.propagate()
 
-    def __check_duplicates(self) -> RecordFluxError:
+    def _check_duplicates(self) -> RecordFluxError:
         error = RecordFluxError()
         types: Dict[ID, type_.Type] = {}
         sessions: Dict[ID, session.Session] = {}
 
-        for t in self.__types:
+        for t in self._types:
             if t.identifier in types:
                 error.extend(
                     [
@@ -94,7 +94,7 @@ class Model(Base):
                 )
             types[t.identifier] = t
 
-        for s in self.__sessions:
+        for s in self._sessions:
             if s.identifier in types or s.identifier in sessions:
                 error.extend(
                     [
@@ -118,13 +118,13 @@ class Model(Base):
 
         return error
 
-    def __check_conflicts(self) -> RecordFluxError:
+    def _check_conflicts(self) -> RecordFluxError:
         error = RecordFluxError()
 
         for e1, e2 in [
             (e1, e2)
-            for i1, e1 in enumerate(self.__types)
-            for i2, e2 in enumerate(self.__types)
+            for i1, e1 in enumerate(self._types)
+            for i2, e2 in enumerate(self._types)
             if (
                 isinstance(e1, type_.Enumeration)
                 and isinstance(e2, type_.Enumeration)
@@ -162,14 +162,14 @@ class Model(Base):
 
         literals = [
             t.package * l
-            for t in self.__types
+            for t in self._types
             if isinstance(t, type_.Enumeration)
             for l in t.literals
         ]
         name_conflicts = [
             (l, t)
             for l in literals
-            for t in self.__types
+            for t in self._types
             if (l.parent == t.package or type_.is_builtin_type(t.identifier))
             and l.name == t.identifier.name
         ]
