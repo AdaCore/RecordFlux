@@ -858,3 +858,37 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
     )
 
     assert utils.assert_executable_code(model, integration, tmp_path, debug=debug) == expected
+
+
+@pytest.mark.parametrize(
+    "global_rel, local_rel",
+    [("Global", "Local"), ("Global = True", "Local = True"), ("Global = False", "Local = False")],
+)
+def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Path) -> None:
+    spec = f"""
+        package Test is
+
+           generic
+           session Session with
+              Initial => Init,
+              Final => Terminated
+           is
+              Global : Boolean := False;
+           begin
+              state Init is
+                 Local : Boolean := False;
+              begin
+                 Global := {local_rel};
+                 Local := {global_rel};
+              transition
+                 goto Terminated
+                    if {global_rel} and {local_rel}
+                 goto Terminated
+              end Init;
+
+              state Terminated is null state;
+           end Session;
+
+        end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)

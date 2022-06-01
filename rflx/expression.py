@@ -1103,6 +1103,22 @@ class Variable(Name):
             return -z3.Int(self.name)
         return z3.Int(self.name)
 
+    def copy(
+        self,
+        identifier: StrID = None,
+        negative: bool = None,
+        immutable: bool = None,
+        type_: rty.Type = None,
+        location: Location = None,
+    ) -> Variable:
+        return self.__class__(
+            ID(identifier) if identifier is not None else self.identifier,
+            negative if negative is not None else self.negative,
+            immutable if immutable is not None else self.immutable,
+            type_ if type_ is not None else self.type_,
+            location if location is not None else self.location,
+        )
+
 
 TRUE = Variable("True", type_=rty.BOOLEAN)
 FALSE = Variable("False", type_=rty.BOOLEAN)
