@@ -1,5 +1,3 @@
-from functools import reduce
-
 from rflx.expression import (
     Aggregate,
     And,
@@ -9,7 +7,6 @@ from rflx.expression import (
     GreaterEqual,
     LessEqual,
     Mul,
-    Not,
     NotEqual,
     Number,
     Or,
@@ -59,69 +56,7 @@ TLV_MESSAGE = Message(
     {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
     skip_proof=True,
 )
-TLV_MESSAGE_WITH_NOT_OPERATOR = Message(
-    "TLV::Message_With_Not_Operator",
-    [
-        Link(INITIAL, Field("Tag")),
-        Link(
-            Field("Tag"),
-            Field("Length"),
-            Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
-        ),
-        Link(
-            Field("Tag"),
-            FINAL,
-            Not(
-                Not(
-                    Not(
-                        Or(
-                            Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
-                            Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
-                        )
-                    )
-                )
-            ),
-        ),
-        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-        Link(Field("Value"), FINAL),
-    ],
-    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
-    skip_proof=True,
-)
-TLV_MESSAGE_WITH_NOT_OPERATOR_EXHAUSTING = Message(
-    "TLV::Message_With_Not_Operator_Exhausting",
-    [
-        Link(INITIAL, Field("Tag")),
-        Link(
-            Field("Tag"),
-            Field("Length"),
-            Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
-        ),
-        Link(
-            Field("Tag"),
-            FINAL,
-            reduce(
-                lambda acc, f: f(acc),
-                [Not, Not] * 16,
-                Not(
-                    Or(
-                        Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
-                        Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
-                    )
-                ),
-            ),
-        ),
-        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-        Link(Field("Value"), FINAL),
-    ],
-    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
-    skip_proof=True,
-)
 TLV_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE])
-TLV_WITH_NOT_OPERATOR_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE_WITH_NOT_OPERATOR])
-TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL = Model(
-    [TLV_TAG, TLV_LENGTH, TLV_MESSAGE_WITH_NOT_OPERATOR_EXHAUSTING]
-)
 
 TLV_MESSAGES = Sequence("TLV::Messages", TLV_MESSAGE)
 TLV_TAGS = Sequence("TLV::Tags", TLV_TAG)
