@@ -258,7 +258,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if self._allocator.required:
             declaration_context.append(WithClause(self._prefix * self._allocator.unit_identifier))
 
-        if self._session_context.used_types or self._session_context.used_types_body:
+        if any(
+            t.parent not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]
+            for t in [*self._session_context.used_types, *self._session_context.used_types_body]
+        ):
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
         body_context: List[ContextItem] = [
@@ -3432,13 +3435,25 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 and isinstance(expression.right, expr.Variable)
             ):
                 if expression.left == expr.Variable("True"):
-                    return expression.right
+                    return expression.right.copy(
+                        identifier=variable_id(expression.right.identifier, is_global)
+                    )
                 if expression.right == expr.Variable("True"):
-                    return expression.left
+                    return expression.left.copy(
+                        identifier=variable_id(expression.left.identifier, is_global)
+                    )
                 if expression.left == expr.Variable("False"):
-                    return expr.Not(expression.right)
+                    return expr.Not(
+                        expression.right.copy(
+                            identifier=variable_id(expression.right.identifier, is_global)
+                        )
+                    )
                 if expression.right == expr.Variable("False"):
-                    return expr.Not(expression.left)
+                    return expr.Not(
+                        expression.left.copy(
+                            identifier=variable_id(expression.left.identifier, is_global)
+                        )
+                    )
 
             if (
                 isinstance(expression, expr.NotEqual)
@@ -3446,13 +3461,25 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 and isinstance(expression.right, expr.Variable)
             ):
                 if expression.left == expr.Variable("True"):
-                    return expr.Not(expression.right)
+                    return expr.Not(
+                        expression.right.copy(
+                            identifier=variable_id(expression.right.identifier, is_global)
+                        )
+                    )
                 if expression.right == expr.Variable("True"):
-                    return expr.Not(expression.left)
+                    return expr.Not(
+                        expression.left.copy(
+                            identifier=variable_id(expression.left.identifier, is_global)
+                        )
+                    )
                 if expression.left == expr.Variable("False"):
-                    return expression.right
+                    return expression.right.copy(
+                        identifier=variable_id(expression.right.identifier, is_global)
+                    )
                 if expression.right == expr.Variable("False"):
-                    return expression.left
+                    return expression.left.copy(
+                        identifier=variable_id(expression.left.identifier, is_global)
+                    )
 
             if isinstance(expression, (expr.Equal, expr.NotEqual)) and isinstance(
                 expression.left.type_, rty.Enumeration
@@ -3539,13 +3566,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 _unsupported_expression(expression, "in expression")
 
             if isinstance(expression, expr.Variable):
-                return expr.Variable(
-                    variable_id(expression.identifier, is_global),
-                    expression.negative,
-                    expression.immutable,
-                    expression.type_,
-                    expression.location,
-                )
+                return expression.copy(identifier=variable_id(expression.identifier, is_global))
 
             return expression
 
