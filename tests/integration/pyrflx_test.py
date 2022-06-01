@@ -1,16 +1,101 @@
 import re
+from functools import reduce
 from pathlib import Path
 from typing import List
 
 import pytest
 
 from rflx.error import FatalError
-from rflx.expression import Add, And, First, Last, Number, Size, Sub, ValidChecksum, ValueRange
+from rflx.expression import (
+    Add,
+    And,
+    Equal,
+    First,
+    Last,
+    Mul,
+    Not,
+    NotEqual,
+    Number,
+    Or,
+    Size,
+    Sub,
+    ValidChecksum,
+    ValueRange,
+    Variable,
+)
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
+from rflx.model.message import INITIAL, Field
+from rflx.model.model import Model
+from rflx.model.type_ import OPAQUE
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from tests.const import CAPTURED_DIR, SPEC_DIR
-from tests.data.models import TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL, TLV_WITH_NOT_OPERATOR_MODEL
+from tests.data.models import TLV_LENGTH, TLV_TAG
+
+TLV_MESSAGE_WITH_NOT_OPERATOR = Message(
+    "TLV::Message_With_Not_Operator",
+    [
+        Link(INITIAL, Field("Tag")),
+        Link(
+            Field("Tag"),
+            Field("Length"),
+            Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
+        ),
+        Link(
+            Field("Tag"),
+            FINAL,
+            Not(
+                Not(
+                    Not(
+                        Or(
+                            Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
+                            Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
+                        )
+                    )
+                )
+            ),
+        ),
+        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
+        Link(Field("Value"), FINAL),
+    ],
+    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
+    skip_proof=True,
+)
+
+TLV_MESSAGE_WITH_NOT_OPERATOR_EXHAUSTING = Message(
+    "TLV::Message_With_Not_Operator_Exhausting",
+    [
+        Link(INITIAL, Field("Tag")),
+        Link(
+            Field("Tag"),
+            Field("Length"),
+            Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
+        ),
+        Link(
+            Field("Tag"),
+            FINAL,
+            reduce(
+                lambda acc, f: f(acc),
+                [Not, Not] * 16,
+                Not(
+                    Or(
+                        Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
+                        Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
+                    )
+                ),
+            ),
+        ),
+        Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
+        Link(Field("Value"), FINAL),
+    ],
+    {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
+    skip_proof=True,
+)
+
+TLV_WITH_NOT_OPERATOR_MODEL = Model([TLV_TAG, TLV_LENGTH, TLV_MESSAGE_WITH_NOT_OPERATOR])
+TLV_WITH_NOT_OPERATOR_EXHAUSTING_MODEL = Model(
+    [TLV_TAG, TLV_LENGTH, TLV_MESSAGE_WITH_NOT_OPERATOR_EXHAUSTING]
+)
 
 
 def test_ethernet_set_tltpid(ethernet_frame_value: MessageValue) -> None:
@@ -401,7 +486,6 @@ def test_tlv_message_with_not_operator() -> None:
     assert msg.bytestring == test_bytes
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_tlv_message_with_not_operator_exhausting() -> None:
     with pytest.raises(
         FatalError,
