@@ -235,27 +235,27 @@ class EnumValue(ScalarValue):
 
     def __init__(self, vtype: Enumeration, imported: bool = False) -> None:
         super().__init__(vtype)
-        self.__imported = imported
-        self.__builtin = self._type.package == BUILTINS_PACKAGE
-        self.__literals: ty.Dict[Name, Expr] = {}
+        self._imported = imported
+        self._builtin = self._type.package == BUILTINS_PACKAGE
+        self._literals: ty.Dict[Name, Expr] = {}
 
         for k, v in self._type.literals.items():
-            if self.__builtin or not self.__imported:
-                self.__literals[Variable(k)] = v
-            if not self.__builtin:
-                self.__literals[Variable(self._type.package * k)] = v
+            if self._builtin or not self._imported:
+                self._literals[Variable(k)] = v
+            if not self._builtin:
+                self._literals[Variable(self._type.package * k)] = v
 
     def assign(self, value: str, check: bool = True) -> None:
         prefixed_value = (
             ID(value)
-            if value.startswith(str(self._type.package)) or not self.__imported or self.__builtin
+            if value.startswith(str(self._type.package)) or not self._imported or self._builtin
             else self._type.package * value
         )
         if Variable(prefixed_value) not in self.literals:
             raise PyRFLXError(f"{value} is not a valid enum value")
         r = (
             (
-                And(*self._type.constraints("__VALUE__", check, not self.__imported))
+                And(*self._type.constraints("__VALUE__", check, not self._imported))
                 .substituted(
                     mapping={
                         **self.literals,
@@ -271,7 +271,7 @@ class EnumValue(ScalarValue):
         assert r == TRUE
         self._value = (
             str(prefixed_value)
-            if self.__imported and not self.__builtin
+            if self._imported and not self._builtin
             else str(prefixed_value.name),
             self._type.literals[prefixed_value.name],
         )
@@ -291,12 +291,12 @@ class EnumValue(ScalarValue):
                     assert isinstance(k, Variable)
                     assert isinstance(v, Number)
                     self._value = (
-                        str(k.identifier) if self.__imported else str(k.identifier.name),
+                        str(k.identifier) if self._imported else str(k.identifier.name),
                         v,
                     )
 
     def clone(self) -> "TypeValue":
-        return self.__class__(self._type, self.__imported)
+        return self.__class__(self._type, self._imported)
 
     @property
     def numeric_value(self) -> Number:
@@ -324,7 +324,7 @@ class EnumValue(ScalarValue):
 
     @property
     def literals(self) -> ty.Mapping[Name, Expr]:
-        return self.__literals
+        return self._literals
 
     def as_json(self) -> object:
         return (self._value[0], self._value[1].value)
@@ -591,18 +591,18 @@ class MessageValue(TypeValue):
             }
         )
 
-        self.__type_literals: ty.Mapping[Name, Expr] = {
+        self._type_literals: ty.Mapping[Name, Expr] = {
             Variable(l): e.literals[l.name]
             for l, e in enum_literals(self._type.types.values(), self._type.package).items()
         }
 
-        self.__additional_enum_literals: ty.Dict[Name, Expr] = {}
-        self.__message_first_name = First("Message")
+        self._additional_enum_literals: ty.Dict[Name, Expr] = {}
+        self._message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(bytes())
         self._simplified_mapping: ty.Dict[Name, Expr] = dict.fromkeys(
-            [initial.name_size, initial.name_last, initial.name_first, self.__message_first_name],
+            [initial.name_size, initial.name_last, initial.name_first, self._message_first_name],
             Number(0),
         )
         self.accessible_fields: ty.List[str] = []
@@ -610,8 +610,8 @@ class MessageValue(TypeValue):
             self._last_field = INITIAL.name
         else:
             self._preset_fields(INITIAL.name)
-        self.__message_last_name = Last("Message")
-        self.__message_size_name = Size("Message")
+        self._message_last_name = Last("Message")
+        self._message_size_name = Size("Message")
 
     def add_refinement(self, refinement: "RefinementValue") -> None:
         self._refinements = [*(self._refinements or []), refinement]
@@ -664,7 +664,7 @@ class MessageValue(TypeValue):
                     for k, v in self._fields.items()
                 },
                 self._checksums,
-                self.__type_literals,
+                self._type_literals,
             ),
         )
 
@@ -717,17 +717,17 @@ class MessageValue(TypeValue):
                 field["value"] = [f.as_json() for f in field_value]
             else:
                 raise NotImplementedError(f"Unsupported: {type(field_value)}")
-            first = self.__simplified(self._fields[field_name].first)
+            first = self._simplified(self._fields[field_name].first)
             assert isinstance(first, Number)
             field["first"] = first.value
-            last = self.__simplified(self._fields[field_name].last)
+            last = self._simplified(self._fields[field_name].last)
             assert isinstance(last, Number)
             field["last"] = last.value
             result[field_name] = field
         return result
 
     def _valid_refinement_condition(self, refinement: "RefinementValue") -> bool:
-        return self.__simplified(refinement.condition) == TRUE
+        return self._simplified(refinement.condition) == TRUE
 
     def _next_link(self, source_field_name: str) -> ty.Optional[Link]:
         field = Field(source_field_name)
@@ -736,7 +736,7 @@ class MessageValue(TypeValue):
             # ISSUE: Componolit/RecordFlux#643
             return None
         for link in self._type.outgoing(field):
-            if self.__simplified(link.condition) == TRUE:
+            if self._simplified(link.condition) == TRUE:
                 return link
         return None
 
@@ -762,7 +762,7 @@ class MessageValue(TypeValue):
         prev: ty.List[str] = [
             l.source.name
             for l in self._type.incoming(Field(fld))
-            if self.__simplified(l.condition) == TRUE
+            if self._simplified(l.condition) == TRUE
         ]
 
         if len(prev) == 1:
@@ -781,18 +781,18 @@ class MessageValue(TypeValue):
             if (
                 self._fields[l.source.name].set
                 and l.size != UNDEFINED
-                and (self._skip_verification or self.__simplified(l.condition) == TRUE)
+                and (self._skip_verification or self._simplified(l.condition) == TRUE)
             ):
-                size = self.__simplified(l.size)
+                size = self._simplified(l.size)
                 return size if isinstance(size, Number) else None
         return None
 
     def _get_first(self, fld: str) -> ty.Optional[Number]:
         for l in self._type.incoming(Field(fld)):
             if l.first != UNDEFINED and (
-                self._skip_verification or self.__simplified(l.condition) == TRUE
+                self._skip_verification or self._simplified(l.condition) == TRUE
             ):
-                first = self.__simplified(l.first)
+                first = self._simplified(l.first)
                 return first if isinstance(first, Number) else None
         prv = self._prev_field(fld)
         if self._skip_verification and prv:
@@ -802,7 +802,7 @@ class MessageValue(TypeValue):
             assert isinstance(size, Number)
             return first + size
         if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
-            first = self.__simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
+            first = self._simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None
         return None
 
@@ -906,7 +906,7 @@ class MessageValue(TypeValue):
         if isinstance(field.typeval, CompositeValue) and f_size is not None:
             field.typeval.set_expected_size(f_size)
         field.typeval.assign(value, not self._skip_verification)
-        self.__update_simplified_mapping(field=field)
+        self._update_simplified_mapping(field=field)
         self.accessible_fields.append(field_name)
 
     def _set_checked(
@@ -927,7 +927,7 @@ class MessageValue(TypeValue):
 
         def check_outgoing_condition_satisfied() -> None:
             simplified = [
-                self.__simplified(o.condition) for o in self._type.outgoing(Field(field_name))
+                self._simplified(o.condition) for o in self._type.outgoing(Field(field_name))
             ]
             unresolved = [o for o in simplified if o not in (FALSE, TRUE)]
             error_msg = ", ".join([str(o) for o in unresolved])
@@ -974,9 +974,9 @@ class MessageValue(TypeValue):
                     field.typeval.parse(buffer)
                     if (
                         isinstance(field.typeval, EnumValue)
-                        and Variable(field.typeval.value) not in self.__type_literals
+                        and Variable(field.typeval.value) not in self._type_literals
                     ):
-                        self.__additional_enum_literals[
+                        self._additional_enum_literals[
                             Variable(field.typeval.value)
                         ] = field.typeval.numeric_value
                 elif isinstance(value, field.typeval.accepted_type):
@@ -993,7 +993,7 @@ class MessageValue(TypeValue):
         else:
             raise PyRFLXError(f"cannot access field {field_name}")
 
-        self.__update_simplified_mapping(message_size)
+        self._update_simplified_mapping(message_size)
         check_outgoing_condition_satisfied()
 
     def set(
@@ -1036,7 +1036,7 @@ class MessageValue(TypeValue):
             if first is None:
                 break
 
-            if (self.__simplified(self._type.path_condition(Field(nxt))) == TRUE) and (
+            if (self._simplified(self._type.path_condition(Field(nxt))) == TRUE) and (
                 self._is_valid_composite_field(nxt)
                 if isinstance(self._fields[nxt].typeval, CompositeValue)
                 else size is not None
@@ -1082,7 +1082,7 @@ class MessageValue(TypeValue):
         def valid_path(value_range: ValueRange) -> bool:
             lower = value_range.lower.substituted(
                 func=lambda e: self._fields[self._next_field(INITIAL.name)].name_first
-                if e == self.__message_first_name
+                if e == self._message_first_name
                 else e
             )
             expr: ty.Dict[Expr, str] = dict.fromkeys([lower, value_range.upper])
@@ -1116,7 +1116,7 @@ class MessageValue(TypeValue):
             return False
 
         for expr_tuple in checksum.parameters:
-            expr_tuple.evaluated_expression = self.__simplified(expr_tuple.expression)
+            expr_tuple.evaluated_expression = self._simplified(expr_tuple.expression)
             if (
                 isinstance(expr_tuple.evaluated_expression, ValueRange)
                 and isinstance(expr_tuple.expression, ValueRange)
@@ -1244,7 +1244,7 @@ class MessageValue(TypeValue):
             if (
                 l.size != UNDEFINED
                 and self._fields[l.source.name].set
-                and self.__simplified(l.condition) == TRUE
+                and self._simplified(l.condition) == TRUE
             ):
                 valid_edge = l
                 break
@@ -1265,9 +1265,9 @@ class MessageValue(TypeValue):
             for f in self.accessible_fields
             if (
                 self._fields[f].set
-                and self.__simplified(self._type.path_condition(Field(f))) == TRUE
+                and self._simplified(self._type.path_condition(Field(f))) == TRUE
                 and any(
-                    self.__simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))
+                    self._simplified(o.condition) == TRUE for o in self._type.outgoing(Field(f))
                 )
             )
         ]
@@ -1290,7 +1290,7 @@ class MessageValue(TypeValue):
             )
         )
 
-    def __update_simplified_mapping(
+    def _update_simplified_mapping(
         self, message_size: int = None, field: ty.Optional[Field] = None
     ) -> None:
         if field:
@@ -1301,10 +1301,10 @@ class MessageValue(TypeValue):
             self._simplified_mapping[field.name_size] = field.typeval.size
             self._simplified_mapping[field.name_first] = field.first
             self._simplified_mapping[field.name_last] = last
-            self._simplified_mapping[self.__message_last_name] = (
+            self._simplified_mapping[self._message_last_name] = (
                 Number(message_size - 1) if message_size else last
             )
-            self._simplified_mapping[self.__message_size_name] = (
+            self._simplified_mapping[self._message_size_name] = (
                 Number(message_size) if message_size else last + Number(1)
             )
             return
@@ -1314,7 +1314,7 @@ class MessageValue(TypeValue):
             for field_type in self._type.types.values()
             if isinstance(field_type, Scalar)
         }
-        self._simplified_mapping[self.__message_first_name] = Number(0)
+        self._simplified_mapping[self._message_first_name] = Number(0)
         for v in self._fields.values():
             if isinstance(v.typeval, ScalarValue) and v.set:
                 self._simplified_mapping[v.name_variable] = v.typeval.expr
@@ -1335,17 +1335,17 @@ class MessageValue(TypeValue):
             if nxt:
                 continue
             if any(l.target == FINAL for l in self._type.outgoing(Field(last_field))):
-                self._simplified_mapping[self.__message_last_name] = (
+                self._simplified_mapping[self._message_last_name] = (
                     Number(message_size - 1) if message_size else last
                 )
-                self._simplified_mapping[self.__message_size_name] = (
+                self._simplified_mapping[self._message_size_name] = (
                     Number(message_size) if message_size else last + Number(1)
                 )
 
         # ISSUE: Componolit/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
-    def __simplified(self, expr: Expr, max_iterations: int = 16) -> Expr:
+    def _simplified(self, expr: Expr, max_iterations: int = 16) -> Expr:
         if expr in {TRUE, FALSE}:
             return expr
 
@@ -1355,12 +1355,12 @@ class MessageValue(TypeValue):
             if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
-            if expression in self.__type_literals:
+            if expression in self._type_literals:
                 assert isinstance(expression, Name)
-                return self.__type_literals[expression]
-            if expression in self.__additional_enum_literals:
+                return self._type_literals[expression]
+            if expression in self._additional_enum_literals:
                 assert isinstance(expression, Name)
-                return self.__additional_enum_literals[expression]
+                return self._additional_enum_literals[expression]
             if expression in self._parameters:
                 assert isinstance(expression, Name)
                 return self._parameters[expression]
@@ -1432,24 +1432,24 @@ class MessageValue(TypeValue):
             self.prev = ""
             self.next = ""
 
-            self.__is_scalar = isinstance(self.typeval, ScalarValue)
-            self.__first: Expr = UNDEFINED
-            self.__last: Expr = UNDEFINED
+            self._is_scalar = isinstance(self.typeval, ScalarValue)
+            self._first: Expr = UNDEFINED
+            self._last: Expr = UNDEFINED
 
-        def _last(self) -> Expr:
+        def _calculate_last(self) -> Expr:
             if self.first == UNDEFINED:
                 return UNDEFINED
-            return Sub(Add(self.__first, self.typeval.size), Number(1)).simplified()
+            return Sub(Add(self._first, self.typeval.size), Number(1)).simplified()
 
         @property
         def first(self) -> Expr:
-            return self.__first
+            return self._first
 
         @first.setter
         def first(self, first: Expr) -> None:
-            self.__first = first
-            if self.__is_scalar:
-                self.__last = self._last()
+            self._first = first
+            if self._is_scalar:
+                self._last = self._calculate_last()
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, MessageValue.Field):
@@ -1471,7 +1471,7 @@ class MessageValue(TypeValue):
 
         @property
         def last(self) -> Expr:
-            return self.__last if self.__is_scalar else self._last()
+            return self._last if self._is_scalar else self._calculate_last()
 
     @dataclass
     class State:

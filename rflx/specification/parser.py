@@ -183,7 +183,7 @@ def create_state(state: lang.State, package: ID, filename: Path) -> model.State:
     )
 
 
-def __check_session_identifier(session: lang.SessionDecl, filename: Path) -> None:
+def _check_session_identifier(session: lang.SessionDecl, filename: Path) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
         fail(
             "inconsistent session identifier: "
@@ -200,7 +200,7 @@ def create_unproven_session(
     filename: Path,
     types: Sequence[model.Type] = None,
 ) -> model.UnprovenSession:
-    __check_session_identifier(session, filename)
+    _check_session_identifier(session, filename)
 
     return model.UnprovenSession(
         package * create_id(session.f_identifier, filename),
@@ -1453,17 +1453,17 @@ class Parser:
         if skip_verification:
             warn("model verification skipped", Subsystem.MODEL)
         self.skip_verification = skip_verification
-        self.__workers = workers
-        self.__specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
-        self.__types: List[model.Type] = [
+        self._workers = workers
+        self._specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
+        self._types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
         ]
-        self.__sessions: List[model.Session] = []
-        self.__integration: Integration = Integration(integration_files_dir)
-        self.__cache = Cache(not skip_verification and cached)
+        self._sessions: List[model.Session] = []
+        self._integration: Integration = Integration(integration_files_dir)
+        self._cache = Cache(not skip_verification and cached)
 
-    def __convert_unit(
+    def _convert_unit(
         self,
         error: RecordFluxError,
         spec: lang.Specification,
@@ -1500,12 +1500,12 @@ class Parser:
                 continue
             withed_file = filename.parent / f"{str(item).lower()}.rflx"
             withed_files.append(withed_file.name)
-            if withed_file.name not in self.__specifications:
-                error.extend(self.__parse_specfile(withed_file, transitions + [item]))
+            if withed_file.name not in self._specifications:
+                error.extend(self._parse_specfile(withed_file, transitions + [item]))
 
         if (
-            packagefile in self.__specifications
-            and filename != self.__specifications[packagefile].filename
+            packagefile in self._specifications
+            and filename != self._specifications[packagefile].filename
         ):
             error.extend(
                 [
@@ -1520,17 +1520,17 @@ class Parser:
                         Subsystem.PARSER,
                         Severity.INFO,
                         node_location(
-                            self.__specifications[
+                            self._specifications[
                                 packagefile
                             ].spec.f_package_declaration.f_identifier,
-                            self.__specifications[packagefile].filename,
+                            self._specifications[packagefile].filename,
                         ),
                     ),
                 ],
             )
-        self.__specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
+        self._specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
 
-    def __parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
+    def _parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
         error = RecordFluxError()
         transitions = transitions or []
 
@@ -1538,18 +1538,18 @@ class Parser:
         unit = lang.AnalysisContext().get_from_file(str(filename))
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return error
-        self.__integration.load_integration_file(filename, error)
+        self._integration.load_integration_file(filename, error)
         if unit.root:
             assert isinstance(unit.root, lang.Specification)
-            self.__convert_unit(error, unit.root, filename, transitions)
+            self._convert_unit(error, unit.root, filename, transitions)
         return error
 
-    def __sort_specs_topologically(self) -> None:
+    def _sort_specs_topologically(self) -> None:
         """(Reverse) Topologically sort specifications using Kahn's algorithm."""
 
         result: List[str] = []
-        incoming: Dict[str, Set[str]] = {f: set() for f in self.__specifications.keys()}
-        for filename, spec_node in self.__specifications.items():
+        incoming: Dict[str, Set[str]] = {f: set() for f in self._specifications.keys()}
+        for filename, spec_node in self._specifications.items():
             for d in spec_node.withed_files:
                 if d in incoming:
                     incoming[d].add(filename)
@@ -1560,20 +1560,20 @@ class Parser:
         while specs:
             s = specs.pop(0)
             result.insert(0, s)
-            for e in self.__specifications[s].withed_files:
+            for e in self._specifications[s].withed_files:
                 visited.add(e)
                 if e in incoming and incoming[e] <= visited:
                     specs.append(e)
 
-        self.__specifications = OrderedDict((f, self.__specifications[f]) for f in result)
+        self._specifications = OrderedDict((f, self._specifications[f]) for f in result)
 
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
 
         for f in specfiles:
-            error.extend(self.__parse_specfile(f))
+            error.extend(self._parse_specfile(f))
             error.extend(style.check(f))
-        self.__sort_specs_topologically()
+        self._sort_specs_topologically()
         error.propagate()
 
     def parse_string(
@@ -1585,17 +1585,17 @@ class Parser:
         unit = lang.AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
             assert isinstance(unit.root, lang.Specification)
-            self.__convert_unit(error, unit.root, STDIN)
-            self.__sort_specs_topologically()
+            self._convert_unit(error, unit.root, STDIN)
+            self._sort_specs_topologically()
         error.propagate()
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
-        for spec_node in self.__specifications.values():
-            self.__evaluate_specification(error, spec_node.spec, spec_node.filename)
+        for spec_node in self._specifications.values():
+            self._evaluate_specification(error, spec_node.spec, spec_node.filename)
         try:
-            result = model.Model(self.__types, self.__sessions)
-            self.__integration.validate(result, error)
+            result = model.Model(self._types, self._sessions)
+            self._integration.validate(result, error)
         except RecordFluxError as e:
             error.extend(e)
 
@@ -1603,16 +1603,16 @@ class Parser:
         return result
 
     def get_integration(self) -> Integration:
-        return self.__integration
+        return self._integration
 
     @property
     def specifications(self) -> Dict[str, lang.Specification]:
         return {
             spec_node.spec.f_package_declaration.f_identifier.text: spec_node.spec
-            for spec_node in self.__specifications.values()
+            for spec_node in self._specifications.values()
         }
 
-    def __evaluate_specification(
+    def _evaluate_specification(
         self, error: RecordFluxError, spec: lang.Specification, filename: Path
     ) -> None:
         handlers: Dict[
@@ -1654,27 +1654,27 @@ class Parser:
                         identifier,
                         t.f_parameters,
                         t.f_definition,
-                        self.__types,
+                        self._types,
                         self.skip_verification,
-                        self.__workers,
-                        self.__cache,
+                        self._workers,
+                        self._cache,
                         filename,
                     )
-                    self.__types.append(new_type)
+                    self._types.append(new_type)
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
             elif isinstance(t, lang.RefinementDecl):
                 try:
-                    new_type = create_refinement(t, package_id, self.__types, filename)
-                    self.__types.append(new_type)
+                    new_type = create_refinement(t, package_id, self._types, filename)
+                    self._types.append(new_type)
                     error.extend(new_type.error)
                 except RecordFluxError as e:
                     error.extend(e)
             elif isinstance(t, lang.SessionDecl):
                 try:
-                    new_session = create_session(t, package_id, filename, self.__types)
-                    self.__sessions.append(new_session)
+                    new_session = create_session(t, package_id, filename, self._types)
+                    self._sessions.append(new_session)
                     error.extend(new_session.error)
                 except RecordFluxError as e:
                     error.extend(e)

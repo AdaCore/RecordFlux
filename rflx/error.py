@@ -19,18 +19,18 @@ class Location(Base):
         end: Tuple[int, int] = None,
         verbose: bool = False,
     ):
-        self.__source = source
-        self.__start = start
-        self.__end = end
-        self.__verbose = verbose
+        self._source = source
+        self._start = start
+        self._end = end
+        self._verbose = verbose
 
     def __str__(self) -> str:
         def linecol_str(linecol: Tuple[int, int]) -> str:
             return f"{linecol[0]}:{linecol[1]}"
 
-        start = f":{linecol_str(self.__start)}"
-        end = f"-{linecol_str(self.__end)}" if self.__end and self.__verbose else ""
-        return f"{self.__source if self.__source else '<stdin>'}{start}{end}"
+        start = f":{linecol_str(self._start)}"
+        end = f"-{linecol_str(self._end)}" if self._end and self._verbose else ""
+        return f"{self._source if self._source else '<stdin>'}{start}{end}"
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -39,18 +39,18 @@ class Location(Base):
 
     @property
     def source(self) -> Optional[Path]:
-        return self.__source
+        return self._source
 
     @property
     def start(self) -> Tuple[int, int]:
-        return self.__start
+        return self._start
 
     @property
     def end(self) -> Optional[Tuple[int, int]]:
-        return self.__end
+        return self._end
 
     def __hash__(self) -> int:
-        return hash(self.__start)
+        return hash(self._start)
 
 
 class Subsystem(Enum):
@@ -86,31 +86,31 @@ class BaseError(Exception, Base):
         def __init__(
             self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
         ):
-            self.__message = message
-            self.__subsystem = subsystem
-            self.__severity = severity
-            self.__location = location
+            self._message = message
+            self._subsystem = subsystem
+            self._severity = severity
+            self._location = location
 
         @property
         def message(self) -> str:
-            return self.__message
+            return self._message
 
         @property
         def subsystem(self) -> Subsystem:
-            return self.__subsystem
+            return self._subsystem
 
         @property
         def severity(self) -> Severity:
-            return self.__severity
+            return self._severity
 
         @property
         def location(self) -> Optional[Location]:
-            return self.__location
+            return self._location
 
     @abstractmethod
     def __init__(self) -> None:
         super().__init__()
-        self.__errors: Deque[BaseError.Entry] = deque()
+        self._errors: Deque[BaseError.Entry] = deque()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -121,9 +121,7 @@ class BaseError(Exception, Base):
                 return f"{entry.location}: "
             return ""
 
-        return "\n".join(
-            f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self.__errors
-        )
+        return "\n".join(f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self._errors)
 
     def __add__(self: Self, other: object) -> Self:
         if isinstance(other, BaseError):
@@ -141,23 +139,23 @@ class BaseError(Exception, Base):
 
     @property
     def errors(self) -> Deque["BaseError.Entry"]:
-        return self.__errors
+        return self._errors
 
     def extend(
         self,
         entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
     ) -> None:
         if isinstance(entries, BaseError):
-            self.__errors.extend(entries.errors)
+            self._errors.extend(entries.errors)
         else:
             for message, subsystem, severity, location in entries:
-                self.__errors.append(BaseError.Entry(message, subsystem, severity, location))
-        num_errors = len(list(e for e in self.__errors if e.severity == Severity.ERROR))
+                self._errors.append(BaseError.Entry(message, subsystem, severity, location))
+        num_errors = len(list(e for e in self._errors if e.severity == Severity.ERROR))
         if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
             raise self
 
     def check(self) -> bool:
-        return len(self.__errors) > 0
+        return len(self._errors) > 0
 
     def propagate(self) -> None:
         if self.check():

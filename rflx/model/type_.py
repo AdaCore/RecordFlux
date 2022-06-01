@@ -143,7 +143,7 @@ class ModularInteger(Integer):
                 ],
             )
 
-        self.__modulus = modulus
+        self._modulus = modulus
         self._size = expr.Number((modulus_int - 1).bit_length())
 
     def __repr__(self) -> str:
@@ -154,7 +154,7 @@ class ModularInteger(Integer):
 
     @property
     def modulus(self) -> expr.Expr:
-        return self.__modulus
+        return self._modulus
 
     @property
     def first(self) -> expr.Number:
@@ -171,7 +171,7 @@ class ModularInteger(Integer):
     ) -> ty.Sequence[expr.Expr]:
         if proof:
             return [
-                expr.Less(expr.Variable(name), self.__modulus, location=self.location),
+                expr.Less(expr.Variable(name), self._modulus, location=self.location),
                 expr.GreaterEqual(expr.Variable(name), expr.Number(0), location=self.location),
                 expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
@@ -295,10 +295,10 @@ class RangeInteger(Integer):
                 ],
             )
 
-        self.__first_expr = first
-        self.__first = first_num
-        self.__last_expr = last
-        self.__last = last_num
+        self._first_expr = first
+        self._first = first_num
+        self._last_expr = last
+        self._last = last_num
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["identifier", "first_expr", "last_expr", "size_expr"])
@@ -311,19 +311,19 @@ class RangeInteger(Integer):
 
     @property
     def first(self) -> expr.Number:
-        return self.__first
+        return self._first
 
     @property
     def first_expr(self) -> expr.Expr:
-        return self.__first_expr
+        return self._first_expr
 
     @property
     def last(self) -> expr.Number:
-        return self.__last
+        return self._last
 
     @property
     def last_expr(self) -> expr.Expr:
-        return self.__last_expr
+        return self._last_expr
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True

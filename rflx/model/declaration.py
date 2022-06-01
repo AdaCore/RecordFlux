@@ -16,14 +16,14 @@ class Declaration(Base):
     def __init__(self, identifier: StrID, location: Location = None):
         self.identifier = ID(identifier)
         self.location = location
-        self.__refcount = 0
+        self._refcount = 0
 
     @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
 
     def reference(self) -> None:
-        self.__refcount += 1
+        self._refcount += 1
 
     @property
     @abstractmethod
@@ -32,7 +32,7 @@ class Declaration(Base):
 
     @property
     def is_referenced(self) -> bool:
-        return self.__refcount > 0
+        return self._refcount > 0
 
     @abstractmethod
     def variables(self) -> Sequence[Variable]:
@@ -53,20 +53,20 @@ class TypeCheckableDeclaration(Declaration):
         location: Location = None,
     ):
         super().__init__(identifier, location)
-        self.__type_identifier = ID(type_identifier)
-        self.__type: rty.Type = type_
+        self._type_identifier = ID(type_identifier)
+        self._type: rty.Type = type_
 
     @property
     def type_identifier(self) -> ID:
-        return self.__type_identifier
+        return self._type_identifier
 
     @property
     def type_(self) -> rty.Type:
-        return self.__type
+        return self._type
 
     @type_.setter
     def type_(self, value: rty.Type) -> None:
-        self.__type = value
+        self._type = value
 
     @abstractmethod
     def check_type(
@@ -180,20 +180,20 @@ class Argument(Base):
         self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.Undefined()
     ):
         super().__init__()
-        self.__identifier = ID(identifier)
-        self.__type_identifier = ID(type_identifier)
+        self._identifier = ID(identifier)
+        self._type_identifier = ID(type_identifier)
         self.type_ = type_
 
     def __str__(self) -> str:
-        return f"{self.__identifier} : {ada_type_name(self.__type_identifier)}"
+        return f"{self._identifier} : {ada_type_name(self._type_identifier)}"
 
     @property
     def identifier(self) -> ID:
-        return self.__identifier
+        return self._identifier
 
     @property
     def type_identifier(self) -> ID:
-        return self.__type_identifier
+        return self._type_identifier
 
 
 class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
@@ -208,13 +208,13 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         location: Location = None,
     ):
         super().__init__(identifier, return_type, type_, location)
-        self.__arguments = arguments
-        self.__return_type = ID(return_type)
+        self._arguments = arguments
+        self._return_type = ID(return_type)
 
     def __str__(self) -> str:
-        arguments = (" (" + "; ".join(map(str, self.__arguments)) + ")") if self.__arguments else ""
+        arguments = (" (" + "; ".join(map(str, self._arguments)) + ")") if self._arguments else ""
         return (
-            f"with function {self.identifier}{arguments} return {ada_type_name(self.__return_type)}"
+            f"with function {self.identifier}{arguments} return {ada_type_name(self._return_type)}"
         )
 
     def check_type(
@@ -225,11 +225,11 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
 
     @property
     def arguments(self) -> Sequence[Argument]:
-        return self.__arguments
+        return self._arguments
 
     @property
     def return_type(self) -> ID:
-        return self.__return_type
+        return self._return_type
 
 
 class ChannelDeclaration(FormalDeclaration):
@@ -244,14 +244,14 @@ class ChannelDeclaration(FormalDeclaration):
     ):
         assert readable or writable
         super().__init__(identifier, location)
-        self.__readable = readable
-        self.__writable = writable
+        self._readable = readable
+        self._writable = writable
 
     def __str__(self) -> str:
         aspects = []
-        if self.__readable:
+        if self._readable:
             aspects.append("Readable")
-        if self.__writable:
+        if self._writable:
             aspects.append("Writable")
         with_aspects = " with " + ", ".join(aspects)
         return f"{self.identifier} : Channel{with_aspects}"
@@ -262,11 +262,11 @@ class ChannelDeclaration(FormalDeclaration):
 
     @property
     def readable(self) -> bool:
-        return self.__readable
+        return self._readable
 
     @property
     def writable(self) -> bool:
-        return self.__writable
+        return self._writable
 
 
 class TypeDeclaration(FormalDeclaration):

@@ -281,75 +281,75 @@ class Validator:
 
 class CoverageInformation:
     def __init__(self, packages: List[Package], coverage: bool) -> None:
-        self.__total_message_coverage: Dict[ID, Dict[Link, bool]] = {}
-        self.__spec_files: Dict[str, List[ID]] = defaultdict(list)
-        self.__coverage = coverage
+        self._total_message_coverage: Dict[ID, Dict[Link, bool]] = {}
+        self._spec_files: Dict[str, List[ID]] = defaultdict(list)
+        self._coverage = coverage
 
-        if not self.__coverage:
+        if not self._coverage:
             return
 
         for package in packages:
             for message in package:
                 assert isinstance(message, MessageValue)
-                self.__total_message_coverage[message.identifier] = {
+                self._total_message_coverage[message.identifier] = {
                     link: False for link in message.model.structure
                 }
 
                 assert message.model.location is not None
                 assert message.model.location.source is not None
                 file_name = message.model.location.source.name
-                self.__spec_files[file_name].append(message.identifier)
+                self._spec_files[file_name].append(message.identifier)
 
         self.total_links = sum(
-            len(structure) for structure in self.__total_message_coverage.values()
+            len(structure) for structure in self._total_message_coverage.values()
         )
         self.total_covered_links = 0
 
     def update(self, message_value: MessageValue) -> None:
-        if self.__coverage:
+        if self._coverage:
             messages = message_value.inner_messages() + [message_value]
             for message in messages:
                 for link in message.path:
-                    if not self.__total_message_coverage[message.identifier][link]:
+                    if not self._total_message_coverage[message.identifier][link]:
                         self.total_covered_links += 1
-                        self.__total_message_coverage[message.identifier][link] = True
+                        self._total_message_coverage[message.identifier][link] = True
 
     def file_total_links(self, file_name: str) -> int:
-        assert file_name in self.__spec_files
+        assert file_name in self._spec_files
         return sum(
-            len(self.__total_message_coverage[message]) for message in self.__spec_files[file_name]
+            len(self._total_message_coverage[message]) for message in self._spec_files[file_name]
         )
 
     def file_covered_links(self, file_name: str) -> int:
-        assert file_name in self.__spec_files
+        assert file_name in self._spec_files
         return sum(
-            list(self.__total_message_coverage[message].values()).count(True)
-            for message in self.__spec_files[file_name]
+            list(self._total_message_coverage[message].values()).count(True)
+            for message in self._spec_files[file_name]
         )
 
     def file_uncovered_links(self, file_name: str) -> List[Link]:
-        assert file_name in self.__spec_files
+        assert file_name in self._spec_files
         return [
             link
-            for message in self.__spec_files[file_name]
-            for link, covered in self.__total_message_coverage[message].items()
+            for message in self._spec_files[file_name]
+            for link, covered in self._total_message_coverage[message].items()
             if not covered
         ]
 
     def print_coverage(self) -> None:
-        if self.__coverage:
-            self.__print_coverage_overview()
+        if self._coverage:
+            self._print_coverage_overview()
             if self.total_covered_links / self.total_links != 1:
-                self.__print_link_coverage()
+                self._print_link_coverage()
 
-    def __print_coverage_overview(self) -> None:
+    def _print_coverage_overview(self) -> None:
         print("\n")
         print("-" * 80)
         print(f"{'RecordFlux Validation Coverage Report' : ^80}".rstrip())
         print(f"Directory: {os.getcwd()}")
         print("-" * 80)
         print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
-        for file in self.__spec_files:
+        for file in self._spec_files:
             file_links = self.file_total_links(file)
             file_covered_links = self.file_covered_links(file)
             print(
@@ -363,12 +363,12 @@ class CoverageInformation:
         )
         print("-" * 80)
 
-    def __print_link_coverage(self) -> None:
+    def _print_link_coverage(self) -> None:
         print("\n")
         print("=" * 80)
         print(f"{'Uncovered Links' : ^80}".rstrip())
         print("=" * 80)
-        for file in self.__spec_files:
+        for file in self._spec_files:
             uncovered_links = self.file_uncovered_links(file)
             if len(uncovered_links) != 0:
                 print("\n")

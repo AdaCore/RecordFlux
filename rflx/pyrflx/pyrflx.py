@@ -22,16 +22,16 @@ class PyRFLX:
         checksum_functions: Dict[StrID, Dict[str, ChecksumFunction]] = None,
         skip_message_verification: bool = False,
     ) -> None:
-        self.__packages: Dict[str, Package] = {}
+        self._packages: Dict[str, Package] = {}
         messages: Dict[ID, MessageValue] = {}
 
         for m in model.messages:
             p = str(m.package)
-            if p not in self.__packages:
-                self.__packages[p] = Package(p)
+            if p not in self._packages:
+                self._packages[p] = Package(p)
             message = MessageValue(m, skip_verification=skip_message_verification)
             messages[m.identifier] = message
-            self.__packages[p].set_message(m.name, message)
+            self._packages[p].set_message(m.name, message)
 
         for r in model.refinements:
             messages[r.pdu.identifier].add_refinement(
@@ -67,12 +67,12 @@ class PyRFLX:
             if len(message_identifier.parts) < 2:
                 raise PyRFLXError(f'"{identifier_str}" is not a valid identifier')
 
-            if str(message_identifier.parent) in self.__packages:
+            if str(message_identifier.parent) in self._packages:
                 package = self.package(message_identifier.parent)
                 package.set_checksum_functions({message_identifier.name: checksum_field_function})
 
     def package(self, key: StrID) -> Package:
-        return self.__packages[str(key)]
+        return self._packages[str(key)]
 
     def __iter__(self) -> Iterator[Package]:
-        return self.__packages.values().__iter__()
+        return self._packages.values().__iter__()

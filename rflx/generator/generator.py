@@ -123,18 +123,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         debug: common.Debug = common.Debug.NONE,
         ignore_unsupported_checksum: bool = False,
     ) -> None:
-        self.__prefix = str(ID(prefix)) if prefix else ""
-        self.__reproducible = reproducible
-        self.__debug = debug
-        self.__ignore_unsupported_checksum = ignore_unsupported_checksum
-        self.__parser = ParserGenerator(self.__prefix)
-        self.__serializer = SerializerGenerator(self.__prefix)
+        self._prefix = str(ID(prefix)) if prefix else ""
+        self._reproducible = reproducible
+        self._debug = debug
+        self._ignore_unsupported_checksum = ignore_unsupported_checksum
+        self._parser = ParserGenerator(self._prefix)
+        self._serializer = SerializerGenerator(self._prefix)
 
         self._executor = ProcessPoolExecutor(max_workers=workers)
         self._units: ty.Dict[ID, Unit] = {}
 
-        self.__template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
-        assert self.__template_dir.is_dir(), "template directory not found"
+        self._template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
+        assert self._template_dir.is_dir(), "template directory not found"
 
     def generate(
         self,
@@ -158,15 +158,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
     def _write_library_files(self, directory: Path) -> None:
         for template_filename in const.LIBRARY_FILES:
-            self.__check_template_file(template_filename)
+            self._check_template_file(template_filename)
 
-            prefix = f"{self.__prefix}." if self.__prefix else ""
+            prefix = f"{self._prefix}." if self._prefix else ""
             filename = Path(f"{file_name(prefix)}{template_filename}")
 
-            template_file = (self.__template_dir / template_filename).read_text()
+            template_file = (self._template_dir / template_filename).read_text()
             create_file(
                 directory / filename,
-                self.__license_header()
+                self._license_header()
                 + "\n".join(
                     [
                         l.format(prefix=prefix)
@@ -176,11 +176,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ),
             )
 
-        if self.__debug == common.Debug.EXTERNAL:
-            debug_package_id = self.__prefix * ID("RFLX_Debug")
+        if self._debug == common.Debug.EXTERNAL:
+            debug_package_id = self._prefix * ID("RFLX_Debug")
             create_file(
                 directory / f"{file_name(str(debug_package_id))}.ads",
-                self.__license_header()
+                self._license_header()
                 + PackageUnit(
                     [],
                     PackageDeclaration(
@@ -205,20 +205,18 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             )
 
     def _write_top_level_package(self, directory: Path) -> None:
-        if self.__prefix:
+        if self._prefix:
             create_file(
-                Path(directory) / Path(file_name(self.__prefix) + ".ads"),
-                self.__license_header() + f"package {self.__prefix} is\n\nend {self.__prefix};",
+                Path(directory) / Path(file_name(self._prefix) + ".ads"),
+                self._license_header() + f"package {self._prefix} is\n\nend {self._prefix};",
             )
 
     def _write_units(self, directory: Path) -> None:
         for unit in self._units.values():
-            create_file(directory / Path(unit.name + ".ads"), self.__license_header() + unit.ads)
+            create_file(directory / Path(unit.name + ".ads"), self._license_header() + unit.ads)
 
             if unit.adb:
-                create_file(
-                    directory / Path(unit.name + ".adb"), self.__license_header() + unit.adb
-                )
+                create_file(directory / Path(unit.name + ".adb"), self._license_header() + unit.adb)
 
     def _generate(self, model: Model, integration: Integration) -> None:
         for t in model.types:
@@ -228,15 +226,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             log.info("Generating %s", t.identifier)
 
             if t.package not in self._units:
-                self.__create_unit(ID(t.package), terminating=False)
+                self._create_unit(ID(t.package), terminating=False)
 
             if isinstance(t, (Scalar, Composite)):
-                self.__create_type(t, ID(t.package))
+                self._create_type(t, ID(t.package))
 
             elif isinstance(t, Message):
                 # ISSUE: Componolit/RecordFlux#276
                 for c in t.checksums:
-                    if not self.__ignore_unsupported_checksum:
+                    if not self._ignore_unsupported_checksum:
                         fail(
                             "unsupported checksum (consider --ignore-unsupported-checksum option)",
                             Subsystem.GENERATOR,
@@ -247,10 +245,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                             "unsupported checksum ignored", Subsystem.GENERATOR, location=c.location
                         )
 
-                self.__create_message(t)
+                self._create_message(t)
 
             elif isinstance(t, Refinement):
-                self.__create_refinement(t)
+                self._create_refinement(t)
 
             else:
                 assert False, f'unexpected type "{type(t).__name__}"'
@@ -259,23 +257,23 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             log.info("Generating %s", s.identifier)
 
             if s.package not in self._units:
-                self.__create_unit(ID(s.package), terminating=False)
+                self._create_unit(ID(s.package), terminating=False)
 
-            self.__create_session(s, integration)
+            self._create_session(s, integration)
 
-    def __create_session(self, session: Session, integration: Integration) -> None:
-        allocator_generator = AllocatorGenerator(session, integration, self.__prefix)
+    def _create_session(self, session: Session, integration: Integration) -> None:
+        allocator_generator = AllocatorGenerator(session, integration, self._prefix)
         if allocator_generator.required:
-            unit = self.__create_unit(
+            unit = self._create_unit(
                 allocator_generator.unit_identifier,
                 allocator_generator.declaration_context,
                 allocator_generator.body_context,
             )
             unit += allocator_generator.unit_part
         session_generator = SessionGenerator(
-            session, allocator_generator, self.__prefix, debug=self.__debug
+            session, allocator_generator, self._prefix, debug=self._debug
         )
-        unit = self.__create_unit(
+        unit = self._create_unit(
             session_generator.unit_identifier,
             session_generator.declaration_context,
             session_generator.body_context,
@@ -284,7 +282,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
         unit += session_generator.unit_part
 
-    def __create_unit(  # pylint: disable = too-many-arguments
+    def _create_unit(  # pylint: disable = too-many-arguments
         self,
         identifier: ID,
         declaration_context: ty.Sequence[ContextItem] = None,
@@ -302,7 +300,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         unit = PackageUnit(
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
-                self.__prefix * identifier,
+                self._prefix * identifier,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
@@ -311,13 +309,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ],
             ),
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *body_context],
-            PackageBody(self.__prefix * identifier, aspects=[SparkMode()]),
+            PackageBody(self._prefix * identifier, aspects=[SparkMode()]),
         )
         self._units[identifier] = unit
 
         return unit
 
-    def __create_instantiation_unit(
+    def _create_instantiation_unit(
         self,
         identifier: ID,
         context: ty.List[ContextItem],
@@ -332,7 +330,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         return unit
 
     # pylint: disable = too-many-branches
-    def __create_message(self, message: Message) -> None:
+    def _create_message(self, message: Message) -> None:
         if not message.fields:
             return
 
@@ -341,14 +339,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
-                    WithClause(self.__prefix * const.TYPES_PACKAGE),
-                    WithClause(self.__prefix * const.BUILTIN_TYPES_PACKAGE),
-                    WithClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
-                    UsePackageClause(self.__prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    WithClause(self._prefix * const.TYPES_PACKAGE),
+                    WithClause(self._prefix * const.BUILTIN_TYPES_PACKAGE),
+                    WithClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    UsePackageClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ]
             )
 
-        context.append(WithClause(self.__prefix * const.TYPES_PACKAGE))
+        context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -357,15 +355,15 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(self.__prefix * ID(field_type.package)),
-                        UsePackageClause(self.__prefix * ID(field_type.package)),
+                        WithClause(self._prefix * ID(field_type.package)),
+                        UsePackageClause(self._prefix * ID(field_type.package)),
                     ]
                 )
 
             elif isinstance(field_type, Sequence):
-                context.append(WithClause(self.__prefix * ID(field_type.identifier)))
+                context.append(WithClause(self._prefix * ID(field_type.identifier)))
 
-        unit = self.__create_unit(ID(message.identifier), context)
+        unit = self._create_unit(ID(message.identifier), context)
 
         scalar_fields = {}
         composite_fields = []
@@ -392,7 +390,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             self._executor.submit(
                 message_generator.create_use_type_clause,
                 composite_fields,
-                self.__serializer.requires_set_procedure(message),
+                self._serializer.requires_set_procedure(message),
             ),
             self._executor.submit(message_generator.create_allow_unevaluated_use_of_old),
             self._executor.submit(message_generator.create_field_type, message),
@@ -403,7 +401,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 message_generator.create_valid_context_function,
                 message,
                 composite_fields,
-                self.__prefix,
+                self._prefix,
             ),
             self._executor.submit(message_generator.create_context_type, message),
             self._executor.submit(message_generator.create_initialize_procedure, message),
@@ -426,30 +424,30 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             self._executor.submit(message_generator.create_written_last_function),
             self._executor.submit(message_generator.create_data_procedure),
             self._executor.submit(
-                message_generator.create_valid_value_function, message, scalar_fields, self.__prefix
+                message_generator.create_valid_value_function, message, scalar_fields, self._prefix
             ),
             self._executor.submit(
-                message_generator.create_path_condition_function, message, self.__prefix
+                message_generator.create_path_condition_function, message, self._prefix
             ),
             self._executor.submit(
-                message_generator.create_field_condition_function, message, self.__prefix
+                message_generator.create_field_condition_function, message, self._prefix
             ),
             self._executor.submit(
                 message_generator.create_field_size_function,
                 message,
                 scalar_fields,
                 composite_fields,
-                self.__prefix,
+                self._prefix,
             ),
             self._executor.submit(
-                message_generator.create_field_first_function, message, self.__prefix
+                message_generator.create_field_first_function, message, self._prefix
             ),
             self._executor.submit(
                 message_generator.create_field_last_function, scalar_fields, composite_fields
             ),
             self._executor.submit(message_generator.create_predecessor_function),
             self._executor.submit(
-                message_generator.create_successor_function, message, self.__prefix
+                message_generator.create_successor_function, message, self._prefix
             ),
             self._executor.submit(
                 message_generator.create_valid_predecessor_function, message, composite_fields
@@ -478,58 +476,58 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                         composite_fields,
                     )
                 ]
-                if self.__requires_composite_field_function(
+                if self._requires_composite_field_function(
                     message, scalar_fields, composite_fields, sequence_fields
                 )
                 else []
             ),
             self._executor.submit(
-                self.__parser.create_get_function, message, scalar_fields, composite_fields
+                self._parser.create_get_function, message, scalar_fields, composite_fields
             ),
             self._executor.submit(
-                self.__parser.create_verify_procedure, message, scalar_fields, composite_fields
+                self._parser.create_verify_procedure, message, scalar_fields, composite_fields
             ),
-            self._executor.submit(self.__parser.create_verify_message_procedure, message),
-            self._executor.submit(self.__parser.create_present_function),
-            self._executor.submit(self.__parser.create_structural_valid_function),
-            self._executor.submit(self.__parser.create_valid_function),
-            self._executor.submit(self.__parser.create_incomplete_function),
-            self._executor.submit(self.__parser.create_invalid_function),
-            self._executor.submit(self.__parser.create_structural_valid_message_function, message),
-            self._executor.submit(self.__parser.create_valid_message_function, message),
-            self._executor.submit(self.__parser.create_incomplete_message_function),
-            self._executor.submit(self.__parser.create_scalar_getter_functions, scalar_fields),
-            self._executor.submit(self.__parser.create_opaque_getter_functions, opaque_fields),
-            self._executor.submit(self.__parser.create_opaque_getter_procedures, opaque_fields),
+            self._executor.submit(self._parser.create_verify_message_procedure, message),
+            self._executor.submit(self._parser.create_present_function),
+            self._executor.submit(self._parser.create_structural_valid_function),
+            self._executor.submit(self._parser.create_valid_function),
+            self._executor.submit(self._parser.create_incomplete_function),
+            self._executor.submit(self._parser.create_invalid_function),
+            self._executor.submit(self._parser.create_structural_valid_message_function, message),
+            self._executor.submit(self._parser.create_valid_message_function, message),
+            self._executor.submit(self._parser.create_incomplete_message_function),
+            self._executor.submit(self._parser.create_scalar_getter_functions, scalar_fields),
+            self._executor.submit(self._parser.create_opaque_getter_functions, opaque_fields),
+            self._executor.submit(self._parser.create_opaque_getter_procedures, opaque_fields),
             self._executor.submit(
-                self.__parser.create_generic_opaque_getter_procedures, opaque_fields
+                self._parser.create_generic_opaque_getter_procedures, opaque_fields
             ),
-            self._executor.submit(self.__serializer.create_valid_size_function, message),
-            self._executor.submit(self.__serializer.create_valid_length_function),
+            self._executor.submit(self._serializer.create_valid_size_function, message),
+            self._executor.submit(self._serializer.create_valid_length_function),
             self._executor.submit(
-                self.__serializer.create_set_procedure, message, scalar_fields, composite_fields
-            ),
-            self._executor.submit(
-                self.__serializer.create_scalar_setter_procedures, message, scalar_fields
+                self._serializer.create_set_procedure, message, scalar_fields, composite_fields
             ),
             self._executor.submit(
-                self.__serializer.create_composite_setter_empty_procedures, message
+                self._serializer.create_scalar_setter_procedures, message, scalar_fields
             ),
             self._executor.submit(
-                self.__serializer.create_sequence_setter_procedures, message, sequence_fields
+                self._serializer.create_composite_setter_empty_procedures, message
             ),
             self._executor.submit(
-                self.__serializer.create_composite_initialize_procedures,
+                self._serializer.create_sequence_setter_procedures, message, sequence_fields
+            ),
+            self._executor.submit(
+                self._serializer.create_composite_initialize_procedures,
                 message,
                 fields_with_explicit_size,
                 fields_with_implicit_size,
             ),
-            self._executor.submit(self.__serializer.create_opaque_setter_procedures, message),
+            self._executor.submit(self._serializer.create_opaque_setter_procedures, message),
             self._executor.submit(
-                self.__serializer.create_generic_opaque_setter_procedures, message
+                self._serializer.create_generic_opaque_setter_procedures, message
             ),
             self._executor.submit(
-                message_generator.create_switch_procedures, message, sequence_fields, self.__prefix
+                message_generator.create_switch_procedures, message, sequence_fields, self._prefix
             ),
             self._executor.submit(
                 message_generator.create_complete_functions, message, sequence_fields
@@ -540,14 +538,14 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             self._executor.submit(message_generator.create_cursor_function),
             self._executor.submit(message_generator.create_cursors_function),
             self._executor.submit(message_generator.create_cursors_index_function),
-            self._executor.submit(message_generator.create_structure, message, self.__prefix),
+            self._executor.submit(message_generator.create_structure, message, self._prefix),
         ]
 
         for future in futures:
             unit += future.result()
 
     @staticmethod
-    def __requires_composite_field_function(
+    def _requires_composite_field_function(
         message: Message,
         scalar_fields: ty.Mapping[Field, Scalar],
         composite_fields: ty.Sequence[Field],
@@ -559,16 +557,16 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             or sequence_fields
         )
 
-    def __create_refinement(self, refinement: Refinement) -> None:
+    def _create_refinement(self, refinement: Refinement) -> None:
         unit_name = refinement.package * const.REFINEMENT_PACKAGE
         null_sdu = not refinement.sdu.fields
 
         if unit_name in self._units:
             unit = self._units[unit_name]
         else:
-            unit = self.__create_unit(
+            unit = self._create_unit(
                 unit_name,
-                [WithClause(self.__prefix * const.TYPES_PACKAGE)] if not null_sdu else [],
+                [WithClause(self._prefix * const.TYPES_PACKAGE)] if not null_sdu else [],
             )
 
         assert isinstance(unit, PackageUnit), "unexpected unit type"
@@ -577,8 +575,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             if len(v.identifier.parts) == 2 and v.identifier.parent != refinement.package:
                 unit.declaration_context.extend(
                     [
-                        WithClause(self.__prefix * ID(v.identifier.parent)),
-                        UsePackageClause(self.__prefix * ID(v.identifier.parent)),
+                        WithClause(self._prefix * ID(v.identifier.parent)),
+                        UsePackageClause(self._prefix * ID(v.identifier.parent)),
                     ]
                 )
 
@@ -596,13 +594,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
             unit.declaration_context.extend(
                 [
-                    WithClause(self.__prefix * ID(pdu_package)),
-                    UsePackageClause(self.__prefix * ID(pdu_package)),
+                    WithClause(self._prefix * ID(pdu_package)),
+                    UsePackageClause(self._prefix * ID(pdu_package)),
                 ]
             )
 
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
+        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
 
         unit.declaration_context.append(WithClause(pdu_identifier))
 
@@ -619,17 +617,17 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             if expr.Variable(f.name) in refinement.condition
         }
 
-        unit += self.__create_contains_function(refinement, condition_fields, null_sdu)
+        unit += self._create_contains_function(refinement, condition_fields, null_sdu)
         if not null_sdu:
             unit += UnitPart(
                 [
                     UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
                 ]
             )
-            unit += self.__create_switch_procedure(refinement, condition_fields)
-            unit += self.__create_copy_refined_field_procedure(refinement, condition_fields)
+            unit += self._create_switch_procedure(refinement, condition_fields)
+            unit += self._create_copy_refined_field_procedure(refinement, condition_fields)
 
-    def __create_type(self, field_type: Type, message_package: ID) -> None:
+    def _create_type(self, field_type: Type, message_package: ID) -> None:
         assert field_type.package != BUILTINS_PACKAGE
 
         unit = self._units[message_package]
@@ -637,25 +635,25 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         assert isinstance(unit, PackageUnit)
 
         if isinstance(field_type, (Integer, Enumeration)):
-            unit.declaration_context.append(WithClause(self.__prefix * const.TYPES))
+            unit.declaration_context.append(WithClause(self._prefix * const.TYPES))
 
         if isinstance(field_type, ModularInteger):
             unit += UnitPart(modular_types(field_type))
-            unit += self.__integer_functions(field_type)
+            unit += self._integer_functions(field_type)
         elif isinstance(field_type, RangeInteger):
             unit += UnitPart(range_types(field_type))
-            unit += self.__integer_functions(field_type)
+            unit += self._integer_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += self.__enumeration_functions(field_type)
+            unit += self._enumeration_functions(field_type)
         elif isinstance(field_type, Sequence):
-            self.__create_sequence_unit(field_type)
+            self._create_sequence_unit(field_type)
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
-    def __create_sequence_unit(self, sequence_type: Sequence) -> None:
-        context, package = common.create_sequence_instantiation(sequence_type, self.__prefix)
-        self.__create_instantiation_unit(
+    def _create_sequence_unit(self, sequence_type: Sequence) -> None:
+        context, package = common.create_sequence_instantiation(sequence_type, self._prefix)
+        self._create_instantiation_unit(
             package.identifier,
             [
                 Pragma("SPARK_Mode"),
@@ -667,7 +665,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                     "Warnings",
                     [Variable("Off"), String('unit "*RFLX_Types" is not referenced')],
                 ),
-                WithClause(self.__prefix * const.TYPES_PACKAGE),
+                WithClause(self._prefix * const.TYPES_PACKAGE),
                 Pragma(
                     "Warnings",
                     [Variable("On"), String('unit "*RFLX_Types" is not referenced')],
@@ -676,7 +674,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             package,
         )
 
-    def __integer_functions(self, integer: Integer) -> UnitPart:
+    def _integer_functions(self, integer: Integer) -> UnitPart:
         specification: ty.List[Declaration] = []
 
         constraints = (
@@ -707,10 +705,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ]
             )
         else:
-            specification.append(UseTypeClause(self.__prefix * const.TYPES_U64))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_U64))
 
         specification.append(
-            self.__type_validation_function(integer.name, "Val", constraints.ada_expr())
+            self._type_validation_function(integer.name, "Val", constraints.ada_expr())
         )
 
         if constraints == expr.TRUE:
@@ -724,11 +722,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ]
             )
 
-        specification.extend(self.__integer_conversion_functions(integer))
+        specification.extend(self._integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
-    def __enumeration_functions(self, enum: Enumeration) -> UnitPart:
+    def _enumeration_functions(self, enum: Enumeration) -> UnitPart:
         incomplete = len(enum.literals) < 2**64
 
         specification: ty.List[Declaration] = []
@@ -746,10 +744,10 @@ class Generator:  # pylint: disable = too-many-instance-attributes
         )
 
         if validation_expression != TRUE:
-            specification.append(UseTypeClause(self.__prefix * const.TYPES_U64))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_U64))
 
         specification.append(
-            self.__type_validation_function(
+            self._type_validation_function(
                 enum.name,
                 "Val" if validation_expression != TRUE else "Unused_Val",
                 validation_expression,
@@ -781,11 +779,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_U64",
-                    self.__prefix * const.TYPES_U64,
+                    self._prefix * const.TYPES_U64,
                     [
                         Parameter(
                             ["Enum"],
-                            self.__prefix
+                            self._prefix
                             * (
                                 ID(common.full_enum_name(enum))
                                 if enum.always_valid
@@ -803,8 +801,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self.__prefix * ID(enum.identifier),
-            [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
+            self._prefix * ID(enum.identifier),
+            [Parameter(["Val"], self._prefix * const.TYPES_U64)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: ty.List[ty.Tuple[Expr, Expr]] = []
@@ -814,7 +812,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self.__prefix * ID(enum.identifier),
+                        self._prefix * ID(enum.identifier),
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -839,8 +837,8 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_U64",
-                        self.__prefix * const.TYPES_U64,
-                        [Parameter(["Val"], self.__prefix * ID(enum.identifier))],
+                        self._prefix * const.TYPES_U64,
+                        [Parameter(["Val"], self._prefix * ID(enum.identifier))],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_U64", [Variable("Val.Enum")]))],
@@ -857,7 +855,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                         for key, value in enum.literals.items()
                     ],
                     *(
-                        [(Variable("others"), Last(self.__prefix * ID(enum.identifier)))]
+                        [(Variable("others"), Last(self._prefix * ID(enum.identifier)))]
                         if incomplete
                         else []
                     ),
@@ -876,13 +874,13 @@ class Generator:  # pylint: disable = too-many-instance-attributes
 
         return UnitPart(specification)
 
-    def __create_contains_function(
+    def _create_contains_function(
         self,
         refinement: Refinement,
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -914,9 +912,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                 ExpressionFunctionDeclaration(
                     specification,
                     expr.AndThen(
-                        *self.__refinement_conditions(
-                            refinement, "Ctx", condition_fields, null_sdu
-                        ),
+                        *self._refinement_conditions(refinement, "Ctx", condition_fields, null_sdu),
                         condition,
                     )
                     .simplified()
@@ -925,11 +921,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ]
         )
 
-    def __create_switch_procedure(
+    def _create_switch_procedure(
         self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
+        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
         pdu_context = f"{refinement.pdu.identifier.flat}_PDU_Context"
         sdu_context = f"{refinement.sdu.identifier.flat}_SDU_Context"
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -953,7 +949,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Not(Constrained(sdu_context)),
                                 *[
                                     c.ada_expr()
-                                    for c in self.__refinement_conditions(
+                                    for c in self._refinement_conditions(
                                         refinement, pdu_context, condition_fields, null_sdu=False
                                     )
                                 ],
@@ -1068,11 +1064,11 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def __create_copy_refined_field_procedure(
+    def _create_copy_refined_field_procedure(
         self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self.__prefix * ID(refinement.sdu.identifier)
+        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
+        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
         pdu_context = ID(refinement.pdu.identifier.flat) + "_PDU_Context"
         sdu_context = ID(refinement.sdu.identifier.flat) + "_SDU_Context"
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -1096,7 +1092,7 @@ class Generator:  # pylint: disable = too-many-instance-attributes
                                 Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
                                 *[
                                     c.ada_expr()
-                                    for c in self.__refinement_conditions(
+                                    for c in self._refinement_conditions(
                                         refinement, pdu_context, condition_fields, null_sdu=False
                                     )
                                 ],
@@ -1255,20 +1251,20 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def __check_template_file(self, filename: str) -> None:
-        assert self.__template_dir.joinpath(
+    def _check_template_file(self, filename: str) -> None:
+        assert self._template_dir.joinpath(
             filename
         ).is_file(), f'template file not found: "{filename}"'
 
-    def __license_header(self) -> str:
-        if self.__reproducible:
+    def _license_header(self) -> str:
+        if self._reproducible:
             return ""
 
         filename = "license_header"
-        self.__check_template_file(filename)
+        self._check_template_file(filename)
         today = date.today()
         return (
-            self.__template_dir.joinpath(filename)
+            self._template_dir.joinpath(filename)
             .read_text(encoding="utf-8")
             .format(
                 version=__version__,
@@ -1277,47 +1273,47 @@ class Generator:  # pylint: disable = too-many-instance-attributes
             )
         )
 
-    def __type_validation_function(
+    def _type_validation_function(
         self, type_name: str, enum_value: str, validation_expression: Expr
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
                 f"Valid_{type_name}",
                 "Boolean",
-                [Parameter([enum_value], self.__prefix * const.TYPES_U64)],
+                [Parameter([enum_value], self._prefix * const.TYPES_U64)],
             ),
             validation_expression,
         )
 
-    def __integer_conversion_functions(self, integer: Integer) -> ty.Sequence[Subprogram]:
+    def _integer_conversion_functions(self, integer: Integer) -> ty.Sequence[Subprogram]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_U64",
-                    self.__prefix * const.TYPES_U64,
-                    [Parameter(["Val"], self.__prefix * ID(integer.identifier))],
+                    self._prefix * const.TYPES_U64,
+                    [Parameter(["Val"], self._prefix * ID(integer.identifier))],
                 ),
-                Call(self.__prefix * const.TYPES_U64, [Variable("Val")]),
+                Call(self._prefix * const.TYPES_U64, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self.__prefix * ID(integer.identifier),
-                    [Parameter(["Val"], self.__prefix * const.TYPES_U64)],
+                    self._prefix * ID(integer.identifier),
+                    [Parameter(["Val"], self._prefix * const.TYPES_U64)],
                 ),
-                Call(self.__prefix * ID(integer.identifier), [Variable("Val")]),
+                Call(self._prefix * ID(integer.identifier), [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
             ),
         ]
 
-    def __refinement_conditions(
+    def _refinement_conditions(
         self,
         refinement: Refinement,
         pdu_context: StrID,
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> ty.Sequence[expr.Expr]:
-        pdu_identifier = self.__prefix * ID(refinement.pdu.identifier)
+        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
 
         conditions: ty.List[expr.Expr] = [
             expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])

@@ -58,10 +58,10 @@ class State(Base):
 
         assert exception_transition.condition == expr.TRUE if exception_transition else True
 
-        self.__identifier = ID(identifier)
-        self.__transitions = transitions or []
-        self.__exception_transition = exception_transition
-        self.__actions = actions or []
+        self._identifier = ID(identifier)
+        self._transitions = transitions or []
+        self._exception_transition = exception_transition
+        self._actions = actions or []
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.description = description
         self.location = location
@@ -88,23 +88,23 @@ class State(Base):
 
     @property
     def identifier(self) -> ID:
-        return self.__identifier
+        return self._identifier
 
     @property
     def transitions(self) -> Sequence[Transition]:
-        return self.__transitions or []
+        return self._transitions or []
 
     @property
     def exception_transition(self) -> Optional[Transition]:
-        return self.__exception_transition
+        return self._exception_transition
 
     @property
     def actions(self) -> Sequence[stmt.Statement]:
-        return self.__actions
+        return self._actions
 
     @property
     def is_null(self) -> bool:
-        return not self.__transitions
+        return not self._transitions
 
     @property
     def has_exceptions(self) -> bool:
@@ -128,7 +128,7 @@ class State(Base):
                     )
                 )
             )
-            for a in self.__actions
+            for a in self._actions
         )
 
 
@@ -262,20 +262,20 @@ class Session(AbstractSession):
             types,
             location,
         )
-        self.__validate()
+        self._validate()
         self.error.propagate()
 
-    def __validate_states(self) -> None:
+    def _validate_states(self) -> None:
         if not self.states:
             self.error.extend(
                 [("empty states", Subsystem.MODEL, Severity.ERROR, self.location)],
             )
 
-        self.__validate_state_existence()
-        self.__validate_duplicate_states()
-        self.__validate_state_reachability()
+        self._validate_state_existence()
+        self._validate_duplicate_states()
+        self._validate_state_reachability()
 
-    def __validate_state_existence(self) -> None:
+    def _validate_state_existence(self) -> None:
         state_identifiers = [s.identifier for s in self.states]
         if self.initial not in state_identifiers:
             self.error.extend(
@@ -314,7 +314,7 @@ class Session(AbstractSession):
                         ],
                     )
 
-    def __validate_duplicate_states(self) -> None:
+    def _validate_duplicate_states(self) -> None:
         identifier_states = defaultdict(list)
         for s in self.states:
             identifier_states[s.identifier].append(s)
@@ -339,7 +339,7 @@ class Session(AbstractSession):
                         ],
                     )
 
-    def __validate_state_reachability(self) -> None:
+    def _validate_state_reachability(self) -> None:
         inputs: Dict[ID, List[ID]] = {}
         for s in self.states:
             for t in [
@@ -375,7 +375,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def __validate_declarations(
+    def _validate_declarations(
         self,
         declarations: Mapping[ID, decl.Declaration],
         visible_declarations: Mapping[ID, decl.Declaration],
@@ -413,7 +413,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-            self.__reference_variable_declaration(d.variables(), visible_declarations)
+            self._reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeDeclaration):
                 type_identifier = mty.internal_type_identifier(k, self.package)
@@ -429,7 +429,7 @@ class Session(AbstractSession):
                     self.error.extend(
                         d.check_type(
                             self.types[type_identifier].type_,
-                            lambda x: self.__typify_variable(x, visible_declarations),
+                            lambda x: self._typify_variable(x, visible_declarations),
                         )
                     )
                 else:
@@ -452,7 +452,7 @@ class Session(AbstractSession):
 
             visible_declarations[k] = d
 
-    def __validate_actions(
+    def _validate_actions(
         self,
         actions: Sequence[stmt.Statement],
         declarations: Mapping[ID, decl.Declaration],
@@ -561,19 +561,19 @@ class Session(AbstractSession):
             self.error.extend(
                 a.check_type(
                     type_,
-                    lambda x: self.__typify_variable(x, declarations),
+                    lambda x: self._typify_variable(x, declarations),
                 )
             )
 
-            self.__reference_variable_declaration(a.variables(), declarations)
+            self._reference_variable_declaration(a.variables(), declarations)
 
-    def __validate_transitions(
+    def _validate_transitions(
         self, state: State, declarations: Mapping[ID, decl.Declaration]
     ) -> None:
         for t in state.transitions:
-            t.condition = t.condition.substituted(lambda x: self.__typify_variable(x, declarations))
+            t.condition = t.condition.substituted(lambda x: self._typify_variable(x, declarations))
             self.error.extend(t.condition.check_type(rty.BOOLEAN))
-            self.__reference_variable_declaration(t.condition.variables(), declarations)
+            self._reference_variable_declaration(t.condition.variables(), declarations)
 
         if not state.exception_transition and state.has_exceptions:
             self.error.extend(
@@ -599,7 +599,7 @@ class Session(AbstractSession):
                 ],
             )
 
-    def __validate_usage(self) -> None:
+    def _validate_usage(self) -> None:
         global_declarations = self._global_declarations.items()
         local_declarations = ((k, d) for s in self.states for k, d in s.declarations.items())
         for k, d in itertools.chain(global_declarations, local_declarations):
@@ -615,7 +615,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def __typify_variable(
+    def _typify_variable(
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
@@ -650,7 +650,7 @@ class Session(AbstractSession):
         return expression
 
     @staticmethod
-    def __reference_variable_declaration(
+    def _reference_variable_declaration(
         variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
     ) -> None:
         for v in variables:
@@ -659,20 +659,20 @@ class Session(AbstractSession):
             except KeyError:
                 pass
 
-    def __validate(self) -> None:
-        self.__validate_states()
+    def _validate(self) -> None:
+        self._validate_states()
 
-        self.__validate_declarations(self._global_declarations, {})
+        self._validate_declarations(self._global_declarations, {})
 
         for s in self.states:
-            self.__validate_declarations(s.declarations, self._global_declarations)
+            self._validate_declarations(s.declarations, self._global_declarations)
 
             declarations = {**self._global_declarations, **s.declarations}
 
-            self.__validate_actions(s.actions, declarations, s.declarations)
-            self.__validate_transitions(s, declarations)
+            self._validate_actions(s.actions, declarations, s.declarations)
+            self._validate_transitions(s, declarations)
 
-        self.__validate_usage()
+        self._validate_usage()
 
 
 class UnprovenSession(AbstractSession):
