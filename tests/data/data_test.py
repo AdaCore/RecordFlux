@@ -11,7 +11,6 @@ from tests.data import models
     [
         models.NULL_MESSAGE,
         models.TLV_MESSAGE,
-        models.TLV_MESSAGE_WITH_NOT_OPERATOR,
         models.ETHERNET_FRAME,
         models.ENUMERATION_MESSAGE,
         models.SEQUENCE_MESSAGE,
