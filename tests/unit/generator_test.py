@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Sequence, Tuple, Type
+from typing import Callable, Sequence, Tuple, Type
 
 import pkg_resources
 import pytest
@@ -44,15 +44,6 @@ MODELS = [
     models.TLV_MODEL,
     Model(models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
 ]
-
-
-def units(generator: Generator) -> Mapping[str, str]:
-    result = {}
-    for unit in generator._units.values():  # pylint: disable=protected-access
-        if unit.name.startswith("rflx-p"):
-            result[f"{unit.name}.ads"] = unit.ads
-            result[f"{unit.name}.adb"] = unit.adb
-    return result
 
 
 def test_invalid_prefix() -> None:
