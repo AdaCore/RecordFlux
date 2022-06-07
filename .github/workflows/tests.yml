@@ -11,6 +11,7 @@ concurrency:
 
 env:
     MEMCACHED: localhost:11211
+    ALIRE_VERSION: "1.2.0"
 
 jobs:
   skip_check_general:
@@ -318,10 +319,12 @@ jobs:
           path: |
             ~/.config/alire
             build/alire
-          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
+          key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
       - name: Install Alire
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
         uses: alire-project/setup-alire@v1
+        with:
+          version: ${{ env.ALIRE_VERSION }}
       - name: Install FSF GNAT
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
         run: |
@@ -508,6 +511,8 @@ jobs:
     - name: Install Alire
       if: ${{ matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
+      with:
+        version: ${{ env.ALIRE_VERSION }}
     - name: Install FSF GNAT
       if: ${{ matrix.gnat-distrib == 'fsf' }}
       run: |
@@ -690,6 +695,8 @@ jobs:
     - name: Install Alire
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
+      with:
+        version: ${{ env.ALIRE_VERSION }}
     - name: Install FSF GNAT
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       run: |
@@ -861,6 +868,8 @@ jobs:
     - name: Install Alire
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
+      with:
+        version: ${{ env.ALIRE_VERSION }}
     - name: Install FSF GNAT
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       run: |
