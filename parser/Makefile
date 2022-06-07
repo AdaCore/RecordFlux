@@ -94,9 +94,9 @@ install_gnat:
 	alr toolchain --install gnat_native=11.2.1 && \
 	mkdir -p build && \
 	cd build && \
-	alr init --lib -n alire && \
+	alr -n init --lib alire && \
 	cd alire && \
-	alr with -n gnatcoll_iconv gnatcoll_gmp
+	alr -n with gnatcoll_iconv gnatcoll_gmp
 
 printenv_gnat:
 	@test -d build/alire && \
