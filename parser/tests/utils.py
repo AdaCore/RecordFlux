@@ -1,5 +1,7 @@
 from typing import Any
 
+from librflxlang import AnalysisContext
+
 
 def to_dict(node: Any) -> Any:  # type: ignore[misc]
     if node is None:
@@ -11,3 +13,9 @@ def to_dict(node: Any) -> Any:  # type: ignore[misc]
         result["_kind"] = node.kind_name
         return result
     return {"_kind": node.kind_name, "_value": node.text}
+
+
+def parse(string: str, rule: str) -> object:
+    unit = AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
+    assert len(unit.diagnostics) == 0, str(unit.diagnostics)
+    return to_dict(unit.root)

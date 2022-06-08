@@ -600,3 +600,15 @@ class Select(Expr):
 
     expression = Field(type=Expr)
     selector = Field(type=UnqualifiedID)
+
+
+class Choice(Expr):
+
+    selectors = Field(type=RFLXNode.list)
+    expression = Field(type=Expr)
+
+
+class CaseExpression(Expr):
+
+    expression = Field(type=Expr)
+    choices = Field(type=Choice.list)

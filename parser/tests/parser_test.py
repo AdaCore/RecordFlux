@@ -1,10 +1,11 @@
 import re
+from typing import Dict
 
 import librflxlang
 import pytest
 
 from language.lexer import rflx_lexer
-from tests.utils import to_dict
+from tests.utils import parse, to_dict
 
 
 def parse_buffer(
@@ -427,3 +428,321 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
     """
     unit = parse_buffer(text, rule=rule)
     assert len(unit.diagnostics) == 0, text + "\n".join(str(d) for d in unit.diagnostics)
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
+            "(case A is when V1 => 1, when V2 => 2)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "1"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V1"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "2"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V2"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when T::V1 => 1, when T::V2 => 2)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "1"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V1"},
+                                "package": {"_kind": "UnqualifiedID", "_value": "T"},
+                            }
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "2"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V2"},
+                                "package": {"_kind": "UnqualifiedID", "_value": "T"},
+                            }
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when V1 | T::V2 => 1, when V3 | T::V4 => 2)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "1"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V1"},
+                                "package": None,
+                            },
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V2"},
+                                "package": {"_kind": "UnqualifiedID", "_value": "T"},
+                            },
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "2"},
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V3"},
+                                "package": None,
+                            },
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V4"},
+                                "package": {"_kind": "UnqualifiedID", "_value": "T"},
+                            },
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when 1 => 8, when 2 => 16)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "8"},
+                        "selectors": [{"_kind": "NumericLiteral", "_value": "1"}],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "16"},
+                        "selectors": [{"_kind": "NumericLiteral", "_value": "2"}],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when 1 | 2 => 8, when 3 | 4 => 16)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "8"},
+                        "selectors": [
+                            {"_kind": "NumericLiteral", "_value": "1"},
+                            {"_kind": "NumericLiteral", "_value": "2"},
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {"_kind": "NumericLiteral", "_value": "16"},
+                        "selectors": [
+                            {"_kind": "NumericLiteral", "_value": "3"},
+                            {"_kind": "NumericLiteral", "_value": "4"},
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when V1 => Length + 2, when V2 => 2 * Length)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {
+                            "_kind": "BinOp",
+                            "left": {
+                                "_kind": "Variable",
+                                "identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "Length"},
+                                    "package": None,
+                                },
+                            },
+                            "op": {"_kind": "OpAdd", "_value": "+"},
+                            "right": {"_kind": "NumericLiteral", "_value": "2"},
+                        },
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V1"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {
+                            "_kind": "BinOp",
+                            "left": {"_kind": "NumericLiteral", "_value": "2"},
+                            "op": {"_kind": "OpMul", "_value": "*"},
+                            "right": {
+                                "_kind": "Variable",
+                                "identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "Length"},
+                                    "package": None,
+                                },
+                            },
+                        },
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "V2"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+        (
+            "(case A is when True => F1, when False => F2 or F3)",
+            {
+                "_kind": "CaseExpression",
+                "choices": [
+                    {
+                        "_kind": "Choice",
+                        "expression": {
+                            "_kind": "Variable",
+                            "identifier": {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "F1"},
+                                "package": None,
+                            },
+                        },
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "True"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                    {
+                        "_kind": "Choice",
+                        "expression": {
+                            "_kind": "BinOp",
+                            "left": {
+                                "_kind": "Variable",
+                                "identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "F2"},
+                                    "package": None,
+                                },
+                            },
+                            "op": {"_kind": "OpOr", "_value": "or"},
+                            "right": {
+                                "_kind": "Variable",
+                                "identifier": {
+                                    "_kind": "ID",
+                                    "name": {"_kind": "UnqualifiedID", "_value": "F3"},
+                                    "package": None,
+                                },
+                            },
+                        },
+                        "selectors": [
+                            {
+                                "_kind": "ID",
+                                "name": {"_kind": "UnqualifiedID", "_value": "False"},
+                                "package": None,
+                            }
+                        ],
+                    },
+                ],
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "A"},
+                        "package": None,
+                    },
+                },
+            },
+        ),
+    ],
+)
+def test_extended_case_expression(string: str, expected: Dict[str, str]) -> None:
+    actual = parse(string, rule=librflxlang.GrammarRule.extended_expression_rule)
+    assert actual == expected

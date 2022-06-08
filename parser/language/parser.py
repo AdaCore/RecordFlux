@@ -62,6 +62,7 @@ grammar.add_rules(
             lexer.Final,
             lexer.And,
             lexer.Or,
+            lexer.Case,
             lexer.UnqualifiedIdentifier,
         )
     ),
@@ -224,8 +225,16 @@ grammar.add_rules(
         grammar.message_aggregate,
         grammar.variable,
         grammar.extended_paren_expression,
+        grammar.extended_case_expression,
     ),
     extended_paren_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
+    extended_choice_list=List(Or(grammar.qualified_identifier, grammar.numeric_literal), sep="|"),
+    extended_choices=ast.Choice(
+        "when", grammar.extended_choice_list, "=>", grammar.extended_expression
+    ),
+    extended_case_expression=ast.CaseExpression(
+        "(", "case", grammar.extended_expression, "is", List(grammar.extended_choices, sep=","), ")"
+    ),
     extended_suffix=Or(
         ast.Select(
             grammar.extended_suffix,

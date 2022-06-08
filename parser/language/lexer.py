@@ -1,6 +1,6 @@
 from langkit.lexer import (
     Alt,
-    Case,
+    Case as Lexer_Case,
     Ignore,
     Lexer,
     LexerToken,
@@ -61,6 +61,7 @@ class Token(LexerToken):  # type: ignore[misc]
     Reset = WithText()
     HighOrderFirst = WithText()
     LowOrderFirst = WithText()
+    Case = WithText()
 
     # Aspect names
     First = WithText()
@@ -108,6 +109,7 @@ class Token(LexerToken):  # type: ignore[misc]
     DoubleColon = WithText()
     Assignment = WithText()
     Colon = WithText()
+    Pipe = WithText()
 
     # Comment
     Comment = WithTrivia()
@@ -130,7 +132,7 @@ rflx_lexer.add_rules(
 # Inspired by Libadalang grammar (ada/language/lexer.py)
 rflx_lexer.add_rules(
     *[
-        Case(
+        Lexer_Case(
             Literal(text),
             Alt(
                 prev_token_cond=(Token.Tick,),
@@ -155,7 +157,7 @@ rflx_lexer.add_rules(
 
 rflx_lexer.add_rules(
     *[
-        Case(
+        Lexer_Case(
             Literal(text),
             Alt(
                 prev_token_cond=(Token.With,),
@@ -188,6 +190,7 @@ rflx_lexer.add_rules(
     (Literal("not"), Token.Not),
     (Literal("new"), Token.New),
     (Literal("for"), Token.For),
+    (Literal("when"), Token.When),
     (Literal("where"), Token.Where),
     (Literal("use"), Token.Use),
     (Literal("all"), Token.All),
@@ -203,6 +206,7 @@ rflx_lexer.add_rules(
     (Literal("goto"), Token.Goto),
     (Literal("exception"), Token.Exception),
     (Literal("renames"), Token.Renames),
+    (Literal("case"), Token.Case),
     (Literal("Channel"), Token.Channel),
     (Literal("Readable"), Token.Readable),
     (Literal("Writable"), Token.Writable),
@@ -248,6 +252,7 @@ rflx_lexer.add_rules(
     (Literal("<"), Token.Lt),
     (Literal(">="), Token.Ge),
     (Literal(">"), Token.Gt),
+    (Literal("|"), Token.Pipe),
     (Literal("and"), Token.And),
     (Literal("or"), Token.Or),
     (Literal("&"), Token.Ampersand),
