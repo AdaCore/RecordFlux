@@ -41,7 +41,7 @@ is
          when others =>
             False);
 
-   function To_S63 (Enum : Boolean) return {prefix}RFLX_Arithmetic.S63 is
+   function To_Base_Int (Enum : Boolean) return {prefix}RFLX_Arithmetic.S63 is
      (case Enum is
          when False =>
             0,

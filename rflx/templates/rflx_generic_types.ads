@@ -70,7 +70,7 @@ is
 
    use type U64;
 
-   subtype S63 is {prefix}RFLX_Arithmetic.S63;
+   subtype Base_Integer is {prefix}RFLX_Arithmetic.S63;
 
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 
@@ -93,7 +93,7 @@ is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
    function Fits_Into (V : U64; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
-   function Fits_Into (V : S63; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
+   function Fits_Into (V : Base_Integer; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
 
    type Offset is mod 8;
 
@@ -126,7 +126,7 @@ is
        Last   : Index;
        Off    : Offset;
        Size   : Positive;
-       BO     : Byte_Order) return S63
+       BO     : Byte_Order) return Base_Integer
    with
      Pre =>
        (Buffer /= null
@@ -163,7 +163,7 @@ is
        (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
 
    procedure Insert
-      (Val    : S63;
+      (Val    : Base_Integer;
        Buffer : Bytes_Ptr;
        First  : Index;
        Last   : Index;
@@ -191,6 +191,6 @@ is
 
    function Unreachable return Length is (0) with Pre => False;
 
-   procedure Lemma_Size (Val : S63; Size : Positive) renames {prefix}RFLX_Arithmetic.Lemma_Size;
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive) renames {prefix}RFLX_Arithmetic.Lemma_Size;
 
 end {prefix}RFLX_Generic_Types;

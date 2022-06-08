@@ -232,7 +232,7 @@ class SerializerGenerator:
                 [
                     InOutParameter(["Ctx"], "Context"),
                     Parameter(["Fld"], "Field"),
-                    Parameter(["Val"], const.TYPES_S63),
+                    Parameter(["Val"], const.TYPES_BASE_INT),
                     Parameter(["Size"], const.TYPES_BIT_LENGTH),
                     Parameter(["State_Valid"], "Boolean"),
                     OutParameter(["Buffer_First"], const.TYPES_INDEX),
@@ -568,11 +568,11 @@ class SerializerGenerator:
                         [
                             Variable("Val")
                             if use_enum_records_directly
-                            else Call("To_S63", [Variable("Val")])
+                            else Call("To_Base_Int", [Variable("Val")])
                         ],
                     ),
                     common.field_condition_call(
-                        message, field, value=Call("To_S63", [Variable("Val")])
+                        message, field, value=Call("To_Base_Int", [Variable("Val")])
                     ),
                     common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                 )
@@ -619,7 +619,7 @@ class SerializerGenerator:
                         [
                             Variable("Ctx"),
                             Variable(field.affixed_name),
-                            Call("To_S63", [Variable("Val")]),
+                            Call("To_Base_Int", [Variable("Val")]),
                         ],
                     ),
                 ],
@@ -663,7 +663,7 @@ class SerializerGenerator:
                         [
                             InOutParameter(["Ctx"], "Context"),
                             Parameter(["Fld"], "Field"),
-                            Parameter(["Val"], const.TYPES_S63),
+                            Parameter(["Val"], const.TYPES_BASE_INT),
                         ],
                     ),
                     [
@@ -749,7 +749,7 @@ class SerializerGenerator:
                                 common.sufficient_space_for_field_condition(Variable("Fld")),
                                 In(
                                     Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                                    ValueRange(Number(1), Size(const.TYPES_S63)),
+                                    ValueRange(Number(1), Size(const.TYPES_BASE_INT)),
                                 ),
                                 Call(
                                     const.TYPES * "Fits_Into",

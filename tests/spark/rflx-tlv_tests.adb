@@ -44,7 +44,7 @@ package body RFLX.TLV_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      use type RFLX.RFLX_Types.S63;
+      use type RFLX.RFLX_Types.Base_Integer;
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 1, 2, 3, 4);
       Context : TLV.Message.Context;
       Tag     : TLV.Tag;
@@ -57,7 +57,7 @@ package body RFLX.TLV_Tests is
       if TLV.Message.Valid (Context, TLV.Message.F_Tag) then
          Tag := TLV.Message.Get_Tag (Context);
          Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
-         Assert (TLV.To_S63 (Tag) = 1, "Invalid conversion of Tag");
+         Assert (TLV.To_Base_Int (Tag) = 1, "Invalid conversion of Tag");
          Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
          if TLV.Message.Valid (Context, TLV.Message.F_Length) then
             Length := TLV.Message.Get_Length (Context);

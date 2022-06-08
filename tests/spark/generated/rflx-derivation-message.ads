@@ -10,7 +10,7 @@ package RFLX.Derivation.Message with
     (GNATprove, Always_Return)
 is
 
-   pragma Warnings (Off, "use clause for type ""S63"" * has no effect");
+   pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");
 
    pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
 
@@ -26,7 +26,7 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.S63;
+   use type RFLX_Types.Base_Integer;
 
    use type RFLX_Types.Offset;
 
@@ -34,7 +34,7 @@ is
 
    pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, "use clause for type ""S63"" * has no effect");
+   pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
@@ -241,7 +241,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Post =>
        True;
 
@@ -259,7 +259,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.S63) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
        and Valid_Predecessor (Ctx, Fld)
@@ -430,8 +430,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Tag)
-       and then RFLX.TLV.Valid_Tag (To_S63 (Val))
-       and then Field_Condition (Ctx, F_Tag, To_S63 (Val))
+       and then RFLX.TLV.Valid_Tag (To_Base_Int (Val))
+       and then Field_Condition (Ctx, F_Tag, To_Base_Int (Val))
        and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag),
      Post =>
        Has_Buffer (Ctx)
@@ -441,7 +441,7 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Value)
        and (if
-               RFLX_Types.S63 (To_S63 (Get_Tag (Ctx))) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Data))
+               RFLX_Types.Base_Integer (To_Base_Int (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))
             then
                Predecessor (Ctx, F_Length) = F_Tag
                and Valid_Next (Ctx, F_Length))
@@ -458,8 +458,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
-       and then RFLX.TLV.Valid_Length (To_S63 (Val))
-       and then Field_Condition (Ctx, F_Length, To_S63 (Val))
+       and then RFLX.TLV.Valid_Length (To_Base_Int (Val))
+       and then Field_Condition (Ctx, F_Length, To_Base_Int (Val))
        and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -606,7 +606,7 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : RFLX_Types.S63 := 0;
+               Value : RFLX_Types.Base_Integer := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
@@ -659,7 +659,7 @@ private
                  then
                     (Valid (Cursors (F_Tag))
                      and then Cursors (F_Length).Predecessor = F_Tag
-                     and then RFLX_Types.S63 (Cursors (F_Tag).Value) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Data))))
+                     and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))))
                 and then (if
                              Structural_Valid (Cursors (F_Value))
                           then
@@ -675,7 +675,7 @@ private
                    and then Cursors (F_Tag).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
-                                and then RFLX_Types.S63 (Cursors (F_Tag).Value) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Data))
+                                and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))
                              then
                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
                                 and then Cursors (F_Length).Predecessor = F_Tag
@@ -727,7 +727,7 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean is
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
           when F_Tag =>
              RFLX.TLV.Valid_Tag (Val),
@@ -741,13 +741,13 @@ private
           when F_Initial | F_Length | F_Value | F_Final =>
              True,
           when F_Tag =>
-             RFLX_Types.S63 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Data))));
+             RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))));
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.S63) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
           when F_Tag =>
-             Val = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Error))
-             or Val = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Data)),
+             Val = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Error))
+             or Val = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data)),
           when F_Length | F_Value =>
              True));
 
@@ -819,12 +819,12 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
-       and then RFLX_Types.S63 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Error)))
+       and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Error)))
       or Structural_Valid (Ctx, F_Value));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
-       and then RFLX_Types.S63 (Ctx.Cursors (F_Tag).Value) = RFLX_Types.S63 (To_S63 (RFLX.TLV.Msg_Error)))
+       and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Error)))
       or Valid (Ctx, F_Value));
 
    function Incomplete_Message (Ctx : Context) return Boolean is

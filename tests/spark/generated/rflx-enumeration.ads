@@ -17,19 +17,19 @@ is
             when True =>
                Enum : Priority_Enum;
             when False =>
-               Raw : RFLX_Types.S63;
+               Raw : RFLX_Types.Base_Integer;
          end case;
       end record;
 
-   use type RFLX.RFLX_Types.S63;
+   use type RFLX.RFLX_Types.Base_Integer;
 
-   function Valid_Priority (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Priority (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val < 2**8);
 
    function Valid_Priority (Val : Priority) return Boolean is
      ((if Val.Known then True else Valid_Priority (Val.Raw) and Val.Raw not in 1 | 4 | 7));
 
-   function To_S63 (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.RFLX_Types.S63 is
+   function To_Base_Int (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Low =>
              1,
@@ -41,7 +41,7 @@ is
    function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Enumeration.Priority is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Enumeration.Priority is
      ((case Val is
           when 1 =>
              (True, Low),
@@ -55,7 +55,7 @@ is
      Pre =>
        Valid_Priority (Val);
 
-   function To_S63 (Val : RFLX.Enumeration.Priority) return RFLX.RFLX_Types.S63 is
-     ((if Val.Known then To_S63 (Val.Enum) else Val.Raw));
+   function To_Base_Int (Val : RFLX.Enumeration.Priority) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
 
 end RFLX.Enumeration;

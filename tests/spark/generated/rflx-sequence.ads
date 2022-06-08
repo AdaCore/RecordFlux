@@ -10,15 +10,15 @@ is
      Size =>
        8;
 
-   use type RFLX.RFLX_Types.S63;
+   use type RFLX.RFLX_Types.Base_Integer;
 
-   function Valid_Length (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_S63 (Val : RFLX.Sequence.Length) return RFLX.RFLX_Types.S63 is
-     (RFLX.RFLX_Types.S63 (Val));
+   function To_Base_Int (Val : RFLX.Sequence.Length) return RFLX.RFLX_Types.Base_Integer is
+     (RFLX.RFLX_Types.Base_Integer (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Sequence.Length is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Length is
      (RFLX.Sequence.Length (Val))
     with
      Pre =>
@@ -28,13 +28,13 @@ is
      Size =>
        16;
 
-   function Valid_Modular_Integer (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Modular_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_S63 (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.S63 is
-     (RFLX.RFLX_Types.S63 (Val));
+   function To_Base_Int (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.Base_Integer is
+     (RFLX.RFLX_Types.Base_Integer (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Sequence.Modular_Integer is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Modular_Integer is
      (RFLX.Sequence.Modular_Integer (Val))
     with
      Pre =>
@@ -44,14 +44,14 @@ is
      Size =>
        8;
 
-   function Valid_Range_Integer (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Range_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function To_S63 (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.S63 is
-     (RFLX.RFLX_Types.S63 (Val));
+   function To_Base_Int (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.Base_Integer is
+     (RFLX.RFLX_Types.Base_Integer (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Sequence.Range_Integer is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Range_Integer is
      (RFLX.Sequence.Range_Integer (Val))
     with
      Pre =>
@@ -62,10 +62,10 @@ is
        8;
    for Enumeration use (Zero => 0, One => 1, Two => 2);
 
-   function Valid_Enumeration (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Enumeration (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2);
 
-   function To_S63 (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.S63 is
+   function To_Base_Int (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Zero =>
              0,
@@ -76,7 +76,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Sequence.Enumeration is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Enumeration is
      ((case Val is
           when 0 =>
              Zero,
@@ -103,17 +103,17 @@ is
             when True =>
                Enum : AV_Enumeration_Enum;
             when False =>
-               Raw : RFLX_Types.S63;
+               Raw : RFLX_Types.Base_Integer;
          end case;
       end record;
 
-   function Valid_AV_Enumeration (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_AV_Enumeration (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val < 2**8);
 
    function Valid_AV_Enumeration (Val : AV_Enumeration) return Boolean is
      ((if Val.Known then True else Valid_AV_Enumeration (Val.Raw) and Val.Raw not in 0 | 1 | 2));
 
-   function To_S63 (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.S63 is
+   function To_Base_Int (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when AV_Zero =>
              0,
@@ -125,7 +125,7 @@ is
    function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration is
      ((True, Enum));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Sequence.AV_Enumeration is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.AV_Enumeration is
      ((case Val is
           when 0 =>
              (True, AV_Zero),
@@ -139,7 +139,7 @@ is
      Pre =>
        Valid_AV_Enumeration (Val);
 
-   function To_S63 (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.S63 is
-     ((if Val.Known then To_S63 (Val.Enum) else Val.Raw));
+   function To_Base_Int (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
 
 end RFLX.Sequence;
