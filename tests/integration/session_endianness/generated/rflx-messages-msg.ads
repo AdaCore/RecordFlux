@@ -8,7 +8,7 @@ package RFLX.Messages.Msg with
     (GNATprove, Always_Return)
 is
 
-   pragma Warnings (Off, "use clause for type ""S63"" * has no effect");
+   pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");
 
    pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
 
@@ -22,7 +22,7 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.S63;
+   use type RFLX_Types.Base_Integer;
 
    use type RFLX_Types.Offset;
 
@@ -30,7 +30,7 @@ is
 
    pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, "use clause for type ""S63"" * has no effect");
+   pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
@@ -237,7 +237,7 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Post =>
        True;
 
@@ -383,7 +383,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_A)
-       and then RFLX.Messages.Valid_Integer (To_S63 (Val))
+       and then RFLX.Messages.Valid_Integer (To_Base_Int (Val))
        and then Field_Condition (Ctx, F_A)
        and then Available_Space (Ctx, F_A) >= Field_Size (Ctx, F_A),
      Post =>
@@ -406,7 +406,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_B)
-       and then RFLX.Messages.Valid_Enum_T (To_S63 (Val))
+       and then RFLX.Messages.Valid_Enum_T (To_Base_Int (Val))
        and then Field_Condition (Ctx, F_B)
        and then Available_Space (Ctx, F_B) >= Field_Size (Ctx, F_B),
      Post =>
@@ -481,7 +481,7 @@ private
             when S_Valid | S_Structural_Valid =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : RFLX_Types.S63 := 0;
+               Value : RFLX_Types.Base_Integer := 0;
             when S_Invalid | S_Incomplete =>
                null;
          end case;
@@ -588,7 +588,7 @@ private
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Written_Last);
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.S63) return Boolean is
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
           when F_A =>
              RFLX.Messages.Valid_Integer (Val),
@@ -698,6 +698,6 @@ private
      (True);
 
    function Sufficient_Buffer_Length (Ctx : Context; Unused_Struct : Structure) return Boolean is
-     (RFLX_Types.S63 (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= 64);
+     (RFLX_Types.Base_Integer (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= 64);
 
 end RFLX.Messages.Msg;

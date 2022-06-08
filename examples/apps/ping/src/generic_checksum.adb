@@ -20,8 +20,8 @@ is
    is
       use type ICMP.Checksum;
       use type Types.Index;
-      Checksum : ICMP.Checksum := Shift_Left (ICMP.Checksum (ICMP.To_S63 (Tag)))
-                                  + ICMP.Checksum (ICMP.To_S63 (Code));
+      Checksum : ICMP.Checksum := Shift_Left (ICMP.Checksum (ICMP.To_Base_Int (Tag)))
+                                  + ICMP.Checksum (ICMP.To_Base_Int (Code));
       Index    : Types.Index;
    begin
       Checksum := Add (Checksum, Add (ICMP.Checksum (Identifier), ICMP.Checksum (Sequence_Number)));

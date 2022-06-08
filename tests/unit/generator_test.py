@@ -202,14 +202,14 @@ def test_substitution_relation_aggregate(
         (
             expr.Variable("Value"),
             expr.TRUE,
-            expr.Call("RFLX_Types::S63", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::S63", [expr.Call("To_S63", [expr.TRUE])]),
+            expr.Call("RFLX_Types::Base_Integer", [expr.Variable("Value")]),
+            expr.Call("RFLX_Types::Base_Integer", [expr.Call("To_Base_Int", [expr.TRUE])]),
         ),
         (
             expr.FALSE,
             expr.Variable("Value"),
-            expr.Call("RFLX_Types::S63", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::S63", [expr.Call("To_S63", [expr.FALSE])]),
+            expr.Call("RFLX_Types::Base_Integer", [expr.Variable("Value")]),
+            expr.Call("RFLX_Types::Base_Integer", [expr.Call("To_Base_Int", [expr.FALSE])]),
         ),
     ],
 )

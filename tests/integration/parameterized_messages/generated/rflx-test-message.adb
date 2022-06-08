@@ -73,11 +73,11 @@ is
      ((case Fld is
           when F_Data =>
              (if
-                 RFLX_Types.S63 (To_S63 (Ctx.Extended)) = RFLX_Types.S63 (To_S63 (True))
+                 RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
               then
                  F_Extension
               elsif
-                 RFLX_Types.S63 (To_S63 (Ctx.Extended)) = RFLX_Types.S63 (To_S63 (False))
+                 RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (False))
               then
                  F_Final
               else
@@ -157,7 +157,7 @@ is
    end Reset_Dependent_Fields;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : RFLX_Types.S63;
+      Value : RFLX_Types.Base_Integer;
    begin
       if
          Invalid (Ctx.Cursors (Fld))
@@ -251,7 +251,7 @@ is
        and Ctx.Verified_Last = Field_Last (Ctx, F_Data)
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.S63 (To_S63 (Ctx.Extended)) = RFLX_Types.S63 (To_S63 (True))
+               RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))

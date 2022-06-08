@@ -6,4 +6,4 @@ pragma Warnings (Off, "unit ""*RFLX_Types"" is not referenced");
 with RFLX.RFLX_Types;
 pragma Warnings (On, "unit ""*RFLX_Types"" is not referenced");
 
-package RFLX.Universal.Values is new RFLX.RFLX_Scalar_Sequence (RFLX.Universal.Value, 8, RFLX.Universal.Valid_Value, RFLX.Universal.To_Actual, RFLX.Universal.To_S63);
+package RFLX.Universal.Values is new RFLX.RFLX_Scalar_Sequence (RFLX.Universal.Value, 8, RFLX.Universal.Valid_Value, RFLX.Universal.To_Actual, RFLX.Universal.To_Base_Int);

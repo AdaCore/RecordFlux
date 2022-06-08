@@ -10,15 +10,15 @@ is
      Size =>
        32;
 
-   use type RFLX.RFLX_Types.S63;
+   use type RFLX.RFLX_Types.Base_Integer;
 
-   function Valid_Integer (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_S63 (Val : RFLX.Messages.Integer) return RFLX.RFLX_Types.S63 is
-     (RFLX.RFLX_Types.S63 (Val));
+   function To_Base_Int (Val : RFLX.Messages.Integer) return RFLX.RFLX_Types.Base_Integer is
+     (RFLX.RFLX_Types.Base_Integer (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Messages.Integer is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Integer is
      (RFLX.Messages.Integer (Val))
     with
      Pre =>
@@ -29,10 +29,10 @@ is
        32;
    for Enum_T use (Enum_A => 0, Enum_B => 1, Enum_C => 2, Enum_D => 4, Enum_E => 8, Enum_F => 16, Enum_G => 32);
 
-   function Valid_Enum_T (Val : RFLX.RFLX_Types.S63) return Boolean is
+   function Valid_Enum_T (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2 | 4 | 8 | 16 | 32);
 
-   function To_S63 (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.S63 is
+   function To_Base_Int (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Enum_A =>
              0,
@@ -51,7 +51,7 @@ is
 
    pragma Warnings (Off, "unreachable branch");
 
-   function To_Actual (Val : RFLX.RFLX_Types.S63) return RFLX.Messages.Enum_T is
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Enum_T is
      ((case Val is
           when 0 =>
              Enum_A,

@@ -364,10 +364,10 @@ is
        Last   : Index;
        Off    : Offset;
        Size   : Positive;
-       BO     : Byte_Order) return S63
+       BO     : Byte_Order) return Base_Integer
    is
    begin
-      return S63 (U64'(Extract (Buffer, First, Last, Off, Size, BO)));
+      return Base_Integer (U64'(Extract (Buffer, First, Last, Off, Size, BO)));
    end Extract;
 
    procedure Insert
@@ -384,7 +384,7 @@ is
    end Insert;
 
    procedure Insert
-      (Val    : S63;
+      (Val    : Base_Integer;
        Buffer : Bytes_Ptr;
        First  : Index;
        Last   : Index;

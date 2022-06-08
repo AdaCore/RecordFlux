@@ -14,7 +14,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => RFLX.RFLX_Types.S63'First, Next_Element => RFLX.RFLX_Types.S63'First);
+      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => RFLX.RFLX_Types.Base_Integer'First, Next_Element => RFLX.RFLX_Types.Base_Integer'First);
       Buffer := null;
    end Initialize;
 
@@ -75,10 +75,10 @@ is
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (To_S63 (Value), Ctx.Buffer, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
+         Insert (To_Base_Int (Value), Ctx.Buffer, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then
-         Ctx.First_Element := To_S63 (Value);
+         Ctx.First_Element := To_Base_Int (Value);
       end if;
       Ctx.Sequence_Last := Ctx.Sequence_Last + RFLX.RFLX_Types.Bit_Index (Element_Size);
    end Append_Element;

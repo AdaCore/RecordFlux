@@ -45,7 +45,7 @@ package body RFLX.Derivation_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      use type RFLX_Types.S63;
+      use type RFLX_Types.Base_Integer;
       Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
       Context : Derivation.Message.Context;
       Tag     : TLV.Tag;
@@ -57,7 +57,7 @@ package body RFLX.Derivation_Tests is
       if Derivation.Message.Valid (Context, Derivation.Message.F_Tag) then
          Tag := Derivation.Message.Get_Tag (Context);
          Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
-         Assert (TLV.To_S63 (Tag) = 1, "Invalid conversion of Tag");
+         Assert (TLV.To_Base_Int (Tag) = 1, "Invalid conversion of Tag");
          Assert (Derivation.Message.Valid (Context, Derivation.Message.F_Length), "Invalid Length");
          if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
             Length := Derivation.Message.Get_Length (Context);

@@ -738,7 +738,7 @@ class Generator:
                 ]
             )
         else:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_S63))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_BASE_INT))
 
         specification.append(
             self._type_validation_function(integer.name, "Val", constraints.ada_expr())
@@ -777,7 +777,7 @@ class Generator:
         )
 
         if validation_expression != TRUE:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_S63))
+            specification.append(UseTypeClause(self._prefix * const.TYPES_BASE_INT))
 
         specification.append(
             self._type_validation_function(
@@ -811,8 +811,8 @@ class Generator:
         specification.append(
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_S63",
-                    self._prefix * const.TYPES_S63,
+                    "To_Base_Int",
+                    self._prefix * const.TYPES_BASE_INT,
                     [
                         Parameter(
                             ["Enum"],
@@ -835,7 +835,7 @@ class Generator:
         conversion_function = FunctionSpecification(
             "To_Actual",
             self._prefix * ID(enum.identifier),
-            [Parameter(["Val"], self._prefix * const.TYPES_S63)],
+            [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: ty.List[ty.Tuple[Expr, Expr]] = []
@@ -869,12 +869,12 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "To_S63",
-                        self._prefix * const.TYPES_S63,
+                        "To_Base_Int",
+                        self._prefix * const.TYPES_BASE_INT,
                         [Parameter(["Val"], self._prefix * ID(enum.identifier))],
                     ),
                     If(
-                        [(Variable("Val.Known"), Call("To_S63", [Variable("Val.Enum")]))],
+                        [(Variable("Val.Known"), Call("To_Base_Int", [Variable("Val.Enum")]))],
                         Variable("Val.Raw"),
                     ),
                 )
@@ -1312,7 +1312,7 @@ class Generator:
             FunctionSpecification(
                 f"Valid_{type_name}",
                 "Boolean",
-                [Parameter([enum_value], self._prefix * const.TYPES_S63)],
+                [Parameter([enum_value], self._prefix * const.TYPES_BASE_INT)],
             ),
             validation_expression,
         )
@@ -1321,17 +1321,17 @@ class Generator:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_S63",
-                    self._prefix * const.TYPES_S63,
+                    "To_Base_Int",
+                    self._prefix * const.TYPES_BASE_INT,
                     [Parameter(["Val"], self._prefix * ID(integer.identifier))],
                 ),
-                Call(self._prefix * const.TYPES_S63, [Variable("Val")]),
+                Call(self._prefix * const.TYPES_BASE_INT, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
                     self._prefix * ID(integer.identifier),
-                    [Parameter(["Val"], self._prefix * const.TYPES_S63)],
+                    [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
                 ),
                 Call(self._prefix * ID(integer.identifier), [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
@@ -1443,7 +1443,7 @@ def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
                     "Known",
                     [
                         Variant([TRUE], [Component("Enum", common.enum_name(enum))]),
-                        Variant([FALSE], [Component("Raw", const.TYPES_S63)]),
+                        Variant([FALSE], [Component("Raw", const.TYPES_BASE_INT)]),
                     ],
                 ),
             )

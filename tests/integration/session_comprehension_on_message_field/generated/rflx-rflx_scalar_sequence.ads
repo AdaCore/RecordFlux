@@ -4,9 +4,9 @@ with RFLX.RFLX_Types;
 generic
    type Element_Type is private;
    Element_Size : Positive;
-   with function Valid (Element : RFLX.RFLX_Types.S63) return Boolean;
-   with function To_Actual (Element : RFLX.RFLX_Types.S63) return Element_Type;
-   with function To_S63 (Element : Element_Type) return RFLX.RFLX_Types.S63;
+   with function Valid (Element : RFLX.RFLX_Types.Base_Integer) return Boolean;
+   with function To_Actual (Element : RFLX.RFLX_Types.Base_Integer) return Element_Type;
+   with function To_Base_Int (Element : Element_Type) return RFLX.RFLX_Types.Base_Integer;
 package RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
@@ -25,7 +25,7 @@ is
 
    use type RFLX_Types.Bit_Index;
 
-   use type RFLX_Types.S63;
+   use type RFLX_Types.Base_Integer;
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
@@ -146,8 +146,8 @@ is
      Pre =>
        (Has_Buffer (Ctx)
         and then Valid (Ctx)
-        and then Valid (To_S63 (Value))
-        and then (if Element_Size < 64 then To_S63 (Value) < 2**Element_Size)
+        and then Valid (To_Base_Int (Value))
+        and then (if Element_Size < 64 then To_Base_Int (Value) < 2**Element_Size)
         and then Available_Space (Ctx) >= RFLX.RFLX_Types.Bit_Index (Element_Size)),
      Post =>
        (Has_Buffer (Ctx)
@@ -191,8 +191,8 @@ private
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer        : RFLX_Types.Bytes_Ptr := null;
          State         : Context_State := S_Valid;
-         First_Element : RFLX.RFLX_Types.S63 := RFLX.RFLX_Types.S63'First;
-         Next_Element  : RFLX.RFLX_Types.S63 := RFLX.RFLX_Types.S63'First;
+         First_Element : RFLX.RFLX_Types.Base_Integer := RFLX.RFLX_Types.Base_Integer'First;
+         Next_Element  : RFLX.RFLX_Types.Base_Integer := RFLX.RFLX_Types.Base_Integer'First;
       end record with
      Dynamic_Predicate =>
        ((if Buffer /= null then

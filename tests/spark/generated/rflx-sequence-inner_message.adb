@@ -150,7 +150,7 @@ is
    function Composite_Field (Fld : Field) return Boolean is
      (Fld in F_Payload);
 
-   function Get (Ctx : Context; Fld : Field) return RFLX_Types.S63 with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -173,7 +173,7 @@ is
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
-      Value : RFLX_Types.S63;
+      Value : RFLX_Types.Base_Integer;
    begin
       if
          Invalid (Ctx.Cursors (Fld))
@@ -234,7 +234,7 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Payload;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
@@ -297,7 +297,7 @@ is
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
    end Set;
 
-   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.S63) with
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -305,7 +305,7 @@ is
        and then Valid_Value (Fld, Val)
        and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.S63'Size
+       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
        and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
@@ -339,7 +339,7 @@ is
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_S63 (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
    end Set_Length;
 
    procedure Set_Payload_Empty (Ctx : in out Context) is
