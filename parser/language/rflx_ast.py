@@ -200,6 +200,14 @@ class Assignment(Statement):
     expression = Field(type=Expr)
 
 
+class MessageFieldAssignment(Statement):
+    """Assignment of expression to message field."""
+
+    message = Field(type=UnqualifiedID)
+    field = Field(type=UnqualifiedID)
+    expression = Field(type=Expr)
+
+
 class AttrStmt(RFLXNode):
     """Attribute statement kind."""
 

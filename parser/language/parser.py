@@ -501,6 +501,13 @@ grammar.add_rules(
     assignment_statement=ast.Assignment(
         grammar.unqualified_identifier, ":=", grammar.extended_expression
     ),
+    message_field_assignment_statement=ast.MessageFieldAssignment(
+        grammar.unqualified_identifier,
+        ".",
+        grammar.unqualified_identifier,
+        ":=",
+        grammar.extended_expression,
+    ),
     list_attribute=ast.AttributeStatement(
         grammar.unqualified_identifier,
         "'",
@@ -522,7 +529,11 @@ grammar.add_rules(
         Opt("(", List(grammar.message_aggregate_association, sep=","), ")"),
     ),
     attribute_statement=Or(grammar.list_attribute, grammar.reset),
-    action=Or(grammar.assignment_statement, grammar.attribute_statement),
+    action=Or(
+        grammar.assignment_statement,
+        grammar.message_field_assignment_statement,
+        grammar.attribute_statement,
+    ),
     conditional_transition=ast.ConditionalTransition(
         "goto",
         grammar.unqualified_identifier,

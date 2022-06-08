@@ -2852,6 +2852,32 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
     "string,expected",
     [
         (
+            "A.B := C",
+            {
+                "_kind": "MessageFieldAssignment",
+                "expression": {
+                    "_kind": "Variable",
+                    "identifier": {
+                        "_kind": "ID",
+                        "name": {"_kind": "UnqualifiedID", "_value": "C"},
+                        "package": None,
+                    },
+                },
+                "message": {"_kind": "UnqualifiedID", "_value": "A"},
+                "field": {"_kind": "UnqualifiedID", "_value": "B"},
+            },
+        )
+    ],
+)
+def test_message_field_assignment_statement(string: str, expected: Dict[str, str]) -> None:
+    actual = parse(string, GrammarRule.message_field_assignment_statement_rule)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        (
             "A'Append (B)",
             {
                 "_kind": "AttributeStatement",

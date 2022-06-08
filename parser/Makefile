@@ -1,6 +1,6 @@
 VERBOSE ?= @
 
-VERSION = 0.10.0
+VERSION = 0.11.0
 BUILDDIR = $(PWD)/build
 
 ifneq ($(MAKECMDGOALS),clean)
