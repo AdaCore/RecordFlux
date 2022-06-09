@@ -28,7 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_simple/test.rflx:15:10
+      --  tests/integration/session_setting_of_message_fields/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -56,44 +56,39 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_simple/test.rflx:27:10
-      if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= 32 then
-         Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 32 - 1);
-         if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-            if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-               Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+      --  tests/integration/session_setting_of_message_fields/test.rflx:27:10
+      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+            Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-            if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-               Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      --  tests/integration/session_setting_of_message_fields/test.rflx:29:10
+      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+            Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-            if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-               if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-                  Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      --  tests/integration/session_setting_of_message_fields/test.rflx:31:10
+      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+            if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+               Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);
@@ -128,7 +123,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_simple/test.rflx:36:10
+      --  tests/integration/session_setting_of_message_fields/test.rflx:40:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

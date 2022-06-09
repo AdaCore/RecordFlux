@@ -1957,6 +1957,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 action.location,
             )
 
+        elif isinstance(action, stmt.MessageFieldAssignment):
+            result = self._assign_message_field(
+                action.message,
+                action.field,
+                action.type_,
+                action.value,
+                exception_handler,
+                is_global,
+            )
+
         elif isinstance(action, stmt.Append):
             result = self._append(action, exception_handler, is_global, state)
 
@@ -2465,7 +2475,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         },
                     ),
                     *self._set_message_fields(
-                        target_type, target_context, message_aggregate, exception_handler, is_global
+                        target_context, message_aggregate, exception_handler, is_global
                     ),
                 ],
                 exception_handler,
@@ -3052,14 +3062,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return call
 
-    @staticmethod
-    def contains_function_name(
-        refinement_package: rid.ID, pdu: rid.ID, sdu: rid.ID, field: rid.ID
-    ) -> str:
-        sdu_name = sdu.name if sdu.parent == refinement_package else sdu
-        pdu_name = pdu.name if pdu.parent == refinement_package else pdu
-        return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
-
     def _assign_to_conversion(
         self,
         target: rid.ID,
@@ -3096,7 +3098,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             self._if(
                 Call(
                     ID(contains_package)
-                    * self.contains_function_name(
+                    * common.contains_function_name(
                         refinement.package, pdu.identifier, sdu.identifier, field
                     ),
                     [Variable(context_id(conversion.argument.prefix.identifier, is_global))],
@@ -3120,6 +3122,25 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 exception_handler,
             )
         ]
+
+    def _assign_message_field(  # pylint: disable = too-many-arguments
+        self,
+        target: rid.ID,
+        target_field: rid.ID,
+        message_type: rty.Type,
+        value: expr.Expr,
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+    ) -> Sequence[Statement]:
+        assert isinstance(message_type, rty.Message)
+        return self._set_message_field(
+            context_id(target, is_global),
+            ID(target_field),
+            message_type,
+            value,
+            exception_handler,
+            is_global,
+        )
 
     def _append(
         self,
@@ -3226,7 +3247,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ),
                             *(
                                 self._set_message_fields(
-                                    element_type,
                                     element_context,
                                     append.parameters[0],
                                     local_exception_handler,
@@ -3773,184 +3793,242 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _set_message_fields(
         self,
-        target_type: ID,
         target_context: ID,
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        # pylint: disable = too-many-statements, too-many-branches, too-many-locals
-
         assert isinstance(message_aggregate.type_, rty.Message)
 
-        statements: List[Statement] = []
-        result = statements
+        message_type = message_aggregate.type_
+        statements = []
 
         for f, v in message_aggregate.field_values.items():
-            if f not in message_aggregate.type_.field_types:
+            if f not in message_type.field_types:
                 continue
 
-            field_type = message_aggregate.type_.field_types[f]
+            statements.extend(
+                self._set_message_field(
+                    target_context, ID(f), message_type, v, exception_handler, is_global
+                )
+            )
 
-            if isinstance(field_type, rty.Sequence):
-                size: Expr
-                if isinstance(v, expr.Aggregate):
-                    size = Mul(Number(len(v.elements)), Size(const.TYPES_BYTE))
-                elif isinstance(v, expr.Variable) and isinstance(
-                    v.type_, (rty.Message, rty.Sequence)
-                ):
-                    type_ = ID(v.type_.identifier)
-                    context = context_id(v.identifier, is_global)
-                    size = Call(type_ * "Size", [Variable(context)])
-                elif isinstance(v, expr.Selected):
-                    assert isinstance(v.prefix, expr.Variable)
-                    assert isinstance(v.prefix.type_, rty.Message)
-                    message_type = ID(v.prefix.type_.identifier)
-                    message_context = context_id(v.prefix.identifier, is_global)
-                    statements = self._ensure(
-                        statements,
-                        Call(
-                            message_type * "Valid_Next",
+        return statements
+
+    def _set_message_field(
+        self,
+        message_context: ID,
+        field: ID,
+        message_type: rty.Message,
+        value: expr.Expr,
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+    ) -> list[Statement]:
+        # pylint: disable = too-many-arguments, too-many-statements, too-many-branches, too-many-locals
+
+        message_type_id = ID(message_type.identifier)
+        field_type = message_type.field_types[field]
+        statements: list[Statement] = []
+        result = statements
+
+        statements = self._ensure(
+            statements,
+            Call(
+                message_type_id * "Valid_Next",
+                [
+                    Variable(message_context),
+                    Variable(message_type_id * f"F_{field}"),
+                ],
+            ),
+            f'trying to set message field "{field}" to "{value}" although "{field}" is not valid'
+            " next field",
+            exception_handler,
+        )
+
+        statements = self._ensure(
+            statements,
+            GreaterEqual(
+                Call(
+                    message_type_id * "Available_Space",
+                    [
+                        Variable(message_context),
+                        Variable(message_type_id * f"F_{field}"),
+                    ],
+                ),
+                Call(
+                    message_type_id * "Field_Size",
+                    [
+                        Variable(message_context),
+                        Variable(message_type_id * f"F_{field}"),
+                    ],
+                ),
+            ),
+            f'insufficient space in message "{message_context}" to set field "{field}"'
+            f' to "{value}"',
+            exception_handler,
+        )
+
+        if isinstance(field_type, rty.Sequence):
+            size: Expr
+            if isinstance(value, expr.Aggregate):
+                size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
+            elif isinstance(value, expr.Variable) and isinstance(
+                value.type_, (rty.Message, rty.Sequence)
+            ):
+                type_ = ID(value.type_.identifier)
+                context = context_id(value.identifier, is_global)
+                size = Call(type_ * "Size", [Variable(context)])
+            elif isinstance(value, expr.Selected):
+                assert isinstance(value.prefix, expr.Variable)
+                assert isinstance(value.prefix.type_, rty.Message)
+                value_message_type_id = ID(value.prefix.type_.identifier)
+                value_message_context = context_id(value.prefix.identifier, is_global)
+                statements = self._ensure(
+                    statements,
+                    Call(
+                        value_message_type_id * "Valid_Next",
+                        [
+                            Variable(value_message_context),
+                            Variable(value_message_type_id * f"F_{value.selector}"),
+                        ],
+                    ),
+                    f'access to invalid next message field for "{value}"',
+                    exception_handler,
+                )
+                size = Call(
+                    value_message_type_id * "Field_Size",
+                    [
+                        Variable(value_message_context),
+                        Variable(value_message_type_id * f"F_{value.selector}"),
+                    ],
+                )
+            elif isinstance(value, expr.Opaque):
+                size = expr.Size(value.prefix).substituted(self._substitution(is_global)).ada_expr()
+            else:
+                size = Size(value.substituted(self._substitution(is_global)).ada_expr())
+            statements = self._ensure(
+                statements,
+                Call(
+                    message_type_id * "Valid_Length",
+                    [
+                        Variable(message_context),
+                        Variable(message_type_id * f"F_{field}"),
+                        Call(const.TYPES_TO_LENGTH, [size]),
+                    ],
+                ),
+                f'invalid message field size for "{value}"',
+                exception_handler,
+            )
+
+        if isinstance(value, (expr.Number, expr.Aggregate)) or (
+            isinstance(value, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr, expr.Size))
+            and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
+        ):
+            if isinstance(value, expr.Aggregate) and len(value.elements) == 0:
+                statements.append(
+                    CallStatement(
+                        message_type_id * f"Set_{field}_Empty", [Variable(message_context)]
+                    )
+                )
+            else:
+                value = self._convert_type(value, field_type).substituted(
+                    self._substitution(is_global)
+                )
+                statements.append(
+                    CallStatement(
+                        message_type_id * f"Set_{field}",
+                        [
+                            Variable(message_context),
+                            value.ada_expr(),
+                        ],
+                    )
+                )
+        elif isinstance(value, expr.Variable) and isinstance(value.type_, rty.Sequence):
+            sequence_context = context_id(value.identifier, is_global)
+            statements.extend(
+                [
+                    CallStatement(
+                        message_type_id * f"Set_{field}",
+                        [Variable(message_context), Variable(sequence_context)],
+                    ),
+                ]
+            )
+        elif isinstance(value, expr.Variable) and isinstance(value.type_, rty.Message):
+            _unsupported_expression(value, "in message aggregate")
+        elif (
+            isinstance(value, expr.Selected)
+            and isinstance(value.prefix, expr.Variable)
+            and isinstance(value.prefix.type_, rty.Message)
+        ):
+            value_message_type_id = ID(value.prefix.type_.identifier)
+            value_message_context = context_id(value.prefix.identifier, is_global)
+            statements = self._ensure(
+                statements,
+                Call(
+                    value_message_type_id
+                    * ("Structural_Valid" if isinstance(value.type_, rty.Sequence) else "Valid"),
+                    [
+                        Variable(value_message_context),
+                        Variable(value_message_type_id * f"F_{value.selector}"),
+                    ],
+                ),
+                f'access to invalid message field in "{value}"',
+                exception_handler,
+            )
+            if isinstance(field_type, (rty.Integer, rty.Enumeration)):
+                get_field_value = self._convert_type(
+                    expr.Call(
+                        value_message_type_id * f"Get_{value.selector}",
+                        [expr.Variable(value_message_context)],
+                    ),
+                    field_type,
+                    value.type_,
+                ).ada_expr()
+                statements.extend(
+                    [
+                        CallStatement(
+                            message_type_id * f"Set_{field}",
                             [
                                 Variable(message_context),
-                                Variable(message_type * f"F_{v.selector}"),
+                                get_field_value,
                             ],
-                        ),
-                        f'access to invalid next message field for "{v}"',
-                        exception_handler,
-                    )
-                    size = Call(
-                        message_type * "Field_Size",
-                        [
-                            Variable(message_context),
-                            Variable(message_type * f"F_{v.selector}"),
-                        ],
-                    )
-                elif isinstance(v, expr.Opaque):
-                    size = expr.Size(v.prefix).substituted(self._substitution(is_global)).ada_expr()
-                else:
-                    size = Size(v.substituted(self._substitution(is_global)).ada_expr())
-                statements = self._ensure(
-                    statements,
-                    Call(
-                        target_type * "Valid_Length",
-                        [
-                            Variable(target_context),
-                            Variable(target_type * f"F_{f}"),
-                            Call(const.TYPES_TO_LENGTH, [size]),
-                        ],
-                    ),
-                    f'invalid message field size for "{v}"',
-                    exception_handler,
-                )
-
-            if isinstance(v, (expr.Number, expr.Aggregate)) or (
-                isinstance(v, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr, expr.Size))
-                and isinstance(v.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
-            ):
-                field_type = message_aggregate.type_.types[f]
-                if isinstance(v, expr.Aggregate) and len(v.elements) == 0:
-                    statements.append(
-                        CallStatement(target_type * f"Set_{f}_Empty", [Variable(target_context)])
-                    )
-                else:
-                    value = self._convert_type(v, field_type).substituted(
-                        self._substitution(is_global)
-                    )
-                    statements.append(
-                        CallStatement(
-                            target_type * f"Set_{f}",
-                            [
-                                Variable(target_context),
-                                value.ada_expr(),
-                            ],
-                        )
-                    )
-            elif isinstance(v, expr.Variable) and isinstance(v.type_, rty.Sequence):
-                sequence_context = context_id(v.identifier, is_global)
-                statements.extend(
-                    [
-                        CallStatement(
-                            target_type * f"Set_{f}",
-                            [Variable(target_context), Variable(sequence_context)],
-                        ),
-                    ]
-                )
-            elif isinstance(v, expr.Variable) and isinstance(v.type_, rty.Message):
-                _unsupported_expression(v, "in message aggregate")
-            elif (
-                isinstance(v, expr.Selected)
-                and isinstance(v.prefix, expr.Variable)
-                and isinstance(v.prefix.type_, rty.Message)
-            ):
-                message_type = ID(v.prefix.type_.identifier)
-                message_context = context_id(v.prefix.identifier, is_global)
-                target_field_type = message_aggregate.type_.types[f]
-                statements = self._ensure(
-                    statements,
-                    Call(
-                        message_type
-                        * ("Structural_Valid" if isinstance(v.type_, rty.Sequence) else "Valid"),
-                        [
-                            Variable(message_context),
-                            Variable(message_type * f"F_{v.selector}"),
-                        ],
-                    ),
-                    f'access to invalid message field in "{v}"',
-                    exception_handler,
-                )
-                if isinstance(target_field_type, (rty.Integer, rty.Enumeration)):
-                    get_field_value = self._convert_type(
-                        expr.Call(
-                            message_type * f"Get_{v.selector}", [expr.Variable(message_context)]
-                        ),
-                        target_field_type,
-                        v.type_,
-                    ).ada_expr()
-                    statements.extend(
-                        [
-                            CallStatement(
-                                target_type * f"Set_{f}",
-                                [
-                                    Variable(target_context),
-                                    get_field_value,
-                                ],
-                            ),
-                        ]
-                    )
-                else:
-                    assert target_field_type == rty.OPAQUE
-                    self._session_context.used_types_body.append(const.TYPES_LENGTH)
-                    statements.extend(
-                        [
-                            self._set_opaque_field_to_message_field(
-                                target_type,
-                                target_context,
-                                ID(f),
-                                message_type,
-                                message_context,
-                                ID(v.selector),
-                            ),
-                        ]
-                    )
-            elif isinstance(v, expr.Opaque) and isinstance(v.prefix, expr.Variable):
-                assert v.type_ == rty.OPAQUE
-                assert isinstance(v.prefix.type_, rty.Message)
-                message_type = ID(v.prefix.type_.identifier)
-                message_context = context_id(v.prefix.identifier, is_global)
-                statements.extend(
-                    [
-                        self._set_opaque_field_to_message(
-                            target_type,
-                            target_context,
-                            ID(f),
-                            message_type,
-                            message_context,
                         ),
                     ]
                 )
             else:
-                _unsupported_expression(v, "in message aggregate")
+                assert field_type == rty.OPAQUE
+                self._session_context.used_types_body.append(const.TYPES_LENGTH)
+                statements.extend(
+                    [
+                        self._set_opaque_field_to_message_field(
+                            message_type_id,
+                            message_context,
+                            ID(field),
+                            value_message_type_id,
+                            value_message_context,
+                            ID(value.selector),
+                        ),
+                    ]
+                )
+        elif isinstance(value, expr.Opaque) and isinstance(value.prefix, expr.Variable):
+            assert value.type_ == rty.OPAQUE
+            assert isinstance(value.prefix.type_, rty.Message)
+            value_message_type_id = ID(value.prefix.type_.identifier)
+            value_message_context = context_id(value.prefix.identifier, is_global)
+            statements.extend(
+                [
+                    self._set_opaque_field_to_message(
+                        message_type_id,
+                        message_context,
+                        ID(field),
+                        value_message_type_id,
+                        value_message_context,
+                    ),
+                ]
+            )
+        else:
+            _unsupported_expression(value, "as value of message field")
+
         return result
 
     @staticmethod

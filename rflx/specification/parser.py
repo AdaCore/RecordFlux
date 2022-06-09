@@ -116,6 +116,16 @@ def create_assignment(assignment: lang.Statement, filename: Path) -> stmt.Statem
     )
 
 
+def create_message_field_assignment(assignment: lang.Statement, filename: Path) -> stmt.Statement:
+    assert isinstance(assignment, lang.MessageFieldAssignment)
+    return stmt.MessageFieldAssignment(
+        create_id(assignment.f_message, filename),
+        create_id(assignment.f_field, filename),
+        create_expression(assignment.f_expression, filename),
+        location=node_location(assignment, filename),
+    )
+
+
 def create_attribute_statement(expression: lang.Statement, filename: Path) -> stmt.Statement:
     assert isinstance(expression, lang.AttributeStatement)
     attrs = {
@@ -137,6 +147,7 @@ def create_statement(statement: lang.Statement, filename: Path) -> stmt.Statemen
     handlers = {
         "Reset": create_reset,
         "Assignment": create_assignment,
+        "MessageFieldAssignment": create_message_field_assignment,
         "AttributeStatement": create_attribute_statement,
     }
     return handlers[statement.kind_name](statement, filename)

@@ -19,7 +19,7 @@ clean:
 	rm -rf generated/* obj obj_optimized
 
 binary_size: $(bin-optimized)
-	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 172000
+	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 174000
 
 $(src): $(specs)
 	rflx generate -d generated --debug built-in $^

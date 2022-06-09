@@ -52,10 +52,34 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
-         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
-         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-            Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1)));
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+               Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+               if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+                  Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1)));
+               else
+                  RFLX_Exception := True;
+               end if;
+            else
+               RFLX_Exception := True;
+            end if;
          else
             RFLX_Exception := True;
          end if;
@@ -81,10 +105,34 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
-         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
-         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-            Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+               Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+               if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+                  Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
+               else
+                  RFLX_Exception := True;
+               end if;
+            else
+               RFLX_Exception := True;
+            end if;
          else
             RFLX_Exception := True;
          end if;
@@ -110,11 +158,24 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
-         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      if RFLX_Exception then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
       --  tests/integration/session_append_unconstrained/test.rflx:23:10
       if
          Universal.Options.Size (Options_Ctx) <= 32768
@@ -122,9 +183,33 @@ is
       then
          if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= Universal.Options.Size (Options_Ctx) + 8 then
             Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + (Universal.Options.Size (Options_Ctx) + 8) - 1);
-            Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Unconstrained_Options);
-            if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
-               Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
+            if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+               if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+                  Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Unconstrained_Options);
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Start_Invariant);
+                  goto Finalize_Start;
+               end if;
+            else
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
+            end if;
+            if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+               if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
+                     Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
+                  else
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Assert (Start_Invariant);
+                     goto Finalize_Start;
+                  end if;
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Start_Invariant);
+                  goto Finalize_Start;
+               end if;
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Start_Invariant);
