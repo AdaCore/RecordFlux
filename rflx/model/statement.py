@@ -56,6 +56,41 @@ class Assignment(Statement):
         return [Variable(self.identifier), *self.expression.variables()]
 
 
+class MessageFieldAssignment(Statement):
+    def __init__(
+        self,
+        message: StrID,
+        field: StrID,
+        value: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(message, type_, location)
+        self.message = ID(message)
+        self.field = ID(field)
+        self.value = value
+
+    def __str__(self) -> str:
+        return f"{self.message}.{self.field} := {self.value}"
+
+    def check_type(
+        self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+    ) -> RecordFluxError:
+        field_type = (
+            statement_type.types[self.field]
+            if isinstance(statement_type, rty.Message)
+            else rty.Undefined()
+        )
+        self.type_ = statement_type
+        self.value = self.value.substituted(typify_variable)
+        return rty.check_type_instance(
+            field_type, rty.Any, self.location, f'variable "{self.identifier}"'
+        ) + self.value.check_type(field_type)
+
+    def variables(self) -> Sequence[Variable]:
+        return [Variable(self.message), *self.value.variables()]
+
+
 class AttributeStatement(Statement):
     def __init__(
         self,

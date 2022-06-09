@@ -657,6 +657,16 @@ def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
 
 @pytest.mark.parametrize(
     "string,expected",
+    [("A.B := C", stmt.MessageFieldAssignment("A", "B", expr.Variable("C")))],
+)
+def test_message_field_assignment_statement(string: str, expected: stmt.Statement) -> None:
+    actual = parse_statement(string)
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
     [
         ("A'Append (B)", stmt.Append("A", expr.Variable("B"))),
         ("A'Extend (B)", stmt.Extend("A", expr.Variable("B"))),

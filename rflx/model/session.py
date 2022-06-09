@@ -109,7 +109,7 @@ class State(Base):
     @property
     def has_exceptions(self) -> bool:
         return any(
-            isinstance(a, (stmt.Append, stmt.Extend))
+            isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
             or (
                 isinstance(a, stmt.Assignment)
                 and (

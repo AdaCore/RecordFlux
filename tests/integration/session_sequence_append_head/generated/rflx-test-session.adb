@@ -46,10 +46,34 @@ is
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-         TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
-         TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
-         if TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-            TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
+         if TLV.Message.Valid_Next (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) then
+            if TLV.Message.Available_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) >= TLV.Message.Field_Size (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) then
+               TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if TLV.Message.Valid_Next (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
+            if TLV.Message.Available_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) >= TLV.Message.Field_Size (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
+               TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if TLV.Message.Valid_Next (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) then
+            if TLV.Message.Available_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) >= TLV.Message.Field_Size (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) then
+               if TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+                  TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
+               else
+                  RFLX_Exception := True;
+               end if;
+            else
+               RFLX_Exception := True;
+            end if;
          else
             RFLX_Exception := True;
          end if;

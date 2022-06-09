@@ -82,32 +82,56 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
-         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-         if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
-            Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
-            if Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
-               if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data))) then
-                  if Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
-                     declare
-                        pragma Warnings (Off, "is not modified, could be declared constant");
-                        RFLX_Ctx_P_Option_Ctx_Tmp : Universal.Option.Context := Ctx.P.Option_Ctx;
-                        pragma Warnings (On, "is not modified, could be declared constant");
-                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                          (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
-                           and then Universal.Option.Structural_Valid (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
-                           and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
-                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-                          Pre =>
-                            RFLX_Process_Data_Pre (Data'Length)
-                        is
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+               if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
+                  Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
+               else
+                  RFLX_Exception := True;
+               end if;
+            else
+               RFLX_Exception := True;
+            end if;
+         else
+            RFLX_Exception := True;
+         end if;
+         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+               if Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
+                  if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data))) then
+                     if Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
+                        declare
+                           pragma Warnings (Off, "is not modified, could be declared constant");
+                           RFLX_Ctx_P_Option_Ctx_Tmp : Universal.Option.Context := Ctx.P.Option_Ctx;
+                           pragma Warnings (On, "is not modified, could be declared constant");
+                           function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                             (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
+                              and then Universal.Option.Structural_Valid (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
+                              and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
+                           procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                             Pre =>
+                               RFLX_Process_Data_Pre (Data'Length)
+                           is
+                           begin
+                              Universal.Option.Get_Data (RFLX_Ctx_P_Option_Ctx_Tmp, Data);
+                           end RFLX_Process_Data;
+                           procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
                         begin
-                           Universal.Option.Get_Data (RFLX_Ctx_P_Option_Ctx_Tmp, Data);
-                        end RFLX_Process_Data;
-                        procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-                     begin
-                        RFLX_Universal_Option_Set_Data (RFLX_Element_Options_Ctx, RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
-                        Ctx.P.Option_Ctx := RFLX_Ctx_P_Option_Ctx_Tmp;
-                     end;
+                           RFLX_Universal_Option_Set_Data (RFLX_Element_Options_Ctx, RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
+                           Ctx.P.Option_Ctx := RFLX_Ctx_P_Option_Ctx_Tmp;
+                        end;
+                     else
+                        RFLX_Exception := True;
+                     end if;
                   else
                      RFLX_Exception := True;
                   end if;
@@ -136,10 +160,46 @@ is
       then
          if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + 1 >= Universal.Options.Size (Options_Ctx) + 24 then
             Universal.Message.Reset (Ctx.P.Message_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_Ctx.Buffer_First) + (Universal.Options.Size (Options_Ctx) + 24) - 1);
-            Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Options);
-            Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Options.Size (Options_Ctx) / 8));
-            if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
-               Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
+            if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+               if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+                  Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Options);
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
+               end if;
+            else
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
+            end if;
+            if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+               if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+                  Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Options.Size (Options_Ctx) / 8));
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
+               end if;
+            else
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
+            end if;
+            if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+               if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
+                     Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
+                  else
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
+                  end if;
+               else
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
+               end if;
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);

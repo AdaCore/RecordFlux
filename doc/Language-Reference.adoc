@@ -739,7 +739,7 @@ The state actions are executed after entering a state.
 
 [subs="+macros,quotes"]
 ----
-[[syntax-state_action]]state_action ::= ( xref:syntax-assignment[assignment] | xref:syntax-append[append] | xref:syntax-extend[extend] | xref:syntax-reset[reset] | xref:syntax-read[read] | xref:syntax-write[write] ) *;*
+[[syntax-state_action]]state_action ::= ( xref:syntax-assignment[assignment] | xref:syntax-message_field_assignment[message_field_assignment] | xref:syntax-append[append] | xref:syntax-extend[extend] | xref:syntax-reset[reset] | xref:syntax-read[read] | xref:syntax-write[write] ) *;*
 ----
 
 ===== Assignment Statements
@@ -786,6 +786,52 @@ An assignment always creates a copy of the original object.
 [source,ada,rflx,assignment_statement]
 ----
 Error_Sent := True
+----
+
+===== Message Field Assignment Statements
+
+// Message Field Assignment Statements [§S-S-A-MFA]
+
+A message field assignment sets the value of a message field.
+
+*Syntax*
+
+[subs="+macros,quotes"]
+----
+[[syntax-message_field_assignment]]message_field_assignment ::= variable_xref:syntax-name[name] *.* field_xref:syntax-name[name] *:=* xref:syntax-expression[expression]
+----
+
+// *Static Semantics*
+//
+// Expressions:
+//
+// * Mathematical Expressions [§S-S-A-MFA-ME]
+// * Boolean Expressions [§S-S-A-MFA-BE]
+// * Literals [§S-S-A-MFA-L]
+// * Variables [§S-S-A-MFA-V]
+// * Message Aggregates [§S-S-A-MFA-MA]
+// * Aggregates [§S-S-A-MFA-A]
+// * Valid Attributes [§S-S-A-MFA-VAT]
+// * Opaque Attributes [§S-S-A-MFA-OAT]
+// * Size Attributes [§S-S-A-MFA-SAT]
+// * Head Attributes [§S-S-A-MFA-HAT]
+// * Has_Data Attributes [§S-S-A-MFA-HDAT]
+// * Selected Expressions [§S-S-A-MFA-S]
+// * List Comprehensions [§S-S-A-MFA-LC]
+// * Bindings [§S-S-A-MFA-B]
+// * Quantified Expressions [§S-S-A-MFA-Q]
+// * Calls [§S-S-A-MFA-CL]
+// * Conversions [§S-S-A-MFA-CV]
+
+*Dynamic Semantics*
+
+Message fields must be set in order. Trying to set a message field which is not a valid next field leads to an exception transition. All subsequent fields of the set message field are invalidated.
+
+*Example*
+
+[source,ada,rflx,message_field_assignment_statement]
+----
+Packet.Length := 42
 ----
 
 ===== Append Attribute Statements
