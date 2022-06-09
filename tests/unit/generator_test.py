@@ -959,6 +959,13 @@ class UnknownStatement(stmt.Statement):
     "action, expected",
     [
         (
+            # ISSUE: Componolit/RecordFlux#1069
+            # Replace this test case by an integration test.
+            #
+            # X := Universal::Message'(Message_Type => A, Length => B, Data => C'Opaque)
+            #    where A = Universal::MT_Data,
+            #          B = 0,
+            #          C = Universal::Option'(Option_Type => Universal::OT_Null)
             stmt.Assignment(
                 "X",
                 expr.Binding(
@@ -1088,6 +1095,8 @@ end if;
             # pylint: enable = line-too-long
         ),
         (
+            # ISSUE: Componolit/RecordFlux#1069
+            # Replace this test case by an integration test.
             stmt.Assignment(
                 "X",
                 expr.Binding(
@@ -1159,6 +1168,13 @@ end if;
             ],
         ),
         (
+            # ISSUE: Componolit/RecordFlux#1069
+            # Replace this test case by an integration test.
+            #
+            # X := Universal::Option (A.Data)
+            #    where A = Universal::Message'(Message_Type => Universal::MT_Data,
+            #                                  Length => 2,
+            #                                  Data => [3, 4])
             stmt.Assignment(
                 "X",
                 expr.Binding(
@@ -1256,6 +1272,11 @@ end if;
             # pylint: enable = line-too-long
         ),
         (
+            # ISSUE: Componolit/RecordFlux#1069
+            # Replace this test case by an integration test.
+            #
+            # X := A.Message_Type
+            #    where A = Universal::Message'(Message_Type => Universal::MT_Null)
             stmt.Assignment(
                 "X",
                 expr.Binding(
@@ -1329,6 +1350,8 @@ end if;
         ),
         # ISSUE: Componolit/RecordFlux#577
         # Copying of sequences is not yet supported.
+        # ISSUE: Componolit/RecordFlux#1069
+        # Replace this test case by an integration test.
         # (
         #     stmt.Assignment(
         #         "X",
@@ -1370,6 +1393,8 @@ end if;
         # ),
         # ISSUE: Componolit/RecordFlux#577
         # Copying of sequences is not yet supported.
+        # ISSUE: Componolit/RecordFlux#1069
+        # Replace this test case by an integration test.
         # (
         #     stmt.Assignment(
         #         "X",
@@ -1395,6 +1420,10 @@ end if;
         #     "",
         # ),
         (
+            # ISSUE: Componolit/RecordFlux#1069
+            # Replace this test case by an integration test.
+            #
+            # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])
             stmt.Assignment(
                 "X",
                 expr.MessageAggregate(
@@ -1435,237 +1464,6 @@ if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_I
    end if;
 else
    Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;
-"""[
-                1:-1
-            ]
-            # pylint: enable = line-too-long
-        ),
-        (
-            stmt.Assignment(
-                "X",
-                expr.MessageAggregate(
-                    "Universal::Message",
-                    {
-                        "Message_Type": expr.Variable(
-                            "Universal::MT_Data",
-                            type_=rty.Enumeration("Universal::Message_Type"),
-                        ),
-                        "Length": expr.Div(
-                            expr.Size(expr.Variable("Y", type_=rty.Message("Universal::Option"))),
-                            expr.Number(8),
-                        ),
-                        "Data": expr.Opaque(
-                            expr.Variable("Y", type_=rty.Message("Universal::Option"))
-                        ),
-                    },
-                    type_=rty.Message(
-                        "Universal::Message",
-                        field_types={
-                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
-                            ID("Length"): rty.Integer("Universal::Length"),
-                            ID("Data"): rty.OPAQUE,
-                        },
-                    ),
-                ),
-                location=Location(start=(1, 1)),
-            ),
-            # pylint: disable = line-too-long
-            """
---  <stdin>:1:1
-if
-   Universal.Option.Size (Y_Ctx) <= 32768
-   and then Universal.Option.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0
-then
-   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1 >= (Universal.Option.Size (Y_Ctx) / 8) * 8 + 24 then
-      Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + ((Universal.Option.Size (Y_Ctx) / 8) * 8 + 24) - 1);
-      Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
-      Universal.Message.Set_Length (X_Ctx, Universal.Option.Size (Y_Ctx) / 8);
-      if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Option.Size (Y_Ctx))) then
-         declare
-            function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-              (Universal.Option.Has_Buffer (Y_Ctx)
-               and then Universal.Option.Structural_Valid_Message (Y_Ctx)
-               and then Length = Universal.Option.Byte_Size (Y_Ctx));
-            procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-              Pre =>
-                RFLX_Process_Data_Pre (Data'Length)
-            is
-            begin
-               Universal.Option.Data (Y_Ctx, Data);
-            end RFLX_Process_Data;
-            procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-         begin
-            RFLX_Universal_Message_Set_Data (X_Ctx, Universal.Option.Byte_Size (Y_Ctx));
-         end;
-      else
-         Ada.Text_IO.Put_Line ("Error: invalid message field size for ""Y'Opaque""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-else
-   Ada.Text_IO.Put_Line ("Error: unexpected size");
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;
-"""[
-                1:-1
-            ]
-            # pylint: enable = line-too-long
-        ),
-        (
-            stmt.Assignment(
-                "X",
-                expr.MessageAggregate(
-                    "Universal::Message",
-                    {
-                        "Message_Type": expr.Selected(
-                            expr.Variable(
-                                "Y",
-                                type_=rty.Message(
-                                    "Universal::Message",
-                                    field_types={
-                                        ID("Message_Type"): rty.Enumeration(
-                                            "Universal::Message_Type"
-                                        ),
-                                        ID("Length"): rty.Integer("Universal::Length"),
-                                        ID("Data"): rty.OPAQUE,
-                                    },
-                                ),
-                            ),
-                            "Message_Type",
-                            type_=rty.Enumeration("Universal::Message_Type"),
-                        ),
-                        "Length": expr.Selected(
-                            expr.Variable(
-                                "Y",
-                                type_=rty.Message(
-                                    "Universal::Message",
-                                    field_types={
-                                        ID("Message_Type"): rty.Enumeration(
-                                            "Universal::Message_Type"
-                                        ),
-                                        ID("Length"): rty.Integer("Universal::Length"),
-                                        ID("Data"): rty.OPAQUE,
-                                    },
-                                ),
-                            ),
-                            "Length",
-                        ),
-                        "Data": expr.Selected(
-                            expr.Variable(
-                                "Y",
-                                type_=rty.Message(
-                                    "Universal::Message",
-                                    field_types={
-                                        ID("Message_Type"): rty.Enumeration(
-                                            "Universal::Message_Type"
-                                        ),
-                                        ID("Length"): rty.Integer("Universal::Length"),
-                                        ID("Data"): rty.OPAQUE,
-                                    },
-                                ),
-                            ),
-                            "Data",
-                            type_=rty.OPAQUE,
-                        ),
-                    },
-                    type_=rty.Message(
-                        "Universal::Message",
-                        field_types={
-                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
-                            ID("Length"): rty.Integer("Universal::Length"),
-                            ID("Data"): rty.OPAQUE,
-                        },
-                    ),
-                ),
-                location=Location(start=(1, 1)),
-            ),
-            # pylint: disable = line-too-long
-            """
---  <stdin>:1:1
-if
-   Universal.Message.Size (Y_Ctx) <= 32768
-   and then Universal.Message.Size (Y_Ctx) mod RFLX_Types.Byte'Size = 0
-then
-   if RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + 1 >= RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx)) * 8 + 24 then
-      Universal.Message.Reset (X_Ctx, RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (X_Ctx.Buffer_First) + (RFLX_Types.Bit_Length (Universal.Message.Get_Length (Y_Ctx)) * 8 + 24) - 1);
-      if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Message_Type) then
-         Universal.Message.Set_Message_Type (X_Ctx, Universal.Message.Get_Message_Type (Y_Ctx));
-         if Universal.Message.Valid (Y_Ctx, Universal.Message.F_Length) then
-            Universal.Message.Set_Length (X_Ctx, Universal.Length (Universal.Message.Get_Length (Y_Ctx)));
-            if Universal.Message.Valid_Next (Y_Ctx, Universal.Message.F_Data) then
-               if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Message.Field_Size (Y_Ctx, Universal.Message.F_Data))) then
-                  if Universal.Message.Structural_Valid (Y_Ctx, Universal.Message.F_Data) then
-                     declare
-                        pragma Warnings (Off, "is not modified, could be declared constant");
-                        RFLX_Y_Ctx_Tmp : Universal.Message.Context := Y_Ctx;
-                        pragma Warnings (On, "is not modified, could be declared constant");
-                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                          (Universal.Message.Has_Buffer (RFLX_Y_Ctx_Tmp)
-                           and then Universal.Message.Structural_Valid (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)
-                           and then Length = RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));
-                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-                          Pre =>
-                            RFLX_Process_Data_Pre (Data'Length)
-                        is
-                        begin
-                           Universal.Message.Get_Data (RFLX_Y_Ctx_Tmp, Data);
-                        end RFLX_Process_Data;
-                        procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-                     begin
-                        RFLX_Universal_Message_Set_Data (X_Ctx, RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Y_Ctx_Tmp, Universal.Message.F_Data)));
-                        Y_Ctx := RFLX_Y_Ctx_Tmp;
-                     end;
-                  else
-                     Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Data""\");
-                     Ctx.P.Next_State := S_E;
-                     pragma Finalization;
-                     goto Finalize_S;
-                  end if;
-               else
-                  Ada.Text_IO.Put_Line ("Error: invalid message field size for ""Y.Data""\");
-                  Ctx.P.Next_State := S_E;
-                  pragma Finalization;
-                  goto Finalize_S;
-               end if;
-            else
-               Ada.Text_IO.Put_Line ("Error: access to invalid next message field for ""Y.Data""\");
-               Ctx.P.Next_State := S_E;
-               pragma Finalization;
-               goto Finalize_S;
-            end if;
-         else
-            Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Length""\");
-            Ctx.P.Next_State := S_E;
-            pragma Finalization;
-            goto Finalize_S;
-         end if;
-      else
-         Ada.Text_IO.Put_Line ("Error: access to invalid message field in ""Y.Message_Type""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx""\");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-else
-   Ada.Text_IO.Put_Line ("Error: unexpected size");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
