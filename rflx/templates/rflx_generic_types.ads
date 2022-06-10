@@ -26,6 +26,19 @@ is
 
    subtype Bit_Length is Custom_Bit_Length;
 
+   function "+" (Left : Index; Right : Length) return Index is
+      (Index (Length (Left) + Right));
+
+   function "+" (Left : Index; Right : Index) return Index is abstract;
+
+   function "-" (Left : Index; Right : Index) return Length is
+      (Length (Left) - Length (Right));
+
+   function "-" (Left : Index; Right : Index) return Index is abstract;
+
+   function "-" (Left : Index; Right : Length) return Index is
+      (Index (Length (Left) - Right));
+
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
    pragma Compile_Time_Error (Byte'Size /= 8, "Byte must be of size 8");
