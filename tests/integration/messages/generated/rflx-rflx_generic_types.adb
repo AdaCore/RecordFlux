@@ -309,6 +309,7 @@ is
                   Buffer.all (RME_Index) := Byte'Val (Add (R_Value, U_Value, Byte'Size, RME_Offset));
                end;
             when High_Order_First =>
+               pragma Assert (LME_Size = Value_Size - RME_Size - Natural (RME_Index - LME_Index - 1) * Byte'Size);
                declare
                   L_Bits : constant U64 := Mask_Upper (Byte'Pos (Buffer.all (RME_Index)), RME_Offset);
                   V_Bits : constant U64 := Mask_Upper (Val, RME_Size);
