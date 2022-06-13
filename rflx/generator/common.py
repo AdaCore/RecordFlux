@@ -245,7 +245,9 @@ def substitution_facts(
     def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
         if isinstance(field_type, model.Enumeration):
             if public:
-                return expr.Call("To_Base_Int", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])])
+                return expr.Call(
+                    "To_Base_Int", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
+                )
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 "Value",

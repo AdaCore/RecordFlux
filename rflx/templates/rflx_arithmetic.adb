@@ -70,7 +70,6 @@ is
          pragma Assert (Fits_Into (U64 (Val), Size));
       else
          pragma Assert (Size = 63);
-         pragma Assert (U64 (Val) < 2 ** 63);
          pragma Assert (Fits_Into (U64 (Val), Size));
       end if;
    end Lemma_Size;
