@@ -117,9 +117,7 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                 "Warnings",
                 [
                     Variable("Off"),
-                    String(
-                        '"S63" is already use-visible through previous use_type_clause'
-                    ),
+                    String('"S63" is already use-visible through previous use_type_clause'),
                 ],
             ),
             Pragma(
@@ -152,9 +150,7 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                 "Warnings",
                 [
                     Variable("On"),
-                    String(
-                        '"S63" is already use-visible through previous use_type_clause'
-                    ),
+                    String('"S63" is already use-visible through previous use_type_clause'),
                 ],
             ),
             Pragma(

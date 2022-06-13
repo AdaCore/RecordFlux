@@ -16,7 +16,6 @@ is
    is (if Bits < U64'Size then V < 2 ** Bits)
      with Post => True;
 
-   pragma Warnings (Off, "postcondition does not mention function result");
    function Fits_Into (V : S63; Bits : Natural) return Boolean
    is (if Bits < S63'Size then V < 2 ** Bits)
      with Post => True;
