@@ -63,10 +63,10 @@ def sizes(
     assert 0 <= align_to_8 < 8
     assert not (multiple_of_8 and align_to_8)
     if multiple_of_8:
-        return draw(st.integers(min_value=1, max_value=8).map(lambda x: x * 8))
+        return draw(st.integers(min_value=1, max_value=7).map(lambda x: x * 8))
     if align_to_8:
         return draw(st.integers(min_value=1, max_value=8).map(lambda x: x * 8 - align_to_8))
-    return draw(st.integers(min_value=1, max_value=64))
+    return draw(st.integers(min_value=1, max_value=63))
 
 
 @st.composite
