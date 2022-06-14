@@ -177,6 +177,11 @@ is
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
+      declare
+         use type RFLX.RFLX_Builtin_Types.Bit_Length;
+      begin
+         pragma Assert (IP_Context.Last = 8192);
+      end;
       RFLX.IPv4.Packet.Set_Version (IP_Context, 4);
       RFLX.IPv4.Packet.Set_IHL (IP_Context, 5);
       RFLX.IPv4.Packet.Set_DSCP (IP_Context, 0);
@@ -196,15 +201,29 @@ is
       RFLX.IPv4.Packet.Initialize_Payload (IP_Context);
       if RFLX.IPv4.Contains.ICMP_Message_In_Packet_Payload (IP_Context) then
          RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
-         RFLX.ICMP.Message.Set_Tag (ICMP_Context, RFLX.ICMP.Echo_Request);
-         RFLX.ICMP.Message.Set_Code_Zero (ICMP_Context, 0);
-         RFLX.ICMP.Message.Set_Checksum (ICMP_Context,
-                                         Checksum.Echo_Request_Reply_Checksum
-                                            (RFLX.ICMP.Echo_Request,
-                                             0, 0, Sequence, Data));
-         RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
-         RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
-         RFLX.ICMP.Message.Set_Data (ICMP_Context, Data);
+         declare
+            use RFLX.ICMP.Message;
+            use RFLX.IPv4.Packet;
+            use RFLX.RFLX_Builtin_Types;
+         begin
+            pragma Assert (ICMP_Context.Last = 84 * 8 - 32 * 5 + Field_First (IP_Context, F_Payload) - 1);
+            RFLX.ICMP.Message.Set_Tag (ICMP_Context, RFLX.ICMP.Echo_Request);
+            RFLX.ICMP.Message.Set_Code_Zero (ICMP_Context, 0);
+            RFLX.ICMP.Message.Set_Checksum (ICMP_Context,
+                                            Checksum.Echo_Request_Reply_Checksum
+                                               (RFLX.ICMP.Echo_Request,
+                                                0, 0, Sequence, Data));
+            RFLX.ICMP.Message.Set_Identifier (ICMP_Context, 0);
+            RFLX.ICMP.Message.Set_Sequence_Number (ICMP_Context, Sequence);
+            pragma Assert (Predecessor (ICMP_Context, F_Data) = F_Sequence_Number);
+            pragma Assert (Field_Last (ICMP_Context, F_Sequence_Number) -
+                              Field_First (IP_Context, F_Payload) + 1
+                           = 8 + 8 + 16 + 16 + 16);
+            pragma Assert (Field_First (ICMP_Context, F_Data) -
+                              RFLX.IPv4.Packet.Field_First (IP_Context, F_Payload)
+                           = 8 + 8 + 16 + 16 + 16);
+            RFLX.ICMP.Message.Set_Data (ICMP_Context, Data);
+         end;
          Last := RFLX.RFLX_Types.To_Index (RFLX.ICMP.Message.Message_Last (ICMP_Context));
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
          Sequence := Sequence + 1;
