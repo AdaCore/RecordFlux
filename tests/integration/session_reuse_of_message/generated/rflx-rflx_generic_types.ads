@@ -27,21 +27,21 @@ is
    subtype Bit_Length is Custom_Bit_Length;
 
    function "+" (Left : Index; Right : Length) return Index is
-      (Index (Length (Left) + Right)) with
-      Pre => Length (Left) <= Length'Last - Right;
+      (Index (Length (Left) + Right))
+     with Pre => Length (Left) <= Length'Last - Right;
 
    function "+" (Left : Index; Right : Index) return Index is abstract;
 
    function "-" (Left : Index; Right : Index) return Length is
-      (Length (Left) - Length (Right)) with
-      Pre => Length (Left) >= Length'First + Length (Right);
+      (Length (Left) - Length (Right))
+     with Pre => Length (Left) >= Length'First + Length (Right);
 
    function "-" (Left : Index; Right : Index) return Index is abstract;
 
    function "-" (Left : Index; Right : Length) return Index is
-      (Index (Length (Left) - Right)) with
-      Pre => Right < Length'Last
-             and then Length (Left) >= Length (Index'First) + Right;
+      (Index (Length (Left) - Right))
+     with Pre => Right < Length'Last
+                 and then Length (Left) >= Length (Index'First) + Right;
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
