@@ -62,6 +62,7 @@ Generator:
 - Relax length precondition of `To_Context` (#1054)
 - Enable comprehensions with message sequence as target (#891)
 - Add precondition `Unitialized` to procedure `Initialize` (#788)
+- Add operators for `Length` and `Index` types (#1070)
 
 PyRFLX:
 
