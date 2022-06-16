@@ -1,6 +1,6 @@
 import re
 from abc import ABC
-from typing import Iterable, Iterator, Sequence, Set, TypeVar
+from typing import Iterable, Iterator, Sequence, TypeVar
 
 
 class Base(ABC):
@@ -54,8 +54,6 @@ T = TypeVar("T")
 
 
 def unique(iterable: Iterable[T]) -> Iterator[T]:
-    seen: Set[T] = set()
-    for e in iterable:
-        if e not in seen:
-            seen.add(e)
-            yield e
+    # In Python 3.7+, standard `dict` is guaranteed to preserve order:
+    # https://stackoverflow.com/a/39980744
+    return dict.fromkeys(iterable).__iter__()
