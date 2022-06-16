@@ -485,9 +485,6 @@ is
        and then Valid_Next (Ctx, F_Data)
        and then Field_Condition (Ctx, F_Data, 0)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Data) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -507,10 +504,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -530,9 +524,6 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Data, Data'Length)
        and then Available_Space (Ctx, F_Data) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Data, 0),
@@ -559,9 +550,6 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Data) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Data, Length)
        and then RFLX_Types.To_Length (Available_Space (Ctx, F_Data)) >= Length
        and then Process_Data_Pre (Length),

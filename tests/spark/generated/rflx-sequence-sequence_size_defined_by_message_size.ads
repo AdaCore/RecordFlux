@@ -425,9 +425,6 @@ is
        and then Valid_Next (Ctx, F_Vector)
        and then Field_Condition (Ctx, F_Vector)
        and then Available_Space (Ctx, F_Vector) >= Field_Size (Ctx, F_Vector)
-       and then Field_First (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Vector) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -448,9 +445,6 @@ is
        and then Valid_Next (Ctx, F_Vector)
        and then Field_Condition (Ctx, F_Vector)
        and then Available_Space (Ctx, F_Vector) >= Field_Size (Ctx, F_Vector)
-       and then Field_First (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Vector, Sequence.Modular_Vector.Byte_Size (Seq_Ctx))
        and then Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
        and then Sequence.Modular_Vector.Valid (Seq_Ctx),
@@ -473,10 +467,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Vector)
        and then Valid_Length (Ctx, F_Vector, Length)
-       and then Available_Space (Ctx, F_Vector) >= RFLX_Types.To_Bit_Length (Length)
-       and then Field_First (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Vector) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Vector) >= RFLX_Types.To_Bit_Length (Length),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Vector)

@@ -431,9 +431,6 @@ is
        and then Valid_Next (Ctx, F_Modular_Vector)
        and then Field_Condition (Ctx, F_Modular_Vector)
        and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector)
-       and then Field_First (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Modular_Vector) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -458,9 +455,6 @@ is
        and then Valid_Next (Ctx, F_Modular_Vector)
        and then Field_Condition (Ctx, F_Modular_Vector)
        and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector)
-       and then Field_First (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Modular_Vector, Sequence.Modular_Vector.Byte_Size (Seq_Ctx))
        and then Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
        and then Sequence.Modular_Vector.Valid (Seq_Ctx),
@@ -488,9 +482,6 @@ is
        and then Valid_Next (Ctx, F_Range_Vector)
        and then Field_Condition (Ctx, F_Range_Vector)
        and then Available_Space (Ctx, F_Range_Vector) >= Field_Size (Ctx, F_Range_Vector)
-       and then Field_First (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Range_Vector, Sequence.Range_Vector.Byte_Size (Seq_Ctx))
        and then Sequence.Range_Vector.Has_Buffer (Seq_Ctx)
        and then Sequence.Range_Vector.Valid (Seq_Ctx),
@@ -517,9 +508,6 @@ is
        and then Valid_Next (Ctx, F_Enumeration_Vector)
        and then Field_Condition (Ctx, F_Enumeration_Vector)
        and then Available_Space (Ctx, F_Enumeration_Vector) >= Field_Size (Ctx, F_Enumeration_Vector)
-       and then Field_First (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Enumeration_Vector, Sequence.Enumeration_Vector.Byte_Size (Seq_Ctx))
        and then Sequence.Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and then Sequence.Enumeration_Vector.Valid (Seq_Ctx),
@@ -545,9 +533,6 @@ is
        and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
        and then Field_Condition (Ctx, F_AV_Enumeration_Vector)
        and then Available_Space (Ctx, F_AV_Enumeration_Vector) >= Field_Size (Ctx, F_AV_Enumeration_Vector)
-       and then Field_First (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_AV_Enumeration_Vector, Sequence.AV_Enumeration_Vector.Byte_Size (Seq_Ctx))
        and then Sequence.AV_Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and then Sequence.AV_Enumeration_Vector.Valid (Seq_Ctx),
@@ -572,10 +557,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Modular_Vector)
-       and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector)
-       and then Field_First (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Modular_Vector) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Modular_Vector) >= Field_Size (Ctx, F_Modular_Vector),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Modular_Vector)
@@ -597,10 +579,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Range_Vector)
-       and then Available_Space (Ctx, F_Range_Vector) >= Field_Size (Ctx, F_Range_Vector)
-       and then Field_First (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Range_Vector) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Range_Vector) >= Field_Size (Ctx, F_Range_Vector),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Range_Vector)
@@ -621,10 +600,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Enumeration_Vector)
-       and then Available_Space (Ctx, F_Enumeration_Vector) >= Field_Size (Ctx, F_Enumeration_Vector)
-       and then Field_First (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Enumeration_Vector) >= Field_Size (Ctx, F_Enumeration_Vector),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Enumeration_Vector)
@@ -644,10 +620,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
-       and then Available_Space (Ctx, F_AV_Enumeration_Vector) >= Field_Size (Ctx, F_AV_Enumeration_Vector)
-       and then Field_First (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_AV_Enumeration_Vector) >= Field_Size (Ctx, F_AV_Enumeration_Vector),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_AV_Enumeration_Vector)

@@ -425,9 +425,6 @@ is
        and then Valid_Next (Ctx, F_Messages)
        and then Field_Condition (Ctx, F_Messages)
        and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_First (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0
        and then Field_Size (Ctx, F_Messages) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -448,9 +445,6 @@ is
        and then Valid_Next (Ctx, F_Messages)
        and then Field_Condition (Ctx, F_Messages)
        and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_First (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Messages, Sequence.Inner_Messages.Byte_Size (Seq_Ctx))
        and then Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and then Sequence.Inner_Messages.Valid (Seq_Ctx),
@@ -472,10 +466,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Messages)
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_First (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Messages) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Messages)
