@@ -379,14 +379,14 @@ def test_enumeration_str() -> None:
 
 def test_sequence_dependencies() -> None:
     assert models.SEQUENCE_MODULAR_VECTOR.dependencies == [
-        models.SEQUENCE_MODULAR_VECTOR,
         models.SEQUENCE_MODULAR_INTEGER,
+        models.SEQUENCE_MODULAR_VECTOR,
     ]
     assert models.SEQUENCE_INNER_MESSAGES.dependencies == [
-        models.SEQUENCE_INNER_MESSAGES,
-        models.SEQUENCE_INNER_MESSAGE,
         models.SEQUENCE_LENGTH,
         OPAQUE,
+        models.SEQUENCE_INNER_MESSAGE,
+        models.SEQUENCE_INNER_MESSAGES,
     ]
 
 

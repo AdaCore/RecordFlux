@@ -1,5 +1,5 @@
 {
-  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestArgs": ["-vv", "tests"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true
 }

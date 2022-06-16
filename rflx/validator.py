@@ -12,7 +12,7 @@ from ruamel.yaml.main import YAML
 
 from rflx import expression as expr
 from rflx.identifier import ID, StrID
-from rflx.model import Link, Message, Model
+from rflx.model import Link, Message, Model, Refinement, type_ as mty
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 from rflx.specification import Parser
@@ -135,15 +135,14 @@ class Validator:
         parser.parse(*files)
         model = parser.create_model()
         if split_disjunctions:
-            model = Model(
-                [
-                    self._expand_message_links(t) if isinstance(t, Message) else t
-                    for t in model.types
-                ],
-            )
+            messages: Dict[ID, Message] = {}
+            for t in model.types:
+                if isinstance(t, Message):
+                    messages[t.identifier] = self._expand_message_links(t, messages)
+            model = Model([self._replace_messages(t, messages) for t in model.types])
         return model
 
-    def _expand_message_links(self, message: Message) -> Message:
+    def _expand_message_links(self, message: Message, messages: Dict[ID, Message]) -> Message:
         """Split disjunctions in link conditions."""
         structure = []
         for link in message.structure:
@@ -165,7 +164,31 @@ class Validator:
                     )
                 )
 
-        return message.copy(structure=structure)
+        types = {f: self._replace_messages(t, messages) for f, t in message.types.items()}
+
+        return message.copy(structure=structure, types=types)
+
+    @staticmethod
+    def _replace_messages(type_: mty.Type, messages: Dict[ID, Message]) -> mty.Type:
+        """Recursively replace messages."""
+        if isinstance(type_, Message):
+            return messages[type_.identifier]
+        if isinstance(type_, Refinement):
+            return Refinement(
+                type_.package,
+                messages[type_.pdu.identifier],
+                type_.field,
+                messages[type_.sdu.identifier],
+                type_.condition,
+                type_.location,
+            )
+        if isinstance(type_, mty.Sequence) and isinstance(type_.element_type, Message):
+            return mty.Sequence(
+                type_.identifier,
+                messages[type_.element_type.identifier],
+                type_.location,
+            )
+        return type_
 
     @staticmethod
     def _expand_expression(expression: expr.Expr) -> List[expr.Expr]:

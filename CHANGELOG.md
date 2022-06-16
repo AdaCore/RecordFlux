@@ -45,6 +45,7 @@ CLI:
 
 Specification / Model:
 
+- `Model.__init__` now considers all type dependencies (#1074)
 - Rename `then` to `goto` in session states (#738)
 - Allow omitting the size aspect for opaque and sequence fields which are the last field of the message (#736)
 - Allow use of `Message'Last` and `Message'Size` only in conditions of the last fields of the message (#736)
@@ -61,7 +62,7 @@ Generator:
 - Optimize provability of generated code (#806, #840, #938, #975)
 - Relax length precondition of `To_Context` (#1054)
 - Enable comprehensions with message sequence as target (#891)
-- Add precondition `Unitialized` to procedure `Initialize` (#788)
+- Add precondition `Uninitialized` to procedure `Initialize` (#788)
 - Add operators for `Length` and `Index` types (#1070)
 
 PyRFLX:
@@ -87,14 +88,14 @@ Generator:
 - Generation of use clauses for sessions (#757)
 - Missing type conversions in generated code (#761, #902, #965)
 - Code generation for:
-    - `Boolean` as function parameter (#882)
-    - Message aggregates (#770)
-    - Use of messages with single opaque field in sessions (#888)
-    - Function calls in sessions (#763)
-    - Mathematical expressions with intermediate values outside type range (#726)
-    - Logical expressions in assignemnts (#1012)
-    - Boolean relations containing global variables (#1059)
-    - Minimal session (#883)
+  - `Boolean` as function parameter (#882)
+  - Message aggregates (#770)
+  - Use of messages with single opaque field in sessions (#888)
+  - Function calls in sessions (#763)
+  - Mathematical expressions with intermediate values outside type range (#726)
+  - Logical expressions in assignments (#1012)
+  - Boolean relations containing global variables (#1059)
+  - Minimal session (#883)
 - Code generation when using non-default prefix (#897)
 - Conversion between message `Structure` and `Context` (#961)
 - Missing reset in assignment to comprehension (#1050)

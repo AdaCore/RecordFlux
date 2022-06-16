@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, Sequence
 
 from rflx import const
-from rflx.common import Base, verbose_repr
+from rflx.common import Base, unique, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 from rflx.model.package import Package
@@ -17,7 +17,7 @@ class Model(Base):
         self._types = types or []
         self._sessions = sessions or []
 
-        self._validate()
+        self._add_missing_types_and_validate()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["types", "sessions"])
@@ -59,8 +59,13 @@ class Model(Base):
         for package, specification in self.create_specifications().items():
             (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)
 
-    def _validate(self) -> None:
+    def _add_missing_types_and_validate(self) -> None:
         error = self._check_duplicates()
+
+        types = [t for s in self._sessions for t in s.direct_dependencies.values()] + [*self._types]
+        types = [d for t in types for d in t.dependencies]
+        self._types = list(unique(types))
+
         error += self._check_conflicts()
         error.propagate()
 
