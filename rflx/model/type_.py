@@ -31,7 +31,7 @@ class Type(BasicDeclaration):
         """
         Return a list consisting of the type and all types on which the type depends.
 
-        The dependencies are determined recursively.
+        The dependencies are determined recursively in *postorder*.
         """
         return [self]
 
@@ -629,11 +629,11 @@ class Sequence(Composite):
 
     @property
     def direct_dependencies(self) -> ty.List["Type"]:
-        return [self, self.element_type]
+        return [self.element_type, self]
 
     @property
     def dependencies(self) -> ty.List["Type"]:
-        return [self, *self.element_type.dependencies]
+        return [*self.element_type.dependencies, self]
 
 
 class Opaque(Composite):

@@ -1,7 +1,7 @@
 import textwrap
 from copy import copy
 from pathlib import Path
-from typing import Sequence
+from typing import List, Sequence
 
 import pytest
 
@@ -132,6 +132,28 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "types,model",
+    [
+        ([models.TLV_MESSAGE], models.TLV_MODEL),
+        ([models.TLV_WITH_CHECKSUM_MESSAGE], models.TLV_WITH_CHECKSUM_MODEL),
+        ([models.ETHERNET_FRAME], models.ETHERNET_MODEL),
+        ([models.ENUMERATION_MESSAGE], models.ENUMERATION_MODEL),
+        ([models.UNIVERSAL_REFINEMENT], models.UNIVERSAL_MODEL),
+        (
+            [
+                models.SEQUENCE_MESSAGE,
+                models.SEQUENCE_MESSAGES_MESSAGE,
+                models.SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE,
+            ],
+            models.SEQUENCE_MODEL,
+        ),
+    ],
+)
+def test_init_introduce_type_dependencies(types: List[Type], model: Model) -> None:
+    assert Model(types).types == model.types
+
+
 def test_invalid_enumeration_type_identical_literals() -> None:
     assert_model_error(
         [
@@ -164,6 +186,33 @@ def test_write_specification_files(tmp_path: Path) -> None:
     assert expected_path.read_text() == textwrap.dedent(
         """\
         package P is
+
+           type T is mod 256;
+
+           type V is sequence of P::T;
+
+           type M is
+              message
+                 Foo : P::T;
+              end message;
+
+        end P;"""
+    )
+
+
+def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
+    s = ModularInteger("P::S", Number(65536))
+    t = ModularInteger("P::T", Number(256))
+    v = mty.Sequence("P::V", element_type=t)
+    m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
+    Model([s, v, m]).write_specification_files(tmp_path)
+    expected_path = tmp_path / Path("p.rflx")
+    assert list(tmp_path.glob("*.rflx")) == [expected_path]
+    assert expected_path.read_text() == textwrap.dedent(
+        """\
+        package P is
+
+           type S is mod 65536;
 
            type T is mod 256;
 
@@ -227,6 +276,61 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
                     then Uniform
                        with Size => Message'Last - Victor'Last;
                  Uniform : Q::U;
+              end message;
+
+        end R;"""
+    )
+
+
+def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path) -> None:
+    t = ModularInteger("P::T", Number(256))
+    u = mty.Sequence("R::U", element_type=t)
+    u1 = mty.Sequence("Q::U1", element_type=t)
+    v = ModularInteger("R::V", Number(65536))
+    links = [
+        Link(INITIAL, Field("Victor")),
+        Link(Field("Victor"), Field("Uniform")),
+        Link(Field("Uniform"), FINAL),
+    ]
+    fields = {Field("Victor"): v, Field("Uniform"): u}
+    m = Message("R::M", links, fields)
+    Model([u1, m, u, v]).write_specification_files(tmp_path)
+    p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
+    assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
+    assert p_path.read_text() == textwrap.dedent(
+        """\
+        package P is
+
+           type T is mod 256;
+
+        end P;"""
+    )
+    assert q_path.read_text() == textwrap.dedent(
+        """\
+        with P;
+
+        package Q is
+
+           type U1 is sequence of P::T;
+
+        end Q;"""
+    )
+    assert r_path.read_text() == textwrap.dedent(
+        """\
+        with P;
+
+        package R is
+
+           type V is mod 65536;
+
+           type U is sequence of P::T;
+
+           type M is
+              message
+                 Victor : R::V
+                    then Uniform
+                       with Size => Message'Last - Victor'Last;
+                 Uniform : R::U;
               end message;
 
         end R;"""

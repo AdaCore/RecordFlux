@@ -152,7 +152,8 @@ class AbstractSession(BasicDeclaration):
         self.states = states
         self.declarations = {d.identifier: d for d in declarations}
         self.parameters = {p.identifier: p for p in parameters}
-        self.types = {t.identifier: t for t in types}
+        self.direct_dependencies = {t.identifier: t for t in types}
+        self.types = self.direct_dependencies.copy()
         self.location = location
 
         refinements = [t for t in types if isinstance(t, Refinement)]

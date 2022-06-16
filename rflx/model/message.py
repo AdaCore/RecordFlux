@@ -224,11 +224,11 @@ class AbstractMessage(mty.Type):
 
     @property
     def direct_dependencies(self) -> List[mty.Type]:
-        return [self, *self._types.values()]
+        return [*self._types.values(), self]
 
     @property
     def dependencies(self) -> List[mty.Type]:
-        return [self, *unique(a for t in self._types.values() for a in t.dependencies)]
+        return [*unique(a for t in self._types.values() for a in t.dependencies), self]
 
     @property
     def byte_order(self) -> Mapping[Field, ByteOrder]:
@@ -2399,6 +2399,17 @@ class Refinement(mty.Type):
                 and self.sdu == other.sdu
             )
         return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
+    @property
+    def direct_dependencies(self) -> List[mty.Type]:
+        return list(unique([self.pdu, self.sdu, self]))
+
+    @property
+    def dependencies(self) -> List[mty.Type]:
+        return list(unique([*self.pdu.dependencies, *self.sdu.dependencies, self]))
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:

@@ -77,6 +77,16 @@ from tests.data.models import (
     TLV_LENGTH,
     TLV_MESSAGE,
     TLV_TAG,
+    UNIVERSAL_LENGTH,
+    UNIVERSAL_MESSAGE,
+    UNIVERSAL_MESSAGE_TYPE,
+    UNIVERSAL_OPTION,
+    UNIVERSAL_OPTION_TYPE,
+    UNIVERSAL_OPTION_TYPES,
+    UNIVERSAL_OPTIONS,
+    UNIVERSAL_REFINEMENT,
+    UNIVERSAL_VALUE,
+    UNIVERSAL_VALUES,
 )
 from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
 
@@ -3615,17 +3625,17 @@ def test_set_refinements_error() -> None:
 
 def test_message_dependencies() -> None:
     assert TLV_MESSAGE.dependencies == [
-        TLV_MESSAGE,
         TLV_TAG,
         TLV_LENGTH,
         OPAQUE,
+        TLV_MESSAGE,
     ]
     assert SEQUENCE_MESSAGES_MESSAGE.dependencies == [
-        SEQUENCE_MESSAGES_MESSAGE,
         SEQUENCE_LENGTH,
-        SEQUENCE_INNER_MESSAGES,
-        SEQUENCE_INNER_MESSAGE,
         OPAQUE,
+        SEQUENCE_INNER_MESSAGE,
+        SEQUENCE_INNER_MESSAGES,
+        SEQUENCE_MESSAGES_MESSAGE,
     ]
 
 
@@ -3662,6 +3672,27 @@ def test_message_str() -> None:
                   end message"""
         ),
     )
+
+
+def test_refinement_dependencies() -> None:
+    assert UNIVERSAL_REFINEMENT.direct_dependencies == [
+        UNIVERSAL_MESSAGE,
+        UNIVERSAL_OPTION,
+        UNIVERSAL_REFINEMENT,
+    ]
+    assert UNIVERSAL_REFINEMENT.dependencies == [
+        UNIVERSAL_MESSAGE_TYPE,
+        UNIVERSAL_LENGTH,
+        OPAQUE,
+        UNIVERSAL_VALUE,
+        UNIVERSAL_VALUES,
+        UNIVERSAL_OPTION_TYPE,
+        UNIVERSAL_OPTION_TYPES,
+        UNIVERSAL_OPTION,
+        UNIVERSAL_OPTIONS,
+        UNIVERSAL_MESSAGE,
+        UNIVERSAL_REFINEMENT,
+    ]
 
 
 def test_refinement_invalid_package() -> None:
