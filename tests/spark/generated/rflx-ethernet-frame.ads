@@ -636,10 +636,7 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
        and then Valid_Length (Ctx, F_Payload, Length)
-       and then Available_Space (Ctx, F_Payload) >= RFLX_Types.To_Bit_Length (Length)
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0,
+       and then Available_Space (Ctx, F_Payload) >= RFLX_Types.To_Bit_Length (Length),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -662,9 +659,6 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Payload, Data'Length)
        and then Available_Space (Ctx, F_Payload) >= Data'Length * RFLX_Types.Byte'Size
        and then Field_Condition (Ctx, F_Payload, 0, RFLX_Types.To_Bit_Length (Data'Length)),
@@ -693,9 +687,6 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Payload)
        and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1
-       and then Field_Last (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
-       and then Field_Size (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 0
        and then Valid_Length (Ctx, F_Payload, Length)
        and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
        and then Process_Data_Pre (Length),

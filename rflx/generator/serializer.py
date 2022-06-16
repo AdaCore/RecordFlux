@@ -1624,36 +1624,6 @@ class SerializerGenerator:
     def composite_setter_preconditions(field: Field, size: Expr = None) -> List[Expr]:
         return [
             common.sufficient_space_for_field_condition(Variable(field.affixed_name), size),
-            Equal(
-                Mod(
-                    Call(
-                        "Field_First",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    Size(const.TYPES_BYTE),
-                ),
-                Number(1),
-            ),
-            Equal(
-                Mod(
-                    Call(
-                        "Field_Last",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    Size(const.TYPES_BYTE),
-                ),
-                Number(0),
-            ),
-            Equal(
-                Mod(
-                    Call(
-                        "Field_Size",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
-                    Size(const.TYPES_BYTE),
-                ),
-                Number(0),
-            ),
         ]
 
     def scalar_setter_and_getter_relation(
