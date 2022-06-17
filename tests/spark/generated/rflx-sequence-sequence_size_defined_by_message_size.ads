@@ -11,11 +11,15 @@ is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");
 
+   pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
+
    pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
    use type RFLX_Types.Bytes;
+
+   use type RFLX_Types.Byte;
 
    use type RFLX_Types.Bytes_Ptr;
 
@@ -34,6 +38,8 @@ is
    pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
+
+   pragma Warnings (On, "use clause for type ""Bytes"" * has no effect");
 
    pragma Unevaluated_Use_Of_Old (Allow);
 

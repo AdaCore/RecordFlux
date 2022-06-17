@@ -115,6 +115,10 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
             ),
             Pragma(
                 "Warnings",
+                [Variable("Off"), String('use clause for type "Bytes" * has no effect')],
+            ),
+            Pragma(
+                "Warnings",
                 [
                     Variable("Off"),
                     String('"S63" is already use-visible through previous use_type_clause'),
@@ -130,7 +134,7 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
             *[
                 UseTypeClause(t)
                 for t in [
-                    *([const.TYPES_BYTES] if composite_fields else []),
+                    *([const.TYPES_BYTES, const.TYPES_BYTE] if composite_fields else []),
                     const.TYPES_BYTES_PTR,
                     const.TYPES_LENGTH,
                     const.TYPES_INDEX,
@@ -156,6 +160,10 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
             Pragma(
                 "Warnings",
                 [Variable("On"), String('use clause for type "Base_Integer" * has no effect')],
+            ),
+            Pragma(
+                "Warnings",
+                [Variable("On"), String('use clause for type "Bytes" * has no effect')],
             ),
         ]
     )
@@ -2207,6 +2215,34 @@ def create_equal_function(
         ],
     )
 
+    first = Call(
+        const.TYPES_TO_INDEX,
+        [
+            Call(
+                "Field_First",
+                [
+                    Variable("Ctx"),
+                    Variable("Fld"),
+                ],
+            )
+        ],
+    )
+
+    last = Call(
+        const.TYPES_TO_INDEX,
+        [
+            Call(
+                "Field_Last",
+                [
+                    Variable("Ctx"),
+                    Variable("Fld"),
+                ],
+            )
+        ],
+    )
+
+    length = Add(Sub(last, first), Number(1))
+
     return UnitPart(
         [
             SubprogramDeclaration(
@@ -2232,37 +2268,22 @@ def create_equal_function(
                             *[
                                 (
                                     Variable(f.affixed_name),
-                                    Equal(
-                                        Indexed(
-                                            Variable("Ctx.Buffer.all"),
-                                            ValueRange(
-                                                Call(
-                                                    const.TYPES_TO_INDEX,
-                                                    [
-                                                        Call(
-                                                            "Field_First",
-                                                            [
-                                                                Variable("Ctx"),
-                                                                Variable("Fld"),
-                                                            ],
-                                                        )
-                                                    ],
-                                                ),
-                                                Call(
-                                                    const.TYPES_TO_INDEX,
-                                                    [
-                                                        Call(
-                                                            "Field_Last",
-                                                            [
-                                                                Variable("Ctx"),
-                                                                Variable("Fld"),
-                                                            ],
-                                                        )
-                                                    ],
+                                    AndThen(
+                                        Equal(Length(Variable("Data")), length),
+                                        ForAllIn(
+                                            "I",
+                                            ValueRange(first, last, const.TYPES_INDEX),
+                                            Equal(
+                                                Indexed(Variable("Ctx.Buffer.all"), Variable("I")),
+                                                Indexed(
+                                                    Variable("Data"),
+                                                    Add(
+                                                        First(Variable("Data")),
+                                                        Sub(Variable("I"), first),
+                                                    ),
                                                 ),
                                             ),
                                         ),
-                                        Variable("Data"),
                                     ),
                                 )
                                 for f in composite_fields
