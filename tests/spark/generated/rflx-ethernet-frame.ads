@@ -12,7 +12,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -34,7 +34,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -450,8 +450,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
-       and then RFLX.Ethernet.Valid_Address (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Destination, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_Address (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Destination, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
      Post =>
        Has_Buffer (Ctx)
@@ -478,8 +478,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
-       and then RFLX.Ethernet.Valid_Address (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Source, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_Address (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Source, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
      Post =>
        Has_Buffer (Ctx)
@@ -508,8 +508,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length_TPID)
-       and then RFLX.Ethernet.Valid_Type_Length (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Type_Length_TPID, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_Type_Length (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Type_Length_TPID, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID),
      Post =>
        Has_Buffer (Ctx)
@@ -546,8 +546,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TPID)
-       and then RFLX.Ethernet.Valid_TPID (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_TPID, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_TPID (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_TPID, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID),
      Post =>
        Has_Buffer (Ctx)
@@ -575,8 +575,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TCI)
-       and then RFLX.Ethernet.Valid_TCI (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_TCI, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_TCI (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_TCI, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI),
      Post =>
        Has_Buffer (Ctx)
@@ -604,8 +604,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length)
-       and then RFLX.Ethernet.Valid_Type_Length (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Type_Length, To_Base_Int (Val))
+       and then RFLX.Ethernet.Valid_Type_Length (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Type_Length, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length),
      Post =>
        Has_Buffer (Ctx)

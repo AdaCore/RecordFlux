@@ -12,7 +12,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -34,7 +34,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -441,7 +441,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source_Port)
-       and then RFLX.UDP.Valid_Port (To_Base_Int (Val))
+       and then RFLX.UDP.Valid_Port (To_Base_Integer (Val))
        and then Field_Condition (Ctx, F_Source_Port)
        and then Available_Space (Ctx, F_Source_Port) >= Field_Size (Ctx, F_Source_Port),
      Post =>
@@ -467,7 +467,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination_Port)
-       and then RFLX.UDP.Valid_Port (To_Base_Int (Val))
+       and then RFLX.UDP.Valid_Port (To_Base_Integer (Val))
        and then Field_Condition (Ctx, F_Destination_Port)
        and then Available_Space (Ctx, F_Destination_Port) >= Field_Size (Ctx, F_Destination_Port),
      Post =>
@@ -495,7 +495,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
-       and then RFLX.UDP.Valid_Length (To_Base_Int (Val))
+       and then RFLX.UDP.Valid_Length (To_Base_Integer (Val))
        and then Field_Condition (Ctx, F_Length)
        and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
@@ -523,7 +523,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Checksum)
-       and then RFLX.UDP.Valid_Checksum (To_Base_Int (Val))
+       and then RFLX.UDP.Valid_Checksum (To_Base_Integer (Val))
        and then Field_Condition (Ctx, F_Checksum)
        and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum),
      Post =>

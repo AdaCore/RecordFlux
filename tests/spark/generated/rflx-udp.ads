@@ -15,7 +15,7 @@ is
    function Valid_Port (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.UDP.Port) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.UDP.Port) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Port is
@@ -32,7 +32,7 @@ is
      (Val >= 8
       and Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.UDP.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.UDP.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Length is
@@ -48,7 +48,7 @@ is
    function Valid_Checksum (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.UDP.Checksum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.UDP.Checksum) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Checksum is

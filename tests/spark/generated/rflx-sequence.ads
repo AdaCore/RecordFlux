@@ -15,7 +15,7 @@ is
    function Valid_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_Base_Int (Val : RFLX.Sequence.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Sequence.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Length is
@@ -31,7 +31,7 @@ is
    function Valid_Modular_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Modular_Integer is
@@ -48,7 +48,7 @@ is
      (Val >= 1
       and Val <= 100);
 
-   function To_Base_Int (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Range_Integer is
@@ -65,7 +65,7 @@ is
    function Valid_Enumeration (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2);
 
-   function To_Base_Int (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Zero =>
              0,
@@ -113,7 +113,7 @@ is
    function Valid_AV_Enumeration (Val : AV_Enumeration) return Boolean is
      ((if Val.Known then True else Valid_AV_Enumeration (Val.Raw) and Val.Raw not in 0 | 1 | 2));
 
-   function To_Base_Int (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when AV_Zero =>
              0,
@@ -139,7 +139,7 @@ is
      Pre =>
        Valid_AV_Enumeration (Val);
 
-   function To_Base_Int (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
+   function To_Base_Integer (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
 
 end RFLX.Sequence;

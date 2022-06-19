@@ -15,7 +15,7 @@ is
    function Valid_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_Base_Int (Val : RFLX.Messages.Integer) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Messages.Integer) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Integer is
@@ -32,7 +32,7 @@ is
    function Valid_Enum_T (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2 | 4 | 8 | 16 | 32);
 
-   function To_Base_Int (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Enum_A =>
              0,

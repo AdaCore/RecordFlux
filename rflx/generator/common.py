@@ -152,7 +152,7 @@ def substitution(
                 other = expression.left
             if boolean_literal and other:
                 return expression.__class__(
-                    other, type_conversion(expr.Call("To_Base_Int", [boolean_literal]))
+                    other, type_conversion(expr.Call("To_Base_Integer", [boolean_literal]))
                 )
 
         def field_value(field: model.Field) -> expr.Expr:
@@ -233,8 +233,8 @@ def substitution_facts(
     def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
         if isinstance(parameter_type, model.Enumeration):
             if embedded:
-                return expr.Call("To_Base_Int", [expr.Variable(parameter.name)])
-            return expr.Call("To_Base_Int", [expr.Variable("Ctx" * parameter.identifier)])
+                return expr.Call("To_Base_Integer", [expr.Variable(parameter.name)])
+            return expr.Call("To_Base_Integer", [expr.Variable("Ctx" * parameter.identifier)])
         if isinstance(parameter_type, model.Scalar):
             if embedded:
                 return expr.Variable(parameter.name)
@@ -246,7 +246,7 @@ def substitution_facts(
         if isinstance(field_type, model.Enumeration):
             if public:
                 return expr.Call(
-                    "To_Base_Int", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
+                    "To_Base_Integer", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
                 )
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
@@ -283,14 +283,14 @@ def substitution_facts(
             for f, t in message.field_types.items()
         },
         **{
-            expr.Variable(l): type_conversion(expr.Call("To_Base_Int", [expr.Variable(l)]))
+            expr.Variable(l): type_conversion(expr.Call("To_Base_Integer", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         **{
             expr.Variable(t.package * l): type_conversion(
-                expr.Call("To_Base_Int", [expr.Variable(prefix * t.package * l)])
+                expr.Call("To_Base_Integer", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
@@ -939,7 +939,7 @@ def create_sequence_instantiation(
                 str(element_type.size),
                 prefix * element_type_package * f"Valid_{element_type.name}",
                 prefix * element_type_package * "To_Actual",
-                prefix * element_type_package * "To_Base_Int",
+                prefix * element_type_package * "To_Base_Integer",
             ],
         )
     else:

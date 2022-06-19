@@ -15,7 +15,7 @@ is
    function Valid_Address (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 281474976710655);
 
-   function To_Base_Int (Val : RFLX.Ethernet.Address) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Ethernet.Address) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.Address is
@@ -32,7 +32,7 @@ is
      (Val >= 46
       and Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.Ethernet.Type_Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Ethernet.Type_Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.Type_Length is
@@ -48,7 +48,7 @@ is
    function Valid_TPID (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val = 16#8100#);
 
-   function To_Base_Int (Val : RFLX.Ethernet.TPID) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Ethernet.TPID) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.TPID is
@@ -64,7 +64,7 @@ is
    function Valid_TCI (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.Ethernet.TCI) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Ethernet.TCI) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.TCI is

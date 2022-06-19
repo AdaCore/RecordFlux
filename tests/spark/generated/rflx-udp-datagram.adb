@@ -377,22 +377,22 @@ is
 
    procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
    begin
-      Set_Scalar (Ctx, F_Source_Port, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Source_Port, To_Base_Integer (Val));
    end Set_Source_Port;
 
    procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
    begin
-      Set_Scalar (Ctx, F_Destination_Port, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Destination_Port, To_Base_Integer (Val));
    end Set_Destination_Port;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) is
    begin
-      Set_Scalar (Ctx, F_Checksum, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Checksum, To_Base_Integer (Val));
    end Set_Checksum;
 
    procedure Set_Payload_Empty (Ctx : in out Context) is

@@ -15,7 +15,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -37,7 +37,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -445,8 +445,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Copied)
-       and then Valid_Boolean (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Copied, To_Base_Int (Val))
+       and then Valid_Boolean (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Copied, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Copied) >= Field_Size (Ctx, F_Copied),
      Post =>
        Has_Buffer (Ctx)
@@ -471,8 +471,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Class)
-       and then RFLX.IPv4.Valid_Option_Class (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Option_Class, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Option_Class (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Option_Class, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Option_Class) >= Field_Size (Ctx, F_Option_Class),
      Post =>
        Has_Buffer (Ctx)
@@ -499,8 +499,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Number)
-       and then RFLX.IPv4.Valid_Option_Number (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Option_Number, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Option_Number (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Option_Number, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Option_Number) >= Field_Size (Ctx, F_Option_Number),
      Post =>
        Has_Buffer (Ctx)
@@ -531,8 +531,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Length)
-       and then RFLX.IPv4.Valid_Option_Length (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Option_Length, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Option_Length (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Option_Length, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Option_Length) >= Field_Size (Ctx, F_Option_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -540,17 +540,17 @@ is
        and Get_Option_Length (Ctx) = Val
        and Invalid (Ctx, F_Option_Data)
        and (if
-               (RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Debugging_And_Measurement))
+               (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
                 and Get_Option_Number (Ctx) = 4)
-               or (RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+               or (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                    and (Get_Option_Number (Ctx) = 9
                         or Get_Option_Number (Ctx) = 3
                         or Get_Option_Number (Ctx) = 7))
                or (Get_Option_Length (Ctx) = 11
-                   and RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                   and RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                    and Get_Option_Number (Ctx) = 2)
                or (Get_Option_Length (Ctx) = 4
-                   and RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                   and RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                    and Get_Option_Number (Ctx) = 8)
             then
                Predecessor (Ctx, F_Option_Data) = F_Option_Length
@@ -760,17 +760,17 @@ private
                           then
                              (Valid (Cursors (F_Option_Length))
                               and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                              and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Debugging_And_Measurement))
+                              and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
                                          and Cursors (F_Option_Number).Value = 4)
-                                        or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                        or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                             and (Cursors (F_Option_Number).Value = 9
                                                  or Cursors (F_Option_Number).Value = 3
                                                  or Cursors (F_Option_Number).Value = 7))
                                         or (Cursors (F_Option_Length).Value = 11
-                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                             and Cursors (F_Option_Number).Value = 2)
                                         or (Cursors (F_Option_Length).Value = 4
-                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                             and Cursors (F_Option_Number).Value = 8)))))
       and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
                 and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
@@ -803,17 +803,17 @@ private
                                                           and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1
                                                           and then (if
                                                                        Structural_Valid (Cursors (F_Option_Data))
-                                                                       and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Debugging_And_Measurement))
+                                                                       and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
                                                                                   and Cursors (F_Option_Number).Value = 4)
-                                                                                 or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                                                                 or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                                                                      and (Cursors (F_Option_Number).Value = 9
                                                                                           or Cursors (F_Option_Number).Value = 3
                                                                                           or Cursors (F_Option_Number).Value = 7))
                                                                                  or (Cursors (F_Option_Length).Value = 11
-                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                                                                      and Cursors (F_Option_Number).Value = 2)
                                                                                  or (Cursors (F_Option_Length).Value = 4
-                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                                                                                      and Cursors (F_Option_Number).Value = 8))
                                                                     then
                                                                        Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
@@ -880,17 +880,17 @@ private
           when F_Option_Number =>
              Ctx.Cursors (F_Option_Number).Value > 1,
           when F_Option_Length =>
-             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Debugging_And_Measurement))
+             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
               and Ctx.Cursors (F_Option_Number).Value = 4)
-             or (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+             or (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and (Ctx.Cursors (F_Option_Number).Value = 9
                       or Ctx.Cursors (F_Option_Number).Value = 3
                       or Ctx.Cursors (F_Option_Number).Value = 7))
              or (Ctx.Cursors (F_Option_Length).Value = 11
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and Ctx.Cursors (F_Option_Number).Value = 2)
              or (Ctx.Cursors (F_Option_Length).Value = 4
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and Ctx.Cursors (F_Option_Number).Value = 8)));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
@@ -898,21 +898,21 @@ private
           when F_Copied | F_Option_Class =>
              True,
           when F_Option_Number =>
-             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
               and Val = 1)
              or Val > 1,
           when F_Option_Length =>
-             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Debugging_And_Measurement))
+             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
               and Ctx.Cursors (F_Option_Number).Value = 4)
-             or (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+             or (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and (Ctx.Cursors (F_Option_Number).Value = 9
                       or Ctx.Cursors (F_Option_Number).Value = 3
                       or Ctx.Cursors (F_Option_Number).Value = 7))
              or (Val = 11
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and Ctx.Cursors (F_Option_Number).Value = 2)
              or (Val = 4
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                  and Ctx.Cursors (F_Option_Number).Value = 8),
           when F_Option_Data =>
              True));
@@ -996,13 +996,13 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+          and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                     and Ctx.Cursors (F_Option_Number).Value = 1)));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Option_Data)
       or (Valid (Ctx, F_Option_Number)
-          and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.IPv4.Control))
+          and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                     and Ctx.Cursors (F_Option_Number).Value = 1)));
 
    function Incomplete_Message (Ctx : Context) return Boolean is

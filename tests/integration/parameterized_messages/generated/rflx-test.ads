@@ -16,7 +16,7 @@ is
      (Val >= 1
       and Val <= 16383);
 
-   function To_Base_Int (Val : RFLX.Test.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Test.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Length is

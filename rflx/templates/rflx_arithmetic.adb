@@ -62,9 +62,9 @@ is
       return A + B;
    end Add;
 
-   procedure Lemma_Size (Val : S63; Size : Positive) is
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive) is
    begin
-      if Size < S63'Size then
+      if Size < Base_Integer'Size then
          pragma Assert (Val < 2 ** Size);
          pragma Assert (U64 (Val) < 2 ** Size);
          pragma Assert (Fits_Into (U64 (Val), Size));

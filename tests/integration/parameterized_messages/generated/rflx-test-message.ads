@@ -15,7 +15,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -35,7 +35,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -465,7 +465,7 @@ is
        and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))
@@ -512,7 +512,7 @@ is
        and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))
@@ -567,7 +567,7 @@ is
        and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))
@@ -684,7 +684,7 @@ private
                  then
                     (Structural_Valid (Cursors (F_Data))
                      and then Cursors (F_Extension).Predecessor = F_Data
-                     and then RFLX_Types.Base_Integer (To_Base_Int (Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True)))))
+                     and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
       and then ((if Invalid (Cursors (F_Data)) then Invalid (Cursors (F_Extension))))
       and then (if
                    Structural_Valid (Cursors (F_Data))
@@ -694,7 +694,7 @@ private
                    and then Cursors (F_Data).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Extension))
-                                and then RFLX_Types.Base_Integer (To_Base_Int (Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+                                and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
                              then
                                 Cursors (F_Extension).Last - Cursors (F_Extension).First + 1 = RFLX_Types.Bit_Length (Length) * 8
                                 and then Cursors (F_Extension).Predecessor = F_Data
@@ -748,13 +748,13 @@ private
           when F_Initial | F_Extension | F_Final =>
              True,
           when F_Data =>
-             RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))));
+             RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))));
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Data =>
-             RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
-             or RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (False)),
+             RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
+             or RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)),
           when F_Extension =>
              True));
 
@@ -819,12 +819,12 @@ private
 
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      ((Structural_Valid (Ctx, F_Data)
-       and then RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (False)))
+       and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
       or Structural_Valid (Ctx, F_Extension));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Data)
-       and then RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (False)))
+       and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
       or Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is

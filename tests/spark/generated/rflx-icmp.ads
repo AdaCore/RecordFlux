@@ -16,7 +16,7 @@ is
    function Valid_Tag (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 8 | 3 | 11 | 12 | 4 | 5 | 13 | 14 | 15 | 16);
 
-   function To_Base_Int (Enum : RFLX.ICMP.Tag) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.ICMP.Tag) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Echo_Reply =>
              0,
@@ -83,7 +83,7 @@ is
    function Valid_Code_Destination_Unreachable (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2 | 3 | 4 | 5);
 
-   function To_Base_Int (Enum : RFLX.ICMP.Code_Destination_Unreachable) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.ICMP.Code_Destination_Unreachable) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Net_Unreachable =>
              0,
@@ -130,7 +130,7 @@ is
    function Valid_Code_Time_Exceeded (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1);
 
-   function To_Base_Int (Enum : RFLX.ICMP.Code_Time_Exceeded) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.ICMP.Code_Time_Exceeded) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when TTL_Exceeded =>
              0,
@@ -161,7 +161,7 @@ is
    function Valid_Code_Redirect (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2 | 3);
 
-   function To_Base_Int (Enum : RFLX.ICMP.Code_Redirect) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.ICMP.Code_Redirect) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Redirect_for_Network =>
              0,
@@ -199,7 +199,7 @@ is
    function Valid_Code_Zero (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val = 0);
 
-   function To_Base_Int (Val : RFLX.ICMP.Code_Zero) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Code_Zero) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Zero is
@@ -215,7 +215,7 @@ is
    function Valid_Checksum (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.ICMP.Checksum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Checksum) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Checksum is
@@ -231,7 +231,7 @@ is
    function Valid_Identifier (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.ICMP.Identifier) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Identifier) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Identifier is
@@ -247,7 +247,7 @@ is
    function Valid_Sequence_Number (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.ICMP.Sequence_Number) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Sequence_Number) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Sequence_Number is
@@ -263,7 +263,7 @@ is
    function Valid_Pointer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_Base_Int (Val : RFLX.ICMP.Pointer) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Pointer) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Pointer is
@@ -279,7 +279,7 @@ is
    function Valid_Timestamp (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_Base_Int (Val : RFLX.ICMP.Timestamp) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Timestamp) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Timestamp is
@@ -295,7 +295,7 @@ is
    function Valid_Gateway_Internet_Address (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_Base_Int (Val : RFLX.ICMP.Gateway_Internet_Address) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Gateway_Internet_Address) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Gateway_Internet_Address is
@@ -311,7 +311,7 @@ is
    function Valid_Unused_32 (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val = 0);
 
-   function To_Base_Int (Val : RFLX.ICMP.Unused_32) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Unused_32) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_32 is
@@ -327,7 +327,7 @@ is
    function Valid_Unused_24 (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val = 0);
 
-   function To_Base_Int (Val : RFLX.ICMP.Unused_24) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.ICMP.Unused_24) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_24 is

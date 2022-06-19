@@ -90,7 +90,7 @@ is
              F_Flag_R,
           when F_Flag_R =>
              (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Int (False))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
               then
                  F_Flag_DF
               else
@@ -379,7 +379,7 @@ is
                     when F_Flag_R =>
                        Get_Flag_R (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.Base_Integer (To_Base_Int (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (False))
+                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
                             then
                                Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                                and Valid_Next (Ctx, F_Flag_DF)),
@@ -511,7 +511,7 @@ is
                when F_Flag_R =>
                   Get_Flag_R (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.Base_Integer (To_Base_Int (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (False))
+                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
                        then
                           Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                           and Valid_Next (Ctx, F_Flag_DF)),
@@ -573,77 +573,77 @@ is
 
    procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) is
    begin
-      Set_Scalar (Ctx, F_Version, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Version, To_Base_Integer (Val));
    end Set_Version;
 
    procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) is
    begin
-      Set_Scalar (Ctx, F_IHL, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_IHL, To_Base_Integer (Val));
    end Set_IHL;
 
    procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) is
    begin
-      Set_Scalar (Ctx, F_DSCP, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_DSCP, To_Base_Integer (Val));
    end Set_DSCP;
 
    procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) is
    begin
-      Set_Scalar (Ctx, F_ECN, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_ECN, To_Base_Integer (Val));
    end Set_ECN;
 
    procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) is
    begin
-      Set_Scalar (Ctx, F_Total_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Total_Length, To_Base_Integer (Val));
    end Set_Total_Length;
 
    procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) is
    begin
-      Set_Scalar (Ctx, F_Identification, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Identification, To_Base_Integer (Val));
    end Set_Identification;
 
    procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) is
    begin
-      Set_Scalar (Ctx, F_Flag_R, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Flag_R, To_Base_Integer (Val));
    end Set_Flag_R;
 
    procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) is
    begin
-      Set_Scalar (Ctx, F_Flag_DF, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Flag_DF, To_Base_Integer (Val));
    end Set_Flag_DF;
 
    procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) is
    begin
-      Set_Scalar (Ctx, F_Flag_MF, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Flag_MF, To_Base_Integer (Val));
    end Set_Flag_MF;
 
    procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) is
    begin
-      Set_Scalar (Ctx, F_Fragment_Offset, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Fragment_Offset, To_Base_Integer (Val));
    end Set_Fragment_Offset;
 
    procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) is
    begin
-      Set_Scalar (Ctx, F_TTL, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_TTL, To_Base_Integer (Val));
    end Set_TTL;
 
    procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) is
    begin
-      Set_Scalar (Ctx, F_Protocol, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Protocol, To_Base_Integer (Val));
    end Set_Protocol;
 
    procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) is
    begin
-      Set_Scalar (Ctx, F_Header_Checksum, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Header_Checksum, To_Base_Integer (Val));
    end Set_Header_Checksum;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) is
    begin
-      Set_Scalar (Ctx, F_Source, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Source, To_Base_Integer (Val));
    end Set_Source;
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) is
    begin
-      Set_Scalar (Ctx, F_Destination, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Destination, To_Base_Integer (Val));
    end Set_Destination;
 
    procedure Set_Options_Empty (Ctx : in out Context) is

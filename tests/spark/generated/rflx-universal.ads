@@ -29,7 +29,7 @@ is
    function Valid_Option_Type (Val : Option_Type) return Boolean is
      ((if Val.Known then True else Valid_Option_Type (Val.Raw) and Val.Raw not in 0 | 1));
 
-   function To_Base_Int (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when OT_Null =>
              0,
@@ -51,7 +51,7 @@ is
      Pre =>
        Valid_Option_Type (Val);
 
-   function To_Base_Int (Val : RFLX.Universal.Option_Type) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
+   function To_Base_Integer (Val : RFLX.Universal.Option_Type) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
 
 end RFLX.Universal;

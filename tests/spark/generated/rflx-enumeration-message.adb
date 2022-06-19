@@ -265,7 +265,7 @@ is
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
    begin
-      Set_Scalar (Ctx, F_Priority, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Priority, To_Base_Integer (Val));
    end Set_Priority;
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority) with
@@ -289,7 +289,7 @@ is
        and Valid_Next (Ctx, F_Priority) = Valid_Next (Ctx, F_Priority)'Old
    is
    begin
-      Set_Scalar (Ctx, F_Priority, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Priority, To_Base_Integer (Val));
    end Set_Priority;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

@@ -471,32 +471,32 @@ is
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
    begin
-      Set_Scalar (Ctx, F_Destination, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Destination, To_Base_Integer (Val));
    end Set_Destination;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
    begin
-      Set_Scalar (Ctx, F_Source, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Source, To_Base_Integer (Val));
    end Set_Source;
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
    begin
-      Set_Scalar (Ctx, F_Type_Length_TPID, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Type_Length_TPID, To_Base_Integer (Val));
    end Set_Type_Length_TPID;
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) is
    begin
-      Set_Scalar (Ctx, F_TPID, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_TPID, To_Base_Integer (Val));
    end Set_TPID;
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) is
    begin
-      Set_Scalar (Ctx, F_TCI, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_TCI, To_Base_Integer (Val));
    end Set_TCI;
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
    begin
-      Set_Scalar (Ctx, F_Type_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Type_Length, To_Base_Integer (Val));
    end Set_Type_Length;
 
    procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with

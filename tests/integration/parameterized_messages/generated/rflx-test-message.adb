@@ -73,11 +73,11 @@ is
      ((case Fld is
           when F_Data =>
              (if
-                 RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+                 RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
               then
                  F_Extension
               elsif
-                 RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (False))
+                 RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False))
               then
                  F_Final
               else
@@ -253,7 +253,7 @@ is
        and Ctx.Verified_Last = Field_Last (Ctx, F_Data)
        and Invalid (Ctx, F_Extension)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Int (True))
+               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
             then
                Predecessor (Ctx, F_Extension) = F_Data
                and Valid_Next (Ctx, F_Extension))

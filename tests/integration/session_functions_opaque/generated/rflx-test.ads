@@ -15,7 +15,7 @@ is
    function Valid_Size (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_Base_Int (Val : RFLX.Test.Size) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Test.Size) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Size is

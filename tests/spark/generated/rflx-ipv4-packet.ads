@@ -16,7 +16,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -38,7 +38,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -490,8 +490,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Version)
-       and then RFLX.IPv4.Valid_Version (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Version, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Version (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Version, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Version) >= Field_Size (Ctx, F_Version),
      Post =>
        Has_Buffer (Ctx)
@@ -527,8 +527,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_IHL)
-       and then RFLX.IPv4.Valid_IHL (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_IHL, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_IHL (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_IHL, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_IHL) >= Field_Size (Ctx, F_IHL),
      Post =>
        Has_Buffer (Ctx)
@@ -566,8 +566,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_DSCP)
-       and then RFLX.IPv4.Valid_DCSP (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_DSCP, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_DCSP (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_DSCP, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_DSCP) >= Field_Size (Ctx, F_DSCP),
      Post =>
        Has_Buffer (Ctx)
@@ -605,8 +605,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_ECN)
-       and then RFLX.IPv4.Valid_ECN (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_ECN, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_ECN (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_ECN, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_ECN) >= Field_Size (Ctx, F_ECN),
      Post =>
        Has_Buffer (Ctx)
@@ -644,8 +644,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Total_Length)
-       and then RFLX.IPv4.Valid_Total_Length (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Total_Length, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Total_Length (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Total_Length, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Total_Length) >= Field_Size (Ctx, F_Total_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -686,8 +686,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Identification)
-       and then RFLX.IPv4.Valid_Identification (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Identification, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Identification (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Identification, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Identification) >= Field_Size (Ctx, F_Identification),
      Post =>
        Has_Buffer (Ctx)
@@ -725,8 +725,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_R)
-       and then Valid_Boolean (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Flag_R, To_Base_Int (Val))
+       and then Valid_Boolean (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Flag_R, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Flag_R) >= Field_Size (Ctx, F_Flag_R),
      Post =>
        Has_Buffer (Ctx)
@@ -743,7 +743,7 @@ is
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (False))
+               RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
             then
                Predecessor (Ctx, F_Flag_DF) = F_Flag_R
                and Valid_Next (Ctx, F_Flag_DF))
@@ -767,8 +767,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_DF)
-       and then Valid_Boolean (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Flag_DF, To_Base_Int (Val))
+       and then Valid_Boolean (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Flag_DF, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Flag_DF) >= Field_Size (Ctx, F_Flag_DF),
      Post =>
        Has_Buffer (Ctx)
@@ -806,8 +806,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Flag_MF)
-       and then Valid_Boolean (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Flag_MF, To_Base_Int (Val))
+       and then Valid_Boolean (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Flag_MF, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Flag_MF) >= Field_Size (Ctx, F_Flag_MF),
      Post =>
        Has_Buffer (Ctx)
@@ -845,8 +845,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Fragment_Offset)
-       and then RFLX.IPv4.Valid_Fragment_Offset (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Fragment_Offset, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Fragment_Offset (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Fragment_Offset, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Fragment_Offset) >= Field_Size (Ctx, F_Fragment_Offset),
      Post =>
        Has_Buffer (Ctx)
@@ -884,8 +884,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TTL)
-       and then RFLX.IPv4.Valid_TTL (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_TTL, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_TTL (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_TTL, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_TTL) >= Field_Size (Ctx, F_TTL),
      Post =>
        Has_Buffer (Ctx)
@@ -923,8 +923,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Protocol)
-       and then RFLX.IPv4.Valid_Protocol (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Protocol, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Protocol (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Protocol, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Protocol) >= Field_Size (Ctx, F_Protocol),
      Post =>
        Has_Buffer (Ctx)
@@ -962,8 +962,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Header_Checksum)
-       and then RFLX.IPv4.Valid_Header_Checksum (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Header_Checksum, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Header_Checksum (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Header_Checksum, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Header_Checksum) >= Field_Size (Ctx, F_Header_Checksum),
      Post =>
        Has_Buffer (Ctx)
@@ -1001,8 +1001,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
-       and then RFLX.IPv4.Valid_Address (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Source, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Address (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Source, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
      Post =>
        Has_Buffer (Ctx)
@@ -1040,8 +1040,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
-       and then RFLX.IPv4.Valid_Address (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Destination, To_Base_Int (Val))
+       and then RFLX.IPv4.Valid_Address (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Destination, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
      Post =>
        Has_Buffer (Ctx)
@@ -1510,7 +1510,7 @@ private
                           then
                              (Valid (Cursors (F_Flag_R))
                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Int (False))))
+                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
                 and then (if
                              Structural_Valid (Cursors (F_Flag_MF))
                           then
@@ -1617,7 +1617,7 @@ private
                                                                                                  and then Cursors (F_Flag_R).First = Cursors (F_Identification).Last + 1
                                                                                                  and then (if
                                                                                                               Structural_Valid (Cursors (F_Flag_DF))
-                                                                                                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Int (False))
+                                                                                                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
                                                                                                            then
                                                                                                               Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = 1
                                                                                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
@@ -1753,7 +1753,7 @@ private
           when F_Total_Length =>
              RFLX_Types.Base_Integer (Ctx.Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Ctx.Cursors (F_IHL).Value) * 4,
           when F_Flag_R =>
-             RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Int (False))));
+             RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
@@ -1764,7 +1764,7 @@ private
           when F_Identification =>
              True,
           when F_Flag_R =>
-             Val = RFLX_Types.Base_Integer (To_Base_Int (False)),
+             Val = RFLX_Types.Base_Integer (To_Base_Integer (False)),
           when F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload =>
              True));
 
