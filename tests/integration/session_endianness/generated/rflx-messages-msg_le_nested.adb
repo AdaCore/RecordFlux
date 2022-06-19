@@ -311,17 +311,17 @@ is
 
    procedure Set_X_A (Ctx : in out Context; Val : RFLX.Messages.Integer) is
    begin
-      Set_Scalar (Ctx, F_X_A, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_X_A, To_Base_Integer (Val));
    end Set_X_A;
 
    procedure Set_X_B (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
    begin
-      Set_Scalar (Ctx, F_X_B, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_X_B, To_Base_Integer (Val));
    end Set_X_B;
 
    procedure Set_Y (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
    begin
-      Set_Scalar (Ctx, F_Y, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Y, To_Base_Integer (Val));
    end Set_Y;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

@@ -811,7 +811,7 @@ class Generator:
         specification.append(
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_Base_Int",
+                    "To_Base_Integer",
                     self._prefix * const.TYPES_BASE_INT,
                     [
                         Parameter(
@@ -869,12 +869,12 @@ class Generator:
             specification.append(
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "To_Base_Int",
+                        "To_Base_Integer",
                         self._prefix * const.TYPES_BASE_INT,
                         [Parameter(["Val"], self._prefix * ID(enum.identifier))],
                     ),
                     If(
-                        [(Variable("Val.Known"), Call("To_Base_Int", [Variable("Val.Enum")]))],
+                        [(Variable("Val.Known"), Call("To_Base_Integer", [Variable("Val.Enum")]))],
                         Variable("Val.Raw"),
                     ),
                 )
@@ -1321,7 +1321,7 @@ class Generator:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
-                    "To_Base_Int",
+                    "To_Base_Integer",
                     self._prefix * const.TYPES_BASE_INT,
                     [Parameter(["Val"], self._prefix * ID(integer.identifier))],
                 ),

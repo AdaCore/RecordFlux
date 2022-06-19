@@ -16,7 +16,7 @@ is
    function Valid_Message_Type (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7);
 
-   function To_Base_Int (Enum : RFLX.Universal.Message_Type) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Universal.Message_Type) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when MT_Null =>
              0,
@@ -70,7 +70,7 @@ is
    function Valid_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.Universal.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Universal.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Universal.Length is
@@ -86,7 +86,7 @@ is
    function Valid_Value (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_Base_Int (Val : RFLX.Universal.Value) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Universal.Value) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Universal.Value is
@@ -116,7 +116,7 @@ is
    function Valid_Option_Type (Val : Option_Type) return Boolean is
      ((if Val.Known then True else Valid_Option_Type (Val.Raw) and Val.Raw not in 0 | 1));
 
-   function To_Base_Int (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Universal.Option_Type_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when OT_Null =>
              0,
@@ -138,7 +138,7 @@ is
      Pre =>
        Valid_Option_Type (Val);
 
-   function To_Base_Int (Val : RFLX.Universal.Option_Type) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
+   function To_Base_Integer (Val : RFLX.Universal.Option_Type) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
 
 end RFLX.Universal;

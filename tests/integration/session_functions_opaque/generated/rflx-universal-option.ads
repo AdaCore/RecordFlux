@@ -12,7 +12,7 @@ is
 
    pragma Warnings (Off, "use clause for type ""Bytes"" * has no effect");
 
-   pragma Warnings (Off, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (Off, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (Off, """LENGTH"" is already use-visible through previous use_type_clause");
 
@@ -34,7 +34,7 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   pragma Warnings (On, """S63"" is already use-visible through previous use_type_clause");
+   pragma Warnings (On, """BASE_INTEGER"" is already use-visible through previous use_type_clause");
 
    pragma Warnings (On, "use clause for type ""Base_Integer"" * has no effect");
 
@@ -434,8 +434,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Type)
-       and then RFLX.Universal.Valid_Option_Type (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Option_Type, To_Base_Int (Val))
+       and then RFLX.Universal.Valid_Option_Type (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Option_Type, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Option_Type) >= Field_Size (Ctx, F_Option_Type),
      Post =>
        Has_Buffer (Ctx)
@@ -445,7 +445,7 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Data)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))
+               RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
             then
                Predecessor (Ctx, F_Length) = F_Option_Type
                and Valid_Next (Ctx, F_Length))
@@ -462,8 +462,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
-       and then RFLX.Universal.Valid_Length (To_Base_Int (Val))
-       and then Field_Condition (Ctx, F_Length, To_Base_Int (Val))
+       and then RFLX.Universal.Valid_Length (To_Base_Integer (Val))
+       and then Field_Condition (Ctx, F_Length, To_Base_Integer (Val))
        and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
@@ -651,7 +651,7 @@ private
                  then
                     (Valid (Cursors (F_Option_Type))
                      and then Cursors (F_Length).Predecessor = F_Option_Type
-                     and then RFLX_Types.Base_Integer (Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))))
+                     and then RFLX_Types.Base_Integer (Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))))
                 and then (if
                              Structural_Valid (Cursors (F_Data))
                           then
@@ -667,7 +667,7 @@ private
                    and then Cursors (F_Option_Type).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Length))
-                                and then RFLX_Types.Base_Integer (Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))
+                                and then RFLX_Types.Base_Integer (Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
                              then
                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
                                 and then Cursors (F_Length).Predecessor = F_Option_Type
@@ -733,13 +733,13 @@ private
           when F_Initial | F_Length | F_Data | F_Final =>
              True,
           when F_Option_Type =>
-             RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))));
+             RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
           when F_Option_Type =>
-             Val = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Null))
-             or Val = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data)),
+             Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
+             or Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data)),
           when F_Length | F_Data =>
              True));
 
@@ -812,12 +812,12 @@ private
    function Structural_Valid_Message (Ctx : Context) return Boolean is
      (Structural_Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Option_Type)
-          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Null))));
+          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Data)
       or (Valid (Ctx, F_Option_Type)
-          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Null))));
+          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

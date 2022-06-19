@@ -57,7 +57,7 @@ package body RFLX.Derivation_Tests is
       if Derivation.Message.Valid (Context, Derivation.Message.F_Tag) then
          Tag := Derivation.Message.Get_Tag (Context);
          Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Data), "Unexpected Tag");
-         Assert (TLV.To_Base_Int (Tag) = 1, "Invalid conversion of Tag");
+         Assert (TLV.To_Base_Integer (Tag) = 1, "Invalid conversion of Tag");
          Assert (Derivation.Message.Valid (Context, Derivation.Message.F_Length), "Invalid Length");
          if Derivation.Message.Valid (Context, Derivation.Message.F_Length) then
             Length := Derivation.Message.Get_Length (Context);

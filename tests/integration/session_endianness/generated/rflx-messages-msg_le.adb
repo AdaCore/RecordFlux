@@ -299,12 +299,12 @@ is
 
    procedure Set_C (Ctx : in out Context; Val : RFLX.Messages.Integer) is
    begin
-      Set_Scalar (Ctx, F_C, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_C, To_Base_Integer (Val));
    end Set_C;
 
    procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
    begin
-      Set_Scalar (Ctx, F_D, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_D, To_Base_Integer (Val));
    end Set_D;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

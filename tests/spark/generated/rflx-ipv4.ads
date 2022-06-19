@@ -15,7 +15,7 @@ is
    function Valid_Version (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val = 4);
 
-   function To_Base_Int (Val : RFLX.IPv4.Version) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Version) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Version is
@@ -32,7 +32,7 @@ is
      (Val >= 5
       and Val <= 15);
 
-   function To_Base_Int (Val : RFLX.IPv4.IHL) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.IHL) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.IHL is
@@ -48,7 +48,7 @@ is
    function Valid_DCSP (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 63);
 
-   function To_Base_Int (Val : RFLX.IPv4.DCSP) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.DCSP) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.DCSP is
@@ -64,7 +64,7 @@ is
    function Valid_ECN (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 3);
 
-   function To_Base_Int (Val : RFLX.IPv4.ECN) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.ECN) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.ECN is
@@ -80,7 +80,7 @@ is
    function Valid_Total_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.IPv4.Total_Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Total_Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Total_Length is
@@ -96,7 +96,7 @@ is
    function Valid_Identification (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.IPv4.Identification) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Identification) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Identification is
@@ -112,7 +112,7 @@ is
    function Valid_Fragment_Offset (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 8191);
 
-   function To_Base_Int (Val : RFLX.IPv4.Fragment_Offset) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Fragment_Offset) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Fragment_Offset is
@@ -128,7 +128,7 @@ is
    function Valid_TTL (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_Base_Int (Val : RFLX.IPv4.TTL) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.TTL) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.TTL is
@@ -158,7 +158,7 @@ is
    function Valid_Protocol (Val : Protocol) return Boolean is
      ((if Val.Known then True else Valid_Protocol (Val.Raw) and Val.Raw not in 1 | 17));
 
-   function To_Base_Int (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when P_ICMP =>
              1,
@@ -180,8 +180,8 @@ is
      Pre =>
        Valid_Protocol (Val);
 
-   function To_Base_Int (Val : RFLX.IPv4.Protocol) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Int (Val.Enum) else Val.Raw));
+   function To_Base_Integer (Val : RFLX.IPv4.Protocol) return RFLX.RFLX_Types.Base_Integer is
+     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
 
    type Header_Checksum is range 0 .. 2**16 - 1 with
      Size =>
@@ -190,7 +190,7 @@ is
    function Valid_Header_Checksum (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.IPv4.Header_Checksum) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Header_Checksum) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Header_Checksum is
@@ -206,7 +206,7 @@ is
    function Valid_Address (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 4294967295);
 
-   function To_Base_Int (Val : RFLX.IPv4.Address) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Address) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Address is
@@ -223,7 +223,7 @@ is
    function Valid_Option_Class (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 2);
 
-   function To_Base_Int (Enum : RFLX.IPv4.Option_Class) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.IPv4.Option_Class) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Control =>
              0,
@@ -253,7 +253,7 @@ is
    function Valid_Option_Number (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 31);
 
-   function To_Base_Int (Val : RFLX.IPv4.Option_Number) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Option_Number) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Number is
@@ -270,7 +270,7 @@ is
      (Val >= 2
       and Val <= 255);
 
-   function To_Base_Int (Val : RFLX.IPv4.Option_Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.IPv4.Option_Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Length is

@@ -16,7 +16,7 @@ is
    function Valid_Result (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 0 | 1);
 
-   function To_Base_Int (Enum : RFLX.Test.Result) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.Test.Result) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when M_Valid =>
              0,
@@ -46,7 +46,7 @@ is
    function Valid_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 255);
 
-   function To_Base_Int (Val : RFLX.Test.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Test.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Length is

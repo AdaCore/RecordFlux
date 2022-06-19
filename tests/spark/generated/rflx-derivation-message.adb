@@ -73,11 +73,11 @@ is
      ((case Fld is
           when F_Tag =>
              (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Error))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Error))
               then
                  F_Final
               elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data))
               then
                  F_Length
               else
@@ -282,7 +282,7 @@ is
                     when F_Tag =>
                        Get_Tag (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.Base_Integer (To_Base_Int (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))
+                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data))
                             then
                                Predecessor (Ctx, F_Length) = F_Tag
                                and Valid_Next (Ctx, F_Length))
@@ -342,7 +342,7 @@ is
                when F_Tag =>
                   Get_Tag (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.Base_Integer (To_Base_Int (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.TLV.Msg_Data))
+                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data))
                        then
                           Predecessor (Ctx, F_Length) = F_Tag
                           and Valid_Next (Ctx, F_Length))
@@ -374,12 +374,12 @@ is
 
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) is
    begin
-      Set_Scalar (Ctx, F_Tag, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Tag, To_Base_Integer (Val));
    end Set_Tag;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Value_Empty (Ctx : in out Context) is

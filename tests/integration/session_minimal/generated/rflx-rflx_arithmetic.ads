@@ -7,7 +7,7 @@ is
    type U64 is mod 2**64 with
      Annotate => (GNATprove, No_Wrap_Around);
 
-   type S63 is range 0 .. 2 ** 63 - 1;
+   type Base_Integer is range 0 .. 2 ** 63 - 1;
 
    --  Express that V contains at most Bits non-zero bits, in the least
    --  significant part (the rest is zero).
@@ -16,8 +16,8 @@ is
    is (if Bits < U64'Size then V < 2 ** Bits)
      with Post => True;
 
-   function Fits_Into (V : S63; Bits : Natural) return Boolean
-   is (if Bits < S63'Size then V < 2 ** Bits)
+   function Fits_Into (V : Base_Integer; Bits : Natural) return Boolean
+   is (if Bits < Base_Integer'Size then V < 2 ** Bits)
      with Post => True;
 
    --  Express that V contains (U64'Size - Bits) leading zero bits, then (Bits -
@@ -88,7 +88,7 @@ is
      Post => Add'Result = A + B and Fits_Into (Add'Result, Total_Bits),
      Global => null;
 
-   procedure Lemma_Size (Val : S63; Size : Positive)
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive)
    with Ghost,
       Pre => Size in 1 .. 63 and then Fits_Into (Val, Size),
       Post => Fits_Into (U64 (Val), Size);

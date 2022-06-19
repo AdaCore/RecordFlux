@@ -568,11 +568,11 @@ class SerializerGenerator:
                         [
                             Variable("Val")
                             if use_enum_records_directly
-                            else Call("To_Base_Int", [Variable("Val")])
+                            else Call("To_Base_Integer", [Variable("Val")])
                         ],
                     ),
                     common.field_condition_call(
-                        message, field, value=Call("To_Base_Int", [Variable("Val")])
+                        message, field, value=Call("To_Base_Integer", [Variable("Val")])
                     ),
                     common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                 )
@@ -619,7 +619,7 @@ class SerializerGenerator:
                         [
                             Variable("Ctx"),
                             Variable(field.affixed_name),
-                            Call("To_Base_Int", [Variable("Val")]),
+                            Call("To_Base_Integer", [Variable("Val")]),
                         ],
                     ),
                 ],

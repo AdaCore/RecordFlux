@@ -353,12 +353,12 @@ is
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Message_Type, To_Base_Integer (Val));
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Test.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type) with
@@ -385,7 +385,7 @@ is
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
    is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Message_Type, To_Base_Integer (Val));
    end Set_Message_Type;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

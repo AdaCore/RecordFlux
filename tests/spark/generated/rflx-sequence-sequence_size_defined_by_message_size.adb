@@ -319,7 +319,7 @@ is
 
    procedure Set_Header (Ctx : in out Context; Val : RFLX.Sequence.Enumeration) is
    begin
-      Set_Scalar (Ctx, F_Header, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Header, To_Base_Integer (Val));
    end Set_Header;
 
    procedure Set_Vector_Empty (Ctx : in out Context) is

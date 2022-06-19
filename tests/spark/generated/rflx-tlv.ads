@@ -16,7 +16,7 @@ is
    function Valid_Tag (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val in 1 | 3);
 
-   function To_Base_Int (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.Base_Integer is
      ((case Enum is
           when Msg_Data =>
              1,
@@ -46,7 +46,7 @@ is
    function Valid_Length (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val <= 65535);
 
-   function To_Base_Int (Val : RFLX.TLV.Length) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.TLV.Length) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.TLV.Length is

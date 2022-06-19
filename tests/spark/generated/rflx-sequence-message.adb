@@ -351,7 +351,7 @@ is
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Sequence.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Modular_Vector_Empty (Ctx : in out Context) is

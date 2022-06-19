@@ -70,7 +70,7 @@ is
 
    use type U64;
 
-   subtype Base_Integer is {prefix}RFLX_Arithmetic.S63;
+   subtype Base_Integer is {prefix}RFLX_Arithmetic.Base_Integer;
 
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 

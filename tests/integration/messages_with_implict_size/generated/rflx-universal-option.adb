@@ -73,11 +73,11 @@ is
      ((case Fld is
           when F_Option_Type =>
              (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Null))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
               then
                  F_Final
               elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
               then
                  F_Length
               else
@@ -282,7 +282,7 @@ is
                     when F_Option_Type =>
                        Get_Option_Type (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))
+                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
                             then
                                Predecessor (Ctx, F_Length) = F_Option_Type
                                and Valid_Next (Ctx, F_Length))
@@ -342,7 +342,7 @@ is
                when F_Option_Type =>
                   Get_Option_Type (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.Base_Integer (To_Base_Int (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Int (RFLX.Universal.OT_Data))
+                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
                        then
                           Predecessor (Ctx, F_Length) = F_Option_Type
                           and Valid_Next (Ctx, F_Length))
@@ -374,12 +374,12 @@ is
 
    procedure Set_Option_Type (Ctx : in out Context; Val : RFLX.Universal.Option_Type_Enum) is
    begin
-      Set_Scalar (Ctx, F_Option_Type, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Option_Type, To_Base_Integer (Val));
    end Set_Option_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Int (Val));
+      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Data_Empty (Ctx : in out Context) is

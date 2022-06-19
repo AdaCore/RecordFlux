@@ -121,7 +121,9 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                 "Warnings",
                 [
                     Variable("Off"),
-                    String('"S63" is already use-visible through previous use_type_clause'),
+                    String(
+                        '"BASE_INTEGER" is already use-visible through previous use_type_clause'
+                    ),
                 ],
             ),
             Pragma(
@@ -154,7 +156,9 @@ def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -
                 "Warnings",
                 [
                     Variable("On"),
-                    String('"S63" is already use-visible through previous use_type_clause'),
+                    String(
+                        '"BASE_INTEGER" is already use-visible through previous use_type_clause'
+                    ),
                 ],
             ),
             Pragma(
@@ -3220,7 +3224,7 @@ def _struct_substitution(
 
             if isinstance(field_type, Enumeration):
                 return expr.Call(
-                    "To_Base_Int",
+                    "To_Base_Integer",
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 
