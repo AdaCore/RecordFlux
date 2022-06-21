@@ -490,6 +490,7 @@ is
        and Predecessor (Ctx, F_Option_Class) = Predecessor (Ctx, F_Option_Class)'Old
        and Valid_Next (Ctx, F_Option_Class) = Valid_Next (Ctx, F_Option_Class)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Class) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Class)) + Field_Size (Ctx, F_Option_Class)
        and (for all F in Field range F_Copied .. F_Copied =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -522,6 +523,7 @@ is
        and Valid_Next (Ctx, F_Option_Number) = Valid_Next (Ctx, F_Option_Number)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Number) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Number)) + Field_Size (Ctx, F_Option_Number)
        and (for all F in Field range F_Copied .. F_Option_Class =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -564,6 +566,7 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Length)) + Field_Size (Ctx, F_Option_Length)
        and (for all F in Field range F_Copied .. F_Option_Number =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -590,7 +593,8 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Data)) + Field_Size (Ctx, F_Option_Data);
 
    procedure Initialize_Option_Data (Ctx : in out Context) with
      Pre =>
@@ -611,7 +615,8 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Data)) + Field_Size (Ctx, F_Option_Data);
 
    procedure Set_Option_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -636,6 +641,7 @@ is
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
        and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Data)) + Field_Size (Ctx, F_Option_Data)
        and Equal (Ctx, F_Option_Data, Data);
 
    generic
@@ -663,7 +669,8 @@ is
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old;
+       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Option_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Data)) + Field_Size (Ctx, F_Option_Data);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

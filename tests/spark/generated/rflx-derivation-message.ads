@@ -481,6 +481,7 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and Field_Last (Ctx, F_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Length)) + Field_Size (Ctx, F_Length)
        and (for all F in Field range F_Tag .. F_Tag =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -505,7 +506,8 @@ is
        and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Value) = Field_Last (Ctx, Predecessor (Ctx, F_Value)) + Field_Size (Ctx, F_Value);
 
    procedure Initialize_Value (Ctx : in out Context) with
      Pre =>
@@ -524,7 +526,8 @@ is
        and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Value) = Field_Last (Ctx, Predecessor (Ctx, F_Value)) + Field_Size (Ctx, F_Value);
 
    procedure Set_Value (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -547,6 +550,7 @@ is
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Value) = Field_Last (Ctx, Predecessor (Ctx, F_Value)) + Field_Size (Ctx, F_Value)
        and Equal (Ctx, F_Value, Data);
 
    generic
@@ -572,7 +576,8 @@ is
        and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Value) = Field_Last (Ctx, Predecessor (Ctx, F_Value)) + Field_Size (Ctx, F_Value);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>
