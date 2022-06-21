@@ -120,8 +120,8 @@ class ModularInteger(Integer):
 
         modulus_int = int(modulus_num)
 
+        # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
-        # see Componolit/RecordFlux#1077
 
         if modulus_int > 2**63:
             self.error.extend(
@@ -287,8 +287,8 @@ class RangeInteger(Integer):
                 ],
             )
 
+        # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
-        # see Componolit/RecordFlux#1077
 
         if int(size_num) > 63:
             self.error.extend(
@@ -435,8 +435,8 @@ class Enumeration(Scalar):
                     ],
                 )
 
+        # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
-        # see Componolit/RecordFlux#1077
 
         if int(size_num) > 63:
             self.error.extend(
