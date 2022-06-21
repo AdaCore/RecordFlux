@@ -1,0 +1,3 @@
+#!/bin/sh
+
+make check_black check_isort

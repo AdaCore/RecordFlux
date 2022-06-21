@@ -134,6 +134,9 @@ install_devel:
 	$(MAKE) -C .config/python-style install_devel
 	pip3 install -e ".[devel]"
 
+install_git_hooks:
+	install -m 755 tools/pre-{commit,push} .git/hooks/
+
 upgrade_devel:
 	tools/upgrade_dependencies.py
 

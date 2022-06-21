@@ -32,6 +32,7 @@ Make targets for common development tasks are:
 - `format` Perform automatic code formatting on Python code
 - `install_devel` Install project in editable mode
 - `upgrade_devel` Upgrade all development dependencies (note: `install_devel` must be executed before changes in `setup.py` take effect)
+- `install_git_hooks` Install git hooks for automatic checks before creating and pushing commits
 
 Additional tools can be found in `tools/`.
 
