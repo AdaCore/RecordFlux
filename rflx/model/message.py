@@ -1231,15 +1231,16 @@ class Message(AbstractMessage):
         for p in self.paths(FINAL):
             types = {f: t for f, t in self.types.items() if f in self.parameters}
             path = []
-            for l in p:
-                try:
-                    # check for contradictions in conditions of path
-                    proof = self._prove_path_property(expr.TRUE, p)
-                    if proof.result == expr.ProofResult.UNSAT:
-                        break
-                except expr.Z3TypeError:
-                    pass
 
+            try:
+                # check for contradictions in conditions of path
+                proof = self._prove_path_property(expr.TRUE, p)
+                if proof.result == expr.ProofResult.UNSAT:
+                    break
+            except expr.Z3TypeError:
+                pass
+
+            for l in p:
                 path.append(l.target)
 
                 if l.source in self.types:
