@@ -15,7 +15,7 @@ is
 
    type Channel is (C_C);
 
-   type State is (S_Start, S_Receive, S_Process, S_Reply, S_Error, S_Terminated);
+   type State is (S_Start, S_Receive, S_Process, S_Reply, S_Reset, S_Error, S_Terminated);
 
    type Private_Context is private;
 

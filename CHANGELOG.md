@@ -79,6 +79,7 @@ Model:
 - Handling of `Message` attributes in message types (#729)
 - Missing file location in error messages (#647)
 - Bug box due to dangling field when merging messages (#1033)
+- Missing type information in `Reset` statement (#1080)
 
 Generator:
 

@@ -46,6 +46,7 @@ package Test is
       is
          Length : Length;
       begin
+         M_S'Reset (Length => M_R.Length, Extended => True);
          M_S := Message'(Length => M_R.Length, Extended => True, Data => M_R.Data, Extension => [3, 4]);
          Length := M_S.Length;
       transition
@@ -61,8 +62,16 @@ package Test is
       begin
          C'Write (M_S);
       transition
-         goto Terminated
+         goto Reset
       end Reply;
+
+      state Reset
+      is
+      begin
+         M_S'Reset (Length => M_R.Length, Extended => M_R.Extended);
+      transition
+         goto Terminated
+      end Reset;
 
       state Error
       is
