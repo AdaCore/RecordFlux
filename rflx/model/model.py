@@ -57,7 +57,12 @@ class Model(Base):
     def write_specification_files(self, output_dir: Path) -> None:
         """Write corresponding specification files (one per package) into given directory."""
         for package, specification in self.create_specifications().items():
-            (output_dir / f"{package.flat.lower()}.rflx").write_text(specification)
+            header = (
+                "-- style: disable = line-length\n\n"
+                if any(len(l) > 120 for l in specification.split("\n"))
+                else ""
+            )
+            (output_dir / f"{package.flat.lower()}.rflx").write_text(f"{header}{specification}")
 
     def _add_missing_types_and_validate(self) -> None:
         error = self._check_duplicates()
