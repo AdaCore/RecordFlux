@@ -425,6 +425,7 @@ is
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
+       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

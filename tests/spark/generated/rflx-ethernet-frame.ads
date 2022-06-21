@@ -499,6 +499,7 @@ is
        and Predecessor (Ctx, F_Source) = Predecessor (Ctx, F_Source)'Old
        and Valid_Next (Ctx, F_Source) = Valid_Next (Ctx, F_Source)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and Field_Last (Ctx, F_Source) = Field_Last (Ctx, Predecessor (Ctx, F_Source)) + Field_Size (Ctx, F_Source)
        and (for all F in Field range F_Destination .. F_Destination =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -537,6 +538,7 @@ is
        and Valid_Next (Ctx, F_Type_Length_TPID) = Valid_Next (Ctx, F_Type_Length_TPID)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and Field_Last (Ctx, F_Type_Length_TPID) = Field_Last (Ctx, Predecessor (Ctx, F_Type_Length_TPID)) + Field_Size (Ctx, F_Type_Length_TPID)
        and (for all F in Field range F_Destination .. F_Source =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -595,6 +597,7 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
+       and Field_Last (Ctx, F_TCI) = Field_Last (Ctx, Predecessor (Ctx, F_TCI)) + Field_Size (Ctx, F_TCI)
        and (for all F in Field range F_Destination .. F_TPID =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -657,7 +660,8 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
-       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old;
+       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -682,6 +686,7 @@ is
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
        and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload)
        and Equal (Ctx, F_Payload, Data);
 
    generic
@@ -709,7 +714,8 @@ is
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Type_Length_TPID (Ctx) = Get_Type_Length_TPID (Ctx)'Old
-       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old;
+       and Get_Type_Length (Ctx) = Get_Type_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

@@ -495,7 +495,8 @@ is
        and Ctx.Length = Ctx.Length'Old
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
-       and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old;
+       and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension);
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -547,6 +548,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension)
        and Equal (Ctx, F_Extension, Data);
 
    generic
@@ -603,7 +605,8 @@ is
        and Ctx.Length = Ctx.Length'Old
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
-       and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old;
+       and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

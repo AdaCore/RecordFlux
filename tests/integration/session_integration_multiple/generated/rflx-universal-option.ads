@@ -479,6 +479,7 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
+       and Field_Last (Ctx, F_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Length)) + Field_Size (Ctx, F_Length)
        and (for all F in Field range F_Option_Type .. F_Option_Type =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -503,7 +504,8 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Initialize_Data (Ctx : in out Context) with
      Pre =>
@@ -522,7 +524,8 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -545,6 +548,7 @@ is
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
        and Equal (Ctx, F_Data, Data);
 
    generic
@@ -570,7 +574,8 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old;
+       and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

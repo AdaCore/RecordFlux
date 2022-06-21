@@ -425,6 +425,7 @@ is
        and Predecessor (Ctx, F_D) = Predecessor (Ctx, F_D)'Old
        and Valid_Next (Ctx, F_D) = Valid_Next (Ctx, F_D)'Old
        and Get_C (Ctx) = Get_C (Ctx)'Old
+       and Field_Last (Ctx, F_D) = Field_Last (Ctx, Predecessor (Ctx, F_D)) + Field_Size (Ctx, F_D)
        and (for all F in Field range F_C .. F_C =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
