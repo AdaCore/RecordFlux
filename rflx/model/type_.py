@@ -123,11 +123,11 @@ class ModularInteger(Integer):
         # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
 
-        if modulus_int > 2**63:
+        if modulus_int > 2**const.MAX_SCALAR_SIZE:
             self.error.extend(
                 [
                     (
-                        f'modulus of "{self.name}" exceeds limit (2**63)',
+                        f'modulus of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         modulus.location,
@@ -221,11 +221,11 @@ class RangeInteger(Integer):
                 ],
             )
             return
-        if int(last_num) >= 2**63:
+        if int(last_num) >= 2**const.MAX_SCALAR_SIZE:
             self.error.extend(
                 [
                     (
-                        f'last of "{self.name}" exceeds limit (2**63 - 1)',
+                        f'last of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE} - 1)',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
@@ -290,11 +290,11 @@ class RangeInteger(Integer):
         # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
 
-        if int(size_num) > 63:
+        if int(size_num) > const.MAX_SCALAR_SIZE:
             self.error.extend(
                 [
                     (
-                        f'size of "{self.name}" exceeds limit (2**63)',
+                        f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
@@ -411,12 +411,12 @@ class Enumeration(Scalar):
         if self.literals.values():
             min_literal_value = min(map(int, self.literals.values()))
             max_literal_value = max(map(int, self.literals.values()))
-            if min_literal_value < 0 or max_literal_value > 2**63 - 1:
+            if min_literal_value < 0 or max_literal_value > 2**const.MAX_SCALAR_SIZE - 1:
                 self.error.extend(
                     [
                         (
                             f'enumeration value of "{self.name}"'
-                            " outside of permitted range (0 .. 2**63 - 1)",
+                            f" outside of permitted range (0 .. 2**{const.MAX_SCALAR_SIZE} - 1)",
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
@@ -438,11 +438,11 @@ class Enumeration(Scalar):
         # ISSUE: Componolit/RecordFlux#1077
         # size of integers is limited to 63bits
 
-        if int(size_num) > 63:
+        if int(size_num) > const.MAX_SCALAR_SIZE:
             self.error.extend(
                 [
                     (
-                        f'size of "{self.name}" exceeds limit (2**63)',
+                        f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,

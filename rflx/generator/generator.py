@@ -84,7 +84,7 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.common import file_name
-from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
+from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE
 from rflx.error import Subsystem, fail, warn
 from rflx.integration import Integration
 from rflx.model import (
@@ -719,7 +719,7 @@ class Generator:
                 ),
                 *(
                     [expr.LessEqual(expr.Variable("Val"), integer.last)]
-                    if integer.last.simplified() != expr.Number(2**63 - 1)
+                    if integer.last.simplified() != expr.Number(2**MAX_SCALAR_SIZE - 1)
                     else []
                 ),
             ).simplified()
@@ -760,14 +760,14 @@ class Generator:
         return UnitPart(specification)
 
     def _enumeration_functions(self, enum: Enumeration) -> UnitPart:
-        incomplete = len(enum.literals) < 2**63
+        incomplete = len(enum.literals) < 2**MAX_SCALAR_SIZE
 
         specification: ty.List[Declaration] = []
 
         validation_expression = (
             (
                 Less(Variable("Val"), Pow(Number(2), enum.size.ada_expr()))
-                if enum.size.simplified() != expr.Number(63)
+                if enum.size.simplified() != expr.Number(MAX_SCALAR_SIZE)
                 else TRUE
             )
             if enum.always_valid
