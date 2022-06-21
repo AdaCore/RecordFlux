@@ -2,7 +2,25 @@
 :toc:
 :numbered:
 
-== Integration files
+== Specification Files
+
+=== Style Checks
+
+By default, the style of specification files is checked. Style checks can be disabled for individual files by adding a pragma to the first line of the file. Besides the deactivation of specific checks, it is also possible to disable all checks by using `all`.
+
+*Example*
+
+[source,ada,rflx]
+----
+-- style: disable = line-length, blank-lines
+
+package P is
+
+   ...
+----
+
+
+== Integration Files
 
 For each RecordFlux specification file with the `.rflx` file extension, users
 may provide a file with the same name but the `.rfi` file extension. This is
