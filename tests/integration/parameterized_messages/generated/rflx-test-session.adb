@@ -73,6 +73,8 @@ is
    begin
       pragma Assert (Process_Invariant);
       --  tests/integration/parameterized_messages/test.rflx:49:10
+      Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
+      --  tests/integration/parameterized_messages/test.rflx:50:10
       if
          Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -158,7 +160,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/parameterized_messages/test.rflx:50:10
+      --  tests/integration/parameterized_messages/test.rflx:51:10
       Length := Ctx.P.M_S_Ctx.Length;
       if Length = Ctx.P.M_R_Ctx.Length then
          Ctx.P.Next_State := S_Reply;
@@ -184,10 +186,31 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:62:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/parameterized_messages/test.rflx:63:10
+      Ctx.P.Next_State := S_Reset;
       pragma Assert (Reply_Invariant);
    end Reply;
+
+   procedure Reset (Ctx : in out Context'Class) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      function Reset_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
+   begin
+      pragma Assert (Reset_Invariant);
+      --  tests/integration/parameterized_messages/test.rflx:71:10
+      Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => Ctx.P.M_R_Ctx.Extended);
+      Ctx.P.Next_State := S_Terminated;
+      pragma Assert (Reset_Invariant);
+   end Reset;
 
    procedure Error (Ctx : in out Context'Class) with
      Pre =>
@@ -255,7 +278,7 @@ is
             null;
          when S_Receive =>
             Test.Message.Reset (Ctx.P.M_R_Ctx, Ctx.P.M_R_Ctx.First, Ctx.P.M_R_Ctx.First - 1, Ctx.P.M_R_Ctx.Length, Ctx.P.M_R_Ctx.Extended);
-         when S_Process | S_Reply | S_Error | S_Terminated =>
+         when S_Process | S_Reply | S_Reset | S_Error | S_Terminated =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -271,6 +294,8 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
+         when S_Reset =>
+            Reset (Ctx);
          when S_Error =>
             Error (Ctx);
          when S_Terminated =>

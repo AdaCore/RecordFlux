@@ -196,6 +196,9 @@ class Reset(AttributeStatement):
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
         self.type_ = statement_type
+        self.associations = {
+            i: e.substituted(typify_variable) for i, e in self.associations.items()
+        }
         return rty.check_type_instance(
             statement_type,
             (rty.Sequence, rty.Message),
