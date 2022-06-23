@@ -265,7 +265,7 @@ is
             end if;
             if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
                if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
-                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types, RFLX_Types.To_Length (Universal.Option_Types.Size (Option_Types_Ctx))) then
+                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
                      Universal.Message.Set_Option_Types (Ctx.P.Message_Ctx, Option_Types_Ctx);
                   else
                      Ctx.P.Next_State := S_Terminated;

@@ -3870,55 +3870,72 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if isinstance(field_type, rty.Sequence):
             size: Expr
-            if isinstance(value, expr.Aggregate):
-                size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
-            elif isinstance(value, expr.Variable) and isinstance(
+            if isinstance(value, expr.Variable) and isinstance(
                 value.type_, (rty.Message, rty.Sequence)
             ):
                 type_ = ID(value.type_.identifier)
                 context = context_id(value.identifier, is_global)
-                size = Call(type_ * "Size", [Variable(context)])
-            elif isinstance(value, expr.Selected):
-                assert isinstance(value.prefix, expr.Variable)
-                assert isinstance(value.prefix.type_, rty.Message)
-                value_message_type_id = ID(value.prefix.type_.identifier)
-                value_message_context = context_id(value.prefix.identifier, is_global)
                 statements = self._ensure(
                     statements,
                     Call(
-                        value_message_type_id * "Valid_Next",
+                        message_type_id * "Valid_Length",
+                        [
+                            Variable(message_context),
+                            Variable(message_type_id * f"F_{field}"),
+                            Call(type_ * "Byte_Size", [Variable(context)]),
+                        ],
+                    ),
+                    f'invalid message field size for "{value}"',
+                    exception_handler,
+                )
+            else:
+                if isinstance(value, expr.Aggregate):
+                    size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
+                elif isinstance(value, expr.Selected):
+                    assert isinstance(value.prefix, expr.Variable)
+                    assert isinstance(value.prefix.type_, rty.Message)
+                    value_message_type_id = ID(value.prefix.type_.identifier)
+                    value_message_context = context_id(value.prefix.identifier, is_global)
+                    statements = self._ensure(
+                        statements,
+                        Call(
+                            value_message_type_id * "Valid_Next",
+                            [
+                                Variable(value_message_context),
+                                Variable(value_message_type_id * f"F_{value.selector}"),
+                            ],
+                        ),
+                        f'access to invalid next message field for "{value}"',
+                        exception_handler,
+                    )
+                    size = Call(
+                        value_message_type_id * "Field_Size",
                         [
                             Variable(value_message_context),
                             Variable(value_message_type_id * f"F_{value.selector}"),
                         ],
+                    )
+                elif isinstance(value, expr.Opaque):
+                    size = (
+                        expr.Size(value.prefix)
+                        .substituted(self._substitution(is_global))
+                        .ada_expr()
+                    )
+                else:
+                    size = Size(value.substituted(self._substitution(is_global)).ada_expr())
+                statements = self._ensure(
+                    statements,
+                    Call(
+                        message_type_id * "Valid_Length",
+                        [
+                            Variable(message_context),
+                            Variable(message_type_id * f"F_{field}"),
+                            Call(const.TYPES_TO_LENGTH, [size]),
+                        ],
                     ),
-                    f'access to invalid next message field for "{value}"',
+                    f'invalid message field size for "{value}"',
                     exception_handler,
                 )
-                size = Call(
-                    value_message_type_id * "Field_Size",
-                    [
-                        Variable(value_message_context),
-                        Variable(value_message_type_id * f"F_{value.selector}"),
-                    ],
-                )
-            elif isinstance(value, expr.Opaque):
-                size = expr.Size(value.prefix).substituted(self._substitution(is_global)).ada_expr()
-            else:
-                size = Size(value.substituted(self._substitution(is_global)).ada_expr())
-            statements = self._ensure(
-                statements,
-                Call(
-                    message_type_id * "Valid_Length",
-                    [
-                        Variable(message_context),
-                        Variable(message_type_id * f"F_{field}"),
-                        Call(const.TYPES_TO_LENGTH, [size]),
-                    ],
-                ),
-                f'invalid message field size for "{value}"',
-                exception_handler,
-            )
 
         if isinstance(value, (expr.Number, expr.Aggregate)) or (
             isinstance(value, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr, expr.Size))
