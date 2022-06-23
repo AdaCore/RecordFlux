@@ -2272,6 +2272,10 @@ def create_equal_function(
                             *[
                                 (
                                     Variable(f.affixed_name),
+                                    # Instead of a more direct comparison of the form
+                                    #   Ctx.Buffer.all (First .. Last) = Data
+                                    # we expand the array equality to this form below,
+                                    #  which is a bit easier for provers in some cases.
                                     AndThen(
                                         Equal(Length(Variable("Data")), length),
                                         ForAllIn(
