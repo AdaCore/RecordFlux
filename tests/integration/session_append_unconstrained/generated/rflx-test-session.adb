@@ -198,7 +198,7 @@ is
             end if;
             if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
-                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, RFLX_Types.To_Length (Universal.Options.Size (Options_Ctx))) then
+                  if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
                      Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
                   else
                      Ctx.P.Next_State := S_Terminated;
