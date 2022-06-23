@@ -144,10 +144,6 @@ def test_no_error(spec: str, tmp_path: Path) -> None:
             r'3:33: style: error: space after "::" \[token-spacing\]',
         ),
         (
-            "-- style: disable",
-            r"1:1: style: error: invalid format of style pragma",
-        ),
-        (
             "-- style: disable = foo",
             r'1:1: style: error: invalid check "foo"',
         ),

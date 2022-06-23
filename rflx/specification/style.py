@@ -95,14 +95,13 @@ def _determine_enabled_checks(error: RecordFluxError, line: str, spec_file: Path
     checks = {c.value for c in Check.__members__.values()}
     disabled_checks = set()
 
-    if "-- style:" in line:
-        m = re.match(r"^-- style: disable = ([^.]*)$", line)
-        if m:
-            disabled_checks = {c.strip() for c in m.group(1).split(",")}
-            for c in disabled_checks - checks:
-                _append(error, f'invalid check "{c}"', 1, 1, spec_file)
-        else:
-            _append(error, "invalid format of style pragma", 1, 1, spec_file)
+    m = re.match(r"^\s*--\s*style\s*:\s*disable\s*=\s*([^.]*)$", line)
+    if m:
+        disabled_checks = {c.strip() for c in m.group(1).split(",")}
+        for c in disabled_checks - checks:
+            _append(error, f'invalid check "{c}"', 1, 1, spec_file)
+    else:
+        return set(Check.__members__.values())
 
     if Check.ALL.value in disabled_checks:
         return set()
