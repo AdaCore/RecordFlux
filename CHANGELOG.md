@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory management in sessions to avoid use of heap (#629)
 - Setting of single message fields (#1067)
 
+Specification:
+
+- Enable deactivation of style checks for individual files (#1079)
+
 CLI:
 
 - `rflx` option `--max-errors NUM` (#748)

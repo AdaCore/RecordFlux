@@ -335,3 +335,11 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
         end R;"""
     )
+
+
+def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
+    t = ModularInteger("P::" + "T" * 120, Number(256))
+    Model([t]).write_specification_files(tmp_path)
+    expected_path = tmp_path / Path("p.rflx")
+    assert list(tmp_path.glob("*.rflx")) == [expected_path]
+    assert expected_path.read_text().startswith("-- style: disable = line-length\n\npackage P is")
