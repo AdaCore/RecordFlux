@@ -406,7 +406,7 @@ def test_tlv_message_serialization(tlv_message_value: MessageValue) -> None:
     assert tlv_message_value.valid_message
     assert tlv_message_value.as_json() == {
         "Length": {"first": 8, "last": 23, "value": 3},
-        "Tag": {"first": 0, "last": 7, "value": "Msg_Data"},
+        "Tag": {"first": 0, "last": 7, "value": "TLV::Msg_Data"},
         "Value": {"first": 24, "last": 47, "value": "616263"},
     }
 
@@ -491,8 +491,8 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
             "or not (Tag = TLV::Msg_Error))))))))))))))))))))))))))))))))))` "
             "after `16` iterations, best effort: "
             "`not (not (not (not (not (not (not (not (not (not (not (not (not "
-            "(not (not (not (not (Tag = 1\n"
-            "                 or Tag /= 3)))))))))))))))))`"
+            "(not (not (not (not (Tag = TLV::Msg_Data\n"
+            "                 or Tag /= TLV::Msg_Error)))))))))))))))))`"
         ),
     ):
         model = PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))

@@ -20,9 +20,11 @@ from rflx.expression import (
     First,
     Greater,
     GreaterEqual,
+    IfExpr,
     Last,
     Less,
     LessEqual,
+    Literal,
     Mod,
     Mul,
     Not,
@@ -31,6 +33,7 @@ from rflx.expression import (
     Opaque,
     Or,
     Pow,
+    Selected,
     Size,
     Sub,
     ValidChecksum,
@@ -2740,31 +2743,31 @@ def test_size() -> None:
     assert FIXED_SIZE_MESSAGE.size() == Number(200)
     assert DEFINITE_MESSAGE.size() == Add(Mul(Variable("Length"), Number(8)), Number(16))
     assert DEFINITE_MESSAGE.size({Field("Length"): Number(8)}) == Number(80)
-    assert TLV_MESSAGE.size({Field("Tag"): Variable("TLV::Msg_Error")}) == Number(8)
+    assert TLV_MESSAGE.size({Field("Tag"): Literal("TLV::Msg_Error")}) == Number(8)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("TLV::Msg_Data"),
+            Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Number(4),
             Field("Value"): Aggregate(*[Number(0)] * 4),
         }
     ) == Number(56)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("TLV::Msg_Data"),
+            Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
             Field("Value"): Aggregate(*[Number(0)] * 3),
         }
     ) == Number(48)
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("TLV::Msg_Data"),
+            Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
             Field("Value"): Variable("Z"),
         }
     ) == Add(Size("Z"), Number(24))
     assert TLV_MESSAGE.size(
         {
-            Field("Tag"): Variable("TLV::Msg_Data"),
+            Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Size("Msg_Data"), Number(8)),
             Field("Value"): Opaque("Msg_Data"),
         }
@@ -2809,40 +2812,97 @@ def test_size() -> None:
         }
     ) == Add(Size("Payload"), Number(112))
 
+    variable_field_value = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("Length")),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                condition=Equal(Variable("Has_Data"), TRUE),
+                size=Mul(Variable("Length"), Number(8)),
+            ),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                condition=Equal(Variable("Has_Data"), FALSE),
+                size=Number(0),
+            ),
+            Link(
+                Field("Data"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("Has_Data"): BOOLEAN,
+            Field("Length"): TLV_LENGTH,
+            Field("Data"): OPAQUE,
+        },
+    )
+    assert variable_field_value.size(
+        {
+            Field("Has_Data"): Variable("X"),
+            Field("Length"): Variable("Y"),
+            Field("Data"): Selected(Variable("M"), "F"),
+        }
+    ) == Add(
+        IfExpr([(Equal(Variable("X"), FALSE), Size(Selected(Variable("M"), "F")))], Number(0)),
+        IfExpr([(Equal(Variable("X"), TRUE), Size(Selected(Variable("M"), "F")))], Number(0)),
+        Number(16),
+    )
+    assert variable_field_value.size(
+        {
+            Field("Has_Data"): Variable("X"),
+            Field("Length"): Variable("Y"),
+            Field("Data"): Variable("Z"),
+        }
+    ) == Add(
+        IfExpr([(Equal(Variable("X"), FALSE), Size(Variable("Z")))], Number(0)),
+        IfExpr([(Equal(Variable("X"), TRUE), Size(Variable("Z")))], Number(0)),
+        Number(16),
+    )
 
-def test_size_error() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=r'^model: error: unable to calculate size for message "TLV::Message\'\(\)"$',
-    ):
-        TLV_MESSAGE.size({})
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            r"^"
-            r'model: error: unable to calculate size for message "Ethernet::Frame\''
-            r"\(Destination => 0, Source => 0, Type_Length_TPID => 0, Type_Length => 0,"
-            r' Payload => \[\]\)"\n'
-            r"model: info: on path Destination -> Source -> Type_Length_TPID -> Type_Length"
-            r" -> Payload -> Final\n"
-            r'model: info: unsatisfied "Type_Length = 0"\n'
-            r'model: info: unsatisfied "Type_Length >= 46"\n'
-            r"model: info: on path Destination -> Source -> Type_Length_TPID -> Type_Length"
-            r" -> Payload -> Final\n"
-            r'model: info: unsatisfied "Type_Length = 0"\n'
-            r'model: info: unsatisfied "Type_Length >= 46"'
-            r"$"
-        ),
-    ):
-        ETHERNET_FRAME.size(
-            {
-                Field("Destination"): Number(0),
-                Field("Source"): Number(0),
-                Field("Type_Length_TPID"): Number(0),
-                Field("Type_Length"): Number(0),
-                Field("Payload"): Aggregate(),
-            }
-        )
+    optional_overlayed_field = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("A")),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Equal(Variable("A"), Number(0)),
+                first=First(Variable("A")),
+            ),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Greater(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("B"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("A"): TLV_LENGTH,
+            Field("B"): TLV_LENGTH,
+        },
+    )
+    assert optional_overlayed_field.size(
+        {
+            Field("A"): Number(0),
+            Field("B"): Number(0),
+        }
+    ) == Number(16)
+    assert optional_overlayed_field.size(
+        {
+            Field("A"): Number(1),
+            Field("B"): Number(2),
+        }
+    ) == Number(32)
+    assert optional_overlayed_field.size() == Add(
+        IfExpr([(Greater(Variable("A"), Number(0)), Number(32))], Number(0)),
+        IfExpr([(Equal(Variable("A"), Number(0)), Number(16))], Number(0)),
+    )
 
 
 def test_max_size() -> None:

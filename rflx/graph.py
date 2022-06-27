@@ -177,7 +177,9 @@ class Graph:
         assert isinstance(self._data, Message)
 
         if not self._data.structure:
-            self._data.structure = [Link(INITIAL, FINAL)]
+            # ISSUE: Componolit/RecordFlux#643
+            # pylint: disable-next = protected-access
+            self._data._structure = [Link(INITIAL, FINAL)]
 
         result = self._graph_with_defaults(self._data.full_name)
         result.add_node(

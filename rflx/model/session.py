@@ -173,7 +173,7 @@ class AbstractSession(BasicDeclaration):
             **mty.enum_literals(self.types.values(), self.package),
         }
 
-        self._resolve_function_calls()
+        self._normalize()
 
         self.error.propagate()
 
@@ -207,11 +207,12 @@ class AbstractSession(BasicDeclaration):
     def literals(self) -> Mapping[ID, mty.Type]:
         return self._literals
 
-    def _resolve_function_calls(self) -> None:
+    def _normalize(self) -> None:
         """
-        Replace variables by function calls where necessary.
+        Normalize all expressions of the session.
 
-        The distinction between function calls without arguments and variables is not possible in
+        Replace variables by literals or function calls where necessary. The distinction between
+        variables and literals or variables and function calls without arguments is not possible in
         the parser, as both are syntactically identical.
         """
         functions = [
@@ -221,8 +222,22 @@ class AbstractSession(BasicDeclaration):
         ]
 
         def substitution(expression: expr.Expr) -> expr.Expr:
-            if isinstance(expression, expr.Variable) and expression.identifier in functions:
-                return expr.Call(expression.identifier, location=expression.location)
+            if isinstance(expression, expr.Variable):
+                if expression.identifier in self.literals:
+                    return expr.Literal(
+                        expression.identifier,
+                        expression.type_,
+                        location=expression.location,
+                    )
+                if expression.identifier in functions:
+                    return expr.Call(
+                        expression.identifier,
+                        [],
+                        expression.negative,
+                        expression.immutable,
+                        expression.type_,
+                        location=expression.location,
+                    )
             return expression
 
         for d in self.declarations.values():
@@ -233,11 +248,19 @@ class AbstractSession(BasicDeclaration):
             for d in state.declarations.values():
                 if isinstance(d, decl.VariableDeclaration) and d.expression:
                     d.expression = d.expression.substituted(substitution)
-            for s in state.actions:
-                if isinstance(s, stmt.Assignment):
-                    s.expression = s.expression.substituted(substitution)
-                if isinstance(s, stmt.AttributeStatement):
-                    s.parameters = [p.substituted(substitution) for p in s.parameters]
+            for a in state.actions:
+                if isinstance(a, stmt.Assignment):
+                    a.expression = a.expression.substituted(substitution)
+                if isinstance(a, stmt.MessageFieldAssignment):
+                    a.value = a.value.substituted(substitution)
+                if isinstance(a, stmt.AttributeStatement):
+                    a.parameters = [p.substituted(substitution) for p in a.parameters]
+                if isinstance(a, stmt.Reset):
+                    a.associations = {
+                        i: e.substituted(substitution) for i, e in a.associations.items()
+                    }
+            for t in state.transitions:
+                t.condition = t.condition.substituted(substitution)
 
 
 class Session(AbstractSession):
@@ -620,13 +643,16 @@ class Session(AbstractSession):
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
-            expression, (expr.Variable, expr.Call, expr.Conversion, expr.MessageAggregate)
+            expression,
+            (expr.Variable, expr.Literal, expr.Call, expr.Conversion, expr.MessageAggregate),
         ):
             identifier = expression.identifier
 
             if isinstance(expression, expr.Variable):
+                assert identifier not in self._literals
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
+            if isinstance(expression, expr.Literal):
                 if identifier in self._literals:
                     expression.type_ = self._literals[identifier].type_
             if isinstance(expression, expr.Call):

@@ -22,7 +22,7 @@ is
       and then RFLX.IPv4.Packet.Present (Ctx, RFLX.IPv4.Packet.F_Payload)
       and then RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Protocol)
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Known
-      and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = IPv4.P_UDP);
+      and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = RFLX.IPv4.P_UDP);
 
    use type RFLX.IPv4.Packet.Field_Cursors;
 
@@ -69,7 +69,7 @@ is
       and then RFLX.IPv4.Packet.Present (Ctx, RFLX.IPv4.Packet.F_Payload)
       and then RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Protocol)
       and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Known
-      and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = IPv4.P_ICMP);
+      and then RFLX.IPv4.Packet.Get_Protocol (Ctx).Enum = RFLX.IPv4.P_ICMP);
 
    procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : out RFLX.ICMP.Message.Context) with
      Pre =>

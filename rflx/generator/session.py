@@ -2192,7 +2192,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> Sequence[Statement]:
         if isinstance(expression, expr.MessageAggregate):
             return self._assign_to_message_aggregate(
-                target, expression, exception_handler, is_global, state
+                target, expression, exception_handler, is_global
             )
 
         if isinstance(target_type, rty.Message):
@@ -2233,6 +2233,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             expression,
             (
                 expr.Variable,
+                expr.Literal,
                 expr.Number,
                 expr.MathBinExpr,
                 expr.MathAssExpr,
@@ -2423,14 +2424,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        state: rid.ID,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
-        size = self._message_size(message_aggregate)
-        required_space, required_space_precondition = self._required_space(size, is_global, state)
         target_type = ID(message_aggregate.type_.identifier)
         target_context = context_id(target, is_global)
         parameter_values = [
@@ -2442,56 +2440,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
         assign_to_message_aggregate = [
-            self._if_sufficient_space(
-                required_space,
-                target_context,
+            CallStatement(
+                target_type * "Reset",
                 [
-                    CallStatement(
-                        target_type * "Reset",
-                        [
-                            Variable(target_context),
-                            Call(
-                                const.TYPES_TO_FIRST_BIT_INDEX,
-                                [
-                                    Variable(f"{target_context}.Buffer_First"),
-                                ],
-                            ),
-                            Add(
-                                Call(
-                                    const.TYPES_TO_FIRST_BIT_INDEX,
-                                    [
-                                        Variable(f"{target_context}.Buffer_First"),
-                                    ],
-                                ),
-                                required_space,
-                                -Number(1),
-                            ),
-                        ],
-                        {
-                            ID(p): self._convert_type(v, t)
-                            .substituted(self._substitution(is_global))
-                            .ada_expr()
-                            for p, v, t in parameter_values
-                        },
-                    ),
-                    *self._set_message_fields(
-                        target_context, message_aggregate, exception_handler, is_global
-                    ),
+                    Variable(target_context),
                 ],
-                exception_handler,
+                {
+                    ID(p): self._convert_type(v, t)
+                    .substituted(self._substitution(is_global))
+                    .ada_expr()
+                    for p, v, t in parameter_values
+                },
+            ),
+            *self._set_message_fields(
+                target_context, message_aggregate, exception_handler, is_global
             ),
             *exception_handler.execute_deferred(),
         ]
-
-        if required_space_precondition:
-            return [
-                self._if(
-                    required_space_precondition,
-                    assign_to_message_aggregate,
-                    "unexpected size",
-                    exception_handler,
-                )
-            ]
 
         return assign_to_message_aggregate
 
@@ -2839,7 +2804,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         for i, (a, t) in enumerate(zip(call_expr.args, call_expr.argument_types)):
             if not isinstance(
                 a,
-                (expr.Number, expr.Variable, expr.Selected, expr.Size, expr.String, expr.Aggregate),
+                (
+                    expr.Number,
+                    expr.Variable,
+                    expr.Literal,
+                    expr.Selected,
+                    expr.Size,
+                    expr.String,
+                    expr.Aggregate,
+                ),
             ) and not (
                 isinstance(a, expr.Opaque)
                 and isinstance(a.prefix, expr.Variable)
@@ -3019,7 +2992,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
                 arguments.append(argument)
             elif (
-                isinstance(a, expr.Variable)
+                isinstance(a, expr.Literal)
                 and isinstance(a.type_, rty.Enumeration)
                 and a.type_.always_valid
                 and a.identifier in self._session.literals
@@ -3205,7 +3178,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
 
         if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
-            if isinstance(append.parameter, (expr.Variable, expr.Number)):
+            if isinstance(append.parameter, (expr.Variable, expr.Literal, expr.Number)):
                 sequence_type = ID(append.type_.identifier)
                 sequence_context = context_id(append.identifier, is_global)
                 element_type = ID(append.type_.element.identifier)
@@ -3449,54 +3422,46 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     )
                 return expr.Aggregate(*[expr.Val(const.TYPES_BYTE, e) for e in expression.elements])
 
-            if (
-                isinstance(expression, expr.Equal)
-                and isinstance(expression.left, expr.Variable)
-                and isinstance(expression.right, expr.Variable)
-            ):
-                if expression.left == expr.Variable("True"):
+            if isinstance(expression, expr.Equal):
+                if expression.left == expr.TRUE and isinstance(expression.right, expr.Variable):
                     return expression.right.copy(
                         identifier=variable_id(expression.right.identifier, is_global)
                     )
-                if expression.right == expr.Variable("True"):
+                if isinstance(expression.left, expr.Variable) and expression.right == expr.TRUE:
                     return expression.left.copy(
                         identifier=variable_id(expression.left.identifier, is_global)
                     )
-                if expression.left == expr.Variable("False"):
+                if expression.left == expr.FALSE and isinstance(expression.right, expr.Variable):
                     return expr.Not(
                         expression.right.copy(
                             identifier=variable_id(expression.right.identifier, is_global)
                         )
                     )
-                if expression.right == expr.Variable("False"):
+                if isinstance(expression.left, expr.Variable) and expression.right == expr.FALSE:
                     return expr.Not(
                         expression.left.copy(
                             identifier=variable_id(expression.left.identifier, is_global)
                         )
                     )
 
-            if (
-                isinstance(expression, expr.NotEqual)
-                and isinstance(expression.left, expr.Variable)
-                and isinstance(expression.right, expr.Variable)
-            ):
-                if expression.left == expr.Variable("True"):
+            if isinstance(expression, expr.NotEqual):
+                if expression.left == expr.TRUE and isinstance(expression.right, expr.Variable):
                     return expr.Not(
                         expression.right.copy(
                             identifier=variable_id(expression.right.identifier, is_global)
                         )
                     )
-                if expression.right == expr.Variable("True"):
+                if isinstance(expression.left, expr.Variable) and expression.right == expr.TRUE:
                     return expr.Not(
                         expression.left.copy(
                             identifier=variable_id(expression.left.identifier, is_global)
                         )
                     )
-                if expression.left == expr.Variable("False"):
+                if expression.left == expr.FALSE and isinstance(expression.right, expr.Variable):
                     return expression.right.copy(
                         identifier=variable_id(expression.right.identifier, is_global)
                     )
-                if expression.right == expr.Variable("False"):
+                if isinstance(expression.left, expr.Variable) and expression.right == expr.FALSE:
                     return expression.left.copy(
                         identifier=variable_id(expression.left.identifier, is_global)
                     )
@@ -3527,7 +3492,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         )
 
             if isinstance(expression, expr.Size):
-                if isinstance(expression.prefix, expr.Variable):
+                if isinstance(expression.prefix, (expr.Variable, expr.Literal)):
                     if (
                         isinstance(expression.prefix.type_, rty.AnyInteger)
                         or (
@@ -3541,7 +3506,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ):
                         return expression
 
-                    if isinstance(expression.prefix.type_, (rty.Message, rty.Sequence)):
+                    if (
+                        isinstance(expression.prefix.type_, (rty.Message, rty.Sequence))
+                        and expression.prefix.type_ != rty.OPAQUE
+                    ):
                         type_ = ID(expression.prefix.type_.identifier)
                         context = context_id(expression.prefix.identifier, is_global)
                         return expr.Call(type_ * "Size", [expr.Variable(context)])
@@ -3686,37 +3654,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
 
         return statements
-
-    def _if_sufficient_space(
-        self,
-        required_space: Expr,
-        target_context: ID,
-        statements: Sequence[Statement],
-        exception_handler: ExceptionHandler,
-    ) -> IfStatement:
-        return self._if(
-            GreaterEqual(
-                Add(
-                    Call(
-                        const.TYPES_TO_FIRST_BIT_INDEX,
-                        [
-                            Variable(f"{target_context}.Buffer_Last"),
-                        ],
-                    ),
-                    -Call(
-                        const.TYPES_TO_FIRST_BIT_INDEX,
-                        [
-                            Variable(f"{target_context}.Buffer_First"),
-                        ],
-                    ),
-                    Number(1),
-                ),
-                required_space,
-            ),
-            statements,
-            f'insufficient space in message "{target_context}"',
-            exception_handler,
-        )
 
     def _if_sufficient_space_in_sequence(
         self,
@@ -3938,7 +3875,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
 
         if isinstance(value, (expr.Number, expr.Aggregate)) or (
-            isinstance(value, (expr.Variable, expr.MathBinExpr, expr.MathAssExpr, expr.Size))
+            isinstance(
+                value,
+                (expr.Variable, expr.Literal, expr.MathBinExpr, expr.MathAssExpr, expr.Size),
+            )
             and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
         ):
             if isinstance(value, expr.Aggregate) and len(value.elements) == 0:

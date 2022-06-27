@@ -277,7 +277,7 @@ def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 8)
     tlv_message_value.set("Value", v1)
-    assert tlv_message_value.get("Tag") == "Msg_Data"
+    assert tlv_message_value.get("Tag") == "TLV::Msg_Data"
     assert tlv_message_value.get("Length") == 8
     assert tlv_message_value.get("Value") == v1
 
@@ -441,7 +441,8 @@ def test_message_value_parse_from_bitstring(
     intval.parse(b"\x02")
     assert intval.value == 2
     enum_value.parse(b"\x01")
-    assert enum_value.value == "One"
+    assert enum_value.value == "Test::One"
+    assert enum_value.numeric_value == expr.Number(1)
     msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 4)
@@ -542,10 +543,10 @@ def fixture_enum_value() -> EnumValue:
 
 def test_enum_value_literals(enum_value: EnumValue) -> None:
     assert enum_value.literals == {
-        expr.Variable("One"): expr.Number(1),
-        expr.Variable("Test::One"): expr.Number(1),
-        expr.Variable("Two"): expr.Number(2),
-        expr.Variable("Test::Two"): expr.Number(2),
+        expr.Literal("One"): expr.Number(1),
+        expr.Literal("Test::One"): expr.Number(1),
+        expr.Literal("Two"): expr.Number(2),
+        expr.Literal("Test::Two"): expr.Number(2),
     }
     assert not enum_value.initialized
 
@@ -558,7 +559,7 @@ def test_enum_value_assign(enum_value: EnumValue) -> None:
 
     enum_value.assign("One")
     assert enum_value.initialized
-    assert enum_value.value == "One"
+    assert enum_value.value == "Test::One"
     assert str(enum_value.bitstring) == "00000001"
 
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: Three is not a valid enum value$"):
@@ -567,7 +568,7 @@ def test_enum_value_assign(enum_value: EnumValue) -> None:
 
 def test_enum_value_parse(enum_value: EnumValue) -> None:
     enum_value.parse(b"\x01")
-    assert enum_value.value == "One"
+    assert enum_value.value == "Test::One"
 
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: Number 15 is not a valid enum value$"):
         enum_value.parse(Bitstring("1111"))
@@ -588,8 +589,8 @@ def fixture_enum_value_imported() -> EnumValue:
 
 def test_enum_value_imported(enum_value_imported: EnumValue) -> None:
     assert enum_value_imported.literals == {
-        expr.Variable("Test::One"): expr.Number(1),
-        expr.Variable("Test::Two"): expr.Number(2),
+        expr.Literal("Test::One"): expr.Number(1),
+        expr.Literal("Test::Two"): expr.Number(2),
     }
     assert not enum_value_imported.initialized
 
@@ -613,8 +614,8 @@ def fixture_enum_value_builtin() -> EnumValue:
 
 def test_enum_value_builtin(enum_value_builtin: EnumValue) -> None:
     assert enum_value_builtin.literals == {
-        expr.Variable("False"): expr.Number(0),
-        expr.Variable("True"): expr.Number(1),
+        expr.Literal("False"): expr.Number(0),
+        expr.Literal("True"): expr.Number(1),
     }
     assert not enum_value_builtin.initialized
 
@@ -1382,7 +1383,13 @@ def test_get_model(icmp_message_value: MessageValue) -> None:
 
 def test_parameterized_message(parameterized_package: Package) -> None:
     message = parameterized_package.new_message(
-        "Message", {"Length": 8, "Tag_Mode": "Without_Tag", "Tag_Value": "Tag_A", "Use_Tag": True}
+        "Message",
+        {
+            "Length": 8,
+            "Tag_Mode": "Without_Tag",
+            "Tag_Value": "Parameterized::Tag_A",
+            "Use_Tag": True,
+        },
     )
     assert message.fields == ["Payload", "Tag"]
     assert message.required_fields == ["Payload"]
@@ -1399,7 +1406,13 @@ def test_parameterized_message_no_verification() -> None:
         skip_message_verification=True,
     )
     message_unv = pyrflx_.package("Parameterized").new_message(
-        "Message", {"Length": 8, "Tag_Mode": "Without_Tag", "Tag_Value": "Tag_A", "Use_Tag": True}
+        "Message",
+        {
+            "Length": 8,
+            "Tag_Mode": "Parameterized::Without_Tag",
+            "Tag_Value": "Tag_A",
+            "Use_Tag": True,
+        },
     )
     assert message_unv.fields == ["Payload", "Tag"]
     message_unv.set("Payload", bytes(8))
@@ -1431,7 +1444,7 @@ def test_json_serialization() -> None:
         )
     )
     enum_value.assign("Two")
-    assert enum_value.as_json() == ("Two", 2)
+    assert enum_value.as_json() == ("Test::Two", 2)
 
     sequence_value = SequenceValue(
         Sequence("Test::ModularSequence", ModularInteger("Test::Int", expr.Number(256)))
@@ -1450,12 +1463,12 @@ def test_message_endianness_parse_be(endianness_package: Package) -> None:
     message.parse(b"\x00\x01")
 
     assert message.valid_message
-    assert message.get("Tag") == "None"
+    assert message.get("Tag") == "Endianness::None"
 
     message.parse(b"\x00\x02\x00\x04\x01\x02\x03\x04")
 
     assert message.valid_message
-    assert message.get("Tag") == "Data"
+    assert message.get("Tag") == "Endianness::Data"
     assert message.get("Length") == 4
     assert message.get("Payload") == b"\x01\x02\x03\x04"
 
@@ -1466,12 +1479,12 @@ def test_message_endianness_parse_le(endianness_package: Package) -> None:
     message_le.parse(b"\x01\x00")
 
     assert message_le.valid_message
-    assert message_le.get("Tag") == "None"
+    assert message_le.get("Tag") == "Endianness::None"
 
     message_le.parse(b"\x02\x00\x04\x00\x01\x02\x03\x04")
 
     assert message_le.valid_message
-    assert message_le.get("Tag") == "Data"
+    assert message_le.get("Tag") == "Endianness::Data"
     assert message_le.get("Length") == 4
     assert message_le.get("Payload") == b"\x01\x02\x03\x04"
 

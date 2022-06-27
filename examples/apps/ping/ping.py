@@ -73,7 +73,7 @@ def ping(target: str) -> None:
                 reply = packet.get("Payload")
                 assert isinstance(reply, MessageValue)
 
-                if reply.get("Tag") != "Echo_Reply":
+                if reply.get("Tag") != "ICMP::Echo_Reply":
                     continue
 
                 reply_seq = str(reply.get("Sequence_Number"))

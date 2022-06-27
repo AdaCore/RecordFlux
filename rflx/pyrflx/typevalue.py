@@ -19,6 +19,7 @@ from rflx.expression import (
     Expr,
     First,
     Last,
+    Literal,
     Name,
     Number,
     Size,
@@ -44,7 +45,6 @@ from rflx.model import (
     Sequence,
     Type,
 )
-from rflx.model.type_ import enum_literals
 from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
 
@@ -241,17 +241,17 @@ class EnumValue(ScalarValue):
 
         for k, v in self._type.literals.items():
             if self._builtin or not self._imported:
-                self._literals[Variable(k)] = v
+                self._literals[Literal(k)] = v
             if not self._builtin:
-                self._literals[Variable(self._type.package * k)] = v
+                self._literals[Literal(self._type.package * k)] = v
 
     def assign(self, value: str, check: bool = True) -> None:
         prefixed_value = (
             ID(value)
-            if value.startswith(str(self._type.package)) or not self._imported or self._builtin
+            if value.startswith(str(self._type.package)) or self._builtin
             else self._type.package * value
         )
-        if Variable(prefixed_value) not in self.literals:
+        if Literal(prefixed_value) not in self.literals:
             raise PyRFLXError(f"{value} is not a valid enum value")
         r = (
             (
@@ -269,12 +269,7 @@ class EnumValue(ScalarValue):
             else TRUE
         )
         assert r == TRUE
-        self._value = (
-            str(prefixed_value)
-            if self._imported and not self._builtin
-            else str(prefixed_value.name),
-            self._type.literals[prefixed_value.name],
-        )
+        self._value = (str(prefixed_value), self._type.literals[prefixed_value.name])
 
     def parse(self, value: ty.Union[Bitstring, bytes], check: bool = True) -> None:
         if isinstance(value, bytes):
@@ -288,12 +283,9 @@ class EnumValue(ScalarValue):
         else:
             for k, v in self.literals.items():
                 if v == value_as_number:
-                    assert isinstance(k, Variable)
+                    assert isinstance(k, Literal)
                     assert isinstance(v, Number)
-                    self._value = (
-                        str(k.identifier) if self._imported else str(k.identifier.name),
-                        v,
-                    )
+                    self._value = (str(k.identifier), v)
 
     def clone(self) -> "TypeValue":
         return self.__class__(self._type, self._imported)
@@ -309,9 +301,9 @@ class EnumValue(ScalarValue):
         return self._value[0]
 
     @property
-    def expr(self) -> Variable:
+    def expr(self) -> Literal:
         self._raise_initialized()
-        return Variable(self._value[0])
+        return Literal(self._value[0])
 
     @property
     def bitstring(self) -> Bitstring:
@@ -591,12 +583,6 @@ class MessageValue(TypeValue):
             }
         )
 
-        self._type_literals: ty.Mapping[Name, Expr] = {
-            Variable(l): e.literals[l.name]
-            for l, e in enum_literals(self._type.types.values(), self._type.package).items()
-        }
-
-        self._additional_enum_literals: ty.Dict[Name, Expr] = {}
         self._message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
@@ -617,15 +603,25 @@ class MessageValue(TypeValue):
         self._refinements = [*(self._refinements or []), refinement]
 
     def add_parameters(self, parameters: ty.Mapping[str, ty.Union[bool, int, str]]) -> None:
+        enum_literals = {
+            str(l): str(t.package * l)
+            for t in self._type.types.values()
+            if isinstance(t, Enumeration) and t.package == self.package
+            for l in t.literals
+        }
         params: ty.Dict[Name, Expr] = {}
         expr: Expr
         for name, value in parameters.items():
             if isinstance(value, bool):
-                expr = Variable("True") if value else Variable("False")
+                expr = TRUE if value else FALSE
             elif isinstance(value, int):
                 expr = Number(value)
             elif isinstance(value, str):
-                expr = Variable(value)
+                if value in enum_literals:
+                    expr = Literal(enum_literals[value])
+                else:
+                    assert value in enum_literals.values()
+                    expr = Literal(value)
             else:
                 raise PyRFLXError(f"{type(value)} is no supported parameter type")
             params[Variable(name)] = expr
@@ -664,7 +660,6 @@ class MessageValue(TypeValue):
                     for k, v in self._fields.items()
                 },
                 self._checksums,
-                self._type_literals,
             ),
         )
 
@@ -972,13 +967,6 @@ class MessageValue(TypeValue):
                         else value.swap()
                     )
                     field.typeval.parse(buffer)
-                    if (
-                        isinstance(field.typeval, EnumValue)
-                        and Variable(field.typeval.value) not in self._type_literals
-                    ):
-                        self._additional_enum_literals[
-                            Variable(field.typeval.value)
-                        ] = field.typeval.numeric_value
                 elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value)
                 else:
@@ -1153,7 +1141,7 @@ class MessageValue(TypeValue):
                 f"no callable checksum function provided"
             )
 
-        arguments: ty.Dict[str, ty.Union[int, bytes, ty.Tuple[int, int], ty.List[int]]] = {}
+        arguments: ty.Dict[str, ty.Union[str, int, bytes, ty.Tuple[int, int], ty.List[int]]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
                 assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
@@ -1169,6 +1157,8 @@ class MessageValue(TypeValue):
                     for v in expr_tuple.evaluated_expression.elements
                     if isinstance(v, Number)
                 ]
+            elif isinstance(expr_tuple.evaluated_expression, Literal):
+                arguments[str(expr_tuple.expression)] = str(expr_tuple.evaluated_expression)
             else:
                 assert isinstance(expr_tuple.evaluated_expression, Number)
                 arguments[str(expr_tuple.expression)] = expr_tuple.evaluated_expression.value
@@ -1355,12 +1345,6 @@ class MessageValue(TypeValue):
             if expression in self._simplified_mapping:
                 assert isinstance(expression, Name)
                 return self._simplified_mapping[expression]
-            if expression in self._type_literals:
-                assert isinstance(expression, Name)
-                return self._type_literals[expression]
-            if expression in self._additional_enum_literals:
-                assert isinstance(expression, Name)
-                return self._additional_enum_literals[expression]
             if expression in self._parameters:
                 assert isinstance(expression, Name)
                 return self._parameters[expression]
@@ -1477,7 +1461,6 @@ class MessageValue(TypeValue):
     class State:
         fields: ty.Optional[ty.Mapping[str, "MessageValue.Field"]] = None
         checksums: ty.Optional[ty.Mapping[str, "MessageValue.Checksum"]] = None
-        type_literals: ty.Optional[ty.Mapping[Name, Expr]] = None
 
 
 class RefinementValue:

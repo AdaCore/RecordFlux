@@ -8,7 +8,7 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -126,19 +126,15 @@ class AbstractMessage(mty.Type):
 
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
 
-        self.structure = sorted(structure)
-
+        self._structure = sorted(structure)
         self._types = types
         self._paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
         self._checksums = checksums or {}
 
         self._state = state or MessageState()
-        self._unqualified_enum_literals = {
-            l
-            for t in self.dependencies
-            if isinstance(t, mty.Enumeration) and t.package == self.package
-            for l in t.literals
-        }
+        self._unqualified_enum_literals = mty.unqualified_enum_literals(
+            self.dependencies, self.package
+        )
         self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
         self._type_literals = mty.qualified_type_literals(self.dependencies)
         self._byte_order = {}
@@ -273,6 +269,10 @@ class AbstractMessage(mty.Type):
     def field_types(self) -> Mapping[Field, mty.Type]:
         """Return fields and corresponding types topologically sorted."""
         return self._state.field_types
+
+    @property
+    def structure(self) -> Sequence[Link]:
+        return self._structure
 
     @property
     def types(self) -> Mapping[Field, mty.Type]:
@@ -414,6 +414,13 @@ class AbstractMessage(mty.Type):
         return self.copy(structure=structure, types=types, byte_order=byte_order)
 
     def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
+        return [
+            *self._aggregate_constraints(expression),
+            *self._scalar_constraints(),
+            *self._type_size_constraints(),
+        ]
+
+    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> List[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self._types[Field(field.name)]
             assert isinstance(comp, mty.Composite)
@@ -429,14 +436,6 @@ class AbstractMessage(mty.Type):
                 ]
             return [result]
 
-        scalar_types = [
-            (f.name, t)
-            for f, t in self._types.items()
-            if isinstance(t, mty.Scalar)
-            and ID(f.name) not in self._qualified_enum_literals
-            and f.name not in ["Message", "Final"]
-        ]
-
         aggregate_constraints: List[expr.Expr] = []
         for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
             assert isinstance(r, (expr.Equal, expr.NotEqual))
@@ -445,22 +444,28 @@ class AbstractMessage(mty.Type):
             if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
                 aggregate_constraints.extend(get_constraints(r.right, r.left))
 
-        scalar_constraints = [
+        return aggregate_constraints
+
+    def _scalar_constraints(self) -> List[expr.Expr]:
+        scalar_types = [
+            (f.name, t)
+            for f, t in self._types.items()
+            if isinstance(t, mty.Scalar)
+            and ID(f.name) not in self._qualified_enum_literals
+            and f.name not in ["Message", "Final"]
+        ]
+
+        return [
             c
             for n, t in scalar_types
             for c in t.constraints(name=n, proof=True, same_package=False)
         ]
 
-        type_size_constraints = [
+    def _type_size_constraints(self) -> List[expr.Expr]:
+        return [
             expr.Equal(expr.Size(l), t.size)
             for l, t in self._type_literals.items()
             if isinstance(t, mty.Scalar)
-        ]
-
-        return [
-            *aggregate_constraints,
-            *scalar_constraints,
-            *type_size_constraints,
         ]
 
     @classmethod
@@ -710,26 +715,39 @@ class AbstractMessage(mty.Type):
         """
         Normalize structure of message.
 
-        Qualify enumeration literals in conditions to prevent ambiguities. Add size expression for
-        fields with implicit size.
+        - Replace variables by literals where necessary.
+        - Qualify enumeration literals in conditions to prevent ambiguities.
+        - Add size expression for fields with implicit size. The distinction between variables and
+          literals is not possible in the parser, as both are syntactically identical.
         """
 
-        def qualify_enum_literals(expression: expr.Expr) -> expr.Expr:
-            if (
-                isinstance(expression, expr.Variable)
-                and expression.identifier in self._unqualified_enum_literals
-            ):
-                return expr.Variable(
-                    self.package * expression.identifier,
-                    negative=expression.negative,
-                    type_=expression.type_,
-                    location=expression.location,
-                )
-            return expression
+        def substitute(expression: expr.Expr) -> expr.Expr:
+            return substitute_enum_literals(
+                expression,
+                self._unqualified_enum_literals,
+                self._qualified_enum_literals,
+                self._type_literals,
+                self.package,
+            )
 
-        for link in self.structure:
-            link.condition = link.condition.substituted(qualify_enum_literals)
+        self._structure = [
+            Link(
+                l.source,
+                l.target,
+                l.condition.substituted(substitute),
+                l.size.substituted(substitute),
+                l.first.substituted(substitute),
+                l.location,
+            )
+            for l in self.structure
+        ]
 
+        self._checksums = {
+            i: [e.substituted(substitute) for e in expressions]
+            for i, expressions in self.checksums.items()
+        }
+
+        for link in self._structure:
             if link.size == expr.UNDEFINED and link.target in self._types:
                 t = self._types[link.target]
                 if isinstance(t, (mty.Opaque, mty.Sequence)) and all(
@@ -936,32 +954,38 @@ class Message(AbstractMessage):
         )
 
     def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
+        # pylint: disable-next = too-many-locals
         """
         Determine the size of the message based on the given field values.
 
-        If the message is not definite, a value for each field on one message path is required.
-        The reason for this is that only for messages without optional fields the size can be
-        represented by a single mathematical expression, if no field values are given.
+        If field values are represented by variables, the returned size expression may contain
+        if-expressions to represent these dependencies.
 
-        An exception is raised if no size can be determined.
+        Limitation: The returned size expression may not be optimal, as the possible message paths
+        are not reduced by the set of given field values.
         """
-        field_values = field_values if field_values else {}
 
-        def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
-            if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
-                return expr.Variable(
-                    expression.name[5:],
-                    expression.negative,
-                    expression.immutable,
-                    expression.type_,
-                    location=expression.location,
-                )
-            return expression
+        def typed_variable(expression: expr.Expr) -> expr.Expr:
+            return self._typed_variable(expression, self.types)
 
         if not self.structure:
             return expr.Number(0)
 
-        fields = set(field_values)
+        field_values = field_values if field_values else {}
+
+        def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
+            if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
+                return expression.copy(identifier=expression.name[5:])
+            if (
+                isinstance(expression, expr.Selected)
+                and isinstance(expression.prefix, expr.Variable)
+                and expression.prefix.name.startswith("RFLX_")
+            ):
+                return expression.copy(
+                    prefix=expression.prefix.copy(identifier=expression.prefix.name[5:])
+                )
+            return expression
+
         values = [
             expr.Equal(expr.Variable(f.name), v, location=v.location)
             for f, v in field_values.items()
@@ -971,98 +995,102 @@ class Message(AbstractMessage):
             for f, v in field_values.items()
             if isinstance(v, expr.Aggregate)
         ]
-        composite_sizes = [
-            expr.Equal(
-                expr.Size(f.name),
-                expr.Size(
-                    expr.Variable(
-                        "RFLX_" + v.identifier,
-                        type_=v.type_,
-                        location=v.location,
+        composite_sizes = []
+        for f, v in field_values.items():
+            if isinstance(self.types[f], mty.Composite):
+                if isinstance(v, expr.Variable):
+                    composite_sizes.append(
+                        expr.Equal(
+                            expr.Size(f.name), expr.Size(v.copy(identifier="RFLX_" + v.identifier))
+                        )
                     )
-                ),
-            )
-            for f, v in field_values.items()
-            if isinstance(self.types[f], mty.Composite) and isinstance(v, expr.Variable)
-        ]
-        failures = []
 
-        for path in self.paths(FINAL):
-            if (
-                not self.is_definite
-                and not self.has_fixed_size
-                and fields
-                != {
-                    *self.parameters,
-                    *(l.target for l in path if l.target != FINAL),
-                }
-            ):
-                continue
-            message_size = expr.Add(
-                *[
-                    expr.Size(link.target.name)
+                if isinstance(v, expr.Selected) and isinstance(v.prefix, expr.Variable):
+                    composite_sizes.append(
+                        expr.Equal(
+                            expr.Size(f.name),
+                            expr.Size(
+                                v.copy(
+                                    prefix=v.prefix.copy(identifier="RFLX_" + v.prefix.identifier)
+                                )
+                            ),
+                        )
+                    )
+        facts: list[expr.Expr] = [*values, *aggregate_sizes, *composite_sizes]
+        type_constraints = to_mapping(self._aggregate_constraints() + self._type_size_constraints())
+        definite_fields = set.intersection(
+            *[{l.target for l in path} for path in self.paths(FINAL)]
+        )
+        optional_fields = set(self.fields) - definite_fields
+        conditional_field_size = []
+
+        for f in self.fields:
+            overlay_condition: expr.Expr = expr.TRUE
+
+            if any(l.first != expr.UNDEFINED for l in self.outgoing(f)):
+                if all(l.first != expr.UNDEFINED for l in self.outgoing(f)):
+                    continue
+
+                overlay_condition = expr.Or(
+                    *[l.condition for l in self.outgoing(f) if l.first == expr.UNDEFINED]
+                )
+
+            paths = sorted(self.paths(f))
+            for path in paths:
+                link_size_expressions = [
+                    fact
                     for link in path
-                    if link.target != FINAL and link.first == expr.UNDEFINED
+                    for fact in self._link_size_expressions(link, ignore_implicit_sizes=True)
                 ]
-            )
-            link_expressions = [
-                fact
-                for link in path
-                for fact in self._link_expression(link, ignore_implicit_sizes=True)
-            ]
-            proof = expr.Equal(expr.Size("Message"), message_size).check(
-                [
-                    *aggregate_sizes,
-                    *composite_sizes,
-                    *link_expressions,
-                    *values,
-                    *self.type_constraints(expr.TRUE),
-                ]
-            )
 
-            if proof.result == expr.ProofResult.SAT:
-                return (
-                    message_size.substituted(mapping=to_mapping(aggregate_sizes + composite_sizes))
-                    .substituted(mapping=to_mapping(link_expressions))
-                    .substituted(mapping=to_mapping(values))
-                    .substituted(mapping=to_mapping(self.type_constraints(expr.TRUE)))
+                path_condition = (
+                    expr.And(
+                        *[l.condition for l in path if l.condition != expr.TRUE],
+                        overlay_condition,
+                    )
+                    .substituted(mapping=to_mapping(link_size_expressions + facts))
+                    .substituted(mapping=type_constraints)
                     .substituted(remove_variable_prefix)
+                    .substituted(typed_variable)
                     .simplified()
                 )
-
-            failures.append((path, proof.error))
-
-        error = RecordFluxError()
-        error.extend(
-            [
-                (
-                    f"unable to calculate size for message \"{self.identifier}'("
-                    + ", ".join(f"{f.identifier} => {v}" for f, v in field_values.items())
-                    + ')"',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    self.location,
+                field_size = (
+                    expr.Size(expr.Variable(f.name, type_=self.types[f].type_))
+                    .substituted(mapping=to_mapping(link_size_expressions + facts))
+                    .substituted(mapping=type_constraints)
+                    .substituted(remove_variable_prefix)
+                    .substituted(typed_variable)
                 )
-            ],
-        )
-        for path, proof_error in failures:
-            error.extend(
-                [
-                    (
-                        "on path " + " -> ".join([l.target.name for l in path]),
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.location,
-                    ),
-                    *[
-                        (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                        for m, locn in proof_error
-                    ],
-                ],
-            )
-        error.propagate()
 
-        assert False
+                conditional_field_size.append(
+                    (
+                        expr.TRUE
+                        if len(paths) == 1
+                        and (
+                            path_condition == expr.TRUE
+                            or (f not in optional_fields and overlay_condition == expr.TRUE)
+                        )
+                        else path_condition,
+                        field_size,
+                    )
+                )
+
+        return (
+            expr.Add(
+                *[
+                    expr.IfExpr([(path_condition, field_size)], expr.Number(0))
+                    if path_condition != expr.TRUE
+                    else field_size
+                    for path_condition, groups in itertools.groupby(
+                        conditional_field_size,
+                        lambda x: x[0],
+                    )
+                    for field_size in [expr.Add(*(s for _, s in groups))]
+                ]
+            )
+            .substituted(mapping=to_mapping(values))
+            .simplified()
+        )
 
     def max_size(self) -> expr.Number:
         if not self.structure:
@@ -1113,7 +1141,7 @@ class Message(AbstractMessage):
                 if link.target != FINAL and link.first == expr.UNDEFINED
             ]
         )
-        link_expressions = [fact for link in path for fact in self._link_expression(link)]
+        link_expressions = [fact for link in path for fact in self._link_expressions(link)]
         return expr.max_value(
             target,
             [
@@ -1124,23 +1152,13 @@ class Message(AbstractMessage):
         )
 
     def _verify_expression_types(self) -> None:
-        types: Dict[ID, mty.Type] = {}
+        types: Dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
-            expression = copy(expression)
-            if isinstance(expression, expr.Variable):
-                if expression.name.lower() == "message":
-                    expression.type_ = rty.OPAQUE
-                elif expression.identifier in types:
-                    expression.type_ = types[expression.identifier].type_
-                elif expression.identifier in self._qualified_enum_literals:
-                    expression.type_ = self._qualified_enum_literals[expression.identifier].type_
-                elif expression.identifier in self._type_literals:
-                    expression.type_ = self._type_literals[expression.identifier].type_
-            return expression
+            return self._typed_variable(expression, types)
 
         for p in self.paths(FINAL):
-            types = {f.identifier: t for f, t in self.types.items() if f in self.parameters}
+            types = {f: t for f, t in self.types.items() if f in self.parameters}
             path = []
             for l in p:
                 try:
@@ -1154,7 +1172,7 @@ class Message(AbstractMessage):
                 path.append(l.target)
 
                 if l.source in self.types:
-                    types[l.source.identifier] = self.types[l.source]
+                    types[l.source] = self.types[l.source]
 
                 for expression in [
                     l.condition.substituted(typed_variable),
@@ -1190,11 +1208,13 @@ class Message(AbstractMessage):
     def _check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
-                isinstance(a.prefix, expr.Variable)
-                and (
-                    a.prefix.name == "Message"
-                    or Field(a.prefix.name) in self.fields
-                    or a.prefix.identifier in self._type_literals
+                (
+                    isinstance(a.prefix, expr.Variable)
+                    and (a.prefix.name == "Message" or Field(a.prefix.name) in self.fields)
+                )
+                or (
+                    isinstance(a.prefix, expr.Literal)
+                    and (a.prefix.identifier in self._type_literals)
                 )
             ):
                 self.error.extend(
@@ -1417,7 +1437,7 @@ class Message(AbstractMessage):
                         for path in self.paths(f):
                             facts = [
                                 *self.type_constraints(conflict),
-                                *[fact for link in path for fact in self._link_expression(link)],
+                                *[fact for link in path for fact in self._link_expressions(link)],
                             ]
                             proofs.add(
                                 conflict,
@@ -1454,7 +1474,7 @@ class Message(AbstractMessage):
         for f in (*self.fields, FINAL):
             paths = []
             for path in self.paths(f):
-                facts = [fact for link in path for fact in self._link_expression(link)]
+                facts = [fact for link in path for fact in self._link_expressions(link)]
                 last_field = path[-1].target
                 outgoing = self.outgoing(last_field)
                 if last_field != FINAL and outgoing:
@@ -1501,7 +1521,7 @@ class Message(AbstractMessage):
             contradictions = []
             paths = 0
             for path in self.paths(f):
-                facts = [fact for link in path for fact in self._link_expression(link)]
+                facts = [fact for link in path for fact in self._link_expressions(link)]
                 for c in self.outgoing(f):
                     paths += 1
                     contradiction = c.condition
@@ -1585,7 +1605,7 @@ class Message(AbstractMessage):
             )
 
             # Constraints for links and types
-            facts.extend([f for l in path for f in self._link_expression(l)])
+            facts.extend([f for l in path for f in self._link_expressions(l)])
 
             # Coverage expression must be False, i.e. no bits left
             error = RecordFluxError()
@@ -1616,7 +1636,7 @@ class Message(AbstractMessage):
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
-                    facts = [f for l in p for f in self._link_expression(l)]
+                    facts = [f for l in p for f in self._link_expressions(l)]
                     overlaid = expr.Equal(
                         self._target_last(l), expr.Last(l.first.prefix), l.location
                     )
@@ -1649,7 +1669,7 @@ class Message(AbstractMessage):
                     last.source.identifier.location,
                 )
 
-                facts = [fact for link in path for fact in self._link_expression(link)]
+                facts = [fact for link in path for fact in self._link_expressions(link)]
 
                 outgoing = self.outgoing(f)
                 if f != FINAL and outgoing:
@@ -1783,7 +1803,7 @@ class Message(AbstractMessage):
                 ]
             )
             facts = [
-                *[fact for link in path for fact in self._link_expression(link)],
+                *[fact for link in path for fact in self._link_expressions(link)],
                 *type_constraints,
                 *field_size_constraints,
             ]
@@ -1840,7 +1860,9 @@ class Message(AbstractMessage):
             link.target.identifier.location,
         )
 
-    def _link_expression(self, link: Link, ignore_implicit_sizes: bool = False) -> List[expr.Expr]:
+    def _link_size_expressions(
+        self, link: Link, ignore_implicit_sizes: bool = False
+    ) -> List[expr.Expr]:
         name = link.target.name
         target_first = self._target_first(link)
         target_size = self._target_size(link)
@@ -1866,8 +1888,31 @@ class Message(AbstractMessage):
                 expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
                 self.location,
             ),
+        ]
+
+    def _link_expressions(self, link: Link, ignore_implicit_sizes: bool = False) -> list[expr.Expr]:
+        return [
+            *self._link_size_expressions(link, ignore_implicit_sizes),
             *expression_list(link.condition),
         ]
+
+    def _typed_variable(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
+        expression = copy(expression)
+        if isinstance(expression, expr.Variable):
+            assert expression.identifier not in {
+                *self._qualified_enum_literals,
+                *self._type_literals,
+            }
+            if expression.name.lower() == "message":
+                expression.type_ = rty.OPAQUE
+            elif Field(expression.identifier) in types:
+                expression.type_ = types[Field(expression.identifier)].type_
+        if isinstance(expression, expr.Literal):
+            if expression.identifier in self._qualified_enum_literals:
+                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
+            elif expression.identifier in self._type_literals:
+                expression.type_ = self._type_literals[expression.identifier].type_
+        return expression
 
 
 class DerivedMessage(Message):
@@ -2311,10 +2356,8 @@ class Refinement(mty.Type):
         location: Location = None,
         error: RecordFluxError = None,
     ) -> None:
-        package = ID(package)
-
         super().__init__(
-            package * "__REFINEMENT__"
+            ID(package) * "__REFINEMENT__"
             f"{sdu.identifier.flat}__{pdu.identifier.flat}__{field.name}__",
             location,
             error,
@@ -2324,31 +2367,53 @@ class Refinement(mty.Type):
         self.field = field
         self.sdu = sdu
         self.condition = condition
-
         self.error = error or RecordFluxError()
-        if len(package.parts) != 1:
+
+        self._normalize()
+        self._verify()
+
+    def _normalize(self) -> None:
+        """
+        Normalize condition of refinement.
+
+        - Replace variables by literals where necessary.
+        - Qualify enumeration literals to prevent ambiguities.
+        """
+
+        unqualified_enum_literals = mty.unqualified_enum_literals(self.dependencies, self.package)
+        qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
+        type_literals = mty.qualified_type_literals(self.dependencies)
+
+        self.condition = self.condition.substituted(
+            lambda e: substitute_enum_literals(
+                e, unqualified_enum_literals, qualified_enum_literals, type_literals, self.package
+            )
+        )
+
+    def _verify(self) -> None:
+        if len(self.package.parts) != 1:
             self.error.extend(
                 [
                     (
-                        f'unexpected format of package name "{package}"',
+                        f'unexpected format of package name "{self.package}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        package.location,
+                        self.package.location,
                     )
                 ],
             )
 
-        for f, t in pdu.types.items():
-            if f == field:
+        for f, t in self.pdu.types.items():
+            if f == self.field:
                 if not isinstance(t, mty.Opaque):
                     self.error.extend(
                         [
                             (
-                                f'invalid type of field "{field.name}" in refinement of'
-                                f' "{pdu.identifier}"',
+                                f'invalid type of field "{self.field.name}" in refinement of'
+                                f' "{self.pdu.identifier}"',
                                 Subsystem.MODEL,
                                 Severity.ERROR,
-                                field.identifier.location,
+                                self.field.identifier.location,
                             ),
                             (
                                 "expected field of type Opaque",
@@ -2363,22 +2428,26 @@ class Refinement(mty.Type):
             self.error.extend(
                 [
                     (
-                        f'invalid field "{field.name}" in refinement of "{pdu.identifier}"',
+                        f'invalid field "{self.field.name}" in refinement of'
+                        f' "{self.pdu.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        field.identifier.location,
+                        self.field.identifier.location,
                     )
                 ],
             )
 
-        for variable in condition.variables():
-            literals = mty.enum_literals([mty.BOOLEAN, *pdu.types.values()], self.package)
-            if Field(str(variable.name)) not in pdu.fields and variable.identifier not in literals:
+        for variable in self.condition.variables():
+            literals = mty.enum_literals([mty.BOOLEAN, *self.pdu.types.values()], self.package)
+            if (
+                Field(str(variable.name)) not in self.pdu.fields
+                and variable.identifier not in literals
+            ):
                 self.error.extend(
                     [
                         (
                             f'unknown field or literal "{variable.identifier}" in refinement'
-                            f' condition of "{pdu.identifier}"',
+                            f' condition of "{self.pdu.identifier}"',
                             Subsystem.MODEL,
                             Severity.ERROR,
                             variable.location,
@@ -2424,3 +2493,26 @@ def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
         for f in facts
         if isinstance(f, expr.Equal) and isinstance(f.left, expr.Name)
     }
+
+
+def substitute_enum_literals(
+    expression: expr.Expr,
+    unqualified_enum_literals: Iterable[ID],
+    qualified_enum_literals: Iterable[ID],
+    type_literals: Iterable[ID],
+    package: ID,
+) -> expr.Expr:
+    if isinstance(expression, expr.Variable):
+        if expression.identifier in {
+            *unqualified_enum_literals,
+            *qualified_enum_literals,
+            *type_literals,
+        }:
+            return expr.Literal(
+                package * expression.identifier
+                if expression.identifier in unqualified_enum_literals
+                else expression.identifier,
+                expression.type_,
+                location=expression.location,
+            )
+    return expression

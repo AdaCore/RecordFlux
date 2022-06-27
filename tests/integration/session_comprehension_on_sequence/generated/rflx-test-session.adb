@@ -369,52 +369,37 @@ is
          goto Finalize_Process;
       end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:38:10
-      if
-         Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
-         and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0
-      then
-         if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_1_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_1_Ctx.Buffer_First) + 1 >= Universal.Option_Types.Size (Option_Types_Ctx) + 24 then
-            Universal.Message.Reset (Ctx.P.Message_1_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_1_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_1_Ctx.Buffer_First) + (Universal.Option_Types.Size (Option_Types_Ctx) + 24) - 1);
-            if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
-               if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
-                  Universal.Message.Set_Message_Type (Ctx.P.Message_1_Ctx, Universal.MT_Option_Types);
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-            if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
-               if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
-                  Universal.Message.Set_Length (Ctx.P.Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-            if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
-               if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
-                  if Universal.Message.Valid_Length (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
-                     Universal.Message.Set_Option_Types (Ctx.P.Message_1_Ctx, Option_Types_Ctx);
-                  else
-                     Ctx.P.Next_State := S_Terminated;
-                     pragma Assert (Process_Invariant);
-                     goto Finalize_Process;
-                  end if;
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
+      Universal.Message.Reset (Ctx.P.Message_1_Ctx);
+      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
+            Universal.Message.Set_Message_Type (Ctx.P.Message_1_Ctx, Universal.MT_Option_Types);
+         else
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
+            Universal.Message.Set_Length (Ctx.P.Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
+         else
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
+         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
+            if Universal.Message.Valid_Length (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
+               Universal.Message.Set_Option_Types (Ctx.P.Message_1_Ctx, Option_Types_Ctx);
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);
@@ -512,52 +497,37 @@ is
          goto Finalize_Process;
       end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:44:10
-      if
-         Universal.Options.Size (Message_Options_Ctx) <= 32768
-         and then Universal.Options.Size (Message_Options_Ctx) mod RFLX_Types.Byte'Size = 0
-      then
-         if RFLX_Types.To_First_Bit_Index (Ctx.P.Message_2_Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.P.Message_2_Ctx.Buffer_First) + 1 >= Universal.Options.Size (Message_Options_Ctx) + 24 then
-            Universal.Message.Reset (Ctx.P.Message_2_Ctx, RFLX_Types.To_First_Bit_Index (Ctx.P.Message_2_Ctx.Buffer_First), RFLX_Types.To_First_Bit_Index (Ctx.P.Message_2_Ctx.Buffer_First) + (Universal.Options.Size (Message_Options_Ctx) + 24) - 1);
-            if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
-               if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
-                  Universal.Message.Set_Message_Type (Ctx.P.Message_2_Ctx, Universal.MT_Options);
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-            if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
-               if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
-                  Universal.Message.Set_Length (Ctx.P.Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-            if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
-               if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
-                  if Universal.Message.Valid_Length (Ctx.P.Message_2_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Message_Options_Ctx)) then
-                     Universal.Message.Set_Options (Ctx.P.Message_2_Ctx, Message_Options_Ctx);
-                  else
-                     Ctx.P.Next_State := S_Terminated;
-                     pragma Assert (Process_Invariant);
-                     goto Finalize_Process;
-                  end if;
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
+      Universal.Message.Reset (Ctx.P.Message_2_Ctx);
+      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
+            Universal.Message.Set_Message_Type (Ctx.P.Message_2_Ctx, Universal.MT_Options);
+         else
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
+            Universal.Message.Set_Length (Ctx.P.Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
+         else
+            Ctx.P.Next_State := S_Terminated;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      else
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
+         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
+            if Universal.Message.Valid_Length (Ctx.P.Message_2_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Message_Options_Ctx)) then
+               Universal.Message.Set_Options (Ctx.P.Message_2_Ctx, Message_Options_Ctx);
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);
