@@ -248,6 +248,15 @@ def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
     assert actual.fields == expected.fields, msg
 
 
+def test_link_order() -> None:
+    l1 = Link(FINAL, INITIAL, condition=Equal(Variable("X"), FALSE))
+    l2 = Link(FINAL, INITIAL, condition=Equal(Variable("X"), TRUE))
+    l3 = Link(INITIAL, FINAL, condition=Equal(Variable("X"), FALSE))
+    l4 = Link(INITIAL, FINAL, condition=Equal(Variable("X"), TRUE))
+    assert sorted([l1, l2, l3, l4]) == [l1, l2, l3, l4]
+    assert sorted([l4, l3, l2, l1]) == [l1, l2, l3, l4]
+
+
 def test_invalid_identifier() -> None:
     with pytest.raises(
         RecordFluxError,
@@ -2900,8 +2909,8 @@ def test_size() -> None:
         }
     ) == Number(32)
     assert optional_overlayed_field.size() == Add(
-        IfExpr([(Greater(Variable("A"), Number(0)), Number(32))], Number(0)),
         IfExpr([(Equal(Variable("A"), Number(0)), Number(16))], Number(0)),
+        IfExpr([(Greater(Variable("A"), Number(0)), Number(32))], Number(0)),
     )
 
 
