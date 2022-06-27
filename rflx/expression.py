@@ -326,7 +326,7 @@ class Not(Expr):
         ]:
             if isinstance(self.expr, relation):
                 return inverse_relation(self.expr.left.simplified(), self.expr.right.simplified())
-        return self.__class__(self.expr.simplified())
+        return self.__class__(self.expr.simplified(), self.location)
 
     def ada_expr(self) -> ada.Expr:
         return ada.Not(self.expr.ada_expr())
@@ -360,7 +360,7 @@ class BinExpr(Expr):
         )
 
     def __neg__(self) -> Expr:
-        return self.__class__(-self.left, self.right)
+        return self.__class__(-self.left, self.right, location=self.location)
 
     def __contains__(self, item: Expr) -> bool:
         return item == self or item in (self.left, self.right)
@@ -394,7 +394,9 @@ class BinExpr(Expr):
         return expr
 
     def simplified(self) -> Expr:
-        return self.__class__(self.left.simplified(), self.right.simplified())
+        return self.__class__(
+            self.left.simplified(), self.right.simplified(), location=self.location
+        )
 
     @property
     @abstractmethod
@@ -1050,6 +1052,65 @@ class Name(Expr):
         raise NotImplementedError
 
 
+class Literal(Name):
+    def __init__(
+        self,
+        identifier: StrID,
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        self.identifier = ID(identifier)
+        super().__init__(negative=False, immutable=False, type_=type_, location=location)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.identifier == other.identifier
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
+    def __neg__(self) -> Literal:
+        raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return RecordFluxError()
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
+
+    @property
+    def representation(self) -> str:
+        return str(self.name)
+
+    def variables(self) -> List[Variable]:
+        return []
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Variable(ada.ID(self.identifier))
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        if self.identifier == ID("True"):
+            return z3.BoolVal(True)
+        if self.identifier == ID("False"):
+            return z3.BoolVal(False)
+        return z3.Int(self.name)
+
+    def copy(
+        self,
+        identifier: StrID = None,
+        type_: rty.Type = None,
+        location: Location = None,
+    ) -> Literal:
+        return self.__class__(
+            ID(identifier) if identifier is not None else self.identifier,
+            type_ if type_ is not None else self.type_,
+            location if location is not None else self.location,
+        )
+
+
 class Variable(Name):
     def __init__(
         self,
@@ -1059,7 +1120,9 @@ class Variable(Name):
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        assert type_ != rty.BOOLEAN if negative else True, "boolean variable must not be negative"
+        assert (
+            not isinstance(type_, rty.Enumeration) if negative else True
+        ), "enumeration variable must not be negative"
         self.identifier = ID(identifier)
         super().__init__(negative, immutable, type_, location)
 
@@ -1095,10 +1158,6 @@ class Variable(Name):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
-        if self.identifier == ID("True"):
-            return z3.BoolVal(True)
-        if self.identifier == ID("False"):
-            return z3.BoolVal(False)
         if self.negative:
             return -z3.Int(self.name)
         return z3.Int(self.name)
@@ -1120,8 +1179,8 @@ class Variable(Name):
         )
 
 
-TRUE = Variable("True", type_=rty.BOOLEAN)
-FALSE = Variable("False", type_=rty.BOOLEAN)
+TRUE = Literal("True", type_=rty.BOOLEAN)
+FALSE = Literal("False", type_=rty.BOOLEAN)
 
 
 class Attribute(Name):
@@ -1172,7 +1231,7 @@ class Attribute(Name):
         return result
 
     def z3expr(self) -> z3.ExprRef:
-        if not isinstance(self.prefix, (Variable, Selected)):
+        if not isinstance(self.prefix, (Variable, Literal, Selected)):
             raise Z3TypeError("illegal prefix of attribute")
         name = f"{self.prefix}'{self.__class__.__name__}"
         if self.negative:
@@ -1400,7 +1459,9 @@ class Selected(Name):
         super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Selected":
-        return self.__class__(self.prefix, self.selector, not self.negative)
+        return self.__class__(
+            self.prefix, self.selector, not self.negative, self.immutable, self.type_, self.location
+        )
 
     def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
         return [
@@ -1450,8 +1511,10 @@ class Selected(Name):
             return expr.__class__(
                 expr.prefix.substituted(func),
                 expr.selector,
-                type_=expr.type_,
-                location=expr.location,
+                expr.negative,
+                expr.immutable,
+                expr.type_,
+                expr.location,
             )
         return expr
 
@@ -1463,6 +1526,24 @@ class Selected(Name):
         if self.negative:
             return -z3.Int(self.representation)
         return z3.Int(self.representation)
+
+    def copy(
+        self,
+        prefix: Expr = None,
+        selector: StrID = None,
+        negative: bool = None,
+        immutable: bool = None,
+        type_: rty.Type = None,
+        location: Location = None,
+    ) -> Selected:
+        return self.__class__(
+            prefix if prefix is not None else self.prefix,
+            ID(selector) if selector is not None else self.selector,
+            negative if negative is not None else self.negative,
+            immutable if immutable is not None else self.immutable,
+            type_ if type_ is not None else self.type_,
+            location if location is not None else self.location,
+        )
 
 
 class Call(Name):
@@ -1482,7 +1563,15 @@ class Call(Name):
         super().__init__(negative, immutable, type_, location)
 
     def __neg__(self) -> "Call":
-        return self.__class__(self.identifier, self.args, not self.negative)
+        return self.__class__(
+            self.identifier,
+            self.args,
+            not self.negative,
+            self.immutable,
+            self.type_,
+            self.argument_types,
+            self.location,
+        )
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
@@ -1655,7 +1744,7 @@ class Aggregate(Expr):
         return expr
 
     def simplified(self) -> Expr:
-        return self.__class__(*[e.simplified() for e in self.elements])
+        return self.__class__(*[e.simplified() for e in self.elements], location=self.location)
 
     @property
     def length(self) -> Expr:
@@ -1755,23 +1844,21 @@ class Relation(BinExpr):
     def _simplified(self, relation_operator: Callable[[Expr, Expr], bool]) -> Expr:
         left = self.left.simplified()
         right = self.right.simplified()
-        if relation_operator in [operator.eq, operator.le, operator.ge] and left == right:
-            return TRUE
-        mapping: Mapping[Tuple[Callable[[Expr, Expr], bool], Expr, Expr], Expr] = {
-            (operator.ne, TRUE, TRUE): FALSE,
-            (operator.ne, FALSE, FALSE): FALSE,
-            (operator.eq, TRUE, FALSE): FALSE,
-            (operator.eq, FALSE, TRUE): FALSE,
-            (operator.ne, TRUE, FALSE): TRUE,
-            (operator.ne, FALSE, TRUE): TRUE,
-        }
-        if (relation_operator, left, right) in mapping:
-            return mapping[(relation_operator, left, right)]
-        if isinstance(left, Number) and isinstance(right, Number):
+
+        if left == right:
+            if relation_operator in [operator.eq, operator.le, operator.ge]:
+                return TRUE
+            if relation_operator in [operator.ne]:
+                return FALSE
+
+        if isinstance(left, Literal) and isinstance(right, Literal):
             return TRUE if relation_operator(left, right) else FALSE
-        if isinstance(left, Aggregate) and isinstance(right, Aggregate):
-            return TRUE if relation_operator(left, right) else FALSE
-        return self.__class__(left, right)
+
+        for t in (Aggregate, Number, Literal):
+            if isinstance(left, t) and isinstance(right, t):
+                return TRUE if relation_operator(left, right) else FALSE
+
+        return self.__class__(left, right, self.location)
 
     @property
     def precedence(self) -> Precedence:
@@ -1988,6 +2075,107 @@ class NotIn(Relation):
         raise NotImplementedError
 
 
+class IfExpr(Expr):
+    def __init__(
+        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
+    ) -> None:
+        super().__init__()
+        self.condition_expressions = condition_expressions
+        self.else_expression = else_expression
+
+    def __neg__(self) -> Expr:
+        return Mul(-Number(1), IfExpr(self.condition_expressions, self.else_expression))
+
+    def _update_str(self) -> None:
+        condition_expressions = [(str(c), str(e)) for c, e in self.condition_expressions]
+        else_expression = str(self.else_expression)
+
+        expression = "".join(
+            f"if {c} then {e}" if i == 0 else f" elsif {c} then {e}"
+            for i, (c, e) in enumerate(condition_expressions)
+        )
+        if self.else_expression:
+            expression += f" else {else_expression}"
+        expression = " ".join(expression.split())
+
+        if len(expression) > 100:
+            expression = ""
+            expression = "".join(
+                f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                if i == 0
+                else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                for i, (c, e) in enumerate(condition_expressions)
+            )
+            if self.else_expression:
+                expression += f"\n else\n{indent(else_expression, 4)}"
+
+        self._str = intern(f"({expression})")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.LITERAL
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, IfExpr):
+            return expr.__class__(
+                [(c.substituted(func), e.substituted(func)) for c, e in self.condition_expressions],
+                self.else_expression.substituted(func) if self.else_expression else None,
+            )
+        return expr
+
+    def simplified(self) -> Expr:
+        condition_expressions = [
+            (c.simplified(), e.simplified()) for c, e in self.condition_expressions
+        ]
+        else_expression = self.else_expression.simplified() if self.else_expression else None
+
+        if len(condition_expressions) == 1:
+            if condition_expressions[0][0] == TRUE:
+                return condition_expressions[0][1]
+            if condition_expressions[0][0] == FALSE and else_expression:
+                return else_expression
+            if condition_expressions[0][1] == else_expression:
+                return else_expression
+
+        return self.__class__(
+            condition_expressions,
+            self.else_expression.simplified() if self.else_expression else None,
+        )
+
+    def ada_expr(self) -> ada.Expr:
+        result = getattr(ada, self.__class__.__name__)(
+            [(c.ada_expr(), e.ada_expr()) for c, e in self.condition_expressions],
+            self.else_expression.ada_expr() if self.else_expression else None,
+        )
+        assert isinstance(result, ada.Expr)
+        return result
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        if len(self.condition_expressions) != 1:
+            raise Z3TypeError("more than one condition")
+        if self.else_expression is None:
+            raise Z3TypeError("missing else expression")
+
+        condition = self.condition_expressions[0][0].z3expr()
+
+        if not isinstance(condition, z3.BoolRef):
+            raise Z3TypeError("non-boolean condition")
+
+        return z3.If(
+            condition,
+            self.condition_expressions[0][1].z3expr(),
+            self.else_expression.z3expr(),
+        )
+
+
 class QuantifiedExpression(Expr):
     def __init__(
         self,
@@ -2066,12 +2254,15 @@ class QuantifiedExpression(Expr):
             expr.parameter_identifier,
             expr.iterable.substituted(func),
             expr.predicate.substituted(func),
-            location=expr.location,
+            expr.location,
         )
 
     def simplified(self) -> Expr:
         return self.__class__(
-            self.parameter_identifier, self.iterable.simplified(), self.predicate.simplified()
+            self.parameter_identifier,
+            self.iterable.simplified(),
+            self.predicate.simplified(),
+            self.location,
         )
 
 
@@ -2145,11 +2336,12 @@ class ValueRange(Expr):
             return self.__class__(
                 self.lower.substituted(func),
                 self.upper.substituted(func),
+                self.location,
             )
         return expr
 
     def simplified(self) -> Expr:
-        return self.__class__(self.lower.simplified(), self.upper.simplified())
+        return self.__class__(self.lower.simplified(), self.upper.simplified(), self.location)
 
     def ada_expr(self) -> ada.Expr:
         return ada.ValueRange(self.lower.ada_expr(), self.upper.ada_expr())

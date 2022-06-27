@@ -214,7 +214,7 @@ def test_ipv4_parsing_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> None:
     assert ipv4_packet_value.get("Flag_MF") == "False"
     assert ipv4_packet_value.get("Fragment_Offset") == 0
     assert ipv4_packet_value.get("TTL") == 64
-    assert ipv4_packet_value.get("Protocol") == "P_UDP"
+    assert ipv4_packet_value.get("Protocol") == "IPv4::P_UDP"
     assert ipv4_packet_value.get("Header_Checksum") == int("7CBE", 16)
     assert ipv4_packet_value.get("Source") == int("7f000001", 16)
     assert ipv4_packet_value.get("Destination") == int("7f000001", 16)
@@ -225,7 +225,7 @@ def test_ipv4_parsing_ipv4_option_value(ipv4_option_value: pyrflx.MessageValue) 
     expected = b"\x44\x03\x2a"
     ipv4_option_value.parse(expected)
     assert ipv4_option_value.get("Copied") == "False"
-    assert ipv4_option_value.get("Option_Class") == "Debugging_And_Measurement"
+    assert ipv4_option_value.get("Option_Class") == "IPv4::Debugging_And_Measurement"
     assert ipv4_option_value.get("Option_Number") == 4
     assert ipv4_option_value.get("Option_Length") == 3
     ip_option = ipv4_option_value.get("Option_Data")
@@ -402,7 +402,7 @@ def test_tlv_parsing_tlv_data(tlv_message_value: pyrflx.MessageValue) -> None:
 def test_tlv_parsing_tlv_data_zero(tlv_message_value: pyrflx.MessageValue) -> None:
     test_bytes = b"\x01\x00\x00"
     tlv_message_value.parse(test_bytes)
-    assert tlv_message_value.get("Tag") == "Msg_Data"
+    assert tlv_message_value.get("Tag") == "TLV::Msg_Data"
     assert tlv_message_value.get("Length") == 0
     assert tlv_message_value.valid_message
 
@@ -410,7 +410,7 @@ def test_tlv_parsing_tlv_data_zero(tlv_message_value: pyrflx.MessageValue) -> No
 def test_tlv_parsing_tlv_error(tlv_message_value: pyrflx.MessageValue) -> None:
     test_bytes = b"\x03"
     tlv_message_value.parse(test_bytes)
-    assert tlv_message_value.get("Tag") == "Msg_Error"
+    assert tlv_message_value.get("Tag") == "TLV::Msg_Error"
     assert tlv_message_value.valid_message
 
 

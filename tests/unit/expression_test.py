@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import textwrap
 from typing import Callable, Mapping
 
 import pytest
@@ -31,12 +32,14 @@ from rflx.expression import (
     GreaterEqual,
     HasData,
     Head,
+    IfExpr,
     In,
     Indexed,
     Last,
     Length,
     Less,
     LessEqual,
+    Literal,
     MessageAggregate,
     Mod,
     Mul,
@@ -86,18 +89,12 @@ def test_true_type() -> None:
     )
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_true_neg() -> None:
-    with pytest.raises(AssertionError):
-        -TRUE  # pylint: disable = pointless-statement
-
-
 def test_true_simplified() -> None:
     assert TRUE.simplified() == TRUE
 
 
 def test_true_variables() -> None:
-    assert TRUE.variables() == [TRUE]
+    assert TRUE.variables() == []
 
 
 def test_true_z3expr() -> None:
@@ -111,18 +108,12 @@ def test_false_type() -> None:
     )
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_false_neg() -> None:
-    with pytest.raises(AssertionError):
-        -FALSE  # pylint: disable = pointless-statement
-
-
 def test_false_simplified() -> None:
     assert FALSE.simplified() == FALSE
 
 
 def test_false_variables() -> None:
-    assert FALSE.variables() == [FALSE]
+    assert FALSE.variables() == []
 
 
 def test_false_z3expr() -> None:
@@ -906,6 +897,10 @@ def test_attribute_substituted() -> None:
         ),
         -Last(Variable("P_X")),
     )
+    assert_equal(
+        First("X").substituted(lambda x: First("Y") if x == Variable("X") else x),
+        First("X"),
+    )
 
 
 def test_attribute_substituted_location() -> None:
@@ -1125,10 +1120,27 @@ def test_relation_simplified() -> None:
         ).simplified(),
         FALSE,
     )
+
+    l = Literal("L")
+    k = Literal("K")
+    assert Equal(l, l).simplified() == TRUE
+    assert Equal(l, k).simplified() == FALSE
+    assert NotEqual(l, l).simplified() == FALSE
+    assert NotEqual(l, k).simplified() == TRUE
+
     assert Equal(TRUE, TRUE).simplified() == TRUE
     assert Equal(TRUE, FALSE).simplified() == FALSE
     assert NotEqual(TRUE, TRUE).simplified() == FALSE
     assert NotEqual(TRUE, FALSE).simplified() == TRUE
+
+    assert Equal(Variable("X"), Variable("X")).simplified() == TRUE
+    assert LessEqual(Variable("X"), Variable("X")).simplified() == TRUE
+    assert GreaterEqual(Variable("X"), Variable("X")).simplified() == TRUE
+    assert NotEqual(Variable("X"), Variable("X")).simplified() == FALSE
+    assert Equal(Variable("X"), Variable("Y")).simplified() == Equal(Variable("X"), Variable("Y"))
+    assert NotEqual(Variable("X"), Variable("Y")).simplified() == NotEqual(
+        Variable("X"), Variable("Y")
+    )
 
 
 def test_relation_contains() -> None:
@@ -1271,6 +1283,69 @@ def test_not_in_simplified() -> None:
 
 def test_not_in_str() -> None:
     assert str(NotIn(Variable("X"), Variable("Y"))) == "X not in Y"
+
+
+def test_if_expr_str() -> None:
+    assert str(IfExpr([(Variable("X"), Variable("Y"))], Variable("Z"))) == "(if X then Y else Z)"
+    assert str(IfExpr([(Variable("X"), Variable("Y"))])) == "(if X then Y)"
+    assert str(
+        IfExpr([(Variable("X" * 30), Variable("Y" * 30))], Variable("Z" * 30))
+    ) == textwrap.dedent(
+        """\
+        (if
+            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+         then
+            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+         else
+            ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ)"""
+    )
+    assert str(IfExpr([(Variable("X" * 50), Variable("Y" * 50))])) == textwrap.dedent(
+        """\
+        (if
+            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+         then
+            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY)"""
+    )
+
+
+def test_if_expr_substituted() -> None:
+    assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).substituted(
+        lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+    ) == IfExpr([(Variable("P_X"), Variable("P_Y"))], Variable("P_Z"))
+    assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).substituted(
+        lambda x: Variable("X") if isinstance(x, IfExpr) else x
+    ) == Variable("X")
+
+
+def test_if_expr_simplified() -> None:
+    assert IfExpr([(TRUE, Variable("X"))], Variable("Y")).simplified() == Variable("X")
+    assert IfExpr([(FALSE, Variable("X"))], Variable("Y")).simplified() == Variable("Y")
+    assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Y")).simplified() == Variable("Y")
+    assert IfExpr(
+        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+    ).simplified() == IfExpr(
+        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+    )
+
+
+def test_if_expr_ada_expr() -> None:
+    assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).ada_expr() == ada.IfExpr(
+        [(ada.Variable("X"), ada.Variable("Y"))], ada.Variable("Z")
+    )
+
+
+def test_if_expr_z3() -> None:
+    assert IfExpr([(TRUE, Variable("Y"))], Variable("Z")).z3expr() == z3.If(
+        z3.BoolVal(True), z3.Int("Y"), z3.Int("Z")
+    )
+    with pytest.raises(Z3TypeError, match=r"^more than one condition$"):
+        IfExpr(
+            [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+        ).z3expr()
+    with pytest.raises(Z3TypeError, match=r"^missing else expression$"):
+        IfExpr([(Variable("X"), Variable("Y"))]).z3expr()
+    with pytest.raises(Z3TypeError, match=r"^non-boolean condition$"):
+        IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).z3expr()
 
 
 def test_value_range_type() -> None:
@@ -1458,25 +1533,25 @@ def test_expr_variables() -> None:
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), TRUE, Variable("X")],
+        [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), TRUE, Variable("X")],
+        [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
         ).variables(),
-        [Variable("Y"), TRUE, Variable("X")],
+        [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
             Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
         ).variables(),
-        [Variable("Y"), TRUE, Variable("X")],
+        [Variable("Y"), Variable("X")],
     )
 
 
@@ -1503,7 +1578,7 @@ def test_expr_variables_duplicates() -> None:
         Or(
             Greater(Variable("X"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
         ).variables(),
-        [Variable("X"), TRUE],
+        [Variable("X")],
     )
 
 
@@ -1533,19 +1608,19 @@ def test_expr_substituted_pre() -> None:
         Binding(Variable("X"), {"X": Number(5)}).substituted(lambda x: x, {})
 
 
-def test_length_z3variables() -> None:
+def test_length_variables() -> None:
     assert Length("Z").variables() == [Variable("Z")]
 
 
-def test_last_z3variables() -> None:
+def test_last_variables() -> None:
     assert Last("Z").variables() == [Variable("Z")]
 
 
-def test_first_z3variables() -> None:
+def test_first_variables() -> None:
     assert First("Z").variables() == [Variable("Z")]
 
 
-def test_size_z3variables() -> None:
+def test_size_variables() -> None:
     assert Size("Z").variables() == [Variable("Z")]
 
 
@@ -1881,7 +1956,7 @@ def test_comprehension_substituted() -> None:
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
             lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
         ),
-        Comprehension("X", Variable("P_Y"), Variable("P_Z"), Variable("P_True")),
+        Comprehension("X", Variable("P_Y"), Variable("P_Z"), TRUE),
     )
     assert_equal(
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(

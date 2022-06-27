@@ -101,11 +101,11 @@ class ID:
 
     @property
     def name(self: Self) -> Self:
-        return self.__class__(self._parts[-1])
+        return self.__class__(self._parts[-1], self.location)
 
     @property
     def parent(self: Self) -> Self:
-        return self.__class__(self._parts[:-1])
+        return self.__class__(self._parts[:-1], self.location)
 
     @property
     def flat(self: Self) -> str:

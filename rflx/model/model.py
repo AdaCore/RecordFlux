@@ -171,7 +171,7 @@ class Model(Base):
                 )
 
         literals = [
-            t.package * l
+            ID(t.package * l, location=l.location)
             for t in self._types
             if isinstance(t, type_.Enumeration)
             for l in t.literals

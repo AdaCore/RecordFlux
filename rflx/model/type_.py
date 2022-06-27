@@ -519,14 +519,14 @@ class Enumeration(Scalar):
             result: ty.List[expr.Expr] = [
                 expr.Or(
                     *[
-                        expr.Equal(expr.Variable(name), expr.Variable(l), self.location)
+                        expr.Equal(expr.Variable(name), expr.Literal(l), self.location)
                         for l in literals
                     ],
                     location=self.location,
                 )
             ]
             result.extend(
-                [expr.Equal(expr.Variable(l), v, self.location) for l, v in literals.items()]
+                [expr.Equal(expr.Literal(l), v, self.location) for l, v in literals.items()]
             )
             result.append(expr.Equal(expr.Size(name), self.size, self.location))
             return result
@@ -749,6 +749,15 @@ def enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumerat
                     literals[t.package * l] = t
 
     return literals
+
+
+def unqualified_enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumeration]:
+    return {
+        l: t
+        for t in types
+        if isinstance(t, Enumeration) and t.package == package
+        for l in t.literals
+    }
 
 
 def qualified_enum_literals(types: ty.Iterable[Type]) -> ty.Dict[ID, Enumeration]:

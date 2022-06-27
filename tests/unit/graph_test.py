@@ -212,16 +212,11 @@ def test_session_graph(tmp_path: Path) -> None:
             START -> STATE  [tooltip="START → STATE\n\n[0] Global = True"];
             START -> END  [tooltip=""];
             Global -> START  [tooltip="START: read Global"];
-            True -> START  [tooltip="START: read True"];
             STATE [height="1.73", width="2.25"];
             STATE -> END  [tooltip=""];
-            True -> STATE  [tooltip="STATE: read True"];
-            False -> STATE  [tooltip="STATE: read False"];
             STATE -> Global  [tooltip="STATE: write Global"];
             END [fillcolor="#6f6f6f", height="1.73", width="2.25"];
             Global [fillcolor="#7e8ab8", height="1.73", width="2.25"];
-            True [fillcolor="#7e8ab8", height="2.00", width="2.60"];
-            False [fillcolor="#7e8ab8", height="1.41", width="1.84"];
         }
         """
 

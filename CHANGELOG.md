@@ -84,6 +84,7 @@ Model:
 - Missing file location in error messages (#647)
 - Bug box due to dangling field when merging messages (#1033)
 - Missing type information in `Reset` statement (#1080)
+- Incorrect message size calculation if size depends on variables (#1064)
 
 Generator:
 
@@ -101,6 +102,7 @@ Generator:
   - Logical expressions in assignments (#1012)
   - Boolean relations containing global variables (#1059)
   - Minimal session (#883)
+  - Message aggregates with variables as field values (#1064)
 - Code generation when using non-default prefix (#897)
 - Conversion between message `Structure` and `Context` (#961)
 - Missing reset in assignment to comprehension (#1050)

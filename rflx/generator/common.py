@@ -139,13 +139,13 @@ def substitution(
             boolean_literal = None
             other = None
             if (
-                isinstance(expression.left, expr.Variable)
+                isinstance(expression.left, expr.Literal)
                 and expression.left.identifier in model.BOOLEAN.literals
             ):
                 boolean_literal = expression.left
                 other = expression.right
             if (
-                isinstance(expression.right, expr.Variable)
+                isinstance(expression.right, expr.Literal)
                 and expression.right.identifier in model.BOOLEAN.literals
             ):
                 boolean_literal = expression.right
@@ -283,13 +283,13 @@ def substitution_facts(
             for f, t in message.field_types.items()
         },
         **{
-            expr.Variable(l): type_conversion(expr.Call("To_Base_Integer", [expr.Variable(l)]))
+            expr.Literal(l): type_conversion(expr.Call("To_Base_Integer", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
         **{
-            expr.Variable(t.package * l): type_conversion(
+            expr.Literal(t.package * l): type_conversion(
                 expr.Call("To_Base_Integer", [expr.Variable(prefix * t.package * l)])
             )
             for t in message.types.values()
