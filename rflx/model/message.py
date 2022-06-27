@@ -35,8 +35,10 @@ class Field(Base):
     def __repr__(self) -> str:
         return f'Field("{self.identifier}")'
 
-    def __lt__(self, other: "Field") -> int:
-        return self.identifier < other.identifier
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.identifier < other.identifier
+        return NotImplemented
 
     @property
     def name(self) -> str:
@@ -1082,7 +1084,7 @@ class Message(AbstractMessage):
                     if path_condition != expr.TRUE
                     else field_size
                     for path_condition, groups in itertools.groupby(
-                        conditional_field_size,
+                        sorted(conditional_field_size),
                         lambda x: x[0],
                     )
                     for field_size in [expr.Add(*(s for _, s in groups))]

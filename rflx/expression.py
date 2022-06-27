@@ -163,6 +163,26 @@ class Expr(DBC, Base):
             return str(self) == str(other)
         return NotImplemented
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return str(self) < str(other)
+        return NotImplemented
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return str(self) <= str(other)
+        return NotImplemented
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return str(self) > str(other)
+        return NotImplemented
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, Expr):
+            return str(self) >= str(other)
+        return NotImplemented
+
     def __str__(self) -> str:
         try:
             return self._str
@@ -172,26 +192,6 @@ class Expr(DBC, Base):
 
     def __hash__(self) -> int:
         return hash(self.__class__.__name__)
-
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, Expr):
-            return False
-        return NotImplemented
-
-    def __le__(self, other: object) -> bool:
-        if isinstance(other, Expr):
-            return self == other
-        return NotImplemented
-
-    def __gt__(self, other: object) -> bool:
-        if isinstance(other, Expr):
-            return False
-        return NotImplemented
-
-    def __ge__(self, other: object) -> bool:
-        if isinstance(other, Expr):
-            return self == other
-        return NotImplemented
 
     def __contains__(self, item: "Expr") -> bool:
         return item == self
@@ -429,38 +429,6 @@ class AssExpr(Expr):
 
     def __contains__(self, item: Expr) -> bool:
         return item == self or any(item in term for term in self.terms)
-
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, AssExpr):
-            if len(self.terms) == len(other.terms):
-                lt = [x < y for x, y in zip(self.terms, other.terms)]
-                eq = [x == y for x, y in zip(self.terms, other.terms)]
-                return any(lt) and all(map((lambda x: x[0] or x[1]), zip(lt, eq)))
-            return False
-        return NotImplemented
-
-    def __le__(self, other: object) -> bool:
-        if isinstance(other, AssExpr):
-            if len(self.terms) == len(other.terms):
-                return all(x <= y for x, y in zip(self.terms, other.terms))
-            return False
-        return NotImplemented
-
-    def __gt__(self, other: object) -> bool:
-        if isinstance(other, AssExpr):
-            if len(self.terms) == len(other.terms):
-                gt = [x > y for x, y in zip(self.terms, other.terms)]
-                eq = [x == y for x, y in zip(self.terms, other.terms)]
-                return any(gt) and all(map((lambda x: x[0] or x[1]), zip(gt, eq)))
-            return False
-        return NotImplemented
-
-    def __ge__(self, other: object) -> bool:
-        if isinstance(other, AssExpr):
-            if len(self.terms) == len(other.terms):
-                return all(x >= y for x, y in zip(self.terms, other.terms))
-            return False
-        return NotImplemented
 
     @property
     @abstractmethod

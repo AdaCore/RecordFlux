@@ -162,11 +162,11 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
             Initial -> intermediate_0 [arrowhead=none];
             intermediate_0 -> X [minlen=1];
             intermediate_1 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
-                            label="(X > 100, 0, ⋆)", penwidth=0, style="", width=0];
+                            label="(X < 50, 0, ⋆)", penwidth=0, style="", width=0];
             X -> intermediate_1 [arrowhead=none];
             intermediate_1 -> Final [minlen=1];
             intermediate_2 [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", height=0,
-                            label="(X < 50, 0, ⋆)", penwidth=0, style="", width=0];
+                            label="(X > 100, 0, ⋆)", penwidth=0, style="", width=0];
             X -> intermediate_2 [arrowhead=none];
             intermediate_2 -> Final [minlen=1];
             Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];

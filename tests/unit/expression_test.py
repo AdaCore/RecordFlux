@@ -493,7 +493,7 @@ def test_number_gt() -> None:
     assert not Number(1) > Number(2)
     assert not Number(2) > Number(2)
     assert Number(3) > Number(2)
-    assert not Variable("X") > Number(2)
+    assert Variable("X") > Number(2)
     assert not Number(2) > Variable("X")
 
 
@@ -502,7 +502,7 @@ def test_number_ge() -> None:
     assert not Number(1) >= Number(2)
     assert Number(2) >= Number(2)
     assert Number(3) >= Number(2)
-    assert not Variable("X") >= Number(2)
+    assert Variable("X") >= Number(2)
     assert not Number(2) >= Variable("X")
 
 
@@ -574,9 +574,9 @@ def test_add_lt() -> None:
     assert Add(Variable("X"), Number(1)) < Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(2)) < Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(3)) < Add(Variable("X"), Number(2))
-    assert not Add(Variable("X"), Number(1)) < Add(Variable("Y"), Number(2))
-    assert not Add(Variable("X"), Number(2)) < Add(Variable("Y"), Number(1))
-    assert not Add(Variable("X"), Number(2)) < Add(Variable("Y"), Variable("Z"), Number(1))
+    assert Add(Variable("X"), Number(1)) < Add(Variable("Y"), Number(2))
+    assert Add(Variable("X"), Number(2)) < Add(Variable("Y"), Number(1))
+    assert Add(Variable("X"), Number(2)) < Add(Variable("Y"), Variable("Z"), Number(1))
 
 
 def test_add_le() -> None:
@@ -584,9 +584,9 @@ def test_add_le() -> None:
     assert Add(Variable("X"), Number(1)) <= Add(Variable("X"), Number(2))
     assert Add(Variable("X"), Number(2)) <= Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(3)) <= Add(Variable("X"), Number(2))
-    assert not Add(Variable("X"), Number(1)) <= Add(Variable("Y"), Number(2))
-    assert not Add(Variable("X"), Number(2)) <= Add(Variable("Y"), Number(1))
-    assert not Add(Variable("X"), Number(2)) <= Add(Variable("Y"), Variable("Z"), Number(1))
+    assert Add(Variable("X"), Number(1)) <= Add(Variable("Y"), Number(2))
+    assert Add(Variable("X"), Number(2)) <= Add(Variable("Y"), Number(1))
+    assert Add(Variable("X"), Number(2)) <= Add(Variable("Y"), Variable("Z"), Number(1))
 
 
 def test_add_gt() -> None:
