@@ -22,6 +22,8 @@ from rflx.contract import DBC, invariant, require
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
+MAX_LINE_LENGTH = 100
+
 
 class Z3TypeError(TypeError):
     pass
@@ -2066,7 +2068,7 @@ class IfExpr(Expr):
             expression += f" else {else_expression}"
         expression = " ".join(expression.split())
 
-        if len(expression) > 100:
+        if len(expression) > MAX_LINE_LENGTH:
             expression = ""
             expression = "".join(
                 f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
