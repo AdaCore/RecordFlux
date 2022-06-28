@@ -134,7 +134,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '["rflx/**", "tests/**"]'
+          paths: '[".github/workflows/**", "rflx/**", "tests/**"]'
           paths_ignore: '["tests/spark/**"]'
 
   tests_python:
@@ -242,7 +242,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '["defaults.gpr", "examples/apps/**", "rflx/**", "tests/**"]'
+          paths: '[".github/workflows/**", "defaults.gpr", "examples/apps/**", "rflx/**", "tests/**"]'
 
   compilation:
     name: Compilation
@@ -483,7 +483,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '["*.gpr", "tests/spark/**"]'
+          paths: '[".github/workflows/**", "*.gpr", "tests/spark/**"]'
 
   runtime_compatibility:
     name: Runtime compatibility
@@ -626,7 +626,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '["defaults.gpr", "examples/apps/**", "rflx/**"]'
+          paths: '[".github/workflows/**", "defaults.gpr", "examples/apps/**", "rflx/**"]'
 
   tests_apps:
     name: App Tests
@@ -807,7 +807,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '["defaults.gpr", "examples/specs/**", "rflx/**"]'
+          paths: '[".github/workflows/**", "defaults.gpr", "examples/specs/**", "rflx/**"]'
 
   tests_specs:
     name: Specification Tests
