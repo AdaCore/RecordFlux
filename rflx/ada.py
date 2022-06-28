@@ -15,6 +15,8 @@ import rflx.identifier
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
 
+MAX_LINE_LENGTH = 100
+
 
 class ID(rflx.identifier.ID):
     @property
@@ -702,7 +704,7 @@ class IfExpr(Expr):
             expression += f" else {else_expression}"
         expression = " ".join(expression.split())
 
-        if len(expression) > 100:
+        if len(expression) > MAX_LINE_LENGTH:
             expression = ""
             expression = "".join(
                 f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
@@ -1777,7 +1779,7 @@ class While(Statement):
     def __str__(self) -> str:
         condition = str(self.condition)
         statements = indent("\n".join(str(s) for s in self.statements), 3)
-        if "\n" in condition or len(condition) > 100:
+        if "\n" in condition or len(condition) > MAX_LINE_LENGTH:
             return f"while\n{indent(condition, 3)}\nloop\n{statements}\nend loop;"
         return f"while {self.condition} loop\n{statements}\nend loop;"
 
