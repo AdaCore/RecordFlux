@@ -264,7 +264,9 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Agg : RFLX_Types.Bytes) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 

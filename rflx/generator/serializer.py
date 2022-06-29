@@ -572,10 +572,10 @@ class SerializerGenerator:
                             else Call("To_Base_Integer", [Variable("Val")])
                         ],
                     ),
+                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                     common.field_condition_call(
                         message, field, value=Call("To_Base_Integer", [Variable("Val")])
                     ),
-                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                 )
             )
 
@@ -839,10 +839,10 @@ class SerializerGenerator:
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f.affixed_name),
+                                    *self.composite_setter_preconditions(f),
                                     *self.composite_setter_field_condition_precondition(
                                         message, f, empty=True
                                     ),
-                                    *self.composite_setter_preconditions(f),
                                     Equal(
                                         Call(
                                             "Field_Size",
@@ -917,10 +917,10 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f.affixed_name),
+                                *self.composite_setter_preconditions(f),
                                 *self.composite_setter_field_condition_precondition(
                                     message, f, empty=True
                                 ),
-                                *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
                                     [

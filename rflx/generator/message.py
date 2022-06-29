@@ -1752,13 +1752,18 @@ def create_field_condition_function(message: Message, prefix: str) -> UnitPart:
                 specification,
                 [
                     Precondition(
-                        And(
+                        AndThen(
                             Call("Has_Buffer", [Variable("Ctx")]),
                             Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
                             *(
                                 [Call("Valid_Value", [Variable("Fld"), Variable("Val")])]
                                 if common.has_value_dependent_condition(message)
                                 else []
+                            ),
+                            Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
+                            GreaterEqual(
+                                Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
+                                Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                             ),
                         )
                     ),
@@ -2558,8 +2563,8 @@ def create_switch_procedures(
                                 Number(0),
                             ),
                             common.byte_aligned_field(f),
-                            common.field_condition_call(message, f),
                             common.sufficient_space_for_field_condition(Variable(f.affixed_name)),
+                            common.field_condition_call(message, f),
                         )
                     ),
                     Postcondition(
