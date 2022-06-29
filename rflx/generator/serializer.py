@@ -738,6 +738,10 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions("Fld"),
+                                In(
+                                    Variable("Fld"),
+                                    ChoiceList(*[Variable(f.affixed_name) for f in scalar_fields]),
+                                ),
                                 Call("Valid_Value", [Variable("Fld"), Variable("Val")]),
                                 Call(
                                     "Valid_Size",
