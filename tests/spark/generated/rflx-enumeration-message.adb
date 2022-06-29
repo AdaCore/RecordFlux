@@ -275,8 +275,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Priority)
        and then RFLX.Enumeration.Valid_Priority (Val)
-       and then Field_Condition (Ctx, F_Priority)
-       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority),
+       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority)
+       and then Field_Condition (Ctx, F_Priority),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Priority)

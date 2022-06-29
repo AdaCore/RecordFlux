@@ -368,8 +368,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Message_Type)
        and then RFLX.Universal.Valid_Option_Type (Val)
-       and then Field_Condition (Ctx, F_Message_Type)
-       and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type),
+       and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type)
+       and then Field_Condition (Ctx, F_Message_Type),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Message_Type)

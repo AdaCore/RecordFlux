@@ -266,8 +266,10 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld)
-       and Valid_Value (Fld, Val),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -451,8 +453,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Destination)
        and then RFLX.Ethernet.Valid_Address (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Destination, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination),
+       and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination)
+       and then Field_Condition (Ctx, F_Destination, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
@@ -479,8 +481,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Source)
        and then RFLX.Ethernet.Valid_Address (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Source, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source),
+       and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source)
+       and then Field_Condition (Ctx, F_Source, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
@@ -510,8 +512,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length_TPID)
        and then RFLX.Ethernet.Valid_Type_Length (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Type_Length_TPID, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID),
+       and then Available_Space (Ctx, F_Type_Length_TPID) >= Field_Size (Ctx, F_Type_Length_TPID)
+       and then Field_Condition (Ctx, F_Type_Length_TPID, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Type_Length_TPID)
@@ -549,8 +551,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TPID)
        and then RFLX.Ethernet.Valid_TPID (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_TPID, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID),
+       and then Available_Space (Ctx, F_TPID) >= Field_Size (Ctx, F_TPID)
+       and then Field_Condition (Ctx, F_TPID, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TPID)
@@ -578,8 +580,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_TCI)
        and then RFLX.Ethernet.Valid_TCI (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_TCI, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI),
+       and then Available_Space (Ctx, F_TCI) >= Field_Size (Ctx, F_TCI)
+       and then Field_Condition (Ctx, F_TCI, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TCI)
@@ -608,8 +610,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Type_Length)
        and then RFLX.Ethernet.Valid_Type_Length (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Type_Length, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length),
+       and then Available_Space (Ctx, F_Type_Length) >= Field_Size (Ctx, F_Type_Length)
+       and then Field_Condition (Ctx, F_Type_Length, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Type_Length)

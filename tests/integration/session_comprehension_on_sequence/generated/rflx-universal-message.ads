@@ -269,8 +269,10 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld)
-       and Valid_Value (Fld, Val),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -442,8 +444,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Message_Type)
        and then RFLX.Universal.Valid_Message_Type (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Message_Type, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type),
+       and then Available_Space (Ctx, F_Message_Type) >= Field_Size (Ctx, F_Message_Type)
+       and then Field_Condition (Ctx, F_Message_Type, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Message_Type)
@@ -486,8 +488,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
        and then RFLX.Universal.Valid_Length (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Length, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
+       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length)
+       and then Field_Condition (Ctx, F_Length, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -541,8 +543,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Value)
        and then RFLX.Universal.Valid_Value (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Value, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value),
+       and then Available_Space (Ctx, F_Value) >= Field_Size (Ctx, F_Value)
+       and then Field_Condition (Ctx, F_Value, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Value)
@@ -568,8 +570,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Field_Condition (Ctx, F_Data, 0)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
+       and then Field_Condition (Ctx, F_Data, 0)
        and then Field_Size (Ctx, F_Data) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -593,8 +595,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Types)
-       and then Field_Condition (Ctx, F_Option_Types, 0)
        and then Available_Space (Ctx, F_Option_Types) >= Field_Size (Ctx, F_Option_Types)
+       and then Field_Condition (Ctx, F_Option_Types, 0)
        and then Field_Size (Ctx, F_Option_Types) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -618,8 +620,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
-       and then Field_Condition (Ctx, F_Options, 0)
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
+       and then Field_Condition (Ctx, F_Options, 0)
        and then Field_Size (Ctx, F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -641,8 +643,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Values)
-       and then Field_Condition (Ctx, F_Values, 0)
        and then Available_Space (Ctx, F_Values) >= Field_Size (Ctx, F_Values)
+       and then Field_Condition (Ctx, F_Values, 0)
        and then Field_Size (Ctx, F_Values) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -663,8 +665,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Types)
-       and then Field_Condition (Ctx, F_Option_Types, 0)
        and then Available_Space (Ctx, F_Option_Types) >= Field_Size (Ctx, F_Option_Types)
+       and then Field_Condition (Ctx, F_Option_Types, 0)
        and then Valid_Length (Ctx, F_Option_Types, Universal.Option_Types.Byte_Size (Seq_Ctx))
        and then Universal.Option_Types.Has_Buffer (Seq_Ctx)
        and then Universal.Option_Types.Valid (Seq_Ctx),
@@ -691,8 +693,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Options)
-       and then Field_Condition (Ctx, F_Options, 0)
        and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
+       and then Field_Condition (Ctx, F_Options, 0)
        and then Valid_Length (Ctx, F_Options, Universal.Options.Byte_Size (Seq_Ctx))
        and then Universal.Options.Has_Buffer (Seq_Ctx)
        and then Universal.Options.Valid (Seq_Ctx),
@@ -717,8 +719,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Values)
-       and then Field_Condition (Ctx, F_Values, 0)
        and then Available_Space (Ctx, F_Values) >= Field_Size (Ctx, F_Values)
+       and then Field_Condition (Ctx, F_Values, 0)
        and then Valid_Length (Ctx, F_Values, Universal.Values.Byte_Size (Seq_Ctx))
        and then Universal.Values.Has_Buffer (Seq_Ctx)
        and then Universal.Values.Valid (Seq_Ctx),
@@ -892,8 +894,8 @@ is
        and then Valid_Next (Ctx, F_Option_Types)
        and then Field_Size (Ctx, F_Option_Types) > 0
        and then Field_First (Ctx, F_Option_Types) rem RFLX_Types.Byte'Size = 1
-       and then Field_Condition (Ctx, F_Option_Types, 0)
-       and then Available_Space (Ctx, F_Option_Types) >= Field_Size (Ctx, F_Option_Types),
+       and then Available_Space (Ctx, F_Option_Types) >= Field_Size (Ctx, F_Option_Types)
+       and then Field_Condition (Ctx, F_Option_Types, 0),
      Post =>
        not Has_Buffer (Ctx)
        and Universal.Option_Types.Has_Buffer (Seq_Ctx)
@@ -930,8 +932,8 @@ is
        and then Valid_Next (Ctx, F_Options)
        and then Field_Size (Ctx, F_Options) > 0
        and then Field_First (Ctx, F_Options) rem RFLX_Types.Byte'Size = 1
-       and then Field_Condition (Ctx, F_Options, 0)
-       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options),
+       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
+       and then Field_Condition (Ctx, F_Options, 0),
      Post =>
        not Has_Buffer (Ctx)
        and Universal.Options.Has_Buffer (Seq_Ctx)
@@ -967,8 +969,8 @@ is
        and then Valid_Next (Ctx, F_Values)
        and then Field_Size (Ctx, F_Values) > 0
        and then Field_First (Ctx, F_Values) rem RFLX_Types.Byte'Size = 1
-       and then Field_Condition (Ctx, F_Values, 0)
-       and then Available_Space (Ctx, F_Values) >= Field_Size (Ctx, F_Values),
+       and then Available_Space (Ctx, F_Values) >= Field_Size (Ctx, F_Values)
+       and then Field_Condition (Ctx, F_Values, 0),
      Post =>
        not Has_Buffer (Ctx)
        and Universal.Values.Has_Buffer (Seq_Ctx)

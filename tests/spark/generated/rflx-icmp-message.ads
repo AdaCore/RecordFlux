@@ -266,8 +266,10 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld)
-       and Valid_Value (Fld, Val),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -487,8 +489,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Tag)
        and then RFLX.ICMP.Valid_Tag (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Tag, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag),
+       and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag)
+       and then Field_Condition (Ctx, F_Tag, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Tag)
@@ -549,8 +551,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Destination_Unreachable)
        and then RFLX.ICMP.Valid_Code_Destination_Unreachable (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Code_Destination_Unreachable, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Size (Ctx, F_Code_Destination_Unreachable),
+       and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Size (Ctx, F_Code_Destination_Unreachable)
+       and then Field_Condition (Ctx, F_Code_Destination_Unreachable, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Destination_Unreachable)
@@ -589,8 +591,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Redirect)
        and then RFLX.ICMP.Valid_Code_Redirect (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Code_Redirect, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Redirect) >= Field_Size (Ctx, F_Code_Redirect),
+       and then Available_Space (Ctx, F_Code_Redirect) >= Field_Size (Ctx, F_Code_Redirect)
+       and then Field_Condition (Ctx, F_Code_Redirect, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Redirect)
@@ -628,8 +630,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Time_Exceeded)
        and then RFLX.ICMP.Valid_Code_Time_Exceeded (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Code_Time_Exceeded, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Size (Ctx, F_Code_Time_Exceeded),
+       and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Size (Ctx, F_Code_Time_Exceeded)
+       and then Field_Condition (Ctx, F_Code_Time_Exceeded, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Time_Exceeded)
@@ -666,8 +668,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Code_Zero)
        and then RFLX.ICMP.Valid_Code_Zero (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Code_Zero, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Zero) >= Field_Size (Ctx, F_Code_Zero),
+       and then Available_Space (Ctx, F_Code_Zero) >= Field_Size (Ctx, F_Code_Zero)
+       and then Field_Condition (Ctx, F_Code_Zero, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Zero)
@@ -702,8 +704,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Checksum)
        and then RFLX.ICMP.Valid_Checksum (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Checksum, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum),
+       and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum)
+       and then Field_Condition (Ctx, F_Checksum, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Checksum)
@@ -763,8 +765,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Gateway_Internet_Address)
        and then RFLX.ICMP.Valid_Gateway_Internet_Address (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Gateway_Internet_Address, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Size (Ctx, F_Gateway_Internet_Address),
+       and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Size (Ctx, F_Gateway_Internet_Address)
+       and then Field_Condition (Ctx, F_Gateway_Internet_Address, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Gateway_Internet_Address)
@@ -799,8 +801,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Identifier)
        and then RFLX.ICMP.Valid_Identifier (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Identifier, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Identifier) >= Field_Size (Ctx, F_Identifier),
+       and then Available_Space (Ctx, F_Identifier) >= Field_Size (Ctx, F_Identifier)
+       and then Field_Condition (Ctx, F_Identifier, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identifier)
@@ -834,8 +836,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Pointer)
        and then RFLX.ICMP.Valid_Pointer (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Pointer, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Pointer) >= Field_Size (Ctx, F_Pointer),
+       and then Available_Space (Ctx, F_Pointer) >= Field_Size (Ctx, F_Pointer)
+       and then Field_Condition (Ctx, F_Pointer, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Pointer)
@@ -868,8 +870,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Unused_32)
        and then RFLX.ICMP.Valid_Unused_32 (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Unused_32, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Unused_32) >= Field_Size (Ctx, F_Unused_32),
+       and then Available_Space (Ctx, F_Unused_32) >= Field_Size (Ctx, F_Unused_32)
+       and then Field_Condition (Ctx, F_Unused_32, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_32)
@@ -900,8 +902,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Sequence_Number)
        and then RFLX.ICMP.Valid_Sequence_Number (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Sequence_Number, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Sequence_Number) >= Field_Size (Ctx, F_Sequence_Number),
+       and then Available_Space (Ctx, F_Sequence_Number) >= Field_Size (Ctx, F_Sequence_Number)
+       and then Field_Condition (Ctx, F_Sequence_Number, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Sequence_Number)
@@ -944,8 +946,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Unused_24)
        and then RFLX.ICMP.Valid_Unused_24 (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Unused_24, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Unused_24) >= Field_Size (Ctx, F_Unused_24),
+       and then Available_Space (Ctx, F_Unused_24) >= Field_Size (Ctx, F_Unused_24)
+       and then Field_Condition (Ctx, F_Unused_24, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_24)
@@ -975,8 +977,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Originate_Timestamp)
        and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Originate_Timestamp, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Size (Ctx, F_Originate_Timestamp),
+       and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Size (Ctx, F_Originate_Timestamp)
+       and then Field_Condition (Ctx, F_Originate_Timestamp, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Originate_Timestamp)
@@ -1007,8 +1009,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Receive_Timestamp)
        and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Receive_Timestamp, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Size (Ctx, F_Receive_Timestamp),
+       and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Size (Ctx, F_Receive_Timestamp)
+       and then Field_Condition (Ctx, F_Receive_Timestamp, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Receive_Timestamp)
@@ -1038,8 +1040,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Transmit_Timestamp)
        and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Transmit_Timestamp, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Size (Ctx, F_Transmit_Timestamp),
+       and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Size (Ctx, F_Transmit_Timestamp)
+       and then Field_Condition (Ctx, F_Transmit_Timestamp, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Transmit_Timestamp)
@@ -1068,8 +1070,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Data)
-       and then Field_Condition (Ctx, F_Data, 0)
        and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
+       and then Field_Condition (Ctx, F_Data, 0)
        and then Field_Size (Ctx, F_Data) = 0,
      Post =>
        Has_Buffer (Ctx)

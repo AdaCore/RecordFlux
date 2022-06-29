@@ -267,7 +267,9 @@ is
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -406,8 +408,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Length)
        and then RFLX.Sequence.Valid_Length (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Length)
-       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length),
+       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length)
+       and then Field_Condition (Ctx, F_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -429,8 +431,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Messages)
-       and then Field_Condition (Ctx, F_Messages)
        and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
+       and then Field_Condition (Ctx, F_Messages)
        and then Field_Size (Ctx, F_Messages) = 0,
      Post =>
        Has_Buffer (Ctx)
@@ -450,8 +452,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Messages)
-       and then Field_Condition (Ctx, F_Messages)
        and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
+       and then Field_Condition (Ctx, F_Messages)
        and then Valid_Length (Ctx, F_Messages, Sequence.Inner_Messages.Byte_Size (Seq_Ctx))
        and then Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and then Sequence.Inner_Messages.Valid (Seq_Ctx),
@@ -496,8 +498,8 @@ is
        and then Valid_Next (Ctx, F_Messages)
        and then Field_Size (Ctx, F_Messages) > 0
        and then Field_First (Ctx, F_Messages) rem RFLX_Types.Byte'Size = 1
-       and then Field_Condition (Ctx, F_Messages)
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages),
+       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
+       and then Field_Condition (Ctx, F_Messages),
      Post =>
        not Has_Buffer (Ctx)
        and Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
