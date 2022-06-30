@@ -3874,7 +3874,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     exception_handler,
                 )
 
-        if isinstance(value, (expr.Number, expr.Aggregate)) or (
+        if isinstance(value, (expr.Number, expr.Aggregate, expr.Case)) or (
             isinstance(
                 value,
                 (expr.Variable, expr.Literal, expr.MathBinExpr, expr.MathAssExpr, expr.Size),

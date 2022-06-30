@@ -2869,7 +2869,12 @@ class Case(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
+        choices = [
+            (Literal(choice).ada_expr(), expr.ada_expr())
+            for choices, expr in self.choices
+            for choice in choices
+        ]
+        return ada.CaseExpr(self.expr.ada_expr(), choices)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
