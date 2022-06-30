@@ -2773,6 +2773,106 @@ def _entity_name(expr: Expr) -> str:
     return f'{expr_type} "{expr_name}"'
 
 
+class Case(Expr):
+    def __init__(
+        self, expr: Expr, choices: List[Tuple[List[StrID], Expr]], location: Location = None
+    ) -> None:
+        super().__init__(rty.Undefined(), location)
+        self.expr = expr
+        self.choices = choices
+
+    def _update_str(self) -> None:
+        data = ",\n".join(f"\n   when {' | '.join(map(str, c))} => {e}" for c, e in self.choices)
+        self._str = intern(f"(case {self.expr} is{data})")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = RecordFluxError()
+        resulttype: rty.Type = rty.Any()
+        for _, expr in self.choices:
+            error += expr.check_type_instance(rty.Any)
+            resulttype = resulttype.common_type(expr.type_)
+
+        for i1, (_, e1) in enumerate(self.choices):
+            for i2, (_, e2) in enumerate(self.choices):
+                if i1 < i2:
+                    if not e1.type_.is_compatible(e2.type_):
+                        error.extend(
+                            [
+                                (
+                                    f'dependent expression "{e1}" has incompatible type {e1.type_}',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    e1.location,
+                                ),
+                                (
+                                    f'conflicting with "{e2}" which has type {e2.type_}',
+                                    Subsystem.MODEL,
+                                    Severity.WARNING,
+                                    e2.location,
+                                ),
+                            ]
+                        )
+
+        error += self.expr.check_type_instance(rty.Any)
+        error.propagate()
+        self.type_ = resulttype
+
+        return error
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+        return [
+            *([self] if match(self) else []),
+            *self.expr.findall(match),
+            *[e for _, v in self.choices for e in v.findall(match)],
+        ]
+
+    def simplified(self) -> Expr:
+        return self.__class__(
+            self.expr.simplified(),
+            [(c, e.simplified()) for c, e in self.choices],
+            location=self.location,
+        )
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Case):
+            return expr.__class__(
+                expr.expr.substituted(func),
+                [(c, e.substituted(func)) for c, e in self.choices],
+                location=expr.location,
+            )
+        return expr
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def variables(self) -> List["Variable"]:
+        simplified = self.simplified()
+        assert isinstance(simplified, Case)
+        return list(
+            unique(
+                [
+                    *simplified.expr.variables(),
+                    *[v for _, e in simplified.choices for v in e.variables()],
+                ]
+            )
+        )
+
+
 def _similar_field_names(
     field: ID, fields: Iterable[ID], location: Optional[Location]
 ) -> List[Tuple[str, Subsystem, Severity, Optional[Location]]]:
