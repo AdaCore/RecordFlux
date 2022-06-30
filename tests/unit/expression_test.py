@@ -2520,6 +2520,11 @@ def test_case_type() -> None:
         r'"__BUILTINS__::Boolean"\n'
         r'model: warning: conflicting with "1" which has type type universal integer \(1\)$',
     )
+    assert_type_error(
+        Case(Opaque(Variable("X", type_=rty.Message("A"))), [([ID("V")], Number(1))]),
+        r'^model: error: invalid discrete choice type "sequence type "__INTERNAL__::Opaque" '
+        r'with element integer type "Byte" \(0 .. 255\)"$',
+    )
 
 
 def test_case_simplified() -> None:

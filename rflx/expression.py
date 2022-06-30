@@ -2787,7 +2787,9 @@ class Case(Expr):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
+
         resulttype: rty.Type = rty.Any()
+
         for _, expr in self.choices:
             error += expr.check_type_instance(rty.Any)
             resulttype = resulttype.common_type(expr.type_)
@@ -2815,6 +2817,19 @@ class Case(Expr):
 
         error += self.expr.check_type_instance(rty.Any)
         error.propagate()
+
+        if not isinstance(self.expr.type_, (rty.AnyInteger, rty.Enumeration)):
+            error.extend(
+                [
+                    (
+                        f'invalid discrete choice type "{self.expr.type_}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.expr.location,
+                    ),
+                ]
+            )
+
         self.type_ = resulttype
 
         return error
