@@ -892,3 +892,29 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+@pytest.mark.verification
+def test_message_field_conditions_provability(tmp_path: Path) -> None:
+    spec = """
+      package Test is
+         type Byte is range 0 .. 2 ** 8 - 1 with Size => 8;
+         type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+         type My_Seq is sequence of Byte;
+
+         type Repr is
+            message
+               Count : Byte;
+               Length : Length_16;
+               Hash : My_Seq
+                  with Size => 32
+                  then Structs
+                     with Size => 8 * Length - 16 - (Hash'Last - Count'First + 1)
+                     if 8 * Length >= 16 + (Hash'Last - Count'First + 1);
+               Structs : My_Seq;
+            end message
+               with Byte_Order => Low_Order_First;
+      end Test;
+   """
+    utils.assert_provable_code_string(spec, tmp_path)
