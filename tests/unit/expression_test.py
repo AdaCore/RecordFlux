@@ -19,6 +19,7 @@ from rflx.expression import (
     Attribute,
     Binding,
     Call,
+    Case,
     Comprehension,
     Conversion,
     Div,
@@ -2453,3 +2454,78 @@ def test_proof_invalid_logic() -> None:
             None,
         )
     ]
+
+
+def test_case_variables() -> None:
+    assert_equal(
+        Case(
+            Variable("C"), [([ID("V1"), ID("V2")], Number(1)), ([ID("V3")], Variable("E"))]
+        ).variables(),
+        [Variable("C"), Variable("E")],
+    )
+
+
+def test_case_substituted() -> None:
+    c = Case(Variable("C"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))])
+    assert_equal(
+        c.substituted(lambda x: Number(42) if x == Variable("E1") else x),
+        Case(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Variable("E2"))]),
+    )
+    assert_equal(
+        c.substituted(
+            lambda x: Number(42) if isinstance(x, Variable) and x.name.startswith("E") else x
+        ),
+        Case(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Number(42))]),
+    )
+    assert_equal(
+        c.substituted(lambda x: Variable("C_Subst") if x == Variable("C") else x),
+        Case(
+            Variable("C_Subst"),
+            [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
+        ),
+    )
+    assert_equal(
+        c.substituted(lambda x: Variable("C_Subst") if isinstance(x, Case) else x),
+        Variable("C_Subst"),
+    )
+
+
+def test_case_substituted_location() -> None:
+    c = Case(
+        Variable("C"),
+        [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
+        location=Location((1, 2)),
+    ).substituted(lambda x: x)
+    assert c.location
+
+
+def test_case_findall() -> None:
+    assert_equal(
+        Case(
+            Variable("C1"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))]
+        ).findall(lambda x: isinstance(x, Variable) and x.name.endswith("1")),
+        [Variable("C1"), Variable("E1")],
+    )
+
+
+def test_case_type() -> None:
+    assert_type(Case(Number(1), [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], FALSE)]), rty.BOOLEAN)
+    assert_type(
+        Case(Number(1), [([ID("V1"), ID("V2")], Number(1)), ([ID("V3")], Number(2))]),
+        rty.UniversalInteger(rty.Bounds(1, 2)),
+    )
+    assert_type_error(
+        Case(Number(1), [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], Number(1))]),
+        r'^model: error: dependent expression "True" has incompatible type enumeration type '
+        r'"__BUILTINS__::Boolean"\n'
+        r'model: warning: conflicting with "1" which has type type universal integer \(1\)$',
+    )
+
+
+def test_case_simplified() -> None:
+    assert_equal(
+        Case(
+            Variable("C"), [([ID("V1"), ID("V2")], And(TRUE, FALSE)), ([ID("V3")], FALSE)]
+        ).simplified(),
+        Case(Variable("C"), [([ID("V1"), ID("V2")], FALSE), ([ID("V3")], FALSE)]),
+    )

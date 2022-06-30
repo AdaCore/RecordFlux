@@ -643,6 +643,22 @@ def create_selected(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
+def create_case(expression: lang.Expr, filename: Path) -> expr.Expr:
+    assert isinstance(expression, lang.CaseExpression)
+    choices: List[Tuple[List[StrID], expr.Expr]] = [
+        (
+            [create_id(s, filename) for s in c.f_selectors if isinstance(s, lang.AbstractID)],
+            create_expression(c.f_expression, filename),
+        )
+        for c in expression.f_choices
+    ]
+    return expr.Case(
+        create_expression(expression.f_expression, filename),
+        choices,
+        location=node_location(expression, filename),
+    )
+
+
 def create_conversion(expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Conversion)
     return expr.Conversion(
@@ -689,6 +705,7 @@ EXPRESSION_MAP = {
     "Conversion": create_conversion,
     "MessageAggregate": create_message_aggregate,
     "BinOp": create_binop,
+    "CaseExpression": create_case,
 }
 
 
@@ -743,6 +760,7 @@ def create_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
         "QuantifiedExpression": create_quantified_expression,
         "Binding": create_binding,
         "SelectNode": create_selected,
+        "CaseExpression": create_case,
     }
     return handlers[expression.kind_name](expression, filename)
 
