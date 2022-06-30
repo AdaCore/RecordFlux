@@ -108,6 +108,7 @@ Generator:
 - Missing reset in assignment to comprehension (#1050)
 - Message size calculation for message aggregates (#1042)
 - Initialization of session context (#954)
+- Unprovable VC with some user conditions on fields (#995)
 
 PyRFLX:
 
