@@ -1,0 +1,52 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Prepare
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+         goto Terminated -- §S-S-T-N
+      end Start;
+
+      state Prepare is
+         Recv_Type : Universal::Message_Type;
+      begin
+         Recv_Type := Message.Message_Type;
+         Message := Universal::Message'(Message_Type => Universal::MT_Value,
+                                        Length       => 1,
+                                        Value        => (case Recv_Type is
+                                                         when Universal::MT_Null | Universal::MT_Data =>   2,
+                                                         when Universal::MT_Value                     =>   8,
+                                                         when Universal::MT_Values                    =>  16,
+                                                         when Universal::MT_Option_Types              =>  32,
+                                                         when Universal::MT_Options                   =>  64,
+                                                         when Universal::MT_Unconstrained_Data        => 128,
+                                                         when Universal::MT_Unconstrained_Options     => 256));
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto Terminated -- §S-S-E
+      end Prepare;
+
+      state Reply is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto Terminated -- §S-S-T-N
+      end Reply;
+
+      state Terminated is null state; -- §S-S-N
+   end Session;
+
+end Test;
