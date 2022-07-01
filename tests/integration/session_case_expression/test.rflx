@@ -20,12 +20,14 @@ package Test is
       end Start;
 
       state Prepare is
-         Recv_Type : Universal::Message_Type;
+         Recv_Type : Universal::Message_Type; -- §S-D-V-T-SC
       begin
-         Recv_Type := Message.Message_Type;
+         Recv_Type := Message.Message_Type; -- §S-S-A-A-V
+         -- §S-S-A-A-MA
          Message := Universal::Message'(Message_Type => Universal::MT_Value,
                                         Length       => 1,
-                                        Value        => (case Recv_Type is
+                                        Value        => -- §S-E-CE
+                                                        (case Recv_Type is
                                                          when Universal::MT_Null | Universal::MT_Data =>   2,
                                                          when Universal::MT_Value                     =>   8,
                                                          when Universal::MT_Values                    =>  16,

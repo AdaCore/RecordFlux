@@ -57,7 +57,7 @@ is
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      --  tests/integration/session_case_expression/test.rflx:26:10
+      --  tests/integration/session_case_expression/test.rflx:27:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
@@ -131,7 +131,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_case_expression/test.rflx:44:10
+      --  tests/integration/session_case_expression/test.rflx:46:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

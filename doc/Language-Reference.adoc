@@ -1070,7 +1070,8 @@ Data_Channel'Write (Message)
 
 [subs="+macros,quotes"]
 ----
-[[syntax-expression]]expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | xref:syntax-mathematical_expression[mathematical_expression] | xref:syntax-boolean_expression[boolean_expression] | xref:syntax-message_aggregate[message_aggregate] | xref:syntax-aggregate[aggregate] | xref:syntax-attribute_reference[attribute_reference] | xref:syntax-selected[selected] | xref:syntax-comprehension[comprehension] | xref:syntax-binding[binding] | xref:syntax-quantified_expression[quantified_expression] | xref:syntax-call[call] | xref:syntax-conversion[conversion]
+[[syntax-expression]]expression ::= xref:syntax-literal[literal] | xref:syntax-variable[variable] | xref:syntax-mathematical_expression[mathematical_expression] | xref:syntax-boolean_expression[boolean_expression] | xref:syntax-message_aggregate[message_aggregate] | xref:syntax-aggregate[aggregate] | xref:syntax-attribute_reference[attribute_reference] | xref:syntax-selected[selected] | xref:syntax-comprehension[comprehension] | xref:syntax-binding[binding] | xref:syntax-quantified_expression[quantified_expression] | xref:syntax-call[call] | xref:syntax-conversion[conversion] | xref:syntax-case_expression[case_expression]
+
 ----
 
 ==== Literals
@@ -1591,6 +1592,45 @@ An invalid condition of a refinement leads to an exception transition. This beha
 ----
 Key_Update_Message (Handshake_Control_Message.Data)
 ----
+
+==== Case Expressions
+
+// Case Expressions [§S-E-CE]
+
+A xref:syntax-case_expression[case expression] selects one of several alternative dependent xref:syntax-expression[expressions] for evaluation based on the value of a selecting xref:syntax-expression[expression].
+ 
+*Syntax*
+
+[subs="+macros,quotes"]
+----
+[[syntax-case_expression]]case_expression ::=
+   *(* *case* selecting_xref:syntax-expression[expression] *is*
+       xref:syntax-case_expression_alternative[case_expression_alternative] { *,*
+       xref:syntax-case_expression_alternative[case_expression_alternative] } *)*
+
+[[syntax-case_expression_alternative]]case_expression_alternative ::=
+   *when* xref:syntax-discrete_choice_list[discrete_choice_list] *=>* dependent_xref:syntax-expression[expression]
+
+[[syntax-discrete_choice_list]]discrete_choice_list := xref:syntax-discrete_choice[discrete_choice] { *|* xref:syntax-discrete_choice[discrete_choice] }
+
+[[syntax-discrete_choice]]discrete_choice := xref:syntax-number[number] | xref:syntax-qualified_name[qualified_name]
+----
+
+*Static Semantics*
+
+The type of all the dependent_xref:syntax-expression[expression]s shall be compatible to the type of the xref:syntax-case_expression[case_expression].
+Each value of the type of the selecting_xref:syntax-expression[expression] shall be covered by a xref:syntax-discrete_choice[discrete_choice].
+Two distinct xref:syntax-discrete_choice[discrete_choices] of a xref:syntax-case_expression[case_expression] shall not cover the same value.
+
+*Example*
+
+[source,ada,rflx,extended_primary]
+----
+(case Value is
+    when T::V1 | T::V2 => 2,
+    when T::V3         => 4)
+----
+
 
 == Packages
 
