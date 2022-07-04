@@ -592,9 +592,9 @@ def public_context_predicate() -> Expr:
     )
 
 
-def context_invariant(message: model.Message) -> Sequence[Expr]:
+def context_invariant(message: model.Message, loop_entry: bool = False) -> Sequence[Expr]:
     return [
-        Equal(e, Old(e))
+        Equal(e, LoopEntry(e) if loop_entry else Old(e))
         for e in [
             Variable("Ctx.Buffer_First"),
             Variable("Ctx.Buffer_Last"),

@@ -258,6 +258,11 @@ is
    procedure Verify_Message (Ctx : in out Context) is
    begin
       for F in Field loop
+         pragma Loop_Invariant (Has_Buffer (Ctx)
+                                and Ctx.Buffer_First = Ctx.Buffer_First'Loop_Entry
+                                and Ctx.Buffer_Last = Ctx.Buffer_Last'Loop_Entry
+                                and Ctx.First = Ctx.First'Loop_Entry
+                                and Ctx.Last = Ctx.Last'Loop_Entry);
          Verify (Ctx, F);
       end loop;
    end Verify_Message;

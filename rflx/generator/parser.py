@@ -489,6 +489,11 @@ class ParserGenerator:
             "Verify_Message", [InOutParameter(["Ctx"], "Context")]
         )
 
+        loop_invariant = And(
+            Call("Has_Buffer", [Variable("Ctx")]),
+            *common.context_invariant(message, loop_entry=True),
+        )
+
         return UnitPart(
             [
                 SubprogramDeclaration(
@@ -512,7 +517,10 @@ class ParserGenerator:
                         ForIn(
                             "F",
                             Variable("Field"),
-                            [CallStatement("Verify", [Variable("Ctx"), Variable("F")])],
+                            [
+                                PragmaStatement("Loop_Invariant", [loop_invariant]),
+                                CallStatement("Verify", [Variable("Ctx"), Variable("F")]),
+                            ],
                         )
                     ],
                 )
