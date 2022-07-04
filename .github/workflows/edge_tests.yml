@@ -6,6 +6,9 @@ on:
   schedule:
     - cron:  '0 2 1 * *'
 
+env:
+    MEMCACHED: localhost:11211
+
 jobs:
   checks:
     name: Checks
@@ -29,16 +32,18 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Cache Ada toolchain
-      uses: actions/cache@v2
+    - name: Install GNAT Pro
+      uses: ./.github/actions/install_gnat_pro
       with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
-      uses: ada-actions/toolchain@ce2021
+        version: "23.0w-20220508"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
       with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
+        version: "23.0w-20220612"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -69,16 +74,18 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Cache Ada toolchain
-      uses: actions/cache@v2
+    - name: Install GNAT Pro
+      uses: ./.github/actions/install_gnat_pro
       with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install Ada toolchain
-      uses: ada-actions/toolchain@ce2021
+        version: "23.0w-20220508"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
+    - name: Install SPARK Pro
+      uses: ./.github/actions/install_spark_pro
       with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
+        version: "23.0w-20220612"
+        ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
+        server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
