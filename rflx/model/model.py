@@ -5,9 +5,9 @@ from rflx import const
 from rflx.common import Base, unique, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
-from rflx.model.package import Package
 
 from . import message, session, type_
+from .package import Package
 
 
 class Model(Base):

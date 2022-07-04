@@ -56,4 +56,4 @@ T = TypeVar("T")
 def unique(iterable: Iterable[T]) -> Iterator[T]:
     # In Python 3.7+, standard `dict` is guaranteed to preserve order:
     # https://stackoverflow.com/a/39980744
-    return dict.fromkeys(iterable).__iter__()
+    return iter(dict.fromkeys(iterable))

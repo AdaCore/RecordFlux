@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
+# pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments,method-cache-max-size-none
 
 from __future__ import annotations
 
@@ -230,7 +230,6 @@ class Expr(DBC, Base):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    # pylint: disable=no-self-use
     def variables(self) -> List["Variable"]:
         return []
 
@@ -791,13 +790,14 @@ class Add(MathAssExpr):
             return expr
         terms: List[Expr] = []
         for term in reversed(expr.terms):
-            complement = False
+            complement = None
             for other in terms:
                 if other == -term:
-                    terms.remove(other)
-                    complement = True
+                    complement = other
                     break
-            if not complement:
+            if complement is not None:
+                terms.remove(complement)
+            else:
                 terms.insert(0, term)
         if len(terms) == 1:
             return terms[0]

@@ -5,12 +5,11 @@ from typing import Dict, Iterable, Iterator, Union
 from rflx.error import FatalError
 from rflx.identifier import ID, StrID
 from rflx.model import Model
-from rflx.pyrflx.typevalue import MessageValue, RefinementValue
 from rflx.specification import Parser
 
-from . import PyRFLXError
+from .error import PyRFLXError
 from .package import Package
-from .typevalue import ChecksumFunction
+from .typevalue import ChecksumFunction, MessageValue, RefinementValue
 
 log = logging.getLogger(__name__)
 

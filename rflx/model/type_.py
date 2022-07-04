@@ -1,3 +1,5 @@
+# pylint: disable = cyclic-import
+
 import typing as ty
 from abc import abstractmethod
 from pathlib import Path
@@ -8,7 +10,8 @@ from rflx.common import indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
-from . import BasicDeclaration, message
+from . import message
+from .basic_declaration import BasicDeclaration
 
 
 class Type(BasicDeclaration):

@@ -2,8 +2,9 @@ from typing import Dict, Iterator, Mapping, Union
 
 from rflx.common import Base
 from rflx.identifier import StrID
-from rflx.pyrflx import PyRFLXError
-from rflx.pyrflx.typevalue import ChecksumFunction, MessageValue
+
+from .error import PyRFLXError
+from .typevalue import ChecksumFunction, MessageValue
 
 
 class Package(Base):

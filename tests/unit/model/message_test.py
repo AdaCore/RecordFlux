@@ -490,7 +490,7 @@ def test_cycle() -> None:
 
 
 def test_parameters() -> None:
-    assert ETHERNET_FRAME.parameters == ()
+    assert not ETHERNET_FRAME.parameters
     assert PARAMETERIZED_MESSAGE.parameters == (
         Field("P1"),
         Field("P2"),

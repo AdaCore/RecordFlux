@@ -484,8 +484,7 @@ class SequenceValue(CompositeValue):
                     )
                     new_exception.extend(e)
                     raise new_exception from e
-                # ISSUE: PyCQA/pylint#4693
-                assert nested_message.valid_message  # pylint: disable=no-member
+                assert nested_message.valid_message
                 self._value.append(nested_message)
                 value = value[len(nested_message.bitstring) :]
 
@@ -1399,7 +1398,7 @@ class MessageValue(TypeValue):
     class Field(Base):
         def __init__(
             self,
-            t: TypeValue,
+            type_value: TypeValue,
             name: str = "",
             name_variable: Variable = None,
             name_first: First = None,
@@ -1408,7 +1407,7 @@ class MessageValue(TypeValue):
         ):
             # pylint: disable=too-many-arguments
             assert name or (name_variable and name_first and name_last and name_size)
-            self.typeval = t
+            self.typeval = type_value
             self.name_variable = name_variable if name_variable else Variable(name)
             self.name_first = name_first if name_first else First(name)
             self.name_last = name_last if name_last else Last(name)
