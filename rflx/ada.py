@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable = cyclic-import, too-many-lines
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from sys import intern
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
 import rflx.identifier
+from rflx import expression as expr
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
 
@@ -80,23 +81,30 @@ class Expr(Base):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def parenthesized(self, expr: "Expr") -> str:
-        if expr.precedence.value <= self.precedence.value:
-            return "(" + indent_next(str(expr), 1) + ")"
-        return str(expr)
+    def parenthesized(self, expression: "Expr") -> str:
+        if expression.precedence.value <= self.precedence.value:
+            return "(" + indent_next(str(expression), 1) + ")"
+        return str(expression)
+
+    @abstractmethod
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
 
 
 class Not(Expr):
-    def __init__(self, expr: Expr) -> None:
+    def __init__(self, expression: Expr) -> None:
         super().__init__()
-        self.expr = expr
+        self.expression = expression
 
     def _update_str(self) -> None:
-        self._str = intern(f"not {self.parenthesized(self.expr)}")
+        self._str = intern(f"not {self.parenthesized(self.expression)}")
 
     @property
     def precedence(self) -> Precedence:
         return Precedence.HIGHEST_PRECEDENCE_OPERATOR
+
+    def rflx_expr(self) -> expr.Not:
+        return expr.Not(self.expression.rflx_expr())
 
 
 class BinExpr(Expr):
@@ -120,6 +128,13 @@ class BinExpr(Expr):
     def symbol(self) -> str:
         raise NotImplementedError
 
+    def rflx_expr(self) -> expr.BinExpr:
+        result = getattr(expr, self.__class__.__name__)(
+            self.left.rflx_expr(), self.right.rflx_expr()
+        )
+        assert isinstance(result, expr.BinExpr)
+        return result
+
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr) -> None:
@@ -138,6 +153,11 @@ class AssExpr(Expr):
     @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError
+
+    def rflx_expr(self) -> expr.AssExpr:
+        result = getattr(expr, self.__class__.__name__)(*[t.rflx_expr() for t in self.terms])
+        assert isinstance(result, expr.AssExpr)
+        return result
 
 
 class BoolAssExpr(AssExpr):
@@ -224,6 +244,9 @@ class Number(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
+
+    def rflx_expr(self) -> expr.Number:
+        return expr.Number(self.value, self.base)
 
 
 class Add(AssExpr):
@@ -334,6 +357,23 @@ class Name(Expr):
         return Precedence.LITERAL
 
 
+class Literal(Name):
+    def __init__(self, identifier: StrID) -> None:
+        self.identifier = ID(identifier)
+        super().__init__(False)
+
+    @property
+    def _representation(self) -> str:
+        return str(self.name)
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
+
+    def rflx_expr(self) -> expr.Literal:
+        return expr.Literal(ID(self.identifier))
+
+
 class Variable(Name):
     def __init__(self, identifier: StrID, negative: bool = False) -> None:
         self.identifier = ID(identifier)
@@ -350,10 +390,13 @@ class Variable(Name):
     def name(self) -> str:
         return str(self.identifier)
 
+    def rflx_expr(self) -> expr.Variable:
+        return expr.Variable(ID(self.identifier))
 
-TRUE = Variable("True")
-FALSE = Variable("False")
-NULL = Variable("null")
+
+TRUE = Literal("True")
+FALSE = Literal("False")
+NULL = Literal("null")
 
 
 class Attribute(Name):
@@ -372,6 +415,11 @@ class Attribute(Name):
     @property
     def _representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
+
+    def rflx_expr(self) -> expr.Attribute:
+        result = getattr(expr, self.__class__.__name__)(self.prefix.rflx_expr(), self.negative)
+        assert isinstance(result, expr.Attribute)
+        return result
 
 
 class Size(Attribute):
@@ -513,24 +561,32 @@ class Indexed(Name):
     def _representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
 
+    def rflx_expr(self) -> expr.Indexed:
+        return expr.Indexed(
+            self.prefix.rflx_expr(), *[e.rflx_expr() for e in self.elements], negative=self.negative
+        )
+
 
 class Selected(Name):
     def __init__(
         self,
         prefix: Expr,
-        selector_identifier: StrID,
+        selector: StrID,
         negative: bool = False,
     ) -> None:
         self.prefix = prefix
-        self.selector_identifier = ID(selector_identifier)
+        self.selector = ID(selector)
         super().__init__(negative)
 
     def __neg__(self) -> "Selected":
-        return self.__class__(self.prefix, self.selector_identifier, not self.negative)
+        return self.__class__(self.prefix, self.selector, not self.negative)
 
     @property
     def _representation(self) -> str:
-        return f"{self.prefix}.{self.selector_identifier}"
+        return f"{self.prefix}.{self.selector}"
+
+    def rflx_expr(self) -> expr.Selected:
+        return expr.Selected(self.prefix.rflx_expr(), ID(self.selector), self.negative)
 
 
 class Call(Name):
@@ -564,6 +620,12 @@ class Call(Name):
         call = f"{self.identifier}{arguments}"
         return call
 
+    def rflx_expr(self) -> expr.Call:
+        assert not self.named_arguments
+        return expr.Call(
+            ID(self.identifier), [a.rflx_expr() for a in self.arguments], self.negative
+        )
+
 
 class Slice(Name):
     def __init__(self, prefix: Expr, first: Expr, last: Expr) -> None:
@@ -575,6 +637,9 @@ class Slice(Name):
     @property
     def _representation(self) -> str:
         return f"{self.prefix} ({self.first} .. {self.last})"
+
+    def rflx_expr(self) -> expr.Slice:
+        return expr.Slice(self.prefix.rflx_expr(), self.first.rflx_expr(), self.last.rflx_expr())
 
 
 class Aggregate(Expr):
@@ -590,6 +655,9 @@ class Aggregate(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
+    def rflx_expr(self) -> expr.Aggregate:
+        return expr.Aggregate(*[e.rflx_expr() for e in self.elements])
+
 
 class String(Aggregate):
     def __init__(self, data: str) -> None:
@@ -603,6 +671,9 @@ class String(Aggregate):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
+
+    def rflx_expr(self) -> expr.String:
+        return expr.String(self.data)
 
 
 class NamedAggregate(Expr):
@@ -620,11 +691,28 @@ class NamedAggregate(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
+    def rflx_expr(self) -> expr.NamedAggregate:
+        elements: list[tuple[Union[StrID, expr.Expr], expr.Expr]] = [
+            (
+                ID(n) if isinstance(n, ID) else n.rflx_expr(),
+                e.rflx_expr(),
+            )
+            for n, e in self.elements
+        ]
+        return expr.NamedAggregate(*elements)
+
 
 class Relation(BinExpr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.RELATIONAL_OPERATOR
+
+    def rflx_expr(self) -> expr.Relation:
+        result = getattr(expr, self.__class__.__name__)(
+            self.left.rflx_expr(), self.right.rflx_expr()
+        )
+        assert isinstance(result, expr.Relation)
+        return result
 
 
 class Less(Relation):
@@ -721,6 +809,12 @@ class IfExpr(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
+    def rflx_expr(self) -> expr.IfExpr:
+        return expr.IfExpr(
+            [(c.rflx_expr(), e.rflx_expr()) for c, e in self.condition_expressions],
+            self.else_expression.rflx_expr() if self.else_expression else None,
+        )
+
 
 def Case(control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]) -> Expr:
     # pylint: disable=invalid-name
@@ -739,12 +833,15 @@ class CaseExpr(Expr):
 
     def _update_str(self) -> None:
         grouped_cases = [
-            (" | ".join(str(c) for c, _ in choices), expr)
-            for expr, choices in itertools.groupby(self.case_expressions, lambda x: x[1])
+            (" | ".join(str(c) for c, _ in choices), expression)
+            for expression, choices in itertools.groupby(self.case_expressions, lambda x: x[1])
         ]
         cases = indent(
             ",".join(
-                [f"\nwhen {choice} =>\n{indent(str(expr), 3)}" for choice, expr in grouped_cases]
+                [
+                    f"\nwhen {choice} =>\n{indent(str(expression), 3)}"
+                    for choice, expression in grouped_cases
+                ]
             ),
             4,
         )
@@ -753,6 +850,9 @@ class CaseExpr(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
+
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
 
 
 class QuantifiedExpr(Expr):
@@ -781,6 +881,13 @@ class QuantifiedExpr(Expr):
     @abstractmethod
     def keyword(self) -> str:
         raise NotImplementedError
+
+    def rflx_expr(self) -> expr.QuantifiedExpr:
+        result = getattr(expr, self.__class__.__name__)(
+            self.parameter_identifier, self.iterable.rflx_expr(), self.predicate.rflx_expr()
+        )
+        assert isinstance(result, expr.QuantifiedExpr)
+        return result
 
 
 class ForAllOf(QuantifiedExpr):
@@ -830,6 +937,9 @@ class ValueRange(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
+    def rflx_expr(self) -> expr.ValueRange:
+        return expr.ValueRange(self.lower.rflx_expr(), self.upper.rflx_expr())
+
 
 class Conversion(Expr):
     def __init__(self, identifier: StrID, argument: Expr) -> None:
@@ -843,6 +953,9 @@ class Conversion(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
+
+    def rflx_expr(self) -> expr.Conversion:
+        return expr.Conversion(ID(self.identifier), self.argument.rflx_expr())
 
 
 class QualifiedExpr(Expr):
@@ -863,6 +976,9 @@ class QualifiedExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
+
 
 class Raise(Expr):
     def __init__(self, identifier: StrID, string: Expr = None) -> None:
@@ -878,6 +994,9 @@ class Raise(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
+
 
 class ChoiceList(Expr):
     def __init__(self, *expressions: Expr) -> None:
@@ -890,6 +1009,9 @@ class ChoiceList(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
+
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
 
 
 class Declaration(Base):
@@ -943,8 +1065,8 @@ class Aspect(Base):
 
 
 class Precondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -952,12 +1074,12 @@ class Precondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class Postcondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -965,12 +1087,12 @@ class Postcondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class ClassPrecondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -978,12 +1100,12 @@ class ClassPrecondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class ClassPostcondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -991,7 +1113,7 @@ class ClassPostcondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class ContractCases(Aspect):
@@ -1032,8 +1154,8 @@ class Depends(Aspect):
 
 
 class DynamicPredicate(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -1041,12 +1163,12 @@ class DynamicPredicate(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class SizeAspect(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -1054,12 +1176,12 @@ class SizeAspect(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class InitialCondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -1067,12 +1189,12 @@ class InitialCondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class DefaultInitialCondition(Aspect):
-    def __init__(self, expr: Expr) -> None:
-        self.expr = expr
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
 
     @property
     def mark(self) -> str:
@@ -1080,7 +1202,7 @@ class DefaultInitialCondition(Aspect):
 
     @property
     def definition(self) -> str:
-        return str(self.expr)
+        return str(self.expression)
 
 
 class SparkMode(Aspect):

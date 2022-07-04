@@ -56,6 +56,7 @@ from rflx.expression import (
     Present,
     Proof,
     ProofResult,
+    Rem,
     Selected,
     Size,
     String,
@@ -541,7 +542,7 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     )
 
 
-@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
+@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod, Rem])
 def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     result = expression(Variable("X"), Variable("Y")).ada_expr()
     expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
