@@ -94,7 +94,7 @@ def test_true_simplified() -> None:
 
 
 def test_true_variables() -> None:
-    assert TRUE.variables() == []
+    assert not TRUE.variables()
 
 
 def test_true_z3expr() -> None:
@@ -113,7 +113,7 @@ def test_false_simplified() -> None:
 
 
 def test_false_variables() -> None:
-    assert FALSE.variables() == []
+    assert not FALSE.variables()
 
 
 def test_false_z3expr() -> None:
@@ -1685,7 +1685,7 @@ def test_number_str_bin() -> None:
 
 
 def test_string_variables() -> None:
-    assert String("X").variables() == []
+    assert not String("X").variables()
 
 
 def test_string_simplified() -> None:

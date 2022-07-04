@@ -9,9 +9,10 @@ from rflx import expression as expr, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
-from rflx.model import Message, Refinement
 
-from . import BasicDeclaration, declaration as decl, statement as stmt, type_ as mty
+from . import declaration as decl, statement as stmt, type_ as mty
+from .basic_declaration import BasicDeclaration
+from .message import Message, Refinement
 
 
 class Transition(Base):
