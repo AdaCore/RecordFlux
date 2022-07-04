@@ -236,7 +236,7 @@ class Validator:
             ) from e
 
         try:
-            checksum_functions = checksum_module.checksum_functions  # type: ignore[attr-defined]
+            checksum_functions = checksum_module.checksum_functions
         except AttributeError as e:
             raise ValidationError(
                 f'missing attribute "checksum_function" in checksum module "{name}"'

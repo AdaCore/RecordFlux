@@ -1546,10 +1546,8 @@ class Call(Name):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
 
-        for a, t in itertools.zip_longest(
-            self.args, self.argument_types[: len(self.args)], fillvalue=rty.Any()
-        ):
-            error += a.check_type(t)
+        for a, t in itertools.zip_longest(self.args, self.argument_types[: len(self.args)]):
+            error += a.check_type(t if t is not None else rty.Any())
 
         if self.type_ != rty.Undefined():
             if len(self.args) < len(self.argument_types):
