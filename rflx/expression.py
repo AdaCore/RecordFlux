@@ -980,6 +980,24 @@ class Mod(MathBinExpr):
         return left % right
 
 
+class Rem(MathBinExpr):
+    """Only used by code generator and therefore provides minimum functionality."""
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.MULTIPLYING_OPERATOR
+
+    @property
+    def symbol(self) -> str:
+        return " rem "
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Rem(self.left.ada_expr(), self.right.ada_expr())
+
+    def z3expr(self) -> z3.ArithRef:
+        raise NotImplementedError
+
+
 class Name(Expr):
     def __init__(
         self,
@@ -1060,7 +1078,7 @@ class Literal(Name):
         return []
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Variable(ada.ID(self.identifier))
+        return ada.Literal(ada.ID(self.identifier))
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1340,6 +1358,13 @@ class Opaque(Attribute):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance((rty.Sequence, rty.Message))
+
+
+class Constrained(Attribute):
+    """Only used by code generator and therefore provides minimum functionality."""
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
 
 
 class Val(Attribute):
@@ -1763,7 +1788,7 @@ class String(Aggregate):
 class NamedAggregate(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
 
-    def __init__(self, *elements: Tuple[Union[StrID, "ValueRange"], Expr]) -> None:
+    def __init__(self, *elements: Tuple[Union[StrID, Expr], Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
@@ -1787,11 +1812,9 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        elements: List[Tuple[Union[ada.StrID, ada.ValueRange], ada.Expr]] = [
+        elements: List[Tuple[Union[ada.StrID, ada.Expr], ada.Expr]] = [
             (
-                ada.ID(n)
-                if isinstance(n, ID)
-                else ada.ValueRange(n.lower.ada_expr(), n.upper.ada_expr()),
+                ada.ID(n) if isinstance(n, ID) else n.ada_expr(),
                 e.ada_expr(),
             )
             for n, e in self.elements
@@ -2146,7 +2169,7 @@ class IfExpr(Expr):
         )
 
 
-class QuantifiedExpression(Expr):
+class QuantifiedExpr(Expr):
     def __init__(
         self,
         parameter_identifier: StrID,
@@ -2204,6 +2227,7 @@ class QuantifiedExpression(Expr):
         )
 
     def ada_expr(self) -> ada.Expr:
+        # pylint: disable-next = abstract-class-instantiated
         result = getattr(ada, self.__class__.__name__)(
             self.parameter_identifier, self.iterable.ada_expr(), self.predicate.ada_expr()
         )
@@ -2219,7 +2243,7 @@ class QuantifiedExpression(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        assert isinstance(expr, QuantifiedExpression)
+        assert isinstance(expr, QuantifiedExpr)
         return expr.__class__(
             expr.parameter_identifier,
             expr.iterable.substituted(func),
@@ -2236,7 +2260,7 @@ class QuantifiedExpression(Expr):
         )
 
 
-class ForAllOf(QuantifiedExpression):
+class ForAllOf(QuantifiedExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
@@ -2249,7 +2273,7 @@ class ForAllOf(QuantifiedExpression):
         return "of"
 
 
-class ForAllIn(QuantifiedExpression):
+class ForAllIn(QuantifiedExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
@@ -2262,7 +2286,7 @@ class ForAllIn(QuantifiedExpression):
         return "in"
 
 
-class ForSomeIn(QuantifiedExpression):
+class ForSomeIn(QuantifiedExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 

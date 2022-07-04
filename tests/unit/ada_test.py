@@ -1,6 +1,8 @@
+from typing import Callable
+
 import pytest
 
-from rflx import ada
+from rflx import ada, expression as expr
 from tests.utils import assert_equal, multilinestr
 
 
@@ -30,6 +32,10 @@ def test_id_mul_str() -> None:
     assert ada.ID("B.C") * "D" == ada.ID("B.C.D")
     assert "" * ada.ID("B.C") == ada.ID("B.C")
     assert ada.ID("B.C") * "" == ada.ID("B.C")
+
+
+def test_not_rflx_expr() -> None:
+    assert ada.Not(ada.Variable("X")).rflx_expr() == expr.Not(expr.Variable("X"))
 
 
 def test_bool_expr_str() -> None:
@@ -63,6 +69,13 @@ def test_bool_expr_str() -> None:
     )
 
 
+@pytest.mark.parametrize("expression", [ada.And, ada.AndThen, ada.Or, ada.OrElse])
+def test_bool_expr_rflx_expr(expression: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
+    result = expression(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
+    expected = getattr(expr, expression.__name__)(expr.Variable("X"), expr.Variable("Y"))
+    assert result == expected
+
+
 def test_and_str() -> None:
     assert str(ada.And(ada.Variable("X"), ada.Variable("Y"))) == "X\nand Y"
 
@@ -79,6 +92,15 @@ def test_or_else_str() -> None:
     assert str(ada.OrElse(ada.Variable("X"), ada.Variable("Y"))) == "X\nor else Y"
 
 
+@pytest.mark.parametrize(
+    "expression", [ada.Add, ada.Mul, ada.Sub, ada.Div, ada.Pow, ada.Mod, ada.Rem]
+)
+def test_math_expr_ada_expr(expression: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
+    result = expression(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
+    expected = getattr(expr, expression.__name__)(expr.Variable("X"), expr.Variable("Y"))
+    assert result == expected
+
+
 def test_add_str() -> None:
     assert str(ada.Add(ada.Number(1), ada.Call("Test", []))) == "1 + Test"
     assert str(ada.Add(ada.Number(1), -ada.Call("Test", []))) == "1 - Test"
@@ -91,9 +113,40 @@ def test_attribute() -> None:
     assert isinstance(ada.Constrained("X"), ada.Attribute)
 
 
+@pytest.mark.parametrize(
+    "relation", [ada.Less, ada.LessEqual, ada.Equal, ada.GreaterEqual, ada.Greater, ada.NotEqual]
+)
+def test_math_relation_rflx_expr(relation: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
+    result = relation(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
+    expected = getattr(expr, relation.__name__)(expr.Variable("X"), expr.Variable("Y"))
+    assert result == expected
+
+
+@pytest.mark.parametrize("relation", [ada.In, ada.NotIn])
+def test_composite_relation_rflx_expr(relation: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
+    result = relation(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
+    expected = getattr(expr, relation.__name__)(expr.Variable("X"), expr.Variable("Y"))
+    assert result == expected
+
+
 def test_attribute_str() -> None:
     assert str(ada.First("X")) == "X'First"
     assert str(-ada.First("X")) == "(-X'First)"
+
+
+def test_literal_rflx_expr() -> None:
+    assert ada.Literal("X").rflx_expr() == expr.Literal("X")
+
+
+def test_variable_rflx_expr() -> None:
+    assert ada.Variable("X").rflx_expr() == expr.Variable("X")
+
+
+@pytest.mark.parametrize("attribute", [ada.Size, ada.Length, ada.First, ada.Last])
+def test_attribute_rflx_expr(attribute: Callable[[ada.Expr], ada.Expr]) -> None:
+    result = attribute(ada.Variable("X")).rflx_expr()
+    expected = getattr(expr, attribute.__name__)(expr.Variable("X"))
+    assert result == expected
 
 
 def test_attribute_expression_str() -> None:
@@ -105,13 +158,43 @@ def test_selected_str() -> None:
     assert str(-ada.Selected(ada.Variable("X"), "Y")) == "(-X.Y)"
 
 
+def test_selected_rflx_expr() -> None:
+    assert ada.Selected(ada.Variable("X"), "Y").rflx_expr() == expr.Selected(
+        expr.Variable("X"), "Y"
+    )
+
+
 def test_indexed_str() -> None:
     assert str(ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "X (Y)"
     assert str(-ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "(-X (Y))"
 
 
+def test_indexed_rflx_expr() -> None:
+    assert ada.Indexed(ada.Variable("X"), ada.Variable("Y")).rflx_expr() == expr.Indexed(
+        expr.Variable("X"), expr.Variable("Y")
+    )
+
+
+def test_call_rflx_expr() -> None:
+    assert ada.Call("X", [ada.Variable("Y"), ada.Variable("Z")]).rflx_expr() == expr.Call(
+        "X", [expr.Variable("Y"), expr.Variable("Z")]
+    )
+
+
+def test_slice_rflx_expr() -> None:
+    assert ada.Slice(
+        ada.Variable("X"), ada.Variable("Y"), ada.Variable("Z")
+    ).rflx_expr() == expr.Slice(expr.Variable("X"), expr.Variable("Y"), expr.Variable("Z"))
+
+
 def test_aggregate_str() -> None:
     assert str(ada.Aggregate(ada.Number(1), ada.Number(2))) == "(1, 2)"
+
+
+def test_aggregate_rflx_expr() -> None:
+    assert ada.Aggregate(ada.Number(1), ada.Number(2)).rflx_expr() == expr.Aggregate(
+        expr.Number(1), expr.Number(2)
+    )
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
@@ -174,6 +257,12 @@ def test_if_str() -> None:
     )
 
 
+def test_if_expr_rflx_expr() -> None:
+    assert ada.IfExpr(
+        [(ada.Variable("X"), ada.Variable("Y"))], ada.Variable("Z")
+    ).rflx_expr() == expr.IfExpr([(expr.Variable("X"), expr.Variable("Y"))], expr.Variable("Z"))
+
+
 def test_case_str() -> None:
     assert_equal(
         str(
@@ -196,6 +285,12 @@ def test_case_str() -> None:
     )
 
 
+def test_value_range_rflx_expr() -> None:
+    assert ada.ValueRange(ada.Variable("X"), ada.Variable("Y")).rflx_expr() == expr.ValueRange(
+        expr.Variable("X"), expr.Variable("Y")
+    )
+
+
 def test_quantified_expression_str() -> None:
     assert (
         str(ada.ForAllOf("X", ada.Variable("Y"), ada.Variable("Z"))) == "(for all X of Y =>\n    Z)"
@@ -207,6 +302,15 @@ def test_quantified_expression_str() -> None:
         str(ada.ForSomeIn("X", ada.Variable("Y"), ada.Variable("Z")))
         == "(for some X in Y =>\n    Z)"
     )
+
+
+@pytest.mark.parametrize("expression", [ada.ForAllOf, ada.ForAllIn, ada.ForSomeIn])
+def test_quantified_expression_rflx_expr(
+    expression: Callable[[str, ada.Expr, ada.Expr], ada.Expr]
+) -> None:
+    result = expression("X", ada.Variable("Y"), ada.Variable("Z")).rflx_expr()
+    expected = getattr(expr, expression.__name__)("X", expr.Variable("Y"), expr.Variable("Z"))
+    assert result == expected
 
 
 def test_number_str() -> None:
@@ -245,9 +349,17 @@ def test_number_str_bin() -> None:
     assert str(ada.Number(454, 2)) == "2#111000110#"
 
 
+def test_number_rflx_expr() -> None:
+    assert ada.Number(42).rflx_expr() == expr.Number(42)
+
+
 def test_string_str() -> None:
     assert str(ada.String("X Y")) == '"X Y"'
     assert str(ada.String('X "Y"')) == '"X ""Y"""'
+
+
+def test_string_rflx_expr() -> None:
+    assert ada.String("X Y").rflx_expr() == expr.String("X Y")
 
 
 def test_named_aggregate_str() -> None:
@@ -266,6 +378,16 @@ def test_named_aggregate_str() -> None:
 def test_named_aggregate_invalid() -> None:
     with pytest.raises(AssertionError):
         str(ada.NamedAggregate())
+
+
+def test_named_aggregate_rflx_expr() -> None:
+    assert ada.NamedAggregate(
+        ("X", ada.Number(1)),
+        (ada.ValueRange(ada.Number(2), ada.Number(3)), ada.Variable("Y")),
+    ).rflx_expr() == expr.NamedAggregate(
+        ("X", expr.Number(1)),
+        (expr.ValueRange(expr.Number(2), expr.Number(3)), expr.Variable("Y")),
+    )
 
 
 def test_raise_str() -> None:
@@ -437,6 +559,12 @@ def test_call_str() -> None:
 def test_conversion_str() -> None:
     assert str(ada.Conversion("A", ada.Variable("B"))) == "A (B)"
     assert str(ada.Not(ada.Conversion("A", ada.Variable("B")))) == "not A (B)"
+
+
+def test_conversion_rflx_expr() -> None:
+    assert ada.Conversion("X", ada.Variable("Y")).rflx_expr() == expr.Conversion(
+        "X", expr.Variable("Y")
+    )
 
 
 @pytest.mark.parametrize(
