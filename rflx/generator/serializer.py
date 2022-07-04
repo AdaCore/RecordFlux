@@ -572,10 +572,10 @@ class SerializerGenerator:
                             else Call("To_Base_Integer", [Variable("Val")])
                         ],
                     ),
+                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                     common.field_condition_call(
                         message, field, value=Call("To_Base_Integer", [Variable("Val")])
                     ),
-                    common.sufficient_space_for_field_condition(Variable(field.affixed_name)),
                 )
             )
 
@@ -738,6 +738,10 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions("Fld"),
+                                In(
+                                    Variable("Fld"),
+                                    ChoiceList(*[Variable(f.affixed_name) for f in scalar_fields]),
+                                ),
                                 Call("Valid_Value", [Variable("Fld"), Variable("Val")]),
                                 Call(
                                     "Valid_Size",
@@ -835,10 +839,10 @@ class SerializerGenerator:
                             Precondition(
                                 AndThen(
                                     *self.setter_preconditions(f.affixed_name),
+                                    *self.composite_setter_preconditions(f),
                                     *self.composite_setter_field_condition_precondition(
                                         message, f, empty=True
                                     ),
-                                    *self.composite_setter_preconditions(f),
                                     Equal(
                                         Call(
                                             "Field_Size",
@@ -913,10 +917,10 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 *self.setter_preconditions(f.affixed_name),
+                                *self.composite_setter_preconditions(f),
                                 *self.composite_setter_field_condition_precondition(
                                     message, f, empty=True
                                 ),
-                                *self.composite_setter_preconditions(f),
                                 Call(
                                     "Valid_Length",
                                     [

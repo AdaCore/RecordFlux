@@ -269,8 +269,10 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld)
-       and Valid_Value (Fld, Val),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Value (Fld, Val)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -446,8 +448,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Copied)
        and then Valid_Boolean (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Copied, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Copied) >= Field_Size (Ctx, F_Copied),
+       and then Available_Space (Ctx, F_Copied) >= Field_Size (Ctx, F_Copied)
+       and then Field_Condition (Ctx, F_Copied, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Copied)
@@ -472,8 +474,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Class)
        and then RFLX.IPv4.Valid_Option_Class (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Option_Class, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Option_Class) >= Field_Size (Ctx, F_Option_Class),
+       and then Available_Space (Ctx, F_Option_Class) >= Field_Size (Ctx, F_Option_Class)
+       and then Field_Condition (Ctx, F_Option_Class, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Class)
@@ -501,8 +503,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Number)
        and then RFLX.IPv4.Valid_Option_Number (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Option_Number, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Option_Number) >= Field_Size (Ctx, F_Option_Number),
+       and then Available_Space (Ctx, F_Option_Number) >= Field_Size (Ctx, F_Option_Number)
+       and then Field_Condition (Ctx, F_Option_Number, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Number)
@@ -534,8 +536,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Length)
        and then RFLX.IPv4.Valid_Option_Length (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Option_Length, To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Option_Length) >= Field_Size (Ctx, F_Option_Length),
+       and then Available_Space (Ctx, F_Option_Length) >= Field_Size (Ctx, F_Option_Length)
+       and then Field_Condition (Ctx, F_Option_Length, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Option_Length)
@@ -577,8 +579,8 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Option_Data)
-       and then Field_Condition (Ctx, F_Option_Data, 0)
        and then Available_Space (Ctx, F_Option_Data) >= Field_Size (Ctx, F_Option_Data)
+       and then Field_Condition (Ctx, F_Option_Data, 0)
        and then Field_Size (Ctx, F_Option_Data) = 0,
      Post =>
        Has_Buffer (Ctx)

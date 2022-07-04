@@ -404,6 +404,7 @@ is
        not Ctx'Constrained
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, Fld)
+       and then Fld in F_Destination | F_Source | F_Type_Length_TPID | F_TPID | F_TCI | F_Type_Length
        and then Valid_Value (Fld, Val)
        and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
        and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)

@@ -262,7 +262,9 @@ is
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        Has_Buffer (Ctx)
-       and Valid_Predecessor (Ctx, Fld),
+       and then Valid_Predecessor (Ctx, Fld)
+       and then Valid_Next (Ctx, Fld)
+       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -392,8 +394,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_X_A)
        and then RFLX.Messages.Valid_Integer (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_X_A)
-       and then Available_Space (Ctx, F_X_A) >= Field_Size (Ctx, F_X_A),
+       and then Available_Space (Ctx, F_X_A) >= Field_Size (Ctx, F_X_A)
+       and then Field_Condition (Ctx, F_X_A),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_X_A)
@@ -416,8 +418,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_X_B)
        and then RFLX.Messages.Valid_Enum_T (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_X_B)
-       and then Available_Space (Ctx, F_X_B) >= Field_Size (Ctx, F_X_B),
+       and then Available_Space (Ctx, F_X_B) >= Field_Size (Ctx, F_X_B)
+       and then Field_Condition (Ctx, F_X_B),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_X_B)
@@ -443,8 +445,8 @@ is
        and then Has_Buffer (Ctx)
        and then Valid_Next (Ctx, F_Y)
        and then RFLX.Messages.Valid_Enum_T (To_Base_Integer (Val))
-       and then Field_Condition (Ctx, F_Y)
-       and then Available_Space (Ctx, F_Y) >= Field_Size (Ctx, F_Y),
+       and then Available_Space (Ctx, F_Y) >= Field_Size (Ctx, F_Y)
+       and then Field_Condition (Ctx, F_Y),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Y)
