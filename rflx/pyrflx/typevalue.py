@@ -1073,9 +1073,9 @@ class MessageValue(TypeValue):
                 if e == self._message_first_name
                 else e
             )
-            expr: ty.Dict[Expr, str] = dict.fromkeys([lower, value_range.upper])
+            expr: ty.Dict[Expr, str] = {}
 
-            for e in expr:
+            for e in [lower, value_range.upper]:
                 if isinstance(e, Sub):
                     assert isinstance(e.left, (First, Last))
                     expr[e] = str(e.left.prefix)
