@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration files for defining buffer sizes of messages and sequences in sessions (#713)
 - Memory management in sessions to avoid use of heap (#629)
 - Setting of single message fields (#1067)
+- Case expressions (#907)
 
 Specification:
 
