@@ -916,5 +916,34 @@ def test_message_field_conditions_provability(tmp_path: Path) -> None:
             end message
                with Byte_Order => Low_Order_First;
       end Test;
-   """
+    """
+    utils.assert_provable_code_string(spec, tmp_path)
+
+
+@pytest.mark.verification
+def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
+    spec = """
+      package Test is
+
+         type Length_16 is mod 2 ** 16;
+
+         type Signature_Length is range 0 .. 512 with Size => 16;
+
+         type Measurements_Response (Signature_Length : Signature_Length;
+                                     Has_Signature    : Boolean) is
+            message
+               Opaque_Length : Length_16;
+               Opaque_Data : Opaque
+                  with Size => 8 * Opaque_Length
+                  then Signature
+                     if Has_Signature = True
+                  then null
+                     if Has_Signature = False;
+               Signature : Opaque
+                  with Size => 8 * Signature_Length;
+            end message
+               with Byte_Order => Low_Order_First;
+
+      end Test;
+    """
     utils.assert_provable_code_string(spec, tmp_path)
