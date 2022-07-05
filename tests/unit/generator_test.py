@@ -298,7 +298,9 @@ DUMMY_SESSION = Session(
                 [
                     decl.Argument("P1", "Boolean", type_=rty.BOOLEAN),
                     decl.Argument("P2", "T2", type_=rty.OPAQUE),
-                    decl.Argument("P3", "T3", type_=rty.Enumeration("T4", always_valid=True)),
+                    decl.Argument(
+                        "P3", "T3", type_=rty.Enumeration("T4", [ID("E1")], always_valid=True)
+                    ),
                     decl.Argument("P4", "T4", type_=rty.Integer("T2")),
                     decl.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
                 ],
@@ -973,7 +975,10 @@ class UnknownStatement(stmt.Statement):
                         "Universal::Message",
                         {
                             "Message_Type": expr.Variable(
-                                "A", type_=rty.Enumeration("Universal::Message_Type")
+                                "A",
+                                type_=rty.Enumeration(
+                                    "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                ),
                             ),
                             "Length": expr.Variable("B", type_=rty.UniversalInteger()),
                             "Data": expr.Opaque(
@@ -986,7 +991,9 @@ class UnknownStatement(stmt.Statement):
                         type_=rty.Message(
                             "Universal::Message",
                             field_types={
-                                ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                                ID("Message_Type"): rty.Enumeration(
+                                    "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                ),
                                 ID("Length"): rty.Integer("Universal::Length"),
                                 ID("Data"): rty.OPAQUE,
                             },
@@ -994,7 +1001,10 @@ class UnknownStatement(stmt.Statement):
                     ),
                     {
                         "A": expr.Variable(
-                            "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                            "Universal::MT_Data",
+                            type_=rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                         ),
                         "B": expr.Number(0),
                         "C": expr.MessageAggregate(
@@ -1002,13 +1012,17 @@ class UnknownStatement(stmt.Statement):
                             {
                                 "Option_Type": expr.Variable(
                                     "Universal::OT_Null",
-                                    type_=rty.Enumeration("Universal::Option_Type"),
+                                    type_=rty.Enumeration(
+                                        "Universal::Option_Type", [ID("Universal::OT_Null")]
+                                    ),
                                 ),
                             },
                             type_=rty.Message(
                                 "Universal::Option",
                                 field_types={
-                                    ID("Option_Type"): rty.Enumeration("Universal::Option_Type"),
+                                    ID("Option_Type"): rty.Enumeration(
+                                        "Universal::Option_Type", [ID("Universal::OT_Null")]
+                                    ),
                                 },
                             ),
                         ),
@@ -1130,7 +1144,12 @@ end if;\
                     expr.Call(
                         "F",
                         [
-                            expr.Variable("A", type_=rty.Enumeration("Universal::Message_Type")),
+                            expr.Variable(
+                                "A",
+                                type_=rty.Enumeration(
+                                    "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                ),
+                            ),
                             expr.Variable("B", type_=rty.UniversalInteger()),
                             expr.Variable(
                                 "C", type_=rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 255)))
@@ -1138,14 +1157,17 @@ end if;\
                         ],
                         type_=rty.Message("Universal::Message"),
                         argument_types=[
-                            rty.Enumeration("Universal::Message_Type"),
+                            rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                             rty.Integer("Universal::Length"),
                             rty.OPAQUE,
                         ],
                     ),
                     {
                         "A": expr.Variable(
-                            "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                            "Universal::MT_Data",
+                            type_=rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                         ),
                         "B": expr.Number(0),
                         "C": expr.Aggregate(),
@@ -1230,7 +1252,9 @@ end if;\
                             {
                                 "Message_Type": expr.Variable(
                                     "Universal::MT_Data",
-                                    type_=rty.Enumeration("Universal::Message_Type"),
+                                    type_=rty.Enumeration(
+                                        "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                    ),
                                 ),
                                 "Length": expr.Number(2),
                                 "Data": expr.Aggregate(expr.Number(3), expr.Number(4)),
@@ -1238,7 +1262,9 @@ end if;\
                             type_=rty.Message(
                                 "Universal::Message",
                                 field_types={
-                                    ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                                    ID("Message_Type"): rty.Enumeration(
+                                        "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                    ),
                                     ID("Length"): rty.Integer("Universal::Length"),
                                     ID("Data"): rty.OPAQUE,
                                 },
@@ -1333,7 +1359,9 @@ end if;\
                             type_=rty.Message("Universal::Message"),
                         ),
                         "Message_Type",
-                        type_=rty.Enumeration("Universal::Message_Type"),
+                        type_=rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                     ),
                     {
                         "A": expr.MessageAggregate(
@@ -1341,13 +1369,17 @@ end if;\
                             {
                                 "Message_Type": expr.Variable(
                                     "Universal::MT_Null",
-                                    type_=rty.Enumeration("Universal::Message_Type"),
+                                    type_=rty.Enumeration(
+                                        "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                    ),
                                 ),
                             },
                             type_=rty.Message(
                                 "Universal::Message",
                                 field_types={
-                                    ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                                    ID("Message_Type"): rty.Enumeration(
+                                        "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                    ),
                                 },
                             ),
                         ),
@@ -1480,7 +1512,9 @@ end if;\
                     {
                         "Message_Type": expr.Variable(
                             "Universal::MT_Data",
-                            type_=rty.Enumeration("Universal::Message_Type"),
+                            type_=rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                         ),
                         "Length": expr.Number(0),
                         "Data": expr.Aggregate(),
@@ -1488,7 +1522,9 @@ end if;\
                     type_=rty.Message(
                         "Universal::Message",
                         field_types={
-                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                            ID("Message_Type"): rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                             ID("Length"): rty.Integer("Universal::Length"),
                             ID("Data"): rty.OPAQUE,
                         },
@@ -1704,7 +1740,10 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
                     "Universal::Message",
                     {
                         "Message_Type": expr.Variable(
-                            "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                            "Universal::MT_Data",
+                            type_=rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                         ),
                         "Length": expr.Number(1),
                         "Data": expr.Aggregate(expr.Number(2)),
@@ -1712,7 +1751,9 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
                     type_=rty.Message(
                         "Universal::Message",
                         field_types={
-                            ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                            ID("Message_Type"): rty.Enumeration(
+                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            ),
                             ID("Length"): rty.Integer("Universal::Length"),
                             ID("Data"): rty.OPAQUE,
                         },
@@ -1830,7 +1871,10 @@ def test_session_state_action_error(
                 "Universal::Message",
                 {
                     "Message_Type": expr.Variable(
-                        "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                        "Universal::MT_Data",
+                        type_=rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                     ),
                     "Length": expr.Number(1),
                     "Data": expr.Variable(
@@ -1840,7 +1884,9 @@ def test_session_state_action_error(
                 type_=rty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                        ID("Message_Type"): rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
                     },
@@ -1856,7 +1902,10 @@ def test_session_state_action_error(
                 "Universal::Message",
                 {
                     "Message_Type": expr.Variable(
-                        "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                        "Universal::MT_Data",
+                        type_=rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                     ),
                     "Length": expr.Last(
                         expr.Variable(
@@ -1874,7 +1923,9 @@ def test_session_state_action_error(
                 type_=rty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                        ID("Message_Type"): rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
                     },
@@ -1890,7 +1941,10 @@ def test_session_state_action_error(
                 "Universal::Message",
                 {
                     "Message_Type": expr.Variable(
-                        "Universal::MT_Data", type_=rty.Enumeration("Universal::Message_Type")
+                        "Universal::MT_Data",
+                        type_=rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                     ),
                     "Length": expr.Number(1),
                     "Data": expr.Head(
@@ -1906,7 +1960,9 @@ def test_session_state_action_error(
                 type_=rty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration("Universal::Message_Type"),
+                        ID("Message_Type"): rty.Enumeration(
+                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                        ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
                     },
@@ -2274,15 +2330,15 @@ def test_session_write_error(
         ),
         (
             expr.Equal(
-                expr.Variable("X", type_=rty.Enumeration("P::E", always_valid=True)),
-                expr.Variable("Y", type_=rty.Enumeration("P::E", always_valid=True)),
+                expr.Variable("X", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                expr.Variable("Y", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             expr.Equal(expr.Variable("X"), expr.Variable("Y")),
         ),
         (
             expr.NotEqual(
-                expr.Variable("X", type_=rty.Enumeration("P::E", always_valid=True)),
-                expr.Variable("Y", type_=rty.Enumeration("P::E", always_valid=True)),
+                expr.Variable("X", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                expr.Variable("Y", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             expr.NotEqual(expr.Variable("X"), expr.Variable("Y")),
         ),
@@ -2372,9 +2428,9 @@ def test_session_substitution_error(
             expr.Selected(
                 expr.Variable("X", type_=rty.Message("P::M")),
                 "Y",
-                type_=rty.Enumeration("P::E", always_valid=True),
+                type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True),
             ),
-            expr.Variable("Z", type_=rty.Enumeration("P::E", always_valid=True)),
+            expr.Variable("Z", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             expr.AndThen(
                 expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Known"),
                 expr.Equal(
@@ -2388,9 +2444,9 @@ def test_session_substitution_error(
             expr.Selected(
                 expr.Variable("X", type_=rty.Message("P::M")),
                 "Y",
-                type_=rty.Enumeration("P::E", always_valid=True),
+                type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True),
             ),
-            expr.Variable("Z", type_=rty.Enumeration("P::E", always_valid=True)),
+            expr.Variable("Z", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             expr.AndThen(
                 expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Known"),
                 expr.NotEqual(

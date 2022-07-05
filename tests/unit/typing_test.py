@@ -3,6 +3,7 @@ import typing as ty
 import pytest
 
 from rflx.error import Location, RecordFluxError
+from rflx.identifier import ID
 from rflx.typing_ import (
     Aggregate,
     Any,
@@ -51,14 +52,18 @@ def test_bounds_str() -> None:
     assert str(Bounds(1, 100)) == "1 .. 100"
 
 
+ENUMERATION_A = Enumeration("A", [ID("AE1"), ID("AE2")])
+ENUMERATION_B = Enumeration("B", [ID("BE1"), ID("BE2"), ID("BE3")])
+
+
 @pytest.mark.parametrize(
     "enumeration,other,expected",
     [
-        (Enumeration("A"), Any(), Enumeration("A")),
-        (Enumeration("A"), Enumeration("A"), Enumeration("A")),
-        (Enumeration("A"), Undefined(), Undefined()),
-        (Enumeration("A"), Enumeration("B"), Undefined()),
-        (Enumeration("A"), Integer("A"), Undefined()),
+        (ENUMERATION_A, Any(), ENUMERATION_A),
+        (ENUMERATION_A, ENUMERATION_A, ENUMERATION_A),
+        (ENUMERATION_A, Undefined(), Undefined()),
+        (ENUMERATION_A, ENUMERATION_B, Undefined()),
+        (ENUMERATION_A, Integer("A"), Undefined()),
     ],
 )
 def test_enumeration_common_type(enumeration: Type, other: Type, expected: Type) -> None:
@@ -69,11 +74,11 @@ def test_enumeration_common_type(enumeration: Type, other: Type, expected: Type)
 @pytest.mark.parametrize(
     "enumeration,other,expected",
     [
-        (Enumeration("A"), Any(), True),
-        (Enumeration("A"), Enumeration("A"), True),
-        (Enumeration("A"), Undefined(), False),
-        (Enumeration("A"), Enumeration("B"), False),
-        (Enumeration("A"), Integer("A"), False),
+        (ENUMERATION_A, Any(), True),
+        (ENUMERATION_A, ENUMERATION_A, True),
+        (ENUMERATION_A, Undefined(), False),
+        (ENUMERATION_A, ENUMERATION_B, False),
+        (ENUMERATION_A, Integer("A"), False),
     ],
 )
 def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: bool) -> None:
@@ -102,7 +107,7 @@ def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: boo
             UndefinedInteger(),
         ),
         (AnyInteger(), Undefined(), Undefined()),
-        (AnyInteger(), Enumeration("B"), Undefined()),
+        (AnyInteger(), ENUMERATION_B, Undefined()),
     ],
 )
 def test_any_integer_common_type(any_integer: Type, other: Type, expected: Type) -> None:
@@ -131,7 +136,7 @@ def test_any_integer_common_type(any_integer: Type, other: Type, expected: Type)
             True,
         ),
         (AnyInteger(), Undefined(), False),
-        (AnyInteger(), Enumeration("B"), False),
+        (AnyInteger(), ENUMERATION_B, False),
     ],
 )
 def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: bool) -> None:
@@ -156,7 +161,7 @@ def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: boo
             UndefinedInteger(),
         ),
         (UndefinedInteger(), Undefined(), Undefined()),
-        (UndefinedInteger(), Enumeration("B"), Undefined()),
+        (UndefinedInteger(), ENUMERATION_B, Undefined()),
     ],
 )
 def test_undefined_integer_common_type(
@@ -183,7 +188,7 @@ def test_undefined_integer_common_type(
             True,
         ),
         (UndefinedInteger(), Undefined(), False),
-        (UndefinedInteger(), Enumeration("B"), False),
+        (UndefinedInteger(), ENUMERATION_B, False),
     ],
 )
 def test_undefined_integer_is_compatible(
@@ -215,7 +220,7 @@ def test_undefined_integer_is_compatible(
             UniversalInteger(),
         ),
         (UniversalInteger(), Undefined(), Undefined()),
-        (UniversalInteger(), Enumeration("B"), Undefined()),
+        (UniversalInteger(), ENUMERATION_B, Undefined()),
     ],
 )
 def test_universal_integer_common_type(
@@ -242,7 +247,7 @@ def test_universal_integer_common_type(
             True,
         ),
         (UniversalInteger(), Undefined(), False),
-        (UniversalInteger(), Enumeration("B"), False),
+        (UniversalInteger(), ENUMERATION_B, False),
     ],
 )
 def test_universal_integer_is_compatible(
@@ -290,7 +295,7 @@ def test_universal_integer_is_compatible(
             UndefinedInteger(),
         ),
         (Integer("A"), Undefined(), Undefined()),
-        (Integer("A"), Enumeration("B"), Undefined()),
+        (Integer("A"), ENUMERATION_B, Undefined()),
     ],
 )
 def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None:
@@ -336,7 +341,7 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
             True,
         ),
         (Integer("A"), Undefined(), False),
-        (Integer("A"), Enumeration("B"), False),
+        (Integer("A"), ENUMERATION_B, False),
     ],
 )
 def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> None:
@@ -541,7 +546,7 @@ def test_composite_is_compatible(composite: Type, other: Type, expected: bool) -
         (Message("A"), Message("A"), Message("A")),
         (Message("A"), Message("B"), Undefined()),
         (Message("A"), Undefined(), Undefined()),
-        (Message("A"), Enumeration("B"), Undefined()),
+        (Message("A"), ENUMERATION_B, Undefined()),
     ],
 )
 def test_message_common_type(message: Type, other: Type, expected: Type) -> None:
@@ -556,7 +561,7 @@ def test_message_common_type(message: Type, other: Type, expected: Type) -> None
         (Message("A"), Message("A"), True),
         (Message("A"), Message("B"), False),
         (Message("A"), Undefined(), False),
-        (Message("A"), Enumeration("B"), False),
+        (Message("A"), ENUMERATION_B, False),
     ],
 )
 def test_message_is_compatible(message: Type, other: Type, expected: bool) -> None:
@@ -581,7 +586,7 @@ def test_message_is_compatible(message: Type, other: Type, expected: bool) -> No
         (Channel(readable=True, writable=False), Undefined(), Undefined()),
         (
             Channel(readable=True, writable=False),
-            Enumeration("A"),
+            ENUMERATION_A,
             Undefined(),
         ),
     ],
@@ -604,7 +609,7 @@ def test_channel_common_type(channel: Type, other: Type, expected: Type) -> None
         (Channel(readable=False, writable=True), Channel(readable=True, writable=True), False),
         (Channel(readable=True, writable=False), Channel(readable=True, writable=True), False),
         (Channel(readable=True, writable=False), Undefined(), False),
-        (Channel(readable=True, writable=False), Enumeration("A"), False),
+        (Channel(readable=True, writable=False), ENUMERATION_A, False),
     ],
 )
 def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> None:

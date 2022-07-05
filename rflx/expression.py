@@ -2775,24 +2775,139 @@ def _entity_name(expr: Expr) -> str:
 
 class Case(Expr):
     def __init__(
-        self, expr: Expr, choices: List[Tuple[List[StrID], Expr]], location: Location = None
+        self,
+        expr: Expr,
+        choices: List[Tuple[List[Union[ID, Number]], Expr]],
+        location: Location = None,
     ) -> None:
         super().__init__(rty.Undefined(), location)
         self.expr = expr
         self.choices = choices
 
     def _update_str(self) -> None:
-        data = ",\n".join(f"\n   when {' | '.join(map(str, c))} => {e}" for c, e in self.choices)
-        self._str = intern(f"(case {self.expr} is{data})")
+        data = ",\n".join(f"      when {' | '.join(map(str, c))} => {e}" for c, e in self.choices)
+        self._str = intern(f"(case {self.expr} is\n{data})")
+
+    def _check_enumeration(self) -> RecordFluxError:
+        assert isinstance(self.expr.type_, rty.Enumeration)
+        assert self.expr.type_.literals
+
+        error = RecordFluxError()
+        literals = [
+            c.name for (choice, _) in self.choices for c in choice if isinstance(c, (str, ID))
+        ]
+        type_literals = [l.name for l in self.expr.type_.literals]
+        missing = set(type_literals) - set(literals)
+        if missing:
+            error.extend(
+                [
+                    (
+                        "not all enumeration literals covered by case expression",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        (
+                            f'missing literal "{l.name}"',
+                            Subsystem.MODEL,
+                            Severity.WARNING,
+                            self.expr.type_.location,
+                        )
+                        for l in missing
+                    ],
+                ]
+            )
+
+        invalid = set(literals) - set(type_literals)
+        if invalid:
+            error.extend(
+                [
+                    (
+                        "invalid literals used in case expression",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        (
+                            f'literal "{l.name}" not part of {self.expr.type_.identifier}',
+                            Subsystem.MODEL,
+                            Severity.WARNING,
+                            self.expr.type_.location,
+                        )
+                        for l in invalid
+                    ],
+                ]
+            )
+        return error
+
+    def _check_integer(self) -> RecordFluxError:
+        assert isinstance(self.expr.type_, rty.Integer)
+        assert self.expr.type_.bounds.lower
+        assert self.expr.type_.bounds.upper
+
+        error = RecordFluxError()
+        literals = [
+            c.value for (choice, _) in self.choices for c in choice if isinstance(c, Number)
+        ]
+        type_literals = range(self.expr.type_.bounds.lower, self.expr.type_.bounds.upper + 1)
+
+        missing = set(type_literals) - set(literals)
+        if missing:
+            error.extend(
+                [
+                    (
+                        f"case expression does not cover full range of "
+                        f"{self.expr.type_.identifier}",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        (
+                            f'missing literal "{l}"',
+                            Subsystem.MODEL,
+                            Severity.WARNING,
+                            self.expr.type_.location,
+                        )
+                        for l in missing
+                    ],
+                ]
+            )
+
+        invalid = set(literals) - set(type_literals)
+        if invalid:
+            error.extend(
+                [
+                    (
+                        "invalid literals used in case expression",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        (
+                            f'literal "{l}" not part of {self.expr.type_.identifier}',
+                            Subsystem.MODEL,
+                            Severity.WARNING,
+                            self.expr.type_.location,
+                        )
+                        for l in invalid
+                    ],
+                ]
+            )
+
+        return error
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
-
-        resulttype: rty.Type = rty.Any()
+        result_type: rty.Type = rty.Any()
+        literals = [c for (choice, _) in self.choices for c in choice]
 
         for _, expr in self.choices:
             error += expr.check_type_instance(rty.Any)
-            resulttype = resulttype.common_type(expr.type_)
+            result_type = result_type.common_type(expr.type_)
 
         for i1, (_, e1) in enumerate(self.choices):
             for i2, (_, e2) in enumerate(self.choices):
@@ -2818,7 +2933,38 @@ class Case(Expr):
         error += self.expr.check_type_instance(rty.Any)
         error.propagate()
 
-        if not isinstance(self.expr.type_, (rty.AnyInteger, rty.Enumeration)):
+        duplicates = [
+            e1
+            for i1, e1 in enumerate(literals)
+            for i2, e2 in enumerate(literals)
+            if i1 > i2 and e1 == e2
+        ]
+        if duplicates:
+            error.extend(
+                [
+                    (
+                        "duplicate literals used in case expression",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        (
+                            f'duplicate literal "{l}"',
+                            Subsystem.MODEL,
+                            Severity.WARNING,
+                            l.location,
+                        )
+                        for l in duplicates
+                    ],
+                ]
+            )
+
+        if isinstance(self.expr.type_, rty.Enumeration):
+            error += self._check_enumeration()
+        elif isinstance(self.expr.type_, rty.Integer):
+            error += self._check_integer()
+        else:
             error.extend(
                 [
                     (
@@ -2830,7 +2976,7 @@ class Case(Expr):
                 ]
             )
 
-        self.type_ = resulttype
+        self.type_ = result_type
 
         return error
 
@@ -2870,7 +3016,10 @@ class Case(Expr):
 
     def ada_expr(self) -> ada.Expr:
         choices = [
-            (Literal(choice).ada_expr(), expr.ada_expr())
+            (
+                Literal(choice).ada_expr() if isinstance(choice, (str, ID)) else choice.ada_expr(),
+                expr.ada_expr(),
+            )
             for choices, expr in self.choices
             for choice in choices
         ]

@@ -645,13 +645,29 @@ def create_selected(expression: lang.Expr, filename: Path) -> expr.Expr:
 
 def create_case(expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.CaseExpression)
-    choices: List[Tuple[List[StrID], expr.Expr]] = [
+
+    def create_choice(
+        value: Union[lang.AbstractID, lang.Expr], filename: Path
+    ) -> Union[ID, expr.Number]:
+        if isinstance(value, lang.AbstractID):
+            return create_id(value, filename)
+        assert isinstance(value, lang.Expr)
+        result = create_numeric_literal(value, filename)
+        assert isinstance(result, expr.Number)
+        return result
+
+    choices: List[Tuple[List[Union[ID, expr.Number]], expr.Expr]] = [
         (
-            [create_id(s, filename) for s in c.f_selectors if isinstance(s, lang.AbstractID)],
+            [
+                create_choice(s, filename)
+                for s in c.f_selectors
+                if isinstance(s, (lang.AbstractID, lang.Expr))
+            ],
             create_expression(c.f_expression, filename),
         )
         for c in expression.f_choices
     ]
+
     return expr.Case(
         create_expression(expression.f_expression, filename),
         choices,

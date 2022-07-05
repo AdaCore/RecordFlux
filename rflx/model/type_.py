@@ -85,7 +85,9 @@ class Scalar(Type):
 class Integer(Scalar):
     @property
     def type_(self) -> rty.Type:
-        return rty.Integer(self.full_name, rty.Bounds(self.first.value, self.last.value))
+        return rty.Integer(
+            self.full_name, rty.Bounds(self.first.value, self.last.value), location=self.location
+        )
 
     @property
     def value_count(self) -> expr.Number:
@@ -498,7 +500,12 @@ class Enumeration(Scalar):
 
     @property
     def type_(self) -> rty.Type:
-        return rty.Enumeration(self.full_name, self.always_valid)
+        return rty.Enumeration(
+            self.full_name,
+            list(map(ID, self.literals.keys())),
+            self.always_valid,
+            location=self.location,
+        )
 
     @property
     def value_count(self) -> expr.Number:
@@ -698,7 +705,7 @@ BOOLEAN = Enumeration(
     ],
     expr.Number(1),
     always_valid=False,
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=rty.BOOLEAN.location,
 )
 
 BUILTIN_TYPES = {
