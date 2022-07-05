@@ -947,3 +947,41 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
       end Test;
     """
     utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-measurements_response"])
+
+
+@pytest.mark.verification
+def test_message_large_number_of_fields(tmp_path: Path) -> None:
+    spec = """
+      package Test is
+         type Byte is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+         type Repr is
+            message
+               Field_1 : Byte;
+               Field_2 : Byte;
+               Field_3 : Byte;
+               Field_4 : Byte;
+               Field_5 : Byte;
+               Field_6 : Byte;
+               Field_7 : Byte;
+               Field_8 : Byte;
+               Field_9 : Byte;
+               Field_10 : Byte;
+               Field_11 : Byte;
+               Field_12 : Byte;
+               Field_13 : Byte;
+               Field_14 : Byte;
+               Field_15 : Byte;
+               Field_16 : Byte;
+               Field_17 : Byte;
+               Field_18 : Byte;
+               Field_19 : Byte;
+               Field_20 : Byte;
+               Field_21 : Byte;
+               Field_22 : Byte;
+               Field_23 : Byte;
+               Field_24 : Byte;
+            end message;
+      end Test;
+   """
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr"])
