@@ -799,13 +799,10 @@ class SerializerGenerator:
                                     if len(message.fields) > 1
                                     else []
                                 ),
+                                *common.context_invariant(message),
                                 *[
                                     Equal(e, Old(e))
                                     for e in [
-                                        Variable("Ctx.Buffer_First"),
-                                        Variable("Ctx.Buffer_Last"),
-                                        Variable("Ctx.First"),
-                                        Variable("Ctx.Last"),
                                         Call("Has_Buffer", [Variable("Ctx")]),
                                         Call("Predecessor", [Variable("Ctx"), Variable("Fld")]),
                                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
