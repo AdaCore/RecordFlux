@@ -1,5 +1,6 @@
 import typing as ty
 from abc import abstractmethod
+from pathlib import Path
 
 import attr
 
@@ -108,13 +109,19 @@ class IndependentType(Any):
 @attr.s(frozen=True)
 class Enumeration(IndependentType):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "enumeration type"
+    literals: ty.Sequence[ID] = attr.ib()
     always_valid: bool = attr.ib(False)
+    location: ty.Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
 
-BOOLEAN = Enumeration(const.BUILTINS_PACKAGE * "Boolean")
+BOOLEAN = Enumeration(
+    const.BUILTINS_PACKAGE * "Boolean",
+    [ID("False"), ID("True")],
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
 
 
 @attr.s(frozen=True)
@@ -172,6 +179,7 @@ class Integer(AnyInteger):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib(Bounds(None, None))
+    location: ty.Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'

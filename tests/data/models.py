@@ -1,3 +1,4 @@
+from rflx.error import Location
 from rflx.expression import (
     Aggregate,
     And,
@@ -306,6 +307,7 @@ ENUMERATION = Enumeration(
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
     Number(8),
     always_valid=False,
+    location=Location((10, 2)),
 )
 
 MESSAGE = Message(
