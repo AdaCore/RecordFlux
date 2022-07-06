@@ -917,7 +917,7 @@ def test_message_field_conditions_provability(tmp_path: Path) -> None:
                with Byte_Order => Low_Order_First;
       end Test;
     """
-    utils.assert_provable_code_string(spec, tmp_path)
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr"])
 
 
 @pytest.mark.verification
@@ -946,4 +946,4 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
 
       end Test;
     """
-    utils.assert_provable_code_string(spec, tmp_path)
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-measurements_response"])
