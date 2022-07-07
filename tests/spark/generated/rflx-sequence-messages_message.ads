@@ -125,7 +125,7 @@ is
    procedure Reset (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx),
+       and RFLX.Sequence.Messages_Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -137,7 +137,7 @@ is
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx)
+       and RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
        and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
@@ -154,7 +154,7 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
        and Buffer /= null
@@ -170,15 +170,15 @@ is
 
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Byte_Size (Ctx) = Buffer'Length;
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Structural_Valid_Message (Ctx)
+       and then RFLX.Sequence.Messages_Message.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Structural_Valid_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -192,8 +192,8 @@ is
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
    procedure Generic_Read (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Structural_Valid_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -209,9 +209,9 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Offset < Buffer_Length (Ctx)
-       and then Pre (Buffer_Length (Ctx), Offset),
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then Offset < RFLX.Sequence.Messages_Message.Buffer_Length (Ctx)
+       and then Pre (RFLX.Sequence.Messages_Message.Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -223,7 +223,7 @@ is
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
@@ -233,16 +233,16 @@ is
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Structural_Valid_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Data'Length = Byte_Size (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Structural_Valid_Message (Ctx)
+       and then Data'Length = RFLX.Sequence.Messages_Message.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -256,7 +256,7 @@ is
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Predecessor (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Valid_Predecessor (Ctx, Fld),
      Post =>
        True;
 
@@ -266,10 +266,10 @@ is
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Predecessor (Ctx, Fld)
-       and then Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Predecessor (Ctx, Fld)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, Fld) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -277,7 +277,7 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Messages =>
@@ -289,7 +289,7 @@ is
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -297,8 +297,8 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, Fld) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Messages =>
@@ -326,16 +326,16 @@ is
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -345,7 +345,7 @@ is
 
    procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -367,11 +367,11 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -385,7 +385,7 @@ is
 
    function Get_Length (Ctx : Context) return RFLX.Sequence.Length with
      Pre =>
-       Valid (Ctx, F_Length);
+       RFLX.Sequence.Messages_Message.Valid (Ctx, RFLX.Sequence.Messages_Message.F_Length);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -393,7 +393,7 @@ is
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -405,11 +405,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Length)
-       and then RFLX.Sequence.Valid_Length (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length)
-       and then Field_Condition (Ctx, F_Length),
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Length)
+       and then RFLX.Sequence.Valid_Length (RFLX.Sequence.To_Base_Integer (Val))
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, RFLX.Sequence.Messages_Message.F_Length) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Length)
+       and then RFLX.Sequence.Messages_Message.Field_Condition (Ctx, RFLX.Sequence.Messages_Message.F_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -430,11 +430,11 @@ is
    procedure Set_Messages_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Messages)
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_Condition (Ctx, F_Messages)
-       and then Field_Size (Ctx, F_Messages) = 0,
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, RFLX.Sequence.Messages_Message.F_Messages) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Field_Condition (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Messages)
@@ -449,16 +449,16 @@ is
        and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages);
 
-   procedure Set_Messages (Ctx : in out Context; Seq_Ctx : Sequence.Inner_Messages.Context) with
+   procedure Set_Messages (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Inner_Messages.Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Messages)
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_Condition (Ctx, F_Messages)
-       and then Valid_Length (Ctx, F_Messages, Sequence.Inner_Messages.Byte_Size (Seq_Ctx))
-       and then Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
-       and then Sequence.Inner_Messages.Valid (Seq_Ctx),
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, RFLX.Sequence.Messages_Message.F_Messages) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Field_Condition (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Valid_Length (Ctx, RFLX.Sequence.Messages_Message.F_Messages, RFLX.Sequence.Inner_Messages.Byte_Size (Seq_Ctx))
+       and then RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
+       and then RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Messages)
@@ -477,9 +477,9 @@ is
    procedure Initialize_Messages (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Messages)
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages),
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, RFLX.Sequence.Messages_Message.F_Messages) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Messages)
@@ -494,25 +494,25 @@ is
        and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages);
 
-   procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Sequence.Inner_Messages.Context) with
+   procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Inner_Messages.Context) with
      Pre =>
        not Ctx'Constrained
        and then not Seq_Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Messages)
-       and then Field_Size (Ctx, F_Messages) > 0
-       and then Field_First (Ctx, F_Messages) rem RFLX_Types.Byte'Size = 1
-       and then Available_Space (Ctx, F_Messages) >= Field_Size (Ctx, F_Messages)
-       and then Field_Condition (Ctx, F_Messages),
+       and then RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages) > 0
+       and then RFLX.Sequence.Messages_Message.Field_First (Ctx, RFLX.Sequence.Messages_Message.F_Messages) rem RFLX_Types.Byte'Size = 1
+       and then RFLX.Sequence.Messages_Message.Available_Space (Ctx, RFLX.Sequence.Messages_Message.F_Messages) >= RFLX.Sequence.Messages_Message.Field_Size (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Field_Condition (Ctx, RFLX.Sequence.Messages_Message.F_Messages),
      Post =>
-       not Has_Buffer (Ctx)
-       and Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
+       not RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Messages)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Messages)
-       and Sequence.Inner_Messages.Valid (Seq_Ctx)
-       and Sequence.Inner_Messages.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
+       and RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx)
+       and RFLX.Sequence.Inner_Messages.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Messages)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -529,16 +529,16 @@ is
         others =>
            True);
 
-   function Complete_Messages (Ctx : Context; Seq_Ctx : Sequence.Inner_Messages.Context) return Boolean with
+   function Complete_Messages (Ctx : Context; Seq_Ctx : RFLX.Sequence.Inner_Messages.Context) return Boolean with
      Pre =>
-       Valid_Next (Ctx, F_Messages);
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, RFLX.Sequence.Messages_Message.F_Messages);
 
-   procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out Sequence.Inner_Messages.Context) with
+   procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Inner_Messages.Context) with
      Pre =>
-       Present (Ctx, F_Messages)
-       and then Complete_Messages (Ctx, Seq_Ctx)
-       and then not Has_Buffer (Ctx)
-       and then Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
+       RFLX.Sequence.Messages_Message.Present (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
+       and then RFLX.Sequence.Messages_Message.Complete_Messages (Ctx, Seq_Ctx)
+       and then not RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
+       and then RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and then Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and then Seq_Ctx.First = Field_First (Ctx, F_Messages)
@@ -546,7 +546,7 @@ is
      Post =>
        Present (Ctx, F_Messages)
        and Has_Buffer (Ctx)
-       and not Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
+       and not RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -669,7 +669,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Length)
-      and then Field_First (Ctx, F_Length) rem RFLX_Types.Byte'Size = 1
+      and then RFLX.Sequence.Messages_Message.Field_First (Ctx, RFLX.Sequence.Messages_Message.F_Length) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Length) = Ctx.Last - Ctx.First + 1
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
@@ -783,14 +783,14 @@ private
      (Size = Field_Size (Ctx, Fld))
     with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld);
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
-   function Complete_Messages (Ctx : Context; Seq_Ctx : Sequence.Inner_Messages.Context) return Boolean is
-     (Sequence.Inner_Messages.Valid (Seq_Ctx)
-      and Sequence.Inner_Messages.Size (Seq_Ctx) = Field_Size (Ctx, F_Messages));
+   function Complete_Messages (Ctx : Context; Seq_Ctx : RFLX.Sequence.Inner_Messages.Context) return Boolean is
+     (RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx)
+      and RFLX.Sequence.Inner_Messages.Size (Seq_Ctx) = Field_Size (Ctx, F_Messages));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

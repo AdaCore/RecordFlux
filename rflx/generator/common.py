@@ -49,6 +49,7 @@ from rflx.ada import (
     Variable,
     WithClause,
 )
+from rflx.const import BUILTINS_PACKAGE
 
 from . import const
 
@@ -689,10 +690,12 @@ def context_cursor_unchanged(
     ]
 
 
-def sufficient_space_for_field_condition(field_name: Name, size: Expr = None) -> Expr:
+def sufficient_space_for_field_condition(
+    message_id: ID, field_name: Name, size: Expr = None
+) -> Expr:
     if size is None:
-        size = Call("Field_Size", [Variable("Ctx"), field_name])
-    return GreaterEqual(Call("Available_Space", [Variable("Ctx"), field_name]), size)
+        size = Call(message_id * "Field_Size", [Variable("Ctx"), field_name])
+    return GreaterEqual(Call(message_id * "Available_Space", [Variable("Ctx"), field_name]), size)
 
 
 def initialize_field_statements(
@@ -788,28 +791,39 @@ def field_bit_location_declarations(field_name: Name) -> Sequence[Declaration]:
 
 
 def field_condition_call(
+    prefix: str,
     message: model.Message,
     field: model.Field,
     value: Expr = None,
     aggregate: Expr = None,
     size: Expr = None,
 ) -> Expr:
+    package = ID(prefix * message.identifier)
     if value is None:
         value = Number(0)
     if aggregate is None:
         aggregate = EMPTY_ARRAY
     if size is None:
-        size = Call("Field_Size", [Variable("Ctx"), Variable(field.affixed_name)])
+        size = Call(
+            package * "Field_Size",
+            [Variable("Ctx"), Variable(package * field.affixed_name)],
+        )
     return Call(
-        "Field_Condition",
+        package * "Field_Condition",
         [
             Variable("Ctx"),
-            Variable(field.affixed_name),
+            Variable(package * field.affixed_name),
             *([value] if has_value_dependent_condition(message) else []),
             *([aggregate] if has_aggregate_dependent_condition(message) else []),
             *([size] if has_size_dependent_condition(message, field) else []),
         ],
     )
+
+
+def to_base_integer(prefix: str, type_package: rid.ID) -> ID:
+    if type_package == BUILTINS_PACKAGE:
+        return ID("To_Base_Integer")
+    return prefix * ID(type_package) * "To_Base_Integer"
 
 
 def ada_type_identifier(type_identifier: rid.ID) -> ID:
@@ -1075,12 +1089,12 @@ def context_cursors_initialization(message: model.Message) -> Expr:
     )
 
 
-def byte_aligned_field(field: model.Field) -> Expr:
+def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) -> Expr:
     return Equal(
         Rem(
             Call(
-                "Field_First",
-                [Variable("Ctx"), Variable(field.affixed_name)],
+                ID(prefix * message.identifier * "Field_First"),
+                [Variable("Ctx"), Variable(ID(prefix * message.identifier * field.affixed_name))],
             ),
             Size(const.TYPES_BYTE),
         ),

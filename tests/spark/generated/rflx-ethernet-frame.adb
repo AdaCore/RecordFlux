@@ -111,9 +111,9 @@ is
                  F_Initial)))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and RFLX.Ethernet.Frame.Structural_Valid (Ctx, Fld)
+       and RFLX.Ethernet.Frame.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -142,8 +142,8 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
@@ -157,7 +157,7 @@ is
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -199,10 +199,10 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
-       and then not Composite_Field (Fld)
+       RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
+       and then RFLX.Ethernet.Frame.Sufficient_Buffer_Length (Ctx, Fld)
+       and then not RFLX.Ethernet.Frame.Composite_Field (Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -290,12 +290,12 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
-       and then (if Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
+       RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
+       and then RFLX.Ethernet.Frame.Valid_Value (Fld, Val)
+       and then RFLX.Ethernet.Frame.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Ethernet.Frame.Available_Space (Ctx, Fld)
+       and then (if RFLX.Ethernet.Frame.Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
      Post =>
        Valid_Next (Ctx, Fld)
        and then Invalid_Successor (Ctx, Fld)
@@ -403,14 +403,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
        and then Fld in F_Destination | F_Source | F_Type_Length_TPID | F_TPID | F_TCI | F_Type_Length
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.Ethernet.Frame.Valid_Value (Fld, Val)
+       and then RFLX.Ethernet.Frame.Valid_Size (Ctx, Fld, RFLX.Ethernet.Frame.Field_Size (Ctx, Fld))
+       and then RFLX.Ethernet.Frame.Available_Space (Ctx, Fld) >= RFLX.Ethernet.Frame.Field_Size (Ctx, Fld)
+       and then RFLX.Ethernet.Frame.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Ethernet.Frame.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -478,42 +478,42 @@ is
 
    procedure Set_Destination (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
    begin
-      Set_Scalar (Ctx, F_Destination, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Destination, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_Destination;
 
    procedure Set_Source (Ctx : in out Context; Val : RFLX.Ethernet.Address) is
    begin
-      Set_Scalar (Ctx, F_Source, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Source, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_Source;
 
    procedure Set_Type_Length_TPID (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
    begin
-      Set_Scalar (Ctx, F_Type_Length_TPID, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Type_Length_TPID, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_Type_Length_TPID;
 
    procedure Set_TPID (Ctx : in out Context; Val : RFLX.Ethernet.TPID) is
    begin
-      Set_Scalar (Ctx, F_TPID, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_TPID, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_TPID;
 
    procedure Set_TCI (Ctx : in out Context; Val : RFLX.Ethernet.TCI) is
    begin
-      Set_Scalar (Ctx, F_TCI, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_TCI, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_TCI;
 
    procedure Set_Type_Length (Ctx : in out Context; Val : RFLX.Ethernet.Type_Length) is
    begin
-      Set_Scalar (Ctx, F_Type_Length, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Type_Length, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_Type_Length;
 
    procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Ethernet.Frame.Has_Buffer (Ctx)
+       and then RFLX.Ethernet.Frame.Valid_Next (Ctx, RFLX.Ethernet.Frame.F_Payload)
+       and then RFLX.Ethernet.Frame.Valid_Length (Ctx, RFLX.Ethernet.Frame.F_Payload, Length)
+       and then RFLX_Types.To_Length (RFLX.Ethernet.Frame.Available_Space (Ctx, RFLX.Ethernet.Frame.F_Payload)) >= Length
+       and then RFLX.Ethernet.Frame.Field_First (Ctx, RFLX.Ethernet.Frame.F_Payload) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)

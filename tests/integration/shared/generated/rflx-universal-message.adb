@@ -120,9 +120,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Universal.Message.Has_Buffer (Ctx)
+       and RFLX.Universal.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Universal.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -148,8 +148,8 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Universal.Message.Has_Buffer (Ctx)
+       and RFLX.Universal.Message.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
@@ -163,7 +163,7 @@ is
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Universal.Message.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -205,10 +205,10 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
-       and then not Composite_Field (Fld)
+       RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Universal.Message.Sufficient_Buffer_Length (Ctx, Fld)
+       and then not RFLX.Universal.Message.Composite_Field (Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -306,12 +306,17 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
-       and then (if Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
+       RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Universal.Message.Valid_Value (Fld, Val)
+       and then RFLX.Universal.Message.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Universal.Message.Available_Space (Ctx, Fld)
+       and then (if
+                    RFLX.Universal.Message.Composite_Field (Fld)
+                 then
+                    Size mod RFLX_Types.Byte'Size = 0
+                 else
+                    State_Valid),
      Post =>
        Valid_Next (Ctx, Fld)
        and then Invalid_Successor (Ctx, Fld)
@@ -452,14 +457,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
        and then Fld in F_Message_Type | F_Length | F_Value
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.Universal.Message.Valid_Value (Fld, Val)
+       and then RFLX.Universal.Message.Valid_Size (Ctx, Fld, RFLX.Universal.Message.Field_Size (Ctx, Fld))
+       and then RFLX.Universal.Message.Available_Space (Ctx, Fld) >= RFLX.Universal.Message.Field_Size (Ctx, Fld)
+       and then RFLX.Universal.Message.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Universal.Message.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -541,17 +546,17 @@ is
 
    procedure Set_Message_Type (Ctx : in out Context; Val : RFLX.Universal.Message_Type) is
    begin
-      Set_Scalar (Ctx, F_Message_Type, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Message_Type, RFLX.Universal.To_Base_Integer (Val));
    end Set_Message_Type;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Length, RFLX.Universal.To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Universal.Value) is
    begin
-      Set_Scalar (Ctx, F_Value, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Value, RFLX.Universal.To_Base_Integer (Val));
    end Set_Value;
 
    procedure Set_Data_Empty (Ctx : in out Context) is
@@ -582,44 +587,44 @@ is
       Set (Ctx, F_Values, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
    end Set_Values_Empty;
 
-   procedure Set_Option_Types (Ctx : in out Context; Seq_Ctx : Universal.Option_Types.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (Universal.Option_Types.Byte_Size (Seq_Ctx));
+   procedure Set_Option_Types (Ctx : in out Context; Seq_Ctx : RFLX.Universal.Option_Types.Context) is
+      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Universal.Option_Types.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Option_Types, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      Universal.Option_Types.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      RFLX.Universal.Option_Types.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Option_Types;
 
-   procedure Set_Options (Ctx : in out Context; Seq_Ctx : Universal.Options.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (Universal.Options.Byte_Size (Seq_Ctx));
+   procedure Set_Options (Ctx : in out Context; Seq_Ctx : RFLX.Universal.Options.Context) is
+      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Universal.Options.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Options, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      Universal.Options.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      RFLX.Universal.Options.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Options;
 
-   procedure Set_Values (Ctx : in out Context; Seq_Ctx : Universal.Values.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (Universal.Values.Byte_Size (Seq_Ctx));
+   procedure Set_Values (Ctx : in out Context; Seq_Ctx : RFLX.Universal.Values.Context) is
+      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Universal.Values.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Values, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      Universal.Values.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      RFLX.Universal.Values.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Values;
 
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Valid_Length (Ctx, F_Data, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Data)) >= Length
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, RFLX.Universal.Message.F_Data)
+       and then RFLX.Universal.Message.Valid_Length (Ctx, RFLX.Universal.Message.F_Data, Length)
+       and then RFLX_Types.To_Length (RFLX.Universal.Message.Available_Space (Ctx, RFLX.Universal.Message.F_Data)) >= Length
+       and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -659,11 +664,11 @@ is
    procedure Initialize_Option_Types_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Option_Types)
-       and then Valid_Length (Ctx, F_Option_Types, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Option_Types)) >= Length
-       and then Field_First (Ctx, F_Option_Types) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, RFLX.Universal.Message.F_Option_Types)
+       and then RFLX.Universal.Message.Valid_Length (Ctx, RFLX.Universal.Message.F_Option_Types, Length)
+       and then RFLX_Types.To_Length (RFLX.Universal.Message.Available_Space (Ctx, RFLX.Universal.Message.F_Option_Types)) >= Length
+       and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Option_Types) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Option_Types)
@@ -703,11 +708,11 @@ is
    procedure Initialize_Options_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Options)
-       and then Valid_Length (Ctx, F_Options, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Options)) >= Length
-       and then Field_First (Ctx, F_Options) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, RFLX.Universal.Message.F_Options)
+       and then RFLX.Universal.Message.Valid_Length (Ctx, RFLX.Universal.Message.F_Options, Length)
+       and then RFLX_Types.To_Length (RFLX.Universal.Message.Available_Space (Ctx, RFLX.Universal.Message.F_Options)) >= Length
+       and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Options) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Options)
@@ -745,11 +750,11 @@ is
    procedure Initialize_Values_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Values)
-       and then Valid_Length (Ctx, F_Values, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Values)) >= Length
-       and then Field_First (Ctx, F_Values) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Universal.Message.Has_Buffer (Ctx)
+       and then RFLX.Universal.Message.Valid_Next (Ctx, RFLX.Universal.Message.F_Values)
+       and then RFLX.Universal.Message.Valid_Length (Ctx, RFLX.Universal.Message.F_Values, Length)
+       and then RFLX_Types.To_Length (RFLX.Universal.Message.Available_Space (Ctx, RFLX.Universal.Message.F_Values)) >= Length
+       and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Values) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Values)
@@ -802,7 +807,7 @@ is
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 
-   procedure Switch_To_Option_Types (Ctx : in out Context; Seq_Ctx : out Universal.Option_Types.Context) is
+   procedure Switch_To_Option_Types (Ctx : in out Context; Seq_Ctx : out RFLX.Universal.Option_Types.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Types);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Option_Types);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -817,11 +822,11 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Universal.Option_Types.Initialize (Seq_Ctx, Buffer, First, Last);
+      RFLX.Universal.Option_Types.Initialize (Seq_Ctx, Buffer, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Option_Types;
 
-   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out Universal.Options.Context) is
+   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out RFLX.Universal.Options.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Options);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -836,11 +841,11 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Universal.Options.Initialize (Seq_Ctx, Buffer, First, Last);
+      RFLX.Universal.Options.Initialize (Seq_Ctx, Buffer, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Options;
 
-   procedure Switch_To_Values (Ctx : in out Context; Seq_Ctx : out Universal.Values.Context) is
+   procedure Switch_To_Values (Ctx : in out Context; Seq_Ctx : out RFLX.Universal.Values.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Values);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Values);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -855,37 +860,37 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      Universal.Values.Initialize (Seq_Ctx, Buffer, First, Last);
+      RFLX.Universal.Values.Initialize (Seq_Ctx, Buffer, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Values;
 
-   procedure Update_Option_Types (Ctx : in out Context; Seq_Ctx : in out Universal.Option_Types.Context) is
-      Valid_Sequence : constant Boolean := Universal.Option_Types.Valid (Seq_Ctx);
+   procedure Update_Option_Types (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Option_Types.Context) is
+      Valid_Sequence : constant Boolean := RFLX.Universal.Option_Types.Valid (Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Universal.Option_Types.Take_Buffer (Seq_Ctx, Buffer);
+      RFLX.Universal.Option_Types.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Option_Types) := (State => S_Valid, First => Ctx.Cursors (F_Option_Types).First, Last => Ctx.Cursors (F_Option_Types).Last, Value => Ctx.Cursors (F_Option_Types).Value, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
       end if;
    end Update_Option_Types;
 
-   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out Universal.Options.Context) is
-      Valid_Sequence : constant Boolean := Universal.Options.Valid (Seq_Ctx);
+   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Options.Context) is
+      Valid_Sequence : constant Boolean := RFLX.Universal.Options.Valid (Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Universal.Options.Take_Buffer (Seq_Ctx, Buffer);
+      RFLX.Universal.Options.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Options) := (State => S_Valid, First => Ctx.Cursors (F_Options).First, Last => Ctx.Cursors (F_Options).Last, Value => Ctx.Cursors (F_Options).Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
       end if;
    end Update_Options;
 
-   procedure Update_Values (Ctx : in out Context; Seq_Ctx : in out Universal.Values.Context) is
-      Valid_Sequence : constant Boolean := Universal.Values.Valid (Seq_Ctx);
+   procedure Update_Values (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Values.Context) is
+      Valid_Sequence : constant Boolean := RFLX.Universal.Values.Valid (Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      Universal.Values.Take_Buffer (Seq_Ctx, Buffer);
+      RFLX.Universal.Values.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Values) := (State => S_Valid, First => Ctx.Cursors (F_Values).First, Last => Ctx.Cursors (F_Values).Last, Value => Ctx.Cursors (F_Values).Value, Predecessor => Ctx.Cursors (F_Values).Predecessor);

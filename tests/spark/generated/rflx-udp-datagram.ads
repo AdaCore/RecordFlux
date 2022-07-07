@@ -124,7 +124,7 @@ is
    procedure Reset (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx),
+       and RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -136,7 +136,7 @@ is
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx)
+       and RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
@@ -153,7 +153,7 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
        and Buffer /= null
@@ -169,15 +169,15 @@ is
 
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Byte_Size (Ctx) = Buffer'Length;
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx)
+       and then RFLX.UDP.Datagram.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -191,8 +191,8 @@ is
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
    procedure Generic_Read (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -208,9 +208,9 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Offset < Buffer_Length (Ctx)
-       and then Pre (Buffer_Length (Ctx), Offset),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then Offset < RFLX.UDP.Datagram.Buffer_Length (Ctx)
+       and then Pre (RFLX.UDP.Datagram.Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -222,7 +222,7 @@ is
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
@@ -232,16 +232,16 @@ is
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Data'Length = Byte_Size (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx)
+       and then Data'Length = RFLX.UDP.Datagram.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -255,7 +255,7 @@ is
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Predecessor (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Predecessor (Ctx, Fld),
      Post =>
        True;
 
@@ -265,10 +265,10 @@ is
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Predecessor (Ctx, Fld)
-       and then Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Predecessor (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, Fld) >= RFLX.UDP.Datagram.Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -276,7 +276,7 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Payload =>
@@ -288,7 +288,7 @@ is
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -296,8 +296,8 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, Fld) >= RFLX.UDP.Datagram.Field_Size (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Payload =>
@@ -325,16 +325,16 @@ is
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -344,7 +344,7 @@ is
 
    procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -366,11 +366,11 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -384,37 +384,37 @@ is
 
    function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port with
      Pre =>
-       Valid (Ctx, F_Source_Port);
+       RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Source_Port);
 
    function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port with
      Pre =>
-       Valid (Ctx, F_Destination_Port);
+       RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Destination_Port);
 
    function Get_Length (Ctx : Context) return RFLX.UDP.Length with
      Pre =>
-       Valid (Ctx, F_Length);
+       RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Length);
 
    function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum with
      Pre =>
-       Valid (Ctx, F_Checksum);
+       RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Checksum);
 
    pragma Warnings (On, "precondition is always False");
 
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Payload)
-       and then Valid_Next (Ctx, F_Payload),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Payload)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then Data'Length = RFLX_Types.To_Length (RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload)),
      Post =>
        Equal (Ctx, F_Payload, Data);
 
@@ -422,14 +422,14 @@ is
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
    procedure Generic_Get_Payload (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Payload);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and RFLX.UDP.Datagram.Present (Ctx, RFLX.UDP.Datagram.F_Payload);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -441,11 +441,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Source_Port)
-       and then RFLX.UDP.Valid_Port (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Source_Port) >= Field_Size (Ctx, F_Source_Port)
-       and then Field_Condition (Ctx, F_Source_Port),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Source_Port)
+       and then RFLX.UDP.Valid_Port (RFLX.UDP.To_Base_Integer (Val))
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Source_Port) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Source_Port)
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Source_Port),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source_Port)
@@ -468,11 +468,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Destination_Port)
-       and then RFLX.UDP.Valid_Port (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Destination_Port) >= Field_Size (Ctx, F_Destination_Port)
-       and then Field_Condition (Ctx, F_Destination_Port),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Destination_Port)
+       and then RFLX.UDP.Valid_Port (RFLX.UDP.To_Base_Integer (Val))
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Destination_Port) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Destination_Port)
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Destination_Port),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination_Port)
@@ -498,11 +498,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Length)
-       and then RFLX.UDP.Valid_Length (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Length) >= Field_Size (Ctx, F_Length)
-       and then Field_Condition (Ctx, F_Length),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Length)
+       and then RFLX.UDP.Valid_Length (RFLX.UDP.To_Base_Integer (Val))
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Length) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Length)
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Length),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
@@ -528,11 +528,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Checksum)
-       and then RFLX.UDP.Valid_Checksum (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum)
-       and then Field_Condition (Ctx, F_Checksum),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Checksum)
+       and then RFLX.UDP.Valid_Checksum (RFLX.UDP.To_Base_Integer (Val))
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Checksum) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Checksum)
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Checksum),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Checksum)
@@ -559,11 +559,11 @@ is
    procedure Set_Payload_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_Condition (Ctx, F_Payload)
-       and then Field_Size (Ctx, F_Payload) = 0,
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -584,9 +584,9 @@ is
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -607,12 +607,12 @@ is
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Data'Length)
-       and then Available_Space (Ctx, F_Payload) >= Data'Length * RFLX_Types.Byte'Size
-       and then Field_Condition (Ctx, F_Payload),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Valid_Length (Ctx, RFLX.UDP.Datagram.F_Payload, Data'Length)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload) >= Data'Length * RFLX_Types.Byte'Size
+       and then RFLX.UDP.Datagram.Field_Condition (Ctx, RFLX.UDP.Datagram.F_Payload),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -637,11 +637,11 @@ is
    procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload) >= RFLX.UDP.Datagram.Field_Size (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Valid_Length (Ctx, RFLX.UDP.Datagram.F_Payload, Length)
+       and then RFLX_Types.To_Length (RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload)) >= Length
        and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
@@ -688,8 +688,8 @@ is
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Structural_Valid_Message (Ctx),
      Post =>
        Valid_Structure (Struct);
 
@@ -698,9 +698,9 @@ is
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Structure (Struct)
-       and then Sufficient_Buffer_Length (Ctx, Struct),
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Structure (Struct)
+       and then RFLX.UDP.Datagram.Sufficient_Buffer_Length (Ctx, Struct),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid_Message (Ctx)
@@ -838,7 +838,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Source_Port)
-      and then Field_First (Ctx, F_Source_Port) rem RFLX_Types.Byte'Size = 1
+      and then RFLX.UDP.Datagram.Field_First (Ctx, RFLX.UDP.Datagram.F_Source_Port) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Source_Port) = Ctx.Last - Ctx.First + 1
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
@@ -974,7 +974,7 @@ private
      (Size = Field_Size (Ctx, Fld))
     with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));

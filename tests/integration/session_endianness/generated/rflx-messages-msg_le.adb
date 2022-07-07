@@ -77,9 +77,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Messages.Msg_LE.Has_Buffer (Ctx)
+       and RFLX.Messages.Msg_LE.Structural_Valid (Ctx, Fld)
+       and RFLX.Messages.Msg_LE.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -97,12 +97,12 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Messages.Msg_LE.Has_Buffer (Ctx)
+       and RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld);
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -141,9 +141,9 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
+       RFLX.Messages.Msg_LE.Has_Buffer (Ctx)
+       and then RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld)
+       and then RFLX.Messages.Msg_LE.Sufficient_Buffer_Length (Ctx, Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -201,11 +201,11 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
+       RFLX.Messages.Msg_LE.Has_Buffer (Ctx)
+       and then RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld)
+       and then RFLX.Messages.Msg_LE.Valid_Value (Fld, Val)
+       and then RFLX.Messages.Msg_LE.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Messages.Msg_LE.Available_Space (Ctx, Fld)
        and then State_Valid,
      Post =>
        Valid_Next (Ctx, Fld)
@@ -265,14 +265,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.Messages.Msg_LE.Has_Buffer (Ctx)
+       and then RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld)
        and then Fld in F_C | F_D
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.Messages.Msg_LE.Valid_Value (Fld, Val)
+       and then RFLX.Messages.Msg_LE.Valid_Size (Ctx, Fld, RFLX.Messages.Msg_LE.Field_Size (Ctx, Fld))
+       and then RFLX.Messages.Msg_LE.Available_Space (Ctx, Fld) >= RFLX.Messages.Msg_LE.Field_Size (Ctx, Fld)
+       and then RFLX.Messages.Msg_LE.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Messages.Msg_LE.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -306,12 +306,12 @@ is
 
    procedure Set_C (Ctx : in out Context; Val : RFLX.Messages.Integer) is
    begin
-      Set_Scalar (Ctx, F_C, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_C, RFLX.Messages.To_Base_Integer (Val));
    end Set_C;
 
    procedure Set_D (Ctx : in out Context; Val : RFLX.Messages.Enum_T) is
    begin
-      Set_Scalar (Ctx, F_D, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_D, RFLX.Messages.To_Base_Integer (Val));
    end Set_D;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

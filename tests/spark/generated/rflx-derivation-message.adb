@@ -88,9 +88,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and RFLX.Derivation.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Derivation.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -110,8 +110,8 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and RFLX.Derivation.Message.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
@@ -125,7 +125,7 @@ is
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Derivation.Message.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -167,10 +167,10 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
-       and then not Composite_Field (Fld)
+       RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and then RFLX.Derivation.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Derivation.Message.Sufficient_Buffer_Length (Ctx, Fld)
+       and then not RFLX.Derivation.Message.Composite_Field (Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -258,12 +258,17 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
-       and then (if Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
+       RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and then RFLX.Derivation.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Derivation.Message.Valid_Value (Fld, Val)
+       and then RFLX.Derivation.Message.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Derivation.Message.Available_Space (Ctx, Fld)
+       and then (if
+                    RFLX.Derivation.Message.Composite_Field (Fld)
+                 then
+                    Size mod RFLX_Types.Byte'Size = 0
+                 else
+                    State_Valid),
      Post =>
        Valid_Next (Ctx, Fld)
        and then Invalid_Successor (Ctx, Fld)
@@ -333,14 +338,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and then RFLX.Derivation.Message.Valid_Next (Ctx, Fld)
        and then Fld in F_Tag | F_Length
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.Derivation.Message.Valid_Value (Fld, Val)
+       and then RFLX.Derivation.Message.Valid_Size (Ctx, Fld, RFLX.Derivation.Message.Field_Size (Ctx, Fld))
+       and then RFLX.Derivation.Message.Available_Space (Ctx, Fld) >= RFLX.Derivation.Message.Field_Size (Ctx, Fld)
+       and then RFLX.Derivation.Message.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Derivation.Message.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -381,12 +386,12 @@ is
 
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.TLV.Tag) is
    begin
-      Set_Scalar (Ctx, F_Tag, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Tag, RFLX.TLV.To_Base_Integer (Val));
    end Set_Tag;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.TLV.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Length, RFLX.TLV.To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Value_Empty (Ctx : in out Context) is
@@ -399,11 +404,11 @@ is
    procedure Initialize_Value_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Value)
-       and then Valid_Length (Ctx, F_Value, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Value)) >= Length
-       and then Field_First (Ctx, F_Value) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Derivation.Message.Has_Buffer (Ctx)
+       and then RFLX.Derivation.Message.Valid_Next (Ctx, RFLX.Derivation.Message.F_Value)
+       and then RFLX.Derivation.Message.Valid_Length (Ctx, RFLX.Derivation.Message.F_Value, Length)
+       and then RFLX_Types.To_Length (RFLX.Derivation.Message.Available_Space (Ctx, RFLX.Derivation.Message.F_Value)) >= Length
+       and then RFLX.Derivation.Message.Field_First (Ctx, RFLX.Derivation.Message.F_Value) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Value)

@@ -105,6 +105,7 @@ Generator:
   - Boolean relations containing global variables (#1059)
   - Minimal session (#883)
   - Message aggregates with variables as field values (#1064)
+  - Message fields with a sequence type name equal to the package name
 - Code generation when using non-default prefix (#897)
 - Conversion between message `Structure` and `Context` (#961)
 - Missing reset in assignment to comprehension (#1050)

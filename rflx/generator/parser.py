@@ -69,8 +69,8 @@ class ParserGenerator:
     def __init__(self, prefix: str = "") -> None:
         self.prefix = prefix
 
-    @staticmethod
     def create_get_function(
+        self,
         message: Message,
         scalar_fields: Mapping[Field, Scalar],
         composite_fields: Sequence[Field],
@@ -196,13 +196,35 @@ class ParserGenerator:
                     [
                         Precondition(
                             AndThen(
-                                Call("Has_Buffer", [Variable("Ctx")]),
-                                Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
                                 Call(
-                                    "Sufficient_Buffer_Length", [Variable("Ctx"), Variable("Fld")]
+                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    [Variable("Ctx")],
+                                ),
+                                Call(
+                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    [Variable("Ctx"), Variable("Fld")],
+                                ),
+                                Call(
+                                    ID(
+                                        self.prefix
+                                        * message.identifier
+                                        * "Sufficient_Buffer_Length"
+                                    ),
+                                    [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 *(
-                                    [Not(Call("Composite_Field", [Variable("Fld")]))]
+                                    [
+                                        Not(
+                                            Call(
+                                                ID(
+                                                    self.prefix
+                                                    * message.identifier
+                                                    * "Composite_Field"
+                                                ),
+                                                [Variable("Fld")],
+                                            )
+                                        )
+                                    ]
                                     if composite_fields
                                     else []
                                 ),
@@ -213,8 +235,8 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
     def create_verify_procedure(
+        self,
         message: Message,
         scalar_fields: Mapping[Field, Scalar],
         composite_fields: Sequence[Field],
@@ -358,7 +380,12 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(Call("Has_Buffer", [Variable("Ctx")])),
+                        Precondition(
+                            Call(
+                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                [Variable("Ctx")],
+                            )
+                        ),
                         Postcondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
@@ -483,8 +510,7 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_verify_message_procedure(message: Message) -> UnitPart:
+    def create_verify_message_procedure(self, message: Message) -> UnitPart:
         specification = ProcedureSpecification(
             "Verify_Message", [InOutParameter(["Ctx"], "Context")]
         )
@@ -499,7 +525,12 @@ class ParserGenerator:
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(Call("Has_Buffer", [Variable("Ctx")])),
+                        Precondition(
+                            Call(
+                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                [Variable("Ctx")],
+                            )
+                        ),
                         Postcondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
@@ -685,7 +716,14 @@ class ParserGenerator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
+                    [
+                        Precondition(
+                            Call(
+                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                [Variable("Ctx")],
+                            )
+                        )
+                    ],
                 )
             ],
             private=[
@@ -705,7 +743,14 @@ class ParserGenerator:
             [
                 SubprogramDeclaration(
                     specification,
-                    [Precondition(Call("Has_Buffer", [Variable("Ctx")]))],
+                    [
+                        Precondition(
+                            Call(
+                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                [Variable("Ctx")],
+                            )
+                        )
+                    ],
                 )
             ],
             private=[
@@ -750,7 +795,9 @@ class ParserGenerator:
             ],
         )
 
-    def create_scalar_getter_functions(self, scalar_fields: Mapping[Field, Scalar]) -> UnitPart:
+    def create_scalar_getter_functions(
+        self, message: Message, scalar_fields: Mapping[Field, Scalar]
+    ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
@@ -776,7 +823,15 @@ class ParserGenerator:
                         specification(f, t),
                         [
                             Precondition(
-                                Call("Valid", [Variable("Ctx"), Variable(f.affixed_name)]),
+                                Call(
+                                    ID(self.prefix * message.identifier * "Valid"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
+                                ),
                             )
                         ],
                     )
@@ -790,8 +845,9 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_opaque_getter_functions(opaque_fields: Sequence[Field]) -> UnitPart:
+    def create_opaque_getter_functions(
+        self, message: Message, opaque_fields: Sequence[Field]
+    ) -> UnitPart:
         def name(field: Field) -> str:
             return f"Get_{field.name}"
 
@@ -810,14 +866,27 @@ class ParserGenerator:
                         Ghost(),
                         Precondition(
                             AndThen(
-                                Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
-                                    "Structural_Valid",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    [Variable("Ctx")],
                                 ),
                                 Call(
-                                    "Valid_Next",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ID(self.prefix * message.identifier * "Structural_Valid"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
+                                ),
+                                Call(
+                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
                                 ),
                             )
                         ),
@@ -891,8 +960,9 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_opaque_getter_procedures(opaque_fields: Sequence[Field]) -> UnitPart:
+    def create_opaque_getter_procedures(
+        self, message: Message, opaque_fields: Sequence[Field]
+    ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Get_{field.name}",
@@ -906,14 +976,27 @@ class ParserGenerator:
                     [
                         Precondition(
                             AndThen(
-                                Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
-                                    "Structural_Valid",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    [Variable("Ctx")],
                                 ),
                                 Call(
-                                    "Valid_Next",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ID(self.prefix * message.identifier * "Structural_Valid"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
+                                ),
+                                Call(
+                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
                                 ),
                                 Equal(
                                     Length("Data"),
@@ -921,10 +1004,16 @@ class ParserGenerator:
                                         const.TYPES_TO_LENGTH,
                                         [
                                             Call(
-                                                "Field_Size",
+                                                ID(self.prefix * message.identifier * "Field_Size"),
                                                 [
                                                     Variable("Ctx"),
-                                                    Variable(f.affixed_name),
+                                                    Variable(
+                                                        ID(
+                                                            self.prefix
+                                                            * message.identifier
+                                                            * f.affixed_name
+                                                        )
+                                                    ),
                                                 ],
                                             )
                                         ],
@@ -1008,8 +1097,9 @@ class ParserGenerator:
             ],
         )
 
-    @staticmethod
-    def create_generic_opaque_getter_procedures(opaque_fields: Sequence[Field]) -> UnitPart:
+    def create_generic_opaque_getter_procedures(
+        self, message: Message, opaque_fields: Sequence[Field]
+    ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
                 f"Generic_Get_{field.name}", [Parameter(["Ctx"], "Context")]
@@ -1022,10 +1112,18 @@ class ParserGenerator:
                     [
                         Precondition(
                             And(
-                                Call("Has_Buffer", [Variable("Ctx")]),
                                 Call(
-                                    "Present",
-                                    [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    [Variable("Ctx")],
+                                ),
+                                Call(
+                                    ID(self.prefix * message.identifier * "Present"),
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(
+                                            ID(self.prefix * message.identifier * f.affixed_name)
+                                        ),
+                                    ],
                                 ),
                             )
                         )
