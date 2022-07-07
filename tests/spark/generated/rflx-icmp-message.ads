@@ -124,7 +124,7 @@ is
    procedure Reset (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx),
+       and RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -136,7 +136,7 @@ is
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx)
+       and RFLX.ICMP.Message.Has_Buffer (Ctx)
        and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
@@ -153,7 +153,7 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
        and Buffer /= null
@@ -169,15 +169,15 @@ is
 
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Byte_Size (Ctx) = Buffer'Length;
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid_Message (Ctx)
+       and then RFLX.ICMP.Message.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -191,8 +191,8 @@ is
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
    procedure Generic_Read (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -208,9 +208,9 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Offset < Buffer_Length (Ctx)
-       and then Pre (Buffer_Length (Ctx), Offset),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then Offset < RFLX.ICMP.Message.Buffer_Length (Ctx)
+       and then Pre (RFLX.ICMP.Message.Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -222,7 +222,7 @@ is
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
@@ -232,16 +232,16 @@ is
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Data'Length = Byte_Size (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid_Message (Ctx)
+       and then Data'Length = RFLX.ICMP.Message.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -255,7 +255,7 @@ is
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Predecessor (Ctx, Fld),
+       RFLX.ICMP.Message.Valid_Predecessor (Ctx, Fld),
      Post =>
        True;
 
@@ -265,11 +265,11 @@ is
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Predecessor (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Predecessor (Ctx, Fld)
+       and then RFLX.ICMP.Message.Valid_Value (Fld, Val)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, Fld) >= RFLX.ICMP.Message.Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -277,7 +277,7 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Data =>
@@ -289,7 +289,7 @@ is
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -297,8 +297,8 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, Fld) >= RFLX.ICMP.Message.Field_Size (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Data =>
@@ -326,16 +326,16 @@ is
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -345,7 +345,7 @@ is
 
    procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -367,11 +367,11 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.ICMP.Message.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -385,81 +385,81 @@ is
 
    function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag with
      Pre =>
-       Valid (Ctx, F_Tag);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Tag);
 
    function Get_Code_Destination_Unreachable (Ctx : Context) return RFLX.ICMP.Code_Destination_Unreachable with
      Pre =>
-       Valid (Ctx, F_Code_Destination_Unreachable);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable);
 
    function Get_Code_Redirect (Ctx : Context) return RFLX.ICMP.Code_Redirect with
      Pre =>
-       Valid (Ctx, F_Code_Redirect);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Redirect);
 
    function Get_Code_Time_Exceeded (Ctx : Context) return RFLX.ICMP.Code_Time_Exceeded with
      Pre =>
-       Valid (Ctx, F_Code_Time_Exceeded);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded);
 
    function Get_Code_Zero (Ctx : Context) return RFLX.ICMP.Code_Zero with
      Pre =>
-       Valid (Ctx, F_Code_Zero);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Zero);
 
    function Get_Checksum (Ctx : Context) return RFLX.ICMP.Checksum with
      Pre =>
-       Valid (Ctx, F_Checksum);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Checksum);
 
    function Get_Gateway_Internet_Address (Ctx : Context) return RFLX.ICMP.Gateway_Internet_Address with
      Pre =>
-       Valid (Ctx, F_Gateway_Internet_Address);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address);
 
    function Get_Identifier (Ctx : Context) return RFLX.ICMP.Identifier with
      Pre =>
-       Valid (Ctx, F_Identifier);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Identifier);
 
    function Get_Pointer (Ctx : Context) return RFLX.ICMP.Pointer with
      Pre =>
-       Valid (Ctx, F_Pointer);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Pointer);
 
    function Get_Unused_32 (Ctx : Context) return RFLX.ICMP.Unused_32 with
      Pre =>
-       Valid (Ctx, F_Unused_32);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Unused_32);
 
    function Get_Sequence_Number (Ctx : Context) return RFLX.ICMP.Sequence_Number with
      Pre =>
-       Valid (Ctx, F_Sequence_Number);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Sequence_Number);
 
    function Get_Unused_24 (Ctx : Context) return RFLX.ICMP.Unused_24 with
      Pre =>
-       Valid (Ctx, F_Unused_24);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Unused_24);
 
    function Get_Originate_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
      Pre =>
-       Valid (Ctx, F_Originate_Timestamp);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp);
 
    function Get_Receive_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
      Pre =>
-       Valid (Ctx, F_Receive_Timestamp);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp);
 
    function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
      Pre =>
-       Valid (Ctx, F_Transmit_Timestamp);
+       RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp);
 
    pragma Warnings (On, "precondition is always False");
 
    function Get_Data (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Data)
-       and then Valid_Next (Ctx, F_Data),
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data),
      Post =>
        Get_Data'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data));
 
    procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Data)
-       and then Valid_Next (Ctx, F_Data)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data)),
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Structural_Valid (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
+       and then Data'Length = RFLX_Types.To_Length (RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Data)),
      Post =>
        Equal (Ctx, F_Data, Data);
 
@@ -467,14 +467,14 @@ is
       with procedure Process_Data (Data : RFLX_Types.Bytes);
    procedure Generic_Get_Data (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Data);
+       RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and RFLX.ICMP.Message.Present (Ctx, RFLX.ICMP.Message.F_Data);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -486,11 +486,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Tag)
-       and then RFLX.ICMP.Valid_Tag (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Tag) >= Field_Size (Ctx, F_Tag)
-       and then Field_Condition (Ctx, F_Tag, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Tag)
+       and then RFLX.ICMP.Valid_Tag (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Tag) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Tag)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Tag, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Tag)
@@ -549,11 +549,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Code_Destination_Unreachable)
-       and then RFLX.ICMP.Valid_Code_Destination_Unreachable (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Destination_Unreachable) >= Field_Size (Ctx, F_Code_Destination_Unreachable)
-       and then Field_Condition (Ctx, F_Code_Destination_Unreachable, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable)
+       and then RFLX.ICMP.Valid_Code_Destination_Unreachable (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Destination_Unreachable)
@@ -590,11 +590,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Code_Redirect)
-       and then RFLX.ICMP.Valid_Code_Redirect (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Redirect) >= Field_Size (Ctx, F_Code_Redirect)
-       and then Field_Condition (Ctx, F_Code_Redirect, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Code_Redirect)
+       and then RFLX.ICMP.Valid_Code_Redirect (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Code_Redirect) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Code_Redirect)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Code_Redirect, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Redirect)
@@ -630,11 +630,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Code_Time_Exceeded)
-       and then RFLX.ICMP.Valid_Code_Time_Exceeded (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Time_Exceeded) >= Field_Size (Ctx, F_Code_Time_Exceeded)
-       and then Field_Condition (Ctx, F_Code_Time_Exceeded, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded)
+       and then RFLX.ICMP.Valid_Code_Time_Exceeded (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Time_Exceeded)
@@ -669,11 +669,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Code_Zero)
-       and then RFLX.ICMP.Valid_Code_Zero (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Code_Zero) >= Field_Size (Ctx, F_Code_Zero)
-       and then Field_Condition (Ctx, F_Code_Zero, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Code_Zero)
+       and then RFLX.ICMP.Valid_Code_Zero (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Code_Zero) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Code_Zero)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Code_Zero, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Code_Zero)
@@ -706,11 +706,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Checksum)
-       and then RFLX.ICMP.Valid_Checksum (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Checksum) >= Field_Size (Ctx, F_Checksum)
-       and then Field_Condition (Ctx, F_Checksum, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Checksum)
+       and then RFLX.ICMP.Valid_Checksum (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Checksum) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Checksum)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Checksum, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Checksum)
@@ -768,11 +768,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Gateway_Internet_Address)
-       and then RFLX.ICMP.Valid_Gateway_Internet_Address (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Gateway_Internet_Address) >= Field_Size (Ctx, F_Gateway_Internet_Address)
-       and then Field_Condition (Ctx, F_Gateway_Internet_Address, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address)
+       and then RFLX.ICMP.Valid_Gateway_Internet_Address (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Gateway_Internet_Address)
@@ -805,11 +805,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Identifier)
-       and then RFLX.ICMP.Valid_Identifier (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Identifier) >= Field_Size (Ctx, F_Identifier)
-       and then Field_Condition (Ctx, F_Identifier, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Identifier)
+       and then RFLX.ICMP.Valid_Identifier (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Identifier) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Identifier)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Identifier, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identifier)
@@ -841,11 +841,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Pointer)
-       and then RFLX.ICMP.Valid_Pointer (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Pointer) >= Field_Size (Ctx, F_Pointer)
-       and then Field_Condition (Ctx, F_Pointer, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Pointer)
+       and then RFLX.ICMP.Valid_Pointer (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Pointer) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Pointer)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Pointer, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Pointer)
@@ -876,11 +876,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Unused_32)
-       and then RFLX.ICMP.Valid_Unused_32 (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Unused_32) >= Field_Size (Ctx, F_Unused_32)
-       and then Field_Condition (Ctx, F_Unused_32, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Unused_32)
+       and then RFLX.ICMP.Valid_Unused_32 (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Unused_32) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Unused_32)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Unused_32, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_32)
@@ -909,11 +909,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Sequence_Number)
-       and then RFLX.ICMP.Valid_Sequence_Number (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Sequence_Number) >= Field_Size (Ctx, F_Sequence_Number)
-       and then Field_Condition (Ctx, F_Sequence_Number, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Sequence_Number)
+       and then RFLX.ICMP.Valid_Sequence_Number (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Sequence_Number) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Sequence_Number)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Sequence_Number, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Sequence_Number)
@@ -954,11 +954,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Unused_24)
-       and then RFLX.ICMP.Valid_Unused_24 (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Unused_24) >= Field_Size (Ctx, F_Unused_24)
-       and then Field_Condition (Ctx, F_Unused_24, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Unused_24)
+       and then RFLX.ICMP.Valid_Unused_24 (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Unused_24) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Unused_24)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Unused_24, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Unused_24)
@@ -986,11 +986,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Originate_Timestamp)
-       and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Originate_Timestamp) >= Field_Size (Ctx, F_Originate_Timestamp)
-       and then Field_Condition (Ctx, F_Originate_Timestamp, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp)
+       and then RFLX.ICMP.Valid_Timestamp (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Originate_Timestamp)
@@ -1019,11 +1019,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Receive_Timestamp)
-       and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Receive_Timestamp) >= Field_Size (Ctx, F_Receive_Timestamp)
-       and then Field_Condition (Ctx, F_Receive_Timestamp, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp)
+       and then RFLX.ICMP.Valid_Timestamp (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Receive_Timestamp)
@@ -1051,11 +1051,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Transmit_Timestamp)
-       and then RFLX.ICMP.Valid_Timestamp (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Transmit_Timestamp) >= Field_Size (Ctx, F_Transmit_Timestamp)
-       and then Field_Condition (Ctx, F_Transmit_Timestamp, To_Base_Integer (Val)),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp)
+       and then RFLX.ICMP.Valid_Timestamp (RFLX.ICMP.To_Base_Integer (Val))
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp, RFLX.ICMP.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Transmit_Timestamp)
@@ -1083,11 +1083,11 @@ is
    procedure Set_Data_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Field_Condition (Ctx, F_Data, 0)
-       and then Field_Size (Ctx, F_Data) = 0,
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Data, 0)
+       and then RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Data) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -1108,10 +1108,10 @@ is
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Valid_Length (Ctx, F_Data, Length)
-       and then Available_Space (Ctx, F_Data) >= RFLX_Types.To_Bit_Length (Length),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Valid_Length (Ctx, RFLX.ICMP.Message.F_Data, Length)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= RFLX_Types.To_Bit_Length (Length),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -1133,12 +1133,12 @@ is
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Valid_Length (Ctx, F_Data, Data'Length)
-       and then Available_Space (Ctx, F_Data) >= Data'Length * RFLX_Types.Byte'Size
-       and then Field_Condition (Ctx, F_Data, 0),
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Valid_Length (Ctx, RFLX.ICMP.Message.F_Data, Data'Length)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= Data'Length * RFLX_Types.Byte'Size
+       and then RFLX.ICMP.Message.Field_Condition (Ctx, RFLX.ICMP.Message.F_Data, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -1163,11 +1163,11 @@ is
    procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Available_Space (Ctx, F_Data) >= Field_Size (Ctx, F_Data)
-       and then Valid_Length (Ctx, F_Data, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Data)) >= Length
+       and then RFLX.ICMP.Message.Has_Buffer (Ctx)
+       and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= RFLX.ICMP.Message.Field_Size (Ctx, RFLX.ICMP.Message.F_Data)
+       and then RFLX.ICMP.Message.Valid_Length (Ctx, RFLX.ICMP.Message.F_Data, Length)
+       and then RFLX_Types.To_Length (RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data)) >= Length
        and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
@@ -1855,7 +1855,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Tag)
-      and then Field_First (Ctx, F_Tag) rem RFLX_Types.Byte'Size = 1
+      and then RFLX.ICMP.Message.Field_First (Ctx, RFLX.ICMP.Message.F_Tag) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Tag) = Ctx.Last - Ctx.First + 1
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
@@ -2215,7 +2215,7 @@ private
           Size = Field_Size (Ctx, Fld)))
     with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));

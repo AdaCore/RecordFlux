@@ -83,9 +83,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and RFLX.UDP.Datagram.Structural_Valid (Ctx, Fld)
+       and RFLX.UDP.Datagram.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -109,8 +109,8 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
@@ -124,7 +124,7 @@ is
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -166,10 +166,10 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
-       and then not Composite_Field (Fld)
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Sufficient_Buffer_Length (Ctx, Fld)
+       and then not RFLX.UDP.Datagram.Composite_Field (Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -255,12 +255,12 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
-       and then (if Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
+       RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Valid_Value (Fld, Val)
+       and then RFLX.UDP.Datagram.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.UDP.Datagram.Available_Space (Ctx, Fld)
+       and then (if RFLX.UDP.Datagram.Composite_Field (Fld) then Size mod RFLX_Types.Byte'Size = 0 else State_Valid),
      Post =>
        Valid_Next (Ctx, Fld)
        and then Invalid_Successor (Ctx, Fld)
@@ -332,14 +332,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
        and then Fld in F_Source_Port | F_Destination_Port | F_Length | F_Checksum
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.UDP.Datagram.Valid_Value (Fld, Val)
+       and then RFLX.UDP.Datagram.Valid_Size (Ctx, Fld, RFLX.UDP.Datagram.Field_Size (Ctx, Fld))
+       and then RFLX.UDP.Datagram.Available_Space (Ctx, Fld) >= RFLX.UDP.Datagram.Field_Size (Ctx, Fld)
+       and then RFLX.UDP.Datagram.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.UDP.Datagram.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -384,22 +384,22 @@ is
 
    procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
    begin
-      Set_Scalar (Ctx, F_Source_Port, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Source_Port, RFLX.UDP.To_Base_Integer (Val));
    end Set_Source_Port;
 
    procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) is
    begin
-      Set_Scalar (Ctx, F_Destination_Port, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Destination_Port, RFLX.UDP.To_Base_Integer (Val));
    end Set_Destination_Port;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) is
    begin
-      Set_Scalar (Ctx, F_Length, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Length, RFLX.UDP.To_Base_Integer (Val));
    end Set_Length;
 
    procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) is
    begin
-      Set_Scalar (Ctx, F_Checksum, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Checksum, RFLX.UDP.To_Base_Integer (Val));
    end Set_Checksum;
 
    procedure Set_Payload_Empty (Ctx : in out Context) is
@@ -412,11 +412,11 @@ is
    procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
-       and then Field_First (Ctx, F_Payload) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
+       and then RFLX.UDP.Datagram.Valid_Next (Ctx, RFLX.UDP.Datagram.F_Payload)
+       and then RFLX.UDP.Datagram.Valid_Length (Ctx, RFLX.UDP.Datagram.F_Payload, Length)
+       and then RFLX_Types.To_Length (RFLX.UDP.Datagram.Available_Space (Ctx, RFLX.UDP.Datagram.F_Payload)) >= Length
+       and then RFLX.UDP.Datagram.Field_First (Ctx, RFLX.UDP.Datagram.F_Payload) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)

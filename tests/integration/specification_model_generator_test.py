@@ -30,11 +30,14 @@ def test_prefix(prefix: str, tmp_path: Path) -> None:
         "range 1 .. 2**32 - 1 with Size => 32",
         "(A, B, C) with Size => 32",
         "(A, B, C) with Size => 32, Always_Valid",
+        "sequence of T",
     ],
 )
 def test_type_name_equals_package_name(definition: str, tmp_path: Path) -> None:
     spec = """
            package Test is
+
+              type T is mod 2**8;
 
               type Test is {};
 

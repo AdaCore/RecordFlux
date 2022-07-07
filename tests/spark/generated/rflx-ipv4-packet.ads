@@ -128,7 +128,7 @@ is
    procedure Reset (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx),
+       and RFLX.IPv4.Packet.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -140,7 +140,7 @@ is
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
-       and Has_Buffer (Ctx)
+       and RFLX.IPv4.Packet.Has_Buffer (Ctx)
        and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
@@ -157,7 +157,7 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
        and Buffer /= null
@@ -173,15 +173,15 @@ is
 
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Byte_Size (Ctx) = Buffer'Length;
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
+       and then RFLX.IPv4.Packet.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -195,8 +195,8 @@ is
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
    procedure Generic_Read (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -212,9 +212,9 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Offset < Buffer_Length (Ctx)
-       and then Pre (Buffer_Length (Ctx), Offset),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then Offset < RFLX.IPv4.Packet.Buffer_Length (Ctx)
+       and then Pre (RFLX.IPv4.Packet.Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -226,7 +226,7 @@ is
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
@@ -236,16 +236,16 @@ is
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid_Message (Ctx)
-       and then Data'Length = Byte_Size (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
+       and then Data'Length = RFLX.IPv4.Packet.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -259,7 +259,7 @@ is
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       Valid_Predecessor (Ctx, Fld),
+       RFLX.IPv4.Packet.Valid_Predecessor (Ctx, Fld),
      Post =>
        True;
 
@@ -269,11 +269,11 @@ is
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Predecessor (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Predecessor (Ctx, Fld)
+       and then RFLX.IPv4.Packet.Valid_Value (Fld, Val)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, Fld)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, Fld) >= RFLX.IPv4.Packet.Field_Size (Ctx, Fld),
      Post =>
        True;
 
@@ -281,7 +281,7 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Options | F_Payload =>
@@ -293,7 +293,7 @@ is
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -301,8 +301,8 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld)
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld),
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, Fld) >= RFLX.IPv4.Packet.Field_Size (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Options | F_Payload =>
@@ -330,16 +330,16 @@ is
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and RFLX.IPv4.Packet.Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -349,7 +349,7 @@ is
 
    procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       Has_Buffer (Ctx),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -371,11 +371,11 @@ is
 
    function Structural_Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       Has_Buffer (Ctx);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -389,81 +389,81 @@ is
 
    function Get_Version (Ctx : Context) return RFLX.IPv4.Version with
      Pre =>
-       Valid (Ctx, F_Version);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Version);
 
    function Get_IHL (Ctx : Context) return RFLX.IPv4.IHL with
      Pre =>
-       Valid (Ctx, F_IHL);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_IHL);
 
    function Get_DSCP (Ctx : Context) return RFLX.IPv4.DCSP with
      Pre =>
-       Valid (Ctx, F_DSCP);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_DSCP);
 
    function Get_ECN (Ctx : Context) return RFLX.IPv4.ECN with
      Pre =>
-       Valid (Ctx, F_ECN);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_ECN);
 
    function Get_Total_Length (Ctx : Context) return RFLX.IPv4.Total_Length with
      Pre =>
-       Valid (Ctx, F_Total_Length);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Total_Length);
 
    function Get_Identification (Ctx : Context) return RFLX.IPv4.Identification with
      Pre =>
-       Valid (Ctx, F_Identification);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Identification);
 
    function Get_Flag_R (Ctx : Context) return Boolean with
      Pre =>
-       Valid (Ctx, F_Flag_R);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Flag_R);
 
    function Get_Flag_DF (Ctx : Context) return Boolean with
      Pre =>
-       Valid (Ctx, F_Flag_DF);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Flag_DF);
 
    function Get_Flag_MF (Ctx : Context) return Boolean with
      Pre =>
-       Valid (Ctx, F_Flag_MF);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Flag_MF);
 
    function Get_Fragment_Offset (Ctx : Context) return RFLX.IPv4.Fragment_Offset with
      Pre =>
-       Valid (Ctx, F_Fragment_Offset);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Fragment_Offset);
 
    function Get_TTL (Ctx : Context) return RFLX.IPv4.TTL with
      Pre =>
-       Valid (Ctx, F_TTL);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_TTL);
 
    function Get_Protocol (Ctx : Context) return RFLX.IPv4.Protocol with
      Pre =>
-       Valid (Ctx, F_Protocol);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Protocol);
 
    function Get_Header_Checksum (Ctx : Context) return RFLX.IPv4.Header_Checksum with
      Pre =>
-       Valid (Ctx, F_Header_Checksum);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Header_Checksum);
 
    function Get_Source (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
-       Valid (Ctx, F_Source);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Source);
 
    function Get_Destination (Ctx : Context) return RFLX.IPv4.Address with
      Pre =>
-       Valid (Ctx, F_Destination);
+       RFLX.IPv4.Packet.Valid (Ctx, RFLX.IPv4.Packet.F_Destination);
 
    pragma Warnings (On, "precondition is always False");
 
    function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Payload)
-       and then Valid_Next (Ctx, F_Payload),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Structural_Valid (Ctx, F_Payload)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Data'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)),
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Structural_Valid (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then Data'Length = RFLX_Types.To_Length (RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload)),
      Post =>
        Equal (Ctx, F_Payload, Data);
 
@@ -471,14 +471,14 @@ is
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
    procedure Generic_Get_Payload (Ctx : Context) with
      Pre =>
-       Has_Buffer (Ctx)
-       and Present (Ctx, F_Payload);
+       RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and RFLX.IPv4.Packet.Present (Ctx, RFLX.IPv4.Packet.F_Payload);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -490,11 +490,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Version)
-       and then RFLX.IPv4.Valid_Version (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Version) >= Field_Size (Ctx, F_Version)
-       and then Field_Condition (Ctx, F_Version, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Version)
+       and then RFLX.IPv4.Valid_Version (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Version) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Version)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Version, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Version)
@@ -528,11 +528,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_IHL)
-       and then RFLX.IPv4.Valid_IHL (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_IHL) >= Field_Size (Ctx, F_IHL)
-       and then Field_Condition (Ctx, F_IHL, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_IHL)
+       and then RFLX.IPv4.Valid_IHL (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_IHL) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_IHL)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_IHL, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_IHL)
@@ -569,11 +569,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_DSCP)
-       and then RFLX.IPv4.Valid_DCSP (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_DSCP) >= Field_Size (Ctx, F_DSCP)
-       and then Field_Condition (Ctx, F_DSCP, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_DSCP)
+       and then RFLX.IPv4.Valid_DCSP (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_DSCP) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_DSCP)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_DSCP, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_DSCP)
@@ -610,11 +610,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_ECN)
-       and then RFLX.IPv4.Valid_ECN (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_ECN) >= Field_Size (Ctx, F_ECN)
-       and then Field_Condition (Ctx, F_ECN, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_ECN)
+       and then RFLX.IPv4.Valid_ECN (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_ECN) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_ECN)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_ECN, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_ECN)
@@ -651,11 +651,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Total_Length)
-       and then RFLX.IPv4.Valid_Total_Length (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Total_Length) >= Field_Size (Ctx, F_Total_Length)
-       and then Field_Condition (Ctx, F_Total_Length, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Total_Length)
+       and then RFLX.IPv4.Valid_Total_Length (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Total_Length) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Total_Length)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Total_Length, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Total_Length)
@@ -695,11 +695,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Identification)
-       and then RFLX.IPv4.Valid_Identification (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Identification) >= Field_Size (Ctx, F_Identification)
-       and then Field_Condition (Ctx, F_Identification, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Identification)
+       and then RFLX.IPv4.Valid_Identification (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Identification) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Identification)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Identification, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Identification)
@@ -736,11 +736,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Flag_R)
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Flag_R)
        and then Valid_Boolean (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Flag_R) >= Field_Size (Ctx, F_Flag_R)
-       and then Field_Condition (Ctx, F_Flag_R, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Flag_R) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Flag_R)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Flag_R, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_R)
@@ -780,11 +780,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Flag_DF)
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Flag_DF)
        and then Valid_Boolean (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Flag_DF) >= Field_Size (Ctx, F_Flag_DF)
-       and then Field_Condition (Ctx, F_Flag_DF, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Flag_DF) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Flag_DF)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Flag_DF, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_DF)
@@ -821,11 +821,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Flag_MF)
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Flag_MF)
        and then Valid_Boolean (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Flag_MF) >= Field_Size (Ctx, F_Flag_MF)
-       and then Field_Condition (Ctx, F_Flag_MF, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Flag_MF) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Flag_MF)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Flag_MF, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Flag_MF)
@@ -862,11 +862,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Fragment_Offset)
-       and then RFLX.IPv4.Valid_Fragment_Offset (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Fragment_Offset) >= Field_Size (Ctx, F_Fragment_Offset)
-       and then Field_Condition (Ctx, F_Fragment_Offset, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Fragment_Offset)
+       and then RFLX.IPv4.Valid_Fragment_Offset (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Fragment_Offset) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Fragment_Offset)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Fragment_Offset, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Fragment_Offset)
@@ -903,11 +903,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_TTL)
-       and then RFLX.IPv4.Valid_TTL (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_TTL) >= Field_Size (Ctx, F_TTL)
-       and then Field_Condition (Ctx, F_TTL, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_TTL)
+       and then RFLX.IPv4.Valid_TTL (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_TTL) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_TTL)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_TTL, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_TTL)
@@ -944,11 +944,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Protocol)
-       and then RFLX.IPv4.Valid_Protocol (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Protocol) >= Field_Size (Ctx, F_Protocol)
-       and then Field_Condition (Ctx, F_Protocol, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Protocol)
+       and then RFLX.IPv4.Valid_Protocol (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Protocol) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Protocol)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Protocol, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Protocol)
@@ -985,11 +985,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Header_Checksum)
-       and then RFLX.IPv4.Valid_Header_Checksum (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Header_Checksum) >= Field_Size (Ctx, F_Header_Checksum)
-       and then Field_Condition (Ctx, F_Header_Checksum, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Header_Checksum)
+       and then RFLX.IPv4.Valid_Header_Checksum (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Header_Checksum) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Header_Checksum)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Header_Checksum, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Header_Checksum)
@@ -1026,11 +1026,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Source)
-       and then RFLX.IPv4.Valid_Address (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Source) >= Field_Size (Ctx, F_Source)
-       and then Field_Condition (Ctx, F_Source, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Source)
+       and then RFLX.IPv4.Valid_Address (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Source) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Source)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Source, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Source)
@@ -1067,11 +1067,11 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Destination)
-       and then RFLX.IPv4.Valid_Address (To_Base_Integer (Val))
-       and then Available_Space (Ctx, F_Destination) >= Field_Size (Ctx, F_Destination)
-       and then Field_Condition (Ctx, F_Destination, To_Base_Integer (Val)),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Destination)
+       and then RFLX.IPv4.Valid_Address (RFLX.IPv4.To_Base_Integer (Val))
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Destination) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Destination)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Destination, RFLX.IPv4.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Destination)
@@ -1109,11 +1109,11 @@ is
    procedure Set_Options_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Options)
-       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
-       and then Field_Condition (Ctx, F_Options, 0)
-       and then Field_Size (Ctx, F_Options) = 0,
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Options, 0)
+       and then RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Options)
@@ -1146,11 +1146,11 @@ is
    procedure Set_Payload_Empty (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Field_Condition (Ctx, F_Payload, 0)
-       and then Field_Size (Ctx, F_Payload) = 0,
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Payload, 0)
+       and then RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -1178,16 +1178,16 @@ is
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
-   procedure Set_Options (Ctx : in out Context; Seq_Ctx : IPv4.Options.Context) with
+   procedure Set_Options (Ctx : in out Context; Seq_Ctx : RFLX.IPv4.Options.Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Options)
-       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
-       and then Field_Condition (Ctx, F_Options, 0)
-       and then Valid_Length (Ctx, F_Options, IPv4.Options.Byte_Size (Seq_Ctx))
-       and then IPv4.Options.Has_Buffer (Seq_Ctx)
-       and then IPv4.Options.Valid (Seq_Ctx),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Options, 0)
+       and then RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Options, RFLX.IPv4.Options.Byte_Size (Seq_Ctx))
+       and then RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
+       and then RFLX.IPv4.Options.Valid (Seq_Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Options)
@@ -1221,9 +1221,9 @@ is
    procedure Initialize_Options (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Options)
-       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Options)
@@ -1256,9 +1256,9 @@ is
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -1289,12 +1289,12 @@ is
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Data'Length)
-       and then Available_Space (Ctx, F_Payload) >= Data'Length * RFLX_Types.Byte'Size
-       and then Field_Condition (Ctx, F_Payload, 0),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Payload, Data'Length)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= Data'Length * RFLX_Types.Byte'Size
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Payload, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Payload)
@@ -1329,11 +1329,11 @@ is
    procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Payload)
-       and then Available_Space (Ctx, F_Payload) >= Field_Size (Ctx, F_Payload)
-       and then Valid_Length (Ctx, F_Payload, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Payload)) >= Length
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Payload, Length)
+       and then RFLX_Types.To_Length (RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload)) >= Length
        and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
@@ -1362,25 +1362,25 @@ is
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
-   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out IPv4.Options.Context) with
+   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out RFLX.IPv4.Options.Context) with
      Pre =>
        not Ctx'Constrained
        and then not Seq_Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Options)
-       and then Field_Size (Ctx, F_Options) > 0
-       and then Field_First (Ctx, F_Options) rem RFLX_Types.Byte'Size = 1
-       and then Available_Space (Ctx, F_Options) >= Field_Size (Ctx, F_Options)
-       and then Field_Condition (Ctx, F_Options, 0),
+       and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options) > 0
+       and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Options) rem RFLX_Types.Byte'Size = 1
+       and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Options, 0),
      Post =>
-       not Has_Buffer (Ctx)
-       and IPv4.Options.Has_Buffer (Seq_Ctx)
+       not RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Options)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Options)
-       and IPv4.Options.Valid (Seq_Ctx)
-       and IPv4.Options.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
+       and RFLX.IPv4.Options.Valid (Seq_Ctx)
+       and RFLX.IPv4.Options.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Options)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -1400,16 +1400,16 @@ is
             and Valid_Next (Ctx, F_Payload))
            and Invalid (Ctx, F_Payload));
 
-   function Complete_Options (Ctx : Context; Seq_Ctx : IPv4.Options.Context) return Boolean with
+   function Complete_Options (Ctx : Context; Seq_Ctx : RFLX.IPv4.Options.Context) return Boolean with
      Pre =>
-       Valid_Next (Ctx, F_Options);
+       RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options);
 
-   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out IPv4.Options.Context) with
+   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.IPv4.Options.Context) with
      Pre =>
-       Present (Ctx, F_Options)
-       and then Complete_Options (Ctx, Seq_Ctx)
-       and then not Has_Buffer (Ctx)
-       and then IPv4.Options.Has_Buffer (Seq_Ctx)
+       RFLX.IPv4.Packet.Present (Ctx, RFLX.IPv4.Packet.F_Options)
+       and then RFLX.IPv4.Packet.Complete_Options (Ctx, Seq_Ctx)
+       and then not RFLX.IPv4.Packet.Has_Buffer (Ctx)
+       and then RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and then Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and then Seq_Ctx.First = Field_First (Ctx, F_Options)
@@ -1417,7 +1417,7 @@ is
      Post =>
        Present (Ctx, F_Options)
        and Has_Buffer (Ctx)
-       and not IPv4.Options.Has_Buffer (Seq_Ctx)
+       and not RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1739,7 +1739,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_Version)
-      and then Field_First (Ctx, F_Version) rem RFLX_Types.Byte'Size = 1
+      and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Version) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Version) = Ctx.Last - Ctx.First + 1
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
@@ -1994,14 +1994,14 @@ private
      (Size = Field_Size (Ctx, Fld))
     with
      Pre =>
-       Valid_Next (Ctx, Fld);
+       RFLX.IPv4.Packet.Valid_Next (Ctx, Fld);
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
-   function Complete_Options (Ctx : Context; Seq_Ctx : IPv4.Options.Context) return Boolean is
-     (IPv4.Options.Valid (Seq_Ctx)
-      and IPv4.Options.Size (Seq_Ctx) = Field_Size (Ctx, F_Options));
+   function Complete_Options (Ctx : Context; Seq_Ctx : RFLX.IPv4.Options.Context) return Boolean is
+     (RFLX.IPv4.Options.Valid (Seq_Ctx)
+      and RFLX.IPv4.Options.Size (Seq_Ctx) = Field_Size (Ctx, F_Options));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

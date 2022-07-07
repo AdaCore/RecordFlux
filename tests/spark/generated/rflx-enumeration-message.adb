@@ -75,9 +75,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and RFLX.Enumeration.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Enumeration.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -88,12 +88,12 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and RFLX.Enumeration.Message.Valid_Next (Ctx, Fld);
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Enumeration.Message.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -123,9 +123,9 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Sufficient_Buffer_Length (Ctx, Fld)
+       RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and then RFLX.Enumeration.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Enumeration.Message.Sufficient_Buffer_Length (Ctx, Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -181,11 +181,11 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Size)
-       and then Size <= Available_Space (Ctx, Fld)
+       RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and then RFLX.Enumeration.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Enumeration.Message.Valid_Value (Fld, Val)
+       and then RFLX.Enumeration.Message.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Enumeration.Message.Available_Space (Ctx, Fld)
        and then State_Valid,
      Post =>
        Valid_Next (Ctx, Fld)
@@ -238,14 +238,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, Fld)
+       and then RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and then RFLX.Enumeration.Message.Valid_Next (Ctx, Fld)
        and then Fld in F_Priority
-       and then Valid_Value (Fld, Val)
-       and then Valid_Size (Ctx, Fld, Field_Size (Ctx, Fld))
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
-       and then Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (Field_Size (Ctx, Fld))),
+       and then RFLX.Enumeration.Message.Valid_Value (Fld, Val)
+       and then RFLX.Enumeration.Message.Valid_Size (Ctx, Fld, RFLX.Enumeration.Message.Field_Size (Ctx, Fld))
+       and then RFLX.Enumeration.Message.Available_Space (Ctx, Fld) >= RFLX.Enumeration.Message.Field_Size (Ctx, Fld)
+       and then RFLX.Enumeration.Message.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Enumeration.Message.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -272,17 +272,17 @@ is
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority_Enum) is
    begin
-      Set_Scalar (Ctx, F_Priority, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Priority, RFLX.Enumeration.To_Base_Integer (Val));
    end Set_Priority;
 
    procedure Set_Priority (Ctx : in out Context; Val : RFLX.Enumeration.Priority) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Priority)
+       and then RFLX.Enumeration.Message.Has_Buffer (Ctx)
+       and then RFLX.Enumeration.Message.Valid_Next (Ctx, RFLX.Enumeration.Message.F_Priority)
        and then RFLX.Enumeration.Valid_Priority (Val)
-       and then Available_Space (Ctx, F_Priority) >= Field_Size (Ctx, F_Priority)
-       and then Field_Condition (Ctx, F_Priority),
+       and then RFLX.Enumeration.Message.Available_Space (Ctx, RFLX.Enumeration.Message.F_Priority) >= RFLX.Enumeration.Message.Field_Size (Ctx, RFLX.Enumeration.Message.F_Priority)
+       and then RFLX.Enumeration.Message.Field_Condition (Ctx, RFLX.Enumeration.Message.F_Priority),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Priority)
@@ -297,7 +297,7 @@ is
        and Field_First (Ctx, F_Priority) = Field_First (Ctx, F_Priority)'Old
    is
    begin
-      Set_Scalar (Ctx, F_Priority, To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_Priority, RFLX.Enumeration.To_Base_Integer (Val));
    end Set_Priority;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is

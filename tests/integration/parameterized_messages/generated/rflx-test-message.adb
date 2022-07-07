@@ -86,9 +86,9 @@ is
              F_Final))
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, Fld)
-       and Valid_Predecessor (Ctx, Fld);
+       RFLX.Test.Message.Has_Buffer (Ctx)
+       and RFLX.Test.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Test.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -106,8 +106,8 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       Has_Buffer (Ctx)
-       and Valid_Next (Ctx, Fld);
+       RFLX.Test.Message.Has_Buffer (Ctx)
+       and RFLX.Test.Message.Valid_Next (Ctx, Fld);
 
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
@@ -119,7 +119,7 @@ is
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       Valid_Next (Ctx, Fld),
+       RFLX.Test.Message.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Invalid (Ctx.Cursors (Fld))
@@ -248,11 +248,11 @@ is
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Data)
-       and then Valid_Length (Ctx, F_Data, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Data)) >= Length
-       and then Field_First (Ctx, F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Test.Message.Has_Buffer (Ctx)
+       and then RFLX.Test.Message.Valid_Next (Ctx, RFLX.Test.Message.F_Data)
+       and then RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Data, Length)
+       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Data)) >= Length
+       and then RFLX.Test.Message.Field_First (Ctx, RFLX.Test.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -294,11 +294,11 @@ is
    procedure Initialize_Extension_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
-       and then Has_Buffer (Ctx)
-       and then Valid_Next (Ctx, F_Extension)
-       and then Valid_Length (Ctx, F_Extension, Length)
-       and then RFLX_Types.To_Length (Available_Space (Ctx, F_Extension)) >= Length
-       and then Field_First (Ctx, F_Extension) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Test.Message.Has_Buffer (Ctx)
+       and then RFLX.Test.Message.Valid_Next (Ctx, RFLX.Test.Message.F_Extension)
+       and then RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Extension, Length)
+       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Extension)) >= Length
+       and then RFLX.Test.Message.Field_First (Ctx, RFLX.Test.Message.F_Extension) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Extension)

@@ -424,65 +424,93 @@ class Generator:
             self._executor.submit(
                 message_generator.create_restricted_initialize_procedure, message
             ),
-            self._executor.submit(message_generator.create_initialized_function, message),
-            self._executor.submit(message_generator.create_reset_procedure, message),
-            self._executor.submit(message_generator.create_restricted_reset_procedure, message),
-            self._executor.submit(message_generator.create_take_buffer_procedure, message),
-            self._executor.submit(message_generator.create_copy_procedure),
-            self._executor.submit(message_generator.create_read_function),
-            self._executor.submit(message_generator.create_generic_read_procedure),
-            self._executor.submit(message_generator.create_generic_write_procedure, message),
+            self._executor.submit(
+                message_generator.create_initialized_function, self._prefix, message
+            ),
+            self._executor.submit(message_generator.create_reset_procedure, self._prefix, message),
+            self._executor.submit(
+                message_generator.create_restricted_reset_procedure, self._prefix, message
+            ),
+            self._executor.submit(
+                message_generator.create_take_buffer_procedure, self._prefix, message
+            ),
+            self._executor.submit(message_generator.create_copy_procedure, self._prefix, message),
+            self._executor.submit(message_generator.create_read_function, self._prefix, message),
+            self._executor.submit(
+                message_generator.create_generic_read_procedure, self._prefix, message
+            ),
+            self._executor.submit(
+                message_generator.create_generic_write_procedure, self._prefix, message
+            ),
             self._executor.submit(message_generator.create_has_buffer_function),
-            self._executor.submit(message_generator.create_buffer_length_function),
+            self._executor.submit(
+                message_generator.create_buffer_length_function, self._prefix, message
+            ),
             self._executor.submit(message_generator.create_size_function),
             self._executor.submit(message_generator.create_byte_size_function),
-            self._executor.submit(message_generator.create_message_last_function),
+            self._executor.submit(
+                message_generator.create_message_last_function, self._prefix, message
+            ),
             self._executor.submit(message_generator.create_written_last_function),
-            self._executor.submit(message_generator.create_data_procedure),
+            self._executor.submit(message_generator.create_data_procedure, self._prefix, message),
             self._executor.submit(
-                message_generator.create_valid_value_function, message, scalar_fields, self._prefix
+                message_generator.create_valid_value_function, self._prefix, message, scalar_fields
             ),
             self._executor.submit(
-                message_generator.create_path_condition_function, message, self._prefix
+                message_generator.create_path_condition_function, self._prefix, message
             ),
             self._executor.submit(
-                message_generator.create_field_condition_function, message, self._prefix
+                message_generator.create_field_condition_function, self._prefix, message
             ),
             self._executor.submit(
                 message_generator.create_field_size_function,
+                self._prefix,
                 message,
                 scalar_fields,
                 composite_fields,
+            ),
+            self._executor.submit(
+                message_generator.create_field_first_function, self._prefix, message
+            ),
+            self._executor.submit(
+                message_generator.create_field_last_function,
                 self._prefix,
-            ),
-            self._executor.submit(
-                message_generator.create_field_first_function, message, self._prefix
-            ),
-            self._executor.submit(
-                message_generator.create_field_last_function, scalar_fields, composite_fields
+                message,
+                scalar_fields,
+                composite_fields,
             ),
             self._executor.submit(message_generator.create_predecessor_function),
             self._executor.submit(
-                message_generator.create_successor_function, message, self._prefix
+                message_generator.create_successor_function, self._prefix, message
             ),
             self._executor.submit(
-                message_generator.create_valid_predecessor_function, message, composite_fields
+                message_generator.create_valid_predecessor_function,
+                message,
+                composite_fields,
             ),
             self._executor.submit(message_generator.create_invalid_successor_function, message),
             self._executor.submit(message_generator.create_valid_next_function),
-            self._executor.submit(message_generator.create_available_space_function),
-            self._executor.submit(message_generator.create_sufficient_buffer_length_function),
+            self._executor.submit(
+                message_generator.create_available_space_function, self._prefix, message
+            ),
+            self._executor.submit(
+                message_generator.create_sufficient_buffer_length_function, self._prefix, message
+            ),
             *(
                 [
                     self._executor.submit(
-                        message_generator.create_equal_function, scalar_fields, composite_fields
+                        message_generator.create_equal_function,
+                        self._prefix,
+                        message,
+                        scalar_fields,
+                        composite_fields,
                     )
                 ]
                 if composite_fields
                 else []
             ),
             self._executor.submit(
-                message_generator.create_reset_dependent_fields_procedure, message
+                message_generator.create_reset_dependent_fields_procedure, self._prefix, message
             ),
             *(
                 [
@@ -514,14 +542,20 @@ class Generator:
             ),
             self._executor.submit(parser_generator.create_valid_message_function, message),
             self._executor.submit(parser_generator.create_incomplete_message_function),
-            self._executor.submit(parser_generator.create_scalar_getter_functions, scalar_fields),
-            self._executor.submit(parser_generator.create_opaque_getter_functions, opaque_fields),
-            self._executor.submit(parser_generator.create_opaque_getter_procedures, opaque_fields),
             self._executor.submit(
-                parser_generator.create_generic_opaque_getter_procedures, opaque_fields
+                parser_generator.create_scalar_getter_functions, message, scalar_fields
+            ),
+            self._executor.submit(
+                parser_generator.create_opaque_getter_functions, message, opaque_fields
+            ),
+            self._executor.submit(
+                parser_generator.create_opaque_getter_procedures, message, opaque_fields
+            ),
+            self._executor.submit(
+                parser_generator.create_generic_opaque_getter_procedures, message, opaque_fields
             ),
             self._executor.submit(serializer_generator.create_valid_size_function, message),
-            self._executor.submit(serializer_generator.create_valid_length_function),
+            self._executor.submit(serializer_generator.create_valid_length_function, message),
             self._executor.submit(
                 serializer_generator.create_set_procedure, message, scalar_fields, composite_fields
             ),
@@ -545,18 +579,18 @@ class Generator:
                 serializer_generator.create_generic_opaque_setter_procedures, message
             ),
             self._executor.submit(
-                message_generator.create_switch_procedures, message, sequence_fields, self._prefix
+                message_generator.create_switch_procedures, self._prefix, message, sequence_fields
             ),
             self._executor.submit(
-                message_generator.create_complete_functions, message, sequence_fields
+                message_generator.create_complete_functions, self._prefix, message, sequence_fields
             ),
             self._executor.submit(
-                message_generator.create_update_procedures, message, sequence_fields
+                message_generator.create_update_procedures, self._prefix, message, sequence_fields
             ),
             self._executor.submit(message_generator.create_cursor_function),
             self._executor.submit(message_generator.create_cursors_function),
             self._executor.submit(message_generator.create_cursors_index_function),
-            self._executor.submit(message_generator.create_structure, message, self._prefix),
+            self._executor.submit(message_generator.create_structure, self._prefix, message),
         ]
 
         for future in futures:
@@ -1003,7 +1037,13 @@ class Generator:
                                         refinement, pdu_context, condition_fields, null_sdu=False
                                     )
                                 ],
-                                Call(contains_function_name(refinement), [Variable(pdu_context)]),
+                                Call(
+                                    self._prefix
+                                    * ID(refinement.package)
+                                    * const.REFINEMENT_PACKAGE
+                                    * contains_function_name(refinement),
+                                    [Variable(pdu_context)],
+                                ),
                             )
                         ),
                         Postcondition(
@@ -1146,7 +1186,13 @@ class Generator:
                                         refinement, pdu_context, condition_fields, null_sdu=False
                                     )
                                 ],
-                                Call(contains_function_name(refinement), [Variable(pdu_context)]),
+                                Call(
+                                    self._prefix
+                                    * ID(refinement.package)
+                                    * const.REFINEMENT_PACKAGE
+                                    * contains_function_name(refinement),
+                                    [Variable(pdu_context)],
+                                ),
                                 GreaterEqual(
                                     Add(
                                         Call(
