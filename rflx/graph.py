@@ -68,14 +68,9 @@ class Graph:
         )
         return result
 
-    def _add_state(self, state: State, result: Dot, variables: Counter[ID]) -> None:
+    def _add_state(self, state: State, result: Dot) -> None:
 
         assert isinstance(self._data, AbstractSession)
-
-        height = sqrt(self._degree[state.identifier.name] + 1)
-        width = 1.3 * sqrt(self._degree[state.identifier.name] + 1)
-        variables_read: Counter[ID] = collections.Counter()
-        variables_write: Counter[ID] = collections.Counter()
 
         if state.identifier == self._data.initial:
             result.add_node(
@@ -83,8 +78,6 @@ class Graph:
                     name=str(state.identifier.name),
                     fillcolor="#ffffff",
                     fontcolor="black",
-                    width=f"{width:.2f}",
-                    height=f"{height:.2f}",
                 )
             )
         elif state.identifier == self._data.final:
@@ -92,14 +85,10 @@ class Graph:
                 Node(
                     name=str(state.identifier.name),
                     fillcolor="#6f6f6f",
-                    width=f"{width:.2f}",
-                    height=f"{height:.2f}",
                 )
             )
         else:
-            result.add_node(
-                Node(name=str(state.identifier.name), width=f"{width:.2f}", height=f"{height:.2f}")
-            )
+            result.add_node(Node(name=str(state.identifier.name)))
 
         for index, t in enumerate(state.transitions):
             label = (
@@ -108,47 +97,13 @@ class Graph:
                 else ""
             )
             result.add_edge(
-                Edge(src=str(state.identifier.name), dst=str(t.target.name), tooltip=label)
-            )
-            variables_read.update(
-                [
-                    v.identifier
-                    for v in t.condition.variables()
-                    if v.identifier not in state.declarations
-                ]
-            )
-
-        for index, a in enumerate(state.actions):
-            if a.identifier not in state.declarations:
-                variables_write.update([a.identifier])
-            if isinstance(a, stmt.Assignment):
-                variables_read.update(
-                    [
-                        v.identifier
-                        for v in a.expression.variables()
-                        if v.identifier not in state.declarations
-                    ]
-                )
-
-        for v in variables_read:
-            result.add_edge(
-                Edge(
-                    src=str(v),
-                    dst=str(state.identifier.name),
-                    tooltip=f"{state.identifier.name}: read {v}",
-                )
-            )
-        for v in variables_write:
-            result.add_edge(
                 Edge(
                     src=str(state.identifier.name),
-                    dst=str(v),
-                    tooltip=f"{state.identifier.name}: write {v}",
+                    dst=str(t.target.name),
+                    tooltip=label,
+                    minlen="3",
                 )
             )
-
-        variables.update(variables_read)
-        variables.update(variables_write)
 
     @property
     def _get_session(self) -> Dot:
@@ -156,17 +111,9 @@ class Graph:
 
         assert isinstance(self._data, AbstractSession)
 
-        variables: Counter[ID] = collections.Counter()
         result = self._graph_with_defaults("Session")
         for s in self._data.states:
-            self._add_state(s, result, variables)
-
-        for v, d in variables.items():
-            height = sqrt(d + 1)
-            width = 1.3 * height
-            result.add_node(
-                Node(name=str(v), fillcolor="#7e8ab8", width=f"{width:.2f}", height=f"{height:.2f}")
-            )
+            self._add_state(s, result)
 
         return result
 
