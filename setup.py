@@ -1,4 +1,3 @@
-import re
 import site
 
 from setuptools import find_packages, setup
@@ -7,17 +6,11 @@ from setuptools import find_packages, setup
 # PEP517 workaround
 site.ENABLE_USER_SITE = True
 
-with open("rflx/__init__.py", encoding="utf-8") as f:
-    match = re.search(r'__version__ = "(.*?)"', f.read())
-    assert match
-    version = match.group(1)
-
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
 setup(
     name="RecordFlux",
-    version=version,
     description=(
         "A toolset for the formal specification of messages and the generation of "
         "verifiable binary parsers and message generators."
@@ -63,6 +56,7 @@ setup(
             "pyicontract-lint >=2.1.2, <2.2",
             "tqdm >=4.61.1, <4.63",
             "types-pkg_resources >=0.1.3, <0.2",
+            "setuptools_scm >=6.2, <8",
         ]
     },
     scripts=["bin/rflx"],
