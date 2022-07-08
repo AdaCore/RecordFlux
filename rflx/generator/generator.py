@@ -1417,6 +1417,7 @@ class Generator:
 def create_file(filename: Path, content: str) -> None:
     log.info("Creating %s", filename)
 
+    filename.unlink(missing_ok=True)
     filename.write_text(content)
 
 
