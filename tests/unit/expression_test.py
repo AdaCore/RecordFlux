@@ -2526,14 +2526,15 @@ def test_case_type() -> None:
 
     assert_type_error(
         CaseExpr(c1, [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], Number(1))]),
-        r'^model: error: dependent expression "True" has incompatible type enumeration type '
+        r'^model: error: dependent expression "True" has incompatible enumeration type '
         r'"__BUILTINS__::Boolean"\n'
-        r'model: warning: conflicting with "1" which has type type universal integer \(1\)$',
+        r'model: info: conflicting with "1" which has type universal integer \(1\)$',
     )
     assert_type_error(
         CaseExpr(Opaque(Variable("X", type_=rty.Message("A"))), [([ID("V")], Number(1))]),
-        r'^model: error: invalid discrete choice type "sequence type "__INTERNAL__::Opaque" '
-        r'with element integer type "Byte" \(0 .. 255\)"$',
+        r'^model: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
+        r'with element integer type "Byte" \(0 .. 255\)\n'
+        r"model: info: expected enumeration or integer type$",
     )
 
 
@@ -2554,7 +2555,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: model: error: not all enumeration literals covered by case expression\n"
-        '<stdin>:10:2: model: warning: missing literal "Two"$',
+        '<stdin>:10:2: model: info: missing literal "Two"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2563,7 +2564,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: model: error: invalid literals used in case expression\n"
-        '<stdin>:10:2: model: warning: literal "Invalid" not part of P::Enumeration$',
+        '<stdin>:10:2: model: info: literal "Invalid" not part of "P::Enumeration"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2575,7 +2576,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: model: error: duplicate literals used in case expression\n"
-        '<stdin>:3:2: model: warning: duplicate literal "One"$',
+        '<stdin>:3:2: model: info: duplicate literal "One"$',
     )
 
     assert_type_error(
@@ -2584,8 +2585,17 @@ def test_case_invalid() -> None:
             [([Number(1)], TRUE), ([Number(2)], FALSE)],
             location=Location((2, 2)),
         ),
-        "^<stdin>:2:2: model: error: case expression does not cover full range of P::Tiny\n"
-        '<stdin>:1:2: model: warning: missing literal "3"$',
+        '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
+        "<stdin>:1:2: model: info: missing value 3$",
+    )
+    assert_type_error(
+        CaseExpr(
+            Variable("C", type_=TINY_INT.type_),
+            [([Number(1)], TRUE)],
+            location=Location((2, 2)),
+        ),
+        '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
+        "<stdin>:1:2: model: info: missing range 2-3$",
     )
     assert_type_error(
         CaseExpr(
@@ -2594,7 +2604,7 @@ def test_case_invalid() -> None:
             location=Location((2, 2)),
         ),
         "^<stdin>:2:2: model: error: invalid literals used in case expression\n"
-        '<stdin>:1:2: model: warning: literal "4" not part of P::Tiny$',
+        '<stdin>:1:2: model: info: value 4 not part of "P::Tiny"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2606,5 +2616,5 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: model: error: duplicate literals used in case expression\n"
-        '<stdin>:1:14: model: warning: duplicate literal "2"$',
+        '<stdin>:1:14: model: info: duplicate literal "2"$',
     )
