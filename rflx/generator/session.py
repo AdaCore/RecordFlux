@@ -2241,6 +2241,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 expr.Attribute,
                 expr.Aggregate,
                 expr.BoolAssExpr,
+                expr.Case,
             ),
         ) and (
             isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))

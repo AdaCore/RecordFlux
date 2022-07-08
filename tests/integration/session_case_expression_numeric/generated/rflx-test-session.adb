@@ -24,9 +24,9 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_case_expression/test.rflx:15:10
-      Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
-      if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+      --  tests/integration/session_case_expression_numeric/test.rflx:22:10
+      Test.Message.Verify_Message (Ctx.P.Message_Ctx);
+      if Test.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Prepare;
       else
          Ctx.P.Next_State := S_Terminated;
@@ -40,7 +40,7 @@ is
      Post =>
        Initialized (Ctx)
    is
-      Recv_Type : Universal.Message_Type;
+      Value : Test.Tiny_Int;
       function Prepare_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null)
        with
@@ -49,59 +49,25 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      --  tests/integration/session_case_expression/test.rflx:25:10
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         Recv_Type := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      --  tests/integration/session_case_expression_numeric/test.rflx:32:10
+      if Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
+         Value := Test.Tiny_Int ((case Test.Message.Get_Value (Ctx.P.Message_Ctx) is
+             when 1 | 2 =>
+                4,
+             when 3 =>
+                1,
+             when 4 =>
+                2));
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      --  tests/integration/session_case_expression/test.rflx:27:10
-      Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-            Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Prepare_Invariant);
-            goto Finalize_Prepare;
-         end if;
-      else
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Prepare_Invariant);
-         goto Finalize_Prepare;
-      end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-            Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Prepare_Invariant);
-            goto Finalize_Prepare;
-         end if;
-      else
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Prepare_Invariant);
-         goto Finalize_Prepare;
-      end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-            Universal.Message.Set_Value (Ctx.P.Message_Ctx, Universal.Value ((case Recv_Type is
-                when Universal.MT_Null | Universal.MT_Data =>
-                   2,
-                when Universal.MT_Value =>
-                   8,
-                when Universal.MT_Values =>
-                   16,
-                when Universal.MT_Option_Types =>
-                   32,
-                when Universal.MT_Options =>
-                   64,
-                when Universal.MT_Unconstrained_Data =>
-                   128,
-                when Universal.MT_Unconstrained_Options =>
-                   256)));
+      --  tests/integration/session_case_expression_numeric/test.rflx:37:10
+      Test.Message.Reset (Ctx.P.Message_Ctx);
+      if Test.Message.Valid_Next (Ctx.P.Message_Ctx, Test.Message.F_Value) then
+         if Test.Message.Available_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) >= Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Value) then
+            Test.Message.Set_Value (Ctx.P.Message_Ctx, Value);
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Assert (Prepare_Invariant);
@@ -131,7 +97,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_case_expression/test.rflx:46:10
+      --  tests/integration/session_case_expression_numeric/test.rflx:46:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -144,7 +110,7 @@ is
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
-      Universal.Message.Initialize (Ctx.P.Message_Ctx, Message_Buffer);
+      Test.Message.Initialize (Ctx.P.Message_Ctx, Message_Buffer);
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
@@ -152,7 +118,7 @@ is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Universal.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
+      Test.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
@@ -168,7 +134,7 @@ is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
-            Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
+            Test.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
          when S_Prepare | S_Reply | S_Terminated =>
             null;
       end case;
@@ -217,14 +183,14 @@ is
       begin
          Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
       end Read;
-      procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
+      procedure Test_Message_Read is new Test.Message.Generic_Read (Read, Read_Pre);
    begin
       Buffer := (others => 0);
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
                when S_Reply =>
-                  Universal_Message_Read (Ctx.P.Message_Ctx);
+                  Test_Message_Read (Ctx.P.Message_Ctx);
                when others =>
                   null;
             end case;
@@ -251,13 +217,13 @@ is
          Message_Buffer := (others => 0);
          Message_Buffer (Message_Buffer'First .. RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) - 1 + Length)) := Buffer;
       end Write;
-      procedure Universal_Message_Write is new Universal.Message.Generic_Write (Write, Write_Pre);
+      procedure Test_Message_Write is new Test.Message.Generic_Write (Write, Write_Pre);
    begin
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
                when S_Start =>
-                  Universal_Message_Write (Ctx.P.Message_Ctx, Offset);
+                  Test_Message_Write (Ctx.P.Message_Ctx, Offset);
                when others =>
                   null;
             end case;
