@@ -554,7 +554,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
         ),
         (
             "(case C is when V1 | V2 => 8, when V3 => 16)",
-            expr.Case(
+            expr.CaseExpr(
                 expr.Variable("C"),
                 [
                     ([ID("V1"), ID("V2")], expr.Number(8)),

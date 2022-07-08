@@ -2773,7 +2773,7 @@ def _entity_name(expr: Expr) -> str:
     return f'{expr_type} "{expr_name}"'
 
 
-class Case(Expr):
+class CaseExpr(Expr):
     def __init__(
         self,
         expr: Expr,
@@ -3002,7 +3002,7 @@ class Case(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, Case):
+        if isinstance(expr, CaseExpr):
             return expr.__class__(
                 expr.expr.substituted(func),
                 [(c, e.substituted(func)) for c, e in self.choices],
@@ -3031,7 +3031,7 @@ class Case(Expr):
 
     def variables(self) -> List["Variable"]:
         simplified = self.simplified()
-        assert isinstance(simplified, Case)
+        assert isinstance(simplified, CaseExpr)
         return list(
             unique(
                 [

@@ -19,7 +19,7 @@ from rflx.expression import (
     Attribute,
     Binding,
     Call,
-    Case,
+    CaseExpr,
     Comprehension,
     Conversion,
     Div,
@@ -2461,7 +2461,7 @@ def test_proof_invalid_logic() -> None:
 
 def test_case_variables() -> None:
     assert_equal(
-        Case(
+        CaseExpr(
             Variable("C"), [([ID("V1"), ID("V2")], Number(1)), ([ID("V3")], Variable("E"))]
         ).variables(),
         [Variable("C"), Variable("E")],
@@ -2469,32 +2469,34 @@ def test_case_variables() -> None:
 
 
 def test_case_substituted() -> None:
-    c = Case(Variable("C"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))])
+    c = CaseExpr(
+        Variable("C"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))]
+    )
     assert_equal(
         c.substituted(lambda x: Number(42) if x == Variable("E1") else x),
-        Case(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Variable("E2"))]),
+        CaseExpr(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Variable("E2"))]),
     )
     assert_equal(
         c.substituted(
             lambda x: Number(42) if isinstance(x, Variable) and x.name.startswith("E") else x
         ),
-        Case(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Number(42))]),
+        CaseExpr(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Number(42))]),
     )
     assert_equal(
         c.substituted(lambda x: Variable("C_Subst") if x == Variable("C") else x),
-        Case(
+        CaseExpr(
             Variable("C_Subst"),
             [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
         ),
     )
     assert_equal(
-        c.substituted(lambda x: Variable("C_Subst") if isinstance(x, Case) else x),
+        c.substituted(lambda x: Variable("C_Subst") if isinstance(x, CaseExpr) else x),
         Variable("C_Subst"),
     )
 
 
 def test_case_substituted_location() -> None:
-    c = Case(
+    c = CaseExpr(
         Variable("C"),
         [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
         location=Location((1, 2)),
@@ -2504,7 +2506,7 @@ def test_case_substituted_location() -> None:
 
 def test_case_findall() -> None:
     assert_equal(
-        Case(
+        CaseExpr(
             Variable("C1"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))]
         ).findall(lambda x: isinstance(x, Variable) and x.name.endswith("1")),
         [Variable("C1"), Variable("E1")],
@@ -2513,23 +2515,23 @@ def test_case_findall() -> None:
 
 def test_case_type() -> None:
     c1 = Variable("C", type_=ENUMERATION.type_)
-    assert_type(Case(c1, [([ID("Zero"), ID("One")], TRUE), ([ID("Two")], FALSE)]), rty.BOOLEAN)
+    assert_type(CaseExpr(c1, [([ID("Zero"), ID("One")], TRUE), ([ID("Two")], FALSE)]), rty.BOOLEAN)
     assert_type(
-        Case(c1, [([ID("Zero"), ID("One")], Number(1)), ([ID("Two")], Number(2))]),
+        CaseExpr(c1, [([ID("Zero"), ID("One")], Number(1)), ([ID("Two")], Number(2))]),
         rty.UniversalInteger(rty.Bounds(1, 2)),
     )
 
     c2 = Variable("C", type_=TINY_INT.type_)
-    assert_type(Case(c2, [([Number(1), Number(2)], TRUE), ([Number(3)], FALSE)]), rty.BOOLEAN)
+    assert_type(CaseExpr(c2, [([Number(1), Number(2)], TRUE), ([Number(3)], FALSE)]), rty.BOOLEAN)
 
     assert_type_error(
-        Case(c1, [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], Number(1))]),
+        CaseExpr(c1, [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], Number(1))]),
         r'^model: error: dependent expression "True" has incompatible type enumeration type '
         r'"__BUILTINS__::Boolean"\n'
         r'model: warning: conflicting with "1" which has type type universal integer \(1\)$',
     )
     assert_type_error(
-        Case(Opaque(Variable("X", type_=rty.Message("A"))), [([ID("V")], Number(1))]),
+        CaseExpr(Opaque(Variable("X", type_=rty.Message("A"))), [([ID("V")], Number(1))]),
         r'^model: error: invalid discrete choice type "sequence type "__INTERNAL__::Opaque" '
         r'with element integer type "Byte" \(0 .. 255\)"$',
     )
@@ -2537,16 +2539,16 @@ def test_case_type() -> None:
 
 def test_case_simplified() -> None:
     assert_equal(
-        Case(
+        CaseExpr(
             Variable("C"), [([ID("V1"), ID("V2")], And(TRUE, FALSE)), ([ID("V3")], FALSE)]
         ).simplified(),
-        Case(Variable("C"), [([ID("V1"), ID("V2")], FALSE), ([ID("V3")], FALSE)]),
+        CaseExpr(Variable("C"), [([ID("V1"), ID("V2")], FALSE), ([ID("V3")], FALSE)]),
     )
 
 
 def test_case_invalid() -> None:
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=ENUMERATION.type_),
             [([ID("Zero")], TRUE), ([ID("One")], FALSE)],
             location=Location((1, 2)),
@@ -2555,7 +2557,7 @@ def test_case_invalid() -> None:
         '<stdin>:10:2: model: warning: missing literal "Two"$',
     )
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=ENUMERATION.type_),
             [([ID("Zero"), ID("One")], TRUE), ([ID("Two"), ID("Invalid")], FALSE)],
             location=Location((1, 2)),
@@ -2564,7 +2566,7 @@ def test_case_invalid() -> None:
         '<stdin>:10:2: model: warning: literal "Invalid" not part of P::Enumeration$',
     )
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=ENUMERATION.type_),
             [
                 ([ID("Zero"), ID("One", location=Location((2, 2)))], TRUE),
@@ -2577,7 +2579,7 @@ def test_case_invalid() -> None:
     )
 
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=TINY_INT.type_),
             [([Number(1)], TRUE), ([Number(2)], FALSE)],
             location=Location((2, 2)),
@@ -2586,7 +2588,7 @@ def test_case_invalid() -> None:
         '<stdin>:1:2: model: warning: missing literal "3"$',
     )
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=TINY_INT.type_),
             [([Number(1), Number(2)], TRUE), ([Number(3), Number(4)], FALSE)],
             location=Location((2, 2)),
@@ -2595,7 +2597,7 @@ def test_case_invalid() -> None:
         '<stdin>:1:2: model: warning: literal "4" not part of P::Tiny$',
     )
     assert_type_error(
-        Case(
+        CaseExpr(
             Variable("C", type_=TINY_INT.type_),
             [
                 ([Number(1), Number(2, location=Location((1, 8)))], TRUE),

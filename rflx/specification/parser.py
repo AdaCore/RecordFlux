@@ -668,7 +668,7 @@ def create_case(expression: lang.Expr, filename: Path) -> expr.Expr:
         for c in expression.f_choices
     ]
 
-    return expr.Case(
+    return expr.CaseExpr(
         create_expression(expression.f_expression, filename),
         choices,
         location=node_location(expression, filename),
