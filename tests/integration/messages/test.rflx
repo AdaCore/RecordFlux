@@ -1,5 +1,1 @@
-with Universal;
-
-package Test is
-
-end Test;
+../shared/test.rflx

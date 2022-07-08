@@ -1,3 +1,1 @@
-package RFLX is
-
-end RFLX;
+../../shared/generated/rflx.ads
