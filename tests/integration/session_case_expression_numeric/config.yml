@@ -1,0 +1,12 @@
+input:
+  Channel:
+    - 3
+output:
+  - Channel
+sequence: |
+  Write Channel: 3
+  State: Start
+  State: Prepare
+  Read Channel: 1
+  State: Reply
+prove:
