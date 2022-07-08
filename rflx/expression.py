@@ -11,6 +11,8 @@ from copy import copy
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
+from itertools import groupby
+from operator import itemgetter
 from sys import intern
 from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
@@ -2811,7 +2813,7 @@ class CaseExpr(Expr):
                         (
                             f'missing literal "{l.name}"',
                             Subsystem.MODEL,
-                            Severity.WARNING,
+                            Severity.INFO,
                             self.expr.type_.location,
                         )
                         for l in missing
@@ -2831,9 +2833,9 @@ class CaseExpr(Expr):
                     ),
                     *[
                         (
-                            f'literal "{l.name}" not part of {self.expr.type_.identifier}',
+                            f'literal "{l.name}" not part of "{self.expr.type_.identifier}"',
                             Subsystem.MODEL,
-                            Severity.WARNING,
+                            Severity.INFO,
                             self.expr.type_.location,
                         )
                         for l in invalid
@@ -2855,23 +2857,30 @@ class CaseExpr(Expr):
 
         missing = set(type_literals) - set(literals)
         if missing:
+            missing_ranges = []
+            for _, g in groupby(enumerate(missing), lambda i: i[0] - i[1]):
+                group = list(map(itemgetter(1), g))
+                missing_ranges.append((group[0], group[-1]))
+
             error.extend(
                 [
                     (
                         f"case expression does not cover full range of "
-                        f"{self.expr.type_.identifier}",
+                        f'"{self.expr.type_.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     ),
                     *[
                         (
-                            f'missing literal "{l}"',
+                            f"missing range {r[0]}-{r[1]}"
+                            if r[0] != r[1]
+                            else f"missing value {r[0]}",
                             Subsystem.MODEL,
-                            Severity.WARNING,
+                            Severity.INFO,
                             self.expr.type_.location,
                         )
-                        for l in missing
+                        for r in missing_ranges
                     ],
                 ]
             )
@@ -2888,9 +2897,9 @@ class CaseExpr(Expr):
                     ),
                     *[
                         (
-                            f'literal "{l}" not part of {self.expr.type_.identifier}',
+                            f'value {l} not part of "{self.expr.type_.identifier}"',
                             Subsystem.MODEL,
-                            Severity.WARNING,
+                            Severity.INFO,
                             self.expr.type_.location,
                         )
                         for l in invalid
@@ -2916,15 +2925,15 @@ class CaseExpr(Expr):
                         error.extend(
                             [
                                 (
-                                    f'dependent expression "{e1}" has incompatible type {e1.type_}',
+                                    f'dependent expression "{e1}" has incompatible {e1.type_}',
                                     Subsystem.MODEL,
                                     Severity.ERROR,
                                     e1.location,
                                 ),
                                 (
-                                    f'conflicting with "{e2}" which has type {e2.type_}',
+                                    f'conflicting with "{e2}" which has {e2.type_}',
                                     Subsystem.MODEL,
-                                    Severity.WARNING,
+                                    Severity.INFO,
                                     e2.location,
                                 ),
                             ]
@@ -2952,7 +2961,7 @@ class CaseExpr(Expr):
                         (
                             f'duplicate literal "{l}"',
                             Subsystem.MODEL,
-                            Severity.WARNING,
+                            Severity.INFO,
                             l.location,
                         )
                         for l in duplicates
@@ -2968,9 +2977,15 @@ class CaseExpr(Expr):
             error.extend(
                 [
                     (
-                        f'invalid discrete choice type "{self.expr.type_}"',
+                        f"invalid discrete choice with {self.expr.type_}",
                         Subsystem.MODEL,
                         Severity.ERROR,
+                        self.expr.location,
+                    ),
+                    (
+                        "expected enumeration or integer type",
+                        Subsystem.MODEL,
+                        Severity.INFO,
                         self.expr.location,
                     ),
                 ]
