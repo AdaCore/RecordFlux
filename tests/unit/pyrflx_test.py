@@ -1426,13 +1426,46 @@ def test_parameterized_message_no_verification() -> None:
     assert message_unv.bytestring == bytes(8)
 
 
-def test_parameterized_message_invalid_type(parameterized_package: Package) -> None:
+def test_parameterized_message_unsupported_type(parameterized_package: Package) -> None:
     with pytest.raises(
-        PyRFLXError, match=f"^pyrflx: error: {type(bytes())} is no supported parameter type$"
+        PyRFLXError,
+        match='^pyrflx: error: message argument for "Length" has unsupported type "bytes"$',
     ):
         parameterized_package.new_message(
             "Message",
-            {"Length": bytes(8)},  # type: ignore[dict-item]
+            {
+                "Length": bytes(8),  # type: ignore[dict-item]
+                "Tag_Mode": "Without_Tag",
+                "Tag_Value": "Parameterized::Tag_A",
+                "Use_Tag": True,
+            },
+        )
+
+
+def test_parameterized_message_invalid_type(parameterized_package: Package) -> None:
+    with pytest.raises(
+        PyRFLXError, match='^pyrflx: error: message argument for "Tag_Mode" has invalid type "int"$'
+    ):
+        parameterized_package.new_message(
+            "Message",
+            {
+                "Length": 8,
+                "Tag_Mode": 2,
+                "Tag_Value": "Parameterized::Tag_A",
+                "Use_Tag": True,
+            },
+        )
+    with pytest.raises(
+        PyRFLXError, match='^pyrflx: error: message argument for "Use_Tag" has invalid type "str"$'
+    ):
+        parameterized_package.new_message(
+            "Message",
+            {
+                "Length": 8,
+                "Tag_Mode": "Without_Tag",
+                "Tag_Value": "Parameterized::Tag_A",
+                "Use_Tag": "True",
+            },
         )
 
 
