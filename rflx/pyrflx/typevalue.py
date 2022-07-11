@@ -30,6 +30,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.model import (
+    BOOLEAN,
     FINAL,
     INITIAL,
     ByteOrder,
@@ -602,6 +603,23 @@ class MessageValue(TypeValue):
         self._refinements = [*(self._refinements or []), refinement]
 
     def add_parameters(self, parameters: ty.Mapping[str, ty.Union[bool, int, str]]) -> None:
+        expected = set(p.name for p in self._type.parameter_types.keys())
+        added = set(p for p in parameters)
+
+        if expected - added:
+            message = ", ".join(expected - added)
+            raise PyRFLXError(f"missing parameter values: {message}")
+
+        if added - expected:
+            message = ", ".join(added - expected)
+            raise PyRFLXError(f"unexpected parameter values: {message}")
+
+        def check_type(valid: bool) -> None:
+            if not valid:
+                raise PyRFLXError(
+                    f'message argument for "{name}" has invalid type "{type(value).__name__}"'
+                )
+
         enum_literals = {
             str(l): str(t.package * l)
             for t in self._type.types.values()
@@ -612,29 +630,27 @@ class MessageValue(TypeValue):
         expr: Expr
         for name, value in parameters.items():
             if isinstance(value, bool):
+                check_type(self.model.parameter_types[Field(name)] == BOOLEAN)
                 expr = TRUE if value else FALSE
             elif isinstance(value, int):
+                check_type(isinstance(self.model.parameter_types[Field(name)], Integer))
                 expr = Number(value)
             elif isinstance(value, str):
+                check_type(
+                    isinstance(self.model.parameter_types[Field(name)], Enumeration)
+                    and self.model.parameter_types[Field(name)] != BOOLEAN
+                )
                 if value in enum_literals:
                     expr = Literal(enum_literals[value])
                 else:
                     assert value in enum_literals.values()
                     expr = Literal(value)
             else:
-                raise PyRFLXError(f"{type(value)} is no supported parameter type")
+                raise PyRFLXError(
+                    f'message argument for "{name}" has unsupported type "{type(value).__name__}"'
+                )
+
             params[Variable(name)] = expr
-
-        expected = set(p.name for p in self._type.parameter_types.keys())
-        added = set(p.name for p in params if isinstance(p, Variable))
-
-        if expected - added:
-            message = ", ".join(expected - added)
-            raise PyRFLXError(f"missing parameter values: {message}")
-
-        if added - expected:
-            message = ", ".join(added - expected)
-            raise PyRFLXError(f"unexpected parameter values: {message}")
 
         self._parameters = params
         if not self._skip_verification:
