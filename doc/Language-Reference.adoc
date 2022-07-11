@@ -1618,9 +1618,9 @@ A xref:syntax-case_expression[case expression] selects one of several alternativ
 
 *Static Semantics*
 
-The type of all the dependent_xref:syntax-expression[expression]s shall be compatible to the type of the xref:syntax-case_expression[case_expression].
-Each value of the type of the selecting_xref:syntax-expression[expression] shall be covered by a xref:syntax-discrete_choice[discrete_choice].
-Two distinct xref:syntax-discrete_choice[discrete_choices] of a xref:syntax-case_expression[case_expression] shall not cover the same value.
+The type of all the dependent xref:syntax-expression[expression]s shall be compatible to the type of the xref:syntax-case_expression[case expression].
+Each value of the type of the selecting xref:syntax-expression[expression] shall be covered by a xref:syntax-discrete_choice[discrete choice].
+Two distinct xref:syntax-discrete_choice[discrete choices] of a xref:syntax-case_expression[case expression] shall not cover the same value.
 
 *Example*
 

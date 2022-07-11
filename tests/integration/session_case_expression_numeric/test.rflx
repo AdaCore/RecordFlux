@@ -30,9 +30,9 @@ package Test is
          Value : Tiny_Int;
       begin
          Value := (case Message.Value is  -- §S-E-CE
-                   when 1 | 2 => 4,
-                   when 3     => 1,
-                   when 4     => 2);
+                      when 1 | 2 => 4,
+                      when 3     => 1,
+                      when 4     => 2);
          -- §S-S-A-A-MA
          Message := Message'(Value => Value);
       transition
