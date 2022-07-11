@@ -2873,7 +2873,7 @@ class CaseExpr(Expr):
                     ),
                     *[
                         (
-                            f"missing range {r[0]}-{r[1]}"
+                            f"missing range {r[0]} .. {r[1]}"
                             if r[0] != r[1]
                             else f"missing value {r[0]}",
                             Subsystem.MODEL,
