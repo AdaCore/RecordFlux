@@ -2595,7 +2595,7 @@ def test_case_invalid() -> None:
             location=Location((2, 2)),
         ),
         '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
-        "<stdin>:1:2: model: info: missing range 2-3$",
+        "<stdin>:1:2: model: info: missing range 2 .. 3$",
     )
     assert_type_error(
         CaseExpr(
