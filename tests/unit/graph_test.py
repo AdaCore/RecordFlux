@@ -191,9 +191,13 @@ def test_session_graph(tmp_path: Path) -> None:
             ),
             State(
                 "STATE",
-                transitions=[Transition(target=ID("END"))],
+                transitions=[Transition(target=ID("IGNORED_1")), Transition(target=ID("END"))],
                 actions=[stmt.Assignment("Global", FALSE), stmt.Reset("Local")],
                 declarations=[decl.VariableDeclaration("Local", "Opaque")],
+            ),
+            State(
+                "IGNORED_1",
+                transitions=[Transition(target=ID("END"))],
             ),
             State("END"),
         ],
@@ -201,23 +205,42 @@ def test_session_graph(tmp_path: Path) -> None:
         parameters=[],
         types=[BOOLEAN, OPAQUE],
     )
-    expected = r"""
+
+    expected_full = r"""
         digraph "Session" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                   shape=box, style="rounded,filled", width="1.5"];
-            START [fillcolor="#ffffff", fontcolor=black, height="1.73", width="2.25"];
-            START -> STATE  [tooltip="START → STATE\n\n[0] Global = True"];
-            START -> END  [tooltip=""];
-            Global -> START  [tooltip="START: read Global"];
-            STATE [height="1.73", width="2.25"];
-            STATE -> END  [tooltip=""];
-            STATE -> Global  [tooltip="STATE: write Global"];
-            END [fillcolor="#6f6f6f", height="1.73", width="2.25"];
-            Global [fillcolor="#7e8ab8", height="1.73", width="2.25"];
+            START [fillcolor="#ffffff", fontcolor=black];
+            START -> STATE  [minlen=3, tooltip="START → STATE\n\n[0] Global = True"];
+            START -> END  [minlen=3, tooltip=""];
+            STATE;
+            STATE -> IGNORED_1 [minlen=3, tooltip=""];
+            STATE -> END  [minlen=3, tooltip=""];
+            IGNORED_1;
+            IGNORED_1 -> END  [minlen=3, tooltip=""];
+            END [fillcolor="#6f6f6f"];
         }
         """
 
-    assert_graph(Graph(s), expected, tmp_path)
+    assert_graph(Graph(s), expected_full, tmp_path)
+
+    expected_filtered = r"""
+        digraph "Session" {
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
+            edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
+            node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
+                  shape=box, style="rounded,filled", width="1.5"];
+            START [fillcolor="#ffffff", fontcolor=black];
+            START -> STATE  [minlen=3, tooltip="START → STATE\n\n[0] Global = True"];
+            START -> END  [minlen=3, tooltip=""];
+            STATE;
+            STATE -> END  [minlen=3, tooltip=""];
+            END [fillcolor="#6f6f6f"];
+        }
+        """
+
+    assert_graph(Graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)

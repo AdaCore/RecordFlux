@@ -1,22 +1,22 @@
-import collections
 import logging
+import re
 from copy import copy
-from math import sqrt
 from pathlib import Path
-from typing import Counter, Union
+from typing import Optional, Sequence, Union
 
 from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message, State, statement as stmt
+from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message, State
 
 log = logging.getLogger(__name__)
 
 
 class Graph:
-    def __init__(self, data: Union[AbstractSession, Message]) -> None:
+    def __init__(self, data: Union[AbstractSession, Message], ignore: Sequence[str] = None) -> None:
         self._data = copy(data)
+        self._ignore: Optional[Sequence[str]] = ignore
         if isinstance(self._data, AbstractSession):
             self._degree = {s.identifier.name: len(s.transitions) for s in self._data.states}
             for s in self._data.states:
@@ -68,9 +68,20 @@ class Graph:
         )
         return result
 
+    def _is_ignored(self, name: ID) -> bool:
+        if not self._ignore:
+            return False
+        for regex in self._ignore:
+            if re.search(regex, str(name), re.IGNORECASE):
+                return True
+        return False
+
     def _add_state(self, state: State, result: Dot) -> None:
 
         assert isinstance(self._data, AbstractSession)
+
+        if self._is_ignored(state.identifier):
+            return
 
         if state.identifier == self._data.initial:
             result.add_node(
@@ -91,19 +102,20 @@ class Graph:
             result.add_node(Node(name=str(state.identifier.name)))
 
         for index, t in enumerate(state.transitions):
-            label = (
-                f"{state.identifier.name} → {t.target.name}\n\n[{index}] {t.condition}"
-                if t.condition != TRUE
-                else ""
-            )
-            result.add_edge(
-                Edge(
-                    src=str(state.identifier.name),
-                    dst=str(t.target.name),
-                    tooltip=label,
-                    minlen="3",
+            if not self._is_ignored(t.target.name):
+                label = (
+                    f"{state.identifier.name} → {t.target.name}\n\n[{index}] {t.condition}"
+                    if t.condition != TRUE
+                    else ""
                 )
-            )
+                result.add_edge(
+                    Edge(
+                        src=str(state.identifier.name),
+                        dst=str(t.target.name),
+                        tooltip=label,
+                        minlen="3",
+                    )
+                )
 
     @property
     def _get_session(self) -> Dot:
