@@ -28,13 +28,13 @@ package Test is
                                         Length       => 1,
                                         Value        => -- §S-E-CE
                                                         (case Recv_Type is
-                                                         when Universal::MT_Null | Universal::MT_Data =>   2,
-                                                         when Universal::MT_Value                     =>   8,
-                                                         when Universal::MT_Values                    =>  16,
-                                                         when Universal::MT_Option_Types              =>  32,
-                                                         when Universal::MT_Options                   =>  64,
-                                                         when Universal::MT_Unconstrained_Data        => 128,
-                                                         when Universal::MT_Unconstrained_Options     => 256));
+                                                            when Universal::MT_Null | Universal::MT_Data =>   2,
+                                                            when Universal::MT_Value                     =>   8,
+                                                            when Universal::MT_Values                    =>  16,
+                                                            when Universal::MT_Option_Types              =>  32,
+                                                            when Universal::MT_Options                   =>  64,
+                                                            when Universal::MT_Unconstrained_Data        => 128,
+                                                            when Universal::MT_Unconstrained_Options     => 256));
       transition
          goto Reply -- §S-S-T-N
       exception
