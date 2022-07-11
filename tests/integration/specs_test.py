@@ -233,7 +233,7 @@ def test_ipv4_parsing_ipv4_option_value(ipv4_option_value: pyrflx.MessageValue) 
     assert len(ip_option) == 1
 
 
-@pytest.mark.skip(reason="ISSUE: Componolit/RecordFlux#61")
+@pytest.mark.skip(reason="https://github.com/Componolit/RecordFlux/issues/61")
 def test_ipv4_parsing_ipv4_with_options(ipv4_packet_value: pyrflx.MessageValue) -> None:
     with open(CAPTURED_DIR / "ipv4-options_udp.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()

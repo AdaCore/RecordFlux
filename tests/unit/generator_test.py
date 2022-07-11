@@ -959,7 +959,7 @@ class UnknownStatement(stmt.Statement):
     "action, expected",
     [
         (
-            # ISSUE: Componolit/RecordFlux#1069
+            # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => A, Length => B, Data => C'Opaque)
@@ -1016,7 +1016,7 @@ class UnknownStatement(stmt.Statement):
                 ),
                 location=Location(start=(1, 1)),
             ),
-            ""  # ISSUE: PyCQA/pylint#3368
+            ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
 --  <stdin>:1:1
 declare
@@ -1122,7 +1122,7 @@ end if;\
 """,
         ),
         (
-            # ISSUE: Componolit/RecordFlux#1069
+            # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
             stmt.Assignment(
                 "X",
@@ -1193,7 +1193,7 @@ end if;\
 """,
         ),
         (
-            # ISSUE: Componolit/RecordFlux#1069
+            # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
             #
             # X := Universal::Option (A.Data)
@@ -1248,7 +1248,7 @@ end if;\
                 ),
                 location=Location(start=(1, 1)),
             ),
-            ""  # ISSUE: PyCQA/pylint#3368
+            ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
 --  <stdin>:1:1
 declare
@@ -1319,7 +1319,7 @@ end if;\
 """,
         ),
         (
-            # ISSUE: Componolit/RecordFlux#1069
+            # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
             #
             # X := A.Message_Type
@@ -1355,7 +1355,7 @@ end if;\
                 ),
                 location=Location(start=(1, 1)),
             ),
-            ""  # ISSUE: PyCQA/pylint#3368
+            ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
 --  <stdin>:1:1
 declare
@@ -1397,9 +1397,9 @@ if RFLX_Exception then
 end if;\
 """,
         ),
-        # ISSUE: Componolit/RecordFlux#577
+        # https://github.com/Componolit/RecordFlux/issues/577
         # Copying of sequences is not yet supported.
-        # ISSUE: Componolit/RecordFlux#1069
+        # https://github.com/Componolit/RecordFlux/issues/1069
         # Replace this test case by an integration test.
         # (
         #     stmt.Assignment(
@@ -1440,9 +1440,9 @@ end if;\
         #     ),
         #     "",
         # ),
-        # ISSUE: Componolit/RecordFlux#577
+        # https://github.com/Componolit/RecordFlux/issues/577
         # Copying of sequences is not yet supported.
-        # ISSUE: Componolit/RecordFlux#1069
+        # https://github.com/Componolit/RecordFlux/issues/1069
         # Replace this test case by an integration test.
         # (
         #     stmt.Assignment(
@@ -1469,7 +1469,7 @@ end if;\
         #     "",
         # ),
         (
-            # ISSUE: Componolit/RecordFlux#1069
+            # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])
@@ -1496,7 +1496,7 @@ end if;\
                 ),
                 location=Location(start=(1, 1)),
             ),
-            ""  # ISSUE: PyCQA/pylint#3368
+            ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
 --  <stdin>:1:1
 Universal.Message.Reset (X_Ctx);

@@ -123,7 +123,7 @@ class ModularInteger(Integer):
 
         modulus_int = int(modulus_num)
 
-        # ISSUE: Componolit/RecordFlux#1077
+        # https://github.com/Componolit/RecordFlux/issues/1077
         # size of integers is limited to 63bits
 
         if modulus_int > 2**const.MAX_SCALAR_SIZE:
@@ -290,7 +290,7 @@ class RangeInteger(Integer):
                 ],
             )
 
-        # ISSUE: Componolit/RecordFlux#1077
+        # https://github.com/Componolit/RecordFlux/issues/1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:
@@ -438,7 +438,7 @@ class Enumeration(Scalar):
                     ],
                 )
 
-        # ISSUE: Componolit/RecordFlux#1077
+        # https://github.com/Componolit/RecordFlux/issues/1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:

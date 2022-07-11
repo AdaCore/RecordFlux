@@ -62,7 +62,7 @@ def sizes(
 ) -> int:
     assert 0 <= align_to_8 < 8
     assert not (multiple_of_8 and align_to_8)
-    # ISSUE: Componolit/RecordFlux#1077
+    # https://github.com/Componolit/RecordFlux/issues/1077
     # size of integers is limited to 63bits
     if multiple_of_8:
         return draw(st.integers(min_value=1, max_value=7).map(lambda x: x * 8))

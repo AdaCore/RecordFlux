@@ -172,7 +172,7 @@ class SerializerGenerator:
 
         return UnitPart(
             [
-                # WORKAROUND Componolit/Workarounds#47
+                # https://github.com/Componolit/Workarounds/issues/47
                 Pragma(
                     "Warnings",
                     [Variable("Off"), String("postcondition does not mention function result")],
@@ -1740,7 +1740,7 @@ class SerializerGenerator:
         return [
             # Improve provability of context predicate
             PragmaStatement("Assert", [Equal(Mod(last, Size(const.TYPES_BYTE)), Number(0))]),
-            # ISSUE: Componolit/RecordFlux#868
+            # https://github.com/Componolit/RecordFlux/issues/868
             PragmaStatement(
                 "Warnings",
                 [

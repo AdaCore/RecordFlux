@@ -727,7 +727,7 @@ class MessageValue(TypeValue):
         field = Field(source_field_name)
         if field == FINAL or not self._type.structure:
             # structure is empty in case of NULL message
-            # ISSUE: Componolit/RecordFlux#643
+            # https://github.com/Componolit/RecordFlux/issues/643
             return None
         for link in self._type.outgoing(field):
             if self._simplified(link.condition) == TRUE:
@@ -744,7 +744,7 @@ class MessageValue(TypeValue):
 
         if next_link is None and field_name == INITIAL.name:
             # the INITIAL field has no outgoing links in case of NULL message
-            # ISSUE: Componolit/RecordFlux#643
+            # https://github.com/Componolit/RecordFlux/issues/643
             return FINAL.name
         return next_link.target.name if next_link is not None else ""
 
@@ -1184,7 +1184,7 @@ class MessageValue(TypeValue):
                 or not isinstance(field_val.first, Number)
                 or not field_val.first.value <= len(bits)
             ):
-                # ISSUE: nedbat/coveragepy#772
+                # https://github.com/nedbat/coveragepy/issues/772
                 # A dummy statement is needed to disable the peephole optimizer, so that the break
                 # statement is detected during coverage analysis.
                 # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
@@ -1331,7 +1331,7 @@ class MessageValue(TypeValue):
                     Number(message_size) if message_size else last + Number(1)
                 )
 
-        # ISSUE: Componolit/RecordFlux#422
+        # https://github.com/Componolit/RecordFlux/issues/422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
     def _simplified(self, expr: Expr, max_iterations: int = 16) -> Expr:

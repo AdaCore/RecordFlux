@@ -313,7 +313,7 @@ def create_valid_context_function(
         [],
         [],
         [
-            # WORKAROUND: Componolit/Workarounds#36
+            # https://github.com/Componolit/Workarounds/issues/36
             # An access constant type cannot be used here, because the "implicit conversion
             # between access types with different designated types is not yet supported".
             Pragma(
@@ -323,7 +323,7 @@ def create_valid_context_function(
                     String('"Buffer" is not modified, could be of access constant type'),
                 ],
             ),
-            # WORKAROUND: Componolit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -690,7 +690,7 @@ def create_initialized_function(message: Message) -> UnitPart:
 
     return UnitPart(
         [
-            # WORKAROUND: Componolit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1065,7 +1065,7 @@ def create_generic_read_procedure() -> UnitPart:
                     [Parameter(["Buffer"], const.TYPES_BYTES)],
                 ),
                 TRUE,
-                # ISSUE: Componolit/Workarounds#48
+                # https://github.com/Componolit/Workarounds/issues/48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
             ),
@@ -1156,7 +1156,7 @@ def create_generic_write_procedure(message: Message) -> UnitPart:
                     ],
                 ),
                 TRUE,
-                # ISSUE: Componolit/Workarounds#48
+                # https://github.com/Componolit/Workarounds/issues/48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
             ),
@@ -1256,7 +1256,7 @@ def create_generic_write_procedure(message: Message) -> UnitPart:
                             Variable("Offset"),
                         ],
                     ),
-                    # ISSUE: Componolit/Workarounds#39
+                    # https://github.com/Componolit/Workarounds/issues/39
                     # Improve the check message in case of a wrong instantiation of "Write".
                     PragmaStatement(
                         "Assert",
@@ -1314,7 +1314,7 @@ def create_valid_value_function(
 
     return UnitPart(
         [
-            # WORKAROUND: Componolit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1400,7 +1400,7 @@ def create_path_condition_function(message: Message, prefix: str) -> UnitPart:
 
     return UnitPart(
         [
-            # WORKAROUND Compolonit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1570,7 +1570,7 @@ def create_field_first_function(message: Message, prefix: str) -> UnitPart:
 
     return UnitPart(
         [
-            # WORKAROUND Compolonit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1703,7 +1703,7 @@ def create_field_condition_function(message: Message, prefix: str) -> UnitPart:
                         )
                     ],
                 ),
-                # ISSUE: Componolit/RecordFlux#276
+                # https://github.com/Componolit/RecordFlux/issues/276
                 **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             }
         )
@@ -1743,7 +1743,7 @@ def create_field_condition_function(message: Message, prefix: str) -> UnitPart:
 
     return UnitPart(
         [
-            # WORKAROUND Componolit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1796,7 +1796,7 @@ def create_predecessor_function() -> UnitPart:
 
     return UnitPart(
         [
-            # WORKAROUND Compolonit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1840,7 +1840,7 @@ def create_successor_function(message: Message, prefix: str) -> UnitPart:
     return UnitPart(
         [],
         [
-            # WORKAROUND: Componolit/Workarounds#31
+            # https://github.com/Componolit/Workarounds/issues/31
             Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
             ExpressionFunctionDeclaration(
                 specification,
@@ -1965,7 +1965,7 @@ def create_valid_predecessor_function(
 
     return UnitPart(
         [
-            # WORKAROUND Compolonit/Workarounds#47
+            # https://github.com/Componolit/Workarounds/issues/47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -3029,7 +3029,7 @@ def _create_valid_structure_function(message: Message, prefix: str) -> UnitPart:
         for link in path
         for condition in [
             link.condition.substituted(
-                # ISSUE: Componolit/RecordFlux#276
+                # https://github.com/Componolit/RecordFlux/issues/276
                 mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             )
             .substituted(_struct_substitution(message))

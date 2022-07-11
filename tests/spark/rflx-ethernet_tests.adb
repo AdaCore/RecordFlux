@@ -345,7 +345,7 @@ package body RFLX.Ethernet_Tests is
          Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
       end;
 
-      --  WORKAROUND: Componolit/Workarounds#32
+      --  https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Ethernet.Frame.Take_Buffer (Context, Buffer);
       pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
@@ -397,7 +397,7 @@ package body RFLX.Ethernet_Tests is
          Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
       end;
 
-      --  WORKAROUND: Componolit/Workarounds#32
+      --  https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Ethernet.Frame.Take_Buffer (Context, Buffer);
       pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");

@@ -58,6 +58,6 @@ UNREACHABLE = ada.Call(TYPES * "Unreachable")
 
 CONFIGURATION_PRAGMAS = [
     ada.Pragma("Style_Checks", [ada.String("N3aAbcdefhiIklnOprStux")]),
-    # ISSUE: Componolit/RecordFlux#508
+    # https://github.com/Componolit/RecordFlux/issues/508
     ada.Pragma("Warnings", [ada.Variable("Off"), ada.String("redundant conversion")]),
 ]

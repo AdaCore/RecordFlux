@@ -2400,7 +2400,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
 
         if isinstance(selected.type_, rty.Sequence):
-            # ISSUE: Componolit/RecordFlux#577
+            # https://github.com/Componolit/RecordFlux/issues/577
             # The relevant buffer part has to be copied from the message context into a
             # sequence context. With the current implementation the sequence needs to
             # be parsed after copying. It must be ensured that the sequence is not
@@ -2861,7 +2861,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 type_identifier = self._ada_type(a.prefix.type_.identifier)
                 local_declarations.extend(
                     [
-                        # ISSUE: Componolit/RecordFlux#917
+                        # https://github.com/Componolit/RecordFlux/issues/917
                         # The use of intermediate buffers should be removed.
                         ObjectDeclaration(
                             [argument_name],
@@ -2935,7 +2935,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_context = context_id(a.prefix.identifier, is_global)
                 local_declarations.extend(
                     [
-                        # ISSUE: Componolit/RecordFlux#917
+                        # https://github.com/Componolit/RecordFlux/issues/917
                         # The use of intermediate buffers should be removed.
                         ObjectDeclaration(
                             [argument_name],
@@ -3302,7 +3302,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             .substituted(self._substitution(is_global))
             .ada_expr()
         )
-        # ISSUE: Componolit/RecordFlux#691
+        # https://github.com/Componolit/RecordFlux/issues/691
         # Validity of fields accessed in `size` must be checked before access.
         precondition = [
             e
@@ -4210,7 +4210,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
     ) -> IfStatement:
-        # ISSUE: Componolit/RecordFlux#577
+        # https://github.com/Componolit/RecordFlux/issues/577
         sequence_context = context_id(sequence_identifier, is_global)
         with exception_handler.local() as local_exception_handler:
             return self._if_valid_sequence(
@@ -4260,7 +4260,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
     ) -> Declare:
-        # ISSUE: Componolit/RecordFlux#577
+        # https://github.com/Componolit/RecordFlux/issues/577
         with exception_handler.local() as local_exception_handler:
             return Declare(
                 self._declare_context_buffer(sequence_identifier, sequence_type, is_global),
@@ -4555,7 +4555,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         context = context_id(identifier, is_global)
         buf = buf or buffer_id(identifier)
         return [
-            # WORKAROUND: Componolit/Workarounds#32
+            # https://github.com/Componolit/Workarounds/issues/32
             PragmaStatement(
                 "Warnings",
                 [
@@ -4584,7 +4584,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_context: ID, element_context: ID, sequence_type: ID
     ) -> Sequence[Statement]:
         return [
-            # WORKAROUND: Componolit/Workarounds#32
+            # https://github.com/Componolit/Workarounds/issues/32
             PragmaStatement(
                 "Warnings",
                 [

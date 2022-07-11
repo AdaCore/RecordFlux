@@ -171,7 +171,7 @@ class Generator:
                     [
                         l.format(prefix=prefix)
                         for l in template_file.split("\n")
-                        if "  --  ISSUE" not in l
+                        if "/Workarounds/" not in l
                     ]
                 ),
             )
@@ -235,7 +235,7 @@ class Generator:
                 units.update(self._create_type(t, ID(t.package), units))
 
             elif isinstance(t, Message):
-                # ISSUE: Componolit/RecordFlux#276
+                # https://github.com/Componolit/RecordFlux/issues/276
                 for c in t.checksums:
                     if not self._ignore_unsupported_checksum:
                         fail(
@@ -699,7 +699,7 @@ class Generator:
                 [
                     Pragma("SPARK_Mode"),
                     *context,
-                    # ISSUE: Componolit/Workarounds#33
+                    # https://github.com/Componolit/Workarounds/issues/33
                     # A compiler error about a non-visible declaration of RFLX_Types inside the
                     # generic sequence package is prevented by adding a with-clause for this
                     # package.

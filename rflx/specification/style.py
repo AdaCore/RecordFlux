@@ -169,7 +169,7 @@ def _check_token_spacing(error: RecordFluxError, line: str, row: int, spec_file:
             continue
 
         if any(match.start() in r for r in strings) or any(match.end() in r for r in strings):
-            # ISSUE: nedbat/coveragepy#772
+            # https://github.com/nedbat/coveragepy/issues/772
             # A dummy statement is needed to disable the peephole optimizer, so that the continue
             # statement is detected during coverage analysis.
             # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.

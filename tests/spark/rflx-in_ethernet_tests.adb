@@ -163,7 +163,7 @@ package body RFLX.In_Ethernet_Tests is
       Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
 
       Message_Last := IPv4.Packet.Message_Last (IPv4_Packet_Context);
-         --  WORKAROUND: Componolit/Workarounds#32
+         --  https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""IPv4_Packet_Context""");
       pragma Warnings (Off, """IPv4_Packet_Context"" is set by ""*"" but not used after the call");
       IPv4.Packet.Take_Buffer (IPv4_Packet_Context, Buffer);

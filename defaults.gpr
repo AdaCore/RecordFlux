@@ -14,19 +14,19 @@ abstract project Defaults is
 
    case Compiler_Variant is
       when "community2020" =>
-         GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
-         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+         GNATVI := "";  --  https://github.com/Componolit/Workarounds/issues/43
+         GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when "community2021" =>
-         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+         GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when "pro20.2" =>
-         GNATVI := "";  --  ISSUE: Componolit/Workarounds#43
-         GNATVO := "";  --  ISSUE: Componolit/Workarounds#23
-         GNATEV := "";  --  ISSUE: Componolit/Workarounds#22
-         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+         GNATVI := "";  --  https://github.com/Componolit/Workarounds/issues/43
+         GNATVO := "";  --  https://github.com/Componolit/Workarounds/issues/23
+         GNATEV := "";  --  https://github.com/Componolit/Workarounds/issues/22
+         GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when "pro21.2" | "pro22.0" =>
-         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+         GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when "fsf" =>
-         GNATA  := "";  --  ISSUE: Componolit/Workarounds#49
+         GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when others =>
    end case;
 
@@ -68,7 +68,7 @@ abstract project Defaults is
       "--memlimit=2000",
       "--checks-as-errors",
       "--warnings=error",
-      --  ISSUE: Componolit/RecordFlux#670
+      --  https://github.com/Componolit/RecordFlux/issues/670
       --  "--proof-warnings",
       "--no-axiom-guard",
       "--counterexamples=off",
@@ -111,7 +111,7 @@ abstract project Defaults is
       "-gnatw.d",  --  Activate tagging of warning and info messages.
       "-gnatwe",   --  Treat all run-time exception warnings as errors.
       "-gnatwd",   --  Activate warnings on implicit dereferencing.
-      --  ISSUE: Componolit/Workarounds#27
+      --  https://github.com/Componolit/Workarounds/issues/27
       --  "-gnatwh",   --  Activate warnings on hiding.
       "-gnatwt",   --  Activate warnings for tracking of deleted conditional code.
       "-gnatwQ",   --  Suppress warnings on questionable missing parentheses.

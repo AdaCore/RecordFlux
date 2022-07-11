@@ -150,7 +150,7 @@ def test_tls_invalid_path(tls_alert_value: MessageValue) -> None:
     tls_alert_value.set("Level", "FATAL")
     assert not tls_alert_value.valid_message
     assert tls_alert_value.valid_fields == ["Level"]  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
 
 
 def test_icmp_echo_request(icmp_message_value: MessageValue) -> None:
