@@ -56,6 +56,7 @@ from rflx.expression import (
     Present,
     Proof,
     ProofResult,
+    QualifiedExpr,
     Rem,
     Selected,
     Size,
@@ -1914,6 +1915,16 @@ def test_conversion_variables() -> None:
 
 def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
+
+
+def test_qualified_expr_simplified() -> None:
+    assert QualifiedExpr("X", Add(Number(21), Number(21))).simplified() == QualifiedExpr(
+        "X", Number(42)
+    )
+
+
+def test_qualified_expr_ada_expr() -> None:
+    assert QualifiedExpr("X", Variable("Y")).ada_expr() == ada.QualifiedExpr("X", ada.Variable("Y"))
 
 
 def test_comprehension_type() -> None:

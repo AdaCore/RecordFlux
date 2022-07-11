@@ -747,6 +747,12 @@ def test_qualified_expr() -> None:
     assert str(ada.QualifiedExpr("T", ada.Variable("A"))) == "T'(A)"
 
 
+def test_qualified_expr_rflx_expr() -> None:
+    assert ada.QualifiedExpr("X", ada.Variable("Y")).rflx_expr() == expr.QualifiedExpr(
+        "X", expr.Variable("Y")
+    )
+
+
 def test_parameter() -> None:
     assert str(ada.Parameter(["P1"], "T")) == "P1 : T"
     assert str(ada.Parameter(["P1"], ada.ID("Boolean"))) == "P1 : Boolean"
