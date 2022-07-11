@@ -293,6 +293,7 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Priority) = Predecessor (Ctx, F_Priority)'Old
        and Valid_Next (Ctx, F_Priority) = Valid_Next (Ctx, F_Priority)'Old
+       and Field_First (Ctx, F_Priority) = Field_First (Ctx, F_Priority)'Old
    is
    begin
       Set_Scalar (Ctx, F_Priority, To_Base_Integer (Val));

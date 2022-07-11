@@ -389,6 +389,7 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
+       and Field_First (Ctx, F_Message_Type) = Field_First (Ctx, F_Message_Type)'Old
    is
    begin
       Set_Scalar (Ctx, F_Message_Type, To_Base_Integer (Val));
@@ -414,6 +415,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);

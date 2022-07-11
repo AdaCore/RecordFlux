@@ -422,7 +422,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Header) = Predecessor (Ctx, F_Header)'Old
-       and Valid_Next (Ctx, F_Header) = Valid_Next (Ctx, F_Header)'Old;
+       and Valid_Next (Ctx, F_Header) = Valid_Next (Ctx, F_Header)'Old
+       and Field_First (Ctx, F_Header) = Field_First (Ctx, F_Header)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
@@ -445,6 +446,7 @@ is
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
 
    procedure Set_Vector (Ctx : in out Context; Seq_Ctx : Sequence.Modular_Vector.Context) with
@@ -468,6 +470,7 @@ is
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector)
        and (if Field_Size (Ctx, F_Vector) > 0 then Present (Ctx, F_Vector));
 
@@ -490,6 +493,7 @@ is
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
 
    procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out Sequence.Modular_Vector.Context) with

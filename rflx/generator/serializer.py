@@ -1628,6 +1628,7 @@ class SerializerGenerator:
                     for t in [message.field_types[p]]
                     if isinstance(t, Scalar) and int(t.value_count) > 1
                 ]
+                + [Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])]
             ],
             *self.last_predecessor_relation(message, field),
         ]

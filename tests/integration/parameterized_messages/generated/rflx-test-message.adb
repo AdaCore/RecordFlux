@@ -272,6 +272,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -311,6 +312,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old
        and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Extension);

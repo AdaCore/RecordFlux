@@ -478,7 +478,8 @@ is
        and Ctx.Length = Ctx.Length'Old
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    procedure Initialize_Extension (Ctx : in out Context) with
      Pre =>
@@ -498,6 +499,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old
        and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension);
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
@@ -527,6 +529,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Equal (Ctx, F_Data, Data);
 
    procedure Set_Extension (Ctx : in out Context; Data : RFLX_Types.Bytes) with
@@ -550,6 +553,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old
        and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension)
        and Equal (Ctx, F_Extension, Data);
 
@@ -582,7 +586,8 @@ is
        and Ctx.Length = Ctx.Length'Old
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    generic
       with procedure Process_Extension (Extension : out RFLX_Types.Bytes);
@@ -608,6 +613,7 @@ is
        and Ctx.Extended = Ctx.Extended'Old
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old
        and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with

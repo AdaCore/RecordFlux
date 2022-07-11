@@ -214,6 +214,7 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

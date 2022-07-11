@@ -446,7 +446,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
-       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
+       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
+       and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
@@ -469,6 +470,7 @@ is
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
    procedure Initialize_Payload (Ctx : in out Context) with
@@ -488,6 +490,7 @@ is
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
@@ -510,6 +513,7 @@ is
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload)
        and Equal (Ctx, F_Payload, Data);
 
@@ -536,6 +540,7 @@ is
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
