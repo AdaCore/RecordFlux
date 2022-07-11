@@ -428,7 +428,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
-       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
+       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
+       and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
@@ -455,6 +456,7 @@ is
        and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
        and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
        and Field_Last (Ctx, F_Modular_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Modular_Vector)) + Field_Size (Ctx, F_Modular_Vector);
 
    procedure Set_Modular_Vector (Ctx : in out Context; Seq_Ctx : Sequence.Modular_Vector.Context) with
@@ -482,6 +484,7 @@ is
        and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
        and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
        and Field_Last (Ctx, F_Modular_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Modular_Vector)) + Field_Size (Ctx, F_Modular_Vector)
        and (if Field_Size (Ctx, F_Modular_Vector) > 0 then Present (Ctx, F_Modular_Vector));
 
@@ -509,6 +512,7 @@ is
        and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
        and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Range_Vector) = Field_First (Ctx, F_Range_Vector)'Old
        and Field_Last (Ctx, F_Range_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Range_Vector)) + Field_Size (Ctx, F_Range_Vector)
        and (if Field_Size (Ctx, F_Range_Vector) > 0 then Present (Ctx, F_Range_Vector));
 
@@ -535,6 +539,7 @@ is
        and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Enumeration_Vector)) + Field_Size (Ctx, F_Enumeration_Vector)
        and (if Field_Size (Ctx, F_Enumeration_Vector) > 0 then Present (Ctx, F_Enumeration_Vector));
 
@@ -562,6 +567,7 @@ is
        and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_AV_Enumeration_Vector)) + Field_Size (Ctx, F_AV_Enumeration_Vector)
        and (if Field_Size (Ctx, F_AV_Enumeration_Vector) > 0 then Present (Ctx, F_AV_Enumeration_Vector));
 
@@ -586,6 +592,7 @@ is
        and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
        and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
        and Field_Last (Ctx, F_Modular_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Modular_Vector)) + Field_Size (Ctx, F_Modular_Vector);
 
    procedure Initialize_Range_Vector (Ctx : in out Context) with
@@ -608,6 +615,7 @@ is
        and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
        and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Range_Vector) = Field_First (Ctx, F_Range_Vector)'Old
        and Field_Last (Ctx, F_Range_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Range_Vector)) + Field_Size (Ctx, F_Range_Vector);
 
    procedure Initialize_Enumeration_Vector (Ctx : in out Context) with
@@ -629,6 +637,7 @@ is
        and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Enumeration_Vector)) + Field_Size (Ctx, F_Enumeration_Vector);
 
    procedure Initialize_AV_Enumeration_Vector (Ctx : in out Context) with
@@ -651,6 +660,7 @@ is
        and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_AV_Enumeration_Vector)) + Field_Size (Ctx, F_AV_Enumeration_Vector);
 
    procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out Sequence.Modular_Vector.Context) with

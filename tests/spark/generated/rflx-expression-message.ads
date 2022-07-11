@@ -428,7 +428,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
-       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old;
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -449,6 +450,7 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
        and Equal (Ctx, F_Payload, Data);
 
    generic
@@ -472,7 +474,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
-       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old;
+       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

@@ -416,6 +416,7 @@ is
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Option_Type (Ctx) = Get_Option_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);

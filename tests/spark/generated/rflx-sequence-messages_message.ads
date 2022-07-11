@@ -422,7 +422,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
-       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old;
+       and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
+       and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
@@ -445,6 +446,7 @@ is
        and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
        and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages);
 
    procedure Set_Messages (Ctx : in out Context; Seq_Ctx : Sequence.Inner_Messages.Context) with
@@ -468,6 +470,7 @@ is
        and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
        and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages)
        and (if Field_Size (Ctx, F_Messages) > 0 then Present (Ctx, F_Messages));
 
@@ -488,6 +491,7 @@ is
        and Predecessor (Ctx, F_Messages) = Predecessor (Ctx, F_Messages)'Old
        and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages);
 
    procedure Switch_To_Messages (Ctx : in out Context; Seq_Ctx : out Sequence.Inner_Messages.Context) with

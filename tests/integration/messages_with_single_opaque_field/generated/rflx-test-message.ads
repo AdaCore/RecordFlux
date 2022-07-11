@@ -432,7 +432,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
@@ -451,7 +452,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -472,6 +474,7 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Equal (Ctx, F_Data, Data);
 
    generic
@@ -495,7 +498,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old;
+       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

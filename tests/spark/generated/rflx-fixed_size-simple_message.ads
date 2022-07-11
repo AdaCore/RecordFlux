@@ -453,7 +453,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
-       and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old;
+       and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
+       and Field_First (Ctx, F_Message_Type) = Field_First (Ctx, F_Message_Type)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
@@ -474,6 +475,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
@@ -496,6 +498,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
        and Equal (Ctx, F_Data, Data);
 
@@ -522,6 +525,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with

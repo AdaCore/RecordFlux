@@ -479,7 +479,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
-       and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old;
+       and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
+       and Field_First (Ctx, F_Message_Type) = Field_First (Ctx, F_Message_Type)'Old;
 
    procedure Set_Length (Ctx : in out Context; Val : RFLX.Universal.Length) with
      Inline_Always,
@@ -532,6 +533,7 @@ is
        and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old
        and Field_Last (Ctx, F_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Length)) + Field_Size (Ctx, F_Length)
        and (for all F in Field range F_Message_Type .. F_Message_Type =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
@@ -559,6 +561,7 @@ is
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Value) = Field_First (Ctx, F_Value)'Old
        and Field_Last (Ctx, F_Value) = Field_Last (Ctx, Predecessor (Ctx, F_Value)) + Field_Size (Ctx, F_Value)
        and (for all F in Field range F_Message_Type .. F_Options =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
@@ -588,6 +591,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Set_Option_Types_Empty (Ctx : in out Context) with
@@ -613,6 +617,7 @@ is
        and Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Types)) + Field_Size (Ctx, F_Option_Types);
 
    procedure Set_Options_Empty (Ctx : in out Context) with
@@ -636,6 +641,7 @@ is
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options);
 
    procedure Set_Values_Empty (Ctx : in out Context) with
@@ -658,6 +664,7 @@ is
        and Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, Predecessor (Ctx, F_Values)) + Field_Size (Ctx, F_Values);
 
    procedure Set_Option_Types (Ctx : in out Context; Seq_Ctx : Universal.Option_Types.Context) with
@@ -685,6 +692,7 @@ is
        and Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Types)) + Field_Size (Ctx, F_Option_Types)
        and (if Field_Size (Ctx, F_Option_Types) > 0 then Present (Ctx, F_Option_Types));
 
@@ -711,6 +719,7 @@ is
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options)
        and (if Field_Size (Ctx, F_Options) > 0 then Present (Ctx, F_Options));
 
@@ -736,6 +745,7 @@ is
        and Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, Predecessor (Ctx, F_Values)) + Field_Size (Ctx, F_Values)
        and (if Field_Size (Ctx, F_Values) > 0 then Present (Ctx, F_Values));
 
@@ -762,6 +772,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Initialize_Option_Types (Ctx : in out Context) with
@@ -785,6 +796,7 @@ is
        and Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Types)) + Field_Size (Ctx, F_Option_Types);
 
    procedure Initialize_Options (Ctx : in out Context; Length : RFLX_Types.Length) with
@@ -808,6 +820,7 @@ is
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options);
 
    procedure Initialize_Values (Ctx : in out Context) with
@@ -828,6 +841,7 @@ is
        and Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, Predecessor (Ctx, F_Values)) + Field_Size (Ctx, F_Values);
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
@@ -854,6 +868,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
        and Equal (Ctx, F_Data, Data);
 
@@ -884,6 +899,7 @@ is
        and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
+       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
        and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Switch_To_Option_Types (Ctx : in out Context; Seq_Ctx : out Universal.Option_Types.Context) with

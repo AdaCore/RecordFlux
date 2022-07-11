@@ -432,6 +432,7 @@ is
        and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
        and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
        and Field_Last (Ctx, F_Modular_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Modular_Vector)) + Field_Size (Ctx, F_Modular_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
@@ -475,6 +476,7 @@ is
        and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
        and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Range_Vector) = Field_First (Ctx, F_Range_Vector)'Old
        and Field_Last (Ctx, F_Range_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Range_Vector)) + Field_Size (Ctx, F_Range_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
@@ -517,6 +519,7 @@ is
        and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Enumeration_Vector)) + Field_Size (Ctx, F_Enumeration_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
@@ -556,6 +559,7 @@ is
        and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_AV_Enumeration_Vector)) + Field_Size (Ctx, F_AV_Enumeration_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
