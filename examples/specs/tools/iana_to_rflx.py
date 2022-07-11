@@ -16,7 +16,7 @@ import rflx.specification.const
 from rflx.cli import parse
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
-# append "reset" as a workaround for ISSUE: Componolit/RecordFlux#678
+# append "reset" as a workaround for https://github.com/Componolit/RecordFlux/issues/678
 RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS) + "|reset"
 
 
