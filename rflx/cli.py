@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 DEFAULT_PREFIX = "RFLX"
 
 
-def main(argv: List[str]) -> Union[int, str]:
+def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-statements
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
@@ -102,6 +102,14 @@ def main(argv: List[str]) -> Union[int, str]:
         default="svg",
         choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
         help="output format (default: %(default)s)",
+    )
+    parser_graph.add_argument(
+        "-i",
+        "--ignore",
+        type=str,
+        metavar="REGEX",
+        action="append",
+        help="ignore states with names matching regular expression",
     )
     parser_graph.add_argument(
         "files", metavar="SPECIFICATION_FILE", type=Path, nargs="+", help="specification file"
@@ -320,7 +328,7 @@ def graph(args: argparse.Namespace) -> None:
         assert isinstance(m, (Message, Session))
         name = m.identifier.flat
         filename = args.output_directory.joinpath(name).with_suffix(f".{args.format}")
-        Graph(m).write(filename, fmt=args.format)
+        Graph(m, args.ignore).write(filename, fmt=args.format)
 
         assert m.location
         assert m.location.start
