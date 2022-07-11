@@ -74,6 +74,7 @@ from tests.utils import assert_equal, multilinestr
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 TINY_INT = RangeInteger("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
+INT = RangeInteger("P::Int", Number(1), Number(100), Number(8), location=Location((3, 2)))
 
 
 def assert_type(expr: Expr, type_: rty.Type) -> None:
@@ -2596,6 +2597,17 @@ def test_case_invalid() -> None:
         ),
         '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
         "<stdin>:1:2: model: info: missing range 2 .. 3$",
+    )
+    assert_type_error(
+        CaseExpr(
+            Variable("C", type_=INT.type_),
+            [([Number(1), Number(2)], TRUE), ([Number(51)], FALSE), ([Number(53)], TRUE)],
+            location=Location((5, 2)),
+        ),
+        '^<stdin>:5:2: model: error: case expression does not cover full range of "P::Int"\n'
+        "<stdin>:3:2: model: info: missing range 3 .. 50\n"
+        "<stdin>:3:2: model: info: missing value 52\n"
+        "<stdin>:3:2: model: info: missing range 54 .. 100$",
     )
     assert_type_error(
         CaseExpr(
