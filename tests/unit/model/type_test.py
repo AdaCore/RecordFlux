@@ -180,7 +180,7 @@ def test_range_invalid_size_too_small() -> None:
 
 
 def test_range_invalid_size_exceeds_limit() -> None:
-    # ISSUE: Componolit/RecordFlux#238
+    # https://github.com/Componolit/RecordFlux/issues/238
     assert_type_error(
         RangeInteger("P::T", Number(0), Number(256), Number(128), Location((50, 3))),
         r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',

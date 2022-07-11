@@ -787,7 +787,7 @@ class AbstractMessage(mty.Type):
                     )
                 ],
             )
-            # ISSUE: Componolit/RecordFlux#256
+            # https://github.com/Componolit/RecordFlux/issues/256
             return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 

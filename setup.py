@@ -3,7 +3,7 @@ import site
 
 from setuptools import find_packages, setup
 
-# ISSUE: pypa/pip#7953
+# https://github.com/pypa/pip/issues/7953
 # PEP517 workaround
 site.ENABLE_USER_SITE = True
 

@@ -207,7 +207,7 @@ is
 
 private
 
-   --  ISSUE: Componolit/Workarounds#24
+   --  https://github.com/Componolit/Workarounds/issues/24
    pragma Warnings (Off, "use clause for package * has no effect");
 
    use {prefix}RFLX_Types;

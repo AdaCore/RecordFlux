@@ -205,7 +205,7 @@ def test_message_value_valid_message(tlv_message_value: MessageValue) -> None:
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\x03"  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     tlv_message_value.set("Tag", "Msg_Data")
     assert not tlv_message_value.valid_message
     assert_bytestring_error(tlv_message_value, tlv_message_value.identifier)
@@ -500,7 +500,7 @@ def test_integer_value_mod() -> None:
     modvalue.assign(128)
     assert modvalue.initialized
     assert modvalue.value == 128  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     assert str(modvalue.bitstring) == "0000000010000000"
     with pytest.raises(
         PyRFLXError, match=r"^pyrflx: error: value 65536 not in type range 0 .. 65535$"
@@ -524,7 +524,7 @@ def test_integer_value_range() -> None:
     rangevalue.assign(10)
     assert rangevalue.initialized
     assert rangevalue.value == 10  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     assert str(rangevalue.bitstring) == "00001010"
     with pytest.raises(PyRFLXError, match=r"^pyrflx: error: value 17 not in type range 8 .. 16$"):
         rangevalue.assign(17)
@@ -649,7 +649,7 @@ def test_opaque_value() -> None:
     opaquevalue.assign(b"\x01\x02")
     assert opaquevalue.initialized
     assert opaquevalue.value == b"\x01\x02"  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     k = opaquevalue.size
     assert isinstance(k, expr.Number)
     assert k.value == 16
@@ -689,7 +689,7 @@ def test_opaque_value_clear() -> None:
     ov.assign(b"")
     assert ov.initialized
     ov.clear()  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     assert not ov.initialized
 
 
@@ -956,7 +956,7 @@ def test_checksum_manual(icmp_checksum_message_value: MessageValue) -> None:
     icmp_checksum_message_value.set("Data", test_data)
     assert icmp_checksum_message_value.valid_message
     assert icmp_checksum_message_value.get("Checksum") == 12824  # type: ignore[unreachable]
-    # ISSUE: python/mypy#12598
+    # https://github.com/python/mypy/issues/12598
     assert icmp_checksum_message_value.bytestring == b"\x08\x00\x32\x18\x00\x05\x00\x01" + test_data
 
 
@@ -1204,7 +1204,7 @@ def test_set_checksum_to_pyrflx(
     tlv_checksum_function = tlv_with_checksum_msg._checksums["Checksum"].function
     assert callable(refinement_checksum_function)
     assert callable(tlv_checksum_function)
-    # ISSUE: python/mypy#10976
+    # https://github.com/python/mypy/issues/10976
     assert (
         refinement_checksum_function.__name__  # type: ignore[attr-defined]
         == checksum_function_255.__name__
@@ -1297,7 +1297,7 @@ def test_message_size(message_size_value: MessageValue) -> None:
 
     message_size_value.set("A", 2)
     message_size_value.set("B", b"\x01\x02")
-    # ISSUE: Componolit/RecordFlux#422
+    # https://github.com/Componolit/RecordFlux/issues/422
     # Serialization of optional fields dependent of message size not supported.
     # message_size_value.set("C", 3)
 
