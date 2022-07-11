@@ -977,7 +977,7 @@ class QualifiedExpr(Expr):
         raise NotImplementedError
 
     def rflx_expr(self) -> expr.Expr:
-        raise NotImplementedError
+        return expr.QualifiedExpr(ID(self.type_identifier), self.expression.rflx_expr())
 
 
 class Raise(Expr):

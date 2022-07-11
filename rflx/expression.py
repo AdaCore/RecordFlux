@@ -2447,6 +2447,42 @@ class Conversion(Expr):
         return self.argument.variables()
 
 
+class QualifiedExpr(Expr):
+    """Only used by code generator and therefore provides minimum functionality."""
+
+    def __init__(self, type_identifier: StrID, expression: Expr) -> None:
+        super().__init__()
+        self.type_identifier = ID(type_identifier)
+        self.expression = expression
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def _update_str(self) -> None:
+        operand = (
+            str(self.expression)
+            if isinstance(self.expression, (Aggregate, NamedAggregate))
+            else f"({self.expression})"
+        )
+        self._str = intern(f"{self.type_identifier}'{operand}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        raise NotImplementedError
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def simplified(self) -> Expr:
+        return QualifiedExpr(self.type_identifier, self.expression.simplified())
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.QualifiedExpr(ada.ID(self.type_identifier), self.expression.ada_expr())
+
+    def z3expr(self) -> z3.ArithRef:
+        raise NotImplementedError
+
+
 class Comprehension(Expr):
     def __init__(
         self,
