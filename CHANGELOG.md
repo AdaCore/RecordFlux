@@ -115,6 +115,7 @@ PyRFLX:
 
 - Error caused by relations between sequences, opaque fields or aggregates (#964)
 - Undefined attribute in `MessageValue.Field` (#1045)
+- Missing type check for arguments of parameterized message (#1104)
 
 ## [0.5.0] - 2021-08-11
 
