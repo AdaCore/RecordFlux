@@ -367,6 +367,21 @@ class SerializerGenerator:
                                 ("Predecessor", Variable("Fld")),
                             ),
                         ),
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                Equal(
+                                    Variable("Last"),
+                                    Sub(
+                                        Add(
+                                            Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
+                                            Variable("Size"),
+                                        ),
+                                        Number(1),
+                                    ),
+                                )
+                            ],
+                        ),
                     ],
                     [
                         Precondition(
