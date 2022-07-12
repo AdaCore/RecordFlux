@@ -398,7 +398,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
-       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old;
+       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
+       and Field_First (Ctx, F_Value) = Field_First (Ctx, F_Value)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
