@@ -245,6 +245,7 @@ is
          Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+      pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 
    procedure Set_Data_Empty (Ctx : in out Context) is
