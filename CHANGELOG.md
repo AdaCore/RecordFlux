@@ -75,6 +75,10 @@ PyRFLX:
 
 - Remove `__getitem__` (#783)
 
+Graph:
+
+- Improve layout of session graphs (#400)
+
 ### Fixed
 
 - Installation of parser when installing RecordFlux from PyPI (#745)
