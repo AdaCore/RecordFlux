@@ -1,7 +1,9 @@
 from pathlib import Path
 
+from pydotplus import Dot
+
 from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Variable
-from rflx.graph import Graph
+from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -20,9 +22,9 @@ from rflx.model import (
 )
 
 
-def assert_graph(graph: Graph, expected: str, tmp_path: Path) -> None:
+def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
     path = tmp_path / Path("test.dot")
-    graph.write(path, fmt="raw")
+    write_graph(graph, path, fmt="raw")
     assert path.read_text().split() == expected.split()
 
 
@@ -33,7 +35,7 @@ def test_graph_object() -> None:
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
         types={Field("X"): f_type},
     )
-    g = Graph(m).get
+    g = create_message_graph(m)
     assert [(e.get_source(), e.get_destination()) for e in g.get_edges()] == [
         ("Initial", "intermediate_0"),
         ("intermediate_0", "X"),
@@ -70,7 +72,7 @@ def test_empty_message_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(m), expected, tmp_path)
+    assert_graph(create_message_graph(m), expected, tmp_path)
 
 
 def test_dot_graph(tmp_path: Path) -> None:
@@ -101,7 +103,7 @@ def test_dot_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(m), expected, tmp_path)
+    assert_graph(create_message_graph(m), expected, tmp_path)
 
 
 def test_dot_graph_with_condition(tmp_path: Path) -> None:
@@ -134,7 +136,7 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(m), expected, tmp_path)
+    assert_graph(create_message_graph(m), expected, tmp_path)
 
 
 def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
@@ -173,7 +175,7 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(m), expected, tmp_path)
+    assert_graph(create_message_graph(m), expected, tmp_path)
 
 
 def test_session_graph(tmp_path: Path) -> None:
@@ -207,7 +209,7 @@ def test_session_graph(tmp_path: Path) -> None:
     )
 
     expected_full = r"""
-        digraph "Session" {
+        digraph "P::S" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
@@ -225,10 +227,10 @@ def test_session_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(s), expected_full, tmp_path)
+    assert_graph(create_session_graph(s), expected_full, tmp_path)
 
     expected_filtered = r"""
-        digraph "Session" {
+        digraph "P::S" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
                    truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
@@ -243,4 +245,4 @@ def test_session_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(Graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)
+    assert_graph(create_session_graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)

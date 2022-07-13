@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import traceback
-from collections import defaultdict
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
@@ -14,7 +13,7 @@ from pkg_resources import get_distribution
 from rflx import __version__
 from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Debug, Generator
-from rflx.graph import Graph
+from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Message, Model, Session
@@ -322,25 +321,25 @@ def graph(args: argparse.Namespace) -> None:
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
     model, _ = parse(args.files, args.no_verification)
-    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = defaultdict(dict)
 
-    for m in [*model.messages, *model.sessions]:
-        assert isinstance(m, (Message, Session))
-        name = m.identifier.flat
-        filename = args.output_directory.joinpath(name).with_suffix(f".{args.format}")
-        Graph(m, args.ignore).write(filename, fmt=args.format)
+    for m in model.messages:
+        filename = args.output_directory.joinpath(m.identifier.flat).with_suffix(f".{args.format}")
+        write_graph(create_message_graph(m), filename, fmt=args.format)
 
-        assert m.location
-        assert m.location.start
-        assert m.location.end
-        assert m.location.source
+    for s in model.sessions:
+        filename = args.output_directory.joinpath(s.identifier.flat).with_suffix(f".{args.format}")
+        write_graph(create_session_graph(s, args.ignore), filename, fmt=args.format)
 
-        source = str(m.location.source)
-
-        locations[source][name] = {
-            "start": {"line": m.location.start[0], "column": m.location.start[1]},
-            "end": {"line": m.location.end[0], "column": m.location.end[1]},
+    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = {
+        str(m.location.source): {
+            m.identifier.flat: {
+                "start": {"line": m.location.start[0], "column": m.location.start[1]},
+                "end": {"line": m.location.end[0], "column": m.location.end[1]},
+            }
         }
+        for m in [*model.messages, *model.sessions]
+        if isinstance(m, (Message, Session)) and m.location and m.location.start and m.location.end
+    }
 
     filename = args.output_directory.joinpath("locations.json")
     with open(filename, "w", encoding="utf-8") as f:

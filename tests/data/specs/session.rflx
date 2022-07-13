@@ -1,0 +1,18 @@
+package Session is
+
+   generic
+   session Session with
+      Initial => Start,
+      Final => Stop
+   is
+   begin
+      state Start is
+      begin
+      transition
+         goto Stop
+      end Start;
+
+      state Stop is null state;
+   end Session;
+
+end Session;
