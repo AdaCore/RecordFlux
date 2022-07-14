@@ -131,6 +131,7 @@ install_gnatstudio:
 	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 install_devel:
+	tools/check_pip_version.py
 	$(MAKE) -C .config/python-style install_devel
 	pip3 install -e ".[devel]"
 
