@@ -11,41 +11,12 @@ from enum import Enum
 from sys import intern
 from typing import List, Mapping, Optional, Sequence, Tuple, Union
 
-import rflx.identifier
 from rflx import expression as expr
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
+from rflx.identifier import ID, StrID
 
 MAX_LINE_LENGTH = 100
-
-
-class ID(rflx.identifier.ID):
-    @property
-    def _separator(self) -> str:
-        return "."
-
-    def __add__(self, other: object) -> "ID":
-        result = super().__add__(other)
-        assert isinstance(result, ID)
-        return result
-
-    def __radd__(self, other: object) -> "ID":
-        result = super().__radd__(other)
-        assert isinstance(result, ID)
-        return result
-
-    def __mul__(self, other: object) -> "ID":
-        result = super().__mul__(other)
-        assert isinstance(result, ID)
-        return result
-
-    def __rmul__(self, other: object) -> "ID":
-        result = super().__rmul__(other)
-        assert isinstance(result, ID)
-        return result
-
-
-StrID = Union[str, ID]
 
 
 class Precedence(Enum):
@@ -360,7 +331,7 @@ class Name(Expr):
 class Literal(Name):
     def __init__(self, identifier: StrID) -> None:
         self.identifier = ID(identifier)
-        super().__init__(False)
+        super().__init__(negative=False)
 
     @property
     def _representation(self) -> str:
@@ -368,10 +339,10 @@ class Literal(Name):
 
     @property
     def name(self) -> str:
-        return str(self.identifier)
+        return self.identifier.ada_str
 
     def rflx_expr(self) -> expr.Literal:
-        return expr.Literal(ID(self.identifier))
+        return expr.Literal(self.identifier)
 
 
 class Variable(Name):
@@ -388,10 +359,10 @@ class Variable(Name):
 
     @property
     def name(self) -> str:
-        return str(self.identifier)
+        return self.identifier.ada_str
 
     def rflx_expr(self) -> expr.Variable:
-        return expr.Variable(ID(self.identifier))
+        return expr.Variable(self.identifier)
 
 
 TRUE = Literal("True")
@@ -539,7 +510,9 @@ class NamedAttributeExpr(Attribute):
     @property
     def _representation(self) -> str:
         assert len(self.associations) > 0
-        associations = ", ".join(f"{name} => {element}" for name, element in self.associations)
+        associations = ", ".join(
+            f"{name.ada_str} => {element}" for name, element in self.associations
+        )
         return f"{self.prefix}'{self.__class__.__name__} ({associations})"
 
 
@@ -586,7 +559,7 @@ class Selected(Name):
         return f"{self.prefix}.{self.selector}"
 
     def rflx_expr(self) -> expr.Selected:
-        return expr.Selected(self.prefix.rflx_expr(), ID(self.selector), self.negative)
+        return expr.Selected(self.prefix.rflx_expr(), self.selector, self.negative)
 
 
 class Call(Name):
@@ -617,14 +590,12 @@ class Call(Name):
         )
         if arguments:
             arguments = f" ({arguments})"
-        call = f"{self.identifier}{arguments}"
+        call = f"{self.identifier.ada_str}{arguments}"
         return call
 
     def rflx_expr(self) -> expr.Call:
         assert not self.named_arguments
-        return expr.Call(
-            ID(self.identifier), [a.rflx_expr() for a in self.arguments], self.negative
-        )
+        return expr.Call(self.identifier, [a.rflx_expr() for a in self.arguments], self.negative)
 
 
 class Slice(Name):
@@ -684,7 +655,12 @@ class NamedAggregate(Expr):
     def _update_str(self) -> None:
         assert len(self.elements) > 0
         self._str = intern(
-            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
+            "("
+            + ", ".join(
+                f"{name.ada_str if isinstance(name, ID) else name} => {element}"
+                for name, element in self.elements
+            )
+            + ")"
         )
 
     @property
@@ -692,9 +668,9 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def rflx_expr(self) -> expr.NamedAggregate:
-        elements: list[tuple[Union[StrID, expr.Expr], expr.Expr]] = [
+        elements: list[tuple[Union[ID, expr.Expr], expr.Expr]] = [
             (
-                ID(n) if isinstance(n, ID) else n.rflx_expr(),
+                n if isinstance(n, ID) else n.rflx_expr(),
                 e.rflx_expr(),
             )
             for n, e in self.elements
@@ -864,8 +840,8 @@ class QuantifiedExpr(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"(for {self.quantifier} {self.parameter_identifier} {self.keyword} {self.iterable}"
-            f" =>\n{indent(str(self.predicate), 4)})"
+            f"(for {self.quantifier} {self.parameter_identifier.ada_str} {self.keyword}"
+            f" {self.iterable} =>\n{indent(str(self.predicate), 4)})"
         )
 
     @property
@@ -925,13 +901,13 @@ class ValueRange(Expr):
         super().__init__()
         self.lower = lower
         self.upper = upper
-        self.type_id = type_identifier
+        self.type_identifier = ID(type_identifier) if type_identifier else None
 
     def _update_str(self) -> None:
-        if self.type_id is None:
+        if self.type_identifier is None:
             self._str = intern(f"{self.lower} .. {self.upper}")
         else:
-            self._str = intern(f"{self.type_id} range {self.lower} .. {self.upper}")
+            self._str = intern(f"{self.type_identifier.ada_str} range {self.lower} .. {self.upper}")
 
     @property
     def precedence(self) -> Precedence:
@@ -948,14 +924,14 @@ class Conversion(Expr):
         self.argument = argument
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self.identifier} ({self.argument})")
+        self._str = intern(f"{self.identifier.ada_str} ({self.argument})")
 
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
     def rflx_expr(self) -> expr.Conversion:
-        return expr.Conversion(ID(self.identifier), self.argument.rflx_expr())
+        return expr.Conversion(self.identifier, self.argument.rflx_expr())
 
 
 class QualifiedExpr(Expr):
@@ -970,7 +946,7 @@ class QualifiedExpr(Expr):
             if isinstance(self.expression, (Aggregate, NamedAggregate))
             else f"({self.expression})"
         )
-        self._str = intern(f"{self.type_identifier}'{operand}")
+        self._str = intern(f"{self.type_identifier.ada_str}'{operand}")
 
     @property
     def precedence(self) -> Precedence:
@@ -988,7 +964,7 @@ class Raise(Expr):
 
     def _update_str(self) -> None:
         string = f" with {self.string}" if self.string else ""
-        self._str = intern(f"raise {self.identifier}{string}")
+        self._str = intern(f"raise {self.identifier.ada_str}{string}")
 
     @property
     def precedence(self) -> Precedence:
@@ -1034,17 +1010,17 @@ class ContextItem(Base):
 
 class WithClause(ContextItem):
     def __str__(self) -> str:
-        return f"with {self.identifier};"
+        return f"with {self.identifier.ada_str};"
 
 
 class UsePackageClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        return f"use {self.identifier};"
+        return f"use {self.identifier.ada_str};"
 
 
 class UseTypeClause(ContextItem, Declaration):
     def __str__(self) -> str:
-        return f"use type {self.identifier};"
+        return f"use type {self.identifier.ada_str};"
 
 
 class Aspect(Base):
@@ -1132,7 +1108,7 @@ class ContractCases(Aspect):
 
 class Depends(Aspect):
     def __init__(self, dependencies: Mapping[StrID, Sequence[StrID]]) -> None:
-        self.dependencies = dependencies
+        self.dependencies = {ID(k): v for k, v in dependencies.items()}
 
     @property
     def mark(self) -> str:
@@ -1148,7 +1124,7 @@ class Depends(Aspect):
             return "(" + ", ".join(str(p) for p in values) + ")"
 
         dependencies = indent_next(
-            ", ".join(f"{o} => {input_values(i)}" for o, i in self.dependencies.items()), 1
+            ", ".join(f"{o.ada_str} => {input_values(i)}" for o, i in self.dependencies.items()), 1
         )
         return f"({dependencies})"
 
@@ -1294,15 +1270,23 @@ class FormalSubprogramDeclaration(FormalDeclaration):
 
 class FormalPackageDeclaration(FormalDeclaration):
     def __init__(
-        self, identifier: StrID, generic_identifier: StrID, associations: Sequence[StrID] = None
+        self,
+        identifier: StrID,
+        generic_identifier: StrID,
+        associations: Sequence[StrID] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_identifier = ID(generic_identifier)
-        self.associations = list(map(str, associations or []))
+        self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(map(str, self.associations)) if self.associations else "<>"
-        return f"with package {self.identifier} is new {self.generic_identifier} ({associations});"
+        associations = (
+            ", ".join([a.ada_str for a in self.associations]) if self.associations else "<>"
+        )
+        return (
+            f"with package {self.identifier.ada_str} is new {self.generic_identifier.ada_str}"
+            f" ({associations});"
+        )
 
 
 class PackageDeclaration(Declaration):
@@ -1323,10 +1307,10 @@ class PackageDeclaration(Declaration):
     def __str__(self) -> str:
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"package {self.identifier}{aspect_specification(self.aspects)}\nis\n\n"
+            f"package {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
             f"{declarative_items(self.declarations)}"
             f"{declarative_items(self.private_declarations, private=True)}"
-            f"end {self.identifier};\n"
+            f"end {self.identifier.ada_str};\n"
         )
 
 
@@ -1354,14 +1338,17 @@ class PackageBody(Declaration):
         )
 
         return (
-            f"package body {self.identifier}{aspect_specification(self.aspects)}\nis\n\n"
-            f"{declarative_items(self.declarations)}{statements}end {self.identifier};\n"
+            f"package body {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
+            f"{declarative_items(self.declarations)}{statements}end {self.identifier.ada_str};\n"
         )
 
 
 class GenericPackageInstantiation(Declaration):
     def __init__(
-        self, identifier: StrID, generic_package: StrID, associations: Sequence[StrID] = None
+        self,
+        identifier: StrID,
+        generic_package: StrID,
+        associations: Sequence[StrID] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_package = ID(generic_package)
@@ -1371,10 +1358,13 @@ class GenericPackageInstantiation(Declaration):
         return hash(self.identifier)
 
     def __str__(self) -> str:
-        associations = ", ".join(map(str, self.associations))
+        associations = ", ".join([a.ada_str for a in self.associations])
         if associations:
             associations = f" ({associations})"
-        return f"package {self.identifier} is new {self.generic_package}{associations};"
+        return (
+            f"package {self.identifier.ada_str} is new {self.generic_package.ada_str}"
+            f"{associations};"
+        )
 
 
 class PackageRenamingDeclaration(Declaration):
@@ -1383,7 +1373,7 @@ class PackageRenamingDeclaration(Declaration):
         self.package_identifier = ID(package_identifier)
 
     def __str__(self) -> str:
-        return f"package {self.identifier} renames {self.package_identifier};"
+        return f"package {self.identifier.ada_str} renames {self.package_identifier.ada_str};"
 
 
 class ObjectDeclaration(Declaration):
@@ -1430,7 +1420,7 @@ class Discriminant(Base):
     def __str__(self) -> str:
         identifiers = ", ".join(map(str, self.identifiers))
         default = f" := {self.default}" if self.default else ""
-        return f"{identifiers} : {self.type_identifier}{default}"
+        return f"{identifiers} : {self.type_identifier.ada_str}{default}"
 
 
 class TypeDeclaration(Declaration, FormalDeclaration):
@@ -1449,7 +1439,7 @@ class TypeDeclaration(Declaration, FormalDeclaration):
 
     def __str__(self) -> str:
         return (
-            f"type {self.identifier}{self.discriminant_part} is{self.type_definition}"
+            f"type {self.identifier.ada_str}{self.discriminant_part} is{self.type_definition}"
             f"{aspect_specification(self.aspects)};{self.extra_declaration}"
         )
 
@@ -1524,7 +1514,7 @@ class EnumerationType(TypeDeclaration):
             f"{k} => {v}" for k, v in self.literals.items() if v is not None
         )
         return (
-            f"\nfor {self.identifier} use ({literal_representation});"
+            f"\nfor {self.identifier.ada_str} use ({literal_representation});"
             if literal_representation
             else ""
         )
@@ -1542,7 +1532,7 @@ class Subtype(TypeDeclaration):
 
     @property
     def type_definition(self) -> str:
-        return f" {self.base_identifier}"
+        return f" {self.base_identifier.ada_str}"
 
 
 class RangeSubtype(Subtype):
@@ -1553,7 +1543,7 @@ class RangeSubtype(Subtype):
 
     @property
     def type_definition(self) -> str:
-        return f" {self.base_identifier} range {self.first} .. {self.last}"
+        return f" {self.base_identifier.ada_str} range {self.first} .. {self.last}"
 
 
 class DerivedType(TypeDeclaration):
@@ -1582,7 +1572,7 @@ class DerivedType(TypeDeclaration):
                 )
                 extension = f" with\n   record\n{components}   end record"
 
-        return f" new {self.type_identifier}{extension}"
+        return f" new {self.type_identifier.ada_str}{extension}"
 
 
 class PrivateType(TypeDeclaration):
@@ -1605,13 +1595,13 @@ class ArrayType(TypeDeclaration):
 
     @property
     def type_definition(self) -> str:
-        return f" array ({self.index_type}) of {self.component_identifier}"
+        return f" array ({self.index_type.ada_str}) of {self.component_identifier.ada_str}"
 
 
 class UnconstrainedArrayType(ArrayType):
     @property
     def type_definition(self) -> str:
-        return f" array ({self.index_type} range <>) of {self.component_identifier}"
+        return f" array ({self.index_type.ada_str} range <>) of {self.component_identifier.ada_str}"
 
 
 class AccessType(TypeDeclaration):
@@ -1621,7 +1611,7 @@ class AccessType(TypeDeclaration):
 
     @property
     def type_definition(self) -> str:
-        return f" access {self.object_identifier}"
+        return f" access {self.object_identifier.ada_str}"
 
 
 class Component(Base):
@@ -1642,7 +1632,7 @@ class Component(Base):
     def __str__(self) -> str:
         default = f" := {self.default}" if self.default else ""
         aliased = "aliased " if self.aliased else ""
-        return f"{self.identifier} : {aliased}{self.type_identifier}{default};"
+        return f"{self.identifier.ada_str} : {aliased}{self.type_identifier}{default};"
 
 
 class NullComponent(Component):
@@ -1671,7 +1661,7 @@ class VariantPart(Base):
 
     def __str__(self) -> str:
         variants = "\n".join(map(str, self.variants))
-        return f"case {self.discriminant_identifier} is\n{variants}\nend case;\n"
+        return f"case {self.discriminant_identifier.ada_str} is\n{variants}\nend case;\n"
 
 
 class RecordType(TypeDeclaration):
@@ -1728,12 +1718,12 @@ class NullStatement(Statement):
 
 
 class Assignment(Statement):
-    def __init__(self, identifier: Union[StrID, Expr], expression: Expr) -> None:
-        self.identifier = identifier if isinstance(identifier, Expr) else Variable(identifier)
+    def __init__(self, name: Union[StrID, Expr], expression: Expr) -> None:
+        self.name = name if isinstance(name, Expr) else Variable(name)
         self.expression = expression
 
     def __str__(self) -> str:
-        return f"{self.identifier} := {self.expression};"
+        return f"{self.name} := {self.expression};"
 
 
 class CallStatement(Statement):
@@ -1755,7 +1745,7 @@ class CallStatement(Statement):
             ]
         )
         arguments = f" ({arguments})" if arguments else ""
-        return f"{self.identifier}{arguments};"
+        return f"{self.identifier.ada_str}{arguments};"
 
 
 class PragmaStatement(Statement):
@@ -1767,8 +1757,10 @@ class PragmaStatement(Statement):
         parameters = ""
         if self.pragma_parameters:
             parameters = ", ".join(map(str, self.pragma_parameters))
-            parameters = " (" + indent_next(str(parameters), len(str(self.identifier)) + 9) + ")"
-        return f"pragma {self.identifier}{parameters};"
+            parameters = (
+                " (" + indent_next(str(parameters), len(str(self.identifier.ada_str)) + 9) + ")"
+            )
+        return f"pragma {self.identifier.ada_str}{parameters};"
 
 
 class ReturnStatement(Statement):
@@ -1808,7 +1800,7 @@ class Label(Statement):
         self.identifier = ID(identifier)
 
     def __str__(self) -> str:
-        return f"<<{self.identifier}>>"
+        return f"<<{self.identifier.ada_str}>>"
 
 
 class CommentStatement(Statement):
@@ -1915,7 +1907,7 @@ class ForLoop(Statement):
         reverse: bool = False,
     ) -> None:
         assert len(statements) > 0
-        self.identifier = identifier
+        self.identifier = ID(identifier)
         self.iterator = iterator
         self.statements = statements
         self.reverse = reverse
@@ -1924,7 +1916,7 @@ class ForLoop(Statement):
         statements = indent("\n".join(str(s) for s in self.statements), 3)
         reverse = "reverse " if self.reverse else ""
         return (
-            f"for {self.identifier} {self.iterator_spec} "
+            f"for {self.identifier.ada_str} {self.iterator_spec} "
             f"{reverse}{self.iterator} loop\n{statements}\nend loop;"
         )
 
@@ -1954,7 +1946,7 @@ class RaiseStatement(Statement):
 
     def __str__(self) -> str:
         string = f" with {self.string}" if self.string else ""
-        return f"raise {self.identifier}{string};"
+        return f"raise {self.identifier.ada_str}{string};"
 
 
 class Declare(Statement):
@@ -1981,7 +1973,7 @@ class Parameter(Base):
     def __str__(self) -> str:
         identifiers = ", ".join(map(str, self.identifiers))
         default = f" := {self.default}" if self.default else ""
-        return f"{identifiers} : {self.mode}{self.type_identifier}{default}"
+        return f"{identifiers} : {self.mode}{self.type_identifier.ada_str}{default}"
 
     @property
     def mode(self) -> str:
@@ -2034,7 +2026,7 @@ class SubprogramSpecification(Base):
 
 class ProcedureSpecification(SubprogramSpecification):
     def __str__(self) -> str:
-        return f"procedure {self.identifier}{self._parameters()}"
+        return f"procedure {self.identifier.ada_str}{self._parameters()}"
 
 
 class FunctionSpecification(SubprogramSpecification):
@@ -2045,7 +2037,10 @@ class FunctionSpecification(SubprogramSpecification):
         self.return_type = ID(return_type)
 
     def __str__(self) -> str:
-        return f"function {self.identifier}{self._parameters()} return {self.return_type}"
+        return (
+            f"function {self.identifier.ada_str}{self._parameters()}"
+            f" return {self.return_type.ada_str}"
+        )
 
 
 class Subprogram(Declaration):
@@ -2107,7 +2102,7 @@ class SubprogramBody(Subprogram):
             f"{self._declarations()}"
             f"begin\n"
             f"{self._statements()}\n"
-            f"end {self.specification.identifier};"
+            f"end {self.specification.identifier.ada_str};"
         )
 
 
@@ -2140,10 +2135,13 @@ class GenericProcedureInstantiation(Subprogram):
         self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(map(str, self.associations))
+        associations = ", ".join([a.ada_str for a in self.associations])
         if associations:
             associations = f" ({associations})"
-        return f"procedure {self.identifier} is new {self.specification.identifier}{associations};"
+        return (
+            f"procedure {self.identifier.ada_str} is new {self.specification.identifier.ada_str}"
+            f"{associations};"
+        )
 
 
 class GenericFunctionInstantiation(Subprogram):
@@ -2159,10 +2157,13 @@ class GenericFunctionInstantiation(Subprogram):
         self.associations = list(map(ID, associations or []))
 
     def __str__(self) -> str:
-        associations = ", ".join(map(str, self.associations))
+        associations = ", ".join([a.ada_str for a in self.associations])
         if associations:
             associations = f" ({associations})"
-        return f"function {self.identifier} is new {self.specification.identifier}{associations};"
+        return (
+            f"function {self.identifier.ada_str} is new {self.specification.identifier.ada_str}"
+            f"{associations};"
+        )
 
 
 class SubprogramRenamingDeclaration(Subprogram):
@@ -2173,7 +2174,7 @@ class SubprogramRenamingDeclaration(Subprogram):
         self.subprogram_identifier = ID(subprogram_identifier)
 
     def __str__(self) -> str:
-        return f"{self.specification} renames {self.subprogram_identifier};"
+        return f"{self.specification} renames {self.subprogram_identifier.ada_str};"
 
 
 class Pragma(Declaration, ContextItem):
@@ -2194,7 +2195,7 @@ class Pragma(Declaration, ContextItem):
         if self.pragma_parameters:
             parameters = ", ".join(map(str, self.pragma_parameters))
             parameters = f" ({parameters})"
-        return f"pragma {self.identifier}{parameters};"
+        return f"pragma {self.identifier.ada_str}{parameters};"
 
 
 class Unit(Base):

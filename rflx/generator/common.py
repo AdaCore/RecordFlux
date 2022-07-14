@@ -3,9 +3,8 @@
 import enum
 from typing import Callable, List, Mapping, Optional, Sequence, Tuple
 
-from rflx import expression as expr, identifier as rid, model
+from rflx import expression as expr, model
 from rflx.ada import (
-    ID,
     TRUE,
     Add,
     And,
@@ -50,6 +49,7 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.const import BUILTINS_PACKAGE
+from rflx.identifier import ID
 
 from . import const
 
@@ -101,7 +101,7 @@ def substitution(
                 if embedded:
                     return expression.__class__(
                         expr.Indexed(
-                            expr.Variable(rid.ID("Buffer") * "all"),
+                            expr.Variable(ID("Buffer") * "all"),
                             expr.ValueRange(
                                 expr.Call(
                                     const.TYPES_TO_INDEX,
@@ -161,7 +161,7 @@ def substitution(
                 return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(
-                    expr.Variable(rid.ID("Ctx") * "Cursors" if not embedded else "Cursors"),
+                    expr.Variable(ID("Ctx") * "Cursors" if not embedded else "Cursors"),
                     expr.Variable(field.affixed_name),
                 ),
                 "Value",
@@ -198,7 +198,7 @@ def substitution_facts(
     target_type: Optional[ID] = const.TYPES_BASE_INT,
 ) -> Mapping[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
-        return expr.Variable(rid.ID("Ctx") * name) if not embedded else expr.Variable(name)
+        return expr.Variable(ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
     last = expr.Call("Written_Last", [expr.Variable("Ctx")]) if public else prefixed("Written_Last")
@@ -798,7 +798,7 @@ def field_condition_call(
     aggregate: Expr = None,
     size: Expr = None,
 ) -> Expr:
-    package = ID(prefix * message.identifier)
+    package = prefix * message.identifier
     if value is None:
         value = Number(0)
     if aggregate is None:
@@ -820,17 +820,17 @@ def field_condition_call(
     )
 
 
-def to_base_integer(prefix: str, type_package: rid.ID) -> ID:
+def to_base_integer(prefix: str, type_package: ID) -> ID:
     if type_package == BUILTINS_PACKAGE:
         return ID("To_Base_Integer")
-    return prefix * ID(type_package) * "To_Base_Integer"
+    return prefix * type_package * "To_Base_Integer"
 
 
-def ada_type_identifier(type_identifier: rid.ID) -> ID:
+def ada_type_identifier(type_identifier: ID) -> ID:
     if model.is_builtin_type(type_identifier):
-        return ID(type_identifier.name)
+        return type_identifier.name
 
-    return ID(type_identifier)
+    return type_identifier
 
 
 def prefixed_type_identifier(type_identifier: ID, prefix: str) -> ID:
@@ -841,20 +841,18 @@ def prefixed_type_identifier(type_identifier: ID, prefix: str) -> ID:
 
 
 def enum_name(enum_type: model.Enumeration) -> ID:
-    return ID(enum_type.name + "_Enum")
+    return ID(enum_type.name) + "_Enum"
 
 
 def full_enum_name(enum_type: model.Enumeration) -> ID:
-    return ID(enum_type.identifier + "_Enum")
+    return enum_type.identifier + "_Enum"
 
 
 def sequence_name(message: model.Message, field: model.Field) -> ID:
-    return ID(message.types[field].identifier)
+    return message.types[field].identifier
 
 
-def contains_function_name(
-    refinement_package: rid.ID, pdu: rid.ID, sdu: rid.ID, field: rid.ID
-) -> str:
+def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) -> str:
     sdu_name = sdu.name if sdu.parent == refinement_package else sdu
     pdu_name = pdu.name if pdu.parent == refinement_package else pdu
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
@@ -908,7 +906,7 @@ def create_sequence_instantiation(
     flat: bool = False,
 ) -> Tuple[List[ContextItem], GenericPackageInstantiation]:
     element_type = sequence_type.element_type
-    element_type_package = ID(element_type.package.name)
+    element_type_package = element_type.package.name
 
     sequence_context: List[ContextItem] = []
     sequence_package: GenericPackageInstantiation
@@ -936,7 +934,7 @@ def create_sequence_instantiation(
             ],
         )
     elif isinstance(element_type, model.Scalar):
-        element_type_identifier = ID(prefix * element_type.identifier)
+        element_type_identifier = prefix * element_type.identifier
         sequence_context = [
             WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
             *(
@@ -1093,8 +1091,11 @@ def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) 
     return Equal(
         Rem(
             Call(
-                ID(prefix * message.identifier * "Field_First"),
-                [Variable("Ctx"), Variable(ID(prefix * message.identifier * field.affixed_name))],
+                prefix * message.identifier * "Field_First",
+                [
+                    Variable("Ctx"),
+                    Variable(prefix * message.identifier * field.affixed_name),
+                ],
             ),
             Size(const.TYPES_BYTE),
         ),

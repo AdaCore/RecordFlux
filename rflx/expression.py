@@ -1078,7 +1078,7 @@ class Literal(Name):
         return []
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Literal(ada.ID(self.identifier))
+        return ada.Literal(self.identifier)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1144,7 +1144,7 @@ class Variable(Name):
         return [self]
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Variable(ada.ID(self.identifier), self.negative)
+        return ada.Variable(self.identifier, self.negative)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1516,7 +1516,7 @@ class Selected(Name):
         return expr
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Selected(self.prefix.ada_expr(), ada.ID(self.selector), self.negative)
+        return ada.Selected(self.prefix.ada_expr(), ID(self.selector), self.negative)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1612,9 +1612,7 @@ class Call(Name):
         return call
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Call(
-            ada.ID(self.identifier), [a.ada_expr() for a in self.args], {}, self.negative
-        )
+        return ada.Call(self.identifier, [a.ada_expr() for a in self.args], {}, self.negative)
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -1812,9 +1810,9 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        elements: List[Tuple[Union[ada.StrID, ada.Expr], ada.Expr]] = [
+        elements: List[Tuple[Union[ID, ada.Expr], ada.Expr]] = [
             (
-                ada.ID(n) if isinstance(n, ID) else n.ada_expr(),
+                n if isinstance(n, ID) else n.ada_expr(),
                 e.ada_expr(),
             )
             for n, e in self.elements
@@ -2437,7 +2435,7 @@ class Conversion(Expr):
         )
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Conversion(ada.ID(self.identifier), self.argument.ada_expr())
+        return ada.Conversion(self.identifier, self.argument.ada_expr())
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
@@ -2477,7 +2475,7 @@ class QualifiedExpr(Expr):
         return QualifiedExpr(self.type_identifier, self.expression.simplified())
 
     def ada_expr(self) -> ada.Expr:
-        return ada.QualifiedExpr(ada.ID(self.type_identifier), self.expression.ada_expr())
+        return ada.QualifiedExpr(self.type_identifier, self.expression.ada_expr())
 
     def z3expr(self) -> z3.ArithRef:
         raise NotImplementedError

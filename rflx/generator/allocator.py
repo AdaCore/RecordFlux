@@ -4,9 +4,8 @@ from dataclasses import dataclass
 from itertools import zip_longest
 from typing import Dict, List, Optional, Sequence
 
-from rflx import expression as expr, identifier as rid, typing_ as rty
+from rflx import expression as expr, typing_ as rty
 from rflx.ada import (
-    ID,
     Add,
     And,
     AndThen,
@@ -43,6 +42,7 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.error import Location
+from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Session, State, declaration as decl, statement as stmt
 
@@ -92,7 +92,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
 
     @property
     def unit_identifier(self) -> ID:
-        return ID(self._session.identifier.parent * f"{self._session.identifier.name}_Allocator")
+        return self._session.identifier.parent * f"{self._session.identifier.name}_Allocator"
 
     @property
     def declaration_context(self) -> List[ContextItem]:
@@ -121,7 +121,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
         slot_id: int = self._allocation_slots[location]
         return self._slot_name(slot_id)
 
-    def get_size(self, variable: Optional[rid.ID] = None, state: Optional[rid.ID] = None) -> int:
+    def get_size(self, variable: Optional[ID] = None, state: Optional[ID] = None) -> int:
         return self._integration.get_size(self._session.identifier, variable, state)
 
     @staticmethod
@@ -344,7 +344,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
         return slots
 
     @staticmethod
-    def _scope(state: State, var_id: rid.ID) -> Optional[rid.ID]:
+    def _scope(state: State, var_id: ID) -> Optional[ID]:
         """
         Return the scope of the variable var_id.
 
