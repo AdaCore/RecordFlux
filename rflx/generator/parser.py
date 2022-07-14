@@ -4,7 +4,6 @@ from typing import Mapping, Sequence
 
 import rflx.expression as expr
 from rflx.ada import (
-    ID,
     TRUE,
     Add,
     And,
@@ -60,6 +59,7 @@ from rflx.ada import (
     Variable,
 )
 from rflx.const import BUILTINS_PACKAGE
+from rflx.identifier import ID
 from rflx.model import FINAL, ByteOrder, Composite, Field, Message, Scalar, Type
 
 from . import common, const
@@ -197,11 +197,11 @@ class ParserGenerator:
                         Precondition(
                             AndThen(
                                 Call(
-                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    self.prefix * message.identifier * "Has_Buffer",
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    self.prefix * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 Call(
@@ -382,7 +382,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             Call(
-                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
                             )
                         ),
@@ -527,7 +527,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             Call(
-                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
                             )
                         ),
@@ -719,7 +719,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             Call(
-                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
                             )
                         )
@@ -746,7 +746,7 @@ class ParserGenerator:
                     [
                         Precondition(
                             Call(
-                                ID(self.prefix * message.identifier * "Has_Buffer"),
+                                self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
                             )
                         )
@@ -802,7 +802,7 @@ class ParserGenerator:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
             else:
-                type_identifier = self.prefix * ID(field_type.identifier)
+                type_identifier = self.prefix * field_type.identifier
 
             return FunctionSpecification(
                 f"Get_{field.name}", type_identifier, [Parameter(["Ctx"], "Context")]
@@ -824,12 +824,10 @@ class ParserGenerator:
                         [
                             Precondition(
                                 Call(
-                                    ID(self.prefix * message.identifier * "Valid"),
+                                    self.prefix * message.identifier * "Valid",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                             )
@@ -867,25 +865,21 @@ class ParserGenerator:
                         Precondition(
                             AndThen(
                                 Call(
-                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    self.prefix * message.identifier * "Has_Buffer",
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Structural_Valid"),
+                                    self.prefix * message.identifier * "Structural_Valid",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    self.prefix * message.identifier * "Valid_Next",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                             )
@@ -977,25 +971,21 @@ class ParserGenerator:
                         Precondition(
                             AndThen(
                                 Call(
-                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    self.prefix * message.identifier * "Has_Buffer",
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Structural_Valid"),
+                                    self.prefix * message.identifier * "Structural_Valid",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Valid_Next"),
+                                    self.prefix * message.identifier * "Valid_Next",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                                 Equal(
@@ -1004,7 +994,7 @@ class ParserGenerator:
                                         const.TYPES_TO_LENGTH,
                                         [
                                             Call(
-                                                ID(self.prefix * message.identifier * "Field_Size"),
+                                                self.prefix * message.identifier * "Field_Size",
                                                 [
                                                     Variable("Ctx"),
                                                     Variable(
@@ -1113,16 +1103,14 @@ class ParserGenerator:
                         Precondition(
                             And(
                                 Call(
-                                    ID(self.prefix * message.identifier * "Has_Buffer"),
+                                    self.prefix * message.identifier * "Has_Buffer",
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    ID(self.prefix * message.identifier * "Present"),
+                                    self.prefix * message.identifier * "Present",
                                     [
                                         Variable("Ctx"),
-                                        Variable(
-                                            ID(self.prefix * message.identifier * f.affixed_name)
-                                        ),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
                             )

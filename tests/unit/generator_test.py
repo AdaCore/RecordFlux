@@ -47,7 +47,7 @@ MODELS = [
 
 
 def test_invalid_prefix() -> None:
-    with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A..B"$'):
+    with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A::::B"$'):
         Generator("A..B")
 
 
@@ -258,9 +258,9 @@ def test_substitution_relation_scalar(
 
 
 def test_prefixed_type_identifier() -> None:
-    assert common.prefixed_type_identifier(ada.ID("Modular"), "P") == ada.ID("P.Modular")
+    assert common.prefixed_type_identifier(ID("Modular"), "P") == ID("P.Modular")
     for t in BUILTIN_TYPES:
-        assert common.prefixed_type_identifier(ada.ID(t), "P") == t.name
+        assert common.prefixed_type_identifier(ID(t), "P") == t.name
 
 
 DUMMY_SESSION = Session(

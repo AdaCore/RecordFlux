@@ -3,35 +3,36 @@ from typing import Callable
 import pytest
 
 from rflx import ada, expression as expr
+from rflx.identifier import ID
 from tests.utils import assert_equal, multilinestr
 
 
 def test_id_str() -> None:
-    assert str(ada.ID("A.B.C")) == "A.B.C"
+    assert ID("A.B.C").ada_str == "A.B.C"
 
 
 def test_id_add() -> None:
-    assert ada.ID("A") + ada.ID("B.C") == ada.ID("AB.C")
-    assert ada.ID("B.C") + ada.ID("D") == ada.ID("B.CD")
+    assert ID("A") + ID("B.C") == ID("AB.C")
+    assert ID("B.C") + ID("D") == ID("B.CD")
 
 
 def test_id_add_str() -> None:
-    assert "A" + ada.ID("B.C") == ada.ID("AB.C")
-    assert ada.ID("B.C") + "D" == ada.ID("B.CD")
-    assert ada.ID("B.C") + "" == ada.ID("B.C")
-    assert "" + ada.ID("B.C") == ada.ID("B.C")
+    assert "A" + ID("B.C") == ID("AB.C")
+    assert ID("B.C") + "D" == ID("B.CD")
+    assert ID("B.C") + "" == ID("B.C")
+    assert "" + ID("B.C") == ID("B.C")
 
 
 def test_id_mul_id() -> None:
-    assert ada.ID("A") * ada.ID("B.C") == ada.ID("A.B.C")
-    assert ada.ID("B.C") * ada.ID("D") == ada.ID("B.C.D")
+    assert ID("A") * ID("B.C") == ID("A.B.C")
+    assert ID("B.C") * ID("D") == ID("B.C.D")
 
 
 def test_id_mul_str() -> None:
-    assert "A" * ada.ID("B.C") == ada.ID("A.B.C")
-    assert ada.ID("B.C") * "D" == ada.ID("B.C.D")
-    assert "" * ada.ID("B.C") == ada.ID("B.C")
-    assert ada.ID("B.C") * "" == ada.ID("B.C")
+    assert "A" * ID("B.C") == ID("A.B.C")
+    assert ID("B.C") * "D" == ID("B.C.D")
+    assert "" * ID("B.C") == ID("B.C")
+    assert ID("B.C") * "" == ID("B.C")
 
 
 def test_not_rflx_expr() -> None:
@@ -540,7 +541,7 @@ def test_call_str() -> None:
     assert str(ada.Call("A", [])) == "A"
     assert str(ada.Call("A", [ada.Variable("B"), ada.Variable("C")])) == "A (B, C)"
     assert (
-        str(ada.Call("A", [], {ada.ID("B"): ada.Number(1), ada.ID("C"): ada.Number(2)}))
+        str(ada.Call("A", [], {ID("B"): ada.Number(1), ID("C"): ada.Number(2)}))
         == "A (B => 1, C => 2)"
     )
     assert (
@@ -548,7 +549,7 @@ def test_call_str() -> None:
             ada.Call(
                 "A",
                 [ada.Variable("B"), ada.Variable("C")],
-                {ada.ID("D"): ada.Number(1), ada.ID("E"): ada.Number(2)},
+                {ID("D"): ada.Number(1), ID("E"): ada.Number(2)},
             )
         )
         == "A (B, C, D => 1, E => 2)"
@@ -693,7 +694,7 @@ def test_call_statement_str() -> None:
     assert str(ada.CallStatement("A", [])) == "A;"
     assert str(ada.CallStatement("A", [ada.Variable("B"), ada.Variable("C")])) == "A (B, C);"
     assert (
-        str(ada.CallStatement("A", [], {ada.ID("B"): ada.Number(1), ada.ID("C"): ada.Number(2)}))
+        str(ada.CallStatement("A", [], {ID("B"): ada.Number(1), ID("C"): ada.Number(2)}))
         == "A (B => 1, C => 2);"
     )
     assert (
@@ -701,7 +702,7 @@ def test_call_statement_str() -> None:
             ada.CallStatement(
                 "A",
                 [ada.Variable("B"), ada.Variable("C")],
-                {ada.ID("D"): ada.Number(1), ada.ID("E"): ada.Number(2)},
+                {ID("D"): ada.Number(1), ID("E"): ada.Number(2)},
             )
         )
         == "A (B, C, D => 1, E => 2);"
@@ -755,7 +756,7 @@ def test_qualified_expr_rflx_expr() -> None:
 
 def test_parameter() -> None:
     assert str(ada.Parameter(["P1"], "T")) == "P1 : T"
-    assert str(ada.Parameter(["P1"], ada.ID("Boolean"))) == "P1 : Boolean"
+    assert str(ada.Parameter(["P1"], ID("Boolean"))) == "P1 : Boolean"
 
 
 def test_raise_statement() -> None:

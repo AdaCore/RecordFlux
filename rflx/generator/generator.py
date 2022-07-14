@@ -13,7 +13,6 @@ import pkg_resources
 from rflx import __version__, expression as expr
 from rflx.ada import (
     FALSE,
-    ID,
     TRUE,
     Add,
     Aggregate,
@@ -68,7 +67,6 @@ from rflx.ada import (
     SizeAspect,
     Slice,
     SparkMode,
-    StrID,
     String,
     Subprogram,
     SubprogramBody,
@@ -86,6 +84,7 @@ from rflx.ada import (
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE
 from rflx.error import Subsystem, fail, warn
+from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import (
     BOOLEAN,
@@ -228,11 +227,11 @@ class Generator:
             log.info("Generating %s", t.identifier)
 
             if t.package not in units:
-                unit = self._create_unit(ID(t.package), terminating=False)
-                units[ID(t.package)] = unit
+                unit = self._create_unit(t.package, terminating=False)
+                units[t.package] = unit
 
             if isinstance(t, (Scalar, Composite)):
-                units.update(self._create_type(t, ID(t.package), units))
+                units.update(self._create_type(t, t.package, units))
 
             elif isinstance(t, Message):
                 # https://github.com/Componolit/RecordFlux/issues/276
@@ -260,8 +259,8 @@ class Generator:
             log.info("Generating %s", s.identifier)
 
             if s.package not in units:
-                unit = self._create_unit(ID(s.package), terminating=False)
-                units[ID(s.package)] = unit
+                unit = self._create_unit(s.package, terminating=False)
+                units[s.package] = unit
 
             units.update(self._create_session(s, integration))
 
@@ -367,16 +366,16 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(self._prefix * ID(field_type.package)),
-                        UsePackageClause(self._prefix * ID(field_type.package)),
+                        WithClause(self._prefix * field_type.package),
+                        UsePackageClause(self._prefix * field_type.package),
                     ]
                 )
 
             elif isinstance(field_type, Sequence):
-                context.append(WithClause(self._prefix * ID(field_type.identifier)))
+                context.append(WithClause(self._prefix * field_type.identifier))
 
-        unit = self._create_unit(ID(message.identifier), context)
-        units[ID(message.identifier)] = unit
+        unit = self._create_unit(message.identifier, context)
+        units[message.identifier] = unit
 
         scalar_fields = {}
         composite_fields = []
@@ -642,8 +641,8 @@ class Generator:
             if len(l.identifier.parts) == 2 and l.identifier.parent != refinement.package:
                 unit.declaration_context.extend(
                     [
-                        WithClause(self._prefix * ID(l.identifier.parent)),
-                        UsePackageClause(self._prefix * ID(l.identifier.parent)),
+                        WithClause(self._prefix * l.identifier.parent),
+                        UsePackageClause(self._prefix * l.identifier.parent),
                     ]
                 )
 
@@ -661,13 +660,13 @@ class Generator:
 
             unit.declaration_context.extend(
                 [
-                    WithClause(self._prefix * ID(pdu_package)),
-                    UsePackageClause(self._prefix * ID(pdu_package)),
+                    WithClause(self._prefix * pdu_package),
+                    UsePackageClause(self._prefix * pdu_package),
                 ]
             )
 
-        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
+        pdu_identifier = self._prefix * refinement.pdu.identifier
+        sdu_identifier = self._prefix * refinement.sdu.identifier
 
         unit.declaration_context.append(WithClause(pdu_identifier))
 
@@ -862,23 +861,23 @@ class Generator:
                             ["Enum"],
                             self._prefix
                             * (
-                                ID(common.full_enum_name(enum))
+                                common.full_enum_name(enum)
                                 if enum.always_valid
-                                else ID(enum.identifier)
+                                else enum.identifier
                             ),
                         )
                     ],
                 ),
                 Case(
                     Variable("Enum"),
-                    [(Variable(ID(key)), value.ada_expr()) for key, value in enum.literals.items()],
+                    [(Variable(key), value.ada_expr()) for key, value in enum.literals.items()],
                 ),
             )
         )
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self._prefix * ID(enum.identifier),
+            self._prefix * enum.identifier,
             [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
@@ -889,7 +888,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self._prefix * ID(enum.identifier),
+                        self._prefix * enum.identifier,
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -897,7 +896,7 @@ class Generator:
             )
 
             conversion_cases.extend(
-                (value.ada_expr(), Aggregate(Variable("True"), Variable(ID(key))))
+                (value.ada_expr(), Aggregate(Variable("True"), Variable(key)))
                 for key, value in enum.literals.items()
             )
             conversion_cases.append(
@@ -915,7 +914,7 @@ class Generator:
                     FunctionSpecification(
                         "To_Base_Integer",
                         self._prefix * const.TYPES_BASE_INT,
-                        [Parameter(["Val"], self._prefix * ID(enum.identifier))],
+                        [Parameter(["Val"], self._prefix * enum.identifier)],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_Base_Integer", [Variable("Val.Enum")]))],
@@ -926,12 +925,9 @@ class Generator:
         else:
             conversion_cases.extend(
                 [
-                    *[
-                        (value.ada_expr(), Variable(ID(key)))
-                        for key, value in enum.literals.items()
-                    ],
+                    *[(value.ada_expr(), Variable(key)) for key, value in enum.literals.items()],
                     *(
-                        [(Variable("others"), Last(self._prefix * ID(enum.identifier)))]
+                        [(Variable("others"), Last(self._prefix * enum.identifier))]
                         if incomplete
                         else []
                     ),
@@ -956,7 +952,7 @@ class Generator:
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
-        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
+        pdu_identifier = self._prefix * refinement.pdu.identifier
         condition = refinement.condition
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
@@ -988,7 +984,7 @@ class Generator:
         specification = FunctionSpecification(
             contains_function_name(refinement),
             "Boolean",
-            [Parameter(["Ctx"], ID(pdu_identifier) * "Context")],
+            [Parameter(["Ctx"], pdu_identifier * "Context")],
         )
 
         return SubprogramUnitPart(
@@ -1008,8 +1004,8 @@ class Generator:
     def _create_switch_procedure(
         self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
+        pdu_identifier = self._prefix * refinement.pdu.identifier
+        sdu_identifier = self._prefix * refinement.sdu.identifier
         pdu_context = f"{refinement.pdu.identifier.flat}_PDU_Context"
         sdu_context = f"{refinement.sdu.identifier.flat}_SDU_Context"
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -1017,8 +1013,8 @@ class Generator:
         specification = ProcedureSpecification(
             f"Switch_To_{refinement.field.name}",
             [
-                InOutParameter([pdu_context], ID(pdu_identifier) * "Context"),
-                OutParameter([sdu_context], ID(sdu_identifier) * "Context"),
+                InOutParameter([pdu_context], pdu_identifier * "Context"),
+                OutParameter([sdu_context], sdu_identifier * "Context"),
             ],
         )
 
@@ -1039,7 +1035,7 @@ class Generator:
                                 ],
                                 Call(
                                     self._prefix
-                                    * ID(refinement.package)
+                                    * refinement.package
                                     * const.REFINEMENT_PACKAGE
                                     * contains_function_name(refinement),
                                     [Variable(pdu_context)],
@@ -1157,17 +1153,17 @@ class Generator:
     def _create_copy_refined_field_procedure(
         self, refinement: Refinement, condition_fields: ty.Mapping[Field, Type]
     ) -> UnitPart:
-        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
-        sdu_identifier = self._prefix * ID(refinement.sdu.identifier)
-        pdu_context = ID(refinement.pdu.identifier.flat) + "_PDU_Context"
-        sdu_context = ID(refinement.sdu.identifier.flat) + "_SDU_Context"
+        pdu_identifier = self._prefix * refinement.pdu.identifier
+        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_context = ID(refinement.pdu.identifier.flat + "_PDU_Context")
+        sdu_context = ID(refinement.sdu.identifier.flat + "_SDU_Context")
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
 
         specification = ProcedureSpecification(
             f"Copy_{refinement.field.name}",
             [
-                Parameter([pdu_context], ID(pdu_identifier) * "Context"),
-                InOutParameter([sdu_context], ID(sdu_identifier) * "Context"),
+                Parameter([pdu_context], pdu_identifier * "Context"),
+                InOutParameter([sdu_context], sdu_identifier * "Context"),
             ],
         )
 
@@ -1188,7 +1184,7 @@ class Generator:
                                 ],
                                 Call(
                                     self._prefix
-                                    * ID(refinement.package)
+                                    * refinement.package
                                     * const.REFINEMENT_PACKAGE
                                     * contains_function_name(refinement),
                                     [Variable(pdu_context)],
@@ -1282,7 +1278,7 @@ class Generator:
                             [
                                 Variable("Off"),
                                 String(
-                                    f'"{sdu_context}" is set by "Take_Buffer"'
+                                    f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
                                     " but not used after the call"
                                 ),
                             ],
@@ -1296,7 +1292,7 @@ class Generator:
                             [
                                 Variable("On"),
                                 String(
-                                    f'"{sdu_context}" is set by "Take_Buffer"'
+                                    f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
                                     " but not used after the call"
                                 ),
                             ],
@@ -1387,17 +1383,17 @@ class Generator:
                 FunctionSpecification(
                     "To_Base_Integer",
                     self._prefix * const.TYPES_BASE_INT,
-                    [Parameter(["Val"], self._prefix * ID(integer.identifier))],
+                    [Parameter(["Val"], self._prefix * integer.identifier)],
                 ),
                 Call(self._prefix * const.TYPES_BASE_INT, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self._prefix * ID(integer.identifier),
+                    self._prefix * integer.identifier,
                     [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
                 ),
-                Call(self._prefix * ID(integer.identifier), [Variable("Val")]),
+                Call(self._prefix * integer.identifier, [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
             ),
         ]
@@ -1409,7 +1405,7 @@ class Generator:
         condition_fields: ty.Mapping[Field, Type],
         null_sdu: bool,
     ) -> ty.Sequence[expr.Expr]:
-        pdu_identifier = self._prefix * ID(refinement.pdu.identifier)
+        pdu_identifier = self._prefix * refinement.pdu.identifier
 
         conditions: ty.List[expr.Expr] = [
             expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
@@ -1451,7 +1447,10 @@ class Generator:
             [
                 expr.Call(
                     pdu_identifier * "Valid",
-                    [expr.Variable(pdu_context), expr.Variable(pdu_identifier * f.affixed_name)],
+                    [
+                        expr.Variable(pdu_context),
+                        expr.Variable(pdu_identifier * f.affixed_name),
+                    ],
                 )
                 for f in condition_fields
             ]
@@ -1497,7 +1496,7 @@ def enumeration_types(enum: Enumeration) -> ty.List[Declaration]:
     types.append(
         EnumerationType(
             common.enum_name(enum) if enum.always_valid else enum.name,
-            {ID(k): Number(v.value) for k, v in enum.literals.items()},
+            {k: Number(v.value) for k, v in enum.literals.items()},
             enum.size_expr.ada_expr(),
         )
     )

@@ -13,7 +13,7 @@ from rflx import ada
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Debug, Generator, const
-from rflx.identifier import ID
+from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
 from rflx.specification import Parser
@@ -279,13 +279,13 @@ def session_main(
     output_channels: Sequence[str] = None,
     context: Sequence[ada.ContextItem] = None,
     subprograms: Sequence[ada.SubprogramBody] = None,
-    session_package: ada.StrID = "RFLX.Test.Session",
+    session_package: StrID = "RFLX.Test.Session",
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}
     output_channels = output_channels or []
     context = context or []
     subprograms = subprograms or []
-    session_package = ada.ID(session_package)
+    session_package = ID(session_package)
 
     run_procedure_spec = ada.ProcedureSpecification("Run")
     run_procedure_decl = ada.SubprogramDeclaration(run_procedure_spec)
