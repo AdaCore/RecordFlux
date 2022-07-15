@@ -33,7 +33,6 @@ is
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
-      RFLX_Exception : Boolean := False;
    begin
       pragma Assert (Start_Invariant);
       --  tests/integration/session_comprehension_on_sequence/test.rflx:18:10
@@ -53,42 +52,72 @@ is
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+                  Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+                  pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+                  pragma Assert (Start_Invariant);
+                  goto Finalize_Start;
                end if;
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Start_Invariant);
-         goto Finalize_Start;
-      end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:20:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
@@ -106,20 +135,25 @@ is
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Start_Invariant);
-         goto Finalize_Start;
-      end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:22:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
@@ -137,42 +171,72 @@ is
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
             if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+                  Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+                  pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+                  pragma Assert (Start_Invariant);
+                  goto Finalize_Start;
                end if;
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Start_Invariant);
+               goto Finalize_Start;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Terminated;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
          end if;
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Start_Invariant);
-         goto Finalize_Start;
-      end if;
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
       <<Finalize_Start>>
@@ -209,7 +273,6 @@ is
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
-      RFLX_Exception : Boolean := False;
    begin
       Option_Types_Buffer := Ctx.P.Slots.Slot_Ptr_4;
       pragma Warnings (Off, "unused assignment");
@@ -223,7 +286,6 @@ is
       Universal.Options.Initialize (Message_Options_Ctx, Message_Options_Buffer);
       pragma Assert (Process_Invariant);
       --  tests/integration/session_comprehension_on_sequence/test.rflx:34:10
-      Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -236,9 +298,16 @@ is
             if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
                Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_5 = null);
+               pragma Assert (RFLX_Copy_Options_Buffer /= null);
+               Ctx.P.Slots.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_5 /= null);
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
             end if;
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
+            Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
                pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
@@ -247,6 +316,8 @@ is
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Option_Types_Ctx.Buffer_Last = Option_Types_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Universal.Option_Types.Valid (Option_Types_Ctx));
+               pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
+               pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_5 = null);
                declare
                   E_Ctx : Universal.Option.Context;
                begin
@@ -263,40 +334,55 @@ is
                         then
                            Universal.Option_Types.Append_Element (Option_Types_Ctx, Universal.Option.Get_Option_Type (E_Ctx));
                         else
-                           RFLX_Exception := True;
+                           Ctx.P.Next_State := S_Terminated;
+                           pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                           pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                           pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_5 = null);
+                           pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                           Ctx.P.Slots.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_5 /= null);
+                           pragma Assert (Process_Invariant);
+                           goto Finalize_Process;
                         end if;
                      end if;
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                     pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                     pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_5 = null);
+                     pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                     Ctx.P.Slots.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_5 /= null);
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                   pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                   Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
                   pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
                end;
-               exit when RFLX_Exception;
             end loop;
             pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
             pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_5 = null);
+            pragma Assert (RFLX_Copy_Options_Buffer /= null);
             Ctx.P.Slots.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_5 /= null);
          end;
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:36:10
-      Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -309,9 +395,16 @@ is
             if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
                Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+               pragma Assert (RFLX_Copy_Options_Buffer /= null);
+               Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Options_Buffer;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
             end if;
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
+            Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
                pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
@@ -320,6 +413,8 @@ is
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Option_Types_Ctx.Buffer_Last = Option_Types_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Universal.Option_Types.Valid (Option_Types_Ctx));
+               pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
+               pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_6 = null);
                declare
                   E_Ctx : Universal.Option.Context;
                begin
@@ -336,34 +431,50 @@ is
                         then
                            Universal.Option_Types.Append_Element (Option_Types_Ctx, Universal.Option.Get_Option_Type (E_Ctx));
                         else
-                           RFLX_Exception := True;
+                           Ctx.P.Next_State := S_Terminated;
+                           pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                           pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                           pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+                           pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                           Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Options_Buffer;
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
+                           pragma Assert (Process_Invariant);
+                           goto Finalize_Process;
                         end if;
                      end if;
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                     pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                     pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+                     pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                     Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Options_Buffer;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                   pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                   Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
                   pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
                end;
-               exit when RFLX_Exception;
             end loop;
             pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
             pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+            pragma Assert (RFLX_Copy_Options_Buffer /= null);
             Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Options_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
@@ -416,7 +527,6 @@ is
          goto Finalize_Process;
       end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:42:10
-      Universal.Options.Reset (Message_Options_Ctx);
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -429,9 +539,16 @@ is
             if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
                Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Terminated;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+               pragma Assert (RFLX_Copy_Options_Buffer /= null);
+               Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
             end if;
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
+            Universal.Options.Reset (Message_Options_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
                pragma Loop_Invariant (Universal.Options.Has_Buffer (Message_Options_Ctx));
@@ -440,6 +557,8 @@ is
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Message_Options_Ctx.Buffer_Last = Message_Options_Ctx.Buffer_Last'Loop_Entry);
                pragma Loop_Invariant (Universal.Options.Valid (Message_Options_Ctx));
+               pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
+               pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_8 = null);
                declare
                   E_Ctx : Universal.Option.Context;
                begin
@@ -458,40 +577,80 @@ is
                               if Universal.Option.Size (E_Ctx) > 0 then
                                  Universal.Options.Append_Element (Message_Options_Ctx, E_Ctx);
                               else
-                                 RFLX_Exception := True;
+                                 Ctx.P.Next_State := S_Terminated;
+                                 pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                                 Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                                 pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                                 pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                                 Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                                 pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                                 pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+                                 pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                                 Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+                                 pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
+                                 pragma Assert (Process_Invariant);
+                                 goto Finalize_Process;
                               end if;
                            else
-                              RFLX_Exception := True;
+                              Ctx.P.Next_State := S_Terminated;
+                              pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                              Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                              pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                              pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                              Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                              pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                              pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+                              pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                              Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+                              pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
+                              pragma Assert (Process_Invariant);
+                              goto Finalize_Process;
                            end if;
                         else
-                           RFLX_Exception := True;
+                           Ctx.P.Next_State := S_Terminated;
+                           pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                           pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                           pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                           pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+                           pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                           Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+                           pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
+                           pragma Assert (Process_Invariant);
+                           goto Finalize_Process;
                         end if;
                      end if;
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
+                     pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
+                     pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+                     pragma Assert (RFLX_Copy_Options_Buffer /= null);
+                     Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                   pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                   Universal.Options.Update (RFLX_Copy_Options_Ctx, E_Ctx);
                   pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
                end;
-               exit when RFLX_Exception;
             end loop;
             pragma Warnings (Off, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             Universal.Options.Take_Buffer (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer);
             pragma Warnings (On, """RFLX_Copy_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
+            pragma Assert (RFLX_Copy_Options_Buffer /= null);
             Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if RFLX_Exception then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
@@ -551,11 +710,17 @@ is
       pragma Warnings (Off, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Option_Types.Take_Buffer (Option_Types_Ctx, Option_Types_Buffer);
       pragma Warnings (On, """Option_Types_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
+      pragma Assert (Option_Types_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_4 := Option_Types_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
       pragma Warnings (Off, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Options.Take_Buffer (Message_Options_Ctx, Message_Options_Buffer);
       pragma Warnings (On, """Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_7 = null);
+      pragma Assert (Message_Options_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_7 := Message_Options_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_7 /= null);
       pragma Assert (Global_Initialized (Ctx));
    end Process;
 
@@ -643,15 +808,24 @@ is
       pragma Warnings (Off, """Ctx.P.Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Options.Take_Buffer (Ctx.P.Options_Ctx, Options_Buffer);
       pragma Warnings (On, """Ctx.P.Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Options_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Options_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       pragma Warnings (Off, """Ctx.P.Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_1_Ctx, Message_1_Buffer);
       pragma Warnings (On, """Ctx.P.Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Message_1_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_2 := Message_1_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       pragma Warnings (Off, """Ctx.P.Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_2_Ctx, Message_2_Buffer);
       pragma Warnings (On, """Ctx.P.Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
+      pragma Assert (Message_2_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_3 := Message_2_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
       Ctx.P.Next_State := S_Terminated;
    end Finalize;

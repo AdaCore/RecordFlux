@@ -54,7 +54,6 @@ is
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
-      RFLX_Exception : Boolean := False;
    begin
       pragma Assert (Process_Invariant);
       --  tests/integration/session_binding/test.rflx:26:10
@@ -76,41 +75,50 @@ is
                   if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
                      Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, MT);
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
                end if;
                if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
                   if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
                      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Length);
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
                end if;
                if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
                   if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
                      if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Opaque'Size)) then
                         Universal.Message.Set_Data (Ctx.P.Message_Ctx, Opaque);
                      else
-                        RFLX_Exception := True;
+                        Ctx.P.Next_State := S_Terminated;
+                        pragma Assert (Process_Invariant);
+                        goto Finalize_Process;
                      end if;
                   else
-                     RFLX_Exception := True;
+                     Ctx.P.Next_State := S_Terminated;
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
                   end if;
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Terminated;
+                  pragma Assert (Process_Invariant);
+                  goto Finalize_Process;
                end if;
             end;
          end;
       end;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
@@ -153,7 +161,10 @@ is
       pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Message_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
       Ctx.P.Next_State := S_Terminated;
    end Finalize;

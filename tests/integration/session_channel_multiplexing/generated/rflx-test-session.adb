@@ -104,11 +104,17 @@ is
       pragma Warnings (Off, """Ctx.P.Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_1_Ctx, Message_1_Buffer);
       pragma Warnings (On, """Ctx.P.Message_1_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Message_1_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Message_1_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       pragma Warnings (Off, """Ctx.P.Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Ctx.P.Message_2_Ctx, Message_2_Buffer);
       pragma Warnings (On, """Ctx.P.Message_2_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Message_2_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_2 := Message_2_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
       Ctx.P.Next_State := S_Terminated;
    end Finalize;

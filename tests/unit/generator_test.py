@@ -517,8 +517,23 @@ def test_session_create_abstract_functions_error(
                             ),
                         ],
                     ),
+                    ada.PragmaStatement(
+                        "Assert",
+                        [ada.Equal(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null"))],
+                    ),
+                    ada.PragmaStatement(
+                        "Assert", [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))]
+                    ),
                     ada.Assignment(
                         ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
+                    ),
+                    ada.PragmaStatement(
+                        "Assert",
+                        [
+                            ada.NotEqual(
+                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")
+                            )
+                        ],
                     ),
                 ],
             ),
@@ -589,8 +604,23 @@ def test_session_create_abstract_functions_error(
                             ),
                         ],
                     ),
+                    ada.PragmaStatement(
+                        "Assert",
+                        [ada.Equal(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null"))],
+                    ),
+                    ada.PragmaStatement(
+                        "Assert", [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))]
+                    ),
                     ada.Assignment(
                         ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
+                    ),
+                    ada.PragmaStatement(
+                        "Assert",
+                        [
+                            ada.NotEqual(
+                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")
+                            )
+                        ],
                     ),
                     ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
                 ],
@@ -714,7 +744,10 @@ class EvaluatedDeclarationStr:
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);\n"
+                    "pragma Assert (X_Buffer /= null);\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;\n"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);"
                 ),
             ),
         ),
@@ -739,7 +772,10 @@ class EvaluatedDeclarationStr:
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);\n"
+                    "pragma Assert (X_Buffer /= null);\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;\n"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);"
                 ),
             ),
         ),
@@ -764,7 +800,10 @@ class EvaluatedDeclarationStr:
                     "P.T.Take_Buffer (X_Ctx, X_Buffer);\n"
                     'pragma Warnings (On, """X_Ctx"" is set by ""Take_Buffer"" but not used after'
                     ' the call");\n'
-                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);\n"
+                    "pragma Assert (X_Buffer /= null);\n"
+                    "Ctx.P.Slots.Slot_Ptr_1 := X_Buffer;\n"
+                    "pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);"
                 ),
             ),
         ),
@@ -1056,11 +1095,15 @@ begin
                Universal.Option.Set_Option_Type (C_Ctx, Universal.OT_Null);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""C_Ctx"" to set field ""Option_Type"" to ""Universal::OT_Null""\");
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_E;
+               pragma Finalization;
+               goto Finalize_S;
             end if;
          else
             Ada.Text_IO.Put_Line ("Error: trying to set message field ""Option_Type"" to ""Universal::OT_Null"" although ""Option_Type"" is not valid next field");
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_E;
+            pragma Finalization;
+            goto Finalize_S;
          end if;
          Universal.Message.Reset (X_Ctx);
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Message_Type) then
@@ -1068,22 +1111,30 @@ begin
                Universal.Message.Set_Message_Type (X_Ctx, A);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""A""\");
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_E;
+               pragma Finalization;
+               goto Finalize_S;
             end if;
          else
             Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""A"" although ""Message_Type"" is not valid next field");
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_E;
+            pragma Finalization;
+            goto Finalize_S;
          end if;
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Length) then
             if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Length) then
                Universal.Message.Set_Length (X_Ctx, B);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""B""\");
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_E;
+               pragma Finalization;
+               goto Finalize_S;
             end if;
          else
             Ada.Text_IO.Put_Line ("Error: trying to set message field ""Length"" to ""B"" although ""Length"" is not valid next field");
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_E;
+            pragma Finalization;
+            goto Finalize_S;
          end if;
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data) then
@@ -1106,33 +1157,32 @@ begin
                   end;
                else
                   Ada.Text_IO.Put_Line ("Error: invalid message field size for ""C'Opaque""\");
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_E;
+                  pragma Finalization;
+                  goto Finalize_S;
                end if;
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Data"" to ""C'Opaque""\");
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_E;
+               pragma Finalization;
+               goto Finalize_S;
             end if;
          else
             Ada.Text_IO.Put_Line ("Error: trying to set message field ""Data"" to ""C'Opaque"" although ""Data"" is not valid next field");
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_E;
+            pragma Finalization;
+            goto Finalize_S;
          end if;
          pragma Warnings (Off, ""\"C_Ctx"" is set by ""Take_Buffer"" but not used after the call");
          Universal.Option.Take_Buffer (C_Ctx, C_Buffer);
          pragma Warnings (On, ""\"C_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+         pragma Assert (C_Buffer /= null);
          Ctx.P.Slots.Slot_Ptr_1 := C_Buffer;
+         pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       end;
    end;
-   if RFLX_Exception then
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-end;
-if RFLX_Exception then
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;\
+end;\
 """,
         ),
         (
@@ -1197,21 +1247,20 @@ begin
                   Universal.Message.To_Context (X, X_Ctx);
                else
                   Ada.Text_IO.Put_Line ("Error: insufficient space for converting message ""X""\");
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_E;
+                  pragma Finalization;
+                  goto Finalize_S;
                end if;
             else
                Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_E;
+               pragma Finalization;
+               goto Finalize_S;
             end if;
          end;
       end;
    end;
-end;
-if RFLX_Exception then
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;\
+end;\
 """,
         ),
         (
@@ -1292,22 +1341,30 @@ begin
          Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Data);
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""\");
-         RFLX_Exception := True;
+         Ctx.P.Next_State := S_E;
+         pragma Finalization;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""Universal::MT_Data"" although ""Message_Type"" is not valid next field");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Length) then
       if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Length) then
          Universal.Message.Set_Length (A_Ctx, Universal.Length (2));
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Length"" to ""2""\");
-         RFLX_Exception := True;
+         Ctx.P.Next_State := S_E;
+         pragma Finalization;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: trying to set message field ""Length"" to ""2"" although ""Length"" is not valid next field");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Data) then
       if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Data) then
@@ -1315,33 +1372,39 @@ begin
             Universal.Message.Set_Data (A_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          else
             Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[3, 4]""\");
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_E;
+            pragma Finalization;
+            goto Finalize_S;
          end if;
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Data"" to ""[3, 4]""\");
-         RFLX_Exception := True;
+         Ctx.P.Next_State := S_E;
+         pragma Finalization;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: trying to set message field ""Data"" to ""[3, 4]"" although ""Data"" is not valid next field");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    if Universal.Contains.Option_In_Message_Data (A_Ctx) then
       Universal.Contains.Copy_Data (A_Ctx, X_Ctx);
       Universal.Option.Verify_Message (X_Ctx);
    else
       Ada.Text_IO.Put_Line ("Error: invalid conversion ""Universal::Option (A.Data)""\");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    pragma Warnings (Off, ""\"A_Ctx"" is set by ""Take_Buffer"" but not used after the call");
    Universal.Message.Take_Buffer (A_Ctx, A_Buffer);
    pragma Warnings (On, ""\"A_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+   pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+   pragma Assert (A_Buffer /= null);
    Ctx.P.Slots.Slot_Ptr_1 := A_Buffer;
-end;
-if RFLX_Exception then
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;\
+   pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
+end;\
 """,
         ),
         (
@@ -1405,28 +1468,32 @@ begin
          Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Null);
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Null""\");
-         RFLX_Exception := True;
+         Ctx.P.Next_State := S_E;
+         pragma Finalization;
+         goto Finalize_S;
       end if;
    else
       Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""Universal::MT_Null"" although ""Message_Type"" is not valid next field");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    if Universal.Message.Valid (A_Ctx, Universal.Message.F_Message_Type) then
       X := Universal.Message.Get_Message_Type (A_Ctx);
    else
       Ada.Text_IO.Put_Line ("Error: access to invalid field ""Message_Type"" of ""A_Ctx""\");
-      RFLX_Exception := True;
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
    end if;
    pragma Warnings (Off, ""\"A_Ctx"" is set by ""Take_Buffer"" but not used after the call");
    Universal.Message.Take_Buffer (A_Ctx, A_Buffer);
    pragma Warnings (On, ""\"A_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+   pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+   pragma Assert (A_Buffer /= null);
    Ctx.P.Slots.Slot_Ptr_1 := A_Buffer;
-end;
-if RFLX_Exception then
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;\
+   pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
+end;\
 """,
         ),
         # https://github.com/Componolit/RecordFlux/issues/577
@@ -2142,9 +2209,11 @@ def test_session_assign_error(
     error_type: Type[BaseError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
-    )
+    allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
+    session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
+    alloc_id = Location(start=(1, 1))
+    # pylint: disable = protected-access
+    allocator._allocation_slots[alloc_id] = 1
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
@@ -2155,7 +2224,7 @@ def test_session_assign_error(
             ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
             lambda x: False,
             ID("State"),
-            alloc_id=None,
+            alloc_id=alloc_id,
         )
 
 

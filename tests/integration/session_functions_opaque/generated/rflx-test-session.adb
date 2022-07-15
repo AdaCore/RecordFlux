@@ -132,7 +132,10 @@ is
       pragma Warnings (Off, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Message.Take_Buffer (Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Message_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Message;
 
    procedure Check_Message_Sequence (Ctx : in out Context'Class) with
@@ -153,7 +156,6 @@ is
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
-      RFLX_Exception : Boolean := False;
    begin
       Message_Sequence_Buffer := Ctx.P.Slots.Slot_Ptr_1;
       pragma Warnings (Off, "unused assignment");
@@ -178,42 +180,72 @@ is
             if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Error;
+               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Check_Message_Sequence_Invariant);
+               goto Finalize_Check_Message_Sequence;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
             if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, 2);
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Error;
+               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Check_Message_Sequence_Invariant);
+               goto Finalize_Check_Message_Sequence;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
             if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Message_Sequence_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
                else
-                  RFLX_Exception := True;
+                  Ctx.P.Next_State := S_Error;
+                  pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+                  Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+                  pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+                  pragma Assert (Check_Message_Sequence_Invariant);
+                  goto Finalize_Check_Message_Sequence;
                end if;
             else
-               RFLX_Exception := True;
+               Ctx.P.Next_State := S_Error;
+               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Assert (Check_Message_Sequence_Invariant);
+               goto Finalize_Check_Message_Sequence;
             end if;
          else
-            RFLX_Exception := True;
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
          end if;
          pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
          pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      if RFLX_Exception then
-         Ctx.P.Next_State := S_Error;
-         pragma Assert (Check_Message_Sequence_Invariant);
-         goto Finalize_Check_Message_Sequence;
-      end if;
       --  tests/integration/session_functions_opaque/test.rflx:45:10
       declare
          RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
@@ -237,7 +269,10 @@ is
       pragma Warnings (Off, """Message_Sequence_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Options.Take_Buffer (Message_Sequence_Ctx, Message_Sequence_Buffer);
       pragma Warnings (On, """Message_Sequence_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Message_Sequence_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Message_Sequence_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Message_Sequence;
 
    procedure Check_Scalar_Sequence (Ctx : in out Context'Class) with
@@ -308,7 +343,10 @@ is
       pragma Warnings (Off, """Scalar_Sequence_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       Universal.Values.Take_Buffer (Scalar_Sequence_Ctx, Scalar_Sequence_Buffer);
       pragma Warnings (On, """Scalar_Sequence_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
+      pragma Assert (Scalar_Sequence_Buffer /= null);
       Ctx.P.Slots.Slot_Ptr_1 := Scalar_Sequence_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Scalar_Sequence;
 
    procedure Error (Ctx : in out Context'Class) with
