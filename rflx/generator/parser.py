@@ -205,22 +205,16 @@ class ParserGenerator:
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 Call(
-                                    ID(
-                                        self.prefix
-                                        * message.identifier
-                                        * "Sufficient_Buffer_Length"
-                                    ),
+                                    self.prefix * message.identifier * "Sufficient_Buffer_Length",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 *(
                                     [
                                         Not(
                                             Call(
-                                                ID(
-                                                    self.prefix
-                                                    * message.identifier
-                                                    * "Composite_Field"
-                                                ),
+                                                self.prefix
+                                                * message.identifier
+                                                * "Composite_Field",
                                                 [Variable("Fld")],
                                             )
                                         )
@@ -998,11 +992,9 @@ class ParserGenerator:
                                                 [
                                                     Variable("Ctx"),
                                                     Variable(
-                                                        ID(
-                                                            self.prefix
-                                                            * message.identifier
-                                                            * f.affixed_name
-                                                        )
+                                                        self.prefix
+                                                        * message.identifier
+                                                        * f.affixed_name
                                                     ),
                                                 ],
                                             )

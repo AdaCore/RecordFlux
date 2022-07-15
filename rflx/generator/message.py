@@ -1368,7 +1368,7 @@ def create_valid_value_function(
                             Call(
                                 f"Valid_{t.name}"
                                 if is_builtin_type(t.identifier)
-                                else ID(prefix * t.package * f"Valid_{t.name}"),
+                                else prefix * t.package * f"Valid_{t.name}",
                                 [Variable("Val")],
                             )
                             if isinstance(t, Scalar)
@@ -1740,9 +1740,9 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
         c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
         c = c.substituted(
             mapping={
-                expr.Size(field.name): expr.Call(ID(const.TYPES_BASE_INT), [expr.Variable("Size")]),
+                expr.Size(field.name): expr.Call(const.TYPES_BASE_INT, [expr.Variable("Size")]),
                 expr.Last(field.name): expr.Call(
-                    ID(const.TYPES_BASE_INT),
+                    const.TYPES_BASE_INT,
                     [
                         expr.Call(
                             "Field_Last",
@@ -3140,7 +3140,7 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
 
     valid_values = [
         Call(
-            ID(prefix * t.package * f"Valid_{t.name}"),
+            prefix * t.package * f"Valid_{t.name}",
             [
                 Variable("Struct" * f.identifier),
             ],
@@ -3367,7 +3367,7 @@ def _struct_substitution(
 
             if isinstance(field_type, Scalar):
                 return expr.Call(
-                    ID(const.TYPES_BASE_INT),
+                    const.TYPES_BASE_INT,
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 
@@ -3403,7 +3403,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                         )
                         .substituted(
                             lambda x: expr.Call(
-                                ID(const.TYPES_BIT_LENGTH),
+                                const.TYPES_BIT_LENGTH,
                                 [expr.Variable("Struct" * x.identifier)],
                             )
                             if isinstance(x, expr.Variable)
