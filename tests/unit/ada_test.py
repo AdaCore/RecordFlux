@@ -709,6 +709,10 @@ def test_call_statement_str() -> None:
     )
 
 
+def test_exit_statement_str() -> None:
+    assert str(ada.ExitStatement(ada.Variable("A"))) == "exit when A;"
+
+
 def test_while_str() -> None:
     assert_equal(
         str(
