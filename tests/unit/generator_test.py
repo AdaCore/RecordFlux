@@ -1091,7 +1091,7 @@ begin
          Universal.Option.Initialize (C_Ctx, C_Buffer);
          Universal.Option.Reset (C_Ctx);
          if Universal.Option.Valid_Next (C_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (C_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (C_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (C_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (C_Ctx, Universal.OT_Null);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""C_Ctx"" to set field ""Option_Type"" to ""Universal::OT_Null""\");
@@ -1107,7 +1107,7 @@ begin
          end if;
          Universal.Message.Reset (X_Ctx);
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Message_Type) then
-            if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Message_Type) then
+            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type) then
                Universal.Message.Set_Message_Type (X_Ctx, A);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""A""\");
@@ -1122,7 +1122,7 @@ begin
             goto Finalize_S;
          end if;
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Length) then
-            if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Length) then
+            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
                Universal.Message.Set_Length (X_Ctx, B);
             else
                Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""B""\");
@@ -1137,7 +1137,7 @@ begin
             goto Finalize_S;
          end if;
          if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Data) then
-            if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data) then
+            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Data) then
                if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Option.Size (C_Ctx))) then
                   declare
                      function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
@@ -1337,7 +1337,7 @@ begin
    Universal.Message.Initialize (A_Ctx, A_Buffer);
    Universal.Message.Reset (A_Ctx);
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Message_Type) then
-      if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Message_Type) then
+      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type) then
          Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Data);
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""\");
@@ -1352,7 +1352,7 @@ begin
       goto Finalize_S;
    end if;
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Length) then
-      if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Length) then
+      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Length) then
          Universal.Message.Set_Length (A_Ctx, Universal.Length (2));
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Length"" to ""2""\");
@@ -1367,7 +1367,7 @@ begin
       goto Finalize_S;
    end if;
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Data) then
-      if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Data) then
+      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Data) then
          if Universal.Message.Valid_Length (A_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Universal.Message.Set_Data (A_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          else
@@ -1464,7 +1464,7 @@ begin
    Universal.Message.Initialize (A_Ctx, A_Buffer);
    Universal.Message.Reset (A_Ctx);
    if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Message_Type) then
-      if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (A_Ctx, Universal.Message.F_Message_Type) then
+      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type) then
          Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Null);
       else
          Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Null""\");
@@ -1604,7 +1604,7 @@ end;\
 --  <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
 if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Message_Type) then
-   if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Message_Type) then
+   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type) then
       Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
    else
       Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""\");
@@ -1619,7 +1619,7 @@ else
    goto Finalize_S;
 end if;
 if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Length) then
-   if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Length) then
+   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
       Universal.Message.Set_Length (X_Ctx, Universal.Length (0));
    else
       Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""0""\");
@@ -1634,7 +1634,7 @@ else
    goto Finalize_S;
 end if;
 if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Data) then
-   if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (X_Ctx, Universal.Message.F_Data) then
+   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Data) then
       if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
          Universal.Message.Set_Data_Empty (X_Ctx);
       else

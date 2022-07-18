@@ -65,7 +65,7 @@ is
       --  tests/integration/session_functions_opaque/test.rflx:27:10
       Universal.Message.Reset (Message_Ctx);
       if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
          else
             Ctx.P.Next_State := S_Error;
@@ -78,7 +78,7 @@ is
          goto Finalize_Check_Message;
       end if;
       if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Message_Ctx, 2);
          else
             Ctx.P.Next_State := S_Error;
@@ -91,7 +91,7 @@ is
          goto Finalize_Check_Message;
       end if;
       if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Message_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                Universal.Message.Set_Data (Message_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
             else
@@ -177,7 +177,7 @@ is
       begin
          Universal.Options.Switch (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
          if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
             else
                Ctx.P.Next_State := S_Error;
@@ -196,7 +196,7 @@ is
             goto Finalize_Check_Message_Sequence;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, 2);
             else
                Ctx.P.Next_State := S_Error;
@@ -215,7 +215,7 @@ is
             goto Finalize_Check_Message_Sequence;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Message_Sequence_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
                else

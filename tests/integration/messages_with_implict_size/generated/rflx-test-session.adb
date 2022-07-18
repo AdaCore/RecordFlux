@@ -49,7 +49,7 @@ is
       --  tests/integration/messages_with_implict_size/test.rflx:24:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.M_S_Ctx, Universal.MT_Unconstrained_Data);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -62,7 +62,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.M_S_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.M_S_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Valid_Next (Ctx.P.M_R_Ctx, Universal.Message.F_Data) then
                if Universal.Message.Valid_Length (Ctx.P.M_S_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.M_R_Ctx, Universal.Message.F_Data))) then
                   if Universal.Message.Structural_Valid (Ctx.P.M_R_Ctx, Universal.Message.F_Data) then

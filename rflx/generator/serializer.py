@@ -525,10 +525,7 @@ class SerializerGenerator:
                                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
-                                GreaterEqual(
-                                    Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
-                                    Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                                ),
+                                Call("Sufficient_Space", [Variable("Ctx"), Variable("Fld")]),
                                 If(
                                     [
                                         (

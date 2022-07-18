@@ -66,7 +66,7 @@ is
       --  tests/integration/session_case_expression_numeric/test.rflx:37:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
       if Test.Message.Valid_Next (Ctx.P.Message_Ctx, Test.Message.F_Value) then
-         if Test.Message.Available_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) >= Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Value) then
+         if Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) then
             Test.Message.Set_Value (Ctx.P.Message_Ctx, Value);
          else
             Ctx.P.Next_State := S_Terminated;

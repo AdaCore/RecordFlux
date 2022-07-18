@@ -77,7 +77,7 @@ is
       --  tests/integration/parameterized_messages/test.rflx:50:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
       if Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
-         if Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) >= Test.Message.Field_Size (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
+         if Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
             if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
                if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
                   if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
@@ -127,7 +127,7 @@ is
          goto Finalize_Process;
       end if;
       if Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Extension) then
-         if Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension) >= Test.Message.Field_Size (Ctx.P.M_S_Ctx, Test.Message.F_Extension) then
+         if Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension) then
             if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
             else

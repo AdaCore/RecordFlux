@@ -292,7 +292,7 @@ is
       --  tests/integration/session_comprehension_on_message_field/test.rflx:31:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Option_Types);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -305,7 +305,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
          else
             Ctx.P.Next_State := S_Terminated;
@@ -318,7 +318,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
             if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
                Universal.Message.Set_Option_Types (Ctx.P.Message_Ctx, Option_Types_Ctx);
             else
