@@ -61,7 +61,7 @@ is
       --  tests/integration/session_integration/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -74,7 +74,7 @@ is
          goto Finalize_Prepare_Message;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -87,7 +87,7 @@ is
          goto Finalize_Prepare_Message;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
                Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
             else
@@ -159,7 +159,7 @@ is
       --  tests/integration/session_integration/test.rflx:44:10
       Universal.Message.Reset (M_Ctx);
       if Universal.Message.Valid_Next (M_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (M_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (M_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -172,7 +172,7 @@ is
          goto Finalize_Next;
       end if;
       if Universal.Message.Valid_Next (M_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (M_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (M_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (M_Ctx, 1);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -185,7 +185,7 @@ is
          goto Finalize_Next;
       end if;
       if Universal.Message.Valid_Next (M_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Available_Space (M_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (M_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Valid_Length (M_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
                Universal.Message.Set_Data (M_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
             else

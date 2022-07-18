@@ -82,7 +82,7 @@ is
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -101,7 +101,7 @@ is
             goto Finalize_Process;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
                if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
                   Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
                else
@@ -129,7 +129,7 @@ is
             goto Finalize_Process;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
                   if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data))) then
                      if Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
@@ -200,7 +200,7 @@ is
       --  tests/integration/session_sequence_append/test.rflx:29:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Options);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -213,7 +213,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Options.Size (Options_Ctx) / 8));
          else
             Ctx.P.Next_State := S_Terminated;
@@ -226,7 +226,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
             if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
                Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
             else

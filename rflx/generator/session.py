@@ -3738,21 +3738,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         statements = self._ensure(
             statements,
-            GreaterEqual(
-                Call(
-                    message_type_id * "Available_Space",
-                    [
-                        Variable(message_context),
-                        Variable(message_type_id * f"F_{field}"),
-                    ],
-                ),
-                Call(
-                    message_type_id * "Field_Size",
-                    [
-                        Variable(message_context),
-                        Variable(message_type_id * f"F_{field}"),
-                    ],
-                ),
+            Call(
+                message_type_id * "Sufficient_Space",
+                [Variable(message_context), Variable(message_type_id * f"F_{field}")],
             ),
             f'insufficient space in message "{message_context}" to set field "{field}"'
             f' to "{value}"',

@@ -49,7 +49,7 @@ is
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -68,7 +68,7 @@ is
             goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -87,7 +87,7 @@ is
             goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
                else
@@ -132,7 +132,7 @@ is
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -168,7 +168,7 @@ is
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
                Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -187,7 +187,7 @@ is
             goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
                Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
             else
                Ctx.P.Next_State := S_Terminated;
@@ -206,7 +206,7 @@ is
             goto Finalize_Start;
          end if;
          if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) >= Universal.Option.Field_Size (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
+            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
                if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
                   Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
                else
@@ -482,7 +482,7 @@ is
       --  tests/integration/session_comprehension_on_sequence/test.rflx:38:10
       Universal.Message.Reset (Ctx.P.Message_1_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_1_Ctx, Universal.MT_Option_Types);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -495,7 +495,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
          else
             Ctx.P.Next_State := S_Terminated;
@@ -508,7 +508,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
-         if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) >= Universal.Message.Field_Size (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
             if Universal.Message.Valid_Length (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
                Universal.Message.Set_Option_Types (Ctx.P.Message_1_Ctx, Option_Types_Ctx);
             else
@@ -658,7 +658,7 @@ is
       --  tests/integration/session_comprehension_on_sequence/test.rflx:44:10
       Universal.Message.Reset (Ctx.P.Message_2_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_2_Ctx, Universal.MT_Options);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -671,7 +671,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
          else
             Ctx.P.Next_State := S_Terminated;
@@ -684,7 +684,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
-         if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) >= Universal.Message.Field_Size (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
             if Universal.Message.Valid_Length (Ctx.P.Message_2_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Message_Options_Ctx)) then
                Universal.Message.Set_Options (Ctx.P.Message_2_Ctx, Message_Options_Ctx);
             else

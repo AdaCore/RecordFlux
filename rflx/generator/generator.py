@@ -493,6 +493,9 @@ class Generator:
                 message_generator.create_available_space_function, self._prefix, message
             ),
             self._executor.submit(
+                message_generator.create_sufficient_space_function, self._prefix, message
+            ),
+            self._executor.submit(
                 message_generator.create_sufficient_buffer_length_function, self._prefix, message
             ),
             *(

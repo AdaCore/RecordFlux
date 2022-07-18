@@ -1670,15 +1670,9 @@ def create_field_last_function(
                                 prefix * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
-                            GreaterEqual(
-                                Call(
-                                    prefix * message.identifier * "Available_Space",
-                                    [Variable("Ctx"), Variable("Fld")],
-                                ),
-                                Call(
-                                    prefix * message.identifier * "Field_Size",
-                                    [Variable("Ctx"), Variable("Fld")],
-                                ),
+                            Call(
+                                prefix * message.identifier * "Sufficient_Space",
+                                [Variable("Ctx"), Variable("Fld")],
                             ),
                         )
                     ),
@@ -1822,15 +1816,9 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                                 prefix * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
-                            GreaterEqual(
-                                Call(
-                                    prefix * message.identifier * "Available_Space",
-                                    [Variable("Ctx"), Variable("Fld")],
-                                ),
-                                Call(
-                                    prefix * message.identifier * "Field_Size",
-                                    [Variable("Ctx"), Variable("Fld")],
-                                ),
+                            Call(
+                                prefix * message.identifier * "Sufficient_Space",
+                                [Variable("Ctx"), Variable("Fld")],
                             ),
                         )
                     ),
@@ -2290,6 +2278,39 @@ def create_available_space_function(prefix: str, message: Message) -> UnitPart:
                     Variable("Ctx.Last"),
                     -Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                     Number(1),
+                ),
+            )
+        ],
+    )
+
+
+def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
+    specification = FunctionSpecification(
+        "Sufficient_Space",
+        "Boolean",
+        [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
+    )
+
+    return UnitPart(
+        [
+            SubprogramDeclaration(
+                specification,
+                [
+                    Precondition(
+                        Call(
+                            prefix * message.identifier * "Valid_Next",
+                            [Variable("Ctx"), Variable("Fld")],
+                        )
+                    )
+                ],
+            )
+        ],
+        private=[
+            ExpressionFunctionDeclaration(
+                specification,
+                GreaterEqual(
+                    Call("Available_Space", [Variable("Ctx"), Variable("Fld")]),
+                    Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
                 ),
             )
         ],

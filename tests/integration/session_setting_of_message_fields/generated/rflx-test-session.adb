@@ -58,7 +58,7 @@ is
       pragma Assert (Process_Invariant);
       --  tests/integration/session_setting_of_message_fields/test.rflx:27:10
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -72,7 +72,7 @@ is
       end if;
       --  tests/integration/session_setting_of_message_fields/test.rflx:29:10
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -86,7 +86,7 @@ is
       end if;
       --  tests/integration/session_setting_of_message_fields/test.rflx:31:10
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
             if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
                Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
             else

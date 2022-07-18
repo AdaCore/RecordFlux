@@ -228,7 +228,7 @@ is
        and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and then Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-       and then Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld)
+       and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Structural_Valid (Ctx, Fld))
        and then (case Fld is
                     when F_X_A =>

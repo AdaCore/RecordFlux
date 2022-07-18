@@ -272,7 +272,7 @@ is
        and then RFLX.Universal.Message.Valid_Predecessor (Ctx, Fld)
        and then RFLX.Universal.Message.Valid_Value (Fld, Val)
        and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.Universal.Message.Available_Space (Ctx, Fld) >= RFLX.Universal.Message.Field_Size (Ctx, Fld),
+       and then RFLX.Universal.Message.Sufficient_Space (Ctx, Fld),
      Post =>
        True;
 
@@ -301,7 +301,7 @@ is
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
        RFLX.Universal.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.Universal.Message.Available_Space (Ctx, Fld) >= RFLX.Universal.Message.Field_Size (Ctx, Fld),
+       and then RFLX.Universal.Message.Sufficient_Space (Ctx, Fld),
      Post =>
        (case Fld is
            when F_Data | F_Option_Types | F_Options | F_Values =>
@@ -328,6 +328,10 @@ is
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+     Pre =>
+       RFLX.Universal.Message.Valid_Next (Ctx, Fld);
+
+   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Universal.Message.Valid_Next (Ctx, Fld);
 
@@ -1517,6 +1521,9 @@ private
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);
+
+   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean is
+     (Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld));
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
      (Structural_Valid (Ctx.Cursors (Fld))

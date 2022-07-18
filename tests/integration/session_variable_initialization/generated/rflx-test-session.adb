@@ -62,7 +62,7 @@ is
       --  tests/integration/session_variable_initialization/test.rflx:29:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
             Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
          else
             Ctx.P.Next_State := S_Terminated;
@@ -75,7 +75,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
             Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Value'Size / 8));
          else
             Ctx.P.Next_State := S_Terminated;
@@ -88,7 +88,7 @@ is
          goto Finalize_Process;
       end if;
       if Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-         if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) >= Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
+         if Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
             Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
          else
             Ctx.P.Next_State := S_Terminated;

@@ -49,7 +49,7 @@ is
       --  tests/integration/messages_with_single_opaque_field/test.rflx:27:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
       if Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
-         if Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) >= Test.Message.Field_Size (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
+         if Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
             if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
                if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
                   if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
