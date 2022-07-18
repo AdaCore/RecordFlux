@@ -961,10 +961,9 @@ class Message(AbstractMessage):
         Determine the size of the message based on the given field values.
 
         If field values are represented by variables, the returned size expression may contain
-        if-expressions to represent these dependencies.
-
-        Limitation: The returned size expression may not be optimal, as the possible message paths
-        are not reduced by the set of given field values.
+        if-expressions to represent these dependencies. Only message paths which contain all given
+        fields are considered. The evaluation of the returned size expression may result in a size
+        greater than zero, even if the field values do not lead to a valid message.
         """
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -1020,25 +1019,44 @@ class Message(AbstractMessage):
                     )
         facts: list[expr.Expr] = [*values, *aggregate_sizes, *composite_sizes]
         type_constraints = to_mapping(self._aggregate_constraints() + self._type_size_constraints())
-        definite_fields = set.intersection(
-            *[{l.target for l in path} for path in self.paths(FINAL)]
-        )
+        possible_paths = [
+            path
+            for path in sorted(self.paths(FINAL))
+            if not (
+                set(field_values)
+                - set(self.parameters)
+                - set(l.target for l in path if l.target != FINAL)
+            )
+        ]
+        definite_fields = set.intersection(*[{l.target for l in path} for path in possible_paths])
         optional_fields = set(self.fields) - definite_fields
         conditional_field_size = []
 
-        for f in self.fields:
+        for field in self.fields:
             overlay_condition: expr.Expr = expr.TRUE
 
-            if any(l.first != expr.UNDEFINED for l in self.outgoing(f)):
-                if all(l.first != expr.UNDEFINED for l in self.outgoing(f)):
+            if any(l.first != expr.UNDEFINED for l in self.outgoing(field)):
+                if all(l.first != expr.UNDEFINED for l in self.outgoing(field)):
                     continue
 
                 overlay_condition = expr.Or(
-                    *[l.condition for l in self.outgoing(f) if l.first == expr.UNDEFINED]
+                    *[l.condition for l in self.outgoing(field) if l.first == expr.UNDEFINED]
                 )
 
-            paths = sorted(self.paths(f))
-            for path in paths:
+            paths_to_field = sorted(
+                {
+                    path[
+                        : {f: i for i, f in enumerate(l.target for l in path if l.target != FINAL)}[
+                            field
+                        ]
+                        + 1
+                    ]
+                    for path in possible_paths
+                    if any(l.target == field for l in path)
+                }
+            )
+
+            for path in paths_to_field:
                 link_size_expressions = [
                     fact
                     for link in path
@@ -1057,7 +1075,7 @@ class Message(AbstractMessage):
                     .simplified()
                 )
                 field_size = (
-                    expr.Size(expr.Variable(f.name, type_=self.types[f].type_))
+                    expr.Size(expr.Variable(field.name, type_=self.types[field].type_))
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
                     .substituted(remove_variable_prefix)
@@ -1067,10 +1085,10 @@ class Message(AbstractMessage):
                 conditional_field_size.append(
                     (
                         expr.TRUE
-                        if len(paths) == 1
+                        if len(paths_to_field) == 1
                         and (
                             path_condition == expr.TRUE
-                            or (f not in optional_fields and overlay_condition == expr.TRUE)
+                            or (field not in optional_fields and overlay_condition == expr.TRUE)
                         )
                         else path_condition,
                         field_size,

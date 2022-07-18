@@ -2781,6 +2781,9 @@ def test_size() -> None:
             Field("Value"): Opaque("Msg_Data"),
         }
     ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
+    assert TLV_MESSAGE.size({Field("Tag"): Variable("X"), Field("Length"): Variable("Y")}) == Add(
+        Mul(Variable("Y"), Number(8)), Number(24)
+    )
 
     assert ETHERNET_FRAME.size(
         {
@@ -2911,6 +2914,44 @@ def test_size() -> None:
     assert optional_overlayed_field.size() == Add(
         IfExpr([(Equal(Variable("A"), Number(0)), Number(16))], Number(0)),
         IfExpr([(Greater(Variable("A"), Number(0)), Number(32))], Number(0)),
+    )
+
+    path_dependent_fields = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("A")),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Equal(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("A"),
+                Field("C"),
+                condition=Greater(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("B"),
+                FINAL,
+            ),
+            Link(
+                Field("C"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("A"): TLV_LENGTH,
+            Field("B"): TLV_LENGTH,
+            Field("C"): TLV_LENGTH,
+        },
+    )
+    assert path_dependent_fields.size({Field("A"): Variable("X"), Field("B"): Number(0)}) == Number(
+        32
+    )
+    assert path_dependent_fields.size({Field("A"): Variable("X")}) == Add(
+        IfExpr([(Equal(Variable("X"), Number(0)), Number(16))], Number(0)),
+        IfExpr([(Greater(Variable("X"), Number(0)), Number(16))], Number(0)),
+        Number(16),
     )
 
 
