@@ -56,39 +56,20 @@ is
       pragma Assert (Copy_Invariant);
       --  tests/integration/session_endianness/test.rflx:28:10
       Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx);
-      if Messages.Msg_LE.Valid_Next (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) then
-         if Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) then
-            if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
-               Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Copy_Invariant);
-               goto Finalize_Copy;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Copy_Invariant);
-            goto Finalize_Copy;
-         end if;
+      if Messages.Msg_LE.Available_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) < 64 then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
+      if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
+         Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
-      if Messages.Msg_LE.Valid_Next (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_D) then
-         if Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_D) then
-            if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
-               Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Copy_Invariant);
-               goto Finalize_Copy;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Copy_Invariant);
-            goto Finalize_Copy;
-         end if;
+      if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
+         Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Copy_Invariant);
@@ -167,39 +148,20 @@ is
       pragma Assert (Copy2_Invariant);
       --  tests/integration/session_endianness/test.rflx:53:10
       Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx);
-      if Messages.Msg.Valid_Next (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) then
-         if Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) then
-            if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
-               Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Copy2_Invariant);
-               goto Finalize_Copy2;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Copy2_Invariant);
-            goto Finalize_Copy2;
-         end if;
+      if Messages.Msg.Available_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) < 64 then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
+      if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
+         Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
-      if Messages.Msg.Valid_Next (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_B) then
-         if Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_B) then
-            if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_D) then
-               Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Copy2_Invariant);
-               goto Finalize_Copy2;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Copy2_Invariant);
-            goto Finalize_Copy2;
-         end if;
+      if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_D) then
+         Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Copy2_Invariant);

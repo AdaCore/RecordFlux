@@ -64,46 +64,18 @@ is
       pragma Assert (Check_Message_Invariant);
       --  tests/integration/session_functions_opaque/test.rflx:27:10
       Universal.Message.Reset (Message_Ctx);
-      if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Message_Type) then
-            Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
-         else
-            Ctx.P.Next_State := S_Error;
-            pragma Assert (Check_Message_Invariant);
-            goto Finalize_Check_Message;
-         end if;
-      else
+      if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Message_Type) < 40 then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
-      if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Length) then
-            Universal.Message.Set_Length (Message_Ctx, 2);
-         else
-            Ctx.P.Next_State := S_Error;
-            pragma Assert (Check_Message_Invariant);
-            goto Finalize_Check_Message;
-         end if;
-      else
-         Ctx.P.Next_State := S_Error;
-         pragma Assert (Check_Message_Invariant);
-         goto Finalize_Check_Message;
-      end if;
-      if Universal.Message.Valid_Next (Message_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Data) then
-            if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-               Universal.Message.Set_Data (Message_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-            else
-               Ctx.P.Next_State := S_Error;
-               pragma Assert (Check_Message_Invariant);
-               goto Finalize_Check_Message;
-            end if;
-         else
-            Ctx.P.Next_State := S_Error;
-            pragma Assert (Check_Message_Invariant);
-            goto Finalize_Check_Message;
-         end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Message_Type));
+      Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
+      pragma Assert (Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Length));
+      Universal.Message.Set_Length (Message_Ctx, 2);
+      if Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+         pragma Assert (Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Data));
+         Universal.Message.Set_Data (Message_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
       else
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Invariant);
@@ -176,18 +148,7 @@ is
          RFLX_Element_Message_Sequence_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-         if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) then
-               Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
-            else
-               Ctx.P.Next_State := S_Error;
-               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Check_Message_Sequence_Invariant);
-               goto Finalize_Check_Message_Sequence;
-            end if;
-         else
+         if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) < 40 then
             Ctx.P.Next_State := S_Error;
             pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
@@ -195,45 +156,13 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
-               Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, 2);
-            else
-               Ctx.P.Next_State := S_Error;
-               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Check_Message_Sequence_Invariant);
-               goto Finalize_Check_Message_Sequence;
-            end if;
-         else
-            Ctx.P.Next_State := S_Error;
-            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Check_Message_Sequence_Invariant);
-            goto Finalize_Check_Message_Sequence;
-         end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data) then
-               if Universal.Option.Valid_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-                  Universal.Option.Set_Data (RFLX_Element_Message_Sequence_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-               else
-                  Ctx.P.Next_State := S_Error;
-                  pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-                  Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-                  pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-                  pragma Assert (Check_Message_Sequence_Invariant);
-                  goto Finalize_Check_Message_Sequence;
-               end if;
-            else
-               Ctx.P.Next_State := S_Error;
-               pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-               pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Check_Message_Sequence_Invariant);
-               goto Finalize_Check_Message_Sequence;
-            end if;
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type));
+         Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length));
+         Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, 2);
+         if Universal.Option.Valid_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+            pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data));
+            Universal.Option.Set_Data (RFLX_Element_Message_Sequence_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          else
             Ctx.P.Next_State := S_Error;
             pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");

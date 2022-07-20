@@ -40,6 +40,9 @@ class Expr(Base):
             self._update_str()
             return self._str
 
+    def __hash__(self) -> int:
+        return hash(self.__class__.__name__)
+
     def __neg__(self) -> "Expr":
         raise NotImplementedError
 

@@ -48,18 +48,7 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
-         else
+         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 32 then
             Ctx.P.Next_State := S_Terminated;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
@@ -67,45 +56,13 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-               Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Start_Invariant);
-            goto Finalize_Start;
-         end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-               if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-                  Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-                  pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  pragma Assert (Start_Invariant);
-                  goto Finalize_Start;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
+         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));
+         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
+         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+            pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data));
+            Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -131,18 +88,7 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
-         else
+         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 8 then
             Ctx.P.Next_State := S_Terminated;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
@@ -150,6 +96,8 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
+         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -167,18 +115,7 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
-               Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
-         else
+         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 40 then
             Ctx.P.Next_State := S_Terminated;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
@@ -186,45 +123,13 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
-               Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Start_Invariant);
-            goto Finalize_Start;
-         end if;
-         if Universal.Option.Valid_Next (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data) then
-               if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-                  Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-                  pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  pragma Assert (Start_Invariant);
-                  goto Finalize_Start;
-               end if;
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Start_Invariant);
-               goto Finalize_Start;
-            end if;
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
+         Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));
+         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
+         if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+            pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data));
+            Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
          else
             Ctx.P.Next_State := S_Terminated;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -481,46 +386,26 @@ is
       end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:38:10
       Universal.Message.Reset (Ctx.P.Message_1_Ctx);
-      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) then
-            Universal.Message.Set_Message_Type (Ctx.P.Message_1_Ctx, Universal.MT_Option_Types);
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-      else
+      if
+         not (Universal.Option_Types.Size (Option_Types_Ctx) <= 64768
+          and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0)
+      then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length) then
-            Universal.Message.Set_Length (Ctx.P.Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-      else
+      if Universal.Message.Available_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type) < Universal.Option_Types.Size (Option_Types_Ctx) + 24 then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types) then
-            if Universal.Message.Valid_Length (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
-               Universal.Message.Set_Option_Types (Ctx.P.Message_1_Ctx, Option_Types_Ctx);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Message_Type));
+      Universal.Message.Set_Message_Type (Ctx.P.Message_1_Ctx, Universal.MT_Option_Types);
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Length));
+      Universal.Message.Set_Length (Ctx.P.Message_1_Ctx, Universal.Length (Universal.Option_Types.Size (Option_Types_Ctx) / 8));
+      if Universal.Message.Valid_Length (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
+         pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_1_Ctx, Universal.Message.F_Option_Types));
+         Universal.Message.Set_Option_Types (Ctx.P.Message_1_Ctx, Option_Types_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
@@ -657,46 +542,26 @@ is
       end if;
       --  tests/integration/session_comprehension_on_sequence/test.rflx:44:10
       Universal.Message.Reset (Ctx.P.Message_2_Ctx);
-      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) then
-            Universal.Message.Set_Message_Type (Ctx.P.Message_2_Ctx, Universal.MT_Options);
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-      else
+      if
+         not (Universal.Options.Size (Message_Options_Ctx) <= 32768
+          and then Universal.Options.Size (Message_Options_Ctx) mod RFLX_Types.Byte'Size = 0)
+      then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length) then
-            Universal.Message.Set_Length (Ctx.P.Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-      else
+      if Universal.Message.Available_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type) < Universal.Options.Size (Message_Options_Ctx) + 24 then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Universal.Message.Valid_Next (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
-         if Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options) then
-            if Universal.Message.Valid_Length (Ctx.P.Message_2_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Message_Options_Ctx)) then
-               Universal.Message.Set_Options (Ctx.P.Message_2_Ctx, Message_Options_Ctx);
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-         else
-            Ctx.P.Next_State := S_Terminated;
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Message_Type));
+      Universal.Message.Set_Message_Type (Ctx.P.Message_2_Ctx, Universal.MT_Options);
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Length));
+      Universal.Message.Set_Length (Ctx.P.Message_2_Ctx, Universal.Length (Universal.Options.Size (Message_Options_Ctx) / 8));
+      if Universal.Message.Valid_Length (Ctx.P.Message_2_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Message_Options_Ctx)) then
+         pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_2_Ctx, Universal.Message.F_Options));
+         Universal.Message.Set_Options (Ctx.P.Message_2_Ctx, Message_Options_Ctx);
       else
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);

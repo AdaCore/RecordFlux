@@ -1039,7 +1039,7 @@ class UnknownStatement(stmt.Statement):
                         ),
                     ),
                     {
-                        "A": expr.Variable(
+                        "A": expr.Literal(
                             "Universal::MT_Data",
                             type_=rty.Enumeration(
                                 "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1049,7 +1049,7 @@ class UnknownStatement(stmt.Statement):
                         "C": expr.MessageAggregate(
                             "Universal::Option",
                             {
-                                "Option_Type": expr.Variable(
+                                "Option_Type": expr.Literal(
                                     "Universal::OT_Null",
                                     type_=rty.Enumeration(
                                         "Universal::Option_Type", [ID("Universal::OT_Null")]
@@ -1090,85 +1090,44 @@ begin
          pragma Warnings (On, "unused assignment");
          Universal.Option.Initialize (C_Ctx, C_Buffer);
          Universal.Option.Reset (C_Ctx);
-         if Universal.Option.Valid_Next (C_Ctx, Universal.Option.F_Option_Type) then
-            if Universal.Option.Sufficient_Space (C_Ctx, Universal.Option.F_Option_Type) then
-               Universal.Option.Set_Option_Type (C_Ctx, Universal.OT_Null);
-            else
-               Ada.Text_IO.Put_Line ("Error: insufficient space in message ""C_Ctx"" to set field ""Option_Type"" to ""Universal::OT_Null""\");
-               Ctx.P.Next_State := S_E;
-               pragma Finalization;
-               goto Finalize_S;
-            end if;
-         else
-            Ada.Text_IO.Put_Line ("Error: trying to set message field ""Option_Type"" to ""Universal::OT_Null"" although ""Option_Type"" is not valid next field");
+         if Universal.Option.Available_Space (C_Ctx, Universal.Option.F_Option_Type) < 8 then
+            Ada.Text_IO.Put_Line ("Error: insufficient space in ""C_Ctx"" for creating message");
             Ctx.P.Next_State := S_E;
             pragma Finalization;
             goto Finalize_S;
          end if;
+         pragma Assert (Universal.Option.Sufficient_Space (C_Ctx, Universal.Option.F_Option_Type));
+         Universal.Option.Set_Option_Type (C_Ctx, Universal.OT_Null);
          Universal.Message.Reset (X_Ctx);
-         if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Message_Type) then
-            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type) then
-               Universal.Message.Set_Message_Type (X_Ctx, A);
-            else
-               Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""A""\");
-               Ctx.P.Next_State := S_E;
-               pragma Finalization;
-               goto Finalize_S;
-            end if;
-         else
-            Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""A"" although ""Message_Type"" is not valid next field");
+         if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) < RFLX_Types.Bit_Length (B) * 8 + 24 then
+            Ada.Text_IO.Put_Line ("Error: insufficient space in ""X_Ctx"" for creating message");
             Ctx.P.Next_State := S_E;
             pragma Finalization;
             goto Finalize_S;
          end if;
-         if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Length) then
-            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
-               Universal.Message.Set_Length (X_Ctx, B);
-            else
-               Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""B""\");
-               Ctx.P.Next_State := S_E;
-               pragma Finalization;
-               goto Finalize_S;
-            end if;
+         pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));
+         Universal.Message.Set_Message_Type (X_Ctx, A);
+         pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
+         Universal.Message.Set_Length (X_Ctx, B);
+         if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Option.Size (C_Ctx))) then
+            declare
+               function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                 (Universal.Option.Has_Buffer (C_Ctx)
+                  and then Universal.Option.Structural_Valid_Message (C_Ctx)
+                  and then Length = Universal.Option.Byte_Size (C_Ctx));
+               procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                 Pre =>
+                   RFLX_Process_Data_Pre (Data'Length)
+               is
+               begin
+                  Universal.Option.Data (C_Ctx, Data);
+               end RFLX_Process_Data;
+               procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+            begin
+               RFLX_Universal_Message_Set_Data (X_Ctx, Universal.Option.Byte_Size (C_Ctx));
+            end;
          else
-            Ada.Text_IO.Put_Line ("Error: trying to set message field ""Length"" to ""B"" although ""Length"" is not valid next field");
-            Ctx.P.Next_State := S_E;
-            pragma Finalization;
-            goto Finalize_S;
-         end if;
-         if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Data) then
-            if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Data) then
-               if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Option.Size (C_Ctx))) then
-                  declare
-                     function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                       (Universal.Option.Has_Buffer (C_Ctx)
-                        and then Universal.Option.Structural_Valid_Message (C_Ctx)
-                        and then Length = Universal.Option.Byte_Size (C_Ctx));
-                     procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-                       Pre =>
-                         RFLX_Process_Data_Pre (Data'Length)
-                     is
-                     begin
-                        Universal.Option.Data (C_Ctx, Data);
-                     end RFLX_Process_Data;
-                     procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-                  begin
-                     RFLX_Universal_Message_Set_Data (X_Ctx, Universal.Option.Byte_Size (C_Ctx));
-                  end;
-               else
-                  Ada.Text_IO.Put_Line ("Error: invalid message field size for ""C'Opaque""\");
-                  Ctx.P.Next_State := S_E;
-                  pragma Finalization;
-                  goto Finalize_S;
-               end if;
-            else
-               Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Data"" to ""C'Opaque""\");
-               Ctx.P.Next_State := S_E;
-               pragma Finalization;
-               goto Finalize_S;
-            end if;
-         else
-            Ada.Text_IO.Put_Line ("Error: trying to set message field ""Data"" to ""C'Opaque"" although ""Data"" is not valid next field");
+            Ada.Text_IO.Put_Line ("Error: invalid message field size for ""C'Opaque""\");
             Ctx.P.Next_State := S_E;
             pragma Finalization;
             goto Finalize_S;
@@ -1213,7 +1172,7 @@ end;\
                         ],
                     ),
                     {
-                        "A": expr.Variable(
+                        "A": expr.Literal(
                             "Universal::MT_Data",
                             type_=rty.Enumeration(
                                 "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1299,7 +1258,7 @@ end;\
                         "A": expr.MessageAggregate(
                             "Universal::Message",
                             {
-                                "Message_Type": expr.Variable(
+                                "Message_Type": expr.Literal(
                                     "Universal::MT_Data",
                                     type_=rty.Enumeration(
                                         "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1336,54 +1295,21 @@ begin
    pragma Warnings (On, "unused assignment");
    Universal.Message.Initialize (A_Ctx, A_Buffer);
    Universal.Message.Reset (A_Ctx);
-   if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Message_Type) then
-      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type) then
-         Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Data);
-      else
-         Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""Universal::MT_Data"" although ""Message_Type"" is not valid next field");
+   if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Message_Type) < 40 then
+      Ada.Text_IO.Put_Line ("Error: insufficient space in ""A_Ctx"" for creating message");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
       goto Finalize_S;
    end if;
-   if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Length) then
-      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Length) then
-         Universal.Message.Set_Length (A_Ctx, Universal.Length (2));
-      else
-         Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Length"" to ""2""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
+   pragma Assert (Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type));
+   Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Data);
+   pragma Assert (Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Length));
+   Universal.Message.Set_Length (A_Ctx, Universal.Length (2));
+   if Universal.Message.Valid_Length (A_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+      pragma Assert (Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Data));
+      Universal.Message.Set_Data (A_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
    else
-      Ada.Text_IO.Put_Line ("Error: trying to set message field ""Length"" to ""2"" although ""Length"" is not valid next field");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-   if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Data) then
-      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Data) then
-         if Universal.Message.Valid_Length (A_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-            Universal.Message.Set_Data (A_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-         else
-            Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[3, 4]""\");
-            Ctx.P.Next_State := S_E;
-            pragma Finalization;
-            goto Finalize_S;
-         end if;
-      else
-         Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Data"" to ""[3, 4]""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: trying to set message field ""Data"" to ""[3, 4]"" although ""Data"" is not valid next field");
+      Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[3, 4]""\");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
       goto Finalize_S;
@@ -1430,7 +1356,7 @@ end;\
                         "A": expr.MessageAggregate(
                             "Universal::Message",
                             {
-                                "Message_Type": expr.Variable(
+                                "Message_Type": expr.Literal(
                                     "Universal::MT_Null",
                                     type_=rty.Enumeration(
                                         "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1463,21 +1389,14 @@ begin
    pragma Warnings (On, "unused assignment");
    Universal.Message.Initialize (A_Ctx, A_Buffer);
    Universal.Message.Reset (A_Ctx);
-   if Universal.Message.Valid_Next (A_Ctx, Universal.Message.F_Message_Type) then
-      if Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type) then
-         Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Null);
-      else
-         Ada.Text_IO.Put_Line ("Error: insufficient space in message ""A_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Null""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""Universal::MT_Null"" although ""Message_Type"" is not valid next field");
+   if Universal.Message.Available_Space (A_Ctx, Universal.Message.F_Message_Type) < 8 then
+      Ada.Text_IO.Put_Line ("Error: insufficient space in ""A_Ctx"" for creating message");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
       goto Finalize_S;
    end if;
+   pragma Assert (Universal.Message.Sufficient_Space (A_Ctx, Universal.Message.F_Message_Type));
+   Universal.Message.Set_Message_Type (A_Ctx, Universal.MT_Null);
    if Universal.Message.Valid (A_Ctx, Universal.Message.F_Message_Type) then
       X := Universal.Message.Get_Message_Type (A_Ctx);
    else
@@ -1577,7 +1496,7 @@ end;\
                 expr.MessageAggregate(
                     "Universal::Message",
                     {
-                        "Message_Type": expr.Variable(
+                        "Message_Type": expr.Literal(
                             "Universal::MT_Data",
                             type_=rty.Enumeration(
                                 "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1603,54 +1522,20 @@ end;\
             + """\
 --  <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
-if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Message_Type) then
-   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type) then
-      Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
-   else
-      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""\");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-else
-   Ada.Text_IO.Put_Line ("Error: trying to set message field ""Message_Type"" to ""Universal::MT_Data"" although ""Message_Type"" is not valid next field");
+if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) < 24 then
+   Ada.Text_IO.Put_Line ("Error: insufficient space in ""X_Ctx"" for creating message");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
 end if;
-if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Length) then
-   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
-      Universal.Message.Set_Length (X_Ctx, Universal.Length (0));
-   else
-      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""0""\");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
+pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));
+Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
+pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
+Universal.Message.Set_Length (X_Ctx, Universal.Length (0));
+if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
+   Universal.Message.Set_Data_Empty (X_Ctx);
 else
-   Ada.Text_IO.Put_Line ("Error: trying to set message field ""Length"" to ""0"" although ""Length"" is not valid next field");
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;
-if Universal.Message.Valid_Next (X_Ctx, Universal.Message.F_Data) then
-   if Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Data) then
-      if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
-         Universal.Message.Set_Data_Empty (X_Ctx);
-      else
-         Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
-      Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Data"" to ""[]""\");
-      Ctx.P.Next_State := S_E;
-      pragma Finalization;
-      goto Finalize_S;
-   end if;
-else
-   Ada.Text_IO.Put_Line ("Error: trying to set message field ""Data"" to ""[]"" although ""Data"" is not valid next field");
+   Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
@@ -1806,7 +1691,7 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
                 expr.MessageAggregate(
                     "Universal::Message",
                     {
-                        "Message_Type": expr.Variable(
+                        "Message_Type": expr.Literal(
                             "Universal::MT_Data",
                             type_=rty.Enumeration(
                                 "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1937,7 +1822,7 @@ def test_session_state_action_error(
             expr.MessageAggregate(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Variable(
+                    "Message_Type": expr.Literal(
                         "Universal::MT_Data",
                         type_=rty.Enumeration(
                             "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -1968,7 +1853,7 @@ def test_session_state_action_error(
             expr.MessageAggregate(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Variable(
+                    "Message_Type": expr.Literal(
                         "Universal::MT_Data",
                         type_=rty.Enumeration(
                             "Universal::Message_Type", [ID("Universal::MT_Data")]
@@ -2007,7 +1892,7 @@ def test_session_state_action_error(
             expr.MessageAggregate(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Variable(
+                    "Message_Type": expr.Literal(
                         "Universal::MT_Data",
                         type_=rty.Enumeration(
                             "Universal::Message_Type", [ID("Universal::MT_Data")]

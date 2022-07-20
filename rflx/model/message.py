@@ -1922,7 +1922,7 @@ class Message(AbstractMessage):
             assert expression.identifier not in {
                 *self._qualified_enum_literals,
                 *self._type_literals,
-            }
+            }, f'variable "{expression.identifier}" has the same name as a literal'
             if expression.name.lower() == "message":
                 expression.type_ = rty.OPAQUE
             elif Field(expression.identifier) in types:
