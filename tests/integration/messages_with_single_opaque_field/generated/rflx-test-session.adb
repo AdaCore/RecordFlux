@@ -48,41 +48,43 @@ is
       pragma Assert (Process_Invariant);
       --  tests/integration/messages_with_single_opaque_field/test.rflx:27:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
-      if Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
-         if Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) then
-            if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
-               if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
-                  if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
-                     declare
-                        pragma Warnings (Off, "is not modified, could be declared constant");
-                        RFLX_Ctx_P_M_R_Ctx_Tmp : Test.Message.Context := Ctx.P.M_R_Ctx;
-                        pragma Warnings (On, "is not modified, could be declared constant");
-                        function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                          (Test.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
-                           and then Test.Message.Structural_Valid (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)
-                           and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-                        procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-                          Pre =>
-                            RFLX_Process_Data_Pre (Data'Length)
-                        is
-                        begin
-                           Test.Message.Get_Data (RFLX_Ctx_P_M_R_Ctx_Tmp, Data);
-                        end RFLX_Process_Data;
-                        procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-                     begin
-                        RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-                        Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
-                     end;
-                  else
-                     Ctx.P.Next_State := S_Terminated;
-                     pragma Assert (Process_Invariant);
-                     goto Finalize_Process;
-                  end if;
-               else
-                  Ctx.P.Next_State := S_Terminated;
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
+      if
+         not (Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
+          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
+          and then Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data))
+      then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) < Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
+            if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+               declare
+                  pragma Warnings (Off, "is not modified, could be declared constant");
+                  RFLX_Ctx_P_M_R_Ctx_Tmp : Test.Message.Context := Ctx.P.M_R_Ctx;
+                  pragma Warnings (On, "is not modified, could be declared constant");
+                  function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                    (Test.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
+                     and then Test.Message.Structural_Valid (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)
+                     and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                  procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                    Pre =>
+                      RFLX_Process_Data_Pre (Data'Length)
+                  is
+                  begin
+                     Test.Message.Get_Data (RFLX_Ctx_P_M_R_Ctx_Tmp, Data);
+                  end RFLX_Process_Data;
+                  procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+               begin
+                  RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                  Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+               end;
             else
                Ctx.P.Next_State := S_Terminated;
                pragma Assert (Process_Invariant);

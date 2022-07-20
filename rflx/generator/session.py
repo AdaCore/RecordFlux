@@ -84,6 +84,7 @@ from rflx.ada import (
     While,
     WithClause,
 )
+from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Location, Subsystem, fail, fatal_fail
 from rflx.identifier import ID
@@ -2143,7 +2144,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> Sequence[Statement]:
         if isinstance(expression, expr.MessageAggregate):
             return self._assign_to_message_aggregate(
-                target, expression, exception_handler, is_global
+                target, expression, exception_handler, is_global, state
             )
 
         if isinstance(target_type, rty.Message):
@@ -2375,6 +2376,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
@@ -2404,7 +2406,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 },
             ),
             *self._set_message_fields(
-                target_context, message_aggregate, exception_handler, is_global
+                target_context, message_aggregate, exception_handler, is_global, state
             ),
         ]
 
@@ -3063,14 +3065,47 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         assert isinstance(message_type, rty.Message)
-        return self._set_message_field(
-            context_id(target, is_global),
-            target_field,
-            message_type,
-            value,
-            exception_handler,
-            is_global,
-        )
+
+        target_context = context_id(target, is_global)
+
+        return [
+            self._raise_exception_if(
+                Not(
+                    Call(
+                        message_type.identifier * "Valid_Next",
+                        [
+                            Variable(target_context),
+                            Variable(message_type.identifier * f"F_{target_field}"),
+                        ],
+                    )
+                ),
+                f'trying to set message field "{target_field}" to "{value}" although'
+                f' "{target_field}" is not valid next field',
+                exception_handler,
+            ),
+            self._raise_exception_if(
+                Not(
+                    Call(
+                        message_type.identifier * "Sufficient_Space",
+                        [
+                            Variable(target_context),
+                            Variable(message_type.identifier * f"F_{target_field}"),
+                        ],
+                    )
+                ),
+                f'insufficient space in message "{target_context}" to set field "{target_field}"'
+                f' to "{value}"',
+                exception_handler,
+            ),
+            *self._set_message_field(
+                target_context,
+                target_field,
+                message_type,
+                value,
+                exception_handler,
+                is_global,
+            ),
+        ]
 
     def _append(
         self,
@@ -3183,6 +3218,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 append.parameters[0],
                                 local_exception_handler,
                                 is_global,
+                                state,
                             )
                             if isinstance(append.parameters[0], expr.MessageAggregate)
                             else []
@@ -3260,20 +3296,33 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             .substituted(self._substitution(is_global))
             .ada_expr()
         )
-        # https://github.com/Componolit/RecordFlux/issues/691
-        # Validity of fields accessed in `size` must be checked before access.
         precondition = [
-            e
-            for v in size.variables()
-            if isinstance(v.type_, (rty.Message, rty.Sequence))
-            for s in [expr.Size(v).substituted(self._substitution(is_global)).ada_expr()]
-            for e in [
-                LessEqual(
-                    s,
-                    Number(self._allocator.get_size(v.identifier, state) * 8),
-                ),
-                Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
-            ]
+            *unique(
+                e
+                for v in size.variables()
+                if isinstance(v.type_, (rty.Message, rty.Sequence))
+                for s in [expr.Size(v).substituted(self._substitution(is_global)).ada_expr()]
+                for e in [
+                    LessEqual(
+                        s,
+                        Number(self._allocator.get_size(v.identifier, state) * 8),
+                    ),
+                    Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
+                ]
+            ),
+            *unique(
+                Call(
+                    s.prefix.type_.identifier * "Structural_Valid",
+                    [
+                        Variable(context_id(s.prefix.identifier, is_global)),
+                        Variable(s.prefix.type_.identifier * model.Field(s.selector).affixed_name),
+                    ],
+                )
+                for s in size.findall(lambda x: isinstance(x, expr.Selected))
+                if isinstance(s, expr.Selected)
+                and isinstance(s.prefix, expr.Variable)
+                and isinstance(s.prefix.type_, rty.Message)
+            ),
         ]
         return (required_space, AndThen(*precondition) if precondition else None)
 
@@ -3688,11 +3737,46 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-    ) -> Sequence[Statement]:
+        state: ID,
+    ) -> list[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
         message_type = message_aggregate.type_
-        statements = []
+        size = self._message_size(message_aggregate)
+        required_space, required_space_precondition = self._required_space(size, is_global, state)
+
+        statements: list[Statement] = [
+            *(
+                [
+                    self._raise_exception_if(
+                        Not(required_space_precondition),
+                        "violated precondition for calculating required space of message for"
+                        f' "{target_context}" (one of the message arguments is invalid or has a too'
+                        " small buffer)",
+                        exception_handler,
+                    )
+                ]
+                if required_space_precondition
+                else []
+            ),
+            self._raise_exception_if(
+                Less(
+                    Call(
+                        message_type.identifier * "Available_Space",
+                        [
+                            Variable(target_context),
+                            Variable(
+                                message_type.identifier
+                                * model.Field(next(iter(message_type.field_types))).affixed_name
+                            ),
+                        ],
+                    ),
+                    required_space,
+                ),
+                f'insufficient space in "{target_context}" for creating message',
+                exception_handler,
+            ),
+        ]
 
         for f, v in message_aggregate.field_values.items():
             if f not in message_type.field_types:
@@ -3721,31 +3805,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         field_type = message_type.field_types[field]
         statements: list[Statement] = []
         result = statements
-
-        statements = self._ensure(
-            statements,
-            Call(
-                message_type_id * "Valid_Next",
-                [
-                    Variable(message_context),
-                    Variable(message_type_id * f"F_{field}"),
-                ],
-            ),
-            f'trying to set message field "{field}" to "{value}" although "{field}" is not valid'
-            " next field",
-            exception_handler,
-        )
-
-        statements = self._ensure(
-            statements,
-            Call(
-                message_type_id * "Sufficient_Space",
-                [Variable(message_context), Variable(message_type_id * f"F_{field}")],
-            ),
-            f'insufficient space in message "{message_context}" to set field "{field}"'
-            f' to "{value}"',
-            exception_handler,
-        )
 
         if isinstance(field_type, rty.Sequence):
             size: Expr
@@ -3816,6 +3875,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     exception_handler,
                 )
 
+        assert_sufficient_space = PragmaStatement(
+            "Assert",
+            [
+                Call(
+                    message_type_id * "Sufficient_Space",
+                    [
+                        Variable(message_context),
+                        Variable(message_type_id * model.Field(field).affixed_name),
+                    ],
+                )
+            ],
+        )
+
         if isinstance(value, (expr.Number, expr.Aggregate, expr.CaseExpr)) or (
             isinstance(
                 value,
@@ -3833,19 +3905,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 value = self._convert_type(value, field_type).substituted(
                     self._substitution(is_global)
                 )
-                statements.append(
-                    CallStatement(
-                        message_type_id * f"Set_{field}",
-                        [
-                            Variable(message_context),
-                            value.ada_expr(),
-                        ],
-                    )
+                statements.extend(
+                    [
+                        assert_sufficient_space,
+                        CallStatement(
+                            message_type_id * f"Set_{field}",
+                            [
+                                Variable(message_context),
+                                value.ada_expr(),
+                            ],
+                        ),
+                    ]
                 )
         elif isinstance(value, expr.Variable) and isinstance(value.type_, rty.Sequence):
             sequence_context = context_id(value.identifier, is_global)
             statements.extend(
                 [
+                    assert_sufficient_space,
                     CallStatement(
                         message_type_id * f"Set_{field}",
                         [Variable(message_context), Variable(sequence_context)],
