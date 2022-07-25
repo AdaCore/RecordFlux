@@ -35,7 +35,9 @@ def check_code_blocks() -> bool:  # pylint: disable=too-many-branches
     code_blocks = []
     state = State.OUTSIDE
 
-    for p in [Path("README.md")] + list(Path("doc").rglob("*.adoc")):
+    # reStructuredText is not yet supported
+    # https://github.com/Componolit/RecordFlux/issues/880
+    for p in Path("doc").rglob("*.rst"):
         is_markdown = p.suffix == ".md"
         if is_markdown:
             prefix = "```"
