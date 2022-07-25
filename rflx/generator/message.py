@@ -695,7 +695,7 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
             ),
-            SubprogramDeclaration(specification, [Ghost(), Postcondition(TRUE)]),
+            SubprogramDeclaration(specification, [Postcondition(TRUE)]),
             Pragma(
                 "Warnings",
                 [Variable("On"), String("postcondition does not mention function result")],

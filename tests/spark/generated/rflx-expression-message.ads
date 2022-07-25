@@ -113,7 +113,6 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Initialized (Ctx : Context) return Boolean with
-     Ghost,
      Post =>
        True;
 

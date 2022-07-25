@@ -35,7 +35,7 @@ jobs:
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
       with:
-        version: "23.0w-20220508"
+        version: "23.0w-20220723"
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
@@ -77,7 +77,7 @@ jobs:
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
       with:
-        version: "23.0w-20220508"
+        version: "23.0w-20220723"
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
