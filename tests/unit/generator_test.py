@@ -1907,6 +1907,7 @@ def test_session_state_action_error(
                             ),
                             location=Location((10, 20)),
                         ),
+                        type_=rty.Message("Universal::Option"),
                     ),
                 },
                 type_=rty.Message(
@@ -1932,6 +1933,7 @@ def test_session_state_action_error(
                     type_=rty.Sequence("B", rty.Integer("A", rty.Bounds(1, 100))),
                     location=Location((10, 20)),
                 ),
+                type_=rty.Integer("A", rty.Bounds(1, 100)),
             ),
             RecordFluxError,
             r'Call with sequence type "B" with element integer type "A" \(1 .. 100\)'

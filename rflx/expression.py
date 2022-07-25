@@ -1327,21 +1327,24 @@ class HasData(Attribute):
 
 
 class Head(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+    def __init__(
+        self, prefix: Union[StrID, Expr], negative: bool = False, type_: rty.Type = rty.Undefined()
+    ):
         super().__init__(prefix, negative)
+        self.type_ = type_
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        error = self.prefix.check_type_instance(rty.Composite)
         self.type_ = (
             self.prefix.type_.element
             if isinstance(self.prefix.type_, (rty.Aggregate, rty.Sequence))
             else rty.Any()
         )
-
-    def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.prefix.check_type_instance(rty.Composite)
-        if not isinstance(self.prefix, (Variable, Selected)):
+        if not isinstance(self.prefix, (Variable, Selected, Comprehension)):
             error.extend(
                 [
                     (
-                        "prefix of attribute Head must be a name",
+                        "prefix of attribute Head must be a name or comprehension",
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.prefix.location,
