@@ -35,7 +35,7 @@ Generator:
 - Function for getting current state of session (#796)
 - Support for `No_Secondary_Stack` restriction (#911)
 - Possibility for externally defined debug output function in generated code (#1052)
-- Compatibility of generated code to FSF GNAT 11 and GNAT Pro 23 (#674, #905, #1015)
+- Compatibility of generated code to FSF GNAT 11 and GNAT Pro 23 (#674, #905, #1015, #1116)
 - Backward compatibility of generated code to GNAT Community 2020 and GNAT Pro 20 (#896)
 
 Dependencies:

@@ -158,8 +158,8 @@ jobs:
           - target: "python_optimized"
             python-version: 3.7
     env:
-      gnat-version: "23.0w-20220508"
-      GNAT: "pro23.0w-20220508"
+      gnat-version: "23.0w-20220723"
+      GNAT: "pro23.0w-20220723"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
@@ -264,7 +264,7 @@ jobs:
           - gnat-distrib: "pro"
             gnat-version: "22.0"
           - gnat-distrib: "pro"
-            gnat-version: "23.0w-20220508"
+            gnat-version: "23.0w-20220723"
           - gnat-distrib: "fsf"
     env:
       python-version: 3.7
@@ -357,8 +357,8 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       python-version: 3.7
-      gnat-version: "23.0w-20220508"
-      GNAT: "pro23.0w-20220508"
+      gnat-version: "23.0w-20220723"
+      GNAT: "pro23.0w-20220723"
     steps:
       - uses: actions/checkout@v2
         if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
