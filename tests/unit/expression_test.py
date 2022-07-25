@@ -829,6 +829,26 @@ def test_attribute() -> None:
         ),
         (Head, Variable("X", type_=rty.Sequence("A", rty.Integer("B"))), rty.Integer("B")),
         (Opaque, Variable("X", type_=rty.Message("A")), rty.OPAQUE),
+        (
+            Head,
+            Comprehension(
+                "X",
+                Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
+                Variable("X", type_=rty.Integer("B")),
+                TRUE,
+                location=Location((10, 30)),
+            ),
+            rty.Integer("B"),
+        ),
+        (
+            Head,
+            Variable(
+                "Z",
+                type_=rty.Sequence("Universal::Options", rty.Message("Universal::Option")),
+                location=Location((10, 20)),
+            ),
+            rty.Message("Universal::Option"),
+        ),
     ],
 )
 def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected: rty.Type) -> None:
@@ -847,15 +867,14 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
         ),
         (
             Head(
-                Comprehension(
-                    "X",
-                    Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
-                    Variable("X", type_=rty.Integer("B")),
-                    TRUE,
-                    location=Location((10, 30)),
+                Opaque(
+                    Variable(
+                        "X", type_=rty.Sequence("A", rty.Integer("B")), location=Location((10, 30))
+                    ),
                 )
             ),
-            r"^<stdin>:10:30: model: error: prefix of attribute Head must be a name$",
+            r"^<stdin>:10:30: model: error: prefix of attribute "
+            r"Head must be a name or comprehension$",
         ),
         (
             Opaque(
