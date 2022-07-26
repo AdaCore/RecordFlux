@@ -65,17 +65,22 @@ def test_main_check_quiet() -> None:
 
 def test_main_check_parser_error(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_parser_error())
-    assert "<stdin>:8:22: parser: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+    assert "<stdin>:8:22: parser: error: TEST" in str(
+        cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
+    )
 
 
 def test_main_check_model_error_parse(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
-    assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+    assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", MESSAGE_SPEC_FILE]))
 
 
 def test_main_check_model_error_create_model(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(rflx.specification.Parser, "parse", lambda x, y: raise_parser_error())
     monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda x: raise_model_error())
-    assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", "README.md"]))
+    assert "<stdin>:8:22: parser: error: TEST\n<stdin>:8:22: model: error: TEST" in str(
+        cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
+    )
 
 
 def test_main_check_non_existent_file() -> None:
