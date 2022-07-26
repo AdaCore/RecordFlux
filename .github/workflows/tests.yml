@@ -904,3 +904,57 @@ jobs:
         eval `make printenv_gnat`
         gnat --version
         make test_specs
+
+  documentation:
+    name: Documentation
+    needs: skip_check_general
+    runs-on: ubuntu-20.04
+    env:
+      python-version: 3.7
+    steps:
+    - uses: actions/checkout@v2
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      with:
+        submodules: true
+    - name: Set up Python
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.python-version }}
+    - name: Determine exact Python version
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      run:
+        echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
+    - name: Cache Python dependencies
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python${{ env.python-version }}/site-packages
+          ~/.local/bin
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+    - name: Cache GNAT Community
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/work/gnat
+        key: ${{ runner.os }}-gnat-ce2021
+    - name: Install GNAT Community
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      uses: ada-actions/toolchain@ce2021
+      with:
+        distrib: community
+        install_dir: /home/runner/work/gnat
+    - name: Install dependencies
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        sudo apt install libgmp-dev patchelf
+        python -m pip install --upgrade pip wheel
+        make install_devel
+    - name: Generate
+      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
+      run: |
+        make doc
