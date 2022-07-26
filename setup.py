@@ -52,11 +52,14 @@ setup(
     ],
     extras_require={
         "devel": [
+            "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
             "pyicontract-lint >=2.1.2, <2.2",
+            "setuptools_scm >=6.2, <8",
+            "sphinx >=4.5, <5",
+            "sphinx-copybutton >=0.5, <0.6",
             "tqdm >=4.61.1, <4.63",
             "types-pkg_resources >=0.1.3, <0.2",
-            "setuptools_scm >=6.2, <8",
         ]
     },
     scripts=["bin/rflx"],

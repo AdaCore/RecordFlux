@@ -4,7 +4,7 @@ TEST_PROCS ?= $(shell nproc)
 SHELL := /bin/bash
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
 
-python-packages := bin examples/apps rflx tests tools stubs setup.py
+python-packages := bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
 
@@ -14,6 +14,7 @@ build-dir := build
 	prove prove_tests prove_python_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	generate \
+	doc \
 	clean
 
 all: check test prove
@@ -167,8 +168,12 @@ printenv_gnat:
 generate:
 	tools/generate_spark_test_code.py
 
+doc:
+	$(MAKE) -C doc html
+
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
+	$(MAKE) -C doc clean
