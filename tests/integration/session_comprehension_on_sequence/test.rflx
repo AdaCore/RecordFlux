@@ -54,6 +54,7 @@ package Test is
          Message_2 := Universal::Message'(Message_Type => Universal::MT_Options,
                                           Length => Message_Options'Size / 8,
                                           Options => Message_Options);
+         First_Option_Length := [for E in Message_2.Options if E.Option_Type = Universal::OT_Data => E.Length]'Head;
          -- §S-S-A-RS-V
          Message_Options'Reset;
       transition

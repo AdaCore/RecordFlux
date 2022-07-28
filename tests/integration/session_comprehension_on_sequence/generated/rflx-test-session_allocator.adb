@@ -24,6 +24,7 @@ is
       S.Slot_Ptr_12 := M.Slot_12'Unrestricted_Access;
       S.Slot_Ptr_13 := M.Slot_13'Unrestricted_Access;
       S.Slot_Ptr_14 := M.Slot_14'Unrestricted_Access;
+      S.Slot_Ptr_15 := M.Slot_15'Unrestricted_Access;
    end Initialize;
 
    procedure Finalize (S : in out Slots) with
@@ -45,6 +46,7 @@ is
       S.Slot_Ptr_12 := null;
       S.Slot_Ptr_13 := null;
       S.Slot_Ptr_14 := null;
+      S.Slot_Ptr_15 := null;
    end Finalize;
 
 end RFLX.Test.Session_Allocator;

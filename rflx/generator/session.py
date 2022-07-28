@@ -2424,7 +2424,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return assign_to_message_aggregate
 
-    def _assign_to_head(  # pylint: disable = too-many-locals
+    def _assign_to_head(
         self,
         target: ID,
         head: expr.Head,
@@ -2442,18 +2442,53 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 location=head.location,
             )
 
-        assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
-
         if isinstance(head.prefix, expr.Comprehension):
-            comprehension = head.prefix
-            sequence_id = ID(f"{comprehension.sequence}")
-            assert isinstance(comprehension.sequence.type_, rty.Sequence)
-            sequence_type_id = comprehension.sequence.type_.identifier
-            sequence_element_type = comprehension.sequence.type_.element
+            return self._assign_to_head_comprehension(
+                target, head, exception_handler, is_global, alloc_id
+            )
+        return self._assign_to_head_sequence(target, head, exception_handler, is_global, alloc_id)
+
+    def _assign_to_head_comprehension(  # pylint: disable = too-many-locals
+        self,
+        target: ID,
+        head: expr.Head,
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+        alloc_id: Optional[Location],
+    ) -> Sequence[Statement]:
+        comprehension = head.prefix
+        assert isinstance(comprehension, expr.Comprehension)
+        assert isinstance(comprehension.sequence.type_, rty.Sequence)
+        sequence_type_id = comprehension.sequence.type_.identifier
+        sequence_element_type = comprehension.sequence.type_.element
+
+        if isinstance(sequence_element_type, rty.Message):
+            if isinstance(comprehension.sequence, expr.Variable):
+                print("COMPREHENSION VAR", comprehension)
+                sequence_id = ID(f"{comprehension.sequence}")
+                comprehension_sequence_id = copy_id(sequence_id)
+            elif isinstance(comprehension.sequence, expr.Selected):
+                print("COMPREHENSION SELECT", comprehension)
+                selected = comprehension.sequence
+
+                if not isinstance(selected.prefix, expr.Variable):
+                    _unsupported_expression(
+                        selected.prefix, "as prefix of Selected in list comprehension"
+                    )
+
+                sequence_id = ID(
+                    f"RFLX_{selected.prefix}_{selected.selector}",
+                    location=selected.location,
+                )
+                comprehension_sequence_id = sequence_id
+
+            else:
+                assert False
 
             def comprehension_statements(
                 local_exception_handler: ExceptionHandler,
             ) -> list[Statement]:
+                assert isinstance(comprehension, expr.Comprehension)
                 assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
                 assert isinstance(
                     sequence_element_type, (rty.Message, rty.Integer, rty.Enumeration)
@@ -2462,9 +2497,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     Declare(
                         [ObjectDeclaration([found_id(target)], "Boolean", FALSE)],
                         [
-                            Assignment(Variable(found_id(target)), FALSE),
                             self._comprehension(
-                                copy_id(sequence_id),
+                                comprehension_sequence_id,
                                 sequence_type_id,
                                 target,
                                 head.type_,
@@ -2485,18 +2519,62 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     )
                 ]
 
-            return [
-                self._declare_sequence_copy(
-                    sequence_id,
-                    sequence_type_id,
-                    comprehension_statements,
-                    exception_handler,
-                    is_global,
-                    alloc_id,
-                )
-            ]
+            if isinstance(comprehension.sequence, expr.Variable):
+                return [
+                    self._declare_sequence_copy(
+                        sequence_id,
+                        sequence_type_id,
+                        comprehension_statements,
+                        exception_handler,
+                        is_global,
+                        alloc_id,
+                    )
+                ]
+            if isinstance(comprehension.sequence, expr.Selected):
+                assert isinstance(selected.prefix, expr.Variable)
+                assert isinstance(selected.prefix.type_, rty.Message)
+                message_id = ID(selected.prefix.name)
+                message_type = selected.prefix.type_.identifier
+                message_field = selected.selector
 
+                return [
+                    self._if_structural_valid_message(
+                        message_type,
+                        context_id(message_id, is_global),
+                        [
+                            self._declare_message_field_sequence_copy(
+                                message_id,
+                                message_type,
+                                message_field,
+                                sequence_id,
+                                sequence_type_id,
+                                comprehension_statements,
+                                exception_handler,
+                                is_global,
+                                alloc_id,
+                            )
+                        ],
+                        exception_handler,
+                    )
+                ]
+            assert False
+        fail(
+            f"iterating over sequence of {sequence_element_type}"
+            " in list comprehension not yet supported",
+            Subsystem.GENERATOR,
+            location=comprehension.sequence.location,
+        )
+
+    def _assign_to_head_sequence(  # pylint: disable = too-many-locals
+        self,
+        target: ID,
+        head: expr.Head,
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+        alloc_id: Optional[Location],
+    ) -> Sequence[Statement]:
         assert isinstance(head.prefix.type_, rty.Sequence)
+        assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
 
         if not isinstance(head.prefix, expr.Variable):
             _unsupported_expression(head.prefix, "in Head attribute")
@@ -4429,11 +4507,45 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         element_handler = (
             self._comprehension_append_element
             if isinstance(target_type, rty.Sequence)
-            else self._comprehension_assing_element
+            else self._comprehension_assign_element
         )
 
-        target_invariants = []
-        if isinstance(target_type, rty.Sequence):
+        if isinstance(target_type, (rty.Enumeration, rty.Integer, rty.Message)):
+            target_invariants = [
+                PragmaStatement(
+                    "Loop_Invariant",
+                    [
+                        Equal(
+                            Selected(
+                                Variable(context_id(sequence_identifier, is_global)), "Buffer_First"
+                            ),
+                            LoopEntry(
+                                Selected(
+                                    Variable(context_id(sequence_identifier, is_global)),
+                                    "Buffer_First",
+                                )
+                            ),
+                        ),
+                    ],
+                ),
+                PragmaStatement(
+                    "Loop_Invariant",
+                    [
+                        Equal(
+                            Selected(
+                                Variable(context_id(sequence_identifier, is_global)), "Buffer_Last"
+                            ),
+                            LoopEntry(
+                                Selected(
+                                    Variable(context_id(sequence_identifier, is_global)),
+                                    "Buffer_Last",
+                                )
+                            ),
+                        ),
+                    ],
+                ),
+            ]
+        elif isinstance(target_type, rty.Sequence):
             target_invariants = [
                 PragmaStatement(
                     "Loop_Invariant",
@@ -4482,6 +4594,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ],
                 ),
             ]
+        else:
+            assert False
 
         return While(
             Call(
@@ -4541,6 +4655,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 target_identifier,
                                                 target_type,
                                                 selector,
+                                                update_context,
                                                 local_exception_handler,
                                                 is_global,
                                             ),
@@ -4557,18 +4672,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _comprehension_assing_element(
+    def _comprehension_assign_element(  # pylint: disable = too-many-arguments
         self,
         target_identifier: ID,
         target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
         selector: expr.Expr,
+        update_context: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> List[Statement]:
         assert isinstance(target_type, (rty.Integer, rty.Enumeration, rty.Message))
 
         target_type_id = target_type.identifier
-        assign_element: Statement
+        assign_element: Sequence[Statement]
 
         if isinstance(target_type, rty.Message):
             if not isinstance(selector, expr.Variable):
@@ -4582,41 +4698,64 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             target_context = context_id(target_identifier, is_global)
             target_buffer = "RFLX_Target_" + target_identifier
 
-            assign_element = Declare(
-                [self._declare_buffer(target_buffer)],
-                [
-                    *self._take_buffer(
-                        target_identifier, target_type_id, is_global, buffer_id(target_buffer)
-                    ),
-                    self._copy_to_buffer(
-                        target_type_id, element_id, buffer_id(target_buffer), exception_handler
-                    ),
-                    CallStatement(
-                        target_type_id * "Initialize",
-                        [
-                            Variable(variable_id(target_context, is_global)),
-                            Variable(buffer_id(target_buffer)),
-                            Call(target_type_id * "Size", [Variable(element_id)]),
-                        ],
-                    ),
-                    CallStatement(
-                        target_type_id * "Verify_Message",
-                        [Variable(variable_id(target_context, is_global))],
-                    ),
-                ],
-            )
+            assign_element = [
+                self._if_structural_valid_message(
+                    target_type.identifier,
+                    element_id,
+                    [
+                        Declare(
+                            [self._declare_buffer(target_buffer)],
+                            [
+                                *self._take_buffer(
+                                    target_identifier,
+                                    target_type_id,
+                                    is_global,
+                                    buffer_id(target_buffer),
+                                ),
+                                self._copy_to_buffer(
+                                    target_type_id,
+                                    element_id,
+                                    buffer_id(target_buffer),
+                                    exception_handler,
+                                ),
+                                CallStatement(
+                                    target_type_id * "Initialize",
+                                    [
+                                        Variable(variable_id(target_context, is_global)),
+                                        Variable(buffer_id(target_buffer)),
+                                        Call(target_type_id * "Size", [Variable(element_id)]),
+                                    ],
+                                ),
+                                CallStatement(
+                                    target_type_id * "Verify_Message",
+                                    [Variable(variable_id(target_context, is_global))],
+                                ),
+                            ],
+                        ),
+                    ],
+                    exception_handler,
+                )
+            ]
 
         elif isinstance(target_type, (rty.Integer, rty.Enumeration)):
-            assign_element = Assignment(
-                Variable(variable_id(target_identifier, is_global)),
-                selector.substituted(self._substitution(is_global)).ada_expr(),
+            assign_element = self._if_valid_fields(
+                selector,
+                [
+                    Assignment(
+                        Variable(variable_id(target_identifier, is_global)),
+                        selector.substituted(self._substitution(is_global)).ada_expr(),
+                    ),
+                ],
+                exception_handler,
+                is_global,
             )
         else:
             assert False
 
         return [
-            assign_element,
+            *assign_element,
             Assignment(Variable(found_id(target_identifier)), TRUE),
+            *update_context,
             ExitStatement(),
         ]
 
@@ -4625,6 +4764,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target_identifier: ID,
         target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
         selector: expr.Expr,
+        _: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> List[Statement]:

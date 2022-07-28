@@ -1976,6 +1976,31 @@ def test_session_state_action_error(
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
+            rty.Message("B"),
+            expr.Head(
+                expr.Comprehension(
+                    "E",
+                    expr.Variable(
+                        "L",
+                        type_=rty.Sequence("A", rty.Message("B")),
+                    ),
+                    expr.Call(
+                        "F",
+                        [expr.Variable("E")],
+                        type_=rty.Message("B"),
+                        location=Location((10, 20)),
+                    ),
+                    expr.Greater(
+                        expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
+                        expr.Number(0),
+                    ),
+                ),
+                type_=rty.Message("B"),
+            ),
+            RecordFluxError,
+            "expressions other than variables not yet supported as selector for message types",
+        ),
+        (
             rty.Sequence("A", rty.Integer("B")),
             expr.Comprehension(
                 "E",
@@ -1996,6 +2021,29 @@ def test_session_state_action_error(
             r" not yet supported",
         ),
         (
+            rty.Message("B"),
+            expr.Head(
+                expr.Comprehension(
+                    "E",
+                    expr.Selected(
+                        expr.Call(
+                            "L",
+                            [expr.Variable("Z")],
+                            location=Location((10, 20)),
+                        ),
+                        "Z",
+                        type_=rty.Sequence("A", rty.Message("C")),
+                    ),
+                    expr.Selected(expr.Variable("E"), "Z", type_=rty.Message("B")),
+                    expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
+                ),
+                type_=rty.Message("B"),
+            ),
+            RecordFluxError,
+            r"Call with undefined type as prefix of Selected in list comprehension"
+            r" not yet supported",
+        ),
+        (
             rty.Sequence("A", rty.Integer("B")),
             expr.Comprehension(
                 "E",
@@ -2004,6 +2052,22 @@ def test_session_state_action_error(
                 ),
                 expr.Variable("E", type_=rty.Integer("B")),
                 expr.Greater(expr.Variable("E"), expr.Number(0)),
+            ),
+            RecordFluxError,
+            r"iterating over sequence of integer type in list comprehension not yet supported",
+        ),
+        (
+            rty.Integer("B"),
+            expr.Head(
+                expr.Comprehension(
+                    "E",
+                    expr.Variable(
+                        "L", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 20))
+                    ),
+                    expr.Variable("E", type_=rty.Integer("B")),
+                    expr.Greater(expr.Variable("E"), expr.Number(0)),
+                ),
+                type_=rty.Integer("B"),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
