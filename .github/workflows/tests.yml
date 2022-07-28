@@ -266,6 +266,9 @@ jobs:
           - gnat-distrib: "pro"
             gnat-version: "23.0w-20220723"
           - gnat-distrib: "fsf"
+            gnat-version: "11.2.4"
+          - gnat-distrib: "fsf"
+            gnat-version: "12.1.2"
     env:
       python-version: 3.7
       GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
@@ -328,6 +331,8 @@ jobs:
           toolchain: "--disable-assistant"
       - name: Install FSF GNAT
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        env:
+          FSF_GNAT_VERSION: ${{ matrix.gnat-version }}
         run: |
           make install_gnat
       # Note: RecordFlux-parser depends on the GNAT toolchain. If the caching of Python dependencies
@@ -660,6 +665,7 @@ jobs:
         include:
           - python-version: 3.7
             gnat-distrib: "fsf"
+            gnat-version: "11.2.4"
     env:
       GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
@@ -714,6 +720,8 @@ jobs:
         toolchain: "--disable-assistant"
     - name: Install FSF GNAT
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      env:
+        FSF_GNAT_VERSION: ${{ matrix.gnat-version }}
       run: |
         make install_gnat
     - name: Configure kernel parameters

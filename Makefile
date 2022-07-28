@@ -1,7 +1,8 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 
-PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv
+SHELL := /bin/bash
+PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
 
 python-packages := bin examples/apps rflx tests tools stubs setup.py
 
@@ -82,7 +83,8 @@ test_apps:
 	$(MAKE) -C examples/apps/dhcp_client test
 
 test_compilation:
-	test "${GNAT}" = "fsf" || $(MAKE) -C tests/spark build_strict
+	# Skip test for FSF GNAT to prevent violations of restriction "No_Secondary_Stack" in AUnit units
+	[[ "${GNAT}" == fsf* ]] || $(MAKE) -C tests/spark build_strict
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
