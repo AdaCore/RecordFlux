@@ -325,6 +325,7 @@ jobs:
         uses: alire-project/setup-alire@v1
         with:
           version: ${{ env.ALIRE_VERSION }}
+          toolchain: "--disable-assistant"
       - name: Install FSF GNAT
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
         run: |
@@ -494,25 +495,38 @@ jobs:
         gnat-distrib:
           - "community"
           - "fsf"
+    env:
+      FSF_GNAT_VERSION: 11.2.4
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Cache GNAT Community
+      if: ${{ matrix.gnat-distrib == 'community' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
+      if: ${{ matrix.gnat-distrib == 'community' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
+    - name: Cache Alire and FSF GNAT
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.config/alire
+          build/alire
+        key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-fsf${{ env.FSF_GNAT_VERSION }}-${{ hashFiles('Makefile') }}
     - name: Install Alire
       if: ${{ matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
       with:
         version: ${{ env.ALIRE_VERSION }}
+        toolchain: "--disable-assistant"
     - name: Install FSF GNAT
       if: ${{ matrix.gnat-distrib == 'fsf' }}
       run: |
@@ -697,6 +711,7 @@ jobs:
       uses: alire-project/setup-alire@v1
       with:
         version: ${{ env.ALIRE_VERSION }}
+        toolchain: "--disable-assistant"
     - name: Install FSF GNAT
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       run: |
@@ -870,6 +885,7 @@ jobs:
       uses: alire-project/setup-alire@v1
       with:
         version: ${{ env.ALIRE_VERSION }}
+        toolchain: "--disable-assistant"
     - name: Install FSF GNAT
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       run: |

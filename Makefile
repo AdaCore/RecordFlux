@@ -144,13 +144,15 @@ upgrade_devel:
 install_devel_edge: install_devel
 	$(MAKE) -C .config/python-style install_devel_edge
 
+install_gnat: FSF_GNAT_VERSION ?= 11.2.4
+install_gnat: GPRBUILD_VERSION ?= 22.0.1
 install_gnat:
 	test -d build/alire || ( \
-	    alr toolchain --install gnat_native=11.2.1 && \
 	    mkdir -p build && \
 	    cd build && \
 	    alr -n init --lib alire && \
 	    cd alire && \
+	    alr toolchain --select --local gnat_native=$(FSF_GNAT_VERSION) gprbuild=$(GPRBUILD_VERSION) && \
 	    alr -n with aunit gnatcoll_iconv gnatcoll_gmp \
 	)
 
