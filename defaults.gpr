@@ -25,7 +25,7 @@ abstract project Defaults is
          GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when "pro21.2" | "pro22.0" =>
          GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
-      when "fsf" =>
+      when "fsf11.2.4" | "fsf12.1.2" =>
          GNATA  := "";  --  https://github.com/Componolit/Workarounds/issues/49
       when others =>
    end case;
