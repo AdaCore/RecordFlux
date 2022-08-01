@@ -38,10 +38,12 @@ class Check(Enum):
 
 
 def check(spec_file: Path) -> RecordFluxError:
-    error = RecordFluxError()
-
     with open(spec_file, encoding="utf-8", newline="") as f:
-        specification = f.read()
+        return check_string(f.read(), spec_file)
+
+
+def check_string(specification: str, spec_file: Path = Path("<stdin>")) -> RecordFluxError:
+    error = RecordFluxError()
 
     if not specification:
         return error

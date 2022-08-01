@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+import textwrap
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -1627,8 +1628,10 @@ class Parser:
         rule: str = lang.GrammarRule.main_rule_rule,
     ) -> None:
         error = RecordFluxError()
+        string = textwrap.dedent(string)
         unit = lang.AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
+            error.extend(style.check_string(string))
             assert isinstance(unit.root, lang.Specification)
             self._convert_unit(error, unit.root, STDIN)
             self._sort_specs_topologically()
