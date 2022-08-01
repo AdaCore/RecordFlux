@@ -1,0 +1,63 @@
+with Universal;
+
+package Test is
+
+   type Result is (M_Valid, M_Invalid) with Size => 2;
+
+   type Option_Data is
+      message
+         Length : Universal::Length;
+         Data : Opaque
+            with Size => Length * 8;
+      end message;
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      -- §S-P-F-R-S
+      with function Get_Option_Data
+         (Data : Opaque)
+      return Option_Data;
+   session Session with
+      Initial => Start,
+      Final => Terminated
+   is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Option : Universal::Option;
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Process
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+         goto Terminated -- §S-S-T-N
+      end Start;
+
+      state Process is
+         Option_Data : Option_Data;
+      begin
+         -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
+         Option_Data := Get_Option_Data (Message.Data);
+         Option'Reset;
+         Option.Option_Type := Universal::OT_Data;
+         Option.Length := Option_Data.Length;
+         Option.Data := Option_Data.Data;
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto Terminated -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (Option); -- §S-S-A-WR-V
+      transition
+         goto Terminated -- §S-S-T-N
+      end Reply;
+
+      state Terminated is null state; -- §S-S-N
+   end Session;
+
+end Test;
