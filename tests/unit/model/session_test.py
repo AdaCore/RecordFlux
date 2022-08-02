@@ -616,7 +616,9 @@ def test_assignment_to_undeclared_variable() -> None:
                 "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Undefined", expr.FALSE, location=Location((10, 20)))],
+                actions=[
+                    stmt.VariableAssignment("Undefined", expr.FALSE, location=Location((10, 20)))
+                ],
             ),
             State("End"),
         ],
@@ -635,7 +637,7 @@ def test_assignment_from_undeclared_variable() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Global", expr.Variable("Undefined", location=Location((10, 20)))
                     )
                 ],
@@ -658,7 +660,7 @@ def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None
                 exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Global",
                         expr.DeltaMessageAggregate("Undefined", {}, location=Location((10, 20))),
                     )
@@ -720,7 +722,7 @@ def test_call_to_undeclared_function() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Global",
                         expr.Call(
                             "UndefSub", [expr.Variable("Global")], location=Location((10, 20))
@@ -752,7 +754,7 @@ def test_call_undeclared_variable() -> None:
                 ],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Call(
                             "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
@@ -781,7 +783,7 @@ def test_call_invalid_argument_type() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Call(
                             "Function",
@@ -817,7 +819,7 @@ def test_call_missing_arguments() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Call(
                             "Function",
@@ -847,7 +849,7 @@ def test_call_too_many_arguments() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Call(
                             "Function",
@@ -1038,7 +1040,7 @@ def test_channel_attribute_has_data() -> None:
                 "Start",
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
-                actions=[stmt.Assignment("Result", expr.HasData(expr.Variable("Message")))],
+                actions=[stmt.VariableAssignment("Result", expr.HasData(expr.Variable("Message")))],
             ),
             State("End"),
         ],
@@ -1066,7 +1068,7 @@ def test_undeclared_variable_in_function_call() -> None:
                 ],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Call(
                             "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
@@ -1319,7 +1321,7 @@ def test_binding_as_function_parameter() -> None:
                 transitions=[Transition(target=ID("End"))],
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Binding(
                             expr.Call("SubProg", [expr.Variable("Bound")]),
@@ -1510,7 +1512,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
                 exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Data",
                         expr.MessageAggregate(
                             "TLV::Message",
@@ -1537,7 +1539,7 @@ def test_message_aggregate_with_undefined_type() -> None:
                 exception_transition=Transition(target=ID("End")),
                 declarations=[],
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Data",
                         expr.MessageAggregate(
                             "P::Undefined",
@@ -1572,7 +1574,7 @@ def test_comprehension() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Result",
                         expr.Comprehension(
                             "E",
@@ -1604,7 +1606,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Data",
                         expr.Opaque(
                             expr.Call(
@@ -1638,7 +1640,7 @@ def test_assignment_opaque_function_result() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Data",
                         expr.Opaque(
                             expr.Call("Sub", [expr.Variable("Data")]),
@@ -1669,7 +1671,7 @@ def test_assignment_opaque_function_binding() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Data",
                         expr.Binding(
                             expr.Opaque(expr.Call("Sub", [expr.Variable("Bound")])),
@@ -1820,7 +1822,7 @@ def test_conversion() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
                             "Null::Message",
@@ -1848,7 +1850,7 @@ def test_conversion_undefined() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
                             "P::Undef",
@@ -1884,7 +1886,7 @@ def test_conversion_invalid_argument() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
                             "TLV::Message",
@@ -1916,7 +1918,7 @@ def test_conversion_invalid() -> None:
                 transitions=[Transition(target=ID("End"))],
                 exception_transition=Transition(target=ID("End")),
                 actions=[
-                    stmt.Assignment(
+                    stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
                             "Null::Message",
@@ -2221,7 +2223,7 @@ def test_type_error_in_renaming_declaration() -> None:
             [
                 stmt.Read("C1", expr.Variable("M1"), location=Location((1, 2))),
                 stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
-                stmt.Assignment("X", expr.FALSE, location=Location((3, 4))),
+                stmt.VariableAssignment("X", expr.FALSE, location=Location((3, 4))),
             ],
             "<stdin>:1:2: model: error: channel IO must not be combined with other actions"
             " in one state",
@@ -2365,7 +2367,7 @@ def test_resolving_of_function_calls() -> None:
                     decl.VariableDeclaration("Local", "Boolean", expr.Variable("Func")),
                 ],
                 actions=[
-                    stmt.Assignment("Global", expr.Variable("Func")),
+                    stmt.VariableAssignment("Global", expr.Variable("Func")),
                 ],
                 transitions=[
                     Transition(
@@ -2397,7 +2399,7 @@ def test_resolving_of_function_calls() -> None:
     assert local_decl.expression == expr.Call("Func")
 
     local_stmt = session.states[0].actions[0]
-    assert isinstance(local_stmt, stmt.Assignment)
+    assert isinstance(local_stmt, stmt.VariableAssignment)
     assert local_stmt.expression == expr.Call("Func")
 
 
@@ -2439,7 +2441,7 @@ def test_resolving_of_function_calls() -> None:
                 ),
             ],
             [
-                stmt.Assignment(
+                stmt.VariableAssignment(
                     "M",
                     expr.DeltaMessageAggregate(
                         "M",
@@ -2476,7 +2478,7 @@ def test_resolving_of_function_calls() -> None:
                     "A",
                     expr.Number(1),
                 ),
-                stmt.Assignment(
+                stmt.VariableAssignment(
                     "M2",
                     expr.DeltaMessageAggregate(
                         "M2",
@@ -2507,7 +2509,7 @@ def test_resolving_of_function_calls() -> None:
                 ),
             ],
             [
-                stmt.Assignment(
+                stmt.VariableAssignment(
                     "M1",
                     expr.DeltaMessageAggregate(
                         "M1",
@@ -2548,7 +2550,7 @@ def test_resolving_of_function_calls() -> None:
                 ),
             ],
             [
-                stmt.Assignment(
+                stmt.VariableAssignment(
                     "M1",
                     expr.DeltaMessageAggregate(
                         "M1",
@@ -2558,7 +2560,7 @@ def test_resolving_of_function_calls() -> None:
                         },
                     ),
                 ),
-                stmt.Assignment(
+                stmt.VariableAssignment(
                     "M2",
                     expr.DeltaMessageAggregate(
                         "M2",
@@ -2607,9 +2609,9 @@ def test_state_normalization(
             transitions=[Transition(target=ID("End"))],
             exception_transition=Transition(target=ID("End")),
             actions=[
-                stmt.Assignment("X", expr.Number(0)),
+                stmt.VariableAssignment("X", expr.Number(0)),
                 *actions,
-                stmt.Assignment("Y", expr.Number(9)),
+                stmt.VariableAssignment("Y", expr.Number(9)),
             ],
         )
     ) == str(
@@ -2618,9 +2620,9 @@ def test_state_normalization(
             transitions=[Transition(target=ID("End"))],
             exception_transition=Transition(target=ID("End")),
             actions=[
-                stmt.Assignment("X", expr.Number(0)),
+                stmt.VariableAssignment("X", expr.Number(0)),
                 *normalized_actions,
-                stmt.Assignment("Y", expr.Number(9)),
+                stmt.VariableAssignment("Y", expr.Number(9)),
             ],
         )
     )
@@ -2629,17 +2631,17 @@ def test_state_normalization(
         transitions=[Transition(target=ID("End"))],
         exception_transition=Transition(target=ID("End")),
         actions=[
-            stmt.Assignment("X", expr.Number(0)),
+            stmt.VariableAssignment("X", expr.Number(0)),
             *actions,
-            stmt.Assignment("Y", expr.Number(9)),
+            stmt.VariableAssignment("Y", expr.Number(9)),
         ],
     ) == State(
         "S",
         transitions=[Transition(target=ID("End"))],
         exception_transition=Transition(target=ID("End")),
         actions=[
-            stmt.Assignment("X", expr.Number(0)),
+            stmt.VariableAssignment("X", expr.Number(0)),
             *normalized_actions,
-            stmt.Assignment("Y", expr.Number(9)),
+            stmt.VariableAssignment("Y", expr.Number(9)),
         ],
     )

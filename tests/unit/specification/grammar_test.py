@@ -673,7 +673,7 @@ def test_renaming_declaration(string: str, expected: decl.Declaration) -> None:
 
 @pytest.mark.parametrize(
     "string,expected",
-    [("A := B", stmt.Assignment("A", expr.Variable("B")))],
+    [("A := B", stmt.VariableAssignment("A", expr.Variable("B")))],
 )
 def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
     actual = parse_statement(string)
@@ -891,7 +891,7 @@ def test_state_error(string: str, error: str) -> None:
                                 "Z", "__BUILTINS__::Boolean", expr.Variable("Y")
                             )
                         ],
-                        actions=[stmt.Assignment("Z", expr.Variable("False"))],
+                        actions=[stmt.VariableAssignment("Z", expr.Variable("False"))],
                         transitions=[
                             model.Transition(
                                 "B",

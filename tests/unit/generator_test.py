@@ -1007,7 +1007,7 @@ class UnknownStatement(stmt.Statement):
             #    where A = Universal::MT_Data,
             #          B = 0,
             #          C = Universal::Option'(Option_Type => Universal::OT_Null)
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Binding(
                     expr.MessageAggregate(
@@ -1147,7 +1147,7 @@ end;\
         (
             # https://github.com/Componolit/RecordFlux/issues/1069
             # Replace this test case by an integration test.
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Binding(
                     expr.Call(
@@ -1230,7 +1230,7 @@ end;\
             #    where A = Universal::Message'(Message_Type => Universal::MT_Data,
             #                                  Length => 2,
             #                                  Data => [3, 4])
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Binding(
                     expr.Conversion(
@@ -1339,7 +1339,7 @@ end;\
             #
             # X := A.Message_Type
             #    where A = Universal::Message'(Message_Type => Universal::MT_Null)
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Binding(
                     expr.Selected(
@@ -1420,7 +1420,7 @@ end;\
         # https://github.com/Componolit/RecordFlux/issues/1069
         # Replace this test case by an integration test.
         # (
-        #     stmt.Assignment(
+        #     stmt.VariableAssignment(
         #         "X",
         #         expr.Binding(
         #             expr.Head(
@@ -1463,7 +1463,7 @@ end;\
         # https://github.com/Componolit/RecordFlux/issues/1069
         # Replace this test case by an integration test.
         # (
-        #     stmt.Assignment(
+        #     stmt.VariableAssignment(
         #         "X",
         #         expr.Binding(
         #             expr.Head(
@@ -1491,7 +1491,7 @@ end;\
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.MessageAggregate(
                     "Universal::Message",
@@ -1543,7 +1543,7 @@ end if;\
 """,
         ),
         (
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Call(
                     "F",
@@ -1568,7 +1568,7 @@ end;\
 """,
         ),
         (
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.Call(
                     "F",
@@ -1609,7 +1609,7 @@ end;\
 """,
         ),
         (
-            stmt.Assignment(
+            stmt.VariableAssignment(
                 "X",
                 expr.And(
                     expr.Variable("A", type_=rty.BOOLEAN),

@@ -114,7 +114,7 @@ class State(Base):
         return any(
             isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
             or (
-                isinstance(a, stmt.Assignment)
+                isinstance(a, stmt.VariableAssignment)
                 and (
                     a.expression.findall(
                         lambda x: isinstance(
@@ -185,11 +185,11 @@ class State(Base):
 
     def _collect_message_field_assignments(
         self, field_assignments: list[stmt.MessageFieldAssignment]
-    ) -> stmt.Assignment:
-        return stmt.Assignment(
+    ) -> stmt.VariableAssignment:
+        return stmt.VariableAssignment(
             field_assignments[0].identifier,
             expr.DeltaMessageAggregate(
-                field_assignments[0].identifier, {a.field: a.value for a in field_assignments}
+                field_assignments[0].identifier, {a.field: a.expression for a in field_assignments}
             ),
             location=Location(
                 field_assignments[0].location.start if field_assignments[0].location else (0, 0),
@@ -318,8 +318,6 @@ class AbstractSession(BasicDeclaration):
             for a in state.actions:
                 if isinstance(a, stmt.Assignment):
                     a.expression = a.expression.substituted(substitution)
-                if isinstance(a, stmt.MessageFieldAssignment):
-                    a.value = a.value.substituted(substitution)
                 if isinstance(a, stmt.AttributeStatement):
                     a.parameters = [p.substituted(substitution) for p in a.parameters]
                 if isinstance(a, stmt.Reset):

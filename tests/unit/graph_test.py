@@ -194,7 +194,7 @@ def test_session_graph(tmp_path: Path) -> None:
             State(
                 "STATE",
                 transitions=[Transition(target=ID("IGNORED_1")), Transition(target=ID("END"))],
-                actions=[stmt.Assignment("Global", FALSE), stmt.Reset("Local")],
+                actions=[stmt.VariableAssignment("Global", FALSE), stmt.Reset("Local")],
                 declarations=[decl.VariableDeclaration("Local", "Opaque")],
             ),
             State(

@@ -40,6 +40,11 @@ class Assignment(Statement):
         super().__init__(identifier, type_, location)
         self.expression = expression
 
+    def variables(self) -> Sequence[Variable]:
+        return [Variable(self.identifier), *self.expression.variables()]
+
+
+class VariableAssignment(Assignment):
     def __str__(self) -> str:
         return f"{self.identifier} := {self.expression}"
 
@@ -52,26 +57,22 @@ class Assignment(Statement):
             statement_type, rty.Any, self.location, f'variable "{self.identifier}"'
         ) + self.expression.check_type(statement_type)
 
-    def variables(self) -> Sequence[Variable]:
-        return [Variable(self.identifier), *self.expression.variables()]
 
-
-class MessageFieldAssignment(Statement):
+class MessageFieldAssignment(Assignment):
     def __init__(
         self,
         message: StrID,
         field: StrID,
-        value: Expr,
+        expression: Expr,
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
-        super().__init__(message, type_, location)
+        super().__init__(message, expression, type_, location)
         self.message = ID(message)
         self.field = ID(field)
-        self.value = value
 
     def __str__(self) -> str:
-        return f"{self.message}.{self.field} := {self.value}"
+        return f"{self.message}.{self.field} := {self.expression}"
 
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
@@ -110,17 +111,14 @@ class MessageFieldAssignment(Statement):
                     ],
                 )
         self.type_ = statement_type
-        self.value = self.value.substituted(typify_variable)
+        self.expression = self.expression.substituted(typify_variable)
         return (
             error
             + rty.check_type_instance(
                 statement_type, rty.Message, self.location, f'variable "{self.identifier}"'
             )
-            + self.value.check_type(field_type)
+            + self.expression.check_type(field_type)
         )
-
-    def variables(self) -> Sequence[Variable]:
-        return [Variable(self.message), *self.value.variables()]
 
 
 class AttributeStatement(Statement):
