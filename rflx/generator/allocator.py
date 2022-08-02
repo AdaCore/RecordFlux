@@ -384,7 +384,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     )
             for a in s.actions:
                 if (
-                    isinstance(a, stmt.Assignment)
+                    isinstance(a, stmt.VariableAssignment)
                     and isinstance(a.expression, expr.Comprehension)
                     and isinstance(a.expression.sequence.type_, rty.Sequence)
                     and isinstance(a.expression.sequence.type_.element, rty.Message)
@@ -403,7 +403,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                             self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
-                if isinstance(a, stmt.Assignment) and isinstance(a.expression, expr.Head):
+                if isinstance(a, stmt.VariableAssignment) and isinstance(a.expression, expr.Head):
                     if isinstance(a.expression.prefix, expr.Comprehension) and isinstance(
                         a.expression.prefix.sequence, expr.Variable
                     ):

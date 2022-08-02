@@ -1946,7 +1946,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(action, stmt.Assignment):
+        if isinstance(action, stmt.VariableAssignment):
             result = self._assign(
                 action.identifier,
                 action.type_,
@@ -1962,7 +1962,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 action.message,
                 action.field,
                 action.type_,
-                action.value,
+                action.expression,
                 exception_handler,
                 is_global,
             )

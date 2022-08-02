@@ -116,7 +116,7 @@ def create_assignment(
     error: RecordFluxError, assignment: lang.Statement, filename: Path
 ) -> stmt.Statement:
     assert isinstance(assignment, lang.Assignment)
-    return stmt.Assignment(
+    return stmt.VariableAssignment(
         create_id(error, assignment.f_identifier, filename),
         create_expression(error, assignment.f_expression, filename),
         location=node_location(assignment, filename),
