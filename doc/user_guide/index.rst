@@ -109,14 +109,13 @@ The order of fields is defined by then clauses.
 Then clauses are also used to state conditions and aspects of the following field.
 A more detailed description can be found in the :ref:`Language Reference`.
 
-..
-    doc-check: rflx
+.. doc-check: rflx
 .. code:: ada
 
    package TLV is
 
       type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
-      type Length is mod 2**16;
+      type Length is mod 2 ** 16;
 
       type Message is
          message
@@ -129,7 +128,7 @@ A more detailed description can be found in the :ref:`Language Reference`.
                then Value
                   with Size => Length * 8;
             Value  : Opaque;
-          end message;
+         end message;
 
    end TLV;
 
@@ -259,11 +258,11 @@ A simple program to parse a ``TLV.Message`` could be as follows:
 .. code:: ada
 
    with Ada.Text_IO;
-   with RFLX.RFLX_Builtin_Types;
+   with RFLX.RFLX_Types;
    with RFLX.TLV.Message;
 
    procedure Main is
-      Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
+      Buffer  : RFLX.RFLX_Types.Bytes_Ptr := new RFLX.RFLX_Types.Bytes'(1, 0, 4, 0, 0, 0, 0);
       Context : RFLX.TLV.Message.Context;
    begin
       RFLX.TLV.Message.Initialize (Context, Buffer, RFLX.RFLX_Types.To_Last_Bit_Index (Buffer'Last));
@@ -293,12 +292,14 @@ A ``TLV.Message`` can be generated as follows:
 .. code:: ada
 
    with Ada.Text_IO;
-   with RFLX.RFLX_Builtin_Types; use type RFLX.RFLX_Builtin_Types.Length, RFLX.RFLX_Builtin_Types.Bytes;
+   with RFLX.RFLX_Types;
    with RFLX.TLV.Message;
 
    procedure Main is
-      Buffer  : RFLX.RFLX_Builtin_Types.Bytes_Ptr := new RFLX.RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
+      Buffer  : RFLX.RFLX_Types.Bytes_Ptr := new RFLX.RFLX_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
       Context : RFLX.TLV.Message.Context;
+
+      use type RFLX.RFLX_Types.Bytes;
    begin
       -- Generating message
       RFLX.TLV.Message.Initialize (Context, Buffer);
@@ -370,11 +371,14 @@ Besides the deactivation of specific checks, it is also possible to disable all 
 
 **Example**
 
+.. doc-check: rflx
 .. code:: ada
 
     -- style: disable = line-length, blank-lines
 
     package P is
+
+    end P;
 
 Integration Files
 =================

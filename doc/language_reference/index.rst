@@ -68,15 +68,15 @@ For a range type the bit size has to be specified explicitly.
 
 **Example**
 
-.. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration,3
+.. code:: ada
 
-   type Address is mod 2**48
+   type Address is mod 2 ** 48
 
-.. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration,3
+.. code:: ada
 
-   type Type_Length is range 46 .. 2**16 - 1 with Size => 16
+   type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16
 
 Enumeration Types
 -----------------
@@ -109,12 +109,12 @@ A message field with such type is always considered valid, whether or not its va
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Tag is (Msg_Error, Msg_Data) with Size => 1
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Ether_Type is
       (ET_IPv4            => 16#0800#,
@@ -226,7 +226,7 @@ All bytes which were received when parsing or were written when serializing are 
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Frame is
       message
@@ -251,7 +251,7 @@ All bytes which were received when parsing or were written when serializing are 
       end message
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Empty_Message is null message
 
@@ -281,7 +281,7 @@ To indicate that a refined field is empty (i.e. does not exit) under a certain c
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    for Ethernet::Frame use (Payload => IPv4::Packet)
       if Ether_Type = Ethernet::IPV4
@@ -308,7 +308,7 @@ Type refinements of a base message type are not inherited by the derived message
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Specific_Extension is new Extension
 
@@ -337,7 +337,7 @@ Scalar types as well as message types can be used as element type.
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    type Options is sequence of Option
 
@@ -372,7 +372,7 @@ The main part of a session definition are the state definitions.
 **Example**
 
 .. doc-check: rflx,basic_declaration
-.. code-block:: ada
+.. code:: ada
 
    generic
       X : Channel with Readable, Writable;
@@ -432,7 +432,7 @@ A private type represents an externally defined type.
 **Example**
 
 .. doc-check: rflx,session_parameter
-.. code-block:: ada
+.. code:: ada
 
    type Hash is private
 
@@ -485,9 +485,14 @@ The return type and parameters of a function are represented by the first and su
 **Example**
 
 .. doc-check: rflx,session_parameter
-.. code-block:: ada
+.. code:: ada
 
-   with function Decrypt (Key_Update_Message : Key_Update_Message; Sequence_Number : Sequence_Number; Encrypted_Record : Opaque) return TLS_Inner_Plaintext
+   with function Decrypt
+      (Key_Update_Message : Key_Update_Message;
+       Sequence_Number    : Sequence_Number;
+       Encrypted_Record   : Opaque)
+   return
+      TLS_Inner_Plaintext
 
 Channels
 ^^^^^^^^
@@ -515,7 +520,7 @@ Channels can be readable or writable (non-exclusive).
 **Example**
 
 .. doc-check: rflx,session_parameter
-.. code-block:: ada
+.. code:: ada
 
    Data_Channel : Channel with Readable, Writable
 
@@ -577,7 +582,7 @@ A declared variable must have a type and can be optionally initialized using an 
 **Example**
 
 .. doc-check: rflx,declaration
-.. code-block:: ada
+.. code:: ada
 
    Error_Sent : Boolean := False
 
@@ -595,7 +600,7 @@ Renaming Declaration
 **Example**
 
 .. doc-check: rflx,declaration
-.. code-block:: ada
+.. code:: ada
 
    Client_Hello_Message : TLS_Handshake::Client_Hello renames Client_Hello_Handshake_Message.Payload
 
@@ -653,8 +658,8 @@ If no condition could be fulfilled or no conditional transitions were defined, t
 
 **Example**
 
-.. doc-check: rflx,state
-.. code-block:: ada
+.. doc-check: rflx,state,6
+.. code:: ada
 
    state A
       with Desc => "rfc1149.txt+51:4-52:9"
@@ -670,8 +675,8 @@ If no condition could be fulfilled or no conditional transitions were defined, t
       goto A
    end A
 
-.. doc-check: rflx,state
-.. code-block:: ada
+.. doc-check: rflx,state,6
+.. code:: ada
 
    state B is null state
 
@@ -765,8 +770,8 @@ The last transition in a state definition is the default transition, which does 
 
 **Example**
 
-.. doc-check: rflx,conditional_transition
-.. code-block:: ada
+.. doc-check: rflx,conditional_transition,9
+.. code:: ada
 
    goto B
       with Desc => "rfc1149.txt+45:4-47:8"
@@ -826,7 +831,7 @@ An assignment always creates a copy of the original object.
 **Example**
 
 .. doc-check: rflx,assignment_statement
-.. code-block:: ada
+.. code:: ada
 
    Error_Sent := True
 
@@ -871,7 +876,7 @@ Message fields must be set in order. Trying to set a message field which is not 
 **Example**
 
 .. doc-check: rflx,message_field_assignment_statement
-.. code-block:: ada
+.. code:: ada
 
     Packet.Length := 42
 
@@ -916,7 +921,7 @@ Appending an element to a sequence might lead to an exception transition.
 **Example**
 
 .. doc-check: rflx,attribute_statement
-.. code-block:: ada
+.. code:: ada
 
    Parameter_Request_List'Append (DHCP::Domain_Name_Option)
 
@@ -961,7 +966,7 @@ Extending a sequence might lead to an exception transition.
 **Example**
 
 .. doc-check: rflx,attribute_statement
-.. code-block:: ada
+.. code:: ada
 
    Parameter_Request_List'Extend (Parameters)
 
@@ -1010,7 +1015,7 @@ The existing state of a message or sequence is removed (and the corresponding bu
 **Example**
 
 .. doc-check: rflx,attribute_statement
-.. code-block:: ada
+.. code:: ada
 
    Message'Reset
 
@@ -1051,7 +1056,7 @@ The read attribute statement is used to retrieve a message from a channel.
 **Example**
 
 .. doc-check: rflx,attribute_statement
-.. code-block:: ada
+.. code:: ada
 
    Data_Channel'Read (Message)
 
@@ -1097,7 +1102,7 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 **Example**
 
 .. doc-check: rflx,attribute_statement
-.. code-block:: ada
+.. code:: ada
 
    Data_Channel'Write (Message)
 
@@ -1149,12 +1154,15 @@ Insufficient memory during the message creation leads to an exception transition
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
-   TLS_Record::TLS_Record'(Tag => TLS_Record::Alert, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size / 8, Fragment => Alert_Message'Opaque)
+   TLS_Record::TLS_Record'(Tag                   => TLS_Record::Alert,
+                           Legacy_Record_Version => TLS_Record::TLS_1_2,
+                           Length                => Alert_Message'Size / 8,
+                           Fragment              => Alert_Message'Opaque)
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    Null_Message'(null message)
 
@@ -1201,12 +1209,12 @@ An aggregate is a collection of elements.
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    [0, 1, 2]
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    []
 
@@ -1336,7 +1344,7 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 **Example**
 
 .. doc-check: rflx,extended_suffix
-.. code-block:: ada
+.. code:: ada
 
    Message'Valid
 
@@ -1382,7 +1390,7 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 **Example**
 
 .. doc-check: rflx,extended_suffix
-.. code-block:: ada
+.. code:: ada
 
    Ethernet_Frame.Payload
 
@@ -1421,7 +1429,7 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    [for O in Offer.Options if O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type]
 
@@ -1467,7 +1475,7 @@ A binding can be used to name a subexpression and enables the use of a subexpres
 **Example**
 
 .. doc-check: rflx,extended_suffix
-.. code-block:: ada
+.. code:: ada
 
    TLS_Alert::Alert'(Level => Level, Description => Description)
       where
@@ -1532,7 +1540,7 @@ Quantified expressions enable reasoning about properties of sequences.
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    for all E in Server_Hello_Message.Extensions => E.Tag /= TLS_Handshake::ET_Supported_Versions
 
@@ -1574,7 +1582,7 @@ All functions which are declared in the session parameters can be called.
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    Decrypt (Key_Update_Message, Sequence_Number, TLS_Record_Message.Encrypted_Record)
 
@@ -1624,7 +1632,7 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    Key_Update_Message (Handshake_Control_Message.Data)
 
@@ -1655,7 +1663,7 @@ Two distinct `discrete choices <#grammar-token-discrete_choice>`_ of a `case exp
 **Example**
 
 .. doc-check: rflx,extended_primary
-.. code-block:: ada
+.. code:: ada
 
    (case Value is
        when T::V1 | T::V2 => 2,
@@ -1682,14 +1690,14 @@ By convention one protocol is specified in one package.
 **Example**
 
 .. doc-check: rflx
-.. code-block:: ada
+.. code:: ada
 
    package Ethernet is
 
-      type Address is mod 2**48;
-      type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+      type Address is mod 2 ** 48;
+      type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16;
       type TPID is range 16#8100# .. 16#8100# with Size => 16;
-      type TCI is mod 2**16;
+      type TCI is mod 2 ** 16;
       type Ether_Type is
          (ET_IPv4            => 16#0800#,
           ET_ARP             => 16#0806#,
@@ -1734,6 +1742,8 @@ By convention one protocol is specified in one package.
          begin
             Input'Read (Frame);
          transition
+            goto Error
+               if Frame'Valid and Frame.Destination = 16#FFFF_FFFF_FFFF#
             goto Forward
                if Frame'Valid
             goto Validate
@@ -1745,11 +1755,10 @@ By convention one protocol is specified in one package.
             Output'Write (Frame);
          transition
             goto Validate
-         exception
-            goto Error
          end Forward;
 
          state Error is null state;
+
       end Validator;
 
    end Ethernet;
@@ -1771,7 +1780,7 @@ For each package referenced in a file, a corresponding with clause has to be add
 **Example**
 
 .. doc-check: rflx,context_clause
-.. code-block:: ada
+.. code:: ada
 
    with Ethernet;
    with IPv4;
@@ -1793,8 +1802,8 @@ The file name must match the package name in lower case characters.
 
 File: ``in_ethernet.rflx``
 
-.. doc-check: rflx,specification
-.. code-block:: ada
+.. doc-check: rflx,specification,0
+.. code:: ada
 
    with Ethernet;
    with IPv4;
