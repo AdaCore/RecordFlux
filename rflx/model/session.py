@@ -198,6 +198,105 @@ class State(Base):
             ),
         )
 
+    def optimize(self) -> None:
+        """Execute optimization transformations on state."""
+        self._optimize_structures()
+
+    def _optimize_structures(self) -> None:
+        """
+        Replace local messages with structures if possible.
+
+        If only a limited feature set of a local message object is used it can be replaced with
+        a structure. This allows the generation of more size and runtime efficient code.
+        """
+
+        def find_identifier(name: ID, expression: expr.Expr) -> bool:
+            """Check if variable with a given identifier exists within an expression."""
+            return bool(
+                expression.findall(lambda e: isinstance(e, expr.Variable) and e.identifier == name)
+            )
+
+        def find_prefix(name: ID, expression: expr.Expr) -> bool:
+            """Check if the prefix of an expression contains a variable with a given identifier."""
+            return bool(
+                expression.findall(
+                    lambda e: isinstance(e, (expr.Attribute, expr.Opaque))
+                    and find_identifier(name, e.prefix)
+                )
+            )
+
+        def substituted(expression: expr.Expr, structure: rty.Structure) -> expr.Expr:
+            """Replace message types with structure of equal name."""
+
+            def subst(expression: expr.Expr) -> expr.Expr:
+                """
+                Substitute type of expression with structure type.
+
+                Replace the type of expression with a structure if
+                it is a message type with the same identifier.
+                """
+                if (
+                    isinstance(expression, (expr.Variable, expr.Call))
+                    and isinstance(expression.type_, rty.Message)
+                    and expression.type_.identifier == structure.identifier
+                ):
+                    expression.type_ = structure
+                return expression
+
+            return expression.substituted(subst)
+
+        def contains_unsupported_feature(name: ID, action: stmt.Statement) -> bool:
+            """Check for features that prevent optimization."""
+            return (
+                # The message is an argument in 'Append.
+                isinstance(action, stmt.Append)
+                and find_identifier(name, action.parameter)
+                # The message is the prefix of an attribute.
+                or (isinstance(action, stmt.AttributeStatement) and action.identifier == name)
+                # The message is the prefix of an assignment target.
+                or (isinstance(action, stmt.Assignment) and find_prefix(name, action.expression))
+                # A field of the message is assigned.
+                or (isinstance(action, stmt.MessageFieldAssignment) and action.message == name)
+                # The message is an argument in 'Extend.
+                or (
+                    isinstance(action, stmt.Extend)
+                    and any(p for p in action.parameters if find_identifier(name, p))
+                )
+                # Assignment to the message that is not a call.
+                or (
+                    isinstance(action, stmt.VariableAssignment)
+                    and action.identifier == name
+                    and not isinstance(action.expression, expr.Call)
+                )
+            )
+
+        for name, message in self.declarations.items():
+            if (
+                not isinstance(message.type_, rty.Message)
+                or not message.type_.is_definite
+                or (
+                    isinstance(message, decl.VariableDeclaration) and message.expression is not None
+                )
+            ):
+                continue
+
+            for action in self._actions:
+                if contains_unsupported_feature(name, action):
+                    break
+            else:
+                # Mypy complains that message.type_ is read only, what's
+                # the correct way to change the type here?
+                message.type_ = rty.Structure(  # type: ignore
+                    identifier=message.type_.identifier,
+                    field_combinations=message.type_.field_combinations,
+                    parameter_types=message.type_.parameter_types,
+                    field_types=message.type_.field_types,
+                )
+
+                for action in self._actions:
+                    if isinstance(action, stmt.Assignment):
+                        substituted(action.expression, message.type_)
+
 
 class AbstractSession(BasicDeclaration):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
@@ -353,6 +452,12 @@ class Session(AbstractSession):
         )
         self._validate()
         self.error.propagate()
+        self._optimize()
+
+    def _optimize(self) -> None:
+        """Optimize session model."""
+        for state in self.states:
+            state.optimize()
 
     def _validate_states(self) -> None:
         if not self.states:

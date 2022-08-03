@@ -264,10 +264,11 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.Test.Option_Data.Has_Buffer (Ctx)
        and then RFLX.Test.Option_Data.Valid_Predecessor (Ctx, Fld)
+       and then RFLX.Test.Option_Data.Valid_Value (Fld, Val)
        and then RFLX.Test.Option_Data.Valid_Next (Ctx, Fld)
        and then RFLX.Test.Option_Data.Sufficient_Space (Ctx, Fld),
      Post =>
@@ -438,14 +439,13 @@ is
        and then RFLX.Test.Option_Data.Valid_Next (Ctx, RFLX.Test.Option_Data.F_Length)
        and then RFLX.Universal.Valid_Length (RFLX.Universal.To_Base_Integer (Val))
        and then RFLX.Test.Option_Data.Available_Space (Ctx, RFLX.Test.Option_Data.F_Length) >= RFLX.Test.Option_Data.Field_Size (Ctx, RFLX.Test.Option_Data.F_Length)
-       and then RFLX.Test.Option_Data.Field_Condition (Ctx, RFLX.Test.Option_Data.F_Length),
+       and then RFLX.Test.Option_Data.Field_Condition (Ctx, RFLX.Test.Option_Data.F_Length, RFLX.Universal.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Length)
        and Get_Length (Ctx) = Val
        and Invalid (Ctx, F_Data)
-       and (Predecessor (Ctx, F_Data) = F_Length
-            and Valid_Next (Ctx, F_Data))
+       and (if Get_Length (Ctx) > 1 then Predecessor (Ctx, F_Data) = F_Length and Valid_Next (Ctx, F_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -455,28 +455,6 @@ is
        and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old;
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
-
-   procedure Set_Data_Empty (Ctx : in out Context) with
-     Pre =>
-       not Ctx'Constrained
-       and then RFLX.Test.Option_Data.Has_Buffer (Ctx)
-       and then RFLX.Test.Option_Data.Valid_Next (Ctx, RFLX.Test.Option_Data.F_Data)
-       and then RFLX.Test.Option_Data.Available_Space (Ctx, RFLX.Test.Option_Data.F_Data) >= RFLX.Test.Option_Data.Field_Size (Ctx, RFLX.Test.Option_Data.F_Data)
-       and then RFLX.Test.Option_Data.Field_Condition (Ctx, RFLX.Test.Option_Data.F_Data)
-       and then RFLX.Test.Option_Data.Field_Size (Ctx, RFLX.Test.Option_Data.F_Data) = 0,
-     Post =>
-       Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Data)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
-       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data);
 
    procedure Initialize_Data (Ctx : in out Context) with
      Pre =>
@@ -506,7 +484,7 @@ is
        and then RFLX.Test.Option_Data.Available_Space (Ctx, RFLX.Test.Option_Data.F_Data) >= RFLX.Test.Option_Data.Field_Size (Ctx, RFLX.Test.Option_Data.F_Data)
        and then RFLX.Test.Option_Data.Valid_Length (Ctx, RFLX.Test.Option_Data.F_Data, Data'Length)
        and then RFLX.Test.Option_Data.Available_Space (Ctx, RFLX.Test.Option_Data.F_Data) >= Data'Length * RFLX_Types.Byte'Size
-       and then RFLX.Test.Option_Data.Field_Condition (Ctx, RFLX.Test.Option_Data.F_Data),
+       and then RFLX.Test.Option_Data.Field_Condition (Ctx, RFLX.Test.Option_Data.F_Data, 0),
      Post =>
        Has_Buffer (Ctx)
        and Structural_Valid (Ctx, F_Data)
@@ -569,7 +547,7 @@ is
          Data : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 65534);
       end record;
 
-   function Valid_Structure (Unused_Struct : Structure) return Boolean;
+   function Valid_Structure (Struct : Structure) return Boolean;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
@@ -591,6 +569,14 @@ is
        and Structural_Valid_Message (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
+
+   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length with
+     Pre =>
+       Valid_Structure (Struct);
+
+   function Field_Size_Data (Struct : Structure) return RFLX_Types.Bit_Length with
+     Pre =>
+       Valid_Structure (Struct);
 
 private
 
@@ -655,7 +641,8 @@ private
                     Structural_Valid (Cursors (F_Data))
                  then
                     (Valid (Cursors (F_Length))
-                     and then Cursors (F_Data).Predecessor = F_Length)))
+                     and then Cursors (F_Data).Predecessor = F_Length
+                     and then Cursors (F_Length).Value > 1)))
       and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Data))))
       and then (if
                    Structural_Valid (Cursors (F_Length))
@@ -665,6 +652,7 @@ private
                    and then Cursors (F_Length).First = First
                    and then (if
                                 Structural_Valid (Cursors (F_Data))
+                                and then Cursors (F_Length).Value > 1
                              then
                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
                                 and then Cursors (F_Data).Predecessor = F_Length
@@ -718,11 +706,17 @@ private
              True));
 
    function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
+     ((case Ctx.Cursors (Fld).Predecessor is
+          when F_Initial | F_Data | F_Final =>
+             True,
+          when F_Length =>
+             Ctx.Cursors (F_Length).Value > 1));
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
-          when F_Length | F_Data =>
+          when F_Length =>
+             Val > 1,
+          when F_Data =>
              True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
@@ -818,10 +812,16 @@ private
    function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor is
      (Cursors (Fld));
 
-   function Valid_Structure (Unused_Struct : Structure) return Boolean is
-     (True);
+   function Valid_Structure (Struct : Structure) return Boolean is
+     (RFLX_Types.Base_Integer (Struct.Length) > 1);
 
    function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean is
      (RFLX_Types.Base_Integer (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= RFLX_Types.Base_Integer (Struct.Length) * 8 + 16);
+
+   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length is
+     (16);
+
+   function Field_Size_Data (Struct : Structure) return RFLX_Types.Bit_Length is
+     (RFLX_Types.Bit_Length (Struct.Length) * 8);
 
 end RFLX.Test.Option_Data;

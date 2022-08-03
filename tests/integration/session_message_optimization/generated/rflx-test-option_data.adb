@@ -72,7 +72,7 @@ is
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
           when F_Length =>
-             F_Data,
+             (if Ctx.Cursors (F_Length).Value > 1 then F_Data else F_Initial),
           when F_Data =>
              F_Final))
     with
@@ -186,7 +186,7 @@ is
             Value := (if Composite_Field (Fld) then 0 else Get (Ctx, Fld));
             if
                Valid_Value (Fld, Value)
-               and then Field_Condition (Ctx, Fld)
+               and then Field_Condition (Ctx, Fld, Value)
             then
                pragma Assert ((if Fld = F_Data then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
@@ -276,8 +276,7 @@ is
        and then (case Fld is
                     when F_Length =>
                        Get_Length (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Data) = F_Length
-                            and Valid_Next (Ctx, F_Data)),
+                       and (if Get_Length (Ctx) > 1 then Predecessor (Ctx, F_Data) = F_Length and Valid_Next (Ctx, F_Data)),
                     when F_Data =>
                        (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
@@ -328,8 +327,7 @@ is
        and (case Fld is
                when F_Length =>
                   Get_Length (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Data) = F_Length
-                       and Valid_Next (Ctx, F_Data)),
+                  and (if Get_Length (Ctx) > 1 then Predecessor (Ctx, F_Data) = F_Length and Valid_Next (Ctx, F_Data)),
                when F_Data =>
                   (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
@@ -355,13 +353,6 @@ is
    begin
       Set_Scalar (Ctx, F_Length, RFLX.Universal.To_Base_Integer (Val));
    end Set_Length;
-
-   procedure Set_Data_Empty (Ctx : in out Context) is
-      Unused_Buffer_First, Unused_Buffer_Last : RFLX_Types.Index;
-      Unused_Offset : RFLX_Types.Offset;
-   begin
-      Set (Ctx, F_Data, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
-   end Set_Data_Empty;
 
    procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
