@@ -3106,6 +3106,9 @@ def create_structure(prefix: str, message: Message) -> UnitPart:
     unit += _create_to_structure_procedure(prefix, message)
     unit += _create_sufficient_buffer_length_function(prefix, message)
     unit += _create_to_context_procedure(prefix, message)
+    for field in message.fields:
+        if isinstance(message.field_types[field], Opaque):
+            unit += _create_structure_field_size_function(message, field)
     return unit
 
 
@@ -3509,6 +3512,43 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
         ],
         [
             SubprogramBody(specification, [], body),
+        ],
+    )
+
+
+def _create_structure_field_size_function(message: Message, field: Field) -> UnitPart:
+    def substitute(expression: expr.Expr) -> expr.Expr:
+        if isinstance(expression, expr.Variable) and Field(expression.identifier) in message.fields:
+            return expr.Call(
+                const.TYPES_BIT_LENGTH,
+                [
+                    expr.Selected(
+                        expr.Variable("Struct"), expression.identifier, type_=expression.type_
+                    )
+                ],
+            )
+        return expression
+
+    specification = FunctionSpecification(
+        f"Field_Size_{field.identifier}", const.TYPES_LENGTH, [Parameter(["Struct"], "Structure")]
+    )
+    links = message.incoming(field)
+    assert len(links) == 1
+    return UnitPart(
+        [
+            SubprogramDeclaration(
+                specification,
+                [Precondition(Call("Valid_Structure", [Variable("Struct")]))],
+            ),
+        ],
+        private=[
+            ExpressionFunctionDeclaration(
+                specification,
+                Call(
+                    const.TYPES_TO_LENGTH,
+                    [links[0].size.substituted(substitute).simplified().ada_expr()],
+                ),
+            )
         ],
     )
 
