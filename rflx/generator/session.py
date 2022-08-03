@@ -2102,6 +2102,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             result.finalization.extend(
                 self._free_context_buffer(identifier, type_identifier, is_global, alloc_id)
             )
+        elif isinstance(type_, rty.Structure):
+            # Messages with initialization clauses are not optimized
+            assert expression is None
+
+            type_identifier = self._ada_type(type_.identifier)
+            result.initialization_declarations.extend(
+                [
+                    ObjectDeclaration(
+                        [identifier],
+                        type_identifier * "Structure",
+                    ),
+                ],
+            )
 
         else:
             fatal_fail(
@@ -2110,7 +2123,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 location=identifier.location,
             )
 
-        assert isinstance(type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
+        assert isinstance(
+            type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence, rty.Structure)
+        )
 
         if session_global:
             self._session_context.referenced_types.append(type_.identifier)
@@ -2356,6 +2371,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 Subsystem.GENERATOR,
                 location=selected.prefix.location,
             )
+
+        if isinstance(selected.prefix.type_, rty.Structure):
+            return [
+                Assignment(
+                    Variable(variable_id(target, is_global)),
+                    Variable(selected.prefix.identifier * selected.selector),
+                )
+            ]
 
         assert isinstance(selected.prefix.type_, rty.Message)
 
@@ -3041,6 +3064,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
             )
 
+        if isinstance(call_expr.type_, rty.Structure):
+            type_identifier = self._ada_type(call_expr.type_.identifier)
+            post_call.append(
+                self._raise_exception_if(
+                    Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
+                    f'"{call_expr.identifier}" returned an invalid message',
+                    exception_handler,
+                )
+            )
+
         arguments: list[expr.Expr] = []
 
         assert len(call_expr.args) == len(call_expr.argument_types)
@@ -3276,6 +3309,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 exception_handler,
                 is_global,
             )
+
+        if isinstance(call_expr.type_, rty.Structure):
+            return [*call, *post_call]
 
         return call
 
@@ -3822,15 +3858,23 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
                 if isinstance(expression.prefix, expr.Selected):
                     assert isinstance(expression.prefix.prefix, expr.Variable)
-                    assert isinstance(expression.prefix.prefix.type_, rty.Message)
+                    assert isinstance(expression.prefix.prefix.type_, (rty.Message, rty.Structure))
                     type_ = expression.prefix.prefix.type_.identifier
-                    context = context_id(expression.prefix.prefix.identifier, is_global)
+                    if isinstance(expression.prefix.prefix.type_, rty.Message):
+                        context = context_id(expression.prefix.prefix.identifier, is_global)
+                        return expr.Call(
+                            type_ * "Field_Size",
+                            [
+                                expr.Variable(context),
+                                expr.Variable(type_ * "F_" + expression.prefix.selector),
+                            ],
+                        )
+
+                    assert expression.prefix.type_ == rty.OPAQUE
+
                     return expr.Call(
-                        type_ * "Field_Size",
-                        [
-                            expr.Variable(context),
-                            expr.Variable(type_ * "F_" + expression.prefix.selector),
-                        ],
+                        type_ * f"Field_Size_{expression.prefix.selector}",
+                        [expression.prefix.prefix],
                     )
 
                 _unsupported_expression(expression.prefix, "in Size attribute")
@@ -4138,29 +4182,43 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 if isinstance(value, expr.Aggregate):
                     size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
                 elif isinstance(value, expr.Selected):
-                    assert isinstance(value.prefix, expr.Variable)
-                    assert isinstance(value.prefix.type_, rty.Message)
+                    assert isinstance(value.prefix, expr.Variable) and isinstance(
+                        value.prefix.type_, rty.CompoundType
+                    )
                     value_message_type_id = value.prefix.type_.identifier
-                    value_message_context = context_id(value.prefix.identifier, is_global)
-                    statements = self._ensure(
-                        statements,
-                        Call(
-                            value_message_type_id * "Valid_Next",
+                    if isinstance(value.prefix.type_, rty.Message):
+                        value_message_context = context_id(value.prefix.identifier, is_global)
+                        statements = self._ensure(
+                            statements,
+                            Call(
+                                value_message_type_id * "Valid_Next",
+                                [
+                                    Variable(value_message_context),
+                                    Variable(value_message_type_id * f"F_{value.selector}"),
+                                ],
+                            ),
+                            f'access to invalid next message field for "{value}"',
+                            exception_handler,
+                        )
+                        size = Call(
+                            value_message_type_id * "Field_Size",
                             [
                                 Variable(value_message_context),
                                 Variable(value_message_type_id * f"F_{value.selector}"),
                             ],
-                        ),
-                        f'access to invalid next message field for "{value}"',
-                        exception_handler,
-                    )
-                    size = Call(
-                        value_message_type_id * "Field_Size",
-                        [
-                            Variable(value_message_context),
-                            Variable(value_message_type_id * f"F_{value.selector}"),
-                        ],
-                    )
+                        )
+                    else:
+                        assert isinstance(value.prefix.type_, rty.Structure)
+                        size = Call(
+                            const.TYPES_TO_LENGTH,
+                            [
+                                Call(
+                                    value_message_type_id * f"Field_Size_{value.selector}",
+                                    [Variable(value.prefix.identifier)],
+                                )
+                            ],
+                        )
+
                 elif isinstance(value, expr.Opaque):
                     size = (
                         expr.Size(value.prefix)
@@ -4169,6 +4227,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     )
                 else:
                     size = Size(value.substituted(self._substitution(is_global)).ada_expr())
+                if not (
+                    isinstance(value, expr.Selected)
+                    and isinstance(value.prefix, expr.Variable)
+                    and isinstance(value.prefix.type_, rty.Structure)
+                ):
+                    size = Call(const.TYPES_TO_LENGTH, [size])
                 statements = self._ensure(
                     statements,
                     Call(
@@ -4176,7 +4240,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         [
                             Variable(message_context),
                             Variable(message_type_id * f"F_{field}"),
-                            Call(const.TYPES_TO_LENGTH, [size]),
+                            size,
                         ],
                     ),
                     f'invalid message field size for "{value}"',
@@ -4289,6 +4353,40 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             field,
                             value_message_type_id,
                             value_message_context,
+                            value.selector,
+                        ),
+                    ]
+                )
+        elif (
+            isinstance(value, expr.Selected)
+            and isinstance(value.prefix, expr.Variable)
+            and isinstance(value.prefix.type_, rty.Structure)
+        ):
+            if isinstance(field_type, (rty.Integer, rty.Enumeration)):
+                statements.extend(
+                    [
+                        CallStatement(
+                            message_type_id * f"Set_{field}",
+                            [
+                                Variable(message_context),
+                                self._convert_type(value, field_type, value.type_)
+                                .simplified()
+                                .ada_expr(),
+                            ],
+                        )
+                    ]
+                )
+            else:
+                assert field_type == rty.OPAQUE
+                self._session_context.used_types_body.append(const.TYPES_LENGTH)
+                statements.extend(
+                    [
+                        self._set_opaque_field_to_message_field_from_structure(
+                            message_type_id,
+                            message_context,
+                            field,
+                            value.prefix.type_.identifier,
+                            value.prefix.identifier,
                             value.selector,
                         ),
                     ]
@@ -4451,6 +4549,71 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 ],
             ),
             post_statements=[Assignment(message_context, Variable(temporary_message_context))],
+        )
+
+    def _set_opaque_field_to_message_field_from_structure(  # pylint: disable = too-many-arguments
+        self,
+        target_type: ID,
+        target_context: ID,
+        field: ID,
+        structure_type_id: ID,
+        structure: ID,
+        structure_field: ID,
+    ) -> Declare:
+        """Generate assignment of an opaque structure field to a message field."""
+        return self._set_opaque_field(
+            target_type,
+            target_context,
+            field,
+            pre_declarations=[],
+            get_preconditions=AndThen(
+                Call(
+                    structure_type_id * "Valid_Structure",
+                    [
+                        Variable(structure),
+                    ],
+                ),
+                Equal(
+                    Variable("Length"),
+                    Call(
+                        const.TYPES_TO_LENGTH,
+                        [
+                            Call(
+                                structure_type_id * f"Field_Size_{structure_field}",
+                                [
+                                    Variable(structure),
+                                ],
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+            get_statements=[
+                Assignment(
+                    Variable("Data"),
+                    Indexed(
+                        Variable(f"{structure}.{structure_field}"),
+                        ValueRange(
+                            First(f"{structure}.{structure_field}"),
+                            Add(
+                                First(f"{structure}.{structure_field}"), Length("Data"), -Number(1)
+                            ),
+                        ),
+                    ),
+                )
+            ],
+            length=Call(
+                const.TYPES_TO_LENGTH,
+                [
+                    Call(
+                        structure_type_id * f"Field_Size_{structure_field}",
+                        [
+                            Variable(structure),
+                        ],
+                    ),
+                ],
+            ),
+            post_statements=[],
         )
 
     def _set_opaque_field_to_message(

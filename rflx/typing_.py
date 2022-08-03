@@ -273,17 +273,14 @@ class Refinement:
 
 
 @attr.s(frozen=True)
-class Message(IndependentType):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "message type"
+class CompoundType(IndependentType):
+    """Base type for any type consisting of multiple fields of different types."""
+
+    DESCRIPTIVE_NAME: ty.ClassVar[str]
     identifier: ID = attr.ib(converter=ID)
     field_combinations: ty.Set[ty.Tuple[str, ...]] = attr.ib(factory=set)
     parameter_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
     field_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
-    refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
-    is_definite: bool = attr.ib(False)
-
-    def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
     @property
     def parameters(self) -> ty.Set[ID]:
@@ -296,6 +293,25 @@ class Message(IndependentType):
     @property
     def types(self) -> ty.Mapping[ID, Type]:
         return {**self.parameter_types, **self.field_types}
+
+    def __str__(self) -> str:
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
+
+
+@attr.s(frozen=True)
+class Structure(CompoundType):
+    """Definite compound type."""
+
+    DESCRIPTIVE_NAME = "structure type"
+
+
+@attr.s(frozen=True)
+class Message(CompoundType):
+    """Indefinite compound type."""
+
+    DESCRIPTIVE_NAME = "message type"
+    refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
+    is_definite: bool = attr.ib(False)
 
 
 @attr.s(frozen=True)

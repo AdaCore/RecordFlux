@@ -630,6 +630,18 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
+   function Field_Size_Message_Type (Struct : Structure) return RFLX_Types.Bit_Length with
+     Pre =>
+       Valid_Structure (Struct);
+
+   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length with
+     Pre =>
+       Valid_Structure (Struct);
+
+   function Field_Size_Data (Struct : Structure) return RFLX_Types.Bit_Length with
+     Pre =>
+       Valid_Structure (Struct);
+
 private
 
    type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
@@ -881,5 +893,14 @@ private
 
    function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean is
      (RFLX_Types.Base_Integer (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= RFLX_Types.Base_Integer (Struct.Length) * 8 + 16);
+
+   function Field_Size_Message_Type (Struct : Structure) return RFLX_Types.Bit_Length is
+     (8);
+
+   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length is
+     (8);
+
+   function Field_Size_Data (Struct : Structure) return RFLX_Types.Bit_Length is
+     (RFLX_Types.Bit_Length (Struct.Length) * 8);
 
 end RFLX.Test.Definite_Message;
