@@ -15,11 +15,18 @@ is
          Slot_1 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_2 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_3 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
-         Slot_4 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
+         Slot_4 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_5 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
          Slot_6 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
-         Slot_7 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_7 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
          Slot_8 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_9 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_10 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_11 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_12 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_13 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_14 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_15 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
       end record;
 
    subtype Slot_Ptr_Type_4096 is RFLX_Types.Bytes_Ptr with
@@ -39,11 +46,18 @@ is
          Slot_Ptr_1 : Slot_Ptr_Type_4096;
          Slot_Ptr_2 : Slot_Ptr_Type_4096;
          Slot_Ptr_3 : Slot_Ptr_Type_4096;
-         Slot_Ptr_4 : Slot_Ptr_Type_8096;
+         Slot_Ptr_4 : Slot_Ptr_Type_4096;
          Slot_Ptr_5 : Slot_Ptr_Type_8096;
          Slot_Ptr_6 : Slot_Ptr_Type_8096;
-         Slot_Ptr_7 : Slot_Ptr_Type_4096;
+         Slot_Ptr_7 : Slot_Ptr_Type_8096;
          Slot_Ptr_8 : Slot_Ptr_Type_4096;
+         Slot_Ptr_9 : Slot_Ptr_Type_4096;
+         Slot_Ptr_10 : Slot_Ptr_Type_4096;
+         Slot_Ptr_11 : Slot_Ptr_Type_4096;
+         Slot_Ptr_12 : Slot_Ptr_Type_4096;
+         Slot_Ptr_13 : Slot_Ptr_Type_4096;
+         Slot_Ptr_14 : Slot_Ptr_Type_4096;
+         Slot_Ptr_15 : Slot_Ptr_Type_4096;
       end record;
 
    function Initialized (S : Slots) return Boolean is
@@ -54,7 +68,14 @@ is
       and S.Slot_Ptr_5 /= null
       and S.Slot_Ptr_6 /= null
       and S.Slot_Ptr_7 /= null
-      and S.Slot_Ptr_8 /= null);
+      and S.Slot_Ptr_8 /= null
+      and S.Slot_Ptr_9 /= null
+      and S.Slot_Ptr_10 /= null
+      and S.Slot_Ptr_11 /= null
+      and S.Slot_Ptr_12 /= null
+      and S.Slot_Ptr_13 /= null
+      and S.Slot_Ptr_14 /= null
+      and S.Slot_Ptr_15 /= null);
 
    function Uninitialized (S : Slots) return Boolean is
      (S.Slot_Ptr_1 = null
@@ -64,7 +85,14 @@ is
       and S.Slot_Ptr_5 = null
       and S.Slot_Ptr_6 = null
       and S.Slot_Ptr_7 = null
-      and S.Slot_Ptr_8 = null);
+      and S.Slot_Ptr_8 = null
+      and S.Slot_Ptr_9 = null
+      and S.Slot_Ptr_10 = null
+      and S.Slot_Ptr_11 = null
+      and S.Slot_Ptr_12 = null
+      and S.Slot_Ptr_13 = null
+      and S.Slot_Ptr_14 = null
+      and S.Slot_Ptr_15 = null);
 
    procedure Initialize (S : out Slots; M : Memory) with
      Post =>
@@ -78,10 +106,17 @@ is
      (S.Slot_Ptr_1 = null
       and S.Slot_Ptr_2 = null
       and S.Slot_Ptr_3 = null
-      and S.Slot_Ptr_4 /= null
+      and S.Slot_Ptr_4 = null
       and S.Slot_Ptr_5 /= null
       and S.Slot_Ptr_6 /= null
       and S.Slot_Ptr_7 /= null
-      and S.Slot_Ptr_8 /= null);
+      and S.Slot_Ptr_8 /= null
+      and S.Slot_Ptr_9 /= null
+      and S.Slot_Ptr_10 /= null
+      and S.Slot_Ptr_11 /= null
+      and S.Slot_Ptr_12 /= null
+      and S.Slot_Ptr_13 /= null
+      and S.Slot_Ptr_14 /= null
+      and S.Slot_Ptr_15 /= null);
 
 end RFLX.Test.Session_Allocator;

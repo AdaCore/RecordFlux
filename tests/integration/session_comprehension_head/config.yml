@@ -1,0 +1,8 @@
+output:
+  - Channel
+sequence: |
+  State: Start
+  State: Process
+  Read Channel: 1 0 1 2
+  State: Send
+prove:
