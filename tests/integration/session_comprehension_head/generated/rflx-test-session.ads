@@ -5,8 +5,7 @@ with RFLX.Test.Session_Allocator;
 with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Universal.Options;
-with RFLX.Universal.Message;
-with RFLX.Universal.Values;
+with RFLX.Universal.Option;
 
 package RFLX.Test.Session with
   SPARK_Mode
@@ -18,7 +17,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Send_1, S_Send_2, S_Terminated);
+   type State is (S_Start, S_Process, S_Send, S_Terminated);
 
    type Private_Context is private;
 
@@ -94,34 +93,23 @@ private
       record
          Next_State : State := S_Start;
          Options_Ctx : Universal.Options.Context;
-         Message_1_Ctx : Universal.Message.Context;
-         Message_2_Ctx : Universal.Message.Context;
-         Values_Ctx : Universal.Values.Context;
-         First_Option_Length : Universal.Length := Universal.Length'First;
+         First_Option_Ctx : Universal.Option.Context;
          Slots : Test.Session_Allocator.Slots;
          Memory : Test.Session_Allocator.Memory;
       end record;
 
    function Uninitialized (Ctx : Context'Class) return Boolean is
      (not Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
-      and not Universal.Message.Has_Buffer (Ctx.P.Message_1_Ctx)
-      and not Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
-      and not Universal.Values.Has_Buffer (Ctx.P.Values_Ctx)
+      and not Universal.Option.Has_Buffer (Ctx.P.First_Option_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Global_Initialized (Ctx : Context'Class) return Boolean is
      (Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
       and then Ctx.P.Options_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Options_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Message.Has_Buffer (Ctx.P.Message_1_Ctx)
-      and then Ctx.P.Message_1_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Message_1_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
-      and then Ctx.P.Message_2_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
-      and then Universal.Values.Has_Buffer (Ctx.P.Values_Ctx)
-      and then Ctx.P.Values_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Values_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
+      and then Universal.Option.Has_Buffer (Ctx.P.First_Option_Ctx)
+      and then Ctx.P.First_Option_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.First_Option_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Initialized (Ctx : Context'Class) return Boolean is
      (Global_Initialized (Ctx)
@@ -137,12 +125,9 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Send_1 =>
-                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_1_Ctx)
-                    and Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0,
-                 when S_Send_2 =>
-                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_2_Ctx)
-                    and Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx) > 0,
+                 when S_Send =>
+                    Universal.Option.Structural_Valid_Message (Ctx.P.First_Option_Ctx)
+                    and Universal.Option.Byte_Size (Ctx.P.First_Option_Ctx) > 0,
                  when others =>
                     False)));
 
@@ -150,10 +135,8 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Send_1 =>
-                    Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx),
-                 when S_Send_2 =>
-                    Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx),
+                 when S_Send =>
+                    Universal.Option.Byte_Size (Ctx.P.First_Option_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));
 

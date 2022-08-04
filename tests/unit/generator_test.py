@@ -1980,6 +1980,32 @@ def test_session_state_action_error(
             expr.Head(
                 expr.Comprehension(
                     "E",
+                    expr.Selected(
+                        expr.Variable("Y", type_=rty.Message("M")),
+                        "Z",
+                        type_=rty.Sequence("A", rty.Message("C")),
+                    ),
+                    expr.Selected(
+                        expr.Variable("E"),
+                        "Z",
+                        type_=rty.Message("B"),
+                        location=Location((10, 20)),
+                    ),
+                    expr.Greater(
+                        expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
+                        expr.Number(0),
+                    ),
+                ),
+                type_=rty.Message("B"),
+            ),
+            RecordFluxError,
+            "expressions other than variables not yet supported as selector for message types",
+        ),
+        (
+            rty.Message("B"),
+            expr.Head(
+                expr.Comprehension(
+                    "E",
                     expr.Variable(
                         "L",
                         type_=rty.Sequence("A", rty.Message("B")),

@@ -215,11 +215,11 @@ is
             Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
-               pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_First = RFLX_Copy_Options_Ctx.Buffer_First'Loop_Entry);
-               pragma Loop_Invariant (Option_Types_Ctx.Buffer_First = Option_Types_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Option_Types_Ctx.Buffer_First = Option_Types_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (Option_Types_Ctx.Buffer_Last = Option_Types_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
                pragma Loop_Invariant (Universal.Option_Types.Valid (Option_Types_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
                pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_5 = null);
@@ -312,11 +312,11 @@ is
             Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
-               pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_First = RFLX_Copy_Options_Ctx.Buffer_First'Loop_Entry);
-               pragma Loop_Invariant (Option_Types_Ctx.Buffer_First = Option_Types_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Option_Types_Ctx.Buffer_First = Option_Types_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (Option_Types_Ctx.Buffer_Last = Option_Types_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Universal.Option_Types.Has_Buffer (Option_Types_Ctx));
                pragma Loop_Invariant (Universal.Option_Types.Valid (Option_Types_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
                pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_6 = null);
@@ -436,11 +436,11 @@ is
             Universal.Options.Reset (Message_Options_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
-               pragma Loop_Invariant (Universal.Options.Has_Buffer (Message_Options_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_First = RFLX_Copy_Options_Ctx.Buffer_First'Loop_Entry);
-               pragma Loop_Invariant (Message_Options_Ctx.Buffer_First = Message_Options_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_Last = RFLX_Copy_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Message_Options_Ctx.Buffer_First = Message_Options_Ctx.Buffer_First'Loop_Entry);
                pragma Loop_Invariant (Message_Options_Ctx.Buffer_Last = Message_Options_Ctx.Buffer_Last'Loop_Entry);
+               pragma Loop_Invariant (Universal.Options.Has_Buffer (Message_Options_Ctx));
                pragma Loop_Invariant (Universal.Options.Valid (Message_Options_Ctx));
                pragma Loop_Invariant (RFLX_Copy_Options_Buffer = null);
                pragma Loop_Invariant (Ctx.P.Slots.Slot_Ptr_8 = null);

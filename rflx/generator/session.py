@@ -2464,11 +2464,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if isinstance(sequence_element_type, rty.Message):
             if isinstance(comprehension.sequence, expr.Variable):
-                print("COMPREHENSION VAR", comprehension)
                 sequence_id = ID(f"{comprehension.sequence}")
                 comprehension_sequence_id = copy_id(sequence_id)
             elif isinstance(comprehension.sequence, expr.Selected):
-                print("COMPREHENSION SELECT", comprehension)
                 selected = comprehension.sequence
 
                 if not isinstance(selected.prefix, expr.Variable):
@@ -2512,7 +2510,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             ),
                             self._raise_exception_if(
                                 Not(Variable(found_id(target))),
-                                f"failed to find valid element in {sequence_id}",
+                                f'failed to find valid element in "{sequence_id}"',
                                 local_exception_handler,
                             ),
                         ],
@@ -2541,19 +2539,24 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     self._if_structural_valid_message(
                         message_type,
                         context_id(message_id, is_global),
-                        [
-                            self._declare_message_field_sequence_copy(
-                                message_id,
-                                message_type,
-                                message_field,
-                                sequence_id,
-                                sequence_type_id,
-                                comprehension_statements,
-                                exception_handler,
-                                is_global,
-                                alloc_id,
-                            )
-                        ],
+                        self._if_valid_fields(
+                            comprehension.condition,
+                            [
+                                self._declare_message_field_sequence_copy(
+                                    message_id,
+                                    message_type,
+                                    message_field,
+                                    sequence_id,
+                                    sequence_type_id,
+                                    comprehension_statements,
+                                    exception_handler,
+                                    is_global,
+                                    alloc_id,
+                                ),
+                            ],
+                            exception_handler,
+                            is_global,
+                        ),
                         exception_handler,
                     )
                 ]
@@ -4504,24 +4507,53 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             sequence_type,
         )
         local_exception_handler = exception_handler.copy(update_context)
-        element_handler = (
-            self._comprehension_append_element
-            if isinstance(target_type, rty.Sequence)
-            else self._comprehension_assign_element
-        )
 
-        if isinstance(target_type, (rty.Enumeration, rty.Integer, rty.Message)):
-            target_invariants = [
+        target_invariants = [
+            PragmaStatement(
+                "Loop_Invariant",
+                [
+                    Equal(
+                        Selected(
+                            Variable(context_id(sequence_identifier, is_global)), "Buffer_First"
+                        ),
+                        LoopEntry(
+                            Selected(
+                                Variable(context_id(sequence_identifier, is_global)),
+                                "Buffer_First",
+                            )
+                        ),
+                    ),
+                ],
+            ),
+            PragmaStatement(
+                "Loop_Invariant",
+                [
+                    Equal(
+                        Selected(
+                            Variable(context_id(sequence_identifier, is_global)), "Buffer_Last"
+                        ),
+                        LoopEntry(
+                            Selected(
+                                Variable(context_id(sequence_identifier, is_global)),
+                                "Buffer_Last",
+                            )
+                        ),
+                    ),
+                ],
+            ),
+        ]
+        if isinstance(target_type, (rty.Message, rty.Sequence)):
+            target_invariants += [
                 PragmaStatement(
                     "Loop_Invariant",
                     [
                         Equal(
                             Selected(
-                                Variable(context_id(sequence_identifier, is_global)), "Buffer_First"
+                                Variable(context_id(target_identifier, is_global)), "Buffer_First"
                             ),
                             LoopEntry(
                                 Selected(
-                                    Variable(context_id(sequence_identifier, is_global)),
+                                    Variable(context_id(target_identifier, is_global)),
                                     "Buffer_First",
                                 )
                             ),
@@ -4533,20 +4565,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [
                         Equal(
                             Selected(
-                                Variable(context_id(sequence_identifier, is_global)), "Buffer_Last"
+                                Variable(context_id(target_identifier, is_global)), "Buffer_Last"
                             ),
                             LoopEntry(
                                 Selected(
-                                    Variable(context_id(sequence_identifier, is_global)),
+                                    Variable(context_id(target_identifier, is_global)),
                                     "Buffer_Last",
                                 )
                             ),
                         ),
                     ],
                 ),
-            ]
-        elif isinstance(target_type, rty.Sequence):
-            target_invariants = [
                 PragmaStatement(
                     "Loop_Invariant",
                     [
@@ -4556,34 +4585,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         )
                     ],
                 ),
-                *[
-                    PragmaStatement(
-                        "Loop_Invariant",
-                        [
-                            Equal(
-                                Selected(Variable(context_id(x, is_global)), "Buffer_First"),
-                                LoopEntry(
-                                    Selected(Variable(context_id(x, is_global)), "Buffer_First")
-                                ),
-                            ),
-                        ],
-                    )
-                    for x in [sequence_identifier, target_identifier]
-                ],
-                *[
-                    PragmaStatement(
-                        "Loop_Invariant",
-                        [
-                            Equal(
-                                Selected(Variable(context_id(x, is_global)), "Buffer_Last"),
-                                LoopEntry(
-                                    Selected(Variable(context_id(x, is_global)), "Buffer_Last")
-                                ),
-                            ),
-                        ],
-                    )
-                    for x in [sequence_identifier, target_identifier]
-                ],
+            ]
+
+        if isinstance(target_type, rty.Sequence):
+            target_invariants += [
                 PragmaStatement(
                     "Loop_Invariant",
                     [
@@ -4594,8 +4599,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     ],
                 ),
             ]
-        else:
-            assert False
 
         return While(
             Call(
@@ -4651,7 +4654,16 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                             condition.substituted(
                                                 self._substitution(is_global)
                                             ).ada_expr(),
-                                            element_handler(
+                                            self._comprehension_append_element(
+                                                target_identifier,
+                                                target_type,
+                                                selector,
+                                                update_context,
+                                                local_exception_handler,
+                                                is_global,
+                                            )
+                                            if isinstance(target_type, rty.Sequence)
+                                            else self._comprehension_assign_element(
                                                 target_identifier,
                                                 target_type,
                                                 selector,
@@ -4675,14 +4687,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _comprehension_assign_element(  # pylint: disable = too-many-arguments
         self,
         target_identifier: ID,
-        target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
+        target_type: Union[rty.Integer, rty.Enumeration, rty.Message],
         selector: expr.Expr,
         update_context: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-    ) -> List[Statement]:
-        assert isinstance(target_type, (rty.Integer, rty.Enumeration, rty.Message))
-
+    ) -> Sequence[Statement]:
         target_type_id = target_type.identifier
         assign_element: Sequence[Statement]
 
@@ -4762,12 +4772,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _comprehension_append_element(
         self,
         target_identifier: ID,
-        target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
+        target_type: rty.Sequence,
         selector: expr.Expr,
         _: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-    ) -> List[Statement]:
+    ) -> Sequence[Statement]:
         assert isinstance(target_type, rty.Sequence)
 
         target_type_id = target_type.identifier
