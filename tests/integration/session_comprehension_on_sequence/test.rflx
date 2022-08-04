@@ -11,8 +11,6 @@ package Test is
       Options : Universal::Options; -- §S-D-V-T-MS, §S-D-V-E-N
       Message_1 : Universal::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
       Message_2 : Universal::Message; -- §S-S-D-V-T-M, §S-S-D-V-E-N
-      Values : Universal::Values;
-      First_Option_Length : Universal::Length;
    begin
       state Start is
       begin
@@ -22,9 +20,6 @@ package Test is
          Options'Append (Universal::Option'(Option_Type => Universal::OT_Null));
          -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
          Options'Append (Universal::Option'(Option_Type => Universal::OT_Data, Length => 2, Data => [2, 3]));
-         Values'Append (1);
-         Values'Append (2);
-         Values'Append (3);
       transition
          goto Process -- §S-S-T-N
       exception
@@ -34,12 +29,7 @@ package Test is
       state Process is
          Option_Types : Universal::Option_Types; -- §S-S-D-V-T-SS, §S-S-D-V-E-N
          Message_Options : Universal::Options; -- §S-S-D-V-T-MS, §S-S-D-V-E-N
-         Local_Options : Universal::Options;
-         First_Option : Universal::Option;
       begin
-         First_Option_Length := [for E in Options if E.Option_Type = Universal::OT_Data => E.Length]'Head;
-         Local_Options := [for E in Options if E.Option_Type = Universal::OT_Data => E];
-         First_Option := [for E in Options if E.Option_Type = Universal::OT_Data => E]'Head;
          -- §S-S-A-A-LC, §S-E-LC-V, §S-E-LC-SMS, §S-E-LC-TSS, §S-E-LC-CS, §S-E-LC-A, §S-E-S-V
          Option_Types := [for E in Options if E.Option_Type = Universal::OT_Data => E.Option_Type];
          -- Test that target sequence is reset by assignment
@@ -54,7 +44,6 @@ package Test is
          Message_2 := Universal::Message'(Message_Type => Universal::MT_Options,
                                           Length => Message_Options'Size / 8,
                                           Options => Message_Options);
-         First_Option_Length := [for E in Message_2.Options if E.Option_Type = Universal::OT_Data => E.Length]'Head;
          -- §S-S-A-RS-V
          Message_Options'Reset;
       transition

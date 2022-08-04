@@ -6,6 +6,7 @@ with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Universal.Options;
 with RFLX.Universal.Message;
+with RFLX.Universal.Values;
 
 package RFLX.Test.Session with
   SPARK_Mode
@@ -95,6 +96,8 @@ private
          Options_Ctx : Universal.Options.Context;
          Message_1_Ctx : Universal.Message.Context;
          Message_2_Ctx : Universal.Message.Context;
+         Values_Ctx : Universal.Values.Context;
+         First_Option_Length : Universal.Length := Universal.Length'First;
          Slots : Test.Session_Allocator.Slots;
          Memory : Test.Session_Allocator.Memory;
       end record;
@@ -103,6 +106,7 @@ private
      (not Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
       and not Universal.Message.Has_Buffer (Ctx.P.Message_1_Ctx)
       and not Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
+      and not Universal.Values.Has_Buffer (Ctx.P.Values_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Global_Initialized (Ctx : Context'Class) return Boolean is
@@ -114,7 +118,10 @@ private
       and then Ctx.P.Message_1_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Universal.Message.Has_Buffer (Ctx.P.Message_2_Ctx)
       and then Ctx.P.Message_2_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
+      and then Ctx.P.Message_2_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Values.Has_Buffer (Ctx.P.Values_Ctx)
+      and then Ctx.P.Values_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Values_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Initialized (Ctx : Context'Class) return Boolean is
      (Global_Initialized (Ctx)
