@@ -509,7 +509,7 @@ class BoolAssExpr(AssExpr):
 
     def _update_str(self) -> None:
         if not self.terms:
-            self._str = str(TRUE)
+            self._str = str(self.simplified())
             return
         self._str = ""
         for i, t in reversed(list(enumerate(self.terms))):

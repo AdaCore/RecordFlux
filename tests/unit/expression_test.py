@@ -354,6 +354,7 @@ def test_and_contains() -> None:
 
 
 def test_and_simplified() -> None:
+    assert And().simplified() == TRUE
     assert And(TRUE, TRUE).simplified() == TRUE
     assert And(TRUE, FALSE, TRUE).simplified() == FALSE
     assert And(TRUE, EXPR).simplified() == EXPR
@@ -394,6 +395,7 @@ def test_or_contains() -> None:
 
 
 def test_or_simplified() -> None:
+    assert Or().simplified() == FALSE
     assert Or(TRUE, TRUE).simplified() == TRUE
     assert Or(TRUE, EXPR).simplified() == TRUE
     assert Or(EXPR, TRUE).simplified() == TRUE
@@ -413,7 +415,7 @@ def test_or_z3expr() -> None:
 
 def test_or_str() -> None:
     assert str(Or(Variable("X"), Variable("Y"))) == "X\nor Y"
-    assert str(Or()) == "True"
+    assert str(Or()) == "False"
 
 
 def test_undefined_simplified() -> None:
