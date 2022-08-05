@@ -931,31 +931,31 @@ def test_session_declaration_error(string: str, error: str) -> None:
 def test_session() -> None:
     p = Parser()
     p.parse_string(
-        """
-           package Test is
+        """\
+        package Test is
 
-               generic
-               session Session with
-                  Initial => A,
-                  Final => C
-               is
-               begin
-                  state A is
-                  begin
-                  transition
-                     goto B
-                  end A;
+           generic
+           session Session with
+              Initial => A,
+              Final => C
+           is
+           begin
+              state A is
+              begin
+              transition
+                 goto B
+              end A;
 
-                  state B is
-                  begin
-                  transition
-                     goto C
-                  end B;
+              state B is
+              begin
+              transition
+                 goto C
+              end B;
 
-                  state C is null state;
-               end Session;
+              state C is null state;
+           end Session;
 
-            end Test;
+        end Test;
         """
     )
     p.create_model()

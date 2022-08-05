@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 
+import textwrap
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, Dict, Sequence
@@ -1107,15 +1108,15 @@ def test_parse_type_refinement_spec() -> None:
 
 def test_parse_type_derivation_spec() -> None:
     assert_ast_string(
-        """
-            package Test is
-               type T is mod 256;
-               type Foo is
-                  message
-                     N : T;
-                  end message;
-               type Bar is new Foo;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type Foo is
+              message
+                 N : T;
+              end message;
+           type Bar is new Foo;
+        end Test;
         """,
         {
             "_kind": "Specification",
@@ -1689,22 +1690,22 @@ def test_parse_ethernet_spec() -> None:
 
 def test_parse_error_illegal_package_identifiers() -> None:
     assert_error_string(
-        """
-            package RFLX_Types is
-            end RFLX_Types;
+        """\
+        package RFLX_Types is
+        end RFLX_Types;
         """,
-        r'^<stdin>:2:21: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"',
+        r'^<stdin>:1:9: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"',
     )
 
 
 def test_parse_error_inconsistent_package_identifiers() -> None:
     assert_error_string(
-        """
-            package A is
-            end B;
+        """\
+        package A is
+        end B;
         """,
-        r'^<stdin>:3:17: parser: error: inconsistent package identifier "B"\n'
-        r'<stdin>:2:21: parser: info: previous identifier was "A"',
+        r'^<stdin>:2:5: parser: error: inconsistent package identifier "B"\n'
+        r'<stdin>:1:9: parser: info: previous identifier was "A"',
     )
 
 
@@ -1728,10 +1729,10 @@ def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) ->
     with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
         monkeypatch.setattr(parser, "check_naming", lambda x, e, o: raise_parser_error())
         p.parse_string(
-            """
-                package Test is
-                   type T is mod 256;
-                end Test;
+            """\
+            package Test is
+               type T is mod 256;
+            end Test;
             """
         )
 
@@ -1751,163 +1752,163 @@ def test_parse_error_context_dependency_cycle() -> None:
 
 def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T
-                        then Bar if Foo < 100
-                        then null if Foo >= 100;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Foo : T
+                    then Bar if Foo < 100
+                    then null if Foo >= 100;
+              end message;
+        end Test;
         """,
-        r'^<stdin>:7:30: parser: error: undefined field "Bar"$',
+        r'^<stdin>:6:18: parser: error: undefined field "Bar"$',
     )
 
 
 def test_parse_error_invalid_location_expression() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T
-                        then Bar
-                            with Foo => 1;
-                    Bar : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Foo : T
+                    then Bar
+                       with Foo => 1;
+                Bar : T;
+              end message;
+        end Test;
         """,
-        r'^<stdin>:8:34: parser: error: invalid aspect "Foo"$',
+        r'^<stdin>:7:21: parser: error: invalid aspect "Foo"$',
     )
 
 
 def test_parse_error_sequence_undefined_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is sequence of Foo;
-            end Test;
+        """\
+        package Test is
+           type T is sequence of Foo;
+        end Test;
         """,
-        r'^<stdin>:3:38: parser: error: undefined element type "Test::Foo"$',
+        r'^<stdin>:2:26: parser: error: undefined element type "Test::Foo"$',
     )
 
 
 def test_parse_error_refinement_undefined_message() -> None:
     assert_error_string(
-        """
-            package Test is
-               for PDU use (Foo => Bar);
-            end Test;
+        """\
+        package Test is
+           for PDU use (Foo => Bar);
+        end Test;
         """,
-        r'^<stdin>:3:16: parser: error: undefined type "Test::PDU" in refinement$',
+        r'^<stdin>:2:4: parser: error: undefined type "Test::PDU" in refinement$',
     )
 
 
 def test_parse_error_refinement_undefined_sdu() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-               for PDU use (Foo => Bar);
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Foo : T;
+              end message;
+           for PDU use (Foo => Bar);
+        end Test;
         """,
-        r'^<stdin>:8:36: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:7:24: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
 def test_parse_error_derivation_undefined_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type Bar is new Foo;
-            end Test;
+        """\
+        package Test is
+           type Bar is new Foo;
+        end Test;
         """,
-        r'^<stdin>:3:32: parser: error: undefined base message "Test::Foo" in derived message$',
+        r'^<stdin>:2:20: parser: error: undefined base message "Test::Foo" in derived message$',
     )
 
 
 def test_parse_error_derivation_unsupported_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type Foo is mod 256;
-               type Bar is new Foo;
-            end Test;
+        """\
+        package Test is
+           type Foo is mod 256;
+           type Bar is new Foo;
+        end Test;
         """,
-        r'^<stdin>:4:21: parser: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:3:21: parser: info: invalid base message type "Test::Foo"',
+        r'^<stdin>:3:9: parser: error: illegal derivation "Test::Bar"\n'
+        r'<stdin>:2:9: parser: info: invalid base message type "Test::Foo"',
     )
 
 
 def test_parse_error_multiple_initial_node_edges() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     null
-                        then Foo,
-                        then Bar;
-                     Foo : T;
-                     Bar : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 null
+                    then Foo,
+                    then Bar;
+                 Foo : T;
+                 Bar : T;
+              end message;
+        end Test;
         """,
-        r"^<stdin>:7:33: parser: error: Expected ';', got ','",
+        r"^<stdin>:6:21: parser: error: Expected ';', got ','",
     )
 
 
 def test_parse_error_multiple_initial_nodes() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     null
-                        then Foo;
-                     null
-                        then Bar;
-                     Foo : T;
-                     Bar : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 null
+                    then Foo;
+                 null
+                    then Bar;
+                 Foo : T;
+                 Bar : T;
+              end message;
+        end Test;
         """,
-        r"^<stdin>:9:25: parser: error: Expected ':', got 'then'",
+        r"^<stdin>:8:13: parser: error: Expected ':', got 'then'",
     )
 
 
 def test_parse_error_reserved_word_in_type_name() -> None:
     assert_error_string(
-        """
-            package Test is
-               type Type is mod 256;
-            end Test;
+        """\
+        package Test is
+           type Type is mod 256;
+        end Test;
         """,
-        r'^<stdin>:3:21: parser: error: reserved word "Type" used as identifier',
+        r'^<stdin>:2:9: parser: error: reserved word "Type" used as identifier',
     )
 
 
 def test_parse_error_reserved_word_in_message_field() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Message : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Message : T;
+              end message;
+        end Test;
         """,
-        r'^<stdin>:6:22: parser: error: reserved word "Message" used as identifier',
+        r'^<stdin>:5:10: parser: error: reserved word "Message" used as identifier',
     )
 
 
@@ -2048,15 +2049,15 @@ def test_create_model_type_derivation_message() -> None:
     message_bar = model.DerivedMessage("Test::Bar", message_foo)
 
     assert_messages_string(
-        """
-            package Test is
-               type T is mod 256;
-               type Foo is
-                  message
-                     Baz : T;
-                  end message;
-               type Bar is new Foo;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type Foo is
+              message
+                 Baz : T;
+              end message;
+           type Bar is new Foo;
+        end Test;
         """,
         [message_foo, message_bar],
     )
@@ -2074,19 +2075,19 @@ def test_create_model_type_derivation_refinements() -> None:
     message_bar = model.DerivedMessage("Test::Bar", message_foo)
 
     assert_refinements_string(
-        """
-            package Test is
-               type Foo is
-                  message
-                     null
-                        then Baz
-                           with Size => 48;
-                     Baz : Opaque;
-                  end message;
-               for Foo use (Baz => Foo);
-               type Bar is new Foo;
-               for Bar use (Baz => Bar);
-            end Test;
+        """\
+        package Test is
+           type Foo is
+              message
+                 null
+                    then Baz
+                       with Size => 48;
+                 Baz : Opaque;
+              end message;
+           for Foo use (Baz => Foo);
+           type Bar is new Foo;
+           for Bar use (Baz => Bar);
+        end Test;
         """,
         [
             model.Refinement("Test", message_foo, model.Field("Baz"), message_foo),
@@ -2098,69 +2099,69 @@ def test_create_model_type_derivation_refinements() -> None:
 def test_create_model_message_locations() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
-           package Test is
-              type T is mod 2**8;
-              type M is
-                 message
-                    F1 : T;
-                    F2 : T;
-                 end message;
-           end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 F1 : T;
+                 F2 : T;
+              end message;
+        end Test;
         """
     )
     m = p.create_model()
     assert [f.identifier.location for f in m.messages[0].fields] == [
-        Location((6, 21), Path("<stdin>"), (6, 23)),
-        Location((7, 21), Path("<stdin>"), (7, 23)),
+        Location((5, 10), Path("<stdin>"), (5, 12)),
+        Location((6, 10), Path("<stdin>"), (6, 12)),
     ]
 
 
 def test_create_model_session_locations() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
-           package Test is
-               generic
-                  with function F return Boolean;
-               session Session with
-                  Initial => A,
-                  Final => B
-               is
-                  Y : Boolean := F;
-               begin
-                  state A is
-                     Z : Boolean := Y;
-                  begin
-                     Z := False;
-                  transition
-                     goto B
-                        if Z = False
-                     goto A
-                  end A;
+        """\
+        package Test is
+           generic
+              with function F return Boolean;
+           session Session with
+              Initial => A,
+              Final => B
+           is
+              Y : Boolean := F;
+           begin
+              state A is
+                 Z : Boolean := Y;
+              begin
+                 Z := False;
+              transition
+                 goto B
+                    if Z = False
+                 goto A
+              end A;
 
-                  state B is null state;
-               end Session;
-           end Test;
+              state B is null state;
+           end Session;
+        end Test;
         """
     )
     m = p.create_model()
     assert [p.location for p in m.sessions[0].parameters] == [
-        Location((4, 33), Path("<stdin>"), (4, 34)),
+        Location((3, 21), Path("<stdin>"), (3, 22)),
     ]
 
 
 def test_create_model_sequence_with_imported_element_type() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
+        """\
            package Test is
               type T is mod 256;
            end Test;
         """
     )
     p.parse_string(
-        """
+        """\
            with Test;
            package Sequence_Test is
               type T is sequence of Test::T;
@@ -2177,23 +2178,23 @@ def test_create_model_sequence_with_imported_element_type() -> None:
 def test_create_model_checksum() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
-           package Test is
-              type T is mod 2**8;
-              type M is
-                 message
-                    F1 : T;
-                    F2 : T;
-                    C1 : T;
-                    F3 : T;
-                    C2 : T
-                       then F4
-                          if C1'Valid_Checksum and C2'Valid_Checksum;
-                    F4 : T;
-                 end message
-                    with Checksum => (C1 => (F3, F1'First .. F2'Last),
-                                      C2 => (C1'Last + 1 .. C2'First - 1));
-            end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 F1 : T;
+                 F2 : T;
+                 C1 : T;
+                 F3 : T;
+                 C2 : T
+                    then F4
+                       if C1'Valid_Checksum and C2'Valid_Checksum;
+                 F4 : T;
+              end message
+                 with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                   C2 => (C1'Last + 1 .. C2'First - 1));
+        end Test;
         """
     )
     m = p.create_model()
@@ -2213,68 +2214,68 @@ def test_create_model_checksum() -> None:
     "spec,byte_order",
     [
         (
-            """
-                package Test is
-                   type T is mod 2**8;
-                   type M is
-                      message
-                         F1 : T;
-                         F2 : T;
-                         F3 : T;
-                      end message
-                         with Byte_Order => Low_Order_First;
-                 end Test;
+            """\
+            package Test is
+               type T is mod 2 ** 8;
+               type M is
+                  message
+                     F1 : T;
+                     F2 : T;
+                     F3 : T;
+                  end message
+                     with Byte_Order => Low_Order_First;
+            end Test;
             """,
             model.ByteOrder.LOW_ORDER_FIRST,
         ),
         (
-            """
-                package Test is
-                   type T is mod 2**8;
-                   type M is
-                      message
-                         F1 : T;
-                         F2 : T;
-                         F3 : T;
-                      end message
-                         with Byte_Order => High_Order_First;
-                 end Test;
+            """\
+            package Test is
+               type T is mod 2 ** 8;
+               type M is
+                  message
+                     F1 : T;
+                     F2 : T;
+                     F3 : T;
+                  end message
+                     with Byte_Order => High_Order_First;
+            end Test;
             """,
             model.ByteOrder.HIGH_ORDER_FIRST,
         ),
         (
-            """
-                package Test is
-                   type T is mod 2**8;
-                   type M is
-                      message
-                         F1 : T;
-                         F2 : T;
-                         F3 : T;
-                     end message;
-                 end Test;
+            """\
+            package Test is
+               type T is mod 2 ** 8;
+               type M is
+                  message
+                     F1 : T;
+                     F2 : T;
+                     F3 : T;
+                  end message;
+            end Test;
             """,
             model.ByteOrder.HIGH_ORDER_FIRST,
         ),
         (
-            """
-                package Test is
-                   type T is mod 2**8;
-                   type M is
-                      message
-                         F1 : T;
-                         F2 : T;
-                         C1 : T;
-                         F3 : T;
-                         C2 : T
-                            then F4
-                               if C1'Valid_Checksum and C2'Valid_Checksum;
-                         F4 : T;
-                      end message
-                         with Checksum => (C1 => (F3, F1'First .. F2'Last),
-                                           C2 => (C1'Last + 1 .. C2'First - 1)),
-                              Byte_Order => Low_Order_First;
-                end Test;
+            """\
+            package Test is
+               type T is mod 2 ** 8;
+               type M is
+                  message
+                     F1 : T;
+                     F2 : T;
+                     C1 : T;
+                     F3 : T;
+                     C2 : T
+                        then F4
+                           if C1'Valid_Checksum and C2'Valid_Checksum;
+                     F4 : T;
+                  end message
+                     with Checksum => (C1 => (F3, F1'First .. F2'Last),
+                                       C2 => (C1'Last + 1 .. C2'First - 1)),
+                          Byte_Order => Low_Order_First;
+            end Test;
             """,
             model.ByteOrder.LOW_ORDER_FIRST,
         ),
@@ -2291,45 +2292,44 @@ def test_create_model_byteorder(spec: str, byte_order: ByteOrder) -> None:
 @pytest.mark.parametrize(
     "spec",
     [
-        """
-               type M is
-                  message
-                     A : T
-                        if A > 10
-                        then B
-                           if A < 100;
-                     B : T;
-                  end message;
-            """,
-        """
-               type M is
-                  message
-                     A : T
-                        if A > 10 and A < 100;
-                     B : T;
-                  end message;
-            """,
-        """
-               type M is
-                  message
-                     A : T
-                        then B
-                           if A > 10 and A < 100;
-                     B : T;
-                  end message;
-            """,
+        """\
+        type M is
+           message
+              A : T
+                 if A > 10
+                 then B
+                    if A < 100;
+              B : T;
+           end message;
+        """,
+        """\
+        type M is
+           message
+              A : T
+                 if A > 10 and A < 100;
+              B : T;
+           end message;
+        """,
+        """\
+        type M is
+           message
+              A : T
+                 then B
+                    if A > 10 and A < 100;
+              B : T;
+           end message;
+        """,
     ],
 )
 def test_message_field_condition(spec: str) -> None:
+    spec = textwrap.indent(textwrap.dedent(spec), "           ")
     assert_messages_string(
-        f"""
-            package Test is
+        f"""\
+        package Test is
 
-               type T is mod 256;
-
-               {spec}
-
-            end Test;
+           type T is mod 256;
+{spec}
+        end Test;
         """,
         [
             Message(
@@ -2355,35 +2355,33 @@ def test_message_field_condition(spec: str) -> None:
 @pytest.mark.parametrize(
     "spec",
     [
-        """
-               type M is
-                  message
-                     A : T
-                        then B
-                           with First => A'First;
-                     B : T;
-                  end message;
-            """,
-        """
-               type M is
-                  message
-                     A : T;
-                     B : T
-                        with First => A'First;
-                  end message;
-            """,
+        """\
+        type M is
+           message
+              A : T
+                 then B
+                    with First => A'First;
+              B : T;
+           end message;
+        """,
+        """\
+        type M is
+           message
+              A : T;
+              B : T
+                 with First => A'First;
+           end message;
+        """,
     ],
 )
 def test_message_field_first(spec: str) -> None:
+    spec = textwrap.indent(textwrap.dedent(spec), "           ")
     assert_messages_string(
-        f"""
-            package Test is
-
-               type T is mod 256;
-
-               {spec}
-
-            end Test;
+        f"""\
+        package Test is
+           type T is mod 256;
+{spec}
+        end Test;
         """,
         [
             Message(
@@ -2402,35 +2400,35 @@ def test_message_field_first(spec: str) -> None:
 @pytest.mark.parametrize(
     "spec",
     [
-        """
-               type M is
-                  message
-                     A : T
-                        then B
-                           with Size => 8;
-                     B : Opaque;
-                  end message;
-            """,
-        """
-               type M is
-                  message
-                     A : T;
-                     B : Opaque
-                        with Size => 8;
-                  end message;
-            """,
+        """\
+        type M is
+           message
+              A : T
+                 then B
+                    with Size => 8;
+              B : Opaque;
+           end message;
+        """,
+        """\
+        type M is
+           message
+              A : T;
+              B : Opaque
+                 with Size => 8;
+           end message;
+        """,
     ],
 )
 def test_message_field_size(spec: str) -> None:
+    spec = textwrap.indent(textwrap.dedent(spec), "           ")
     assert_messages_string(
-        f"""
-            package Test is
+        f"""\
+        package Test is
 
-               type T is mod 256;
+           type T is mod 256;
 
-               {spec}
-
-            end Test;
+{spec}
+        end Test;
         """,
         [
             Message(
@@ -2464,23 +2462,20 @@ def test_message_field_size(spec: str) -> None:
     ],
 )
 def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: str) -> None:
+    field_a = f"\n                    {field_a}" if field_a else ""
+    link = f"\n                       {link}" if link else ""
+    field_b = f"\n                    {field_b}" if field_b else ""
     assert_messages_string(
-        f"""
-            package Test is
-
-               type T is mod 256;
-
-               type M is
-                  message
-                     A : T
-                        {field_a}
-                        then B
-                           {link};
-                     B : Opaque
-                           {field_b};
-                  end message;
-
-            end Test;
+        f"""\
+        package Test is
+           type T is mod 256;
+           type M is
+              message
+                 A : T{field_a}
+                    then B{link};
+                 B : Opaque{field_b};
+              end message;
+        end Test;
         """,
         [
             Message(
@@ -2507,30 +2502,30 @@ def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: s
 
 def test_parameterized_messages() -> None:
     assert_messages_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type T is mod 256;
+           type T is mod 256;
 
-               type M (P : T) is
-                  message
-                     F : Opaque
-                        with Size => P * 8
-                        if P < 100;
-                  end message;
+           type M (P : T) is
+              message
+                 F : Opaque
+                    with Size => P * 8
+                    if P < 100;
+              end message;
 
-               type M_S is
-                  message
-                     F : M (P => 16);
-                  end message;
+           type M_S is
+              message
+                 F : M (P => 16);
+              end message;
 
-               type M_D is
-                  message
-                     L : T;
-                     F : M (P => L);
-                  end message;
+           type M_D is
+              message
+                 L : T;
+                 F : M (P => L);
+              end message;
 
-            end Test;
+        end Test;
         """,
         [
             Message(
@@ -2576,38 +2571,38 @@ def test_parameterized_messages() -> None:
         (
             "",
             r"^"
-            r"<stdin>:15:26: parser: error: missing argument\n"
-            r'<stdin>:6:26: parser: info: expected argument for parameter "P"'
+            r"<stdin>:14:14: parser: error: missing argument\n"
+            r'<stdin>:5:14: parser: info: expected argument for parameter "P"'
             r"$",
         ),
         (
-            "(Q => 16)",
+            " (Q => 16)",
             r"^"
-            r'<stdin>:15:31: parser: error: unexpected argument "Q"\n'
-            r'<stdin>:15:31: parser: info: expected argument for parameter "P"'
+            r'<stdin>:14:19: parser: error: unexpected argument "Q"\n'
+            r'<stdin>:14:19: parser: info: expected argument for parameter "P"'
             r"$",
         ),
         (
-            "(P => 16, Q => 16)",
+            " (P => 16, Q => 16)",
             r"^"
-            r'<stdin>:15:40: parser: error: unexpected argument "Q"\n'
-            r"<stdin>:15:40: parser: info: expected no argument"
+            r'<stdin>:14:28: parser: error: unexpected argument "Q"\n'
+            r"<stdin>:14:28: parser: info: expected no argument"
             r"$",
         ),
         (
-            "(Q => 16, P => 16)",
+            " (Q => 16, P => 16)",
             r"^"
-            r'<stdin>:15:31: parser: error: unexpected argument "Q"\n'
-            r'<stdin>:15:31: parser: info: expected argument for parameter "P"\n'
-            r'<stdin>:15:40: parser: error: unexpected argument "P"\n'
-            r"<stdin>:15:40: parser: info: expected no argument"
+            r'<stdin>:14:19: parser: error: unexpected argument "Q"\n'
+            r'<stdin>:14:19: parser: info: expected argument for parameter "P"\n'
+            r'<stdin>:14:28: parser: error: unexpected argument "P"\n'
+            r"<stdin>:14:28: parser: info: expected no argument"
             r"$",
         ),
         (
-            "(P => 16, P => 16)",
+            " (P => 16, P => 16)",
             r"^"
-            r'<stdin>:15:40: parser: error: unexpected argument "P"\n'
-            r"<stdin>:15:40: parser: info: expected no argument"
+            r'<stdin>:14:28: parser: error: unexpected argument "P"\n'
+            r"<stdin>:14:28: parser: info: expected no argument"
             r"$",
         ),
     ],
@@ -2616,24 +2611,24 @@ def test_parse_error_invalid_arguments_for_parameterized_messages(
     parameters: str, error: str
 ) -> None:
     assert_error_string(
-        f"""
-            package Test is
+        f"""\
+        package Test is
 
-               type T is mod 256;
+           type T is mod 256;
 
-               type M_P (P : T) is
-                  message
-                     F : Opaque
-                        with Size => P * 8
-                        if P < 100;
-                  end message;
+           type M_P (P : T) is
+              message
+                 F : Opaque
+                    with Size => P * 8
+                    if P < 100;
+              end message;
 
-               type M is
-                  message
-                     F : M_P {parameters};
-                  end message;
+           type M is
+              message
+                 F : M_P{parameters};
+              end message;
 
-            end Test;
+        end Test;
         """,
         error,
     )
@@ -2641,12 +2636,12 @@ def test_parse_error_invalid_arguments_for_parameterized_messages(
 
 def test_parse_error_invalid_range_aspect() -> None:
     assert_error_string(
-        """
-            package Test is
-                type T is range 1 .. 200 with Invalid => 42;
-            end Test;
+        """\
+        package Test is
+           type T is range 1 .. 200 with Invalid => 42;
+        end Test;
         """,
-        r"^<stdin>:3:27: parser: error: invalid aspect Invalid for range type T",
+        r"^<stdin>:2:14: parser: error: invalid aspect Invalid for range type T",
     )
 
 
@@ -2654,22 +2649,22 @@ def test_parse_error_invalid_range_aspect() -> None:
     "spec, error",
     [
         (
-            """
-            package Test is
-                type T is (A, B) with Foo;
-            end Test;
+            """\
+        package Test is
+           type T is (A, B) with Foo;
+        end Test;
         """,
-            r'^<stdin>:3:22: parser: error: no size set for "Test::T"',
+            r'^<stdin>:2:9: parser: error: no size set for "Test::T"',
         ),
         (
-            """
-            package Test is
-                type T is (A, B) with Always_Valid => Invalid;
-            end Test;
+            """\
+        package Test is
+           type T is (A, B) with Always_Valid => Invalid;
+        end Test;
         """,
             r"^"
-            "<stdin>:3:55: parser: error: invalid Always_Valid expression: Invalid\n"
-            '<stdin>:3:22: parser: error: no size set for "Test::T"'
+            "<stdin>:2:42: parser: error: invalid Always_Valid expression: Invalid\n"
+            '<stdin>:2:9: parser: error: no size set for "Test::T"'
             r"$",
         ),
     ],
@@ -2681,7 +2676,7 @@ def test_parse_error_invalid_enum(spec: str, error: str) -> None:
 @pytest.mark.parametrize(
     "spec",
     [
-        "type X (P : Y) is mod 2**8",
+        "type X (P : Y) is mod 2 ** 8",
         "type X (P : Y) is range 1 .. 100 with Size => 8",
         "type X (P : Y) is (A, B) with Size => 8",
         "type X (P : Y) is sequence of T",
@@ -2691,67 +2686,67 @@ def test_parse_error_invalid_enum(spec: str, error: str) -> None:
 )
 def test_parse_error_invalid_parameterized_type(spec: str) -> None:
     assert_error_string(
-        f"""
-            package Test is
-               type T is mod 2**8;
-               type M is
-                  message
-                     F : T;
-                  end message;
-               {spec};
-            end Test;
+        f"""\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 F : T;
+              end message;
+           {spec};
+        end Test;
         """,
-        r"^<stdin>:8:24: parser: error: only message types can be parameterized$",
+        r"^<stdin>:7:12: parser: error: only message types can be parameterized$",
     )
 
 
 def test_parse_error_undefined_parameter() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 2**8;
-               type M (P : X) is
-                  message
-                     F : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M (P : X) is
+              message
+                 F : T;
+              end message;
+        end Test;
         """,
-        r'^<stdin>:4:28: parser: error: undefined type "Test::X"$',
+        r'^<stdin>:3:16: parser: error: undefined type "Test::X"$',
     )
 
 
 def test_parse_error_name_conflict_between_parameters() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 2**8;
-               type M (P : T; P : T) is
-                  message
-                     F : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M (P : T; P : T) is
+              message
+                 F : T;
+              end message;
+        end Test;
         """,
         r"^"
-        r'<stdin>:4:31: parser: error: name conflict for "P"\n'
-        r"<stdin>:4:24: parser: info: conflicting name"
+        r'<stdin>:3:19: parser: error: name conflict for "P"\n'
+        r"<stdin>:3:12: parser: info: conflicting name"
         r"$",
     )
 
 
 def test_parse_error_name_conflict_between_field_and_parameter() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 2**8;
-               type M (P : T) is
-                  message
-                     P : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M (P : T) is
+              message
+                 P : T;
+              end message;
+        end Test;
         """,
         r"^"
-        r'<stdin>:6:22: parser: error: name conflict for "P"\n'
-        r"<stdin>:4:24: parser: info: conflicting name"
+        r'<stdin>:5:10: parser: error: name conflict for "P"\n'
+        r"<stdin>:3:12: parser: info: conflicting name"
         r"$",
     )
 
@@ -2773,13 +2768,13 @@ def test_parse_error_duplicate_spec_file_file() -> None:
 def test_parse_error_duplicate_spec_stdin_file() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
+        """\
         package Message_Type is
-            type T is mod 2**32;
-            type M is
-                message
-                    F : T;
-                end message;
+           type T is mod 2 ** 32;
+           type M is
+              message
+                 F : T;
+              end message;
         end Message_Type;
         """
     )
@@ -2788,7 +2783,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
         match=(
             "^tests/data/specs/subdir/message_type.rflx:1:9: parser: error: duplicate"
             " specification\n"
-            "<stdin>:2:17: parser: info: previous specification$"
+            "<stdin>:1:9: parser: info: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -2797,9 +2792,9 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
 def test_parse_reserved_words_as_enum_literals() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
+        """\
         package Test is
-            type A is (Reset => 1, package => 2) with Size => 8;
+           type A is (Reset => 1, package => 2) with Size => 8;
         end Test;
         """
     )
@@ -2808,7 +2803,7 @@ def test_parse_reserved_words_as_enum_literals() -> None:
 def test_parse_reserved_word_as_channel_name() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
+        """\
         package Test is
            generic
               Channel : Channel with Readable, Writable;
