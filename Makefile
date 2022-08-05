@@ -168,7 +168,7 @@ printenv_gnat:
 generate:
 	tools/generate_spark_test_code.py
 
-doc:
+doc: check_doc
 	$(MAKE) -C doc html
 
 clean:
