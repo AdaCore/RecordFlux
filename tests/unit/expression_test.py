@@ -361,6 +361,15 @@ def test_and_simplified() -> None:
     assert And(EXPR, TRUE).simplified() == EXPR
     assert And(EXPR, FALSE).simplified() == FALSE
     assert And(FALSE, EXPR).simplified() == FALSE
+    assert (
+        And(
+            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+        ).simplified()
+        == FALSE
+    )
+    assert And(
+        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+    ).simplified() == Equal(Variable("X"), Number(0))
 
 
 def test_and_z3expr() -> None:
@@ -399,6 +408,15 @@ def test_or_simplified() -> None:
     assert Or(TRUE, TRUE).simplified() == TRUE
     assert Or(TRUE, EXPR).simplified() == TRUE
     assert Or(EXPR, TRUE).simplified() == TRUE
+    assert (
+        Or(
+            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+        ).simplified()
+        == TRUE
+    )
+    assert Or(
+        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+    ).simplified() == Equal(Variable("X"), Number(0))
 
 
 def test_or_z3expr() -> None:
