@@ -47,194 +47,194 @@ def assert_error_string(string: str, regex: str) -> None:
 
 def test_message_undefined_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type PDU is
+              message
+                 Foo : T;
+              end message;
+        end Test;
         """,
         r"^"
-        r'<stdin>:5:28: parser: error: undefined type "Test::T"\n'
-        r'<stdin>:5:22: model: error: missing type for field "Foo" in "Test::PDU"'
+        r'<stdin>:4:16: parser: error: undefined type "Test::T"\n'
+        r'<stdin>:4:10: model: error: missing type for field "Foo" in "Test::PDU"'
         r"$",
     )
 
 
 def test_message_field_first_conflict() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type T is mod 256;
+           type T is mod 256;
 
-               type M is
-                  message
-                     A : T
-                        then B
-                           with First => A'First;
-                     B : T
-                        with First => A'First;
-                  end message;
+           type M is
+              message
+                 A : T
+                    then B
+                       with First => A'First;
+                 B : T
+                    with First => A'First;
+              end message;
 
-            end Test;
+        end Test;
         """,
         r"^"
-        r'<stdin>:12:39: model: error: first aspect of field "B" conflicts with previous'
+        r'<stdin>:11:27: model: error: first aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:10:42: model: info: previous specification of first"
+        r"<stdin>:9:30: model: info: previous specification of first"
         r"$",
     )
 
 
 def test_message_field_size_conflict() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type T is mod 256;
+           type T is mod 256;
 
-               type M is
-                  message
-                     A : T
-                        then B
-                           with Size => 8;
-                     B : Opaque
-                        with Size => 8;
-                  end message;
+           type M is
+              message
+                 A : T
+                    then B
+                       with Size => 8;
+                 B : Opaque
+                    with Size => 8;
+              end message;
 
-            end Test;
+        end Test;
         """,
         r"^"
-        r'<stdin>:12:38: model: error: size aspect of field "B" conflicts with previous'
+        r'<stdin>:11:26: model: error: size aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:10:41: model: info: previous specification of size"
+        r"<stdin>:9:29: model: info: previous specification of size"
         r"$",
     )
 
 
 def test_message_derivation_of_derived_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type Foo is null message;
-               type Bar is new Foo;
-               type Baz is new Bar;
-            end Test;
+        """\
+        package Test is
+           type Foo is null message;
+           type Bar is new Foo;
+           type Baz is new Bar;
+        end Test;
         """,
-        r'^<stdin>:5:21: model: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:4:21: model: info: illegal base message type "Test::Bar"$',
+        r'^<stdin>:4:9: model: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:3:9: model: info: illegal base message type "Test::Bar"$',
     )
 
 
 def test_illegal_redefinition() -> None:
     assert_error_string(
-        """
-            package Test is
-               type Boolean is mod 2;
-            end Test;
+        """\
+        package Test is
+           type Boolean is mod 2;
+        end Test;
         """,
-        r'^<stdin>:3:16: model: error: illegal redefinition of built-in type "Boolean"',
+        r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"',
     )
 
 
 def test_invalid_modular_type() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 2**128;
-            end Test;
+        """\
+        package Test is
+           type T is mod 2 ** 128;
+        end Test;
         """,
-        r'^<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*63\)',
+        r'^<stdin>:2:18: model: error: modulus of "T" exceeds limit \(2\*\*63\)',
     )
 
 
 def test_invalid_enumeration_type_size() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is (Foo, Bar, Baz) with Size => 1;
-            end Test;
+        """\
+        package Test is
+           type T is (Foo, Bar, Baz) with Size => 1;
+        end Test;
         """,
-        r'<stdin>:3:21: model: error: size of "T" too small',
+        r'<stdin>:2:9: model: error: size of "T" too small',
     )
 
 
 def test_invalid_enumeration_type_duplicate_values() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is (Foo => 0, Bar => 0) with Size => 1;
-            end Test;
+        """\
+        package Test is
+           type T is (Foo => 0, Bar => 0) with Size => 1;
+        end Test;
         """,
-        r'<stdin>:3:44: model: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:3:34: model: info: previous occurrence",
+        r'<stdin>:2:32: model: error: duplicate enumeration value "0" in "T"\n'
+        r"<stdin>:2:22: model: info: previous occurrence",
     )
 
 
 def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is (Foo => 0, Foo_1 => 1, Bar => 0, Bar_1 => 1) with Size => 8;
-            end Test;
+        """\
+        package Test is
+           type T is (Foo => 0, Foo_1 => 1, Bar => 0, Bar_1 => 1) with Size => 8;
+        end Test;
         """,
-        r'<stdin>:3:56: model: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:3:34: model: info: previous occurrence\n"
-        r'<stdin>:3:68: model: error: duplicate enumeration value "1" in "T"\n'
-        r"<stdin>:3:46: model: info: previous occurrence",
+        r'<stdin>:2:44: model: error: duplicate enumeration value "0" in "T"\n'
+        r"<stdin>:2:22: model: info: previous occurrence\n"
+        r'<stdin>:2:56: model: error: duplicate enumeration value "1" in "T"\n'
+        r"<stdin>:2:34: model: info: previous occurrence",
     )
 
 
 def test_invalid_enumeration_type_identical_literals() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T1 is (Foo, Bar) with Size => 1;
-               type T2 is (Bar, Baz) with Size => 1;
-            end Test;
+        """\
+        package Test is
+           type T1 is (Foo, Bar) with Size => 1;
+           type T2 is (Bar, Baz) with Size => 1;
+        end Test;
         """,
-        r"<stdin>:4:21: model: error: conflicting literals: Bar\n"
-        r'<stdin>:3:33: model: info: previous occurrence of "Bar"',
+        r"<stdin>:3:9: model: error: conflicting literals: Bar\n"
+        r'<stdin>:2:21: model: info: previous occurrence of "Bar"',
     )
 
 
 def test_refinement_invalid_field() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-               for PDU use (Bar => PDU);
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Foo : T;
+              end message;
+           for PDU use (Bar => PDU);
+        end Test;
         """,
-        r'^<stdin>:8:29: model: error: invalid field "Bar" in refinement',
+        r'^<stdin>:7:17: model: error: invalid field "Bar" in refinement',
     )
 
 
 def test_refinement_invalid_condition() -> None:
     assert_error_string(
-        """
-            package Test is
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with Size => 8;
-                     Foo : Opaque;
-                  end message;
-               for PDU use (Foo => PDU)
-                  if X < Y + 1;
-            end Test;
+        """\
+        package Test is
+           type PDU is
+              message
+                 null
+                    then Foo
+                       with Size => 8;
+                 Foo : Opaque;
+              end message;
+           for PDU use (Foo => PDU)
+              if X < Y + 1;
+        end Test;
         """,
         r"^"
-        r'<stdin>:11:22: model: error: unknown field or literal "X"'
+        r'<stdin>:10:10: model: error: unknown field or literal "X"'
         r' in refinement condition of "Test::PDU"\n'
-        r'<stdin>:11:26: model: error: unknown field or literal "Y"'
+        r'<stdin>:10:14: model: error: unknown field or literal "Y"'
         r' in refinement condition of "Test::PDU"'
         r"$",
     )
@@ -242,121 +242,121 @@ def test_refinement_invalid_condition() -> None:
 
 def test_model_name_conflict_messages() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-               type PDU is
-                  message
-                     Foo : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 Foo : T;
+              end message;
+           type PDU is
+              message
+                 Foo : T;
+              end message;
+        end Test;
         """,
-        r'^<stdin>:8:21: model: error: name conflict for type "Test::PDU"\n'
-        r'<stdin>:4:21: model: info: previous occurrence of "Test::PDU"$',
+        r'^<stdin>:7:9: model: error: name conflict for type "Test::PDU"\n'
+        r'<stdin>:3:9: model: info: previous occurrence of "Test::PDU"$',
     )
 
 
 def test_model_conflicting_refinements() -> None:
     assert_error_string(
-        """
-            package Test is
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with Size => 8;
-                     Foo : Opaque;
-                  end message;
-               for Test::PDU use (Foo => Test::PDU);
-               for PDU use (Foo => PDU);
-            end Test;
+        """\
+        package Test is
+           type PDU is
+              message
+                 null
+                    then Foo
+                       with Size => 8;
+                 Foo : Opaque;
+              end message;
+           for Test::PDU use (Foo => Test::PDU);
+           for PDU use (Foo => PDU);
+        end Test;
         """,
-        r'^<stdin>:11:16: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
-        r"<stdin>:10:16: model: info: previous occurrence of refinement",
+        r'^<stdin>:10:4: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
+        r"<stdin>:9:4: model: info: previous occurrence of refinement",
     )
 
 
 def test_model_name_conflict_derivations() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type Foo is
-                  message
-                     Foo : T;
-                  end message;
-               type Bar is new Test::Foo;
-               type Bar is new Foo;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type Foo is
+              message
+                 Foo : T;
+              end message;
+           type Bar is new Test::Foo;
+           type Bar is new Foo;
+        end Test;
         """,
-        r'^<stdin>:9:21: model: error: name conflict for type "Test::Bar"\n'
-        r'<stdin>:8:21: model: info: previous occurrence of "Test::Bar"',
+        r'^<stdin>:8:9: model: error: name conflict for type "Test::Bar"\n'
+        r'<stdin>:7:9: model: info: previous occurrence of "Test::Bar"',
     )
 
 
 def test_model_name_conflict_sessions() -> None:
     assert_error_string(
-        """
-            package Test is
-               type X is mod 2**8;
+        """\
+        package Test is
+           type X is mod 2 ** 8;
 
-               generic
-               session X with
-                  Initial => A,
-                  Final => A
-               is
-               begin
-                  state A is null state;
-               end X;
-            end Test;
+           generic
+           session X with
+              Initial => A,
+              Final => A
+           is
+           begin
+              state A is null state;
+           end X;
+        end Test;
         """,
-        r'^<stdin>:5:16: model: error: name conflict for session "Test::X"\n'
-        r'<stdin>:3:21: model: info: previous occurrence of "Test::X"$',
+        r'^<stdin>:4:4: model: error: name conflict for session "Test::X"\n'
+        r'<stdin>:2:9: model: info: previous occurrence of "Test::X"$',
     )
 
 
 def test_model_illegal_first_aspect_at_initial_link() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 256;
-               type PDU is
-                  message
-                     null
-                        then Foo
-                           with First => 0;
-                     Foo : T;
-                  end message;
-            end Test;
+        """\
+        package Test is
+           type T is mod 256;
+           type PDU is
+              message
+                 null
+                    then Foo
+                       with First => 0;
+                 Foo : T;
+              end message;
+        end Test;
         """,
-        r"^<stdin>:8:42: model: error: illegal first aspect at initial link$",
+        r"^<stdin>:7:30: model: error: illegal first aspect at initial link$",
     )
 
 
 def test_model_errors_in_type_and_session() -> None:
     assert_error_string(
-        """
-            package Test is
-               type T is mod 2**256;
+        """\
+        package Test is
+           type T is mod 2 ** 256;
 
-               generic
-               session S with
-                  Initial => A,
-                  Final => A
-               is
-               begin
-               end S;
-            end Test;
+           generic
+           session S with
+              Initial => A,
+              Final => A
+           is
+           begin
+           end S;
+        end Test;
         """,
         r"^"
-        r'<stdin>:3:30: model: error: modulus of "T" exceeds limit \(2\*\*63\)\n'
-        r"<stdin>:5:16: model: error: empty states\n"
-        r'<stdin>:7:30: model: error: initial state "A" does not exist in "Test::S"\n'
-        r'<stdin>:8:28: model: error: final state "A" does not exist in "Test::S"'
+        r'<stdin>:2:18: model: error: modulus of "T" exceeds limit \(2\*\*63\)\n'
+        r"<stdin>:4:4: model: error: empty states\n"
+        r'<stdin>:6:18: model: error: initial state "A" does not exist in "Test::S"\n'
+        r'<stdin>:7:16: model: error: final state "A" does not exist in "Test::S"'
         r"$",
     )
 
@@ -364,18 +364,18 @@ def test_model_errors_in_type_and_session() -> None:
 def test_message_with_two_size_fields() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
-           package Test is
-              type Length is mod 2**8;
-              type Packet is
-                 message
-                    Length_1 : Length;
-                    Length_2 : Length
-                       then Payload
-                          with Size => 8 * (Length_1 + Length_2);
-                    Payload : Opaque;
-                 end message;
-           end Test;
+        """\
+        package Test is
+           type Length is mod 2 ** 8;
+           type Packet is
+              message
+                 Length_1 : Length;
+                 Length_2 : Length
+                    then Payload
+                       with Size => 8 * (Length_1 + Length_2);
+                 Payload : Opaque;
+              end message;
+        end Test;
         """
     )
     p.create_model()
@@ -384,19 +384,19 @@ def test_message_with_two_size_fields() -> None:
 def test_message_same_field_and_type_name_with_different_size() -> None:
     p = parser.Parser()
     p.parse_string(
-        """
-           package Test is
+        """\
+        package Test is
 
-              type T is mod 2**8;
+           type T is mod 2 ** 8;
 
-              type M is
-                 message
-                    A : T;
-                    T : Opaque
-                       with Size => 16;
-                 end message;
+           type M is
+              message
+                 A : T;
+                 T : Opaque
+                    with Size => 16;
+              end message;
 
-           end Test;
+        end Test;
         """
     )
     p.create_model()
@@ -404,130 +404,130 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
 
 def test_invalid_implicit_size() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type Kind is mod 2 ** 16;
+           type Kind is mod 2 ** 16;
 
-               type M is
-                  message
-                     A : Kind
-                        then B
-                           if Kind = 1
-                        then C
-                           if Kind = 2;
-                     B : Kind;
-                     C : Opaque
-                        with Size => Message'Last - A'Last;
-                  end message;
+           type M is
+              message
+                 A : Kind
+                    then B
+                       if Kind = 1
+                    then C
+                       if Kind = 2;
+                 B : Kind;
+                 C : Opaque
+                    with Size => Message'Last - A'Last;
+              end message;
 
-            end Test;
+        end Test;
         """,
         r"^"
-        r'<stdin>:15:38: model: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:15:38: model: info: remove size aspect to define field with implicit size"
+        r'<stdin>:14:26: model: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:14:26: model: info: remove size aspect to define field with implicit size"
         r"$",
     )
 
 
 def test_invalid_use_of_message_type_with_implicit_size() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type T is mod 2 ** 16;
+           type T is mod 2 ** 16;
 
-               type Inner is
-                  message
-                     Data : Opaque;
-                  end message;
+           type Inner is
+              message
+                 Data : Opaque;
+              end message;
 
-               type Outer is
-                  message
-                     A : T;
-                     Inner : Inner;
-                     B : T;
-                  end message;
+           type Outer is
+              message
+                 A : T;
+                 Inner : Inner;
+                 B : T;
+              end message;
 
-            end Test;
+        end Test;
         """,
         r"^"
-        r"<stdin>:14:22: model: error: messages with implicit size may only be used"
+        r"<stdin>:13:10: model: error: messages with implicit size may only be used"
         " for last fields\n"
-        r'<stdin>:8:22: model: info: message field with implicit size in "Test::Inner"'
+        r'<stdin>:7:10: model: info: message field with implicit size in "Test::Inner"'
         r"$",
     )
 
 
 def test_invalid_message_with_multiple_fields_with_implicit_size() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type M is
-                  message
-                     A : Opaque
-                        with Size => Message'Size;
-                     B : Opaque
-                        with Size => Message'Size - A'Size;
-                  end message;
+           type M is
+              message
+                 A : Opaque
+                    with Size => Message'Size;
+                 B : Opaque
+                    with Size => Message'Size - A'Size;
+              end message;
 
-            end Test;
+        end Test;
         """,
         r"^"
-        r'<stdin>:9:38: model: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:9:38: model: info: remove size aspect to define field with implicit size\n"
-        r'<stdin>:7:38: model: error: "Message" must not be used in size aspects'
+        r'<stdin>:8:26: model: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:8:26: model: info: remove size aspect to define field with implicit size\n"
+        r'<stdin>:6:26: model: error: "Message" must not be used in size aspects'
         r"$",
     )
 
 
 def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
     assert_error_string(
-        """
-            package Test is
+        """\
+        package Test is
 
-               type T is mod 2**8;
+           type T is mod 2 ** 8;
 
-               type M is
-                  message
-                     A : T;
-                     B : Opaque
-                        with Size => Message'Size - 2 * Test::T'Size;
-                     C : T;
-                  end message;
+           type M is
+              message
+                 A : T;
+                 B : Opaque
+                    with Size => Message'Size - 2 * Test::T'Size;
+                 C : T;
+              end message;
 
-            end Test;
+        end Test;
         """,
-        r'^<stdin>:10:38: model: error: "Message" must not be used in size aspects$',
+        r'^<stdin>:9:26: model: error: "Message" must not be used in size aspects$',
     )
 
 
 def test_invalid_message_with_unreachable_field_after_merging() -> None:
     assert_error_string(
-        """
-           package Test is
+        """\
+        package Test is
 
-              type T is range 0 .. 3 with Size => 8;
+           type T is range 0 .. 3 with Size => 8;
 
-              type I is
-                 message
-                    A : T;
-                 end message;
+           type I is
+              message
+                 A : T;
+              end message;
 
-              type O is
-                 message
-                    C : I
-                       then null
-                          if C_A /= 4
-                       then D
-                          if C_A = 4;
-                    D : T;
-                 end message;
+           type O is
+              message
+                 C : I
+                    then null
+                       if C_A /= 4
+                    then D
+                       if C_A = 4;
+                 D : T;
+              end message;
 
-           end Test;
+        end Test;
         """,
-        r'^<stdin>:18:21: model: error: unreachable field "D" in "Test::O"$',
+        r'^<stdin>:17:10: model: error: unreachable field "D" in "Test::O"$',
     )
 
 
