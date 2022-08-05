@@ -1003,12 +1003,7 @@ private
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean is
      ((case Fld is
-          when F_Destination | F_Source =>
-             True,
-          when F_Type_Length_TPID =>
-             Val = 16#8100#
-             or Val /= 16#8100#,
-          when F_TPID | F_TCI =>
+          when F_Destination | F_Source | F_Type_Length_TPID | F_TPID | F_TCI =>
              True,
           when F_Type_Length =>
              Val <= 1500

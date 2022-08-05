@@ -535,28 +535,13 @@ def test_path_condition() -> None:
     )
     assert_equal(
         ETHERNET_FRAME.path_condition(Field("Type_Length")),
-        Or(
-            Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-            NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-        ),
+        TRUE,
     )
     assert_equal(
         ETHERNET_FRAME.path_condition(Field("Payload")),
         Or(
-            And(
-                Or(
-                    Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-                ),
-                LessEqual(Variable("Type_Length"), Number(1500)),
-            ),
-            And(
-                Or(
-                    Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-                ),
-                GreaterEqual(Variable("Type_Length"), Number(1536)),
-            ),
+            LessEqual(Variable("Type_Length"), Number(1500)),
+            GreaterEqual(Variable("Type_Length"), Number(1536)),
         ),
     )
 

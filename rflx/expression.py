@@ -462,6 +462,7 @@ class AssExpr(Expr):
         terms: List[Expr] = []
         all_terms = list(self.terms)
         total = self.neutral_element()
+
         for term in all_terms:
             t = term.simplified()
             if isinstance(t, Number):
@@ -474,19 +475,43 @@ class AssExpr(Expr):
                 all_terms += t.terms
             else:
                 terms.append(t)
-        boolean = isinstance(self, (And, Or))
-        if not terms:
-            if boolean:
-                return TRUE if total else FALSE
-            return Number(total)
-        if total != self.neutral_element():
-            if boolean:
-                terms.append(TRUE if total else FALSE)
-            else:
+
+        if isinstance(self, (And, Or)):
+            terms = self._simplified_boolean_expressions(terms, total)
+        else:
+            if not terms:
+                return Number(total)
+            if total != self.neutral_element():
                 terms.append(Number(total))
+
         if len(terms) == 1:
             return terms[0]
+
         return self.__class__(*terms, location=self.location)
+
+    def _simplified_boolean_expressions(self, terms: Sequence[Expr], total: int) -> list[Expr]:
+        if not terms:
+            return [TRUE if total else FALSE]
+
+        terms = list(unique(terms))
+
+        for term in terms:
+            for relation, inverse_relation in [
+                (Less, GreaterEqual),
+                (LessEqual, Greater),
+                (Equal, NotEqual),
+                (GreaterEqual, Less),
+                (Greater, LessEqual),
+                (NotEqual, Equal),
+            ]:
+                if isinstance(term, relation):
+                    if inverse_relation(term.left, term.right) in terms:
+                        return [FALSE if isinstance(self, And) else TRUE]
+
+        if total != self.neutral_element():
+            terms.append(TRUE if total else FALSE)
+
+        return terms
 
     @abstractmethod
     def operation(self, left: int, right: int) -> int:
