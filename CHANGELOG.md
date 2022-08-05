@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory management in sessions to avoid use of heap (#629)
 - Setting of single message fields (#1067)
 - Case expressions (#907)
+- Optimization and support for Head attributes on list comprehensions (#1115)
 
 Specification:
 
