@@ -36,6 +36,10 @@ Property-based testing based on [Hypothesis](https://hypothesis.readthedocs.io/)
 
 The SPARK tests verify the correctness of the generated SPARK code. A [test suite](https://docs.adacore.com/live/wave/aunit/html/aunit_cb/aunit_cb.html) and [formal verification](https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/en/gnatprove.html) is used to ensure functional correctness and prove absence of runtime errors. The to be proven code is contained in `tests/spark/generated`. This code is also used by integration tests for regression testing.
 
+### Tool Tests (`tests/tools`)
+
+Tool tests verify the functionality of the complementary tools in the `tools/` directory of the repository.
+
 ### IDE Tests (`tests/ide`)
 
 IDE tests allow to verify the functionality of the IDE plugin. These tests are not executed automatically.
