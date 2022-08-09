@@ -76,16 +76,48 @@ class MessageFieldAssignment(Statement):
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
-        field_type = (
-            statement_type.types[self.field]
-            if isinstance(statement_type, rty.Message)
-            else rty.Undefined()
-        )
+        error = RecordFluxError()
+        field_type: rty.Type = rty.Undefined()
+        if isinstance(statement_type, rty.Message):
+            if self.field in statement_type.fields:
+                field_type = statement_type.types[self.field]
+            elif self.field in statement_type.parameters:
+                error.extend(
+                    [
+                        (
+                            f'message parameter "{self.field}" cannot be set using an assignment',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.field.location,
+                        ),
+                        (
+                            "use a Reset statement to change the message parameters",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            self.field.location,
+                        ),
+                    ],
+                )
+            else:
+                error.extend(
+                    [
+                        (
+                            f'invalid message field "{self.field}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.field.location,
+                        ),
+                    ],
+                )
         self.type_ = statement_type
         self.value = self.value.substituted(typify_variable)
-        return rty.check_type_instance(
-            field_type, rty.Any, self.location, f'variable "{self.identifier}"'
-        ) + self.value.check_type(field_type)
+        return (
+            error
+            + rty.check_type_instance(
+                statement_type, rty.Message, self.location, f'variable "{self.identifier}"'
+            )
+            + self.value.check_type(field_type)
+        )
 
     def variables(self) -> Sequence[Variable]:
         return [Variable(self.message), *self.value.variables()]
