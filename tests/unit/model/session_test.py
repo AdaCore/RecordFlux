@@ -25,7 +25,7 @@ from tests.data.models import (
     TLV_TAGS,
     UNIVERSAL_MESSAGE,
 )
-from tests.utils import assert_equal, assert_session_model_error, multilinestr
+from tests.utils import assert_equal, assert_session_model_error, get_test_model, multilinestr
 
 
 def test_str() -> None:
@@ -1660,6 +1660,125 @@ def test_assignment_opaque_function_binding() -> None:
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
         types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+    )
+
+
+def test_message_field_assignment_with_invalid_field_name() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        ID("Invalid", location=Location((1, 2))),
+                        expr.Number(42),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=r'^<stdin>:1:2: model: error: invalid message field "Invalid"$',
+    )
+
+
+def test_message_field_assignment_to_message_parameter() -> None:
+    parameterized_model = get_test_model("parameterized")
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        ID("Length", location=Location((1, 2))),
+                        expr.Number(42),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "Parameterized::Message"),
+        ],
+        parameters=[],
+        types=parameterized_model.types,
+        regex=(
+            r"^"
+            r'<stdin>:1:2: model: error: message parameter "Length" cannot be set using an'
+            r" assignment\n"
+            r"<stdin>:1:2: model: info: use a Reset statement to change the message parameters"
+            r"$"
+        ),
+    )
+
+
+def test_message_field_assignment_with_incompatible_field_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        "Tag",
+                        expr.Number(42, location=Location((1, 2))),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=(
+            r"^"
+            r'<stdin>:1:2: model: error: expected enumeration type "TLV::Tag"\n'
+            r"<stdin>:1:2: model: info: found type universal integer \(42\)"
+            r"$"
+        ),
+    )
+
+
+def test_message_field_assignment_with_incompatible_variable_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message", "Tag", expr.Variable("TLV::Msg_Data"), location=Location((1, 2))
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Tag"),
+        ],
+        parameters=[],
+        types=[TLV_TAG],
+        regex=(
+            r"^"
+            r"<stdin>:1:2: model: error: expected message type\n"
+            r'<stdin>:1:2: model: info: found enumeration type "TLV::Tag"'
+            r"$"
+        ),
     )
 
 
