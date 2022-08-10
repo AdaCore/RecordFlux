@@ -3796,7 +3796,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> Sequence[Statement]:
         """Ensure that all referenced fields in the expression are valid."""
 
-        selected = expression.findall(lambda x: isinstance(x, expr.Selected))
+        selected = [
+            s
+            for s in expression.findall(lambda x: isinstance(x, expr.Selected))
+            if isinstance(s, expr.Selected)
+            and isinstance(s.prefix.type_, rty.Message)
+            and s.selector in s.prefix.type_.fields
+        ]
 
         if selected:
             expressions = " or ".join(f'"{s}"' for s in selected)
