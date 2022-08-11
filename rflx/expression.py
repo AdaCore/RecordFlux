@@ -484,6 +484,8 @@ class AssExpr(Expr):
             if total != self.neutral_element():
                 terms.append(Number(total))
 
+        terms = self._simplified_if_expressions(terms)
+
         if len(terms) == 1:
             return terms[0]
 
@@ -510,6 +512,41 @@ class AssExpr(Expr):
 
         if total != self.neutral_element():
             terms.append(TRUE if total else FALSE)
+
+        return terms
+
+    def _simplified_if_expressions(self, terms: list[Expr]) -> list[Expr]:
+        """Merge if expressions which differ only in the condition."""
+
+        if not terms:
+            return []
+
+        t = terms[0]
+
+        if isinstance(t, IfExpr):
+            for i, u in enumerate(terms[1:]):
+                if (
+                    isinstance(u, IfExpr)
+                    and len(u.condition_expressions) == 1
+                    and u.condition_expressions[0][1] == t.condition_expressions[0][1]
+                    and u.else_expression == t.else_expression
+                ):
+                    return [
+                        IfExpr(
+                            [
+                                (
+                                    Or(
+                                        t.condition_expressions[0][0],
+                                        u.condition_expressions[0][0],
+                                    ).simplified(),
+                                    t.condition_expressions[0][1],
+                                )
+                            ],
+                            t.else_expression,
+                        ),
+                        *self._simplified_if_expressions(terms[1 : i + 1] + terms[i + 2 :]),
+                    ]
+            return [t, *self._simplified_if_expressions(terms[1:])]
 
         return terms
 
