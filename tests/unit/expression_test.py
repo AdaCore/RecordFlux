@@ -22,6 +22,7 @@ from rflx.expression import (
     CaseExpr,
     Comprehension,
     Conversion,
+    DeltaMessageAggregate,
     Div,
     Equal,
     Expr,
@@ -2239,6 +2240,174 @@ def test_message_aggregate_substituted_location() -> None:
 
 def test_message_aggregate_variables() -> None:
     result = MessageAggregate(
+        "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "field_values,type_",
+    [
+        (
+            {"Y": Variable("A", type_=rty.Integer("A")), "Z": Variable("B", type_=rty.BOOLEAN)},
+            rty.Message(
+                "M",
+                {
+                    ("X",),
+                    ("X", "Y"),
+                    ("X", "Y", "Z"),
+                },
+                {},
+                {
+                    ID("Y"): rty.Integer("A"),
+                    ID("Z"): rty.BOOLEAN,
+                },
+            ),
+        ),
+        (
+            {"Y": Variable("A", type_=rty.Message("I"))},
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y", "Z"),
+                },
+                {},
+                {
+                    ID("Y"): rty.OPAQUE,
+                },
+                [
+                    rty.Refinement(ID("Y"), rty.Message("I"), "P"),
+                    rty.Refinement(ID("Y"), rty.Message("J"), "P"),
+                ],
+            ),
+        ),
+    ],
+)
+def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.Type) -> None:
+    assert_type(
+        DeltaMessageAggregate(
+            "M",
+            field_values,
+            type_=type_,
+        ),
+        type_,
+    )
+
+
+@pytest.mark.parametrize(
+    "field_values,type_,match",
+    [
+        (
+            {
+                "X": Variable("A", location=Location((10, 30))),
+                "Y": Variable("B", location=Location((10, 40))),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: undefined variable "A"\n'
+            r'<stdin>:10:40: model: error: undefined variable "B"$',
+        ),
+        (
+            {
+                "X": Variable("A", type_=rty.Integer("A")),
+                "Y": Variable("B", type_=rty.BOOLEAN),
+                ID("Z", location=Location((10, 50))): Variable("Z", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
+        ),
+        (
+            {
+                "Y": Variable("B", type_=rty.BOOLEAN),
+                ID("X", location=Location((10, 30))): Variable("A", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: invalid position for field "X" of message type "M"$',
+        ),
+        (
+            {
+                "X": Variable("A", location=Location((10, 40))),
+                "Y": Variable("B", location=Location((10, 30))),
+            },
+            rty.Undefined(),
+            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
+            r'<stdin>:10:30: model: error: undefined variable "B"\n'
+            r'<stdin>:10:20: model: error: undefined message "T"$',
+        ),
+    ],
+)
+def test_delta_message_aggregate_type_error(
+    field_values: Mapping[StrID, Expr], type_: rty.Type, match: str
+) -> None:
+    assert_type_error(
+        DeltaMessageAggregate("T", field_values, type_=type_, location=Location((10, 20))),
+        match,
+    )
+
+
+def test_delta_message_aggregate_substituted() -> None:
+    assert_equal(
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        DeltaMessageAggregate("X", {"Y": Variable("P_A"), "Z": Variable("P_B")}),
+    )
+    assert_equal(
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable("Z") if isinstance(x, DeltaMessageAggregate) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_delta_message_aggregate_substituted_location() -> None:
+    expr = DeltaMessageAggregate(
+        "X", {"Y": Variable("A"), "Z": Variable("B")}, location=Location((1, 2))
+    ).substituted(lambda x: x)
+    assert expr.location
+
+
+def test_delta_message_aggregate_simplified() -> None:
+    assert_equal(
+        DeltaMessageAggregate(
+            "X", {"Y": Variable("A"), "Z": Add(Number(1), Number(2))}
+        ).simplified(),
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Number(3)}),
+    )
+
+
+def test_delta_message_aggregate_variables() -> None:
+    result = DeltaMessageAggregate(
         "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]

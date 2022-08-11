@@ -67,6 +67,8 @@ class State(Base):
         self.description = description
         self.location = location
 
+        self._normalize()
+
     def __repr__(self) -> str:
         return verbose_repr(self, ["identifier", "transitions", "actions", "declarations"])
 
@@ -122,6 +124,7 @@ class State(Base):
                                 expr.Head,
                                 expr.Comprehension,
                                 expr.MessageAggregate,
+                                expr.DeltaMessageAggregate,
                                 expr.Conversion,
                                 expr.Opaque,
                             ),
@@ -130,6 +133,69 @@ class State(Base):
                 )
             )
             for a in self._actions
+        )
+
+    def _normalize(self) -> None:  # pylint: disable = too-many-branches
+        field_assignments: list[stmt.MessageFieldAssignment] = []
+        actions: list[stmt.Statement] = []
+
+        for a in self._actions:
+            if not field_assignments:
+                if isinstance(a, stmt.MessageFieldAssignment):
+                    field_assignments.append(a)
+                else:
+                    actions.append(a)
+            elif len(field_assignments) == 1:
+                if isinstance(a, stmt.MessageFieldAssignment):
+                    if field_assignments[0].message == a.message:
+                        field_assignments.append(a)
+                    else:
+                        actions.extend(field_assignments)
+                        field_assignments = [a]
+                else:
+                    actions.extend(
+                        [
+                            *field_assignments,
+                            a,
+                        ]
+                    )
+                    field_assignments = []
+            else:
+                if isinstance(a, stmt.MessageFieldAssignment):
+                    if field_assignments[0].message == a.message:
+                        field_assignments.append(a)
+                    else:
+                        actions.append(self._collect_message_field_assignments(field_assignments))
+                        field_assignments = [a]
+                else:
+                    actions.extend(
+                        [
+                            self._collect_message_field_assignments(field_assignments),
+                            a,
+                        ]
+                    )
+                    field_assignments = []
+
+        if len(field_assignments) == 1:
+            actions.extend(field_assignments)
+        elif len(field_assignments) > 1:
+            actions.append(self._collect_message_field_assignments(field_assignments))
+
+        self._actions = actions
+
+    def _collect_message_field_assignments(
+        self, field_assignments: list[stmt.MessageFieldAssignment]
+    ) -> stmt.Assignment:
+        return stmt.Assignment(
+            field_assignments[0].identifier,
+            expr.DeltaMessageAggregate(
+                field_assignments[0].identifier, {a.field: a.value for a in field_assignments}
+            ),
+            location=Location(
+                field_assignments[0].location.start if field_assignments[0].location else (0, 0),
+                field_assignments[0].location.source if field_assignments[0].location else None,
+                field_assignments[-1].location.end if field_assignments[-1].location else None,
+            ),
         )
 
 
@@ -640,12 +706,19 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def _typify_variable(
+    def _typify_variable(  # pylint: disable = too-many-branches
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
             expression,
-            (expr.Variable, expr.Literal, expr.Call, expr.Conversion, expr.MessageAggregate),
+            (
+                expr.Variable,
+                expr.Literal,
+                expr.Call,
+                expr.Conversion,
+                expr.MessageAggregate,
+                expr.DeltaMessageAggregate,
+            ),
         ):
             identifier = expression.identifier
 
@@ -674,6 +747,9 @@ class Session(AbstractSession):
                 type_identifier = mty.internal_type_identifier(identifier, self.package)
                 if type_identifier in self.types:
                     expression.type_ = self.types[type_identifier].type_
+            if isinstance(expression, expr.DeltaMessageAggregate):
+                if identifier in declarations:
+                    expression.type_ = declarations[identifier].type_
 
         return expression
 

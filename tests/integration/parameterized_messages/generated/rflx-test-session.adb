@@ -18,7 +18,8 @@ is
    is
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 = null)
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
@@ -39,7 +40,8 @@ is
    is
       function Receive_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 = null)
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
@@ -63,18 +65,29 @@ is
        Initialized (Ctx)
    is
       Length : Test.Length;
+      M_T_Ctx : Test.Message.Context;
+      Equal : Boolean;
+      M_T_Buffer : RFLX_Types.Bytes_Ptr;
       function Process_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 = null
+        (Global_Initialized (Ctx)
+         and Test.Message.Has_Buffer (M_T_Ctx)
+         and M_T_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+         and M_T_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Ctx.P.Slots.Slot_Ptr_3 = null
+         and Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
    begin
+      M_T_Buffer := Ctx.P.Slots.Slot_Ptr_3;
+      pragma Warnings (Off, "unused assignment");
+      Ctx.P.Slots.Slot_Ptr_3 := null;
+      pragma Warnings (On, "unused assignment");
+      Test.Message.Initialize (M_T_Ctx, M_T_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       pragma Assert (Process_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:49:10
-      Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
-      --  tests/integration/parameterized_messages/test.rflx:50:10
+      --  tests/integration/parameterized_messages/test.rflx:51:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
       if
          not (Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
@@ -136,15 +149,97 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/parameterized_messages/test.rflx:51:10
+      --  tests/integration/parameterized_messages/test.rflx:52:10
       Length := Ctx.P.M_S_Ctx.Length;
-      if Length = Ctx.P.M_R_Ctx.Length then
+      --  tests/integration/parameterized_messages/test.rflx:53:10
+      Test.Message.Reset (M_T_Ctx, Length => Ctx.P.M_S_Ctx.Length, Extended => True);
+      --  tests/integration/parameterized_messages/test.rflx:54:10
+      if not Test.Message.Valid_Next (M_T_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if
+         not (Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
+          and then Test.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
+          and then Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data))
+      then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Test.Message.Available_Space (M_T_Ctx, Test.Message.F_Data) < Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data) + 16 then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Test.Message.Valid_Next (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         if Test.Message.Valid_Length (M_T_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (Ctx.P.M_R_Ctx, Test.Message.F_Data))) then
+            if Test.Message.Structural_Valid (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+               declare
+                  pragma Warnings (Off, "is not modified, could be declared constant");
+                  RFLX_Ctx_P_M_R_Ctx_Tmp : Test.Message.Context := Ctx.P.M_R_Ctx;
+                  pragma Warnings (On, "is not modified, could be declared constant");
+                  function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+                    (Test.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
+                     and then Test.Message.Structural_Valid (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)
+                     and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                  procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+                    Pre =>
+                      RFLX_Process_Data_Pre (Data'Length)
+                  is
+                  begin
+                     Test.Message.Get_Data (RFLX_Ctx_P_M_R_Ctx_Tmp, Data);
+                  end RFLX_Process_Data;
+                  procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+               begin
+                  RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
+                  Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+               end;
+            else
+               Ctx.P.Next_State := S_Error;
+               pragma Assert (Process_Invariant);
+               goto Finalize_Process;
+            end if;
+         else
+            Ctx.P.Next_State := S_Error;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      else
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if Test.Message.Valid_Length (M_T_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
+         pragma Assert (Test.Message.Sufficient_Space (M_T_Ctx, Test.Message.F_Extension));
+         Test.Message.Set_Extension (M_T_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
+      else
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      --  tests/integration/parameterized_messages/test.rflx:56:10
+      Equal := Ctx.P.M_S_Ctx.Length = M_T_Ctx.Length
+      and then Ctx.P.M_S_Ctx.Extended = M_T_Ctx.Extended;
+      if
+         Length = Ctx.P.M_R_Ctx.Length
+         and then Equal
+      then
          Ctx.P.Next_State := S_Reply;
       else
          Ctx.P.Next_State := S_Error;
       end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
+      pragma Warnings (Off, """M_T_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Test.Message.Take_Buffer (M_T_Ctx, M_T_Buffer);
+      pragma Warnings (On, """M_T_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
+      pragma Assert (M_T_Buffer /= null);
+      Ctx.P.Slots.Slot_Ptr_3 := M_T_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
+      pragma Assert (Global_Initialized (Ctx));
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -155,14 +250,15 @@ is
    is
       function Reply_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 = null)
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:63:10
+      --  tests/integration/parameterized_messages/test.rflx:68:10
       Ctx.P.Next_State := S_Reset;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -175,14 +271,15 @@ is
    is
       function Reset_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 = null)
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
    begin
       pragma Assert (Reset_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:71:10
+      --  tests/integration/parameterized_messages/test.rflx:76:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => Ctx.P.M_R_Ctx.Extended);
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reset_Invariant);
@@ -196,7 +293,8 @@ is
    is
       function Error_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 = null)
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_3 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
