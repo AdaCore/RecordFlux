@@ -2843,8 +2843,15 @@ def test_size() -> None:
             Field("Data"): Selected(Variable("M"), "F"),
         }
     ) == Add(
-        IfExpr([(Equal(Variable("X"), FALSE), Size(Selected(Variable("M"), "F")))], Number(0)),
-        IfExpr([(Equal(Variable("X"), TRUE), Size(Selected(Variable("M"), "F")))], Number(0)),
+        IfExpr(
+            [
+                (
+                    Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)),
+                    Size(Selected(Variable("M"), "F")),
+                )
+            ],
+            Number(0),
+        ),
         Number(16),
     )
     assert variable_field_value.size(
@@ -2854,8 +2861,10 @@ def test_size() -> None:
             Field("Data"): Variable("Z"),
         }
     ) == Add(
-        IfExpr([(Equal(Variable("X"), FALSE), Size(Variable("Z")))], Number(0)),
-        IfExpr([(Equal(Variable("X"), TRUE), Size(Variable("Z")))], Number(0)),
+        IfExpr(
+            [(Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)), Size(Variable("Z")))],
+            Number(0),
+        ),
         Number(16),
     )
 
@@ -2942,8 +2951,10 @@ def test_size() -> None:
         32
     )
     assert path_dependent_fields.size({Field("A"): Variable("X")}) == Add(
-        IfExpr([(Equal(Variable("X"), Number(0)), Number(16))], Number(0)),
-        IfExpr([(Greater(Variable("X"), Number(0)), Number(16))], Number(0)),
+        IfExpr(
+            [(Or(Equal(Variable("X"), Number(0)), Greater(Variable("X"), Number(0))), Number(16))],
+            Number(0),
+        ),
         Number(16),
     )
 
@@ -3115,16 +3126,10 @@ def test_size_subpath() -> None:
         IfExpr(
             [
                 (
-                    Equal(Selected(Variable("X"), "Has_Data"), FALSE),
-                    Size(Selected(Variable("M"), "F")),
-                )
-            ],
-            Number(0),
-        ),
-        IfExpr(
-            [
-                (
-                    Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                    Or(
+                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
+                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                    ),
                     Size(Selected(Variable("M"), "F")),
                 )
             ],
@@ -3141,10 +3146,16 @@ def test_size_subpath() -> None:
         subpath=True,
     ) == Add(
         IfExpr(
-            [(Equal(Selected(Variable("X"), "Has_Data"), FALSE), Size(Variable("Z")))], Number(0)
-        ),
-        IfExpr(
-            [(Equal(Selected(Variable("X"), "Has_Data"), TRUE), Size(Variable("Z")))], Number(0)
+            [
+                (
+                    Or(
+                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
+                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                    ),
+                    Size(Variable("Z")),
+                )
+            ],
+            Number(0),
         ),
         Number(16),
     )

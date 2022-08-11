@@ -245,12 +245,84 @@ def test_bin_expr_substituted_location() -> None:
     assert expr.location
 
 
+def test_ass_expr_str() -> None:
+    assert (
+        str(
+            Add(
+                Number(1),
+                IfExpr([(Variable("A"), Variable("B"))], Variable("C")),
+                IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")),
+            )
+        )
+        == "1 + (if A then B else C) + (if X then Y else Z)"
+    )
+
+
 def test_ass_expr_findall() -> None:
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Less(Variable("Y"), Number(2))).findall(
             lambda x: isinstance(x, Number)
         ),
         [Number(1), Number(2)],
+    )
+
+
+def test_ass_expr_simplified() -> None:
+    assert_equal(
+        Add(
+            Number(8),
+            IfExpr(
+                [
+                    (
+                        And(
+                            Variable("A"),
+                            Or(Variable("B"), Variable("C")),
+                            Equal(Variable("D"), TRUE),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(16),
+            IfExpr(
+                [
+                    (
+                        And(
+                            Variable("A"),
+                            Or(Variable("B"), Variable("C")),
+                            Equal(Variable("D"), FALSE),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(24),
+        ).simplified(),
+        Add(
+            IfExpr(
+                [
+                    (
+                        Or(
+                            And(
+                                Variable("A"),
+                                Or(Variable("B"), Variable("C")),
+                                Equal(Variable("D"), TRUE),
+                            ),
+                            And(
+                                Variable("A"),
+                                Or(Variable("B"), Variable("C")),
+                                Equal(Variable("D"), FALSE),
+                            ),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(48),
+        ),
     )
 
 
