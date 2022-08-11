@@ -2745,6 +2745,138 @@ class MessageAggregate(Expr):
         return result
 
 
+class DeltaMessageAggregate(Expr):
+    """For internal use only."""
+
+    def __init__(
+        self,
+        identifier: StrID,
+        field_values: Mapping[StrID, Expr],
+        type_: rty.Type = rty.Undefined(),
+        location: Location = None,
+    ) -> None:
+        super().__init__(type_, location)
+        self.identifier = ID(identifier)
+        self.field_values = {ID(k): v for k, v in field_values.items()}
+
+    def _update_str(self) -> None:
+        field_values = (
+            ", ".join([f"{k} => {self.field_values[k]}" for k in self.field_values])
+            if self.field_values
+            else "null message"
+        )
+        self._str = intern(f"{self.identifier} with delta {field_values}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        if not isinstance(self.type_, rty.Message):
+            error = RecordFluxError()
+
+            for d in self.field_values.values():
+                error += d.check_type_instance(rty.Any)
+
+            return error
+
+        error = RecordFluxError()
+        field_combinations = set(self.type_.field_combinations)
+        fields: tuple[str, ...] = ()
+
+        for i, (field, expr) in enumerate(self.field_values.items()):
+            if field not in self.type_.fields:
+                error.extend(
+                    [
+                        (
+                            f'invalid field "{field}" for {self.type_}',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            field.location,
+                        ),
+                        *_similar_field_names(field, self.type_.fields, field.location),
+                    ]
+                )
+                continue
+
+            field_type = self.type_.types[field]
+
+            if field_type == rty.OPAQUE:
+                if not any(
+                    r.field == field and expr.type_.is_compatible(r.sdu)
+                    for r in self.type_.refinements
+                ):
+                    error += expr.check_type(field_type)
+            else:
+                error += expr.check_type(field_type)
+
+            fields = (*fields, str(field))
+            field_combinations = {
+                c
+                for c in field_combinations
+                if any(fields == c[i : len(fields) + i] for i in range(len(c) - len(fields) + 1))
+            }
+
+            if not field_combinations:
+                error.extend(
+                    [
+                        (
+                            f'invalid position for field "{field}" of {self.type_}',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            field.location,
+                        )
+                    ],
+                )
+                break
+
+        return error
+
+    def __neg__(self) -> Expr:
+        raise NotImplementedError
+
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+        return [
+            *([self] if match(self) else []),
+            *[e for v in self.field_values.values() for e in v.findall(match)],
+        ]
+
+    def simplified(self) -> Expr:
+        return DeltaMessageAggregate(
+            self.identifier,
+            {k: self.field_values[k].simplified() for k in self.field_values},
+            self.type_,
+            self.location,
+        )
+
+    def substituted(
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, DeltaMessageAggregate):
+            return expr.__class__(
+                expr.identifier,
+                {k: expr.field_values[k].substituted(func) for k in expr.field_values},
+                type_=expr.type_,
+                location=expr.location,
+            )
+        return expr
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def ada_expr(self) -> ada.Expr:
+        raise NotImplementedError
+
+    @lru_cache(maxsize=None)
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def variables(self) -> List[Variable]:
+        result = []
+        for v in self.field_values.values():
+            result.extend(v.variables())
+        return result
+
+
 class Binding(Expr):
     def __init__(self, expr: Expr, data: Mapping[StrID, Expr], location: Location = None) -> None:
         super().__init__(expr.type_, location)
@@ -2850,12 +2982,12 @@ def _entity_name(expr: Expr) -> str:
         else "type"
         if isinstance(expr, Conversion)
         else "message"
-        if isinstance(expr, MessageAggregate)
+        if isinstance(expr, (MessageAggregate, DeltaMessageAggregate))
         else "expression"
     )
     expr_name = (
         str(expr.identifier)
-        if isinstance(expr, (Variable, Call, Conversion, MessageAggregate))
+        if isinstance(expr, (Variable, Call, Conversion, MessageAggregate, DeltaMessageAggregate))
         else str(expr)
     )
     return f'{expr_type} "{expr_name}"'

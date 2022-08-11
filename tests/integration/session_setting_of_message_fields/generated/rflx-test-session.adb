@@ -21,7 +21,8 @@ is
        Initialized (Ctx)
    is
       function Start_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 = null)
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
@@ -48,51 +49,41 @@ is
      Post =>
        Initialized (Ctx)
    is
+      Local_Message_Ctx : Universal.Message.Context;
+      Local_Message_Buffer : RFLX_Types.Bytes_Ptr;
       function Process_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 = null)
+        (Global_Initialized (Ctx)
+         and Universal.Message.Has_Buffer (Local_Message_Ctx)
+         and Local_Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
+         and Local_Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Ctx.P.Slots.Slot_Ptr_2 = null
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
    begin
+      Local_Message_Buffer := Ctx.P.Slots.Slot_Ptr_2;
+      pragma Warnings (Off, "unused assignment");
+      Ctx.P.Slots.Slot_Ptr_2 := null;
+      pragma Warnings (On, "unused assignment");
+      Universal.Message.Initialize (Local_Message_Ctx, Local_Message_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:27:10
+      --  tests/integration/session_setting_of_message_fields/test.rflx:28:10
       if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:29:10
-      if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:31:10
-      if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-         Ctx.P.Next_State := S_Terminated;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data));
          Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
@@ -101,9 +92,34 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Ctx.P.Next_State := S_Reply;
+      --  tests/integration/session_setting_of_message_fields/test.rflx:34:10
+      if not Universal.Message.Valid_Next (Local_Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if not Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Terminated;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Message_Type));
+      Universal.Message.Set_Message_Type (Local_Message_Ctx, Universal.MT_Null);
+      if Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) /= Universal.Message.Get_Message_Type (Local_Message_Ctx) then
+         Ctx.P.Next_State := S_Reply;
+      else
+         Ctx.P.Next_State := S_Terminated;
+      end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
+      pragma Warnings (Off, """Local_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      Universal.Message.Take_Buffer (Local_Message_Ctx, Local_Message_Buffer);
+      pragma Warnings (On, """Local_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 = null);
+      pragma Assert (Local_Message_Buffer /= null);
+      Ctx.P.Slots.Slot_Ptr_2 := Local_Message_Buffer;
+      pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
+      pragma Assert (Global_Initialized (Ctx));
    end Process;
 
    procedure Reply (Ctx : in out Context'Class) with
@@ -113,14 +129,15 @@ is
        Initialized (Ctx)
    is
       function Reply_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 = null)
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
        with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:40:10
+      --  tests/integration/session_setting_of_message_fields/test.rflx:45:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Reply_Invariant);
    end Reply;

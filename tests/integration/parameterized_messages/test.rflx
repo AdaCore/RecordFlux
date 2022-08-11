@@ -45,13 +45,18 @@ package Test is
       state Process
       is
          Length : Length;
+         M_T : Message;
+         Equal : Boolean;
       begin
-         M_S'Reset (Length => M_R.Length, Extended => True);
          M_S := Message'(Length => M_R.Length, Extended => True, Data => M_R.Data, Extension => [3, 4]);
          Length := M_S.Length;
+         M_T'Reset (Length => M_S.Length, Extended => True);
+         M_T.Data := M_R.Data;
+         M_T.Extension := [3, 4];
+         Equal := M_S.Length = M_T.Length and M_S.Extended = M_T.Extended;
       transition
          goto Reply
-            if Length = M_R.Length
+            if Length = M_R.Length and Equal
          goto Error
       exception
          goto Error
