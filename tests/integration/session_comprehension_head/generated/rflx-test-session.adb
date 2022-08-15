@@ -161,9 +161,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:33:10
-      First_Option_Length := 0;
-      --  tests/integration/session_comprehension_head/test.rflx:35:10
+      --  tests/integration/session_comprehension_head/test.rflx:32:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -188,6 +186,7 @@ is
             declare
                RFLX_First_Option_Length_Found : Boolean := False;
             begin
+               First_Option_Length := Universal.Length'First;
                while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
                   pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Copy_Options_Ctx));
                   pragma Loop_Invariant (RFLX_Copy_Options_Ctx.Buffer_First = RFLX_Copy_Options_Ctx.Buffer_First'Loop_Entry);
@@ -273,7 +272,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_comprehension_head/test.rflx:37:10
+      --  tests/integration/session_comprehension_head/test.rflx:34:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -437,7 +436,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:49:10
+      --  tests/integration/session_comprehension_head/test.rflx:46:10
       Ctx.P.Next_State := S_Terminated;
       pragma Assert (Send_Invariant);
    end Send;

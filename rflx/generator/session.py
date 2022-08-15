@@ -2491,10 +2491,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 assert isinstance(
                     sequence_element_type, (rty.Message, rty.Integer, rty.Enumeration)
                 )
+                default_assignment = []
+                if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
+                    default_assignment = [Assignment(target, First(head.type_.identifier))]
                 return [
                     Declare(
                         [ObjectDeclaration([found_id(target)], "Boolean", FALSE)],
                         [
+                            *default_assignment,
                             self._comprehension(
                                 comprehension_sequence_id,
                                 sequence_type_id,
