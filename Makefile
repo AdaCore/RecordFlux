@@ -2,7 +2,7 @@ VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 
 SHELL := /bin/bash
-PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
+PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
 
 python-packages := bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 
