@@ -55,6 +55,7 @@ setup(
             "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
             "pyicontract-lint >=2.1.2, <2.2",
+            "pytest-timeout >=2, <3",
             "setuptools_scm >=6.2, <8",
             "sphinx >=4.5, <5",
             "sphinx-copybutton >=0.5, <0.6",
