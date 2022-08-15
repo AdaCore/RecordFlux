@@ -28,9 +28,6 @@ package Test is
       state Process is
          First_Option_Length : Universal::Length; -- §S-S-D-V-T-SC, §S-S-D-V-E-H
       begin
-         -- Needed for SPARK if the list comprehension does not return an element.
-         -- §S-S-A-A-L
-         First_Option_Length := 0;
          -- §S-S-A-A-LC, §S-S-A-A-HAT, §S-E-AT-H-SS, §S-E-AT-H-LC, §S-E-S-LC, §S-E-S-BE, §S-E-LC-SSS, §S-E-LC-TSS
          First_Option_Length := [for E in Options if E.Option_Type = Universal::OT_Data => E.Length]'Head;
          -- §S-S-A-A-LC, §S-S-A-A-HAT, §S-E-AT-H-MS, §S-E-AT-H-LC, §S-E-S-LC, §S-E-S-BE, §S-E-LC-SMS, §S-E-LC-TMS
