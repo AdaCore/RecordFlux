@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field as dataclass_field
 from distutils.dir_util import copy_tree
 from pathlib import Path
-from typing import Optional, Sequence, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 
 import pytest
+from pydantic import BaseModel, validator
 from ruamel.yaml.main import YAML
 
 from rflx.identifier import ID
@@ -26,6 +27,27 @@ FEATURES = [
 ]
 
 
+class ConfigFile(BaseModel):
+    input: Optional[Mapping[str, Optional[Sequence[str]]]]
+    output: Optional[Sequence[str]]
+    sequence: Optional[str]
+    prove: Optional[Sequence[str]]
+
+    @validator("input")  # pylint: disable-next = no-self-argument
+    def initialize_input_if_present(
+        cls, value: Optional[Mapping[str, Sequence[str]]]
+    ) -> Mapping[str, Sequence[str]]:
+        return value if value is not None else {}
+
+    @validator("output")  # pylint: disable-next = no-self-argument
+    def initialize_output_if_present(cls, value: Optional[Sequence[str]]) -> Sequence[str]:
+        return value if value is not None else []
+
+    @validator("prove")  # pylint: disable-next = no-self-argument
+    def initialize_prove_if_present(cls, value: Optional[Sequence[str]]) -> Sequence[str]:
+        return value if value is not None else []
+
+
 @dataclass(frozen=True)
 class Config:
     inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
@@ -39,17 +61,18 @@ def get_config(feature: str) -> Config:
 
     if config_file.is_file():
         yaml = YAML(typ="safe")
-        cfg = yaml.load(config_file)
+        cfg = ConfigFile.parse_obj(yaml.load(config_file))
         return Config(
             {
                 str(c): [tuple(int(e) for e in str(m).split()) for m in i]
-                for c, i in cfg["input"].items()
+                for c, i in cfg.input.items()
+                if i is not None
             }
-            if "input" in cfg and isinstance(cfg["input"], dict)
+            if cfg.input is not None
             else {},
-            cfg["output"] if "output" in cfg and cfg["output"] else [],
-            cfg["sequence"] if "sequence" in cfg else "",
-            (cfg["prove"] if cfg["prove"] else []) if "prove" in cfg else None,
+            cfg.output if cfg.output is not None else [],
+            cfg.sequence if cfg.sequence else "",
+            cfg.prove,
         )
 
     return Config()
