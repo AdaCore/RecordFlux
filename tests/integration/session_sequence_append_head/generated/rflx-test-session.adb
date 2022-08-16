@@ -658,7 +658,9 @@ is
                when S_Reply_1 | S_Reply_2 =>
                   TLV_Message_Read (Ctx.P.Message_Ctx);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Read;

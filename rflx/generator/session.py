@@ -1629,7 +1629,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 (
                                                     Variable("others"),
                                                     [
+                                                        PragmaStatement(
+                                                            "Warnings",
+                                                            [
+                                                                Variable("Off"),
+                                                                String("unreachable code"),
+                                                            ],
+                                                        ),
                                                         NullStatement(),
+                                                        PragmaStatement(
+                                                            "Warnings",
+                                                            [
+                                                                Variable("On"),
+                                                                String("unreachable code"),
+                                                            ],
+                                                        ),
                                                     ],
                                                 ),
                                             ],
@@ -1836,7 +1850,21 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 (
                                                     Variable("others"),
                                                     [
+                                                        PragmaStatement(
+                                                            "Warnings",
+                                                            [
+                                                                Variable("Off"),
+                                                                String("unreachable code"),
+                                                            ],
+                                                        ),
                                                         NullStatement(),
+                                                        PragmaStatement(
+                                                            "Warnings",
+                                                            [
+                                                                Variable("On"),
+                                                                String("unreachable code"),
+                                                            ],
+                                                        ),
                                                     ],
                                                 ),
                                             ],

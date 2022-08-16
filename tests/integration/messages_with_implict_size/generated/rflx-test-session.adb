@@ -234,7 +234,9 @@ is
                when S_Reply =>
                   Universal_Message_Read (Ctx.P.M_S_Ctx);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Read;
@@ -267,7 +269,9 @@ is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.M_R_Ctx, Offset);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Write;

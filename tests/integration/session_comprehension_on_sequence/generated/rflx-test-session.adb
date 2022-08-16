@@ -750,7 +750,9 @@ is
                when S_Send_2 =>
                   Universal_Message_Read (Ctx.P.Message_2_Ctx);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Read;

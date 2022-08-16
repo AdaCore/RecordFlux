@@ -125,7 +125,9 @@ is
                when S_Start =>
                   Universal_Message_Write (Ctx.P.M_Ctx, Offset);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Write;

@@ -791,7 +791,9 @@ is
                when S_Send_1 | S_Send_2 =>
                   Universal_Option_Read (Ctx.P.First_Option_Ctx);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Read;
@@ -824,7 +826,9 @@ is
                when S_Recv =>
                   Universal_Message_Write (Ctx.P.Message_Ctx, Offset);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Write;
