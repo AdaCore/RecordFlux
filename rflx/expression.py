@@ -2805,15 +2805,14 @@ class DeltaMessageAggregate(Expr):
         self._str = intern(f"{self.identifier} with delta {field_values}")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        if not isinstance(self.type_, rty.Message):
-            error = RecordFluxError()
+        error = RecordFluxError()
 
+        if not isinstance(self.type_, rty.Message):
             for d in self.field_values.values():
                 error += d.check_type_instance(rty.Any)
 
             return error
 
-        error = RecordFluxError()
         field_combinations = set(self.type_.field_combinations)
         fields: tuple[str, ...] = ()
 
