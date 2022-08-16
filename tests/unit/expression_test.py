@@ -22,6 +22,7 @@ from rflx.expression import (
     CaseExpr,
     Comprehension,
     Conversion,
+    DeltaMessageAggregate,
     Div,
     Equal,
     Expr,
@@ -244,12 +245,84 @@ def test_bin_expr_substituted_location() -> None:
     assert expr.location
 
 
+def test_ass_expr_str() -> None:
+    assert (
+        str(
+            Add(
+                Number(1),
+                IfExpr([(Variable("A"), Variable("B"))], Variable("C")),
+                IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")),
+            )
+        )
+        == "1 + (if A then B else C) + (if X then Y else Z)"
+    )
+
+
 def test_ass_expr_findall() -> None:
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Less(Variable("Y"), Number(2))).findall(
             lambda x: isinstance(x, Number)
         ),
         [Number(1), Number(2)],
+    )
+
+
+def test_ass_expr_simplified() -> None:
+    assert_equal(
+        Add(
+            Number(8),
+            IfExpr(
+                [
+                    (
+                        And(
+                            Variable("A"),
+                            Or(Variable("B"), Variable("C")),
+                            Equal(Variable("D"), TRUE),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(16),
+            IfExpr(
+                [
+                    (
+                        And(
+                            Variable("A"),
+                            Or(Variable("B"), Variable("C")),
+                            Equal(Variable("D"), FALSE),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(24),
+        ).simplified(),
+        Add(
+            IfExpr(
+                [
+                    (
+                        Or(
+                            And(
+                                Variable("A"),
+                                Or(Variable("B"), Variable("C")),
+                                Equal(Variable("D"), TRUE),
+                            ),
+                            And(
+                                Variable("A"),
+                                Or(Variable("B"), Variable("C")),
+                                Equal(Variable("D"), FALSE),
+                            ),
+                        ),
+                        Variable("X"),
+                    )
+                ],
+                Variable("Y"),
+            ),
+            Number(48),
+        ),
     )
 
 
@@ -354,12 +427,22 @@ def test_and_contains() -> None:
 
 
 def test_and_simplified() -> None:
+    assert And().simplified() == TRUE
     assert And(TRUE, TRUE).simplified() == TRUE
     assert And(TRUE, FALSE, TRUE).simplified() == FALSE
     assert And(TRUE, EXPR).simplified() == EXPR
     assert And(EXPR, TRUE).simplified() == EXPR
     assert And(EXPR, FALSE).simplified() == FALSE
     assert And(FALSE, EXPR).simplified() == FALSE
+    assert (
+        And(
+            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+        ).simplified()
+        == FALSE
+    )
+    assert And(
+        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+    ).simplified() == Equal(Variable("X"), Number(0))
 
 
 def test_and_z3expr() -> None:
@@ -394,9 +477,19 @@ def test_or_contains() -> None:
 
 
 def test_or_simplified() -> None:
+    assert Or().simplified() == FALSE
     assert Or(TRUE, TRUE).simplified() == TRUE
     assert Or(TRUE, EXPR).simplified() == TRUE
     assert Or(EXPR, TRUE).simplified() == TRUE
+    assert (
+        Or(
+            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+        ).simplified()
+        == TRUE
+    )
+    assert Or(
+        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+    ).simplified() == Equal(Variable("X"), Number(0))
 
 
 def test_or_z3expr() -> None:
@@ -413,7 +506,7 @@ def test_or_z3expr() -> None:
 
 def test_or_str() -> None:
     assert str(Or(Variable("X"), Variable("Y"))) == "X\nor Y"
-    assert str(Or()) == "True"
+    assert str(Or()) == "False"
 
 
 def test_undefined_simplified() -> None:
@@ -2219,6 +2312,174 @@ def test_message_aggregate_substituted_location() -> None:
 
 def test_message_aggregate_variables() -> None:
     result = MessageAggregate(
+        "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
+    ).variables()
+    expected = [Variable("A"), Variable("B"), Variable("C")]
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "field_values,type_",
+    [
+        (
+            {"Y": Variable("A", type_=rty.Integer("A")), "Z": Variable("B", type_=rty.BOOLEAN)},
+            rty.Message(
+                "M",
+                {
+                    ("X",),
+                    ("X", "Y"),
+                    ("X", "Y", "Z"),
+                },
+                {},
+                {
+                    ID("Y"): rty.Integer("A"),
+                    ID("Z"): rty.BOOLEAN,
+                },
+            ),
+        ),
+        (
+            {"Y": Variable("A", type_=rty.Message("I"))},
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y", "Z"),
+                },
+                {},
+                {
+                    ID("Y"): rty.OPAQUE,
+                },
+                [
+                    rty.Refinement(ID("Y"), rty.Message("I"), "P"),
+                    rty.Refinement(ID("Y"), rty.Message("J"), "P"),
+                ],
+            ),
+        ),
+    ],
+)
+def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.Type) -> None:
+    assert_type(
+        DeltaMessageAggregate(
+            "M",
+            field_values,
+            type_=type_,
+        ),
+        type_,
+    )
+
+
+@pytest.mark.parametrize(
+    "field_values,type_,match",
+    [
+        (
+            {
+                "X": Variable("A", location=Location((10, 30))),
+                "Y": Variable("B", location=Location((10, 40))),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: undefined variable "A"\n'
+            r'<stdin>:10:40: model: error: undefined variable "B"$',
+        ),
+        (
+            {
+                "X": Variable("A", type_=rty.Integer("A")),
+                "Y": Variable("B", type_=rty.BOOLEAN),
+                ID("Z", location=Location((10, 50))): Variable("Z", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
+        ),
+        (
+            {
+                "Y": Variable("B", type_=rty.BOOLEAN),
+                ID("X", location=Location((10, 30))): Variable("A", type_=rty.Integer("A")),
+            },
+            rty.Message(
+                "M",
+                {
+                    ("X", "Y"),
+                },
+                {},
+                {
+                    ID("X"): rty.Integer("A"),
+                    ID("Y"): rty.BOOLEAN,
+                },
+            ),
+            r'^<stdin>:10:30: model: error: invalid position for field "X" of message type "M"$',
+        ),
+        (
+            {
+                "X": Variable("A", location=Location((10, 40))),
+                "Y": Variable("B", location=Location((10, 30))),
+            },
+            rty.Undefined(),
+            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
+            r'<stdin>:10:30: model: error: undefined variable "B"\n'
+            r'<stdin>:10:20: model: error: undefined message "T"$',
+        ),
+    ],
+)
+def test_delta_message_aggregate_type_error(
+    field_values: Mapping[StrID, Expr], type_: rty.Type, match: str
+) -> None:
+    assert_type_error(
+        DeltaMessageAggregate("T", field_values, type_=type_, location=Location((10, 20))),
+        match,
+    )
+
+
+def test_delta_message_aggregate_substituted() -> None:
+    assert_equal(
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        ),
+        DeltaMessageAggregate("X", {"Y": Variable("P_A"), "Z": Variable("P_B")}),
+    )
+    assert_equal(
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
+            lambda x: Variable("Z") if isinstance(x, DeltaMessageAggregate) else x
+        ),
+        Variable("Z"),
+    )
+
+
+def test_delta_message_aggregate_substituted_location() -> None:
+    expr = DeltaMessageAggregate(
+        "X", {"Y": Variable("A"), "Z": Variable("B")}, location=Location((1, 2))
+    ).substituted(lambda x: x)
+    assert expr.location
+
+
+def test_delta_message_aggregate_simplified() -> None:
+    assert_equal(
+        DeltaMessageAggregate(
+            "X", {"Y": Variable("A"), "Z": Add(Number(1), Number(2))}
+        ).simplified(),
+        DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Number(3)}),
+    )
+
+
+def test_delta_message_aggregate_variables() -> None:
+    result = DeltaMessageAggregate(
         "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]

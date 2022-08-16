@@ -1,4 +1,7 @@
 # pylint: disable=too-many-lines
+
+from __future__ import annotations
+
 import typing as ty
 
 import pytest
@@ -25,7 +28,7 @@ from tests.data.models import (
     TLV_TAGS,
     UNIVERSAL_MESSAGE,
 )
-from tests.utils import assert_equal, assert_session_model_error, multilinestr
+from tests.utils import assert_equal, assert_session_model_error, get_test_model, multilinestr
 
 
 def test_str() -> None:
@@ -643,6 +646,30 @@ def test_assignment_from_undeclared_variable() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+    )
+
+
+def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                declarations=[],
+                actions=[
+                    stmt.Assignment(
+                        "Global",
+                        expr.DeltaMessageAggregate("Undefined", {}, location=Location((10, 20))),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[decl.VariableDeclaration("Global", "Boolean")],
+        parameters=[],
+        types=[BOOLEAN],
+        regex=r'^<stdin>:10:20: model: error: undefined message "Undefined"$',
     )
 
 
@@ -1663,6 +1690,125 @@ def test_assignment_opaque_function_binding() -> None:
     )
 
 
+def test_message_field_assignment_with_invalid_field_name() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        ID("Invalid", location=Location((1, 2))),
+                        expr.Number(42),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=r'^<stdin>:1:2: model: error: invalid message field "Invalid"$',
+    )
+
+
+def test_message_field_assignment_to_message_parameter() -> None:
+    parameterized_model = get_test_model("parameterized")
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        ID("Length", location=Location((1, 2))),
+                        expr.Number(42),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "Parameterized::Message"),
+        ],
+        parameters=[],
+        types=parameterized_model.types,
+        regex=(
+            r"^"
+            r'<stdin>:1:2: model: error: message parameter "Length" cannot be set using an'
+            r" assignment\n"
+            r"<stdin>:1:2: model: info: use a Reset statement to change the message parameters"
+            r"$"
+        ),
+    )
+
+
+def test_message_field_assignment_with_incompatible_field_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message",
+                        "Tag",
+                        expr.Number(42, location=Location((1, 2))),
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Message"),
+        ],
+        parameters=[],
+        types=[TLV_MESSAGE],
+        regex=(
+            r"^"
+            r'<stdin>:1:2: model: error: expected enumeration type "TLV::Tag"\n'
+            r"<stdin>:1:2: model: info: found type universal integer \(42\)"
+            r"$"
+        ),
+    )
+
+
+def test_message_field_assignment_with_incompatible_variable_type() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("End"))],
+                exception_transition=Transition(target=ID("End")),
+                actions=[
+                    stmt.MessageFieldAssignment(
+                        "Message", "Tag", expr.Variable("TLV::Msg_Data"), location=Location((1, 2))
+                    )
+                ],
+            ),
+            State("End"),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Message", "TLV::Tag"),
+        ],
+        parameters=[],
+        types=[TLV_TAG],
+        regex=(
+            r"^"
+            r"<stdin>:1:2: model: error: expected message type\n"
+            r'<stdin>:1:2: model: info: found enumeration type "TLV::Tag"'
+            r"$"
+        ),
+    )
+
+
 def test_conversion() -> None:
     Session(
         identifier="P::S",
@@ -2253,3 +2399,247 @@ def test_resolving_of_function_calls() -> None:
     local_stmt = session.states[0].actions[0]
     assert isinstance(local_stmt, stmt.Assignment)
     assert local_stmt.expression == expr.Call("Func")
+
+
+@pytest.mark.parametrize(
+    "actions, normalized_actions",
+    [
+        (
+            [
+                stmt.MessageFieldAssignment(
+                    "M",
+                    "A",
+                    expr.Number(1),
+                ),
+            ],
+            [
+                stmt.MessageFieldAssignment(
+                    "M",
+                    "A",
+                    expr.Number(1),
+                ),
+            ],
+        ),
+        (
+            [
+                stmt.MessageFieldAssignment(
+                    "M",
+                    "A",
+                    expr.Number(1),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M",
+                    "B",
+                    expr.Number(2),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M",
+                    "C",
+                    expr.Number(3),
+                ),
+            ],
+            [
+                stmt.Assignment(
+                    "M",
+                    expr.DeltaMessageAggregate(
+                        "M",
+                        {
+                            "A": expr.Number(1),
+                            "B": expr.Number(2),
+                            "C": expr.Number(3),
+                        },
+                    ),
+                ),
+            ],
+        ),
+        (
+            [
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "A",
+                    expr.Number(1),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "B",
+                    expr.Number(2),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "C",
+                    expr.Number(3),
+                ),
+            ],
+            [
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "A",
+                    expr.Number(1),
+                ),
+                stmt.Assignment(
+                    "M2",
+                    expr.DeltaMessageAggregate(
+                        "M2",
+                        {
+                            "B": expr.Number(2),
+                            "C": expr.Number(3),
+                        },
+                    ),
+                ),
+            ],
+        ),
+        (
+            [
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "A",
+                    expr.Number(1),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "B",
+                    expr.Number(2),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "C",
+                    expr.Number(3),
+                ),
+            ],
+            [
+                stmt.Assignment(
+                    "M1",
+                    expr.DeltaMessageAggregate(
+                        "M1",
+                        {
+                            "A": expr.Number(1),
+                            "B": expr.Number(2),
+                        },
+                    ),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "C",
+                    expr.Number(3),
+                ),
+            ],
+        ),
+        (
+            [
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "A",
+                    expr.Number(1),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M1",
+                    "B",
+                    expr.Number(2),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "C",
+                    expr.Number(3),
+                ),
+                stmt.MessageFieldAssignment(
+                    "M2",
+                    "D",
+                    expr.Number(4),
+                ),
+            ],
+            [
+                stmt.Assignment(
+                    "M1",
+                    expr.DeltaMessageAggregate(
+                        "M1",
+                        {
+                            "A": expr.Number(1),
+                            "B": expr.Number(2),
+                        },
+                    ),
+                ),
+                stmt.Assignment(
+                    "M2",
+                    expr.DeltaMessageAggregate(
+                        "M2",
+                        {
+                            "C": expr.Number(3),
+                            "D": expr.Number(4),
+                        },
+                    ),
+                ),
+            ],
+        ),
+    ],
+)
+def test_state_normalization(
+    actions: list[stmt.Statement], normalized_actions: list[stmt.Statement]
+) -> None:
+    assert str(
+        State(
+            "S",
+            transitions=[Transition(target=ID("End"))],
+            exception_transition=Transition(target=ID("End")),
+            actions=actions,
+        )
+    ) == str(
+        State(
+            "S",
+            transitions=[Transition(target=ID("End"))],
+            exception_transition=Transition(target=ID("End")),
+            actions=normalized_actions,
+        )
+    )
+    assert State(
+        "S",
+        transitions=[Transition(target=ID("End"))],
+        exception_transition=Transition(target=ID("End")),
+        actions=actions,
+    ) == State(
+        "S",
+        transitions=[Transition(target=ID("End"))],
+        exception_transition=Transition(target=ID("End")),
+        actions=normalized_actions,
+    )
+    assert str(
+        State(
+            "S",
+            transitions=[Transition(target=ID("End"))],
+            exception_transition=Transition(target=ID("End")),
+            actions=[
+                stmt.Assignment("X", expr.Number(0)),
+                *actions,
+                stmt.Assignment("Y", expr.Number(9)),
+            ],
+        )
+    ) == str(
+        State(
+            "S",
+            transitions=[Transition(target=ID("End"))],
+            exception_transition=Transition(target=ID("End")),
+            actions=[
+                stmt.Assignment("X", expr.Number(0)),
+                *normalized_actions,
+                stmt.Assignment("Y", expr.Number(9)),
+            ],
+        )
+    )
+    assert State(
+        "S",
+        transitions=[Transition(target=ID("End"))],
+        exception_transition=Transition(target=ID("End")),
+        actions=[
+            stmt.Assignment("X", expr.Number(0)),
+            *actions,
+            stmt.Assignment("Y", expr.Number(9)),
+        ],
+    ) == State(
+        "S",
+        transitions=[Transition(target=ID("End"))],
+        exception_transition=Transition(target=ID("End")),
+        actions=[
+            stmt.Assignment("X", expr.Number(0)),
+            *normalized_actions,
+            stmt.Assignment("Y", expr.Number(9)),
+        ],
+    )

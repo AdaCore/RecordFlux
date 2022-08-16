@@ -2159,6 +2159,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 target, expression, exception_handler, is_global, state
             )
 
+        if isinstance(expression, expr.DeltaMessageAggregate):
+            return self._assign_to_delta_message_aggregate(
+                target, expression, exception_handler, is_global, state
+            )
+
         if isinstance(target_type, rty.Message):
             for v in expression.findall(
                 lambda x: isinstance(x, expr.Variable) and x.identifier == target
@@ -2423,6 +2428,85 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
         return assign_to_message_aggregate
+
+    def _assign_to_delta_message_aggregate(
+        self,
+        target: ID,
+        delta_message_aggregate: expr.DeltaMessageAggregate,
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+        state: ID,
+    ) -> Sequence[Statement]:
+        assert isinstance(delta_message_aggregate.type_, rty.Message)
+
+        self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
+
+        target_type_id = delta_message_aggregate.type_.identifier
+        target_context = context_id(target, is_global)
+
+        fields = list(delta_message_aggregate.field_values)
+        first_field = fields[0]
+        last_field = fields[-1]
+
+        required_space, required_space_precondition = self._required_space(
+            self._message_subpath_size(delta_message_aggregate), is_global, state
+        )
+
+        return [
+            self._raise_exception_if(
+                Not(
+                    Call(
+                        target_type_id * "Valid_Next",
+                        [
+                            Variable(target_context),
+                            Variable(target_type_id * model.Field(first_field).affixed_name),
+                        ],
+                    )
+                ),
+                f'trying to set message fields "{first_field}" to "{last_field}" although'
+                f' "{first_field}" is not valid next field',
+                exception_handler,
+            ),
+            *(
+                [
+                    self._raise_exception_if(
+                        Not(required_space_precondition),
+                        "violated precondition for calculating required space for setting message"
+                        f' fields "{first_field}" to "{last_field}" (one of the message arguments'
+                        " is invalid or has a too small buffer)",
+                        exception_handler,
+                    )
+                ]
+                if required_space_precondition
+                else []
+            ),
+            self._raise_exception_if(
+                Less(
+                    Call(
+                        target_type_id * "Available_Space",
+                        [
+                            Variable(target_context),
+                            Variable(target_type_id * model.Field(first_field).affixed_name),
+                        ],
+                    ),
+                    required_space,
+                ),
+                f'insufficient space for setting message fields "{first_field}" to "{last_field}"',
+                exception_handler,
+            ),
+            *[
+                s
+                for f, v in delta_message_aggregate.field_values.items()
+                for s in self._set_message_field(
+                    target_context,
+                    f,
+                    delta_message_aggregate.type_,
+                    v,
+                    exception_handler,
+                    is_global,
+                )
+            ],
+        ]
 
     def _assign_to_head(
         self,
@@ -3429,6 +3513,18 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         assert isinstance(message, model.Message)
         return message.size({model.Field(f): v for f, v in message_aggregate.field_values.items()})
 
+    def _message_subpath_size(
+        self, delta_message_aggregate: expr.DeltaMessageAggregate
+    ) -> expr.Expr:
+        assert isinstance(delta_message_aggregate.type_, rty.Message)
+        message = self._model_type(delta_message_aggregate.type_.identifier)
+        assert isinstance(message, model.Message)
+        return message.size(
+            {model.Field(f): v for f, v in delta_message_aggregate.field_values.items()},
+            delta_message_aggregate.identifier,
+            subpath=True,
+        )
+
     def _required_space(
         self, size: expr.Expr, is_global: Callable[[ID], bool], state: ID
     ) -> tuple[Expr, Optional[Expr]]:
@@ -3436,7 +3532,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             size.substituted(
                 lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
                 if (isinstance(x, expr.Variable) and isinstance(x.type_, rty.AnyInteger))
-                or (isinstance(x, expr.Selected) and x.type_ != rty.OPAQUE)
                 else x
             )
             .substituted(self._substitution(is_global))
@@ -3791,7 +3886,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> Sequence[Statement]:
         """Ensure that all referenced fields in the expression are valid."""
 
-        selected = expression.findall(lambda x: isinstance(x, expr.Selected))
+        selected = [
+            s
+            for s in expression.findall(lambda x: isinstance(x, expr.Selected))
+            if isinstance(s, expr.Selected)
+            and isinstance(s.prefix.type_, rty.Message)
+            and s.selector in s.prefix.type_.fields
+        ]
 
         if selected:
             expressions = " or ".join(f'"{s}"' for s in selected)

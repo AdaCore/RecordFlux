@@ -955,7 +955,12 @@ class Message(AbstractMessage):
             and not any(isinstance(t, mty.Sequence) for t in self.types.values())
         )
 
-    def size(self, field_values: Mapping[Field, expr.Expr] = None) -> expr.Expr:
+    def size(
+        self,
+        field_values: Mapping[Field, expr.Expr] = None,
+        message_instance: ID = None,
+        subpath: bool = False,
+    ) -> expr.Expr:
         # pylint: disable-next = too-many-locals
         """
         Determine the size of the message based on the given field values.
@@ -964,17 +969,77 @@ class Message(AbstractMessage):
         if-expressions to represent these dependencies. Only message paths which contain all given
         fields are considered. The evaluation of the returned size expression may result in a size
         greater than zero, even if the field values do not lead to a valid message.
+
+        The message fields can be prefixed by the message instance.
+
+        The size calculation can be restricted to the size of a subpath. The subpath is defined by
+        the given field values.
         """
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             return self._typed_variable(expression, self.types)
 
-        if not self.structure:
-            return expr.Number(0)
-
         field_values = field_values if field_values else {}
 
+        if subpath:
+            if not field_values:
+                return expr.Number(0)
+
+            fields = list(field_values)
+            possible_paths = [
+                p
+                for p in sorted(self.paths(FINAL))
+                if any(
+                    fields == [l.target for l in p[i : len(fields) + i]]
+                    for i in range(len(p) - len(fields) + 1)
+                )
+            ]
+
+            if not possible_paths:
+                subpath_str = " -> ".join(f.name for f in fields)
+                fail(
+                    f'unable to calculate size of invalid subpath "{subpath_str}"'
+                    f' of message "{self.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.location,
+                )
+        else:
+            if not self.structure:
+                return expr.Number(0)
+
+            fields = list(self.fields)
+            possible_paths = [
+                path
+                for path in sorted(self.paths(FINAL))
+                if not (
+                    set(field_values)
+                    - set(self.parameters)
+                    - set(l.target for l in path if l.target != FINAL)
+                )
+            ]
+
+        def add_message_prefix(expression: expr.Expr) -> expr.Expr:
+            if (
+                message_instance
+                and isinstance(expression, expr.Variable)
+                and Field(expression.identifier) in self.types
+            ):
+                return expr.Selected(
+                    expr.Variable(message_instance, type_=self.type_),
+                    expression.identifier,
+                    negative=expression.negative,
+                    type_=expression.type_,
+                    location=expression.location,
+                )
+            return expression
+
         def remove_variable_prefix(expression: expr.Expr) -> expr.Expr:
+            """
+            Remove prefix from variables.
+
+            The prefix is used to prevent name conflicts between field values and field names.
+            """
             if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
                 return expression.copy(identifier=expression.name[5:])
             if (
@@ -1019,30 +1084,14 @@ class Message(AbstractMessage):
                     )
         facts: list[expr.Expr] = [*values, *aggregate_sizes, *composite_sizes]
         type_constraints = to_mapping(self._aggregate_constraints() + self._type_size_constraints())
-        possible_paths = [
-            path
-            for path in sorted(self.paths(FINAL))
-            if not (
-                set(field_values)
-                - set(self.parameters)
-                - set(l.target for l in path if l.target != FINAL)
-            )
-        ]
         definite_fields = set.intersection(*[{l.target for l in path} for path in possible_paths])
-        optional_fields = set(self.fields) - definite_fields
+        optional_fields = set(fields) - definite_fields
         conditional_field_size = []
 
-        for field in self.fields:
-            overlay_condition: expr.Expr = expr.TRUE
-
-            if any(l.first != expr.UNDEFINED for l in self.outgoing(field)):
-                if all(l.first != expr.UNDEFINED for l in self.outgoing(field)):
-                    continue
-
-                overlay_condition = expr.Or(
-                    *[l.condition for l in self.outgoing(field) if l.first == expr.UNDEFINED]
-                )
-
+        for field in fields:
+            overlay_condition = expr.Not(
+                expr.Or(*[l.condition for l in self.incoming(field) if l.first != expr.UNDEFINED])
+            ).simplified()
             paths_to_field = sorted(
                 {
                     path[
@@ -1070,16 +1119,18 @@ class Message(AbstractMessage):
                     )
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
-                    .substituted(remove_variable_prefix)
                     .substituted(typed_variable)
+                    .substituted(add_message_prefix)
+                    .substituted(remove_variable_prefix)
                     .simplified()
                 )
                 field_size = (
                     expr.Size(expr.Variable(field.name, type_=self.types[field].type_))
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
-                    .substituted(remove_variable_prefix)
                     .substituted(typed_variable)
+                    .substituted(add_message_prefix)
+                    .substituted(remove_variable_prefix)
                 )
 
                 conditional_field_size.append(

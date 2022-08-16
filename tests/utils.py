@@ -24,6 +24,7 @@ from rflx.specification.parser import (
     create_math_expression,
     diagnostics_to_error,
 )
+from tests.const import SPEC_DIR
 
 
 def assert_equal(left: object, right: object) -> None:
@@ -857,3 +858,9 @@ def parse_expression(data: str, rule: str = lang.GrammarRule.extended_expression
     expression = create_expression(parser_expression, filename)
     assert isinstance(expression, Expr)
     return expression
+
+
+def get_test_model(name: str) -> Model:
+    parser = Parser()
+    parser.parse(SPEC_DIR / f"{name}.rflx")
+    return parser.create_model()

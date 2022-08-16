@@ -535,28 +535,13 @@ def test_path_condition() -> None:
     )
     assert_equal(
         ETHERNET_FRAME.path_condition(Field("Type_Length")),
-        Or(
-            Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-            NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-        ),
+        TRUE,
     )
     assert_equal(
         ETHERNET_FRAME.path_condition(Field("Payload")),
         Or(
-            And(
-                Or(
-                    Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-                ),
-                LessEqual(Variable("Type_Length"), Number(1500)),
-            ),
-            And(
-                Or(
-                    Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
-                    NotEqual(Variable("Type_Length_TPID"), Number(33024, 16)),
-                ),
-                GreaterEqual(Variable("Type_Length"), Number(1536)),
-            ),
+            LessEqual(Variable("Type_Length"), Number(1500)),
+            GreaterEqual(Variable("Type_Length"), Number(1536)),
         ),
     )
 
@@ -2858,8 +2843,15 @@ def test_size() -> None:
             Field("Data"): Selected(Variable("M"), "F"),
         }
     ) == Add(
-        IfExpr([(Equal(Variable("X"), FALSE), Size(Selected(Variable("M"), "F")))], Number(0)),
-        IfExpr([(Equal(Variable("X"), TRUE), Size(Selected(Variable("M"), "F")))], Number(0)),
+        IfExpr(
+            [
+                (
+                    Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)),
+                    Size(Selected(Variable("M"), "F")),
+                )
+            ],
+            Number(0),
+        ),
         Number(16),
     )
     assert variable_field_value.size(
@@ -2869,8 +2861,10 @@ def test_size() -> None:
             Field("Data"): Variable("Z"),
         }
     ) == Add(
-        IfExpr([(Equal(Variable("X"), FALSE), Size(Variable("Z")))], Number(0)),
-        IfExpr([(Equal(Variable("X"), TRUE), Size(Variable("Z")))], Number(0)),
+        IfExpr(
+            [(Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)), Size(Variable("Z")))],
+            Number(0),
+        ),
         Number(16),
     )
 
@@ -2912,8 +2906,16 @@ def test_size() -> None:
         }
     ) == Number(32)
     assert optional_overlayed_field.size() == Add(
-        IfExpr([(Equal(Variable("A"), Number(0)), Number(16))], Number(0)),
-        IfExpr([(Greater(Variable("A"), Number(0)), Number(32))], Number(0)),
+        IfExpr(
+            [
+                (
+                    And(Greater(Variable("A"), Number(0)), NotEqual(Variable("A"), Number(0))),
+                    Number(16),
+                )
+            ],
+            Number(0),
+        ),
+        Number(16),
     )
 
     path_dependent_fields = Message(
@@ -2949,10 +2951,334 @@ def test_size() -> None:
         32
     )
     assert path_dependent_fields.size({Field("A"): Variable("X")}) == Add(
-        IfExpr([(Equal(Variable("X"), Number(0)), Number(16))], Number(0)),
-        IfExpr([(Greater(Variable("X"), Number(0)), Number(16))], Number(0)),
+        IfExpr(
+            [(Or(Equal(Variable("X"), Number(0)), Greater(Variable("X"), Number(0))), Number(16))],
+            Number(0),
+        ),
         Number(16),
     )
+
+
+def test_size_subpath() -> None:
+    assert NULL_MESSAGE.size({}, subpath=True) == Number(0)
+
+    assert FIXED_SIZE_MESSAGE.size(
+        {
+            Field("Message_Type"): Literal("Universal::MT_Data"),
+        },
+        subpath=True,
+    ) == Number(8)
+    assert FIXED_SIZE_MESSAGE.size(
+        {
+            Field("Data"): Aggregate(*[Number(0)] * 4),
+        },
+        subpath=True,
+    ) == Number(32)
+    assert FIXED_SIZE_MESSAGE.size(
+        {
+            Field("Message_Type"): Literal("Universal::MT_Data"),
+            Field("Data"): Aggregate(*[Number(0)] * 4),
+        },
+        subpath=True,
+    ) == Number(40)
+
+    assert DEFINITE_MESSAGE.size(
+        {
+            Field("Length"): Number(8),
+        },
+        subpath=True,
+    ) == Number(16)
+    assert DEFINITE_MESSAGE.size(
+        {
+            Field("Data"): Variable("D"),
+        },
+        subpath=True,
+    ) == Size("D")
+    assert DEFINITE_MESSAGE.size(
+        {
+            Field("Length"): Variable("L"),
+            Field("Data"): Variable("D"),
+        },
+        subpath=True,
+    ) == Add(Size("D"), Number(16))
+
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("T"),
+        },
+        subpath=True,
+    ) == Number(8)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("T"),
+            Field("Length"): Variable("L"),
+            Field("Value"): Aggregate(*[Number(0)] * 4),
+        },
+        subpath=True,
+    ) == Number(56)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Tag"): Variable("T"),
+            Field("Length"): Variable("L"),
+        },
+        subpath=True,
+    ) == Number(24)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
+            Field("Value"): Aggregate(*[Number(0)] * 3),
+        },
+        subpath=True,
+    ) == Number(40)
+    assert TLV_MESSAGE.size(
+        {
+            Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
+            Field("Value"): Variable("Z"),
+        },
+        subpath=True,
+    ) == Add(Size("Z"), Number(16))
+    assert TLV_MESSAGE.size(
+        {
+            Field("Length"): Div(Size("Msg_Data"), Number(8)),
+            Field("Value"): Opaque("Msg_Data"),
+        },
+        subpath=True,
+    ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(16))
+
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(46),
+            Field("Type_Length"): Number(46),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        },
+        subpath=True,
+    ) == Number(480)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(0x8100),
+            Field("TPID"): Number(0x8100),
+            Field("TCI"): Number(0),
+            Field("Type_Length"): Number(46),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        },
+        subpath=True,
+    ) == Number(512)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(1536),
+            Field("Type_Length"): Number(1536),
+            Field("Payload"): Aggregate(*[Number(0)] * 46),
+        },
+        subpath=True,
+    ) == Number(480)
+    assert ETHERNET_FRAME.size(
+        {
+            Field("Destination"): Number(0),
+            Field("Source"): Number(0),
+            Field("Type_Length_TPID"): Number(1536),
+            Field("Type_Length"): Number(1536),
+            Field("Payload"): Variable("Payload"),
+        },
+        subpath=True,
+    ) == Add(Size("Payload"), Number(112))
+
+    variable_field_value = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("Length")),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                condition=Equal(Variable("Has_Data"), TRUE),
+                size=Mul(Variable("Length"), Number(8)),
+            ),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                condition=Equal(Variable("Has_Data"), FALSE),
+                size=Number(0),
+            ),
+            Link(
+                Field("Data"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("Has_Data"): BOOLEAN,
+            Field("Length"): TLV_LENGTH,
+            Field("Data"): OPAQUE,
+        },
+    )
+    assert variable_field_value.size(
+        {
+            Field("Length"): Variable("Y"),
+            Field("Data"): Selected(Variable("M"), "F"),
+        },
+        ID("X"),
+        subpath=True,
+    ) == Add(
+        IfExpr(
+            [
+                (
+                    Or(
+                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
+                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                    ),
+                    Size(Selected(Variable("M"), "F")),
+                )
+            ],
+            Number(0),
+        ),
+        Number(16),
+    )
+    assert variable_field_value.size(
+        {
+            Field("Length"): Variable("Y"),
+            Field("Data"): Variable("Z"),
+        },
+        ID("X"),
+        subpath=True,
+    ) == Add(
+        IfExpr(
+            [
+                (
+                    Or(
+                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
+                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                    ),
+                    Size(Variable("Z")),
+                )
+            ],
+            Number(0),
+        ),
+        Number(16),
+    )
+
+    optional_overlayed_field = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("A")),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Equal(Variable("A"), Number(0)),
+                first=First(Variable("A")),
+            ),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Greater(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("B"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("A"): TLV_LENGTH,
+            Field("B"): TLV_LENGTH,
+        },
+    )
+    assert optional_overlayed_field.size(
+        {
+            Field("A"): Number(0),
+            Field("B"): Number(0),
+        },
+        subpath=True,
+    ) == Number(16)
+    assert optional_overlayed_field.size(
+        {
+            Field("A"): Number(1),
+            Field("B"): Number(2),
+        },
+        subpath=True,
+    ) == Number(32)
+    assert optional_overlayed_field.size(
+        {
+            Field("A"): Number(1),
+        },
+        subpath=True,
+    ) == Number(16)
+    assert optional_overlayed_field.size({Field("B"): Number(1)}, subpath=True) == IfExpr(
+        [
+            (
+                And(Greater(Variable("A"), Number(0)), NotEqual(Variable("A"), Number(0))),
+                Number(16),
+            )
+        ],
+        Number(0),
+    )
+
+    path_dependent_fields = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("A")),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Equal(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("A"),
+                Field("C"),
+                condition=Greater(Variable("A"), Number(0)),
+            ),
+            Link(
+                Field("B"),
+                FINAL,
+            ),
+            Link(
+                Field("C"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("A"): TLV_LENGTH,
+            Field("B"): TLV_LENGTH,
+            Field("C"): TLV_LENGTH,
+        },
+    )
+    assert path_dependent_fields.size(
+        {Field("A"): Variable("X"), Field("B"): Number(0)},
+        subpath=True,
+    ) == Number(32)
+    assert path_dependent_fields.size(
+        {Field("A"): Variable("X"), Field("C"): Variable("Y")},
+        subpath=True,
+    ) == Number(32)
+    assert path_dependent_fields.size(
+        {Field("A"): Variable("X")},
+        subpath=True,
+    ) == Number(16)
+    assert path_dependent_fields.size(
+        {Field("B"): Variable("X")},
+        subpath=True,
+    ) == Number(16)
+
+
+def test_size_subpath_error() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'model: error: unable to calculate size of invalid subpath "Tag -> Value"'
+            r' of message "TLV::Message"'
+            r"$"
+        ),
+    ):
+        TLV_MESSAGE.size(
+            {
+                Field("Tag"): Variable("T"),
+                Field("Value"): Variable("V"),
+            },
+            subpath=True,
+        )
 
 
 def test_max_size() -> None:
