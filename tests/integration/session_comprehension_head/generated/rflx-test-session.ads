@@ -6,6 +6,7 @@ with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Universal.Options;
 with RFLX.Universal.Option;
+with RFLX.Universal.Message;
 
 package RFLX.Test.Session with
   SPARK_Mode
@@ -17,7 +18,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Send, S_Terminated);
+   type State is (S_Start, S_Process_1, S_Send_1, S_Recv, S_Process_2, S_Send_2, S_Terminated);
 
    type Private_Context is private;
 
@@ -87,6 +88,25 @@ is
      Post =>
        Initialized (Ctx);
 
+   function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean with
+     Pre =>
+       Initialized (Ctx);
+
+   function Write_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length with
+     Pre =>
+       Initialized (Ctx)
+       and then Needs_Data (Ctx, Chan);
+
+   procedure Write (Ctx : in out Context'Class; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+     Pre =>
+       Initialized (Ctx)
+       and then Needs_Data (Ctx, Chan)
+       and then Buffer'Length > 0
+       and then Offset <= RFLX_Types.Length'Last - Buffer'Length
+       and then Buffer'Length + Offset <= Write_Buffer_Size (Ctx, Chan),
+     Post =>
+       Initialized (Ctx);
+
 private
 
    type Private_Context is
@@ -94,6 +114,7 @@ private
          Next_State : State := S_Start;
          Options_Ctx : Universal.Options.Context;
          First_Option_Ctx : Universal.Option.Context;
+         Message_Ctx : Universal.Message.Context;
          Slots : Test.Session_Allocator.Slots;
          Memory : Test.Session_Allocator.Memory;
       end record;
@@ -101,6 +122,7 @@ private
    function Uninitialized (Ctx : Context'Class) return Boolean is
      (not Universal.Options.Has_Buffer (Ctx.P.Options_Ctx)
       and not Universal.Option.Has_Buffer (Ctx.P.First_Option_Ctx)
+      and not Universal.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and Test.Session_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Global_Initialized (Ctx : Context'Class) return Boolean is
@@ -109,7 +131,10 @@ private
       and then Ctx.P.Options_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then Universal.Option.Has_Buffer (Ctx.P.First_Option_Ctx)
       and then Ctx.P.First_Option_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.First_Option_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
+      and then Ctx.P.First_Option_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Universal.Message.Has_Buffer (Ctx.P.Message_Ctx)
+      and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
+      and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Initialized (Ctx : Context'Class) return Boolean is
      (Global_Initialized (Ctx)
@@ -125,7 +150,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Send =>
+                 when S_Send_1 | S_Send_2 =>
                     Universal.Option.Structural_Valid_Message (Ctx.P.First_Option_Ctx)
                     and Universal.Option.Byte_Size (Ctx.P.First_Option_Ctx) > 0,
                  when others =>
@@ -135,8 +160,26 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Send =>
+                 when S_Send_1 | S_Send_2 =>
                     Universal.Option.Byte_Size (Ctx.P.First_Option_Ctx),
+                 when others =>
+                    RFLX_Types.Unreachable)));
+
+   function Needs_Data (Ctx : Context'Class; Chan : Channel) return Boolean is
+     ((case Chan is
+          when C_Channel =>
+             (case Ctx.P.Next_State is
+                 when S_Recv =>
+                    True,
+                 when others =>
+                    False)));
+
+   function Write_Buffer_Size (Ctx : Context'Class; Chan : Channel) return RFLX_Types.Length is
+     ((case Chan is
+          when C_Channel =>
+             (case Ctx.P.Next_State is
+                 when S_Recv =>
+                    Universal.Message.Buffer_Length (Ctx.P.Message_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));
 

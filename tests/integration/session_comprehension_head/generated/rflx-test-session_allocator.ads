@@ -16,6 +16,7 @@ is
          Slot_2 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_3 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_4 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_5 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
       end record;
 
    subtype Slot_Ptr_Type_4096 is RFLX_Types.Bytes_Ptr with
@@ -30,19 +31,22 @@ is
          Slot_Ptr_2 : Slot_Ptr_Type_4096;
          Slot_Ptr_3 : Slot_Ptr_Type_4096;
          Slot_Ptr_4 : Slot_Ptr_Type_4096;
+         Slot_Ptr_5 : Slot_Ptr_Type_4096;
       end record;
 
    function Initialized (S : Slots) return Boolean is
      (S.Slot_Ptr_1 /= null
       and S.Slot_Ptr_2 /= null
       and S.Slot_Ptr_3 /= null
-      and S.Slot_Ptr_4 /= null);
+      and S.Slot_Ptr_4 /= null
+      and S.Slot_Ptr_5 /= null);
 
    function Uninitialized (S : Slots) return Boolean is
      (S.Slot_Ptr_1 = null
       and S.Slot_Ptr_2 = null
       and S.Slot_Ptr_3 = null
-      and S.Slot_Ptr_4 = null);
+      and S.Slot_Ptr_4 = null
+      and S.Slot_Ptr_5 = null);
 
    procedure Initialize (S : out Slots; M : Memory) with
      Post =>
@@ -55,7 +59,8 @@ is
    function Global_Allocated (S : Slots) return Boolean is
      (S.Slot_Ptr_1 = null
       and S.Slot_Ptr_2 = null
-      and S.Slot_Ptr_3 /= null
-      and S.Slot_Ptr_4 /= null);
+      and S.Slot_Ptr_3 = null
+      and S.Slot_Ptr_4 /= null
+      and S.Slot_Ptr_5 /= null);
 
 end RFLX.Test.Session_Allocator;

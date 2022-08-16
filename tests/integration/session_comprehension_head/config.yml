@@ -1,8 +1,16 @@
+input:
+  Channel:
+    - 5 0 6 1 0 2 4 2 0
 output:
   - Channel
 sequence: |
   State: Start
-  State: Process
+  State: Process_1
   Read Channel: 1 0 1 2
-  State: Send
+  State: Send_1
+  Write Channel: 5 0 6 1 0 2 4 2 0
+  State: Recv
+  State: Process_2
+  Read Channel: 1 0 2 4 2
+  State: Send_2
 prove:
