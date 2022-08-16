@@ -2543,24 +2543,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     self._if_structural_valid_message(
                         message_type,
                         context_id(message_id, is_global),
-                        self._if_valid_fields(
-                            comprehension.condition,
-                            [
-                                self._declare_message_field_sequence_copy(
-                                    message_id,
-                                    message_type,
-                                    message_field,
-                                    sequence_id,
-                                    sequence_type_id,
-                                    comprehension_statements,
-                                    exception_handler,
-                                    is_global,
-                                    alloc_id,
-                                ),
-                            ],
-                            exception_handler,
-                            is_global,
-                        ),
+                        [
+                            self._declare_message_field_sequence_copy(
+                                message_id,
+                                message_type,
+                                message_field,
+                                sequence_id,
+                                sequence_type_id,
+                                comprehension_statements,
+                                exception_handler,
+                                is_global,
+                                alloc_id,
+                            ),
+                        ],
                         exception_handler,
                     )
                 ]
