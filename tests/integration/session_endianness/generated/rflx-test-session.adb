@@ -336,7 +336,9 @@ is
       Buffer := (others => 0);
       case Chan is
          when C_I =>
+            pragma Warnings (Off, "unreachable code");
             null;
+            pragma Warnings (On, "unreachable code");
          when C_O =>
             case Ctx.P.Next_State is
                when S_Reply =>
@@ -344,7 +346,9 @@ is
                when S_Reply2 =>
                   Messages_Msg_Read (Ctx.P.Out_Msg2_Ctx);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
       end case;
    end Read;
@@ -380,10 +384,14 @@ is
                when S_Read2 =>
                   Messages_Msg_LE_Write (Ctx.P.In_Msg2_Ctx, Offset);
                when others =>
+                  pragma Warnings (Off, "unreachable code");
                   null;
+                  pragma Warnings (On, "unreachable code");
             end case;
          when C_O =>
+            pragma Warnings (Off, "unreachable code");
             null;
+            pragma Warnings (On, "unreachable code");
       end case;
    end Write;
 
