@@ -200,17 +200,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_6 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
-               Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
-               pragma Assert (RFLX_Copy_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+            Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
             Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
@@ -297,17 +287,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_7 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
-               Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_7 = null);
-               pragma Assert (RFLX_Copy_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_7 := RFLX_Copy_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_7 /= null);
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+            Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
             Universal.Option_Types.Reset (Option_Types_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop
@@ -421,17 +401,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_8 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
-               Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_8 = null);
-               pragma Assert (RFLX_Copy_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_8 := RFLX_Copy_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_8 /= null);
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+            Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
             Universal.Options.Reset (Message_Options_Ctx);
             while Universal.Options.Has_Element (RFLX_Copy_Options_Ctx) loop

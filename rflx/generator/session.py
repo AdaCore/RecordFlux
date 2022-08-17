@@ -2212,12 +2212,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             return self._assign_to_selected(target, expression, exception_handler, is_global)
 
         if isinstance(expression, expr.Head):
-            return self._assign_to_head(target, expression, exception_handler, is_global, alloc_id)
+            return self._assign_to_head(
+                target, expression, exception_handler, is_global, state, alloc_id
+            )
 
         if isinstance(expression, expr.Comprehension):
             assert isinstance(target_type, rty.Sequence)
             return self._assign_to_comprehension(
-                target, target_type, expression, exception_handler, is_global, alloc_id
+                target, target_type, expression, exception_handler, is_global, state, alloc_id
             )
 
         if isinstance(expression, expr.Call):
@@ -2536,12 +2538,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         ]
 
-    def _assign_to_head(
+    def _assign_to_head(  # pylint: disable = too-many-arguments
         self,
         target: ID,
         head: expr.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix.type_, (rty.Sequence, rty.Aggregate))
@@ -2556,16 +2559,19 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if isinstance(head.prefix, expr.Comprehension):
             return self._assign_to_head_comprehension(
-                target, head, exception_handler, is_global, alloc_id
+                target, head, exception_handler, is_global, state, alloc_id
             )
-        return self._assign_to_head_sequence(target, head, exception_handler, is_global, alloc_id)
+        return self._assign_to_head_sequence(
+            target, head, exception_handler, is_global, state, alloc_id
+        )
 
-    def _assign_to_head_comprehension(  # pylint: disable = too-many-locals
+    def _assign_to_head_comprehension(  # pylint: disable = too-many-arguments, too-many-locals
         self,
         target: ID,
         head: expr.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         comprehension = head.prefix
@@ -2650,6 +2656,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_id = ID(selected.prefix.name)
                 message_type = selected.prefix.type_.identifier
                 message_field = selected.selector
+                source_buffer_size = self._allocator.get_size(message_id, state)
+                target_buffer_size = self._allocator.get_size(target, state)
 
                 return [
                     self._if_structural_valid_message(
@@ -2663,6 +2671,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 sequence_id,
                                 sequence_type_id,
                                 comprehension_statements,
+                                target_buffer_size < source_buffer_size,
                                 exception_handler,
                                 is_global,
                                 alloc_id,
@@ -2679,12 +2688,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             location=comprehension.sequence.location,
         )
 
-    def _assign_to_head_sequence(  # pylint: disable = too-many-locals
+    def _assign_to_head_sequence(  # pylint: disable = too-many-arguments, too-many-locals
         self,
         target: ID,
         head: expr.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix.type_, rty.Sequence)
@@ -2740,6 +2750,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         target_buffer = buffer_id("RFLX_Target_" + target)
         element_context = ID("RFLX_Head_Ctx")
         copied_sequence_context = context_id(copy_id(sequence_id), is_global)
+        source_buffer_size = self._allocator.get_size(sequence_id, state)
+        target_buffer_size = self._allocator.get_size(target, state)
 
         def statements(exception_handler: ExceptionHandler) -> list[Statement]:
             update_context = self._update_context(
@@ -2795,6 +2807,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                     target_type,
                                                     element_context,
                                                     target_buffer,
+                                                    target_buffer_size < source_buffer_size,
                                                     local_exception_handler.copy(
                                                         [
                                                             CallStatement(
@@ -2859,6 +2872,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         comprehension: expr.Comprehension,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
         # pylint: disable = too-many-locals
@@ -2929,6 +2943,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     location=selected.location,
                 )
                 message_field = selected.selector
+                source_buffer_size = self._allocator.get_size(message_id, state)
+                target_buffer_size = self._allocator.get_size(target, state)
 
                 return [
                     reset_target,
@@ -2957,6 +2973,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                         alloc_id,
                                     )
                                 ],
+                                target_buffer_size < source_buffer_size,
                                 exception_handler,
                                 is_global,
                                 alloc_id,
@@ -4532,7 +4549,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             sequence_type,
                             sequence_context,
                             copy_id(buffer_id(sequence_identifier)),
-                            exception_handler.copy(free_buffer),
+                            target_buffer_is_smaller=False,
+                            exception_handler=exception_handler.copy(free_buffer),
                         ),
                         self._initialize_context(
                             copy_id(sequence_identifier),
@@ -4560,6 +4578,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_identifier: ID,
         sequence_type: ID,
         statements: Callable[[ExceptionHandler], Sequence[Statement]],
+        target_buffer_is_smaller: bool,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
@@ -4576,6 +4595,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     message_type,
                     context_id(message_identifier, is_global),
                     buffer_id(sequence_identifier),
+                    target_buffer_is_smaller,
                     local_exception_handler,
                 ),
                 self._if_structural_valid_message_field(
@@ -4864,7 +4884,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     target_type_id,
                                     element_id,
                                     buffer_id(target_buffer),
-                                    exception_handler,
+                                    target_buffer_is_smaller=True,
+                                    exception_handler=exception_handler,
                                 ),
                                 CallStatement(
                                     target_type_id * "Initialize",
@@ -5137,53 +5158,59 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         type_: ID,
         source_context: ID,
         target_buffer: ID,
+        target_buffer_is_smaller: bool,
         exception_handler: ExceptionHandler,
-    ) -> IfStatement:
+    ) -> Statement:
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
-        return IfStatement(
+        copy = CallStatement(
+            type_ * "Copy",
             [
-                (
-                    LessEqual(
-                        Call(
-                            type_ * "Byte_Size",
-                            [Variable(source_context)],
-                        ),
-                        Length(target_buffer),
-                    ),
-                    [
-                        CallStatement(
-                            type_ * "Copy",
-                            [
-                                Variable(source_context),
-                                Indexed(
-                                    Variable(target_buffer * "all"),
-                                    ValueRange(
-                                        First(target_buffer),
-                                        Add(
-                                            First(target_buffer),
-                                            Call(
-                                                const.TYPES_INDEX,
-                                                [
-                                                    Add(
-                                                        Call(
-                                                            type_ * "Byte_Size",
-                                                            [Variable(source_context)],
-                                                        ),
-                                                        Number(1),
-                                                    )
-                                                ],
-                                            ),
-                                            -Number(2),
+                Variable(source_context),
+                Indexed(
+                    Variable(target_buffer * "all"),
+                    ValueRange(
+                        First(target_buffer),
+                        Add(
+                            First(target_buffer),
+                            Call(
+                                const.TYPES_INDEX,
+                                [
+                                    Add(
+                                        Call(
+                                            type_ * "Byte_Size",
+                                            [Variable(source_context)],
                                         ),
-                                    ),
-                                ),
-                            ],
+                                        Number(1),
+                                    )
+                                ],
+                            ),
+                            -Number(2),
                         ),
-                    ],
-                )
+                    ),
+                ),
             ],
-            exception_handler.execute(),
         )
+
+        if target_buffer_is_smaller:
+            return IfStatement(
+                [
+                    (
+                        LessEqual(
+                            Call(
+                                type_ * "Byte_Size",
+                                [Variable(source_context)],
+                            ),
+                            Length(target_buffer),
+                        ),
+                        [
+                            copy,
+                        ],
+                    )
+                ],
+                exception_handler.execute(),
+            )
+
+        return copy
 
     def _convert_type(
         self, expression: expr.Expr, target_type: rty.Type, expression_type: rty.Type = None
