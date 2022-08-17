@@ -48,14 +48,6 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 32 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Start_Invariant);
-            goto Finalize_Start;
-         end if;
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));
@@ -88,14 +80,6 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 8 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Start_Invariant);
-            goto Finalize_Start;
-         end if;
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Null);
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -115,14 +99,6 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < 40 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Start_Invariant);
-            goto Finalize_Start;
-         end if;
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));

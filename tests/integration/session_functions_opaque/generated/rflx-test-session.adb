@@ -148,14 +148,6 @@ is
          RFLX_Element_Message_Sequence_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-         if Universal.Option.Available_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type) < 40 then
-            Ctx.P.Next_State := S_Error;
-            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
-            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Check_Message_Sequence_Invariant);
-            goto Finalize_Check_Message_Sequence;
-         end if;
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length));

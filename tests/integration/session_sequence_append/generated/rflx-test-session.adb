@@ -82,26 +82,6 @@ is
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
-         if
-            not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
-             and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0
-             and then Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data))
-         then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-         if Universal.Option.Available_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) < Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data) + 24 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
