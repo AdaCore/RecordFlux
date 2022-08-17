@@ -173,17 +173,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
-               Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
-               pragma Assert (RFLX_Copy_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_4 := RFLX_Copy_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
-               pragma Assert (Process_1_Invariant);
-               goto Finalize_Process_1;
-            end if;
+            Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
             declare
                RFLX_First_Option_Length_Found : Boolean := False;
@@ -284,17 +274,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_5 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Options.Byte_Size (Ctx.P.Options_Ctx) <= RFLX_Copy_Options_Buffer'Length then
-               Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_5 = null);
-               pragma Assert (RFLX_Copy_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_5 := RFLX_Copy_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_5 /= null);
-               pragma Assert (Process_1_Invariant);
-               goto Finalize_Process_1;
-            end if;
+            Universal.Options.Copy (Ctx.P.Options_Ctx, RFLX_Copy_Options_Buffer.all (RFLX_Copy_Options_Buffer'First .. RFLX_Copy_Options_Buffer'First + RFLX_Types.Index (Universal.Options.Byte_Size (Ctx.P.Options_Ctx) + 1) - 2));
             Universal.Options.Initialize (RFLX_Copy_Options_Ctx, RFLX_Copy_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Options_Buffer'First), Universal.Options.Sequence_Last (Ctx.P.Options_Ctx));
             declare
                RFLX_First_Option_Found : Boolean := False;
@@ -496,17 +476,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Message.Byte_Size (Ctx.P.Message_Ctx) <= RFLX_Message_Options_Buffer'Length then
-               Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
-               pragma Assert (RFLX_Message_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_4 := RFLX_Message_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
-               pragma Assert (Process_2_Invariant);
-               goto Finalize_Process_2;
-            end if;
+            Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
             if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                declare

@@ -86,17 +86,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_3 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Message.Byte_Size (Ctx.P.Message_Ctx) <= RFLX_Message_Options_Buffer'Length then
-               Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
-               pragma Assert (RFLX_Message_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_3 := RFLX_Message_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+            Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
             if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
@@ -193,17 +183,7 @@ is
             pragma Warnings (Off, "unused assignment");
             Ctx.P.Slots.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
-            if Universal.Message.Byte_Size (Ctx.P.Message_Ctx) <= RFLX_Message_Options_Buffer'Length then
-               Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            else
-               Ctx.P.Next_State := S_Terminated;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
-               pragma Assert (RFLX_Message_Options_Buffer /= null);
-               Ctx.P.Slots.Slot_Ptr_4 := RFLX_Message_Options_Buffer;
-               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
+            Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
             if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
