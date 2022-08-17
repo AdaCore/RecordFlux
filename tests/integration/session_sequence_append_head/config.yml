@@ -3,7 +3,10 @@ input:
 output:
   - Channel
 sequence: |
-  State: Start
+  State: Global
   Read Channel: 1 0 1 2
-  State: Reply
+  State: Reply_1
+  State: Local
+  Read Channel: 1 0 2 3 4
+  State: Reply_2
 prove:

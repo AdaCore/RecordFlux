@@ -16,8 +16,8 @@ is
          Slot_2 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_3 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_4 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
-         Slot_5 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
-         Slot_6 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 8095) := (others => 0);
+         Slot_5 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         Slot_6 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_7 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          Slot_8 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
       end record;
@@ -40,8 +40,8 @@ is
          Slot_Ptr_2 : Slot_Ptr_Type_4096;
          Slot_Ptr_3 : Slot_Ptr_Type_4096;
          Slot_Ptr_4 : Slot_Ptr_Type_8096;
-         Slot_Ptr_5 : Slot_Ptr_Type_8096;
-         Slot_Ptr_6 : Slot_Ptr_Type_8096;
+         Slot_Ptr_5 : Slot_Ptr_Type_4096;
+         Slot_Ptr_6 : Slot_Ptr_Type_4096;
          Slot_Ptr_7 : Slot_Ptr_Type_4096;
          Slot_Ptr_8 : Slot_Ptr_Type_4096;
       end record;

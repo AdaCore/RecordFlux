@@ -355,7 +355,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
             return state.identifier.name
         return None
 
-    def _allocate_local_slots(self) -> List[SlotInfo]:
+    def _allocate_local_slots(self) -> List[SlotInfo]:  # pylint: disable-next = too-many-branches
         """
         Allocate slots for state variables and state actions.
 
@@ -390,17 +390,37 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
                     and isinstance(a.expression.sequence.type_.element, rty.Message)
                     and isinstance(a.expression.sequence, (expr.Selected, expr.Variable))
                 ):
+                    if isinstance(a.expression.sequence, expr.Selected) and isinstance(
+                        a.expression.sequence.prefix, expr.Variable
+                    ):
+                        identifier = a.expression.sequence.prefix.identifier
+                    else:
+                        assert isinstance(a.expression.sequence, expr.Variable)
+                        identifier = a.expression.sequence.identifier
                     state_requirements.append(
                         AllocationRequirement(
                             a.location,
-                            self.get_size(a.identifier, self._scope(s, a.identifier)),
+                            self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
                 if isinstance(a, stmt.Assignment) and isinstance(a.expression, expr.Head):
+                    if isinstance(a.expression.prefix, expr.Comprehension) and isinstance(
+                        a.expression.prefix.sequence, expr.Variable
+                    ):
+                        identifier = a.expression.prefix.sequence.identifier
+                    elif (
+                        isinstance(a.expression.prefix, expr.Comprehension)
+                        and isinstance(a.expression.prefix.sequence, expr.Selected)
+                        and isinstance(a.expression.prefix.sequence.prefix, expr.Variable)
+                    ):
+                        identifier = a.expression.prefix.sequence.prefix.identifier
+                    else:
+                        assert isinstance(a.expression.prefix, expr.Variable)
+                        identifier = a.expression.prefix.identifier
                     state_requirements.append(
                         AllocationRequirement(
                             a.location,
-                            self.get_size(a.identifier, self._scope(s, a.identifier)),
+                            self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
 
