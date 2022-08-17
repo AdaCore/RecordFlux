@@ -2767,7 +2767,17 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                     target_type,
                                                     element_context,
                                                     target_buffer,
-                                                    local_exception_handler,
+                                                    local_exception_handler.copy(
+                                                        [
+                                                            CallStatement(
+                                                                target_type * "Initialize",
+                                                                [
+                                                                    Variable(target_context),
+                                                                    Variable(target_buffer),
+                                                                ],
+                                                            )
+                                                        ]
+                                                    ),
                                                 ),
                                                 CallStatement(
                                                     target_type * "Initialize",

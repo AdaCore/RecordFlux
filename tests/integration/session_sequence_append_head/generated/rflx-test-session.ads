@@ -18,7 +18,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Reply, S_Terminated);
+   type State is (S_Global, S_Reply_1, S_Local, S_Reply_2, S_Terminated);
 
    type Private_Context is private;
 
@@ -92,7 +92,7 @@ private
 
    type Private_Context is
       record
-         Next_State : State := S_Start;
+         Next_State : State := S_Global;
          Messages_Ctx : TLV.Messages.Context;
          Tags_Ctx : TLV.Tags.Context;
          Message_Ctx : TLV.Message.Context;
@@ -109,13 +109,13 @@ private
    function Global_Initialized (Ctx : Context'Class) return Boolean is
      (TLV.Messages.Has_Buffer (Ctx.P.Messages_Ctx)
       and then Ctx.P.Messages_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Messages_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
+      and then Ctx.P.Messages_Ctx.Buffer_Last = RFLX_Types.Index'First + 8095
       and then TLV.Tags.Has_Buffer (Ctx.P.Tags_Ctx)
       and then Ctx.P.Tags_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Tags_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095
       and then TLV.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
-      and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 8095);
+      and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
    function Initialized (Ctx : Context'Class) return Boolean is
      (Global_Initialized (Ctx)
@@ -131,7 +131,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply =>
+                 when S_Reply_1 | S_Reply_2 =>
                     TLV.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
                     and TLV.Message.Byte_Size (Ctx.P.Message_Ctx) > 0,
                  when others =>
@@ -141,7 +141,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply =>
+                 when S_Reply_1 | S_Reply_2 =>
                     TLV.Message.Byte_Size (Ctx.P.Message_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));

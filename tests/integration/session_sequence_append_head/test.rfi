@@ -3,4 +3,4 @@ Session:
     Buffer_Size:
       Default: 4096
       Global:
-        Message: 8096
+        Messages: 8096
