@@ -3504,6 +3504,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 local_exception_handler,
                                 is_global,
                                 state,
+                                size_check=False,
                             )
                             if isinstance(append.parameters[0], expr.MessageAggregate)
                             else []
@@ -4033,13 +4034,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
         )
 
-    def _set_message_fields(
+    def _set_message_fields(  # pylint: disable = too-many-arguments
         self,
         target_context: ID,
         message_aggregate: expr.MessageAggregate,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
+        size_check: bool = True,
     ) -> list[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
@@ -4047,38 +4049,42 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         size = self._message_size(message_aggregate)
         required_space, required_space_precondition = self._required_space(size, is_global, state)
 
-        statements: list[Statement] = [
-            *(
-                [
-                    self._raise_exception_if(
-                        Not(required_space_precondition),
-                        "violated precondition for calculating required space of message for"
-                        f' "{target_context}" (one of the message arguments is invalid or has a too'
-                        " small buffer)",
-                        exception_handler,
-                    )
-                ]
-                if required_space_precondition
-                else []
-            ),
-            self._raise_exception_if(
-                Less(
-                    Call(
-                        message_type.identifier * "Available_Space",
-                        [
-                            Variable(target_context),
-                            Variable(
-                                message_type.identifier
-                                * model.Field(next(iter(message_type.field_types))).affixed_name
-                            ),
-                        ],
-                    ),
-                    required_space,
+        statements: list[Statement] = (
+            [
+                *(
+                    [
+                        self._raise_exception_if(
+                            Not(required_space_precondition),
+                            "violated precondition for calculating required space of message for"
+                            f' "{target_context}" (one of the message arguments is invalid or has a'
+                            " too small buffer)",
+                            exception_handler,
+                        )
+                    ]
+                    if required_space_precondition
+                    else []
                 ),
-                f'insufficient space in "{target_context}" for creating message',
-                exception_handler,
-            ),
-        ]
+                self._raise_exception_if(
+                    Less(
+                        Call(
+                            message_type.identifier * "Available_Space",
+                            [
+                                Variable(target_context),
+                                Variable(
+                                    message_type.identifier
+                                    * model.Field(next(iter(message_type.field_types))).affixed_name
+                                ),
+                            ],
+                        ),
+                        required_space,
+                    ),
+                    f'insufficient space in "{target_context}" for creating message',
+                    exception_handler,
+                ),
+            ]
+            if size_check
+            else []
+        )
 
         for f, v in message_aggregate.field_values.items():
             if f not in message_type.field_types:

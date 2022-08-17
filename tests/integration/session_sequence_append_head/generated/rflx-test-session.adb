@@ -47,14 +47,6 @@ is
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-         if TLV.Message.Available_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) < 32 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Global_Invariant);
-            goto Finalize_Global;
-         end if;
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag));
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
@@ -285,14 +277,6 @@ is
          RFLX_Element_Local_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
-         if TLV.Message.Available_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Tag) < 40 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
-            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Local_Invariant);
-            goto Finalize_Local;
-         end if;
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Tag));
          TLV.Message.Set_Tag (RFLX_Element_Local_Messages_Ctx, TLV.Msg_Data);
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Length));
@@ -325,14 +309,6 @@ is
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-         if TLV.Message.Available_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) < 32 then
-            Ctx.P.Next_State := S_Terminated;
-            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Local_Invariant);
-            goto Finalize_Local;
-         end if;
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag));
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
          pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
