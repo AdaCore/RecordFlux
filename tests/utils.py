@@ -216,8 +216,8 @@ def assert_provable_code(
     gnatprove = ["gnatprove", "-Ptest"]
 
     if units:
-        for unit in units:
-            run([*gnatprove, "-u", unit])
+        args = [arg for unit in units for arg in ["-u", unit]]
+        run([*gnatprove, *args])
     else:
         run(gnatprove)
 
@@ -494,26 +494,6 @@ def session_main(
             ),
         ],
         [
-            ada.IfStatement(
-                [
-                    (
-                        ada.Equal(ada.Variable("Size"), ada.Number(0)),
-                        [
-                            ada.CallStatement(
-                                "Ada.Text_IO.Put_Line",
-                                [
-                                    ada.Concatenation(
-                                        ada.String("Read "),
-                                        ada.Image("Chan"),
-                                        ada.String(": read buffer size is 0"),
-                                    )
-                                ],
-                            ),
-                            ada.ReturnStatement(),
-                        ],
-                    ),
-                ]
-            ),
             ada.IfStatement(
                 [
                     (
