@@ -185,11 +185,15 @@ is
 
    procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 
+   pragma Warnings (Off, "precondition is always False");
+
    function Unreachable return Boolean is (False) with Pre => False;
 
    function Unreachable return Bit_Length is (0) with Pre => False;
 
    function Unreachable return Length is (0) with Pre => False;
+
+   pragma Warnings (On, "precondition is always False");
 
    procedure Lemma_Size (Val : Base_Integer; Size : Positive) renames RFLX.RFLX_Arithmetic.Lemma_Size;
 
