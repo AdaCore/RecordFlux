@@ -13,6 +13,7 @@ env:
     MEMCACHED: localhost:11211
     ALIRE_VERSION: "1.2.0"
     SPARK_VERSION: "23.0w-20220811"
+    GNAT_VERSION: "23.0w-20220723"
 
 jobs:
   skip_check_general:
@@ -159,7 +160,6 @@ jobs:
           - target: "python_optimized"
             python-version: "3.8"
     env:
-      gnat-version: "23.0w-20220723"
       GNAT: "pro23.0w-20220723"
     steps:
     - uses: actions/checkout@v2
@@ -188,7 +188,7 @@ jobs:
       uses: ./.github/actions/install_gnat_pro
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
-        version: ${{ env.gnat-version }}
+        version: ${{ env.GNAT_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
@@ -393,7 +393,7 @@ jobs:
         uses: ./.github/actions/install_gnat_pro
         if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         with:
-          version: ${{ env.gnat-version }}
+          version: ${{ env.GNAT_VERSION }}
           ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
           server: ${{ secrets.MEMCACHED_SERVER }}
       - name: Install dependencies

@@ -9,6 +9,7 @@ on:
 env:
     MEMCACHED: localhost:11211
     SPARK_VERSION: "23.0w-20220811"
+    GNAT_VERSION: "23.0w-20220723"
 
 jobs:
   checks:
@@ -36,7 +37,7 @@ jobs:
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
       with:
-        version: "23.0w-20220723"
+        version: ${{ env.GNAT_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
@@ -78,7 +79,7 @@ jobs:
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
       with:
-        version: "23.0w-20220723"
+        version: ${{ env.GNAT_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install SPARK Pro
