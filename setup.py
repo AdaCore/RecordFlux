@@ -29,7 +29,6 @@ setup(
         "Programming Language :: Ada",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Topic :: Communications",
@@ -40,7 +39,7 @@ setup(
     ],
     packages=find_packages(include=("rflx", "rflx.*")),
     package_data={"rflx": ["py.typed", "templates/*"]},
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
         "attrs >=20, <22",
         "icontract >=2.3.4, <3",
