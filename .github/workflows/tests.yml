@@ -12,6 +12,7 @@ concurrency:
 env:
     MEMCACHED: localhost:11211
     ALIRE_VERSION: "1.2.0"
+    SPARK_VERSION: "23.0w-20220811"
 
 jobs:
   skip_check_general:
@@ -194,7 +195,7 @@ jobs:
       uses: ./.github/actions/install_spark_pro
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
@@ -450,7 +451,7 @@ jobs:
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
@@ -604,7 +605,7 @@ jobs:
       uses: ./.github/actions/install_spark_pro
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
@@ -789,7 +790,7 @@ jobs:
       uses: ./.github/actions/install_spark_pro
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies

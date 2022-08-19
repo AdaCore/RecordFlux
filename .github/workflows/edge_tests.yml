@@ -8,6 +8,7 @@ on:
 
 env:
     MEMCACHED: localhost:11211
+    SPARK_VERSION: "23.0w-20220811"
 
 jobs:
   checks:
@@ -41,7 +42,7 @@ jobs:
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
@@ -83,7 +84,7 @@ jobs:
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
       with:
-        version: "23.0w-20220612"
+        version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
