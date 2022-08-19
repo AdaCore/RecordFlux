@@ -1,7 +1,7 @@
 # [![RecordFlux](https://raw.githubusercontent.com/Componolit/RecordFlux/main/doc/img/logo.svg)](https://github.com/Componolit/RecordFlux/)
 
 [![PyPI](https://img.shields.io/pypi/v/RecordFlux?color=blue)](https://pypi.org/project/RecordFlux/)
-[![Python Versions](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue.svg)](https://python.org/)
+[![Python Versions](https://img.shields.io/badge/python-3.8%20%7C%203.9-blue.svg)](https://python.org/)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![Tests](https://github.com/Componolit/RecordFlux/workflows/tests/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5052/badge)](https://bestpractices.coreinfrastructure.org/projects/5052)
