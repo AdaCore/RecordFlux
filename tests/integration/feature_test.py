@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field
-from distutils.dir_util import copy_tree
 from pathlib import Path
+from shutil import copytree
 from typing import Mapping, Optional, Sequence, Tuple
 
 import pytest
@@ -98,7 +98,7 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
 
     src_dir = Path(__file__).parent / feature / "src"
     if src_dir.is_dir():
-        copy_tree(str(src_dir), str(tmp_path))
+        copytree(str(src_dir), str(tmp_path), dirs_exist_ok=True)
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
