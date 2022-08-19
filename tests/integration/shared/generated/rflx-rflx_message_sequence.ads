@@ -12,7 +12,9 @@ generic
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
 package RFLX.RFLX_Message_Sequence with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    pragma Annotate (GNATprove, Always_Return, RFLX_Message_Sequence);

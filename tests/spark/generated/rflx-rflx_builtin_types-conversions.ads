@@ -3,7 +3,9 @@ pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 with RFLX.RFLX_Arithmetic;
 
 package RFLX.RFLX_Builtin_Types.Conversions with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    pragma Annotate (GNATprove, Always_Return, Conversions);
