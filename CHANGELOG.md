@@ -41,6 +41,7 @@ Generator:
 
 Dependencies:
 
+- Support for Python 3.10
 - Python: `ruamel.yaml`
 
 ### Changed

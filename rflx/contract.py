@@ -1,4 +1,4 @@
-if __debug__:
+if __debug__:  # pragma: no cover
 
     # pylint: disable=unused-import
     from icontract import (

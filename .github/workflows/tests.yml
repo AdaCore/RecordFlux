@@ -45,7 +45,7 @@ jobs:
           - contracts
           - doc
     env:
-      python-version: 3.8
+      python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
@@ -106,7 +106,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: "3.8"
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -147,15 +147,16 @@ jobs:
         target:
           - "python_coverage"
         python-version:
-          - 3.8
-          - 3.9
+          - "3.8"
+          - "3.9"
+          - "3.10"
         include:
           - target: "python_unit"
-            python-version: 3.8
+            python-version: "3.8"
           - target: "python_property"
-            python-version: 3.8
+            python-version: "3.8"
           - target: "python_optimized"
-            python-version: 3.8
+            python-version: "3.8"
     env:
       gnat-version: "23.0w-20220723"
       GNAT: "pro23.0w-20220723"
@@ -269,7 +270,7 @@ jobs:
           - gnat-distrib: "fsf"
             gnat-version: "12.1.2"
     env:
-      python-version: 3.8
+      python-version: "3.8"
       GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
       - uses: actions/checkout@v2
@@ -361,7 +362,7 @@ jobs:
     name: Binary size
     runs-on: ubuntu-20.04
     env:
-      python-version: 3.8
+      python-version: "3.8"
       gnat-version: "23.0w-20220723"
       GNAT: "pro23.0w-20220723"
     steps:
@@ -563,7 +564,7 @@ jobs:
           - "sequence"
           - "tlv"
     env:
-      python-version: 3.8
+      python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
@@ -654,14 +655,15 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - 3.8
-          - 3.9
+          - "3.8"
+          - "3.9"
+          - "3.10"
         gnat-distrib:
           - "community"
         gnat-version:
           - "2021"
         include:
-          - python-version: 3.8
+          - python-version: "3.8"
             gnat-distrib: "fsf"
             gnat-version: "11.2.4"
     env:
@@ -744,7 +746,7 @@ jobs:
           - ping
           - dhcp_client
     env:
-      python-version: 3.8
+      python-version: "3.8"
       # SPARK requires more than the available 7 GB of RAM for proving the DHCP client, if multiple
       # processes are used.
       GNATPROVE_PROCS: 1
@@ -841,7 +843,7 @@ jobs:
           - "community"
           - "fsf"
     env:
-      python-version: 3.8
+      python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
@@ -908,7 +910,7 @@ jobs:
     needs: skip_check_general
     runs-on: ubuntu-20.04
     env:
-      python-version: 3.8
+      python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
