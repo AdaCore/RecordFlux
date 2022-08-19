@@ -1,7 +1,9 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 package {prefix}RFLX_Builtin_Types with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    type Length is new Natural;

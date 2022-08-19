@@ -8,7 +8,9 @@ generic
    with function To_Actual (Element : {prefix}RFLX_Types.Base_Integer) return Element_Type;
    with function To_Base_Int (Element : Element_Type) return {prefix}RFLX_Types.Base_Integer;
 package {prefix}RFLX_Scalar_Sequence with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    pragma Annotate (GNATprove, Always_Return, RFLX_Scalar_Sequence);

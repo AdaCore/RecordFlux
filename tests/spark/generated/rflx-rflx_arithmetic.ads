@@ -1,7 +1,9 @@
 pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
 
 package RFLX.RFLX_Arithmetic with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    type U64 is mod 2**64 with

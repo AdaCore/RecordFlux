@@ -11,7 +11,9 @@ generic
    type Custom_Length is range <>;
    type Custom_Bit_Length is range <>;
 package RFLX.RFLX_Generic_Types with
-  SPARK_Mode
+  SPARK_Mode,
+  Annotate =>
+    (GNATprove, Always_Return)
 is
 
    subtype Index is Custom_Index;
