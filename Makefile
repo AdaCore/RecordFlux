@@ -79,7 +79,7 @@ test_python_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	$(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not hypothesis" tests
+	$(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis" tests
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
