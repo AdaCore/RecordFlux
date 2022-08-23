@@ -74,6 +74,7 @@ Generator:
 - Add operators for `Length` and `Index` types (#1070)
 - Overwrite symlinks when creating files
 - Make `In_IO_State` session function public (#1155)
+- Generate improved code for messages with reduced feature usage (#1114)
 
 PyRFLX:
 
