@@ -545,13 +545,40 @@ def create_channel_decl(
     assert isinstance(declaration, lang.FormalChannelDecl)
     readable = False
     writable = False
+
+    grouped = defaultdict(list)
     for p in declaration.f_parameters:
-        if p.kind_name == "Readable":
+        grouped[p.kind_name].append(node_location(p, filename))
+
+    for name, locations in grouped.items():
+        if len(locations) > 1:
+            error = RecordFluxError()
+            error.extend(
+                [
+                    (
+                        f'duplicate channel aspect "{name}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        locations[-1],
+                    ),
+                    *[
+                        (
+                            "previous location",
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            l,
+                        )
+                        for l in locations[:-1]
+                    ],
+                ],
+            )
+            error.propagate()
+        if name == "Readable":
             readable = True
-        elif p.kind_name == "Writable":
+        elif name == "Writable":
             writable = True
         else:
-            raise NotImplementedError(f"channel parameter: {p.kind_name}")
+            raise NotImplementedError(f"channel parameter: {name}")
     return decl.ChannelDeclaration(
         create_id(declaration.f_identifier, filename),
         readable=readable,
@@ -1023,21 +1050,52 @@ def create_message_structure(
     error: RecordFluxError, fields: lang.MessageFields, filename: Path
 ) -> List[model.Link]:
     def extract_aspect(aspects: lang.AspectList) -> Tuple[expr.Expr, expr.Expr]:
+
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
+
+        grouped = defaultdict(list)
         for aspect in aspects:
-            if aspect.f_identifier.text == "Size":
+            grouped[aspect.f_identifier.text].append(
+                (aspect, node_location(aspect.f_identifier, filename))
+            )
+
+        for name, locations in grouped.items():
+            if len(locations) > 1:
+                error.extend(
+                    [
+                        (
+                            f'duplicate aspect "{name}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            locations[-1][1],
+                        ),
+                        *[
+                            (
+                                "previous location",
+                                Subsystem.PARSER,
+                                Severity.INFO,
+                                l,
+                            )
+                            for _, l in locations[:-1]
+                        ],
+                    ],
+                )
+
+            aspect, location = locations[0]
+
+            if name == "Size":
                 size = create_math_expression(aspect.f_value, filename)
-            elif aspect.f_identifier.text == "First":
+            elif name == "First":
                 first = create_math_expression(aspect.f_value, filename)
             else:
                 error.extend(
                     [
                         (
-                            f'invalid aspect "{aspect.f_identifier.text}"',
+                            f'invalid aspect "{name}"',
                             Subsystem.PARSER,
                             Severity.ERROR,
-                            node_location(aspect.f_identifier, filename),
+                            location,
                         )
                     ],
                 )

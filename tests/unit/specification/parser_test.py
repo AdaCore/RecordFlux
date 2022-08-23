@@ -2826,3 +2826,56 @@ def test_parse_reserved_word_as_channel_name() -> None:
         end Test;
         """
     )
+
+
+def test_parse_error_duplicate_message_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 A : T;
+                 B : Opaque
+                    with First => A'First, Size => A'Size, First => A'First, Size => A'Size;
+              end message;
+        end Test;
+        """,
+        r'^<stdin>:7:52: parser: error: duplicate aspect "First"\n'
+        "<stdin>:7:18: parser: info: previous location\n"
+        '<stdin>:7:70: parser: error: duplicate aspect "Size"\n'
+        "<stdin>:7:36: parser: info: previous location$",
+    )
+
+
+def test_parse_error_duplicate_channel_decl_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type Message is
+              message
+                 A : T;
+              end message;
+           generic
+              C : Channel with Readable, Writable, Readable;
+           session S with
+              Initial => I,
+              Final => F
+           is
+              M : Test::Message;
+           begin
+              state I
+              is
+              begin
+                 C'Read (M);
+              transition
+                 goto F
+              end I;
+              state F is null state;
+           end S;
+        end Test;
+        """,
+        r'^<stdin>:8:44: parser: error: duplicate channel aspect "Readable"\n'
+        "<stdin>:8:24: parser: info: previous location$",
+    )
