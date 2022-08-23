@@ -6,6 +6,9 @@ on:
   schedule:
     - cron:  '0 2 * * *'
 
+env:
+  PYTHON_VERSION: "3.8"
+
 jobs:
   Checks:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
@@ -13,7 +16,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7]
         target:
           - black
           - isort
@@ -28,7 +30,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: Determine exact Python version
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
@@ -40,7 +42,7 @@ jobs:
       with:
         path: |
           ~/.cache/pip
-          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/lib/python${{ env.PYTHON_VERSION }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt', '.config/python-style/setup.cfg') }}
     - name: Install toolchain
@@ -60,10 +62,6 @@ jobs:
   Tests:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.7]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -71,7 +69,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ env.PYTHON_VERSION }}
     - name: Determine exact Python version
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
@@ -83,7 +81,7 @@ jobs:
       with:
         path: |
           ~/.cache/pip
-          ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          ~/.local/lib/python${{ env.PYTHON_VERSION }}/site-packages
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.RFLX_HEAD }}-${{ hashFiles('requirements.txt', '.config/python-style/setup.cfg') }}
     - name: Install toolchain
