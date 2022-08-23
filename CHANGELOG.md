@@ -59,6 +59,7 @@ Specification / Model:
 - Enable use of `Opaque` attribute for arguments of function calls and on sequences (#984, #1021)
 - Keep multiple message versions in verification cache (#1028)
 - Improve generation of specification files for model (#1009, #1022)
+- Detect duplicate aspects (#714)
 
 Generator:
 
