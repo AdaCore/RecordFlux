@@ -752,26 +752,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         for state in session.states:
             if not state.is_null:
-                parameters = []
                 invariant = []
                 slots = []
 
                 for d in state.declarations.values():
                     assert isinstance(d, decl.VariableDeclaration)
-                    if isinstance(d.type_, (rty.Integer, rty.Enumeration)):
-                        parameters.append(
-                            InOutParameter([d.identifier], self._ada_type(d.type_.identifier))
-                        )
-                    else:
-                        assert isinstance(d.type_, (rty.Message, rty.Sequence))
+                    if isinstance(d.type_, (rty.Message, rty.Sequence)):
                         identifier = context_id(d.identifier, is_global)
                         type_identifier = self._ada_type(d.type_.identifier)
-                        parameters.append(
-                            InOutParameter(
-                                [identifier],
-                                type_identifier * "Context",
-                            )
-                        )
                         invariant.extend(
                             [
                                 *(
