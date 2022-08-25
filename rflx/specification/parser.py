@@ -617,26 +617,7 @@ def create_channel_decl(
         grouped[p.kind_name].append(node_location(p, filename))
 
     for name, locations in grouped.items():
-        if len(locations) > 1:
-            error.extend(
-                [
-                    (
-                        f'duplicate channel aspect "{name}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        locations[-1],
-                    ),
-                    *[
-                        (
-                            "previous location",
-                            Subsystem.PARSER,
-                            Severity.INFO,
-                            l,
-                        )
-                        for l in locations[:-1]
-                    ],
-                ],
-            )
+        check_duplicate_aspect(error, name, locations)
         if name == "Readable":
             readable = True
         elif name == "Writable":
@@ -1151,27 +1132,7 @@ def create_message_structure(
             )
 
         for name, locations in grouped.items():
-            if len(locations) > 1:
-                error.extend(
-                    [
-                        (
-                            f'duplicate aspect "{name}"',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            locations[-1][1],
-                        ),
-                        *[
-                            (
-                                "previous location",
-                                Subsystem.PARSER,
-                                Severity.INFO,
-                                l,
-                            )
-                            for _, l in locations[:-1]
-                        ],
-                    ],
-                )
-
+            check_duplicate_aspect(error, name, [l for _, l in locations])
             aspect, location = locations[0]
 
             if name == "Size":
@@ -1361,12 +1322,50 @@ def merge_field_condition(
             )
 
 
+def check_duplicate_aspect(error: RecordFluxError, name: str, locations: List[Location]) -> None:
+    if len(locations) > 1:
+        error.extend(
+            [
+                (
+                    f'duplicate aspect "{name}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    locations[1],
+                ),
+                *[
+                    (
+                        "previous location",
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        l,
+                    )
+                    for l in locations[:-1]
+                ],
+            ],
+        )
+
+
 def parse_aspects(
     error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
 ) -> Tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
+    # pylint: disable=too-many-branches
     checksum_result = {}
     byte_order_result = None
+
+    grouped = defaultdict(list)
     for aspect in aspects:
+        if isinstance(aspect, lang.ByteOrderAspect):
+            name = "Byte_Order"
+        elif isinstance(aspect, lang.ChecksumAspect):
+            name = "Checksum"
+        else:
+            raise NotImplementedError(f"Message aspect {type(aspect)} unsupported")
+        grouped[name].append((aspect, node_location(aspect, filename)))
+
+    for name, locations in grouped.items():
+        check_duplicate_aspect(error, name, [l for _, l in locations])
+        aspect, _ = locations[0]
+
         if isinstance(aspect, lang.ChecksumAspect):
             for assoc in aspect.f_associations:
                 exprs = []
@@ -1388,6 +1387,7 @@ def parse_aspects(
                 byte_order_result = model.ByteOrder.LOW_ORDER_FIRST
             else:
                 byte_order_result = model.ByteOrder.HIGH_ORDER_FIRST
+
     return checksum_result, byte_order_result
 
 
@@ -1477,12 +1477,20 @@ def create_enumeration(
     def create_aspects(aspects: lang.AspectList) -> Optional[Tuple[expr.Expr, bool]]:
         always_valid = False
         size = None
-        for a in aspects:
-            if a.f_identifier.text == "Size":
-                size = create_math_expression(error, a.f_value, filename)
-            if a.f_identifier.text == "Always_Valid":
-                if a.f_value:
-                    av_expr = create_bool_expression(error, a.f_value, filename)
+
+        grouped = defaultdict(list)
+        for aspect in aspects:
+            grouped[aspect.f_identifier.text].append((aspect, node_location(aspect, filename)))
+
+        for name, locations in grouped.items():
+            check_duplicate_aspect(error, name, [l for _, l in locations])
+            aspect, location = locations[0]
+
+            if aspect.f_identifier.text == "Size":
+                size = create_math_expression(error, aspect.f_value, filename)
+            if aspect.f_identifier.text == "Always_Valid":
+                if aspect.f_value:
+                    av_expr = create_bool_expression(error, aspect.f_value, filename)
                     if av_expr == expr.Variable("True"):
                         always_valid = True
                     elif av_expr == expr.Variable("False"):
@@ -1494,7 +1502,7 @@ def create_enumeration(
                                     f"invalid Always_Valid expression: {av_expr}",
                                     Subsystem.PARSER,
                                     Severity.ERROR,
-                                    node_location(a.f_value, filename),
+                                    location,
                                 )
                             ],
                         )
