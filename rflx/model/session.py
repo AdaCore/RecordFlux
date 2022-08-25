@@ -210,17 +210,14 @@ class State(Base):
         """
 
         def find_identifier(name: ID, expression: expr.Expr) -> bool:
-            """Check if variable with a given identifier exists within an expression."""
             return bool(
                 expression.findall(lambda e: isinstance(e, expr.Variable) and e.identifier == name)
             )
 
-        def find_prefix(name: ID, expression: expr.Expr) -> bool:
-            """Check if the prefix of an expression contains a variable with a given identifier."""
+        def find_attribute_prefix(name: ID, expression: expr.Expr) -> bool:
             return bool(
                 expression.findall(
-                    lambda e: isinstance(e, (expr.Attribute, expr.Opaque))
-                    and find_identifier(name, e.prefix)
+                    lambda e: isinstance(e, expr.Attribute) and find_identifier(name, e.prefix)
                 )
             )
 
@@ -237,37 +234,29 @@ class State(Base):
             return expression.substituted(replace_expression_type)
 
         def contains_unsupported_feature(name: ID, action: stmt.Statement) -> bool:
-            """Check for features that prevent optimization."""
             return (
-                # The message is an argument in 'Append.
-                isinstance(action, stmt.Append)
-                and find_identifier(name, action.parameter)
-                # The message is the prefix of an attribute.
+                (isinstance(action, stmt.Append) and find_identifier(name, action.parameter))
                 or (isinstance(action, stmt.AttributeStatement) and action.identifier == name)
-                # The message is the prefix of an assignment target.
-                or (isinstance(action, stmt.Assignment) and find_prefix(name, action.expression))
-                # A field of the message is assigned.
                 or (isinstance(action, stmt.MessageFieldAssignment) and action.message == name)
-                # The message is an argument in 'Extend.
-                or (
-                    isinstance(action, stmt.Extend)
-                    and any(p for p in action.parameters if find_identifier(name, p))
-                )
-                # Assignment to the message that is not a call.
                 or (
                     isinstance(action, stmt.VariableAssignment)
                     and action.identifier == name
                     and not isinstance(action.expression, expr.Call)
                 )
+                or (
+                    isinstance(action, stmt.Assignment)
+                    and find_attribute_prefix(name, action.expression)
+                )
             )
 
-        for name, message_decl in self.declarations.items():
+        for name, declaration in self.declarations.items():
             if (
-                not isinstance(message_decl.type_, rty.Message)
-                or not message_decl.type_.is_definite
+                not isinstance(declaration, decl.VariableDeclaration)
+                or not isinstance(declaration.type_, rty.Message)
+                or not declaration.type_.is_definite
                 or (
-                    isinstance(message_decl, decl.VariableDeclaration)
-                    and message_decl.expression is not None
+                    isinstance(declaration, decl.VariableDeclaration)
+                    and declaration.expression is not None
                 )
             ):
                 continue
@@ -276,14 +265,20 @@ class State(Base):
                 if contains_unsupported_feature(name, action):
                     break
             else:
-                # Mypy complains that message_decl.type_ is read only, what's
-                # the correct way to change the type here?
-                message_decl.type_ = rty.Structure(  # type: ignore
-                    identifier=message_decl.type_.identifier,
-                    field_combinations=message_decl.type_.field_combinations,
-                    parameter_types=message_decl.type_.parameter_types,
-                    field_types=message_decl.type_.field_types,
+                message_decl = decl.VariableDeclaration(
+                    identifier=declaration.identifier,
+                    type_identifier=declaration.type_identifier,
+                    expression=declaration.expression,
+                    type_=rty.Structure(
+                        identifier=declaration.type_.identifier,
+                        field_combinations=declaration.type_.field_combinations,
+                        parameter_types=declaration.type_.parameter_types,
+                        field_types=declaration.type_.field_types,
+                    ),
+                    location=declaration.location,
                 )
+                assert isinstance(message_decl.type_, rty.Structure)
+                self.declarations[name] = message_decl
 
                 for action in self._actions:
                     if isinstance(action, stmt.Assignment):

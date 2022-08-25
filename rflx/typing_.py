@@ -273,7 +273,7 @@ class Refinement:
 
 
 @attr.s(frozen=True)
-class CompoundType(IndependentType):
+class Compound(IndependentType):
     """Base type for any type consisting of multiple fields of different types."""
 
     DESCRIPTIVE_NAME: ty.ClassVar[str]
@@ -299,12 +299,12 @@ class CompoundType(IndependentType):
 
 
 @attr.s(frozen=True)
-class Structure(CompoundType):
+class Structure(Compound):
     DESCRIPTIVE_NAME = "structure type"
 
 
 @attr.s(frozen=True)
-class Message(CompoundType):
+class Message(Compound):
     DESCRIPTIVE_NAME = "message type"
     refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
     is_definite: bool = attr.ib(False)
