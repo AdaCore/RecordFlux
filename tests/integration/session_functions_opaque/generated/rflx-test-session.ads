@@ -49,6 +49,8 @@ is
 
    pragma Warnings (On, "subprogram ""Tick"" has no effect");
 
+   function In_IO_State (Unused_Ctx : Context'Class) return Boolean;
+
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
    procedure Run (Ctx : in out Context'Class) with

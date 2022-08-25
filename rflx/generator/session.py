@@ -357,7 +357,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             unit += self._create_reset_messages_before_write_procedure(self._session, is_global)
 
         unit += self._create_tick_procedure(self._session, has_reads)
-        unit += self._create_run_procedure(self._session)
+        unit += self._create_in_io_state_function(self._session)
+        unit += self._create_run_procedure()
         unit += self._create_state_function()
 
         if has_writes:
@@ -1134,7 +1135,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
 
     @staticmethod
-    def _create_run_procedure(session: model.Session) -> UnitPart:
+    def _create_in_io_state_function(session: model.Session) -> UnitPart:
         io_states = [
             state
             for state in session.states
@@ -1148,6 +1149,30 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 )
             )
         ]
+        in_io_state_specification = FunctionSpecification(
+            "In_IO_State",
+            "Boolean",
+            [Parameter(["Ctx" if io_states else "Unused_Ctx"], "Context'Class")],
+        )
+        return UnitPart(
+            [
+                SubprogramDeclaration(in_io_state_specification),
+            ],
+            [
+                ExpressionFunctionDeclaration(
+                    in_io_state_specification,
+                    In(
+                        Variable("Ctx.P.Next_State"),
+                        ChoiceList(*[Variable(f"S_{state.identifier}") for state in io_states]),
+                    )
+                    if io_states
+                    else FALSE,
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_run_procedure() -> UnitPart:
         specification = ProcedureSpecification("Run", [InOutParameter(["Ctx"], "Context'Class")])
         return UnitPart(
             [
@@ -1162,19 +1187,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 Pragma("Warnings", [Variable("On"), String('subprogram "Run" has no effect')]),
             ],
             [
-                ExpressionFunctionDeclaration(
-                    FunctionSpecification(
-                        "In_IO_State",
-                        "Boolean",
-                        [Parameter(["Ctx" if io_states else "Unused_Ctx"], "Context'Class")],
-                    ),
-                    In(
-                        Variable("Ctx.P.Next_State"),
-                        ChoiceList(*[Variable(f"S_{state.identifier}") for state in io_states]),
-                    )
-                    if io_states
-                    else FALSE,
-                ),
                 SubprogramBody(
                     specification,
                     [],

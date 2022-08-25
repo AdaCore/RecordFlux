@@ -72,6 +72,7 @@ Generator:
 - Add precondition `Uninitialized` to procedure `Initialize` (#788)
 - Add operators for `Length` and `Index` types (#1070)
 - Overwrite symlinks when creating files
+- Make `In_IO_State` session function public (#1155)
 
 PyRFLX:
 
