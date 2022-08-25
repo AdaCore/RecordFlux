@@ -3070,6 +3070,5 @@ def test_state_normalization(
     ],
 )
 def test_state_optimization(state: State, optimized_state: State) -> None:
-    """Test state optimizations."""
     state.optimize()
     assert state == optimized_state

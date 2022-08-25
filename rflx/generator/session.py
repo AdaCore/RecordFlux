@@ -4560,7 +4560,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         structure: ID,
         structure_field: ID,
     ) -> Declare:
-        """Generate assignment of an opaque structure field to a message field."""
         return self._set_opaque_field(
             target_type,
             target_context,

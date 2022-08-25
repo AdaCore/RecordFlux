@@ -3516,7 +3516,6 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
 
 
 def _create_structure_field_size_function(message: Message, field: Field) -> UnitPart:
-    """Generate a named field size function for each field of a structure."""
     field_type = message.field_types[field]
     specification = FunctionSpecification(
         f"Field_Size_{field.identifier}",
