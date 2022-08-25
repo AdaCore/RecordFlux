@@ -2737,7 +2737,7 @@ def test_state_normalization(
                         ),
                     )
                 ],
-                actions=[stmt.Append("Msg", expr.Variable("E"))],
+                actions=[stmt.Reset("Msg")],
                 transitions=[Transition(target=ID("End"))],
             ),
             State(
@@ -2752,71 +2752,7 @@ def test_state_normalization(
                         ),
                     )
                 ],
-                actions=[stmt.Append("Msg", expr.Variable("E"))],
-                transitions=[Transition(target=ID("End"))],
-            ),
-        ),
-        (
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg",
-                        "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                    )
-                ],
-                actions=[stmt.Append("List", expr.Variable("Msg"))],
-                transitions=[Transition(target=ID("End"))],
-            ),
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg",
-                        "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                    )
-                ],
-                actions=[stmt.Append("List", expr.Variable("Msg"))],
-                transitions=[Transition(target=ID("End"))],
-            ),
-        ),
-        (
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg",
-                        "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                    )
-                ],
-                actions=[stmt.Extend("List", expr.Variable("Msg"))],
-                transitions=[Transition(target=ID("End"))],
-            ),
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg",
-                        "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                    )
-                ],
-                actions=[stmt.Extend("List", expr.Variable("Msg"))],
+                actions=[stmt.Reset("Msg")],
                 transitions=[Transition(target=ID("End"))],
             ),
         ),
@@ -2834,7 +2770,7 @@ def test_state_normalization(
                     )
                 ],
                 actions=[
-                    stmt.Extend("List", expr.Variable("E")),
+                    stmt.Append("List", expr.Variable("E")),
                     stmt.Append("List", expr.Variable("Msg")),
                 ],
                 transitions=[Transition(target=ID("End"))],
@@ -2852,7 +2788,7 @@ def test_state_normalization(
                     )
                 ],
                 actions=[
-                    stmt.Extend("List", expr.Variable("E")),
+                    stmt.Append("List", expr.Variable("E")),
                     stmt.Append("List", expr.Variable("Msg")),
                 ],
                 transitions=[Transition(target=ID("End"))],
@@ -3062,6 +2998,48 @@ def test_state_normalization(
                             ),
                             selector="Field",
                         ),
+                    ),
+                ],
+                transitions=[Transition(target=ID("End"))],
+            ),
+        ),
+        (
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Msg",
+                        "Message",
+                        type_=rty.Message(
+                            "M",
+                            is_definite=True,
+                        ),
+                    )
+                ],
+                actions=[
+                    stmt.VariableAssignment(
+                        "Valid",
+                        expr.Valid("Msg"),
+                    ),
+                ],
+                transitions=[Transition(target=ID("End"))],
+            ),
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Msg",
+                        "Message",
+                        type_=rty.Message(
+                            "M",
+                            is_definite=True,
+                        ),
+                    )
+                ],
+                actions=[
+                    stmt.VariableAssignment(
+                        "Valid",
+                        expr.Valid("Msg"),
                     ),
                 ],
                 transitions=[Transition(target=ID("End"))],

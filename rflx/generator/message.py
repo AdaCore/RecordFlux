@@ -3522,50 +3522,49 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
         const.TYPES_BIT_LENGTH,
         [Parameter(["Struct"], "Structure")],
     )
-    declaration = SubprogramDeclaration(
-        specification,
-        [Precondition(Call("Valid_Structure", [Variable("Struct")]))],
-    )
     if isinstance(field_type, Scalar):
-        return UnitPart(
-            [declaration],
-            private=[ExpressionFunctionDeclaration(specification, field_type.size.ada_expr())],
-        )
-    assert isinstance(field_type, Opaque)
+        expression = field_type.size.ada_expr()
+    else:
+        assert isinstance(field_type, Opaque)
 
-    def substitute(expression: expr.Expr) -> expr.Expr:
-        if (
-            isinstance(expression, expr.Size)
-            and isinstance(expression.prefix, expr.Variable)
-            and Field(expression.prefix.identifier) in message.fields
-        ):
-            return expr.Call(
-                f"Field_Size_{expression.prefix.identifier}", [expr.Variable("Struct")]
-            )
-        if isinstance(expression, expr.Variable) and Field(expression.identifier) in message.fields:
-            return expr.Call(
-                const.TYPES_BIT_LENGTH,
-                [
-                    expr.Selected(
-                        expr.Variable("Struct"), expression.identifier, type_=expression.type_
-                    )
-                ],
-            )
-        return expression
+        def substitute(expression: expr.Expr) -> expr.Expr:
+            if (
+                isinstance(expression, expr.Size)
+                and isinstance(expression.prefix, expr.Variable)
+                and Field(expression.prefix.identifier) in message.fields
+            ):
+                return expr.Call(
+                    f"Field_Size_{expression.prefix.identifier}", [expr.Variable("Struct")]
+                )
+            if (
+                isinstance(expression, expr.Variable)
+                and Field(expression.identifier) in message.fields
+            ):
+                return expr.Call(
+                    const.TYPES_BIT_LENGTH,
+                    [
+                        expr.Selected(
+                            expr.Variable("Struct"), expression.identifier, type_=expression.type_
+                        )
+                    ],
+                )
+            return expression
 
-    links = message.incoming(field)
-    assert len(links) == 1
+        links = message.incoming(field)
+        assert len(links) == 1
+        expression = links[0].size.substituted(substitute).simplified().ada_expr()
+
     return UnitPart(
         [
             SubprogramDeclaration(
                 specification,
                 [Precondition(Call("Valid_Structure", [Variable("Struct")]))],
-            ),
+            )
         ],
         private=[
             ExpressionFunctionDeclaration(
                 specification,
-                links[0].size.substituted(substitute).simplified().ada_expr(),
+                expression,
             )
         ],
     )
