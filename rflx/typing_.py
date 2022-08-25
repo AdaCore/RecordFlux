@@ -300,15 +300,11 @@ class CompoundType(IndependentType):
 
 @attr.s(frozen=True)
 class Structure(CompoundType):
-    """Definite compound type."""
-
     DESCRIPTIVE_NAME = "structure type"
 
 
 @attr.s(frozen=True)
 class Message(CompoundType):
-    """Indefinite compound type."""
-
     DESCRIPTIVE_NAME = "message type"
     refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
     is_definite: bool = attr.ib(False)

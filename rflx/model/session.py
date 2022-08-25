@@ -199,7 +199,6 @@ class State(Base):
         )
 
     def optimize(self) -> None:
-        """Execute optimization transformations on state."""
         self._optimize_structures()
 
     def _optimize_structures(self) -> None:
@@ -226,15 +225,7 @@ class State(Base):
             )
 
         def substituted(expression: expr.Expr, structure: rty.Structure) -> expr.Expr:
-            """Replace message types with structure of equal name."""
-
-            def subst(expression: expr.Expr) -> expr.Expr:
-                """
-                Substitute type of expression with structure type.
-
-                Replace the type of expression with a structure if
-                it is a message type with the same identifier.
-                """
+            def replace_expression_type(expression: expr.Expr) -> expr.Expr:
                 if (
                     isinstance(expression, (expr.Variable, expr.Call))
                     and isinstance(expression.type_, rty.Message)
@@ -243,7 +234,7 @@ class State(Base):
                     expression.type_ = structure
                 return expression
 
-            return expression.substituted(subst)
+            return expression.substituted(replace_expression_type)
 
         def contains_unsupported_feature(name: ID, action: stmt.Statement) -> bool:
             """Check for features that prevent optimization."""
@@ -270,12 +261,13 @@ class State(Base):
                 )
             )
 
-        for name, message in self.declarations.items():
+        for name, message_decl in self.declarations.items():
             if (
-                not isinstance(message.type_, rty.Message)
-                or not message.type_.is_definite
+                not isinstance(message_decl.type_, rty.Message)
+                or not message_decl.type_.is_definite
                 or (
-                    isinstance(message, decl.VariableDeclaration) and message.expression is not None
+                    isinstance(message_decl, decl.VariableDeclaration)
+                    and message_decl.expression is not None
                 )
             ):
                 continue
@@ -284,18 +276,18 @@ class State(Base):
                 if contains_unsupported_feature(name, action):
                     break
             else:
-                # Mypy complains that message.type_ is read only, what's
+                # Mypy complains that message_decl.type_ is read only, what's
                 # the correct way to change the type here?
-                message.type_ = rty.Structure(  # type: ignore
-                    identifier=message.type_.identifier,
-                    field_combinations=message.type_.field_combinations,
-                    parameter_types=message.type_.parameter_types,
-                    field_types=message.type_.field_types,
+                message_decl.type_ = rty.Structure(  # type: ignore
+                    identifier=message_decl.type_.identifier,
+                    field_combinations=message_decl.type_.field_combinations,
+                    parameter_types=message_decl.type_.parameter_types,
+                    field_types=message_decl.type_.field_types,
                 )
 
                 for action in self._actions:
                     if isinstance(action, stmt.Assignment):
-                        substituted(action.expression, message.type_)
+                        substituted(action.expression, message_decl.type_)
 
 
 class AbstractSession(BasicDeclaration):
@@ -455,7 +447,6 @@ class Session(AbstractSession):
         self._optimize()
 
     def _optimize(self) -> None:
-        """Optimize session model."""
         for state in self.states:
             state.optimize()
 
