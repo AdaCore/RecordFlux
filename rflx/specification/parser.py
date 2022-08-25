@@ -11,7 +11,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 import librflxlang as lang
 
 from rflx import expression as expr, model
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import declaration as decl, statement as stmt
@@ -85,49 +85,59 @@ def create_description(description: lang.Description = None) -> Optional[str]:
     return None
 
 
-def create_transition(transition: lang.Transition, filename: Path) -> model.Transition:
+def create_transition(
+    error: RecordFluxError, transition: lang.Transition, filename: Path
+) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
-    target = create_id(transition.f_target, filename)
+    target = create_id(error, transition.f_target, filename)
     condition: expr.Expr = expr.TRUE
     description = create_description(transition.f_description)
     if isinstance(transition, lang.ConditionalTransition):
-        condition = create_bool_expression(transition.f_condition, filename)
+        condition = create_bool_expression(error, transition.f_condition, filename)
     return model.Transition(target, condition, description, node_location(transition, filename))
 
 
-def create_reset(reset: lang.Statement, filename: Path) -> stmt.Statement:
+def create_reset(error: RecordFluxError, reset: lang.Statement, filename: Path) -> stmt.Statement:
     assert isinstance(reset, lang.Reset)
     return stmt.Reset(
-        create_id(reset.f_identifier, filename),
+        create_id(error, reset.f_identifier, filename),
         {
-            create_id(c.f_identifier, filename): create_expression(c.f_expression, filename)
+            create_id(error, c.f_identifier, filename): create_expression(
+                error, c.f_expression, filename
+            )
             for c in reset.f_associations
         },
         location=node_location(reset, filename),
     )
 
 
-def create_assignment(assignment: lang.Statement, filename: Path) -> stmt.Statement:
+def create_assignment(
+    error: RecordFluxError, assignment: lang.Statement, filename: Path
+) -> stmt.Statement:
     assert isinstance(assignment, lang.Assignment)
     return stmt.Assignment(
-        create_id(assignment.f_identifier, filename),
-        create_expression(assignment.f_expression, filename),
+        create_id(error, assignment.f_identifier, filename),
+        create_expression(error, assignment.f_expression, filename),
         location=node_location(assignment, filename),
     )
 
 
-def create_message_field_assignment(assignment: lang.Statement, filename: Path) -> stmt.Statement:
+def create_message_field_assignment(
+    error: RecordFluxError, assignment: lang.Statement, filename: Path
+) -> stmt.Statement:
     assert isinstance(assignment, lang.MessageFieldAssignment)
     return stmt.MessageFieldAssignment(
-        create_id(assignment.f_message, filename),
-        create_id(assignment.f_field, filename),
-        create_expression(assignment.f_expression, filename),
+        create_id(error, assignment.f_message, filename),
+        create_id(error, assignment.f_field, filename),
+        create_expression(error, assignment.f_expression, filename),
         location=node_location(assignment, filename),
     )
 
 
-def create_attribute_statement(expression: lang.Statement, filename: Path) -> stmt.Statement:
+def create_attribute_statement(
+    error: RecordFluxError, expression: lang.Statement, filename: Path
+) -> stmt.Statement:
     assert isinstance(expression, lang.AttributeStatement)
     attrs = {
         "Append": stmt.Append,
@@ -138,51 +148,59 @@ def create_attribute_statement(expression: lang.Statement, filename: Path) -> st
     constructor = attrs[expression.f_attr.text]
 
     return constructor(
-        create_id(expression.f_identifier, filename),
-        create_expression(expression.f_expression, filename),
+        create_id(error, expression.f_identifier, filename),
+        create_expression(error, expression.f_expression, filename),
         location=node_location(expression, filename),
     )
 
 
-def create_statement(statement: lang.Statement, filename: Path) -> stmt.Statement:
+def create_statement(
+    error: RecordFluxError, statement: lang.Statement, filename: Path
+) -> stmt.Statement:
     handlers = {
         "Reset": create_reset,
         "Assignment": create_assignment,
         "MessageFieldAssignment": create_message_field_assignment,
         "AttributeStatement": create_attribute_statement,
     }
-    return handlers[statement.kind_name](statement, filename)
+    return handlers[statement.kind_name](error, statement, filename)
 
 
-def create_state(state: lang.State, package: ID, filename: Path) -> model.State:
+def create_state(
+    error: RecordFluxError, state: lang.State, package: ID, filename: Path
+) -> model.State:
     location = node_location(state, filename)
-    identifier = create_id(state.f_identifier, filename)
+    identifier = create_id(error, state.f_identifier, filename)
     if isinstance(state.f_body, lang.NullStateBody):
         return model.State(identifier)
     assert isinstance(state.f_body, lang.StateBody)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
-        fail(
-            "inconsistent state identifier: "
-            f"{state.f_identifier.text} /= {state.f_body.f_end_identifier.text}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            location,
+        error.extend(
+            [
+                (
+                    "inconsistent state identifier: "
+                    f"{state.f_identifier.text} /= {state.f_body.f_end_identifier.text}",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    location,
+                )
+            ]
         )
     transitions = []
     for t in state.f_body.f_conditional_transitions:
-        transitions.append(create_transition(t, filename))
-    transitions.append(create_transition(state.f_body.f_final_transition, filename))
+        transitions.append(create_transition(error, t, filename))
+    transitions.append(create_transition(error, state.f_body.f_final_transition, filename))
     exception_transition = (
-        create_transition(state.f_body.f_exception_transition, filename)
+        create_transition(error, state.f_body.f_exception_transition, filename)
         if state.f_body.f_exception_transition
         else None
     )
     actions = []
     for a in state.f_body.f_actions:
-        actions.append(create_statement(a, filename))
+        actions.append(create_statement(error, a, filename))
     declarations = []
     for d in state.f_body.f_declarations:
-        declarations.append(create_declaration(d, package, filename))
+        declarations.append(create_declaration(error, d, package, filename))
     description = create_description(state.f_description)
     return model.State(
         identifier=identifier,
@@ -195,54 +213,71 @@ def create_state(state: lang.State, package: ID, filename: Path) -> model.State:
     )
 
 
-def _check_session_identifier(session: lang.SessionDecl, filename: Path) -> None:
+def _check_session_identifier(
+    error: RecordFluxError, session: lang.SessionDecl, filename: Path
+) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
-        fail(
-            "inconsistent session identifier: "
-            f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(session, filename),
+        error.extend(
+            [
+                (
+                    "inconsistent session identifier: "
+                    f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(session, filename),
+                )
+            ]
         )
 
 
 def create_unproven_session(
+    error: RecordFluxError,
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
     types: Sequence[model.Type] = None,
 ) -> model.UnprovenSession:
-    _check_session_identifier(session, filename)
+    _check_session_identifier(error, session, filename)
 
     return model.UnprovenSession(
-        package * create_id(session.f_identifier, filename),
-        create_id(session.f_aspects.f_initial, filename),
-        create_id(session.f_aspects.f_final, filename),
-        [create_state(s, package, filename) for s in session.f_states],
-        [create_declaration(d, package, filename) for d in session.f_declarations],
-        [create_formal_declaration(p, package, filename) for p in session.f_parameters],
+        package * create_id(error, session.f_identifier, filename),
+        create_id(error, session.f_aspects.f_initial, filename),
+        create_id(error, session.f_aspects.f_final, filename),
+        [create_state(error, s, package, filename) for s in session.f_states],
+        [create_declaration(error, d, package, filename) for d in session.f_declarations],
+        [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
         types or [],
         node_location(session, filename),
     )
 
 
 def create_session(
+    error: RecordFluxError,
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
     types: Sequence[model.Type] = None,
-) -> model.Session:
-    return create_unproven_session(session, package, filename, types).proven()
+) -> Optional[model.Session]:
+    try:
+        return create_unproven_session(error, session, package, filename, types).proven()
+    except RecordFluxError as e:
+        error.extend(e)
+
+    return None
 
 
-def create_id(identifier: lang.AbstractID, filename: Path) -> ID:
+def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Path) -> ID:
     if isinstance(identifier, lang.UnqualifiedID):
         if identifier.text.lower() in RESERVED_WORDS:
-            fail(
-                f'reserved word "{identifier.text}" used as identifier',
-                Subsystem.PARSER,
-                Severity.ERROR,
-                node_location(identifier, filename),
+            error.extend(
+                [
+                    (
+                        f'reserved word "{identifier.text}" used as identifier',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(identifier, filename),
+                    )
+                ]
             )
         return ID(identifier.text, location=node_location(identifier, filename))
     if isinstance(identifier, lang.ID):
@@ -261,6 +296,7 @@ def create_id(identifier: lang.AbstractID, filename: Path) -> ID:
 
 
 def create_sequence(
+    error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     sequence: lang.TypeDef,
@@ -269,26 +305,35 @@ def create_sequence(
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.internal_type_identifier(
-        create_id(sequence.f_element_type, filename), identifier.parent
+        create_id(error, sequence.f_element_type, filename), identifier.parent
     )
 
     try:
         element_type = next(t for t in types if element_identifier == t.identifier)
     except StopIteration:
-        fail(
-            f'undefined element type "{element_identifier}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            element_identifier.location,
+        error.extend(
+            [
+                (
+                    f'undefined element type "{element_identifier}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    element_identifier.location,
+                )
+            ]
         )
+        return None
 
-    return model.Sequence(identifier, element_type, type_location(identifier, sequence))
+    result = model.Sequence(identifier, element_type, type_location(identifier, sequence))
+    error.extend(result.error)
+    return result
 
 
-def create_numeric_literal(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_numeric_literal(
+    _error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     location = node_location(expression, filename)
     num = expression.text.split("#")
     if len(num) == 1:
@@ -307,24 +352,24 @@ OPERATIONS: Dict[str, Type[expr.BinExpr]] = {
 }
 
 
-def create_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
     loc = node_location(expression, filename)
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
-            create_expression(expression.f_left, filename),
-            create_expression(expression.f_right, filename),
+            create_expression(error, expression.f_left, filename),
+            create_expression(error, expression.f_right, filename),
             location=loc,
         )
     if expression.f_op.kind_name in BOOLEAN_OPERATIONS:
         return BOOLEAN_OPERATIONS[expression.f_op.kind_name](
-            create_expression(expression.f_left, filename),
-            create_expression(expression.f_right, filename),
+            create_expression(error, expression.f_left, filename),
+            create_expression(error, expression.f_right, filename),
             location=loc,
         )
 
-    left = create_math_expression(expression.f_left, filename)
-    right = create_math_expression(expression.f_right, filename)
+    left = create_math_expression(error, expression.f_left, filename)
+    right = create_math_expression(error, expression.f_right, filename)
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](left, right, location=loc)
     if expression.f_op.kind_name in MATH_COMPARISONS:
@@ -343,12 +388,12 @@ MATH_OPERATIONS: Dict[str, Union[Type[expr.BinExpr], Type[expr.AssExpr]]] = {
 }
 
 
-def create_math_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
-            create_math_expression(expression.f_left, filename),
-            create_math_expression(expression.f_right, filename),
+            create_math_expression(error, expression.f_left, filename),
+            create_math_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
     raise NotImplementedError(
@@ -369,24 +414,24 @@ BOOLEAN_OPERATIONS = {
 }
 
 
-def create_bool_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
-            create_math_expression(expression.f_left, filename),
-            create_math_expression(expression.f_right, filename),
+            create_math_expression(error, expression.f_left, filename),
+            create_math_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
     if expression.f_op.kind_name in BOOLEAN_OPERATIONS:
         return BOOLEAN_OPERATIONS[expression.f_op.kind_name](
-            create_bool_expression(expression.f_left, filename),
-            create_bool_expression(expression.f_right, filename),
+            create_bool_expression(error, expression.f_left, filename),
+            create_bool_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
-            create_expression(expression.f_left, filename),
-            create_expression(expression.f_right, filename),
+            create_expression(error, expression.f_left, filename),
+            create_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
     raise NotImplementedError(
@@ -394,32 +439,40 @@ def create_bool_binop(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_paren_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_paren_bool_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
-    return create_bool_expression(expression.f_data, filename)
+    return create_bool_expression(error, expression.f_data, filename)
 
 
-def create_paren_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_paren_math_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
-    return create_math_expression(expression.f_data, filename)
+    return create_math_expression(error, expression.f_data, filename)
 
 
-def create_paren_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_paren_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
-    return create_expression(expression.f_data, filename)
+    return create_expression(error, expression.f_data, filename)
 
 
-def create_variable(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_variable(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Variable)
     location = node_location(expression, filename)
     if expression.f_identifier.text.lower() in ("true", "false"):
-        return expr.Variable(create_id(expression.f_identifier, filename), location=location)
-    return expr.Variable(create_id(expression.f_identifier, filename), location=location)
+        return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
+    return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
 
 
-def create_math_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_math_attribute(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.Attribute)
-    inner = create_expression(expression.f_expression, filename)
+    inner = create_expression(error, expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
     if expression.f_kind.kind_name == "AttrFirst":
@@ -431,9 +484,9 @@ def create_math_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_attribute(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Attribute)
-    inner = create_expression(expression.f_expression, filename)
+    inner = create_expression(error, expression.f_expression, filename)
     if expression.f_kind.kind_name == "AttrLast":
         return expr.Last(inner)
     if expression.f_kind.kind_name == "AttrFirst":
@@ -457,35 +510,41 @@ def create_attribute(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_sequence_aggregate(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_sequence_aggregate(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.SequenceAggregate)
     return expr.Aggregate(
-        *[create_math_expression(v, filename) for v in expression.f_values],
+        *[create_math_expression(error, v, filename) for v in expression.f_values],
         location=node_location(expression, filename),
     )
 
 
-def create_string_literal(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_string_literal(
+    _error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     return expr.String(
         expression.text.split('"')[1],
         location=node_location(expression, filename),
     )
 
 
-def create_call(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_call(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Call)
     return expr.Call(
-        create_id(expression.f_identifier, filename),
-        [create_expression(a, filename) for a in expression.f_arguments],
+        create_id(error, expression.f_identifier, filename),
+        [create_expression(error, a, filename) for a in expression.f_arguments],
         location=node_location(expression, filename),
     )
 
 
-def create_quantified_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_quantified_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.QuantifiedExpression)
-    param_id = create_id(expression.f_parameter_identifier, filename)
-    iterable = create_expression(expression.f_iterable, filename)
-    predicate = create_expression(expression.f_predicate, filename)
+    param_id = create_id(error, expression.f_parameter_identifier, filename)
+    iterable = create_expression(error, expression.f_iterable, filename)
+    predicate = create_expression(error, expression.f_predicate, filename)
     location = node_location(expression, filename)
     if expression.f_operation.kind_name == "QuantifierAll":
         return expr.ForAllIn(param_id, iterable, predicate, location)
@@ -495,49 +554,56 @@ def create_quantified_expression(expression: lang.Expr, filename: Path) -> expr.
     raise NotImplementedError(f"Invalid quantified: {expression.f_operation.text}")
 
 
-def create_binding(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_binding(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Binding)
     bindings: Mapping[Union[str, ID], expr.Expr] = {
-        create_id(b.f_identifier, filename): create_expression(b.f_expression, filename)
+        create_id(error, b.f_identifier, filename): create_expression(
+            error, b.f_expression, filename
+        )
         for b in expression.f_bindings
     }
     return expr.Binding(
-        create_expression(expression.f_expression, filename),
+        create_expression(error, expression.f_expression, filename),
         bindings,
         node_location(expression, filename),
     )
 
 
 def create_variable_decl(
-    declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
 ) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.VariableDecl)
     initializer = (
-        create_expression(declaration.f_initializer, filename)
+        create_expression(error, declaration.f_initializer, filename)
         if declaration.f_initializer
         else None
     )
     return decl.VariableDeclaration(
-        create_id(declaration.f_identifier, filename),
-        model.internal_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        create_id(error, declaration.f_identifier, filename),
+        model.internal_type_identifier(
+            create_id(error, declaration.f_type_identifier, filename), package
+        ),
         initializer,
         location=node_location(declaration, filename),
     )
 
 
 def create_private_type_decl(
-    declaration: lang.FormalDecl, package: ID, filename: Path
+    error: RecordFluxError, declaration: lang.FormalDecl, package: ID, filename: Path
 ) -> decl.FormalDeclaration:
     assert isinstance(declaration, lang.FormalPrivateTypeDecl)
     return decl.TypeDeclaration(
         model.Private(
-            model.internal_type_identifier(create_id(declaration.f_identifier, filename), package),
+            model.internal_type_identifier(
+                create_id(error, declaration.f_identifier, filename), package
+            ),
             location=node_location(declaration, filename),
         )
     )
 
 
 def create_channel_decl(
+    error: RecordFluxError,
     declaration: lang.FormalDecl,
     _package: ID,
     filename: Path,
@@ -552,7 +618,6 @@ def create_channel_decl(
 
     for name, locations in grouped.items():
         if len(locations) > 1:
-            error = RecordFluxError()
             error.extend(
                 [
                     (
@@ -572,7 +637,6 @@ def create_channel_decl(
                     ],
                 ],
             )
-            error.propagate()
         if name == "Readable":
             readable = True
         elif name == "Writable":
@@ -580,7 +644,7 @@ def create_channel_decl(
         else:
             raise NotImplementedError(f"channel parameter: {name}")
     return decl.ChannelDeclaration(
-        create_id(declaration.f_identifier, filename),
+        create_id(error, declaration.f_identifier, filename),
         readable=readable,
         writable=writable,
         location=node_location(declaration, filename),
@@ -588,20 +652,23 @@ def create_channel_decl(
 
 
 def create_renaming_decl(
-    declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
 ) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.RenamingDecl)
-    selected = create_expression(declaration.f_expression, filename)
+    selected = create_expression(error, declaration.f_expression, filename)
     assert isinstance(selected, expr.Selected)
     return decl.RenamingDeclaration(
-        create_id(declaration.f_identifier, filename),
-        model.internal_type_identifier(create_id(declaration.f_type_identifier, filename), package),
+        create_id(error, declaration.f_identifier, filename),
+        model.internal_type_identifier(
+            create_id(error, declaration.f_type_identifier, filename), package
+        ),
         selected,
         location=node_location(declaration, filename),
     )
 
 
 def create_function_decl(
+    error: RecordFluxError,
     declaration: lang.FormalDecl,
     package: ID,
     filename: Path,
@@ -612,33 +679,35 @@ def create_function_decl(
         for p in declaration.f_parameters.f_parameters:
             arguments.append(
                 decl.Argument(
-                    create_id(p.f_identifier, filename),
+                    create_id(error, p.f_identifier, filename),
                     model.internal_type_identifier(
-                        create_id(p.f_type_identifier, filename), package
+                        create_id(error, p.f_type_identifier, filename), package
                     ),
                 )
             )
     return decl.FunctionDeclaration(
-        create_id(declaration.f_identifier, filename),
+        create_id(error, declaration.f_identifier, filename),
         arguments,
         model.internal_type_identifier(
-            create_id(declaration.f_return_type_identifier, filename), package
+            create_id(error, declaration.f_return_type_identifier, filename), package
         ),
         location=node_location(declaration, filename),
     )
 
 
-def create_negation(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_negation(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Negation)
-    math_expr = create_math_expression(expression.f_data, filename)
+    math_expr = create_math_expression(error, expression.f_data, filename)
     assert isinstance(math_expr, expr.Number)
     return expr.Number(-math_expr.value, math_expr.base, node_location(expression, filename))
 
 
-def create_concatenation(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_concatenation(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.Concatenation)
-    left = create_expression(expression.f_left, filename)
-    right = create_expression(expression.f_right, filename)
+    left = create_expression(error, expression.f_left, filename)
+    right = create_expression(error, expression.f_right, filename)
     assert isinstance(left, expr.Aggregate)
     assert isinstance(right, expr.Aggregate)
     return expr.Aggregate(
@@ -646,41 +715,43 @@ def create_concatenation(expression: lang.Expr, filename: Path) -> expr.Expr:
     )
 
 
-def create_comprehension(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_comprehension(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.Comprehension)
     condition = (
-        create_bool_expression(expression.f_condition, filename)
+        create_bool_expression(error, expression.f_condition, filename)
         if expression.f_condition
         else expr.TRUE
     )
     return expr.Comprehension(
-        create_id(expression.f_iterator, filename),
-        create_expression(expression.f_sequence, filename),
-        create_expression(expression.f_selector, filename),
+        create_id(error, expression.f_iterator, filename),
+        create_expression(error, expression.f_sequence, filename),
+        create_expression(error, expression.f_selector, filename),
         condition,
         node_location(expression, filename),
     )
 
 
-def create_selected(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_selected(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.SelectNode)
     return expr.Selected(
-        create_expression(expression.f_expression, filename),
-        create_id(expression.f_selector, filename),
+        create_expression(error, expression.f_expression, filename),
+        create_id(error, expression.f_selector, filename),
         location=node_location(expression, filename),
     )
 
 
-def create_case(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.CaseExpression)
 
     def create_choice(
         value: Union[lang.AbstractID, lang.Expr], filename: Path
     ) -> Union[ID, expr.Number]:
         if isinstance(value, lang.AbstractID):
-            return create_id(value, filename)
+            return create_id(error, value, filename)
         assert isinstance(value, lang.Expr)
-        result = create_numeric_literal(value, filename)
+        result = create_numeric_literal(error, value, filename)
         assert isinstance(result, expr.Number)
         return result
 
@@ -691,42 +762,46 @@ def create_case(expression: lang.Expr, filename: Path) -> expr.Expr:
                 for s in c.f_selectors
                 if isinstance(s, (lang.AbstractID, lang.Expr))
             ],
-            create_expression(c.f_expression, filename),
+            create_expression(error, c.f_expression, filename),
         )
         for c in expression.f_choices
     ]
 
     return expr.CaseExpr(
-        create_expression(expression.f_expression, filename),
+        create_expression(error, expression.f_expression, filename),
         choices,
         location=node_location(expression, filename),
     )
 
 
-def create_conversion(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_conversion(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Conversion)
     return expr.Conversion(
-        create_id(expression.f_target_identifier, filename),
-        create_expression(expression.f_argument, filename),
+        create_id(error, expression.f_target_identifier, filename),
+        create_expression(error, expression.f_argument, filename),
         location=node_location(expression, filename),
     )
 
 
-def create_message_aggregate(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_message_aggregate(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     assert isinstance(expression, lang.MessageAggregate)
     values: Mapping[StrID, expr.Expr] = {}
     if isinstance(expression.f_values, lang.NullMessageAggregate):
         values = {}
     elif isinstance(expression.f_values, lang.MessageAggregateAssociations):
         values = {
-            create_id(c.f_identifier, filename): create_expression(c.f_expression, filename)
+            create_id(error, c.f_identifier, filename): create_expression(
+                error, c.f_expression, filename
+            )
             for c in expression.f_values.f_associations
         }
     else:
         raise NotImplementedError(f"invalid message field: {type(expression.f_values)}")
 
     return expr.MessageAggregate(
-        create_id(expression.f_identifier, filename),
+        create_id(error, expression.f_identifier, filename),
         values,
         location=node_location(expression, filename),
     )
@@ -753,32 +828,34 @@ EXPRESSION_MAP = {
 }
 
 
-def create_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
-    return EXPRESSION_MAP[expression.kind_name](expression, filename)
+def create_expression(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
+    return EXPRESSION_MAP[expression.kind_name](error, expression, filename)
 
 
 def create_declaration(
-    declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
 ) -> decl.BasicDeclaration:
     handlers = {
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
-    return handlers[declaration.kind_name](declaration, package, filename)
+    return handlers[declaration.kind_name](error, declaration, package, filename)
 
 
 def create_formal_declaration(
-    declaration: lang.FormalDecl, package: ID, filename: Path
+    error: RecordFluxError, declaration: lang.FormalDecl, package: ID, filename: Path
 ) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
         "FormalPrivateTypeDecl": create_private_type_decl,
     }
-    return handlers[declaration.kind_name](declaration, package, filename)
+    return handlers[declaration.kind_name](error, declaration, package, filename)
 
 
-def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_math_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     handlers = {
         "NumericLiteral": create_numeric_literal,
         "BinOp": create_math_binop,
@@ -791,10 +868,12 @@ def create_math_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
         "SelectNode": create_selected,
         "SequenceAggregate": create_sequence_aggregate,
     }
-    return handlers[expression.kind_name](expression, filename)
+    return handlers[expression.kind_name](error, expression, filename)
 
 
-def create_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
+def create_bool_expression(
+    error: RecordFluxError, expression: lang.Expr, filename: Path
+) -> expr.Expr:
     handlers = {
         "BinOp": create_bool_binop,
         "ParenExpression": create_paren_bool_expression,
@@ -806,10 +885,11 @@ def create_bool_expression(expression: lang.Expr, filename: Path) -> expr.Expr:
         "SelectNode": create_selected,
         "CaseExpression": create_case,
     }
-    return handlers[expression.kind_name](expression, filename)
+    return handlers[expression.kind_name](error, expression, filename)
 
 
 def create_modular(
+    error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     modular: lang.TypeDef,
@@ -818,16 +898,19 @@ def create_modular(
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     assert isinstance(modular, lang.ModularTypeDef)
-    return model.ModularInteger(
+    result = model.ModularInteger(
         identifier,
-        create_math_expression(modular.f_mod, filename),
+        create_math_expression(error, modular.f_mod, filename),
         type_location(identifier, modular),
     )
+    error.extend(result.error)
+    return result
 
 
 def create_range(
+    error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     rangetype: lang.TypeDef,
@@ -836,26 +919,34 @@ def create_range(
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     assert isinstance(rangetype, lang.RangeTypeDef)
     if rangetype.f_size.f_identifier.text != "Size":
-        fail(
-            f"invalid aspect {rangetype.f_size.f_identifier.text} for range type {identifier}",
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(rangetype, filename),
+        error.extend(
+            [
+                (
+                    f"invalid aspect {rangetype.f_size.f_identifier.text} "
+                    f"for range type {identifier}",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(rangetype, filename),
+                )
+            ]
         )
-    size = create_math_expression(rangetype.f_size.f_value, filename)
-    return model.RangeInteger(
+    size = create_math_expression(error, rangetype.f_size.f_value, filename)
+    result = model.RangeInteger(
         identifier,
-        create_math_expression(rangetype.f_first, filename),
-        create_math_expression(rangetype.f_last, filename),
+        create_math_expression(error, rangetype.f_first, filename),
+        create_math_expression(error, rangetype.f_last, filename),
         size,
         type_location(identifier, rangetype),
     )
+    error.extend(result.error)
+    return result
 
 
 def create_null_message(
+    _error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     message: lang.TypeDef,
@@ -864,12 +955,13 @@ def create_null_message(
     _workers: int,
     _cache: Cache,
     _filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     assert isinstance(message, lang.NullMessageTypeDef)
     return model.Message(identifier, [], {}, location=type_location(identifier, message))
 
 
 def create_message(
+    error: RecordFluxError,
     identifier: ID,
     parameters: lang.Parameters,
     message: lang.TypeDef,
@@ -878,36 +970,34 @@ def create_message(
     workers: int,
     cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     # pylint: disable = too-many-arguments, too-many-locals
 
     assert isinstance(message, lang.MessageTypeDef)
-    error = RecordFluxError()
     fields = message.f_message_fields
 
     field_types, message_arguments = create_message_types(
         error, identifier, parameters, fields, types, filename
     )
     structure = create_message_structure(error, fields, filename)
-    checksum_aspects, byte_order_aspect = parse_aspects(message.f_aspects, filename)
-    try:
-        result = create_proven_message(
-            model.UnprovenMessage(
-                identifier,
-                structure,
-                field_types,
-                checksum_aspects,
-                byte_order_aspect,
-                type_location(identifier, message),
-            ).merged(message_arguments),
-            skip_verification,
-            workers,
-            cache,
-        )
-    except RecordFluxError as e:
-        error.extend(e)
-    error.propagate()
-    return result
+    checksum_aspects, byte_order_aspect = parse_aspects(error, message.f_aspects, filename)
+
+    unproven_message = model.UnprovenMessage(
+        identifier,
+        structure,
+        field_types,
+        checksum_aspects,
+        byte_order_aspect,
+        type_location(identifier, message),
+    ).merged(message_arguments)
+
+    return create_proven_message(
+        error,
+        unproven_message,
+        skip_verification,
+        workers,
+        cache,
+    )
 
 
 def create_message_types(
@@ -938,11 +1028,11 @@ def create_message_types(
         ),
     ):
         qualified_type_identifier = model.internal_type_identifier(
-            create_id(type_identifier, filename), identifier.parent
+            create_id(error, type_identifier, filename), identifier.parent
         )
         field_type = next((t for t in types if t.identifier == qualified_type_identifier), None)
         if field_type:
-            field = model.Field(create_id(field_identifier, filename))
+            field = model.Field(create_id(error, field_identifier, filename))
             if field not in field_types:
                 if isinstance(field_type, model.Message):
                     assert isinstance(type_arguments, lang.TypeArgumentList)
@@ -1000,8 +1090,8 @@ def create_message_arguments(
         if param:
             param_id = param.identifier
         if arg:
-            arg_id = create_id(arg.f_identifier, filename)
-            arg_expression = create_expression(arg.f_expression, filename)
+            arg_id = create_id(error, arg.f_identifier, filename)
+            arg_expression = create_expression(error, arg.f_expression, filename)
         if arg and param and arg_id == param_id:
             result[arg_id] = arg_expression
         if not param or (arg and arg_id != param_id):
@@ -1085,9 +1175,9 @@ def create_message_structure(
             aspect, location = locations[0]
 
             if name == "Size":
-                size = create_math_expression(aspect.f_value, filename)
+                size = create_math_expression(error, aspect.f_value, filename)
             elif name == "First":
-                first = create_math_expression(aspect.f_value, filename)
+                first = create_math_expression(error, aspect.f_value, filename)
             else:
                 error.extend(
                     [
@@ -1107,10 +1197,12 @@ def create_message_structure(
         target = (
             model.FINAL
             if then.f_target.text == "null"
-            else model.Field(create_id(then.f_target, filename))
+            else model.Field(create_id(error, then.f_target, filename))
         )
         condition = (
-            create_bool_expression(then.f_condition, filename) if then.f_condition else expr.TRUE
+            create_bool_expression(error, then.f_condition, filename)
+            if then.f_condition
+            else expr.TRUE
         )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
@@ -1128,18 +1220,18 @@ def create_message_structure(
         structure.append(
             model.Link(
                 model.INITIAL,
-                model.Field(create_id(fields.f_fields[0].f_identifier, filename)),
+                model.Field(create_id(error, fields.f_fields[0].f_identifier, filename)),
                 location=node_location(fields.f_fields[0].f_identifier, filename),
             )
         )
 
     for i, field in enumerate(fields.f_fields):
         source_node = (
-            model.Field(create_id(field.f_identifier, filename))
+            model.Field(create_id(error, field.f_identifier, filename))
             if field.f_identifier
             else model.INITIAL
         )
-        field_identifier = create_id(field.f_identifier, filename)
+        field_identifier = create_id(error, field.f_identifier, filename)
         if field.f_identifier.text.lower() == "message":
             error.extend(
                 [
@@ -1155,7 +1247,7 @@ def create_message_structure(
 
         if len(field.f_thens) == 0:
             target_id = (
-                create_id(fields.f_fields[i + 1].f_identifier, filename)
+                create_id(error, fields.f_fields[i + 1].f_identifier, filename)
                 if i + 1 < len(fields.f_fields)
                 else None
             )
@@ -1185,11 +1277,16 @@ def create_message_structure(
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
 
+        if error.check():
+            continue
+
         merge_field_aspects(error, field_identifier, structure, *extract_aspect(field.f_aspects))
         merge_field_condition(
             field_identifier,
             structure,
-            create_bool_expression(field.f_condition, filename) if field.f_condition else expr.TRUE,
+            create_bool_expression(error, field.f_condition, filename)
+            if field.f_condition
+            else expr.TRUE,
         )
 
     return structure
@@ -1265,7 +1362,7 @@ def merge_field_condition(
 
 
 def parse_aspects(
-    aspects: lang.MessageAspectList, filename: Path
+    error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
 ) -> Tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
     checksum_result = {}
     byte_order_result = None
@@ -1275,17 +1372,17 @@ def parse_aspects(
                 exprs = []
                 for value in assoc.f_covered_fields:
                     if isinstance(value, lang.ChecksumVal):
-                        exprs.append(create_math_expression(value.f_data, filename))
+                        exprs.append(create_math_expression(error, value.f_data, filename))
                     elif isinstance(value, lang.ChecksumValueRange):
                         exprs.append(
                             expr.ValueRange(
-                                create_math_expression(value.f_first, filename),
-                                create_math_expression(value.f_last, filename),
+                                create_math_expression(error, value.f_first, filename),
+                                create_math_expression(error, value.f_last, filename),
                             )
                         )
                     else:
                         raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
-                checksum_result[create_id(assoc.f_identifier, filename)] = exprs
+                checksum_result[create_id(error, assoc.f_identifier, filename)] = exprs
         if isinstance(aspect, lang.ByteOrderAspect):
             if isinstance(aspect.f_byte_order, lang.ByteOrderTypeLoworderfirst):
                 byte_order_result = model.ByteOrder.LOW_ORDER_FIRST
@@ -1295,6 +1392,7 @@ def parse_aspects(
 
 
 def create_derived_message(
+    error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     derivation: lang.TypeDef,
@@ -1303,26 +1401,30 @@ def create_derived_message(
     workers: int,
     cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     # pylint: disable=too-many-arguments
     assert isinstance(derivation, lang.TypeDerivationDef)
-    base_id = create_id(derivation.f_base, filename)
+    base_id = create_id(error, derivation.f_base, filename)
     base_name = model.internal_type_identifier(base_id, identifier.parent)
 
     base_types: Sequence[model.Type] = [t for t in types if t.identifier == base_name]
 
     if not base_types:
-        fail(
-            f'undefined base message "{base_name}" in derived message',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            base_name.location,
+        error.extend(
+            [
+                (
+                    f'undefined base message "{base_name}" in derived message',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    base_name.location,
+                )
+            ]
         )
+        return None
 
     base_messages: Sequence[model.Message] = [t for t in base_types if isinstance(t, model.Message)]
 
     if not base_messages:
-        error = RecordFluxError()
         error.extend(
             [
                 (
@@ -1339,12 +1441,19 @@ def create_derived_message(
                 ),
             ],
         )
-        error.propagate()
+        return None
+
+    try:
+        unproven_message = model.UnprovenDerivedMessage(
+            identifier, base_messages[0], location=type_location(identifier, derivation)
+        ).merged()
+    except RecordFluxError as e:
+        error.extend(e)
+        return None
 
     return create_proven_message(
-        model.UnprovenDerivedMessage(
-            identifier, base_messages[0], location=type_location(identifier, derivation)
-        ).merged(),
+        error,
+        unproven_message,
         skip_verification,
         workers,
         cache,
@@ -1352,6 +1461,7 @@ def create_derived_message(
 
 
 def create_enumeration(
+    error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     enumeration: lang.TypeDef,
@@ -1360,20 +1470,19 @@ def create_enumeration(
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> model.Type:
+) -> Optional[model.Type]:
     assert isinstance(enumeration, lang.EnumerationTypeDef)
     literals: List[Tuple[StrID, expr.Number]] = []
-    error = RecordFluxError()
 
-    def create_aspects(aspects: lang.AspectList) -> Tuple[expr.Expr, bool]:
+    def create_aspects(aspects: lang.AspectList) -> Optional[Tuple[expr.Expr, bool]]:
         always_valid = False
         size = None
         for a in aspects:
             if a.f_identifier.text == "Size":
-                size = create_math_expression(a.f_value, filename)
+                size = create_math_expression(error, a.f_value, filename)
             if a.f_identifier.text == "Always_Valid":
                 if a.f_value:
-                    av_expr = create_bool_expression(a.f_value, filename)
+                    av_expr = create_bool_expression(error, a.f_value, filename)
                     if av_expr == expr.Variable("True"):
                         always_valid = True
                     elif av_expr == expr.Variable("False"):
@@ -1402,19 +1511,20 @@ def create_enumeration(
                     )
                 ],
             )
-        error.propagate()
+            return None
+
         assert size
         return size, always_valid
 
     if isinstance(enumeration.f_elements, lang.NamedEnumerationDef):
         for e in enumeration.f_elements.f_elements:
-            element_identifier = create_id(e.f_identifier, filename)
-            value = create_math_expression(e.f_literal, filename)
+            element_identifier = create_id(error, e.f_identifier, filename)
+            value = create_math_expression(error, e.f_literal, filename)
             assert isinstance(value, expr.Number)
             literals.append((element_identifier, value))
     elif isinstance(enumeration.f_elements, lang.PositionalEnumerationDef):
         literals = [
-            (create_id(e, filename), expr.Number(i))
+            (create_id(error, e, filename), expr.Number(i))
             for i, e in enumerate(enumeration.f_elements.f_elements)
         ]
     else:
@@ -1422,19 +1532,33 @@ def create_enumeration(
             f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
         )
 
-    size, always_valid = create_aspects(enumeration.f_aspects)
+    aspects = create_aspects(enumeration.f_aspects)
+    if aspects is None:
+        return None
 
-    return model.Enumeration(
+    size, always_valid = aspects
+
+    result = model.Enumeration(
         identifier, literals, size, always_valid, location=type_location(identifier, enumeration)
     )
+    error.extend(result.error)
+    return result
 
 
 def create_proven_message(
-    unproven_message: model.UnprovenMessage, skip_verification: bool, workers: int, cache: Cache
-) -> model.Message:
-    proven_message = unproven_message.proven(
-        skip_verification or cache.is_verified(unproven_message), workers
-    )
+    error: RecordFluxError,
+    unproven_message: model.UnprovenMessage,
+    skip_verification: bool,
+    workers: int,
+    cache: Cache,
+) -> Optional[model.Message]:
+    try:
+        proven_message = unproven_message.proven(
+            skip_verification or cache.is_verified(unproven_message), workers
+        )
+    except RecordFluxError as e:
+        error.extend(e)
+        return None
 
     cache.add_verified(unproven_message)
 
@@ -1442,41 +1566,60 @@ def create_proven_message(
 
 
 def create_refinement(
-    refinement: lang.RefinementDecl, package: ID, types: Sequence[model.Type], filename: Path
-) -> model.Refinement:
+    error: RecordFluxError,
+    refinement: lang.RefinementDecl,
+    package: ID,
+    types: Sequence[model.Type],
+    filename: Path,
+) -> Optional[model.Refinement]:
     messages = {t.identifier: t for t in types if isinstance(t, model.Message)}
 
-    pdu = model.internal_type_identifier(create_id(refinement.f_pdu, filename), package)
+    pdu = model.internal_type_identifier(create_id(error, refinement.f_pdu, filename), package)
     if pdu not in messages:
-        fail(
-            f'undefined type "{pdu}" in refinement',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            node_location(refinement, filename),
+        error.extend(
+            [
+                (
+                    f'undefined type "{pdu}" in refinement',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(refinement, filename),
+                )
+            ]
         )
 
-    sdu = model.internal_type_identifier(create_id(refinement.f_sdu, filename), package)
+    sdu = model.internal_type_identifier(create_id(error, refinement.f_sdu, filename), package)
     if sdu not in messages:
-        fail(
-            f'undefined type "{sdu}" in refinement of "{pdu}"',
-            Subsystem.PARSER,
-            Severity.ERROR,
-            sdu.location,
+        error.extend(
+            [
+                (
+                    f'undefined type "{sdu}" in refinement of "{pdu}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    sdu.location,
+                )
+            ]
         )
 
     if refinement.f_condition:
-        condition = create_bool_expression(refinement.f_condition, filename)
+        condition = create_bool_expression(error, refinement.f_condition, filename)
     else:
         condition = expr.TRUE
 
-    return model.Refinement(
+    refinement_id = model.Field(create_id(error, refinement.f_field, filename))
+
+    if error.check():
+        return None
+
+    result = model.Refinement(
         package,
         messages[pdu],
-        model.Field(create_id(refinement.f_field, filename)),
+        refinement_id,
         messages[sdu],
         condition,
         node_location(refinement, filename),
     )
+    error.extend(result.error)
+    return result
 
 
 def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) -> None:
@@ -1525,7 +1668,7 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
             )
     for t in package.f_declarations:
         if isinstance(t, lang.TypeDecl) and model.is_builtin_type(
-            create_id(t.f_identifier, name).name
+            create_id(error, t.f_identifier, name).name
         ):
             error.extend(
                 [
@@ -1580,7 +1723,7 @@ class Parser:
         check_naming(error, spec.f_package_declaration, filename)
         packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
         for context in spec.f_context_clause:
-            item = create_id(context.f_item, filename)
+            item = create_id(error, context.f_item, filename)
             if item in transitions:
                 error.extend(
                     [
@@ -1724,8 +1867,18 @@ class Parser:
         handlers: Dict[
             str,
             Callable[
-                [ID, lang.Parameters, lang.TypeDef, Sequence[model.Type], bool, int, Cache, Path],
-                model.Type,
+                [
+                    RecordFluxError,
+                    ID,
+                    lang.Parameters,
+                    lang.TypeDef,
+                    Sequence[model.Type],
+                    bool,
+                    int,
+                    Cache,
+                    Path,
+                ],
+                Optional[model.Type],
             ],
         ] = {
             "SequenceTypeDef": create_sequence,
@@ -1737,52 +1890,44 @@ class Parser:
             "EnumerationTypeDef": create_enumeration,
         }
         log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
-        package_id = create_id(spec.f_package_declaration.f_identifier, filename)
+        package_id = create_id(error, spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, lang.TypeDecl):
                 identifier = model.internal_type_identifier(
-                    create_id(t.f_identifier, filename), package_id
+                    create_id(error, t.f_identifier, filename), package_id
                 )
-                try:
-                    if not t.f_definition.kind_name == "MessageTypeDef" and t.f_parameters:
-                        error.extend(
-                            [
-                                (
-                                    "only message types can be parameterized",
-                                    Subsystem.PARSER,
-                                    Severity.ERROR,
-                                    node_location(t.f_parameters.f_parameters, filename),
-                                )
-                            ]
-                        )
-                    new_type = handlers[t.f_definition.kind_name](
-                        identifier,
-                        t.f_parameters,
-                        t.f_definition,
-                        self._types,
-                        self.skip_verification,
-                        self._workers,
-                        self._cache,
-                        filename,
+                if not t.f_definition.kind_name == "MessageTypeDef" and t.f_parameters:
+                    error.extend(
+                        [
+                            (
+                                "only message types can be parameterized",
+                                Subsystem.PARSER,
+                                Severity.ERROR,
+                                node_location(t.f_parameters.f_parameters, filename),
+                            )
+                        ]
                     )
+                new_type = handlers[t.f_definition.kind_name](
+                    error,
+                    identifier,
+                    t.f_parameters,
+                    t.f_definition,
+                    self._types,
+                    self.skip_verification,
+                    self._workers,
+                    self._cache,
+                    filename,
+                )
+                if new_type is not None:
                     self._types.append(new_type)
-                    error.extend(new_type.error)
-                except RecordFluxError as e:
-                    error.extend(e)
             elif isinstance(t, lang.RefinementDecl):
-                try:
-                    new_type = create_refinement(t, package_id, self._types, filename)
-                    self._types.append(new_type)
-                    error.extend(new_type.error)
-                except RecordFluxError as e:
-                    error.extend(e)
+                new_refinement = create_refinement(error, t, package_id, self._types, filename)
+                if new_refinement is not None:
+                    self._types.append(new_refinement)
             elif isinstance(t, lang.SessionDecl):
-                try:
-                    new_session = create_session(t, package_id, filename, self._types)
+                new_session = create_session(error, t, package_id, filename, self._types)
+                if new_session is not None:
                     self._sessions.append(new_session)
-                    error.extend(new_session.error)
-                except RecordFluxError as e:
-                    error.extend(e)
             else:
                 raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")

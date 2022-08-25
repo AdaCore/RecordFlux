@@ -25,7 +25,9 @@ from tests.utils import parse, parse_bool_expression, parse_expression, parse_ma
 def parse_statement(data: str) -> stmt.Statement:
     parser_statement, filename = parse(data, lang.GrammarRule.action_rule)
     assert isinstance(parser_statement, lang.Statement)
-    statement = create_statement(parser_statement, filename)
+    error = RecordFluxError()
+    statement = create_statement(error, parser_statement, filename)
+    error.propagate()
     assert isinstance(statement, stmt.Statement)
     return statement
 
@@ -33,15 +35,19 @@ def parse_statement(data: str) -> stmt.Statement:
 def parse_declaration(data: str) -> decl.Declaration:
     parser_declaration, filename = parse(data, lang.GrammarRule.declaration_rule)
     assert isinstance(parser_declaration, lang.LocalDecl)
-    declaration = create_declaration(parser_declaration, ID("Package"), filename)
+    error = RecordFluxError()
+    declaration = create_declaration(error, parser_declaration, ID("Package"), filename)
+    error.propagate()
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
 
 def parse_formal_declaration(data: str) -> decl.Declaration:
+    error = RecordFluxError()
     parser_declaration, filename = parse(data, lang.GrammarRule.session_parameter_rule)
     assert isinstance(parser_declaration, lang.FormalDecl)
-    declaration = create_formal_declaration(parser_declaration, ID("Package"), filename)
+    declaration = create_formal_declaration(error, parser_declaration, ID("Package"), filename)
+    error.propagate()
     assert isinstance(declaration, decl.Declaration)
     return declaration
 
@@ -49,7 +55,9 @@ def parse_formal_declaration(data: str) -> decl.Declaration:
 def parse_state(data: str) -> State:
     parser_state, source = parse(data, lang.GrammarRule.state_rule)
     assert isinstance(parser_state, lang.State)
-    state = create_state(parser_state, ID("Package"), source)
+    error = RecordFluxError()
+    state = create_state(error, parser_state, ID("Package"), source)
+    error.propagate()
     assert isinstance(state, State)
     return state
 
@@ -62,7 +70,10 @@ def parse_session(string: str) -> model.Session:
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     assert isinstance(unit.root, lang.SessionDecl)
-    return create_session(unit.root, ID("Package"), Path("<stdin>"))
+    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    error.propagate()
+    assert isinstance(result, model.Session)
+    return result
 
 
 def parse_unproven_session(string: str) -> model.UnprovenSession:
@@ -73,14 +84,19 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
     assert isinstance(unit.root, lang.SessionDecl)
-    return create_unproven_session(unit.root, ID("Package"), Path("<stdin>"))
+    result = create_unproven_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    error.propagate()
+    return result
 
 
 def parse_id(data: str, rule: str) -> ID:
     unit = lang.AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
     assert isinstance(unit.root, lang.AbstractID)
-    return create_id(unit.root, Path("<stdin>"))
+    error = RecordFluxError()
+    result = create_id(error, unit.root, Path("<stdin>"))
+    error.propagate()
+    return result
 
 
 @pytest.mark.parametrize(
