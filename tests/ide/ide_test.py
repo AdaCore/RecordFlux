@@ -80,10 +80,20 @@ def test_multiple_errors() -> None:
             f'{path}:103:26: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
             f'{path}:106:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:106:40: parser: error: undefined type "RFLX_Invalid::SDU2" in refinement '
+            'of "RFLX_Invalid::PDU1"',
             f'{path}:109:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:109:26: parser: error: undefined type "RFLX_Invalid::SDU2" in refinement '
+            'of "RFLX_Invalid::PDU1"',
             f'{path}:112:4: parser: error: undefined type "RFLX_Invalid::Undef_PDU" in refinement',
+            f'{path}:112:31: parser: error: undefined type "RFLX_Invalid::R" in refinement '
+            'of "RFLX_Invalid::Undef_PDU"',
             f'{path}:115:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:115:26: parser: error: undefined type "RFLX_Invalid::Undef_Type" in '
+            'refinement of "RFLX_Invalid::PDU1"',
             f'{path}:118:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:118:33: parser: error: undefined type "RFLX_Invalid::R" in refinement '
+            'of "RFLX_Invalid::PDU1"',
             f'{path}:124:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
             f'{path}:125:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'

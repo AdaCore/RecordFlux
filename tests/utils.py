@@ -816,7 +816,9 @@ def parse_math_expression(data: str, extended: bool) -> Expr:
     )
     parser_expression, filename = parse(data, rule)
     assert isinstance(parser_expression, lang.Expr)
-    expression = create_math_expression(parser_expression, filename)
+    error = RecordFluxError()
+    expression = create_math_expression(error, parser_expression, filename)
+    error.propagate()
     assert isinstance(expression, Expr)
     return expression
 
@@ -827,7 +829,9 @@ def parse_bool_expression(data: str, extended: bool) -> Expr:
     )
     parser_expression, filename = parse(data, rule)
     assert isinstance(parser_expression, lang.Expr)
-    expression = create_bool_expression(parser_expression, filename)
+    error = RecordFluxError()
+    expression = create_bool_expression(error, parser_expression, filename)
+    error.propagate()
     assert isinstance(expression, Expr)
     return expression
 
@@ -835,7 +839,9 @@ def parse_bool_expression(data: str, extended: bool) -> Expr:
 def parse_expression(data: str, rule: str = lang.GrammarRule.extended_expression_rule) -> Expr:
     parser_expression, filename = parse(data, rule)
     assert isinstance(parser_expression, lang.Expr)
-    expression = create_expression(parser_expression, filename)
+    error = RecordFluxError()
+    expression = create_expression(error, parser_expression, filename)
+    error.propagate()
     assert isinstance(expression, Expr)
     return expression
 

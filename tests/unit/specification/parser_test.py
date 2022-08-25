@@ -118,19 +118,23 @@ def test_create_model_cached() -> None:
 def test_create_proven_message(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
     c = cache.Cache()
+    error = RecordFluxError()
     assert parser.create_proven_message(
-        models.VALID_MESSAGE, skip_verification=False, workers=1, cache=c
+        error, models.VALID_MESSAGE, skip_verification=False, workers=1, cache=c
     )
+    error.propagate()
     assert c.is_verified(models.VALID_MESSAGE)
 
 
 def test_create_proven_message_error(tmp_path: Path) -> None:
     cache.CACHE_DIR = tmp_path
     c = cache.Cache()
+    error = RecordFluxError()
+    parser.create_proven_message(
+        error, models.INVALID_MESSAGE, skip_verification=False, workers=1, cache=c
+    )
     with pytest.raises(RecordFluxError):
-        parser.create_proven_message(
-            models.INVALID_MESSAGE, skip_verification=False, workers=1, cache=c
-        )
+        error.propagate()
     assert not c.is_verified(models.INVALID_MESSAGE)
 
 
@@ -1803,7 +1807,8 @@ def test_parse_error_refinement_undefined_message() -> None:
            for PDU use (Foo => Bar);
         end Test;
         """,
-        r'^<stdin>:2:4: parser: error: undefined type "Test::PDU" in refinement$',
+        r'^<stdin>:2:4: parser: error: undefined type "Test::PDU" in refinement\n'
+        r'<stdin>:2:24: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
