@@ -2668,7 +2668,7 @@ def test_parse_error_invalid_range_aspect() -> None:
         end Test;
         """,
             r"^"
-            "<stdin>:2:42: parser: error: invalid Always_Valid expression: Invalid\n"
+            "<stdin>:2:26: parser: error: invalid Always_Valid expression: Invalid\n"
             '<stdin>:2:9: parser: error: no size set for "Test::T"'
             r"$",
         ),
@@ -2881,6 +2881,134 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
            end S;
         end Test;
         """,
-        r'^<stdin>:8:44: parser: error: duplicate channel aspect "Readable"\n'
+        r'^<stdin>:8:44: parser: error: duplicate aspect "Readable"\n'
         "<stdin>:8:24: parser: info: previous location$",
+    )
+
+
+def test_parse_error_duplicate_integer_size_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is range 1 .. 10 with Size => 8, Size => 16;
+        end Test;
+        """,
+        r"^<stdin>:2:42: parser: error: Expected ';', got ','$",
+    )
+
+
+def test_parse_error_duplicate_enumeration_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type E is (L1, L2, L3) with Size => 8, Always_Valid, Size => 16, Always_Valid;
+        end Test;
+        """,
+        r'^<stdin>:2:57: parser: error: duplicate aspect "Size"\n'
+        r"<stdin>:2:32: parser: info: previous location\n"
+        r'<stdin>:2:69: parser: error: duplicate aspect "Always_Valid"\n'
+        r"<stdin>:2:43: parser: info: previous location$",
+    )
+
+
+def test_parse_error_duplicate_message_checksum_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 F1 : T;
+                 F2 : T;
+              end message
+                 with Checksum => (F1 => (F1'First .. F1'Last)),
+                      Checksum => (F1 => (F1'First .. F1'Last));
+        end Test;
+        """,
+        r"^<stdin>:9:15: parser: error: Expected 'Byte_Order', got 'First'$",
+    )
+
+
+def test_parse_error_duplicate_message_byte_order_aspect() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 F1 : T;
+                 F2 : T;
+              end message
+                 with Byte_Order => Low_Order_First,
+                      Byte_Order => High_Order_First;
+        end Test;
+        """,
+        r'^<stdin>:9:15: parser: error: duplicate aspect "Byte_Order"\n'
+        "<stdin>:8:15: parser: info: previous location$",
+    )
+
+
+def test_parse_error_duplicate_state_desc() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type Message is
+              message
+                 A : T;
+              end message;
+           generic
+              C : Channel with Readable, Writable;
+           session S with
+              Initial => I,
+              Final => F
+           is
+              M : Test::Message;
+           begin
+              state I
+                 with Desc => "D1", Desc => "D2"
+              is
+              begin
+                 C'Read (M);
+              transition
+                 goto F
+              end I;
+              state F is null state;
+           end S;
+        end Test;
+        """,
+        r"^<stdin>:16:27: parser: error: Expected 'is', got ','$",
+    )
+
+
+def test_parse_error_duplicate_transition_desc() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 8;
+           type Message is
+              message
+                 A : T;
+              end message;
+           generic
+              C : Channel with Readable, Writable;
+           session S with
+              Initial => I,
+              Final => F
+           is
+              M : Test::Message;
+           begin
+              state I
+              is
+              begin
+                 C'Read (M);
+              transition
+                 goto F
+                    with Desc => "D1", Desc => "D2"
+              end I;
+              state F is null state;
+           end S;
+        end Test;
+        """,
+        r"^<stdin>:21:30: parser: error: Expected 'end', got ','$",
     )
