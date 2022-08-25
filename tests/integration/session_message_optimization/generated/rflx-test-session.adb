@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:29:10
+      --  tests/integration/session_message_optimization/test.rflx:27:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -60,7 +60,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:43:10
+      --  tests/integration/session_message_optimization/test.rflx:41:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
             RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
@@ -79,11 +79,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_message_optimization/test.rflx:45:10
+      --  tests/integration/session_message_optimization/test.rflx:43:10
       Local_Length := Option_Data.Length;
-      --  tests/integration/session_message_optimization/test.rflx:47:10
+      --  tests/integration/session_message_optimization/test.rflx:45:10
       Universal.Option.Reset (Ctx.P.Option_Ctx);
-      --  tests/integration/session_message_optimization/test.rflx:49:10
+      --  tests/integration/session_message_optimization/test.rflx:47:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
          Ctx.P.Next_State := S_Terminated;
          pragma Assert (Process_Invariant);
@@ -142,7 +142,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:64:10
+      --  tests/integration/session_message_optimization/test.rflx:62:10
       Ctx.P.Next_State := S_Trigger_Error;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -163,14 +163,14 @@ is
         Ghost;
    begin
       pragma Assert (Trigger_Error_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:73:10
+      --  tests/integration/session_message_optimization/test.rflx:71:10
       Get_Option_Data (Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
       if not Test.Option_Data.Valid_Structure (Null_Option_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
-      --  tests/integration/session_message_optimization/test.rflx:75:10
+      --  tests/integration/session_message_optimization/test.rflx:73:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);

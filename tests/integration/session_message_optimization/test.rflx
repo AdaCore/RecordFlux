@@ -2,8 +2,6 @@ with Universal;
 
 package Test is
 
-   type Result is (M_Valid, M_Invalid) with Size => 2;
-
    type Option_Data is
       message
          Length : Universal::Length
