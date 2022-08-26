@@ -9,8 +9,6 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import os
 import sys
 
-from rflx import __version__
-
 # -- Path setup --------------------------------------------------------------
 
 sys.path.insert(0, os.path.abspath(".."))
@@ -20,8 +18,8 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "RecordFlux"
 copyright = "2022, AdaCore"
 author = "AdaCore"
-version = __version__
-release = __version__
+version = "main"
+release = "main"
 
 # -- General configuration ---------------------------------------------------
 
