@@ -1,6 +1,6 @@
 abstract project Defaults is
 
-   type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
+   type Build_Mode is ("strict", "asserts_enabled", "optimized");
    Mode : Build_Mode := external ("mode", "asserts_enabled");
    Memcached := external ("MEMCACHED", "");
    Procs := external ("GNATPROVE_PROCS", "");
@@ -33,7 +33,7 @@ abstract project Defaults is
    case Mode is
       when "strict" | "optimized" =>
          GNATA  := "";
-      when "asserts_enabled" | "runtime_compatible" =>
+      when "asserts_enabled" =>
    end case;
 
    Global_Configuration_Pragmas := "defaults_backward_compatible.adc";

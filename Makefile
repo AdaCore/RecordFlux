@@ -10,7 +10,7 @@ build-dir := build
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc check_interrogate \
 	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_runtime test_installation \
+	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
 	prove prove_tests prove_python_tests prove_apps \
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	generate \
@@ -58,7 +58,7 @@ format:
 	black -l 100 $(python-packages) ide/gnatstudio
 	isort $(python-packages) ide/gnatstudio
 
-test: test_python_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_runtime test_installation
+test: test_python_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_installation
 
 test_python:
 	$(PYTEST) -m "not hypothesis" tests
@@ -103,14 +103,6 @@ test_binary_size:
 
 test_specs:
 	cd examples/specs && $(PYTEST) tests/test_specs.py
-
-test_runtime:
-	rm -rf $(build-dir)/ada-runtime
-	git clone --depth=1 --branch recordflux https://github.com/Componolit/ada-runtime $(build-dir)/ada-runtime
-	$(MAKE) -C build/ada-runtime
-	mkdir -p build/aunit
-	echo "project AUnit is end AUnit;" > build/aunit/aunit.gpr
-	cd tests/spark && gprbuild -Ptest --RTS=../../build/ada-runtime/build/posix/obj -Xmode=runtime_compatible -aP ../../build/aunit
 
 test_installation:
 	rm -rf $(build-dir)/venv
