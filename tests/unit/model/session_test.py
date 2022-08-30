@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import textwrap
 import typing as ty
 
 import pytest
@@ -29,7 +30,7 @@ from tests.data.models import (
     TLV_TAGS,
     UNIVERSAL_MESSAGE,
 )
-from tests.utils import assert_equal, assert_session_model_error, get_test_model, multilinestr
+from tests.utils import assert_equal, assert_session_model_error, get_test_model
 
 
 def test_str() -> None:
@@ -82,41 +83,42 @@ def test_str() -> None:
                 [BOOLEAN, TLV_MESSAGE],
             )
         ),
-        multilinestr(
-            """generic
-                  X : Channel with Readable, Writable;
-                  type T is private;
-                  with function F return T;
-                  with function G (P : T) return Boolean;
-               session S with
-                  Initial => A,
-                  Final => C
-               is
-                  M : TLV::Message;
-                  Y : Boolean := False;
+        textwrap.dedent(
+            """\
+            generic
+               X : Channel with Readable, Writable;
+               type T is private;
+               with function F return T;
+               with function G (P : T) return Boolean;
+            session S with
+               Initial => A,
+               Final => C
+            is
+               M : TLV::Message;
+               Y : Boolean := False;
+            begin
+               state A is
                begin
-                  state A is
-                  begin
-                     X'Read (M);
-                  transition
-                     goto B
-                  end A;
+                  X'Read (M);
+               transition
+                  goto B
+               end A;
 
-                  state B
-                     with Desc => "rfc1149.txt+51:4-52:9"
-                  is
-                     Z : Boolean := Y;
-                  begin
-                  transition
-                     goto C
-                        with Desc => "rfc1149.txt+45:4-47:8"
-                        if Z = True
-                           and G (F) = True
-                     goto A
-                  end B;
+               state B
+                  with Desc => "rfc1149.txt+51:4-52:9"
+               is
+                  Z : Boolean := Y;
+               begin
+               transition
+                  goto C
+                     with Desc => "rfc1149.txt+45:4-47:8"
+                     if Z = True
+                        and G (F) = True
+                  goto A
+               end B;
 
-                  state C is null state;
-               end S"""
+               state C is null state;
+            end S"""
         ),
     )
 
