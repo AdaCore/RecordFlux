@@ -3,7 +3,7 @@ name: tests
 on:
   push:
   schedule:
-    - cron:  '0 2 * * *'
+    - cron:  '40 20 * * *'
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
