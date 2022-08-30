@@ -1,4 +1,5 @@
 import re
+import textwrap
 from abc import ABC
 from typing import Iterable, Iterator, Sequence, TypeVar
 
@@ -39,7 +40,7 @@ def verbose_repr(obj: object, attributes: Sequence[str]) -> str:
 
 
 def indent(string: str, indentation: int) -> str:
-    return "\n".join((indentation * " " + l if l else "") for l in string.split("\n"))
+    return textwrap.indent(string, indentation * " ")
 
 
 def indent_next(string: str, indentation: int) -> str:
