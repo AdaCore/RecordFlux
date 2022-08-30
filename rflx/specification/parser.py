@@ -1484,7 +1484,7 @@ def create_enumeration(
 
         for name, locations in grouped.items():
             check_duplicate_aspect(error, name, [l for _, l in locations])
-            aspect, location = locations[0]
+            aspect, _ = locations[0]
 
             if aspect.f_identifier.text == "Size":
                 size = create_math_expression(error, aspect.f_value, filename)
@@ -1502,7 +1502,7 @@ def create_enumeration(
                                     f"invalid Always_Valid expression: {av_expr}",
                                     Subsystem.PARSER,
                                     Severity.ERROR,
-                                    location,
+                                    node_location(aspect.f_value, filename),
                                 )
                             ],
                         )
