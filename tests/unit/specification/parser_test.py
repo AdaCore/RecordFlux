@@ -2668,7 +2668,7 @@ def test_parse_error_invalid_range_aspect() -> None:
         end Test;
         """,
             r"^"
-            "<stdin>:2:26: parser: error: invalid Always_Valid expression: Invalid\n"
+            "<stdin>:2:42: parser: error: invalid Always_Valid expression: Invalid\n"
             '<stdin>:2:9: parser: error: no size set for "Test::T"'
             r"$",
         ),
