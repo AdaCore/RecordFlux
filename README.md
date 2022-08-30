@@ -6,7 +6,7 @@
 [![Tests](https://github.com/Componolit/RecordFlux/workflows/tests/badge.svg)](https://github.com/Componolit/RecordFlux/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5052/badge)](https://bestpractices.coreinfrastructure.org/projects/5052)
 
-RecordFlux is a toolset for the formal specification of messages and the generation of verifiable binary parsers and message generators.
+RecordFlux is a toolset for the formal specification and generation of verifiable binary parsers, message generators and protocol state machines.
 
 See the [user's guide](doc/user_guide/index.rst) for more information.
 
