@@ -3,7 +3,7 @@ with "../../defaults";
 
 project Test is
 
-   type Build_Mode is ("strict", "asserts_enabled", "optimized", "runtime_compatible");
+   type Build_Mode is ("strict", "asserts_enabled", "optimized");
    Mode : Build_Mode := external ("mode", "asserts_enabled");
    Test := external ("test", "");
 
@@ -30,7 +30,7 @@ project Test is
             when others =>
                for Main use ("test_" & Test & ".adb");
          end case;
-      when "strict" | "runtime_compatible" =>
+      when "strict" =>
          for Source_Dirs use (Generated_Dir, Spec_Dir);
    end case;
 
@@ -43,13 +43,13 @@ project Test is
 
    package Builder is
       case Mode is
-         when "strict" | "asserts_enabled" | "runtime_compatible" =>
+         when "strict" | "asserts_enabled" =>
             for Default_Switches ("Ada") use Defaults.Builder_Switches;
          when "optimized" =>
             for Default_Switches ("Ada") use Defaults.Builder_Switches & ("-O3");
       end case;
       case Mode is
-         when "strict" | "runtime_compatible" =>
+         when "strict" =>
             for Global_Configuration_Pragmas use "../../" & Defaults.Global_Configuration_Pragmas;
          when "asserts_enabled" | "optimized" =>
             null;
@@ -61,8 +61,6 @@ project Test is
       case Mode is
          when "strict" | "asserts_enabled" | "optimized" =>
             for Default_Switches ("Ada") use Defaults.Compiler_Switches;
-         when "runtime_compatible" =>
-            null;
       end case;
    end Compiler;
 

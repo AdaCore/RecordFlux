@@ -466,57 +466,6 @@ jobs:
         with:
           paths: '[".github/workflows/**", "*.gpr", "tests/spark/**"]'
 
-  runtime_compatibility:
-    name: Runtime compatibility
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        gnat-distrib:
-          - "community"
-          - "fsf"
-    env:
-      FSF_GNAT_VERSION: 11.2.4
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Cache GNAT Community
-      if: ${{ matrix.gnat-distrib == 'community' }}
-      uses: actions/cache@v2
-      with:
-        path: /home/runner/work/gnat
-        key: ${{ runner.os }}-gnat-ce2021
-    - name: Install GNAT Community
-      if: ${{ matrix.gnat-distrib == 'community' }}
-      uses: ada-actions/toolchain@ce2021
-      with:
-        distrib: community
-        install_dir: /home/runner/work/gnat
-    - name: Cache Alire and FSF GNAT
-      if: ${{ matrix.gnat-distrib == 'fsf' }}
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.config/alire
-          build/alire
-        key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-fsf${{ env.FSF_GNAT_VERSION }}-${{ hashFiles('Makefile') }}
-    - name: Install Alire
-      if: ${{ matrix.gnat-distrib == 'fsf' }}
-      uses: alire-project/setup-alire@v1
-      with:
-        version: ${{ env.ALIRE_VERSION }}
-        toolchain: "--disable-assistant"
-    - name: Install FSF GNAT
-      if: ${{ matrix.gnat-distrib == 'fsf' }}
-      run: |
-        make install_gnat
-    - name: Build
-      run: |
-        eval `make printenv_gnat`
-        gnat --version
-        make test_runtime
-
   verification_spark:
     name: Verification
     needs: skip_check_spark
