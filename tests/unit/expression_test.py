@@ -73,7 +73,7 @@ from rflx.expression import (
 from rflx.identifier import ID, StrID
 from rflx.model import RangeInteger
 from tests.data.models import ENUMERATION
-from tests.utils import assert_equal, multilinestr
+from tests.utils import assert_equal
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 TINY_INT = RangeInteger("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
@@ -359,20 +359,22 @@ def test_ass_expr_substituted_location() -> None:
 def test_bool_expr_str() -> None:
     assert_equal(
         str(And(Variable("A"), Or(Variable("B"), Variable("C")), Variable("D"))),
-        multilinestr(
-            """A
-               and (B
-                    or C)
-               and D"""
+        textwrap.dedent(
+            """\
+            A
+            and (B
+                 or C)
+            and D"""
         ),
     )
     assert_equal(
         str(AndThen(Variable("A"), OrElse(Variable("B"), Variable("C")), Variable("D"))),
-        multilinestr(
-            """A
-               and then (B
-                         or else C)
-               and then D"""
+        textwrap.dedent(
+            """\
+            A
+            and then (B
+                      or else C)
+            and then D"""
         ),
     )
 

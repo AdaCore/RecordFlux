@@ -1,10 +1,11 @@
+import textwrap
 from typing import Callable
 
 import pytest
 
 from rflx import ada, expression as expr
 from rflx.identifier import ID
-from tests.utils import assert_equal, multilinestr
+from tests.utils import assert_equal
 
 
 def test_id_str() -> None:
@@ -46,11 +47,12 @@ def test_bool_expr_str() -> None:
                 ada.Variable("A"), ada.Or(ada.Variable("B"), ada.Variable("C")), ada.Variable("D")
             )
         ),
-        multilinestr(
-            """A
-               and (B
-                    or C)
-               and D"""
+        textwrap.dedent(
+            """\
+            A
+            and (B
+                 or C)
+            and D"""
         ),
     )
     assert_equal(
@@ -61,11 +63,12 @@ def test_bool_expr_str() -> None:
                 ada.Variable("D"),
             )
         ),
-        multilinestr(
-            """A
-               and then (B
-                         or else C)
-               and then D"""
+        textwrap.dedent(
+            """\
+            A
+            and then (B
+                      or else C)
+            and then D"""
         ),
     )
 
@@ -243,17 +246,18 @@ def test_if_str() -> None:
                 ada.Variable("Some_Complex_Expression"),
             )
         ),
-        multilinestr(
-            """(if
-                   Some_Complex_Condition
-                then
-                   Some_Complex_Expression
-                elsif
-                   Another_Complex_Condition
-                then
-                   Another_Complex_Expression
-                else
-                   Some_Complex_Expression)"""
+        textwrap.dedent(
+            """\
+            (if
+                Some_Complex_Condition
+             then
+                Some_Complex_Expression
+             elsif
+                Another_Complex_Condition
+             then
+                Another_Complex_Expression
+             else
+                Some_Complex_Expression)"""
         ),
     )
 
@@ -276,12 +280,13 @@ def test_case_str() -> None:
                 ],
             )
         ),
-        multilinestr(
-            """(case X is
-                   when Y | Z =>
-                      1,
-                   when others =>
-                      2)"""
+        textwrap.dedent(
+            """\
+            (case X is
+                when Y | Z =>
+                   1,
+                when others =>
+                   2)"""
         ),
     )
 
@@ -431,19 +436,20 @@ def test_expr_str() -> None:
                 ada.Div(ada.Mul(ada.Variable("Variable_A"), ada.Number(3)), ada.Number(8)),
             )
         ),
-        multilinestr(
-            """(if
-                   (Variable_X
-                    and Variable_Y)
-                   or Variable_Z
-                then
-                   1
-                elsif
-                   Variable_Y
-                then
-                   2
-                else
-                   (Variable_A * 3) / 8)"""
+        textwrap.dedent(
+            """\
+            (if
+                (Variable_X
+                 and Variable_Y)
+                or Variable_Z
+             then
+                1
+             elsif
+                Variable_Y
+             then
+                2
+             else
+                (Variable_A * 3) / 8)"""
         ),
     )
     assert_equal(
@@ -473,23 +479,24 @@ def test_expr_str() -> None:
                 ada.Variable("D"),
             )
         ),
-        multilinestr(
-            """(if
-                   (Variable_X
-                    and Variable_Y)
-                   or Variable_Z
-                then
-                   1
-                elsif
-                   Variable_Y
-                then
-                   2
-                else
-                   (Variable_A * 3) / 8)
-               and A
-               and (B
-                    or C)
-               and D"""
+        textwrap.dedent(
+            """\
+            (if
+                (Variable_X
+                 and Variable_Y)
+                or Variable_Z
+             then
+                1
+             elsif
+                Variable_Y
+             then
+                2
+             else
+                (Variable_A * 3) / 8)
+            and A
+            and (B
+                 or C)
+            and D"""
         ),
     )
     assert_equal(
@@ -518,20 +525,21 @@ def test_expr_str() -> None:
                 ),
             )
         ),
-        multilinestr(
-            """(for all X of Z =>
-                   (if
-                       (Variable_X
-                        and Variable_Y)
-                       or Variable_Z
-                    then
-                       1
-                    elsif
-                       Variable_Y
-                    then
-                       2
-                    else
-                       (Variable_A * 3) / 8))"""
+        textwrap.dedent(
+            """\
+            (for all X of Z =>
+                (if
+                    (Variable_X
+                     and Variable_Y)
+                    or Variable_Z
+                 then
+                    1
+                 elsif
+                    Variable_Y
+                 then
+                    2
+                 else
+                    (Variable_A * 3) / 8))"""
         ),
     )
     assert str(ada.Equal(ada.String("S"), ada.Variable("X"))) == '"S" = X'
@@ -721,10 +729,11 @@ def test_while_str() -> None:
                 [ada.NullStatement()],
             )
         ),
-        multilinestr(
-            """while X loop
-                  null;
-               end loop;"""
+        textwrap.dedent(
+            """\
+            while X loop
+               null;
+            end loop;"""
         ),
     )
     assert_equal(
@@ -737,13 +746,14 @@ def test_while_str() -> None:
                 [ada.NullStatement()],
             )
         ),
-        multilinestr(
-            """while
-                  X
-                  and Y
-               loop
-                  null;
-               end loop;"""
+        textwrap.dedent(
+            """\
+            while
+               X
+               and Y
+            loop
+               null;
+            end loop;"""
         ),
     )
 

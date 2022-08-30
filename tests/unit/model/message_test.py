@@ -1,4 +1,5 @@
 # pylint: disable=too-many-lines
+import textwrap
 import typing as ty
 from copy import deepcopy
 
@@ -91,7 +92,7 @@ from tests.data.models import (
     UNIVERSAL_VALUE,
     UNIVERSAL_VALUES,
 )
-from tests.utils import assert_equal, assert_message_model_error, assert_type_error, multilinestr
+from tests.utils import assert_equal, assert_message_model_error, assert_type_error
 
 M_NO_REF = UnprovenMessage(
     "P::No_Ref",
@@ -4094,18 +4095,19 @@ def test_message_str() -> None:
     )
     assert_equal(
         str(message),
-        multilinestr(
-            """type M (A : Boolean) is
-                  message
-                     L : P::Modular
-                        then O
-                           if L > 100
-                        then P
-                           if L <= 100;
-                     O : P::Modular
-                        then null;
-                     P : P::Modular;
-                  end message"""
+        textwrap.dedent(
+            """\
+            type M (A : Boolean) is
+               message
+                  L : P::Modular
+                     then O
+                        if L > 100
+                     then P
+                        if L <= 100;
+                  O : P::Modular
+                     then null;
+                  P : P::Modular;
+               end message"""
         ),
     )
 

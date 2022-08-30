@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import textwrap
 from typing import Iterable, Mapping, Sequence, Tuple, Union
 
 import librflxlang as lang
@@ -235,36 +236,37 @@ def _create_files(
     shutil.copy("defaults_backward_compatible.adc", tmp_path)
     main = f'"{main}"' if main else ""
     (tmp_path / "test.gpr").write_text(
-        multilinestr(
-            f"""with "defaults";
+        textwrap.dedent(
+            f"""\
+            with "defaults";
 
-               project Test is
-                  type Build_Mode is ("strict", "asserts_enabled");
-                  Mode : Build_Mode := external ("mode", "strict");
+            project Test is
+               type Build_Mode is ("strict", "asserts_enabled");
+               Mode : Build_Mode := external ("mode", "strict");
 
-                  for Source_Dirs use (".");
-                  for Main use ({main});
+               for Source_Dirs use (".");
+               for Main use ({main});
 
-                  package Builder is
-                     for Default_Switches ("Ada") use Defaults.Builder_Switches;
-                     case Mode is
-                        when "strict" =>
-                           for Global_Configuration_Pragmas use
-                              Defaults.Global_Configuration_Pragmas;
-                        when others =>
-                           null;
-                     end case;
-                  end Builder;
+               package Builder is
+                  for Default_Switches ("Ada") use Defaults.Builder_Switches;
+                  case Mode is
+                     when "strict" =>
+                        for Global_Configuration_Pragmas use
+                           Defaults.Global_Configuration_Pragmas;
+                     when others =>
+                        null;
+                  end case;
+               end Builder;
 
-                  package Compiler is
-                     for Default_Switches ("Ada") use Defaults.Compiler_Switches;
-                  end Compiler;
+               package Compiler is
+                  for Default_Switches ("Ada") use Defaults.Compiler_Switches;
+               end Compiler;
 
-                  package Prove is
-                     for Proof_Switches ("Ada") use
-                        Defaults.Proof_Switches & ("--steps=0", "--timeout=150");
-                  end Prove;
-               end Test;"""
+               package Prove is
+                  for Proof_Switches ("Ada") use
+                     Defaults.Proof_Switches & ("--steps=0", "--timeout=150");
+               end Prove;
+            end Test;"""
         )
     )
 
@@ -788,14 +790,6 @@ begin
 end Main;
 """,
     }
-
-
-def multilinestr(string: str) -> str:
-    correct_indentation = [not l or l.startswith(15 * " ") for l in string.split("\n")[1:]]
-    assert all(
-        correct_indentation
-    ), f"invalid indentation of line {correct_indentation.index(False) + 2}"
-    return string.replace(15 * " ", "")
 
 
 def parse(
