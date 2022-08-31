@@ -405,11 +405,6 @@ The following example of an integration file defines, for the session ``My_Sessi
            My_State:
              My_State_Variable: 1024
 
-Limitations
-===========
-
-A list of known limitations for version 0.5.0 can be found `here <https://github.com/Componolit/RecordFlux/issues?q=is%3Aissue+label%3Alimitation+label%3Av0.5.0>`_.
-
 Background
 ==========
 
