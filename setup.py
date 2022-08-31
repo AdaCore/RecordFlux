@@ -12,8 +12,8 @@ with open("README.md", encoding="utf-8") as f:
 setup(
     name="RecordFlux",
     description=(
-        "A toolset for the formal specification of messages and the generation of "
-        "verifiable binary parsers and message generators."
+        "A toolset for the formal specification and generation of verifiable binary parsers, "
+        "message generators and protocol state machines."
     ),
     long_description=readme,
     long_description_content_type="text/markdown",
