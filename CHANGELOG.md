@@ -84,8 +84,6 @@ Graph:
 
 - Improve layout of session graphs (#400)
 
-Dependencies:
-
 ### Removed
 
 - Support for Python 3.7
