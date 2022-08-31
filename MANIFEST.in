@@ -1,3 +1,6 @@
-include LICENSE
-include SECURITY.md
-recursive-include doc *
+# All SCM-managed files are automatically added to the sdist by setuptools_scm.
+prune *
+exclude .git* defaults* Makefile MANIFEST.in
+graft bin
+graft rflx
+global-exclude *.py[cod]
