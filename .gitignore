@@ -15,3 +15,5 @@ htmlcov
 why3session.xml.bak
 why3shapes.gz.bak
 .vscode/configurationCache.log
+.env
+.venv
