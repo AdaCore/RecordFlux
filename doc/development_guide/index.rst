@@ -108,33 +108,32 @@ A project board for an upcoming release has four columns:
 Checklist for releasing new versions
 ====================================
 
-- ☐ Prepare release notes
-- ☐ Update submodules
-- ☐ Test GNAT Studio plugin
-   - Check verification, generation and display of message graph for
-      example apps
-- ☐ Add version to limitations labels on GitHub
-- ☐ Change version in limitations link in README
-- ☐ Change version in code
-- ☐ Generate distribution archive
-   - ``python3 setup.py sdist``
-- ☐ Check distribution archive
-   - Check content of archive (e.g., that documentation is contained)
-   - Install in new virtual environment
-   - Ensure that no additional packages to ``rflx`` are installed
-   - Test ``rflx`` executable
-- ☐ Upload to TestPyPI
-   - ``twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz``
-- ☐ Check project on TestPyPI
-- ☐ Test installation from TestPyPI
-   - ``pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux``
-- ☐ Upload to PyPI
-   - ``twine upload dist/RecordFlux-X.Y.Z.tar.gz``
-- ☐ Test installation from PyPI
-   - ``pip3 install RecordFlux``
-- ☐ Add tag to git repository
-   - Note: Commit IDs change when a PR is merged on GitHub, so it
-      should be ensured that the right branch is checked out.
-   - ``git tag -a vX.Y.Z -m ""``
-   - ``git push --follow-tags``
-- ☐ Publish release notes on GitHub
+.. code:: markdown
+
+    - [ ] Update submodules
+    - [ ] Test GNAT Studio plugin
+       - Check verification, generation and display of message graph for example apps
+    - [ ] Add release to `CHANGELOG`
+    - [ ] Bring changes to `main` branch
+    - [ ] Add tag to git repository
+       - Note: Commit IDs change when a PR is merged on GitHub, so it should be ensured that the right branch is checked out.
+       - `git tag -a vX.Y.Z -m ""`
+    - [ ] Generate distribution archive
+       - `make dist`
+    - [ ] Check distribution archive
+       - Check content of archive
+       - Install in new virtual environment
+       - Ensure that no additional packages to `rflx` are installed
+       - Test `rflx` executable
+    - [ ] Push tag
+       - `git push --follow-tags`
+    - [ ] Upload to TestPyPI
+       - `twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz`
+    - [ ] Check project on TestPyPI
+    - [ ] Test installation from TestPyPI
+       - `pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux`
+    - [ ] Upload to PyPI
+       - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
+    - [ ] Test installation from PyPI
+       - `pip3 install RecordFlux`
+    - [ ] Publish release notes on GitHub
