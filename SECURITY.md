@@ -8,7 +8,7 @@ We will get back to you within a working day to discuss the next steps.
 
 ## Confidential Reporting
 
-If you would like to report a security vulnerability confidentially, please send an email to [recordflux_remove_this_text_including_first_underscore@componolit.com](mailto:recordflux_remove_this_text_including_first_underscore@componolit.com) (make sure to change the address as described).
+If you would like to report a security vulnerability confidentially, please send an email to [product-security@adacore.com](mailto:product-security@adacore.com).
 
 ## Supported Versions
 
