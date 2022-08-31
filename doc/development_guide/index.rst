@@ -40,6 +40,7 @@ Make targets for common development tasks are:
 - ``install_devel`` Install project in editable mode
 - ``upgrade_devel`` Upgrade all development dependencies (note: ``install_devel`` must be executed before changes in ``setup.py`` take effect)
 - ``doc`` Generate HTML documentation
+- ``dist`` Create Python package
 
 Additional tools can be found in ``tools/``.
 

@@ -15,6 +15,7 @@ build-dir := build
 	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	generate \
 	doc \
+	dist \
 	clean
 
 all: check test prove
@@ -165,6 +166,9 @@ generate:
 
 doc: check_doc
 	$(MAKE) -C doc html
+
+dist:
+	python3 setup.py sdist
 
 clean:
 	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
