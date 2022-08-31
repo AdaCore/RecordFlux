@@ -2,13 +2,14 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import traceback
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import librflxlang
-from pkg_resources import get_distribution
+from pkg_resources import get_distribution, resource_filename
 
 from rflx import __version__
 from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
@@ -189,6 +190,11 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
         help="abort with exitcode 1 if the coverage threshold is not reached",
     )
     parser_validate.set_defaults(func=validate)
+
+    parser_setup = subparsers.add_parser(
+        "setup_ide", help="set up RecordFlux IDE integration (GNAT Studio)"
+    )
+    parser_setup.set_defaults(func=setup)
 
     args = parser.parse_args(argv[1:])
 
@@ -383,3 +389,12 @@ def validate(args: argparse.Namespace) -> None:
         fatal_error = FatalError()
         fatal_error.extend(e)
         raise fatal_error from e
+
+
+def setup(_args: argparse.Namespace) -> None:
+    gnatstudio_dir = resource_filename("ide", "gnatstudio/")
+    plugins_dir = Path.home() / ".gnatstudio/plug-ins"
+    if not plugins_dir.exists():
+        plugins_dir.mkdir(parents=True, exist_ok=True)
+    print(f'Installing RecordFlux plugin into "{plugins_dir}"')
+    shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)

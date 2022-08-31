@@ -39,7 +39,7 @@ setup(
         "Topic :: System :: Networking",
     ],
     packages=find_packages(include=("rflx", "rflx.*")),
-    package_data={"rflx": ["py.typed", "templates/*"]},
+    package_data={"rflx": ["py.typed", "templates/*"], "ide": ["gnatstudio/*"]},
     python_requires=">=3.8",
     install_requires=[
         "attrs >=20, <22",

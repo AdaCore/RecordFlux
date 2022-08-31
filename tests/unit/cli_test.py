@@ -467,3 +467,17 @@ def test_fail_fast() -> None:
         )
         == 10
     )
+
+
+def test_setup_gnat_studio_plugin() -> None:
+    cli.main(["rflx", "setup_ide"])
+    plugin = Path.home() / ".gnatstudio/plug-ins/recordflux.py"
+    assert plugin.exists()
+    assert plugin.is_file()
+
+    # Install with plugin dir already present
+    plugin.unlink()
+    cli.main(["rflx", "setup_ide"])
+    plugin = Path.home() / ".gnatstudio/plug-ins/recordflux.py"
+    assert plugin.exists()
+    assert plugin.is_file()
