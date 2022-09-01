@@ -13,7 +13,7 @@ project := $(noprefix_dir)/test
 test_files := $(addprefix $(noprefix_dir)/, $(subst rflx-,,$(test_files)))
 endif
 
-.PHONY: test test_optimized prove prove_cvc4 clean
+.PHONY: test test_optimized prove clean
 
 test: $(test_files)
 	gprbuild -P$(project) -Xtest=$(TEST) -Xgnat=$(GNAT) -Xmode=asserts_enabled
@@ -28,9 +28,6 @@ build_strict: $(test_files)
 
 prove: $(proof_sessions) $(test_files)
 	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
-
-prove_cvc4: $(test_files)
-	gnatprove -P$(project) --prover=cvc4 --steps=200000 --timeout=120 --warnings=continue -u rflx-ipv4 -u rflx-ipv4-packet -u rflx-in_ipv4 -u rflx-in_ipv4-contains -u rflx-in_ipv4-tests $(GNATPROVE_ARGS)
 
 clean:
 	gprclean -P$(project)
