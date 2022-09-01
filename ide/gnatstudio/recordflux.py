@@ -302,7 +302,7 @@ def run(files, mode, skip_verification=False, options=None):
     GPS.Locations.remove_category("RecordFlux")
 
     return "rflx {skip_verification}{mode} {options} {files}".format(
-        skip_verification="--no-verification " if skip_verification else "",
+        skip_verification="--unsafe --no-verification " if skip_verification else "",
         mode=mode,
         files=" ".join(files),
         options=" ".join(options),

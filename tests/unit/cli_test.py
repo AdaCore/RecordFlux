@@ -481,3 +481,39 @@ def test_setup_gnat_studio_plugin() -> None:
     plugin = Path.home() / ".gnatstudio/plug-ins/recordflux.py"
     assert plugin.exists()
     assert plugin.is_file()
+
+
+def test_missing_unsafe_option() -> None:
+    assert (
+        cli.main(
+            [
+                "rflx",
+                "--no-verification",
+                "check",
+                MESSAGE_SPEC_FILE,
+            ]
+        )
+        == 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
+    )
+
+
+def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(cli, "generate", lambda x: raise_fatal_error())
+    assert re.fullmatch(
+        r"\n-*\nEXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS\n-*\n"
+        r"Traceback.*\n-*$",
+        str(
+            cli.main(
+                [
+                    "rflx",
+                    "--unsafe",
+                    "generate",
+                    "-d",
+                    str(tmp_path),
+                    MESSAGE_SPEC_FILE,
+                    SESSION_SPEC_FILE,
+                ]
+            )
+        ),
+        re.DOTALL,
+    )

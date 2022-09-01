@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 CLI:
 
 - `rflx setup_ide` subcommand for installing IDE integration (#795)
+- `rflx` option `--unsafe` (#987)
 
 ## [0.6.0] - 2022-08-31
 

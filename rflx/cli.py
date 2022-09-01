@@ -52,6 +52,11 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
         metavar=("NUM"),
         help="parallelize proofs among NUM workers (default: %(default)d)",
     )
+    parser.add_argument(
+        "--unsafe",
+        action="store_true",
+        help=("allow unsafe options (WARNING: may lead to erronous behavior"),
+    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -209,6 +214,10 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
     if args.quiet:
         logging.disable(logging.CRITICAL)
 
+    if not args.unsafe:
+        if args.no_verification:
+            return 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
+
     ERROR_CONFIG.fail_after_value = args.max_errors
 
     try:
@@ -216,6 +225,13 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
     except RecordFluxError as e:
         return f"{e}"
     except Exception:  # pylint: disable = broad-except
+        if args.unsafe:
+            return f"""
+----------------------------------------------------------------------------
+EXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS
+----------------------------------------------------------------------------
+{traceback.format_exc()}
+----------------------------------------------------------------------------"""
         return f"""
 ------------------------------ RecordFlux Bug ------------------------------
 {version()}
