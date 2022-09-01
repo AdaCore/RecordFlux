@@ -113,9 +113,6 @@ prove: prove_tests prove_python_tests prove_apps
 prove_tests:
 	$(MAKE) -C tests/spark prove
 
-prove_tests_cvc4:
-	$(MAKE) -C tests/spark prove_cvc4
-
 prove_python_tests:
 	$(PYTEST) -m "verification and not hypothesis" tests
 
