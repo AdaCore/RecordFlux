@@ -8,7 +8,7 @@ python-packages := bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
 
-.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc check_interrogate \
+.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
 	prove prove_tests prove_python_tests prove_apps \
@@ -20,7 +20,7 @@ build-dir := build
 
 all: check test prove
 
-check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc check_interrogate
+check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
 check_packages:
 	tools/check_packages.py $(python-packages)
@@ -51,9 +51,6 @@ check_pydocstyle:
 
 check_doc:
 	tools/check_doc.py
-
-check_interrogate:
-	interrogate --fail-under 3.5 rflx/ tools/
 
 format:
 	black -l 100 $(python-packages) ide/gnatstudio
