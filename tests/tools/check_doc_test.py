@@ -18,6 +18,7 @@ def test_invalid_no_code_blocks() -> None:
         check_files([DATA_DIR / "no_code_blocks_1.rst", DATA_DIR / "no_code_blocks_2.rst"])
 
 
+@pytest.mark.compilation
 def test_invalid_missing_empty_line() -> None:
     with pytest.raises(
         CheckDocError,
@@ -96,6 +97,7 @@ def test_invalid_unknown_doc_check_2() -> None:
         )
 
 
+@pytest.mark.compilation
 def test_invalid_ada_code() -> None:
     with pytest.raises(
         CheckDocError,
@@ -263,10 +265,12 @@ Some more text...
         )
 
 
+@pytest.mark.compilation
 def test_valid_no_code_blocks() -> None:
     check_files([DATA_DIR / "no_code_blocks_1.rst", DATA_DIR / "with_code_blocks.rst"])
 
 
+@pytest.mark.compilation
 def test_valid_ada_procedure() -> None:
     check_file(
         STDIN,
@@ -281,6 +285,7 @@ def test_valid_ada_procedure() -> None:
     )
 
 
+@pytest.mark.compilation
 def test_valid_ada_declaration() -> None:
     check_file(
         STDIN,
