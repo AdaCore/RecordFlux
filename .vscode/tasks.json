@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Python Coverage",
+            "detail": "Measure test coverage",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m",
+                "pytest",
+                "-n",
+                "auto",
+                "--cov=rflx",
+                "--cov-branch",
+                "--no-cov-on-fail",
+                "--cov-report=xml:${workspaceFolder}/build/cov.xml",
+                "--cov-report=term-missing:skip-covered",
+                "--cov-report=html:${workspaceFolder}/build/coverage/",
+                "-m",
+                "not verification and not hypothesis and not compilation",
+                "tests"
+            ],
+            "problemMatcher": []
+        }
+    ],
+    "presentation": {
+        "close": false,
+        "revealProblems": "onProblem",
+    }
+}

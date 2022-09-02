@@ -17,3 +17,4 @@ why3shapes.gz.bak
 .vscode/configurationCache.log
 .env
 .venv
+.coverage.*
