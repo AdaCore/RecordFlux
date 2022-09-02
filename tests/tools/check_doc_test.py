@@ -103,7 +103,7 @@ def test_invalid_ada_code() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:2: error in code block\n"
-            r"main.adb:1:01: error: compilation unit expected\n"
+            r"main.adb:1:01: (error: )?compilation unit expected\n"
             r"gprbuild: [*][*][*] compilation phase failed\n$"
         ),
     ):
