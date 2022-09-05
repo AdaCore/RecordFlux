@@ -311,14 +311,6 @@ class Message(Compound):
 
 
 @attr.s(frozen=True)
-class Private(IndependentType):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "private type"
-
-    def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
-
-
-@attr.s(frozen=True)
 class Channel(Any):
     DESCRIPTIVE_NAME: ty.ClassVar[str] = "channel"
     readable: bool = attr.ib()

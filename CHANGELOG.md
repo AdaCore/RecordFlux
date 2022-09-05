@@ -14,6 +14,12 @@ CLI:
 - `rflx setup_ide` subcommand for installing IDE integration (#795)
 - `rflx` option `--unsafe` (#987)
 
+### Removed
+
+Specification:
+
+- Remove private types (#1156)
+
 ## [0.6.0] - 2022-08-31
 
 ### Added

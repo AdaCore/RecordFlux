@@ -1940,18 +1940,19 @@ def test_session_state_action_error(
             r" in Head attribute not yet supported",
         ),
         (
-            rty.Private("T"),
+            models.SEQUENCE_MODULAR_VECTOR.type_,
             expr.Head(
                 expr.Call(
                     "F",
                     [expr.Variable("Y")],
-                    type_=rty.Sequence("B", rty.Private("T")),
+                    type_=rty.Sequence("S", models.SEQUENCE_MODULAR_VECTOR.type_),
                     location=Location((10, 20)),
                 ),
             ),
             FatalError,
-            r'unexpected sequence element type \(private type "T"\) for "F \(Y\)\'Head"'
-            r' in assignment of "X"',
+            r'unexpected sequence element type \(sequence type "Sequence::Modular_Vector" with '
+            r'element integer type "Sequence::Modular_Integer" \(0 .. 65535\)\) '
+            r'for "F \(Y\)\'Head" in assignment of "X"',
         ),
         (
             rty.Sequence("A", rty.Message("B")),

@@ -13,7 +13,6 @@ from rflx.typing_ import (
     Enumeration,
     Integer,
     Message,
-    Private,
     Sequence,
     Type,
     Undefined,
@@ -687,10 +686,10 @@ def test_check_type(actual: Type, expected: Type) -> None:
     "actual,expected,match",
     [
         (
-            Private("A"),
+            Message("A"),
             Channel(readable=False, writable=True),
             r"^<stdin>:10:20: model: error: expected writable channel\n"
-            r'<stdin>:10:20: model: info: found private type "A"$',
+            r'<stdin>:10:20: model: info: found message type "A"$',
         ),
         (
             UndefinedInteger(),
@@ -729,10 +728,10 @@ def test_check_type_instance(
     "actual,expected,match",
     [
         (
-            Private("A"),
+            Message("M"),
             Channel,
             r"^<stdin>:10:20: model: error: expected channel\n"
-            r'<stdin>:10:20: model: info: found private type "A"$',
+            r'<stdin>:10:20: model: info: found message type "M"$',
         ),
         (
             UndefinedInteger(),

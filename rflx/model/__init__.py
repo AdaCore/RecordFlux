@@ -31,7 +31,6 @@ from .type_ import (  # noqa: F401
     Integer as Integer,
     ModularInteger as ModularInteger,
     Opaque as Opaque,
-    Private as Private,
     RangeInteger as RangeInteger,
     Scalar as Scalar,
     Sequence as Sequence,

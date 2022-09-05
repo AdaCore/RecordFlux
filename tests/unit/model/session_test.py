@@ -14,7 +14,6 @@ from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
     OPAQUE,
-    Private,
     Session,
     State,
     Transition,
@@ -76,9 +75,10 @@ def test_str() -> None:
                 ],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.TypeDeclaration(Private("T")),
-                    decl.FunctionDeclaration("F", [], "T"),
-                    decl.FunctionDeclaration("G", [decl.Argument("P", "T")], BOOLEAN.identifier),
+                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+                    decl.FunctionDeclaration(
+                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                    ),
                 ],
                 [BOOLEAN, TLV_MESSAGE],
             )
@@ -87,9 +87,8 @@ def test_str() -> None:
             """\
             generic
                X : Channel with Readable, Writable;
-               type T is private;
-               with function F return T;
-               with function G (P : T) return Boolean;
+               with function F return Boolean;
+               with function G (P : Boolean) return Boolean;
             session S with
                Initial => A,
                Final => C
@@ -1175,21 +1174,6 @@ def test_unused_channel() -> None:
     )
 
 
-def test_unused_private_type() -> None:
-    assert_session_model_error(
-        states=[
-            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
-            State("End"),
-        ],
-        declarations=[],
-        parameters=[
-            decl.TypeDeclaration(Private("X", location=Location((10, 20)))),
-        ],
-        types=[],
-        regex=r'^<stdin>:10:20: model: error: unused type "X"$',
-    )
-
-
 def test_unused_function() -> None:
     assert_session_model_error(
         states=[
@@ -1946,64 +1930,6 @@ def test_conversion_invalid() -> None:
             r" would make operation legal"
             r"$"
         ),
-    )
-
-
-def test_private_type() -> None:
-    Session(
-        identifier=ID("P::S"),
-        initial=ID("Start"),
-        final=ID("End"),
-        states=[
-            State(
-                "Start",
-                declarations=[
-                    decl.VariableDeclaration("X", "P::T"),
-                ],
-                transitions=[
-                    Transition(
-                        target=ID("End"),
-                        condition=expr.Equal(expr.Variable("X"), expr.Variable("X")),
-                    ),
-                    Transition(
-                        target=ID("Start"),
-                    ),
-                ],
-            ),
-            State("End"),
-        ],
-        declarations=[],
-        parameters=[decl.TypeDeclaration(Private("P::T"))],
-        types=[],
-    )
-
-
-def test_private_type_shadows_type() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[
-                    Transition(
-                        target=ID("End"),
-                        condition=expr.Equal(expr.Variable("X"), expr.Variable("Y")),
-                    ),
-                    Transition(
-                        target=ID("Start"),
-                    ),
-                ],
-            ),
-            State("End"),
-        ],
-        declarations=[
-            decl.VariableDeclaration("X", "Boolean"),
-            decl.VariableDeclaration("Y", "Boolean"),
-        ],
-        parameters=[
-            decl.TypeDeclaration(Private("Boolean", location=Location((10, 20)))),
-        ],
-        types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: type "Boolean" shadows type$',
     )
 
 
