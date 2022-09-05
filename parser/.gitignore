@@ -13,3 +13,5 @@ gnatinspect.db
 htmlcov
 .venv
 .eggs
+.hypothesis
+.env

@@ -334,10 +334,6 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.type_refinement_rule,
         ),
         (
-            "type {keyword} is private",
-            librflxlang.GrammarRule.private_type_declaration_rule,
-        ),
-        (
             "{keyword} : {keyword}",
             librflxlang.GrammarRule.parameter_rule,
         ),

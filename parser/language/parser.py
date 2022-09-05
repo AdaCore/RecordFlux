@@ -34,7 +34,6 @@ grammar.add_rules(
             lexer.Generic,
             lexer.Session,
             lexer.Begin,
-            lexer.Private,
             lexer.Return,
             lexer.Function,
             lexer.State,
@@ -456,9 +455,6 @@ grammar.add_rules(
         ")",
         Opt(grammar.if_condition),
     ),
-    private_type_declaration=ast.FormalPrivateTypeDecl(
-        "type", grammar.unqualified_identifier, "is", "private"
-    ),
     parameter=ast.Parameter(grammar.unqualified_identifier, ":", grammar.qualified_identifier),
     parameter_list=ast.Parameters("(", List(grammar.parameter, sep=";"), ")"),
     formal_function_declaration=ast.FormalFunctionDecl(
@@ -477,7 +473,6 @@ grammar.add_rules(
         List(Or(ast.Readable("Readable"), ast.Writable("Writable")), sep=","),
     ),
     session_parameter=Or(
-        grammar.private_type_declaration,
         grammar.formal_function_declaration,
         grammar.channel_declaration,
     ),

@@ -42,7 +42,6 @@ class Token(LexerToken):  # type: ignore[misc]
     Generic = WithText()
     Session = WithText()
     Begin = WithText()
-    Private = WithText()
     Return = WithText()
     Function = WithText()
     State = WithText()
@@ -198,7 +197,6 @@ rflx_lexer.add_rules(
     (Literal("generic"), Token.Generic),
     (Literal("session"), Token.Session),
     (Literal("begin"), Token.Begin),
-    (Literal("private"), Token.Private),
     (Literal("return"), Token.Return),
     (Literal("function"), Token.Function),
     (Literal("state"), Token.State),

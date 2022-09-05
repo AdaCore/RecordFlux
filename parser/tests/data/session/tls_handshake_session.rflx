@@ -4,6 +4,13 @@ with TLS_Handshake;
 
 package TLS_Handshake_Session is
 
+   type Hash_Context is
+      message
+         Length : GreenTLS::KM_Length;
+         Data   : Opaque
+            with Size => 8 * Length;
+      end message;
+
    generic
       Record_Data_Channel : Channel with Readable, Writable;
       Record_Control_Channel : Channel with Writable;
@@ -12,8 +19,6 @@ package TLS_Handshake_Session is
       Application_Control_Channel : Channel with Readable, Writable;
       Configuration_Channel : Channel with Readable;
       Connection_Channel : Channel with Readable;
-
-      type Hash_Context is private;
 
       with function Calculate_Binders (PSKs : GreenTLS::PSKs; Transcript_Hash : GreenTLS::Content) return TLS_Handshake::PSK_Binder_Entries;
       with function Calculate_Binders_Length (PSKs : GreenTLS::PSKs) return TLS_Handshake::Binders_Length;

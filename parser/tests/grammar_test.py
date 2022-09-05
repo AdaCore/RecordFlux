@@ -2622,16 +2622,6 @@ def test_expression_complex(string: str, expected: Dict[str, str]) -> None:
     assert actual == expected
 
 
-def test_private_type_declaration() -> None:
-    string = "type X is private"
-    expected = {
-        "_kind": "FormalPrivateTypeDecl",
-        "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
-    }
-    actual = parse(string, GrammarRule.session_parameter_rule)
-    assert actual == expected
-
-
 @pytest.mark.parametrize(
     "string,expected",
     [
@@ -3269,8 +3259,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
             """
                generic
                   X : Channel with Readable, Writable;
-                  type T is private;
-                  with function F return T;
+                  with function F return Boolean;
                session Session with
                   Initial => A,
                   Final => B
@@ -3328,16 +3317,12 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                         ],
                     },
                     {
-                        "_kind": "FormalPrivateTypeDecl",
-                        "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
-                    },
-                    {
                         "_kind": "FormalFunctionDecl",
                         "identifier": {"_kind": "UnqualifiedID", "_value": "F"},
                         "parameters": None,
                         "return_type_identifier": {
                             "_kind": "ID",
-                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                            "name": {"_kind": "UnqualifiedID", "_value": "Boolean"},
                             "package": None,
                         },
                     },

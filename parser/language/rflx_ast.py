@@ -145,12 +145,6 @@ class FormalDecl(RFLXNode):
     """Base class for generic formal session declarations."""
 
 
-class FormalPrivateTypeDecl(FormalDecl):
-    """Formal private session type declaration."""
-
-    identifier = Field(type=UnqualifiedID)
-
-
 class SessionAspects(RFLXNode):
     """Session aspects (Initial, Final)."""
 

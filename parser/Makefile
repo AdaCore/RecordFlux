@@ -1,6 +1,6 @@
 VERBOSE ?= @
 
-VERSION = 0.11.0
+VERSION = 0.12.0
 BUILDDIR = $(PWD)/build
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -49,7 +49,7 @@ test_python:
 	python3 -m pytest -n$(shell nproc) -vv tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=77 --cov-report=term-missing:skip-covered tests
+	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=79 --cov-report=term-missing:skip-covered tests
 
 install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
