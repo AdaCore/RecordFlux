@@ -588,20 +588,6 @@ def create_variable_decl(
     )
 
 
-def create_private_type_decl(
-    error: RecordFluxError, declaration: lang.FormalDecl, package: ID, filename: Path
-) -> decl.FormalDeclaration:
-    assert isinstance(declaration, lang.FormalPrivateTypeDecl)
-    return decl.TypeDeclaration(
-        model.Private(
-            model.internal_type_identifier(
-                create_id(error, declaration.f_identifier, filename), package
-            ),
-            location=node_location(declaration, filename),
-        )
-    )
-
-
 def create_channel_decl(
     error: RecordFluxError,
     declaration: lang.FormalDecl,
@@ -829,7 +815,6 @@ def create_formal_declaration(
     handlers = {
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
-        "FormalPrivateTypeDecl": create_private_type_decl,
     }
     return handlers[declaration.kind_name](error, declaration, package, filename)
 

@@ -19,6 +19,7 @@ from rflx.specification.parser import (
     create_unproven_session,
     diagnostics_to_error,
 )
+from rflx.typing_ import BOOLEAN
 from tests.utils import parse, parse_bool_expression, parse_expression, parse_math_expression
 
 
@@ -586,16 +587,6 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
     assert actual.location
 
 
-def test_private_type_declaration() -> None:
-    string = "type X is private"
-    expected = decl.TypeDeclaration(
-        model.Private("Package::X", location=Location((1, 1), None, (1, 17)))
-    )
-    actual = parse_formal_declaration(string)
-    assert actual == expected
-    assert actual.location
-
-
 @pytest.mark.parametrize(
     "string,expected",
     [
@@ -858,8 +849,7 @@ def test_state_error(string: str, error: str) -> None:
             """
                generic
                   X : Channel with Readable, Writable;
-                  type T is private;
-                  with function F return T;
+                  with function F return Boolean;
                session Session with
                   Initial => A,
                   Final => B
@@ -887,9 +877,7 @@ def test_state_error(string: str, error: str) -> None:
                     model.State(
                         "A",
                         declarations=[
-                            decl.VariableDeclaration(
-                                "Z", "__BUILTINS__::Boolean", expr.Variable("Y")
-                            )
+                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y"))
                         ],
                         actions=[stmt.VariableAssignment("Z", expr.Variable("False"))],
                         transitions=[
@@ -902,11 +890,10 @@ def test_state_error(string: str, error: str) -> None:
                     ),
                     model.State("B"),
                 ],
-                [decl.VariableDeclaration("Y", "__BUILTINS__::Boolean", expr.Variable("True"))],
+                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.Variable("True"))],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.TypeDeclaration(model.Private("Package::T")),
-                    decl.FunctionDeclaration("F", [], "Package::T"),
+                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                 ],
                 [],
                 location=Location((2, 16), None, (23, 27)),

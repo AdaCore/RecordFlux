@@ -676,21 +676,6 @@ class Opaque(Composite):
         return expr.Number(8)
 
 
-class Private(Type):
-    def __init__(self, identifier: StrID, location: Location = None) -> None:
-        super().__init__(identifier, location)
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier"])
-
-    def __str__(self) -> str:
-        return f"type {self.name} is private"
-
-    @property
-    def type_(self) -> rty.Type:
-        return rty.Private(str(self.identifier))
-
-
 OPAQUE = Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
 
 INTERNAL_TYPES = {

@@ -46,7 +46,6 @@ RESERVED_WORDS = [
     "overriding",
     "package",
     "pragma",
-    "private",
     "procedure",
     "protected",
     "raise",

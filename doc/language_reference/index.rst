@@ -376,7 +376,6 @@ The main part of a session definition are the state definitions.
 
    generic
       X : Channel with Readable, Writable;
-      type T is private;
       with function F return T;
       with function G (P : T) return Boolean;
    session S with
@@ -409,32 +408,12 @@ Session Parameters
 ..
     Session Parameters [§S-P]
 
-Private types, functions and channels can be defined as session parameters.
+Functions and channels can be defined as session parameters.
 
 **Syntax**
 
 .. productionlist::
-   session_parameter: ( `private_type_declaration` | `function_declaration` | `channel_declaration` ) ;
-
-Private Types
-^^^^^^^^^^^^^
-
-..
-    Private Types [§S-P-P]
-
-A private type represents an externally defined type.
-
-**Syntax**
-
-.. productionlist::
-   private_type_declaration: type `name` is private
-
-**Example**
-
-.. doc-check: rflx,session_parameter
-.. code:: ada
-
-   type Hash is private
+   session_parameter: ( `function_declaration` | `channel_declaration` ) ;
 
 Functions
 ^^^^^^^^^
