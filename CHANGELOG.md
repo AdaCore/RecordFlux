@@ -18,7 +18,7 @@ CLI:
 
 Specification:
 
-- Remove private types (#1156)
+- Private types (#1156)
 
 ## [0.6.0] - 2022-08-31
 
