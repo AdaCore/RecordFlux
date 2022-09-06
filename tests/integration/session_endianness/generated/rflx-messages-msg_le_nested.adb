@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types.Operations;
 
 package body RFLX.Messages.Msg_LE_Nested with
   SPARK_Mode
@@ -159,7 +160,7 @@ is
              32);
       Byte_Order : constant RFLX_Types.Byte_Order := (if Fld in F_X_A | F_X_B then RFLX_Types.High_Order_First else RFLX_Types.Low_Order_First);
    begin
-      return RFLX_Types.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
+      return RFLX_Types.Operations.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -313,7 +314,7 @@ is
    begin
       Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
       RFLX_Types.Lemma_Size (Val, Positive (Size));
-      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), (if Fld in F_Y then RFLX_Types.Low_Order_First else RFLX_Types.High_Order_First));
+      RFLX_Types.Operations.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), (if Fld in F_Y then RFLX_Types.Low_Order_First else RFLX_Types.High_Order_First));
    end Set_Scalar;
 
    procedure Set_X_A (Ctx : in out Context; Val : RFLX.Messages.Integer) is

@@ -749,7 +749,7 @@ class SerializerGenerator:
                             ],
                         ),
                         CallStatement(
-                            const.TYPES * "Insert",
+                            const.TYPES_OPERATIONS * "Insert",
                             [
                                 Variable("Val"),
                                 Variable("Ctx.Buffer"),
