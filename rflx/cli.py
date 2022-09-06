@@ -199,6 +199,13 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
     parser_setup = subparsers.add_parser(
         "setup_ide", help="set up RecordFlux IDE integration (GNAT Studio)"
     )
+    parser_setup.add_argument(
+        "--gnat-studio-dir",
+        dest="gnat_studio_dir",
+        type=Path,
+        help="path to the GNAT Studio settings directory (default: %(default)s)",
+        default=Path.home() / ".gnatstudio",
+    )
     parser_setup.set_defaults(func=setup)
 
     args = parser.parse_args(argv[1:])
@@ -407,9 +414,9 @@ def validate(args: argparse.Namespace) -> None:
         raise fatal_error from e
 
 
-def setup(_args: argparse.Namespace) -> None:
+def setup(args: argparse.Namespace) -> None:
     gnatstudio_dir = resource_filename("ide", "gnatstudio/")
-    plugins_dir = Path.home() / ".gnatstudio/plug-ins"
+    plugins_dir = args.gnat_studio_dir / "plug-ins"
     if not plugins_dir.exists():
         plugins_dir.mkdir(parents=True, exist_ok=True)
     print(f'Installing RecordFlux plugin into "{plugins_dir}"')
