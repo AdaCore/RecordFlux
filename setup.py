@@ -48,7 +48,7 @@ setup(
         "pydotplus >=2, <3",
         "ruamel.yaml >=0.17, <0.18",
         "z3-solver >=4, <5",
-        "RecordFlux-parser ==0.11.0",
+        "RecordFlux-parser ==0.12.0",
     ],
     extras_require={
         "devel": [
