@@ -345,19 +345,20 @@ class Generator:
         if not message.fields:
             return units
 
-        context: list[ContextItem] = []
+        context: list[ContextItem] = [WithClause(self._prefix * const.TYPES_PACKAGE)]
+        body_context: list[ContextItem] = []
 
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
-                    WithClause(self._prefix * const.TYPES_PACKAGE),
                     WithClause(self._prefix * const.BUILTIN_TYPES_PACKAGE),
                     WithClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                     UsePackageClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ]
             )
 
-        context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+        if any(isinstance(field_type, Scalar) for field_type in message.field_types.values()):
+            body_context.append(WithClause(self._prefix * const.TYPES_OPERATIONS_PACKAGE))
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -374,7 +375,7 @@ class Generator:
             elif isinstance(field_type, Sequence):
                 context.append(WithClause(self._prefix * field_type.identifier))
 
-        unit = self._create_unit(message.identifier, context)
+        unit = self._create_unit(message.identifier, context, body_context=body_context)
         units[message.identifier] = unit
 
         scalar_fields = {}

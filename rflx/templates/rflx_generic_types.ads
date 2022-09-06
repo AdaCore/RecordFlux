@@ -28,28 +28,9 @@ is
 
    subtype Bit_Length is Custom_Bit_Length;
 
-   function "+" (Left : Index; Right : Length) return Index is
-      (Index (Length (Left) + Right))
-   with
-     Pre =>
-       Length (Left) <= Length'Last - Right;
-
    function "+" (Left : Index; Right : Index) return Index is abstract;
 
-   function "-" (Left : Index; Right : Index) return Length is
-      (Length (Left) - Length (Right))
-   with
-     Pre =>
-       Length (Left) >= Length'First + Length (Right);
-
    function "-" (Left : Index; Right : Index) return Index is abstract;
-
-   function "-" (Left : Index; Right : Length) return Index is
-      (Index (Length (Left) - Right))
-   with
-     Pre =>
-       Right < Length'Last
-       and then Length (Left) >= Length (Index'First) + Right;
 
    pragma Compile_Time_Error (Index'First /= 1, "Index'First must be 1");
 
@@ -69,8 +50,6 @@ is
                               "Bit_Length'Last must be equal to Length'Last * 8");
 
    subtype U64 is {prefix}RFLX_Arithmetic.U64;
-
-   use type U64;
 
    subtype Base_Integer is {prefix}RFLX_Arithmetic.Base_Integer;
 
@@ -101,92 +80,6 @@ is
 
    type Byte_Order is (High_Order_First, Low_Order_First);
 
-   function Extract
-      (Buffer : Bytes_Ptr;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order) return U64
-   with
-     Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
-        and then Last <= Buffer'Last
-        and then Size in 1 .. U64'Size
-        and then First <= Last
-        and then Last - First <= Index'Last - 1
-        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)
-        and then (Offset'Pos (Off) + Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1),
-    Post =>
-       (if Size < U64'Size then Extract'Result < 2**Size);
-
-   function Extract
-      (Buffer : Bytes_Ptr;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order) return Base_Integer
-   with
-     Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
-        and then Last <= Buffer'Last
-        and then Size in 1 .. 63
-        and then First <= Last
-        and then Last - First <= Index'Last - 1
-        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)
-        and then (Offset'Pos (Off) + Size - 1) / Byte'Size <= Natural'Size
-        and then (Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size)) < Long_Integer'Size - 1),
-    Post =>
-       (U64 (Extract'Result) < 2**Size);
-
-   procedure Insert
-      (Val    : U64;
-       Buffer : Bytes_Ptr;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order)
-   with
-     Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
-        and then Last <= Buffer'Last
-        and then Size in 1 .. U64'Size
-        and then Fits_Into (Val, Size)
-        and then First <= Last
-        and then Last - First <= Index'Last - 1
-        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
-     Post =>
-       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
-
-   procedure Insert
-      (Val    : Base_Integer;
-       Buffer : Bytes_Ptr;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order)
-   with
-     Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
-        and then Last <= Buffer'Last
-        and then Size in 1 .. 63
-        and then Fits_Into (Val, Size)
-        and then First <= Last
-        and then Last - First <= Index'Last - 1
-        and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
-     Post =>
-       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
-
-   procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
-
    pragma Warnings (Off, "precondition is always False");
 
    function Unreachable return Boolean is (False) with Pre => False;
@@ -198,5 +91,7 @@ is
    pragma Warnings (On, "precondition is always False");
 
    procedure Lemma_Size (Val : Base_Integer; Size : Positive) renames {prefix}RFLX_Arithmetic.Lemma_Size;
+
+   procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 
 end {prefix}RFLX_Generic_Types;

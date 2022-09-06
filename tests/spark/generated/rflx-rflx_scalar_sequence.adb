@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+with RFLX.RFLX_Types.Operations;
 
 package body RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode
@@ -46,7 +47,7 @@ is
       Offset       : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
    begin
       if Buffer_First >= Ctx.Buffer'First and Buffer_Last <= Ctx.Buffer'Last and Buffer_First <= Buffer_Last then
-         Ctx.Next_Element := Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
+         Ctx.Next_Element := RFLX.RFLX_Types.Operations.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
          if Valid_Element (Ctx) then
             if Size (Ctx) = 0 then
                Ctx.First_Element := Ctx.Next_Element;
@@ -75,7 +76,7 @@ is
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - (Last_Bit mod 8)) mod 8);
       if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
-         Insert (To_Base_Int (Value), Ctx.Buffer, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
+         RFLX.RFLX_Types.Operations.Insert (To_Base_Int (Value), Ctx.Buffer, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then
          Ctx.First_Element := To_Base_Int (Value);

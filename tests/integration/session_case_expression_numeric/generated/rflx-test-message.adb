@@ -1,5 +1,6 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types.Operations;
 
 package body RFLX.Test.Message with
   SPARK_Mode
@@ -137,7 +138,7 @@ is
              8);
       Byte_Order : constant RFLX_Types.Byte_Order := RFLX_Types.High_Order_First;
    begin
-      return RFLX_Types.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
+      return RFLX_Types.Operations.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -267,7 +268,7 @@ is
    begin
       Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
       RFLX_Types.Lemma_Size (Val, Positive (Size));
-      RFLX_Types.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+      RFLX_Types.Operations.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
    procedure Set_Value (Ctx : in out Context; Val : RFLX.Test.Tiny_Int) is
