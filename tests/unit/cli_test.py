@@ -469,16 +469,20 @@ def test_fail_fast() -> None:
     )
 
 
-def test_setup_gnat_studio_plugin() -> None:
-    cli.main(["rflx", "setup_ide"])
-    plugin = Path.home() / ".gnatstudio/plug-ins/recordflux.py"
+def test_setup_gnat_studio_plugin(tmp_path: Path) -> None:
+    gnat_studio_dir = tmp_path / ".gnatstudio"
+    gnat_studio_dir.mkdir(parents=True, exist_ok=True)
+    args = ["rflx", "setup_ide", "--gnat-studio-dir", str(gnat_studio_dir)]
+
+    # Install plugin into empty dir
+    cli.main(args)
+    plugin = gnat_studio_dir / "plug-ins/recordflux.py"
     assert plugin.exists()
     assert plugin.is_file()
 
     # Install with plugin dir already present
     plugin.unlink()
-    cli.main(["rflx", "setup_ide"])
-    plugin = Path.home() / ".gnatstudio/plug-ins/recordflux.py"
+    cli.main(args)
     assert plugin.exists()
     assert plugin.is_file()
 
