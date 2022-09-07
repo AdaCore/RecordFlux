@@ -35,6 +35,7 @@ Generator:
 
 - Style of Ada comments (#816)
 - Detect when a generated file would overwrite an existing file (#993)
+- Move operators and operations on types into separate child packages (#1126)
 
 ### Removed
 
