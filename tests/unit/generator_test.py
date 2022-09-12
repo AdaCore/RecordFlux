@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Sequence, Tuple, Type
+from typing import Callable, Sequence, Set, Tuple, Type
 
 import pkg_resources
 import pytest
@@ -12,6 +12,7 @@ from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import ada, expression as expr, typing_ as rty
+from rflx.common import file_name
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
 from rflx.generator import Generator, common, const
 from rflx.generator.allocator import AllocatorGenerator
@@ -80,31 +81,48 @@ def test_unexpected_type(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "debug, debug_expected",
+    [
+        (Debug.NONE, set()),
+        (Debug.BUILTIN, set()),
+        (Debug.EXTERNAL, {"rflx_debug.ads"}),
+    ],
+)
+@pytest.mark.parametrize(
     "prefix, library_files, top_level_package, expected",
     [
-        ("RFLX", True, True, ["rflx.ads", *[f"rflx-{f}" for f in const.LIBRARY_FILES]]),
-        ("RFLX", True, False, [f"rflx-{f}" for f in const.LIBRARY_FILES]),
-        ("RFLX", False, True, ["rflx.ads"]),
-        ("RFLX", False, False, []),
-        ("", True, True, const.LIBRARY_FILES),
-        ("", True, False, const.LIBRARY_FILES),
-        ("", False, True, []),
-        ("", False, False, []),
+        ("RFLX", True, True, {"rflx.ads"} | {f"rflx-{f}" for f in const.LIBRARY_FILES}),
+        ("RFLX", True, False, {f"rflx-{f}" for f in const.LIBRARY_FILES}),
+        ("RFLX", False, True, {"rflx.ads"}),
+        ("RFLX", False, False, set()),
+        ("", True, True, set(const.LIBRARY_FILES)),
+        ("", True, False, set(const.LIBRARY_FILES)),
+        ("", False, True, set()),
+        ("", False, False, set()),
     ],
 )
 def test_generate(
-    prefix: str, library_files: bool, top_level_package: bool, expected: list[str], tmp_path: Path
+    debug: Debug,
+    debug_expected: Set[str],
+    prefix: str,
+    library_files: bool,
+    top_level_package: bool,
+    expected: Set[str],
+    tmp_path: Path,
 ) -> None:
-    Generator(prefix, reproducible=True).generate(
+    Generator(prefix, reproducible=True, debug=debug).generate(
         Model(), Integration(), tmp_path, library_files, top_level_package
     )
-    for filename in expected:
-        if prefix:
-            assert (tmp_path / filename).read_text() == (
-                GENERATED_DIR / filename
-            ).read_text(), filename
-        else:
-            assert (tmp_path / filename).exists()
+    present = {f.name for f in tmp_path.glob("*.ad?")}
+    assert present == expected | (
+        {(f"{file_name(prefix)}-{f}" if prefix else f) for f in debug_expected}
+        if library_files
+        else set()
+    )
+
+    if prefix and debug == Debug.NONE:
+        for f in present:
+            assert (tmp_path / f).read_text() == (GENERATED_DIR / f).read_text(), f"Error in {f}"
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
@@ -2533,3 +2551,222 @@ def test_session_with_only_null_state(tmp_path: Path) -> None:
     )
     model = Model(types=[], sessions=[session])
     assert_compilable_code(model, Integration(), tmp_path)
+
+
+def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
+    types = [
+        mty.RangeInteger(
+            "P::T",
+            first=expr.Number(0),
+            last=expr.Sub(
+                expr.Pow(expr.Number(2), expr.Number(constants.MAX_SCALAR_SIZE)), expr.Number(1)
+            ),
+            size=expr.Number(constants.MAX_SCALAR_SIZE),
+        )
+    ]
+    Generator(reproducible=True).generate(
+        Model(types=types), Integration(), tmp_path, library_files=False, top_level_package=False
+    )
+    assert (tmp_path / "p.ads").exists()
+    assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
+        '''\
+        pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+        pragma Warnings (Off, "redundant conversion");
+        with RFLX_Types;
+
+        package P with
+          SPARK_Mode
+        is
+
+           type T is range 0 .. 2**63 - 1 with
+             Size =>
+               63;
+
+           pragma Warnings (Off, "unused variable ""Val""");
+
+           pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
+
+           function Valid_T (Val : RFLX_Types.Base_Integer) return Boolean is
+             (True);
+
+           pragma Warnings (On, "formal parameter ""Val"" is not referenced");
+
+           pragma Warnings (On, "unused variable ""Val""");
+
+           function To_Base_Integer (Val : P.T) return RFLX_Types.Base_Integer is
+             (RFLX_Types.Base_Integer (Val));
+
+           function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
+             (P.T (Val))
+            with
+             Pre =>
+               Valid_T (Val);
+
+        end P;
+        '''
+    )
+
+
+@pytest.mark.parametrize(
+    "always_valid, expected",
+    [
+        (
+            False,
+            """\
+            pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+            pragma Warnings (Off, "redundant conversion");
+            with RFLX_Types;
+
+            package P with
+              SPARK_Mode
+            is
+
+               type T is (E1) with
+                 Size =>
+                   63;
+               for T use (E1 => 1);
+
+               use type RFLX_Types.Base_Integer;
+
+               function Valid_T (Val : RFLX_Types.Base_Integer) return Boolean is
+                 (Val in 1);
+
+               function To_Base_Integer (Enum : P.T) return RFLX_Types.Base_Integer is
+                 ((case Enum is
+                      when E1 =>
+                         1));
+
+               pragma Warnings (Off, "unreachable branch");
+
+               function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
+                 ((case Val is
+                      when 1 =>
+                         E1,
+                      when others =>
+                         P.T'Last))
+                with
+                 Pre =>
+                   Valid_T (Val);
+
+               pragma Warnings (On, "unreachable branch");
+
+            end P;
+            """,
+        ),
+        (
+            True,
+            """\
+            pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+            pragma Warnings (Off, "redundant conversion");
+            with RFLX_Types;
+
+            package P with
+              SPARK_Mode
+            is
+
+               type T_Enum is (E1) with
+                 Size =>
+                   63;
+               for T_Enum use (E1 => 1);
+
+               type T (Known : Boolean := False) is
+                  record
+                     case Known is
+                        when True =>
+                           Enum : T_Enum;
+                        when False =>
+                           Raw : RFLX_Types.Base_Integer;
+                     end case;
+                  end record;
+
+               function Valid_T (Unused_Val : RFLX_Types.Base_Integer) return Boolean is
+                 (True);
+
+               function Valid_T (Val : T) return Boolean is
+                 ((if Val.Known then True else Valid_T (Val.Raw) and Val.Raw not in 1));
+
+               function To_Base_Integer (Enum : P.T_Enum) return RFLX_Types.Base_Integer is
+                 ((case Enum is
+                      when E1 =>
+                         1));
+
+               function To_Actual (Enum : T_Enum) return P.T is
+                 ((True, Enum));
+
+               function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
+                 ((case Val is
+                      when 1 =>
+                         (True, E1),
+                      when others =>
+                         (False, Val)))
+                with
+                 Pre =>
+                   Valid_T (Val);
+
+               function To_Base_Integer (Val : P.T) return RFLX_Types.Base_Integer is
+                 ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
+
+            end P;
+            """,
+        ),
+    ],
+)
+def test_generate_enumeration_base_type_use(
+    always_valid: bool, expected: str, tmp_path: Path
+) -> None:
+    types = [
+        mty.Enumeration(
+            "P::T",
+            literals=[("E1", expr.Number(1))],
+            size=expr.Number(constants.MAX_SCALAR_SIZE),
+            always_valid=always_valid,
+        )
+    ]
+    Generator(reproducible=True).generate(
+        Model(types=types), Integration(), tmp_path, library_files=False, top_level_package=False
+    )
+    assert (tmp_path / "p.ads").exists()
+    assert (tmp_path / "p.ads").read_text() == textwrap.dedent(expected)
+
+
+def test_generate_field_size_optimization() -> None:
+    message = Message(
+        "P::Message",
+        [
+            Link(INITIAL, Field("Length")),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                size=expr.Add(expr.Size(expr.Variable("Length")), expr.Number(8)),
+            ),
+            Link(
+                Field("Data"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("Length"): models.UNIVERSAL_LENGTH,
+            Field("Data"): mty.OPAQUE,
+        },
+    )
+    structure = create_structure("", message)
+    assert (
+        ada.ExpressionFunctionDeclaration(
+            specification=ada.FunctionSpecification(
+                identifier=ID("Field_Size_Length"),
+                parameters=[
+                    ada.Parameter(identifiers=[ID("Struct")], type_identifier=ID("Structure"))
+                ],
+                return_type=ID("RFLX_Types::Bit_Length"),
+            ),
+            expression=ada.Number(value=16),
+        )
+        in structure.private
+    )
+
+
+def test_generate_string_substitution() -> None:
+    subst = substitution(models.DEFINITE_MESSAGE, "")
+    assert subst(expr.String("abc")) == expr.Aggregate(
+        expr.Number(97), expr.Number(98), expr.Number(99)
+    )
