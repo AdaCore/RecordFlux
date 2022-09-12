@@ -637,6 +637,7 @@ def test_range_subtype() -> None:
 
 def test_derived_type() -> None:
     assert str(ada.DerivedType("A", "B")) == "type A is new B;"
+    assert str(ada.DerivedType("A", "B", [])) == "type A is new B with null record;"
     assert (
         str(ada.DerivedType("A", "B", [ada.Component("C", "D")]))
         == "type A is new B with\n   record\n      C : D;\n   end record;"
@@ -776,3 +777,16 @@ def test_parameter() -> None:
 def test_raise_statement() -> None:
     assert str(ada.RaiseStatement("X")) == "raise X;"
     assert str(ada.RaiseStatement("X", ada.String("Y"))) == 'raise X with "Y";'
+
+
+def test_concatenation() -> None:
+    assert str(ada.Concatenation(ada.String("X"), ada.String("Y"))) == '"X" & "Y"'
+
+
+def test_for_loop() -> None:
+    assert str(ada.ForOf("X", ada.Variable("Y"), [ada.NullStatement()])) == textwrap.dedent(
+        """\
+        for X of Y loop
+           null;
+        end loop;"""
+    )

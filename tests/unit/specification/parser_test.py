@@ -11,7 +11,17 @@ from _pytest.monkeypatch import MonkeyPatch
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, OPAQUE, Field, Link, Message, ModularInteger
+from rflx.model import (
+    BOOLEAN,
+    FINAL,
+    INITIAL,
+    OPAQUE,
+    Enumeration,
+    Field,
+    Link,
+    Message,
+    ModularInteger,
+)
 from rflx.model.message import ByteOrder
 from rflx.specification import cache, parser
 from tests.const import SPEC_DIR
@@ -3012,3 +3022,25 @@ def test_parse_error_duplicate_transition_desc() -> None:
         """,
         r"^<stdin>:21:30: parser: error: Expected 'end', got ','$",
     )
+
+
+def test_enumeration() -> None:
+    p = parser.Parser()
+    p.parse_string(
+        """\
+        package Test is
+           type E is (E1 => 1, E2 => 2) with Always_Valid => False, Size => 8;
+        end Test;
+        """
+    )
+    m = p.create_model()
+    assert m.types == [
+        BOOLEAN,
+        OPAQUE,
+        Enumeration(
+            "Test::E",
+            [("E1", expr.Number(1)), ("E2", expr.Number(2))],
+            size=expr.Number(8),
+            always_valid=False,
+        ),
+    ]
