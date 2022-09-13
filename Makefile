@@ -77,7 +77,7 @@ test_python_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis" tests
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
