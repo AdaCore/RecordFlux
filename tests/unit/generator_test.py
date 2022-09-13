@@ -104,6 +104,7 @@ def test_unexpected_type(tmp_path: Path) -> None:
         ("", False, False, set()),
     ],
 )
+# pylint: disable-next = too-many-arguments
 def test_generate(
     debug: Debug,
     debug_expected: Set[str],
