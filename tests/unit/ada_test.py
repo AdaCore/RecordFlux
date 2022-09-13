@@ -790,3 +790,18 @@ def test_for_loop() -> None:
            null;
         end loop;"""
     )
+
+
+def test_declarative_items() -> None:
+    assert str(
+        ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")])
+    ) == textwrap.dedent(
+        """\
+        package P
+        is
+
+           X : Boolean;
+
+        end P;
+        """
+    )
