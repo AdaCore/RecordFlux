@@ -14,5 +14,6 @@
   "coverage-gutters.coverageReportFileName": "build/coverage/index.html",
   "coverage-gutters.highlightdark": "",
   "coverage-gutters.highlightlight": "",
-  "coverage-gutters.showGutterCoverage": false
+  "coverage-gutters.showGutterCoverage": false,
+  "python.linting.pylintEnabled": true
 }
