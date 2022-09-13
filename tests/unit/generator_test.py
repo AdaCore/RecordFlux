@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-import textwrap
 from typing import Callable, Sequence, Set, Tuple, Type
 
 import pkg_resources
@@ -12,12 +12,13 @@ import pytest
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
-from rflx import ada, expression as expr, typing_ as rty, const as constants
+from rflx import ada, const as constants, expression as expr, typing_ as rty
 from rflx.common import file_name
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
 from rflx.generator import Generator, common, const
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.generator.common import Debug
+from rflx.generator.message import create_structure
 from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
 from rflx.identifier import ID
 from rflx.integration import Integration
@@ -31,6 +32,7 @@ from rflx.model import (
     statement as stmt,
     type_ as mty,
 )
+from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from tests.const import GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_compilable_code, assert_equal, assert_equal_code
@@ -2767,7 +2769,7 @@ def test_generate_field_size_optimization() -> None:
 
 
 def test_generate_string_substitution() -> None:
-    subst = substitution(models.DEFINITE_MESSAGE, "")
+    subst = common.substitution(models.DEFINITE_MESSAGE, "")
     assert subst(expr.String("abc")) == expr.Aggregate(
         expr.Number(97), expr.Number(98), expr.Number(99)
     )
