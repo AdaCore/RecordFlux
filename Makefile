@@ -103,10 +103,13 @@ test_specs:
 	cd examples/specs && $(PYTEST) tests/test_specs.py
 
 test_installation:
-	rm -rf $(build-dir)/venv
+	rm -rf $(build-dir)/venv $(build-dir)/test_installation
+	mkdir -p $(build-dir)/test_installation
 	python3 -m venv $(build-dir)/venv
 	$(build-dir)/venv/bin/pip install .
 	$(build-dir)/venv/bin/rflx --version
+	HOME=$(build-dir)/test_installation $(build-dir)/venv/bin/rflx setup_ide
+	test -f $(build-dir)/test_installation/.gnatstudio/plug-ins/recordflux.py
 
 prove: prove_tests prove_python_tests prove_apps
 
