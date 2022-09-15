@@ -55,7 +55,7 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
     parser.add_argument(
         "--unsafe",
         action="store_true",
-        help=("allow unsafe options (WARNING: may lead to erronous behavior"),
+        help="allow unsafe options (WARNING: may lead to erronous behavior)",
     )
 
     subparsers = parser.add_subparsers(dest="subcommand")
