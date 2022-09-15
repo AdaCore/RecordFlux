@@ -32,11 +32,11 @@ By default the following dependencies are installed:
 
 Optionally, the GNAT Studio IDE integration for RecordFlux can be installed.
 It enables syntax highlighting for RecordFlux specifications and allows for running RecordFlux from within GNAT Studio.
-In the RecordFlux source directory do:
+After installing RecordFlux do:
 
 .. code:: console
 
-   $ make install_gnatstudio
+   $ rflx setup_ide
 
 .. |GNAT Alire Crate| image:: https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/gnat_native.json
    :target: https://alire.ada.dev/crates/gnat_native.html
