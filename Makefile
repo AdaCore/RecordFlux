@@ -12,7 +12,7 @@ build-dir := build
 	format \
 	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
 	prove prove_tests prove_python_tests prove_apps \
-	install_gnatstudio install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
+	install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	generate \
 	doc \
 	dist \
@@ -119,9 +119,6 @@ prove_python_tests:
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove
 	$(MAKE) -C examples/apps/dhcp_client prove
-
-install_gnatstudio:
-	install -m 644 ide/gnatstudio/recordflux.py ${HOME}/.gnatstudio/plug-ins/recordflux.py
 
 install_devel:
 	tools/check_pip_version.py
