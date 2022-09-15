@@ -27,6 +27,17 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ source venv/bin/activate
    $ make install_devel
 
+The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
+To make use of the coverage data, the `Coverage Gutters <https://github.com/ryanluker/vscode-coverage-gutters>` extension needs to be installed.
+The path to GNAT and SPARK has to be configured to allow compilation and proof tests to succeed.
+After configuring the path to the desired tool versions on the command line, a file called ``.env`` should be created as follows:
+
+.. code:: console
+
+   $ echo "PATH=$PATH" > .env
+
+Note, that this file has to be recreated whenever different tool versions are to be used.
+
 Tools
 =====
 
