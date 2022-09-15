@@ -38,7 +38,7 @@ setup(
         "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Networking",
     ],
-    packages=find_packages(include=("rflx", "rflx.*")),
+    packages=find_packages(include=("rflx", "rflx.*", "ide")),
     package_data={"rflx": ["py.typed", "templates/*"], "ide": ["gnatstudio/*"]},
     python_requires=">=3.8",
     install_requires=[
