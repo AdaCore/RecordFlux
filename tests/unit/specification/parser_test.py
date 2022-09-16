@@ -29,6 +29,88 @@ from tests.data import models
 
 T = ModularInteger("Test::T", expr.Number(256))
 
+# Generated from the Ada 202x LRM source code (http://ada-auth.org/arm-files/ARM_SRC.zip) retrieved
+# on 2022-09-16 using the following command:
+#
+#  $ sed -ne "s/.*@key{\([^} ]*\)}.*/\"\L\1\",/p" *.MSS *.mss | sort -u
+#
+ADA_KEYWORDS = [
+    "abort",
+    "abs",
+    "abstract",
+    "accept",
+    "access",
+    "aliased",
+    "all",
+    "and",
+    "array",
+    "at",
+    "begin",
+    "body",
+    "case",
+    "constant",
+    "declare",
+    "delay",
+    "delta",
+    "digits",
+    "do",
+    "else",
+    "elsif",
+    "end",
+    "entry",
+    "exception",
+    "exit",
+    "for",
+    "function",
+    "generic",
+    "goto",
+    "if",
+    "in",
+    "interface",
+    "is",
+    "limited",
+    "loop",
+    "mod",
+    "new",
+    "not",
+    "null",
+    "of",
+    "or",
+    "others",
+    "out",
+    "overriding",
+    "package",
+    "parallel",
+    "pragma",
+    "private",
+    "procedure",
+    "protected",
+    "raise",
+    "range",
+    "record",
+    "rem",
+    "renames",
+    "requeue",
+    "return",
+    "reverse",
+    "select",
+    "separate",
+    "some",
+    "subtype",
+    "synchronized",
+    "tagged",
+    "task",
+    "terminate",
+    "then",
+    "type",
+    "until",
+    "use",
+    "when",
+    "while",
+    "with",
+    "xor",
+]
+
 
 def to_dict(node: Any) -> Any:  # type: ignore[misc]
     if node is None:
@@ -1901,29 +1983,31 @@ def test_parse_error_multiple_initial_nodes() -> None:
     )
 
 
-def test_parse_error_reserved_word_in_type_name() -> None:
+@pytest.mark.parametrize("keyword", ADA_KEYWORDS)
+def test_parse_error_reserved_word_in_type_name(keyword: str) -> None:
     assert_error_string(
-        """\
+        f"""\
         package Test is
-           type Type is mod 256;
+           type {keyword.title()} is mod 256;
         end Test;
         """,
-        r'^<stdin>:2:9: parser: error: reserved word "Type" used as identifier',
+        rf'^<stdin>:2:9: parser: error: reserved word "{keyword.title()}" used as identifier',
     )
 
 
-def test_parse_error_reserved_word_in_message_field() -> None:
+@pytest.mark.parametrize("keyword", [*ADA_KEYWORDS, "message"])
+def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
     assert_error_string(
-        """\
+        f"""\
         package Test is
            type T is mod 256;
            type PDU is
               message
-                 Message : T;
+                 {keyword.title()} : T;
               end message;
         end Test;
         """,
-        r'^<stdin>:5:10: parser: error: reserved word "Message" used as identifier',
+        rf'^<stdin>:5:10: parser: error: reserved word "{keyword.title()}" used as identifier',
     )
 
 
@@ -2804,12 +2888,13 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
 
 
-def test_parse_reserved_words_as_enum_literals() -> None:
+@pytest.mark.parametrize("keyword", ADA_KEYWORDS)
+def test_parse_reserved_words_as_enum_literals(keyword: str) -> None:
     p = parser.Parser()
     p.parse_string(
-        """\
+        f"""\
         package Test is
-           type A is (Reset => 1, package => 2) with Size => 8;
+           type A is (Reset => 1, {keyword.title()} => 2) with Size => 8;
         end Test;
         """
     )
