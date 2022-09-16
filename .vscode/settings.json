@@ -15,5 +15,6 @@
   "coverage-gutters.highlightdark": "",
   "coverage-gutters.highlightlight": "",
   "coverage-gutters.showGutterCoverage": false,
-  "python.linting.pylintEnabled": true
+  "python.linting.pylintEnabled": true,
+  "python.testing.pytestEnabled": true
 }
