@@ -355,7 +355,7 @@ grammar.add_rules(
     extended_if_condition=Pick("if", grammar.extended_expression),
     then=ast.Then(
         "then",
-        Or(ast.NullID("null"), grammar.unqualified_identifier),
+        grammar.unqualified_identifier,
         Opt("with", List(grammar.aspect, sep=",")),
         Opt(grammar.if_condition),
     ),

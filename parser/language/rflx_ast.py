@@ -11,10 +11,6 @@ class AbstractID(RFLXNode):
     """Base class for identifiers."""
 
 
-class NullID(AbstractID):
-    """'null' identifier."""
-
-
 class UnqualifiedID(AbstractID):
     """Simple, unqualified identifiers, i.e. identifiers without a package part (e.g. "Foo")."""
 
