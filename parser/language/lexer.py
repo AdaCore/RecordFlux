@@ -74,8 +74,6 @@ class Token(LexerToken):  # type: ignore[misc]
     Opaque = WithText()
     Present = WithText()
     Valid = WithText()
-    Initial = WithText()
-    Final = WithText()
 
     # Symbols
     Dot = WithText()
@@ -224,8 +222,6 @@ rflx_lexer.add_rules(
     (Literal("Opaque"), Token.Opaque),
     (Literal("Present"), Token.Present),
     (Literal("Valid"), Token.Valid),
-    (Literal("Initial"), Token.Initial),
-    (Literal("Final"), Token.Final),
     (Literal(";"), Token.Semicolon),
     (Literal("::"), Token.DoubleColon),
     (Literal(":="), Token.Assignment),

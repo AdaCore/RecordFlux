@@ -57,8 +57,6 @@ grammar.add_rules(
             lexer.Opaque,
             lexer.Present,
             lexer.Valid,
-            lexer.Initial,
-            lexer.Final,
             lexer.And,
             lexer.Or,
             lexer.Case,
@@ -476,16 +474,6 @@ grammar.add_rules(
         grammar.formal_function_declaration,
         grammar.channel_declaration,
     ),
-    session_aspects=ast.SessionAspects(
-        "with",
-        "Initial",
-        "=>",
-        grammar.unqualified_identifier,
-        ",",
-        "Final",
-        "=>",
-        grammar.unqualified_identifier,
-    ),
     renaming_declaration=ast.RenamingDecl(
         grammar.unqualified_identifier,
         ":",
@@ -546,7 +534,7 @@ grammar.add_rules(
     ),
     transition=ast.Transition(
         "goto",
-        grammar.unqualified_identifier,
+        Or(ast.NullID("null"), grammar.unqualified_identifier),
         Opt("with", grammar.description_aspect),
     ),
     state_body=ast.StateBody(
@@ -572,7 +560,6 @@ grammar.add_rules(
         Opt(List(grammar.session_parameter, sep=";"), ";"),
         "session",
         grammar.unqualified_identifier,
-        grammar.session_aspects,
         "is",
         Opt(List(grammar.declaration, sep=";"), ";"),
         "begin",

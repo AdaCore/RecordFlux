@@ -3260,9 +3260,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                generic
                   X : Channel with Readable, Writable;
                   with function F return Boolean;
-               session Session with
-                  Initial => A,
-                  Final => B
+               session Session
                is
                   Y : Boolean := True;
                begin
@@ -3281,11 +3279,6 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
          """,
             {
                 "_kind": "SessionDecl",
-                "aspects": {
-                    "_kind": "SessionAspects",
-                    "final": {"_kind": "UnqualifiedID", "_value": "B"},
-                    "initial": {"_kind": "UnqualifiedID", "_value": "A"},
-                },
                 "declarations": [
                     {
                         "_kind": "VariableDecl",

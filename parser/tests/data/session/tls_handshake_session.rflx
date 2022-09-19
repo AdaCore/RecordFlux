@@ -37,10 +37,7 @@ package TLS_Handshake_Session is
       with function Update_Hash (Context : Hash_Context; Data : Opaque) return Hash_Context;
       with function Validate_Certificate_Verify_Signature (Certificate_Message : TLS_Handshake::Certificate; Certificate_Verify_Message : TLS_Handshake::Certificate_Verify; Transcript_Hash : GreenTLS::Content) return GreenTLS::Signature_Validation_Result;
       with function Validate_Server_Certificate (Certificate_Message : TLS_Handshake::Certificate; Configuration : GreenTLS::Configuration; Connection : GreenTLS::Connection) return GreenTLS::Certificate_Validation_Result;
-   session Client with
-      Initial => START,
-      Final => TERMINATED
-   is
+   session Client is
       Application_Layer_Protocol_Negotiation_Received : Boolean := False;
       Binders : TLS_Handshake::PSK_Binder_Entries;
       Binders_Length : TLS_Handshake::Binders_Length;

@@ -13,10 +13,7 @@ package TLS_Record_Session is
       Heartbeat_Data_Channel : Channel with Readable, Writable;
       with function Decrypt (Server_Key_Update_Message : GreenTLS::Key_Update_Message; Server_Sequence_Number : GreenTLS::Sequence_Number; Encrypted_Record : Opaque) return TLS_Record::TLS_Inner_Plaintext;
       with function Encrypt (Client_Key_Update_Message : GreenTLS::Key_Update_Message; Client_Sequence_Number : GreenTLS::Sequence_Number; Fragment : Opaque) return GreenTLS::Content;
-   session Client with
-      Initial => IDLE,
-      Final => TERMINATED
-   is
+   session Client is
       Alert_Message : TLS_Alert::Alert;
       Application_Control_Message : GreenTLS::Application_Control_Message;
       Ciphertext : GreenTLS::Content;

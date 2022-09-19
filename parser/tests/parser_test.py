@@ -346,10 +346,6 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.channel_declaration_rule,
         ),
         (
-            "with Initial => {keyword}, Final => {keyword}",
-            librflxlang.GrammarRule.session_aspects_rule,
-        ),
-        (
             "{keyword} : {keyword} renames {keyword}",
             librflxlang.GrammarRule.renaming_declaration_rule,
         ),
@@ -390,8 +386,7 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.state_rule,
         ),
         (
-            "generic session {keyword} with "
-            "Initial => {keyword}, Final => {keyword} is begin end {keyword}",
+            "generic session {keyword} is begin end {keyword}",
             librflxlang.GrammarRule.session_declaration_rule,
         ),
         (

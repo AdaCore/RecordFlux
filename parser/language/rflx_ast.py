@@ -145,13 +145,6 @@ class FormalDecl(RFLXNode):
     """Base class for generic formal session declarations."""
 
 
-class SessionAspects(RFLXNode):
-    """Session aspects (Initial, Final)."""
-
-    initial = Field(type=UnqualifiedID)
-    final = Field(type=UnqualifiedID)
-
-
 @abstract
 class LocalDecl(RFLXNode):
     """Base class for session or state local declarations."""
@@ -267,7 +260,7 @@ class Description(RFLXNode):
 class Transition(RFLXNode):
     """Unconditional session state transition."""
 
-    target = Field(type=UnqualifiedID)
+    target = Field(type=AbstractID)
     description = Field(type=Description)
 
 
@@ -300,7 +293,6 @@ class SessionDecl(Declaration):
 
     parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
-    aspects = Field(type=SessionAspects)
     declarations = Field(type=LocalDecl.list)
     states = Field(type=State.list)
     end_identifier = Field(type=UnqualifiedID)
