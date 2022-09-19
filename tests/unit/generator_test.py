@@ -287,9 +287,7 @@ def test_prefixed_type_identifier() -> None:
 
 DUMMY_SESSION = Session(
     identifier="P::S",
-    initial=ID("State"),
-    final=ID("State"),
-    states=[State("State")],
+    states=[State("State", [Transition("null")])],
     declarations=[],
     parameters=[],
     types=[*models.UNIVERSAL_MODEL.types],
@@ -2549,10 +2547,8 @@ def test_session_substitution_equality(
 
 @pytest.mark.compilation
 def test_session_with_only_null_state(tmp_path: Path) -> None:
-    state = State("St", transitions=[])
-    session = Session(
-        "P::S", initial="St", final="St", states=[state], declarations=[], parameters=[], types=[]
-    )
+    state = State("St", [Transition("null")])
+    session = Session("P::S", states=[state], declarations=[], parameters=[], types=[])
     model = Model(types=[], sessions=[session])
     assert_compilable_code(model, Integration(), tmp_path)
 

@@ -348,8 +348,8 @@ Protocol Sessions
     Protocol Sessions [§S]
 
 A session defines the dynamic behavior of a protocol using a finite state machine.
+The first defined state is considered the initial state.
 The external interface of a session is defined by parameters.
-The initial and final state is defined by aspects.
 The declaration part enables the declaration of session global variables.
 The main part of a session definition are the state definitions.
 
@@ -359,10 +359,7 @@ The main part of a session definition are the state definitions.
    session:
           : generic
           :  { `session_parameter` }
-          : session `name` with
-          :    Initial => state_`name`,
-          :    Final => state_`name`
-          : is
+          : session `name` is
           :  { `session_declaration` }
           : begin
           :    `state`
@@ -378,10 +375,7 @@ The main part of a session definition are the state definitions.
       X : Channel with Readable, Writable;
       with function F return T;
       with function G (P : T) return Boolean;
-   session S with
-      Initial => A,
-      Final => B
-   is
+   session S is
       Y : Boolean := False;
    begin
       state A
@@ -392,14 +386,12 @@ The main part of a session definition are the state definitions.
       begin
          X'Read (M);
       transition
-         goto B
+         goto null
             with Desc => "rfc1149.txt+45:4-47:8"
             if Z = True
                and G (F) = True
          goto A
       end A;
-
-      state B is null state;
    end S
 
 Session Parameters
@@ -606,7 +598,6 @@ A state defines the to be executed actions and the transitions to subsequent sta
               :[ exception
               :     `transition` ]
               :  end `name`
-              :| state `name` is null state
          description_aspect: Desc => `string`
 
 **Static Semantics**
@@ -621,11 +612,6 @@ An exception transition must be defined just in case any action might lead to a 
 
 Exception transitions are currently also used for other cases.
 This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
-
-..
-    Null State [§S-S-N]
-
-A null state does not contain any actions or transitions, and represents the final state of a session state machine.
 
 **Dynamic Semantics**
 
@@ -653,11 +639,6 @@ If no condition could be fulfilled or no conditional transitions were defined, t
          if Z = True and G (F) = True
       goto A
    end A
-
-.. doc-check: rflx,state,6
-.. code:: ada
-
-   state B is null state
 
 State Declarations
 ^^^^^^^^^^^^^^^^^^
@@ -716,6 +697,7 @@ State Transitions
 State transitions define the conditions for the change to subsequent states.
 An arbitrary number of conditional transitions can be defined.
 The last transition in a state definition is the default transition, which does not contain any condition.
+The transition target must be either a state name or `null`, which represents the final state.
 
 **Syntax**
 
@@ -1710,10 +1692,7 @@ By convention one protocol is specified in one package.
       generic
          Input : Channel with Readable;
          Output : Channel with Writable;
-      session Validator with
-         Initial => Validate,
-         Final => Error
-      is
+      session Validator is
          Frame : Ethernet::Frame;
       begin
          state Validate
@@ -1721,8 +1700,6 @@ By convention one protocol is specified in one package.
          begin
             Input'Read (Frame);
          transition
-            goto Error
-               if Frame'Valid and Frame.Destination = 16#FFFF_FFFF_FFFF#
             goto Forward
                if Frame'Valid
             goto Validate
@@ -1735,9 +1712,6 @@ By convention one protocol is specified in one package.
          transition
             goto Validate
          end Forward;
-
-         state Error is null state;
-
       end Validator;
 
    end Ethernet;

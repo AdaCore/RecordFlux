@@ -14,11 +14,19 @@ CLI:
 - `rflx setup_ide` subcommand for installing IDE integration (#795)
 - `rflx` option `--unsafe` (#987)
 
+### Changed
+
+- Syntax for defining initial and final states of session (#700)
+
 ### Removed
 
 Specification:
 
 - Private types (#1156)
+
+### Fixed
+
+- Non-null state accepted as final state (#1130)
 
 ## [0.6.0] - 2022-08-31
 

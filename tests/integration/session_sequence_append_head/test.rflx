@@ -4,10 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Writable; -- §S-P-C-W
-   session Session with
-      Initial => Global,
-      Final => Terminated
-   is
+   session Session is
       Messages : TLV::Messages; -- §S-D-V-T-MS, §S-D-V-E-N
       Tags : TLV::Tags; -- §S-D-V-T-SS, §S-D-V-E-N
       Message : TLV::Message; -- §S-D-V-T-M, §S-D-V-E-N
@@ -26,9 +23,9 @@ package Test is
          goto Reply_1
             if Message_Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
                and Tag = TLV::Msg_Error -- §S-S-T-V, §S-S-T-L
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Global;
 
       state Reply_1 is
@@ -57,19 +54,17 @@ package Test is
          goto Reply_2
             if Message_Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
                and Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Local;
 
       state Reply_2 is
       begin
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Reply_2;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

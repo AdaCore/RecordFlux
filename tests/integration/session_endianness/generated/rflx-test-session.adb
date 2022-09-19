@@ -27,12 +27,12 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_endianness/test.rflx:19:10
+      --  tests/integration/session_endianness/test.rflx:16:10
       Messages.Msg_LE_Nested.Verify_Message (Ctx.P.In_Msg_Ctx);
       if Messages.Msg_LE_Nested.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -54,24 +54,24 @@ is
         Ghost;
    begin
       pragma Assert (Copy_Invariant);
-      --  tests/integration/session_endianness/test.rflx:28:10
+      --  tests/integration/session_endianness/test.rflx:25:10
       Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx);
       if Messages.Msg_LE.Available_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) < 64 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
       if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
          Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
       if Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
          Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
@@ -97,7 +97,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_endianness/test.rflx:37:10
+      --  tests/integration/session_endianness/test.rflx:34:10
       Ctx.P.Next_State := S_Read2;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -119,12 +119,12 @@ is
         Ghost;
    begin
       pragma Assert (Read2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:44:10
+      --  tests/integration/session_endianness/test.rflx:41:10
       Messages.Msg_LE.Verify_Message (Ctx.P.In_Msg2_Ctx);
       if Messages.Msg_LE.Byte_Size (Ctx.P.In_Msg2_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy2;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Read2_Invariant);
    end Read2;
@@ -146,24 +146,24 @@ is
         Ghost;
    begin
       pragma Assert (Copy2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:53:10
+      --  tests/integration/session_endianness/test.rflx:50:10
       Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx);
       if Messages.Msg.Available_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) < 64 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
       if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
          Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
       if Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_D) then
          Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
@@ -189,7 +189,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:62:10
+      --  tests/integration/session_endianness/test.rflx:59:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply2_Invariant);
    end Reply2;
@@ -259,7 +259,7 @@ is
       Ctx.P.Slots.Slot_Ptr_4 := Out_Msg2_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -276,7 +276,7 @@ is
             null;
          when S_Read2 =>
             Messages.Msg_LE.Reset (Ctx.P.In_Msg2_Ctx, Ctx.P.In_Msg2_Ctx.First, Ctx.P.In_Msg2_Ctx.First - 1);
-         when S_Copy2 | S_Reply2 | S_Terminated =>
+         when S_Copy2 | S_Reply2 | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -296,7 +296,7 @@ is
             Copy2 (Ctx);
          when S_Reply2 =>
             Reply2 (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

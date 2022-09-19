@@ -1754,7 +1754,10 @@ def test_parse_ethernet_spec() -> None:
                                                         },
                                                     },
                                                 },
-                                                "target": {"_kind": "NullID", "_value": "null"},
+                                                "target": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "null",
+                                                },
                                             }
                                         ],
                                         "type_identifier": {
@@ -2223,10 +2226,7 @@ def test_create_model_session_locations() -> None:
         package Test is
            generic
               with function F return Boolean;
-           session Session with
-              Initial => A,
-              Final => B
-           is
+           session Session is
               Y : Boolean := F;
            begin
               state A is
@@ -2234,12 +2234,10 @@ def test_create_model_session_locations() -> None:
               begin
                  Z := False;
               transition
-                 goto B
+                 goto null
                     if Z = False
                  goto A
               end A;
-
-              state B is null state;
            end Session;
         end Test;
         """
@@ -2907,10 +2905,7 @@ def test_parse_reserved_word_as_channel_name() -> None:
         package Test is
            generic
               Channel : Channel with Readable, Writable;
-           session Session with
-              Initial => A,
-              Final => B
-           is
+           session Session is
            begin
               state A
               is
@@ -2918,10 +2913,8 @@ def test_parse_reserved_word_as_channel_name() -> None:
               begin
               transition
                  goto A if Avail
-                 goto B
+                 goto null
               end A;
-
-              state B is null state;
            end Session;
         end Test;
         """
@@ -2959,10 +2952,7 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
               end message;
            generic
               C : Channel with Readable, Writable, Readable;
-           session S with
-              Initial => I,
-              Final => F
-           is
+           session S is
               M : Test::Message;
            begin
               state I
@@ -2970,9 +2960,8 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
               begin
                  C'Read (M);
               transition
-                 goto F
+                 goto null
               end I;
-              state F is null state;
            end S;
         end Test;
         """,
@@ -3054,10 +3043,7 @@ def test_parse_error_duplicate_state_desc() -> None:
               end message;
            generic
               C : Channel with Readable, Writable;
-           session S with
-              Initial => I,
-              Final => F
-           is
+           session S is
               M : Test::Message;
            begin
               state I
@@ -3066,13 +3052,12 @@ def test_parse_error_duplicate_state_desc() -> None:
               begin
                  C'Read (M);
               transition
-                 goto F
+                 goto null
               end I;
-              state F is null state;
            end S;
         end Test;
         """,
-        r"^<stdin>:16:27: parser: error: Expected 'is', got ','$",
+        r"^<stdin>:13:27: parser: error: Expected 'is', got ','$",
     )
 
 
@@ -3087,10 +3072,7 @@ def test_parse_error_duplicate_transition_desc() -> None:
               end message;
            generic
               C : Channel with Readable, Writable;
-           session S with
-              Initial => I,
-              Final => F
-           is
+           session S is
               M : Test::Message;
            begin
               state I
@@ -3098,14 +3080,13 @@ def test_parse_error_duplicate_transition_desc() -> None:
               begin
                  C'Read (M);
               transition
-                 goto F
+                 goto null
                     with Desc => "D1", Desc => "D2"
               end I;
-              state F is null state;
            end S;
         end Test;
         """,
-        r"^<stdin>:21:30: parser: error: Expected 'end', got ','$",
+        r"^<stdin>:18:30: parser: error: Expected 'end', got ','$",
     )
 
 

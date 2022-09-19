@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:27:10
+      --  tests/integration/session_message_optimization/test.rflx:24:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -38,7 +38,7 @@ is
       then
          Ctx.P.Next_State := S_Process;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -60,7 +60,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:41:10
+      --  tests/integration/session_message_optimization/test.rflx:38:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
             RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
@@ -69,28 +69,28 @@ is
             Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
             Get_Option_Data (Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
             if not Test.Option_Data.Valid_Structure (Option_Data) then
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Process_Invariant);
                goto Finalize_Process;
             end if;
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_message_optimization/test.rflx:43:10
+      --  tests/integration/session_message_optimization/test.rflx:40:10
       Local_Length := Option_Data.Length;
-      --  tests/integration/session_message_optimization/test.rflx:45:10
+      --  tests/integration/session_message_optimization/test.rflx:42:10
       Universal.Option.Reset (Ctx.P.Option_Ctx);
-      --  tests/integration/session_message_optimization/test.rflx:47:10
+      --  tests/integration/session_message_optimization/test.rflx:44:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Universal.Option.Available_Space (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) < Test.Option_Data.Field_Size_Data (Option_Data) + 24 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -114,14 +114,14 @@ is
             RFLX_Universal_Option_Set_Data (Ctx.P.Option_Ctx, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Local_Length > 0 then
          Ctx.P.Next_State := S_Reply;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
@@ -142,7 +142,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:62:10
+      --  tests/integration/session_message_optimization/test.rflx:59:10
       Ctx.P.Next_State := S_Trigger_Error;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -163,14 +163,14 @@ is
         Ghost;
    begin
       pragma Assert (Trigger_Error_Invariant);
-      --  tests/integration/session_message_optimization/test.rflx:71:10
+      --  tests/integration/session_message_optimization/test.rflx:68:10
       Get_Option_Data (Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
       if not Test.Option_Data.Valid_Structure (Null_Option_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
-      --  tests/integration/session_message_optimization/test.rflx:73:10
+      --  tests/integration/session_message_optimization/test.rflx:70:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);
@@ -182,7 +182,7 @@ is
          goto Finalize_Trigger_Error;
       end if;
       Universal.Option.Set_Length (Ctx.P.Option_Ctx, Null_Option_Data.Length);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Trigger_Error_Invariant);
       <<Finalize_Trigger_Error>>
    end Trigger_Error;
@@ -202,7 +202,7 @@ is
         Ghost;
    begin
       pragma Assert (Error_Invariant);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Error_Invariant);
    end Error;
 
@@ -243,7 +243,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Option_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -256,7 +256,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Trigger_Error | S_Error | S_Terminated =>
+         when S_Process | S_Reply | S_Trigger_Error | S_Error | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -274,7 +274,7 @@ is
             Trigger_Error (Ctx);
          when S_Error =>
             Error (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

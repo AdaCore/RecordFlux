@@ -26,7 +26,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_variable_initialization/test.rflx:17:10
+      --  tests/integration/session_variable_initialization/test.rflx:14:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -47,22 +47,22 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_variable_initialization/test.rflx:25:10
+      --  tests/integration/session_variable_initialization/test.rflx:22:10
       if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
          Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_variable_initialization/test.rflx:26:10
+      --  tests/integration/session_variable_initialization/test.rflx:23:10
       Ctx.P.Uninitialized_Global := Local;
-      --  tests/integration/session_variable_initialization/test.rflx:27:10
+      --  tests/integration/session_variable_initialization/test.rflx:24:10
       Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
-      --  tests/integration/session_variable_initialization/test.rflx:29:10
+      --  tests/integration/session_variable_initialization/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -75,7 +75,7 @@ is
       if Local < Ctx.P.Global then
          Ctx.P.Next_State := S_Reply;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
@@ -95,8 +95,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_variable_initialization/test.rflx:42:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_variable_initialization/test.rflx:39:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -124,7 +124,7 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -137,7 +137,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -151,7 +151,7 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

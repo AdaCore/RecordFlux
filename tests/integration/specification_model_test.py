@@ -1,4 +1,5 @@
 import re
+import textwrap
 from pathlib import Path
 from typing import Sequence
 
@@ -304,12 +305,13 @@ def test_model_name_conflict_sessions() -> None:
            type X is mod 2 ** 8;
 
            generic
-           session X with
-              Initial => A,
-              Final => A
-           is
+           session X is
            begin
-              state A is null state;
+              state A is
+              begin
+              transition
+                 goto null
+              end A;
            end X;
         end Test;
         """,
@@ -343,19 +345,14 @@ def test_model_errors_in_type_and_session() -> None:
            type T is mod 2 ** 256;
 
            generic
-           session S with
-              Initial => A,
-              Final => A
-           is
+           session S is
            begin
            end S;
         end Test;
         """,
         r"^"
         r'<stdin>:2:18: model: error: modulus of "T" exceeds limit \(2\*\*63\)\n'
-        r"<stdin>:4:4: model: error: empty states\n"
-        r'<stdin>:6:18: model: error: initial state "A" does not exist in "Test::S"\n'
-        r'<stdin>:7:16: model: error: final state "A" does not exist in "Test::S"'
+        r"<stdin>:4:4: model: error: empty states"
         r"$",
     )
 
@@ -566,8 +563,6 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
     )
     session = Session(
         "Test::Session",
-        "A",
-        "C",
         [
             State(
                 "A",
@@ -585,7 +580,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                 actions=[],
                 transitions=[
                     Transition(
-                        "C",
+                        "null",
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
                             expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
@@ -596,7 +591,6 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                 ],
                 description="rfc1149.txt+51:4-52:9",
             ),
-            State("C"),
         ],
         [
             decl.VariableDeclaration("M", "Test::Message"),
@@ -714,65 +708,67 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
 )
 def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
     p = parser.Parser()
-    content = """package Test is
-   type Message_Type is (MT_Null => 0, MT_Data => 1) with Size => 8;
+    content = textwrap.dedent(
+        """\
+        package Test is
+           type Message_Type is (MT_Null => 0, MT_Data => 1) with Size => 8;
 
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
-   type ValueT is mod 256;
+           type Value is mod 256;
 
-   type Message is
-      message
-         Message_Type : Message_Type;
-         Length : Length;
-         Value : ValueT;
-      end message;
+           type Message is
+              message
+                 Message_Type : Message_Type;
+                 Length : Length;
+                 Value : Value;
+              end message;
 
-   generic
-       Channel : Channel with Readable, Writable;
-   session Session with
-       Initial => Start,
-       Final => Terminated
-   is
-       Msg : Message;
-   begin
-      state Start is
-      begin
-         Channel'Read (Msg);
-      transition
-         goto Reply
-            if Msg'Valid = True
-            and Msg.Message_Type = MT_Data
-            and Msg.Length = 1
-         goto Terminated
-      end Start;
-      state Reply is
-      begin
-         Msg := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
-      transition
-         goto Msg_Write
-      exception
-         goto Terminated
-      end Reply;
-      state Msg_Write is
-      begin
-         Channel'Write (Msg);
-      transition
-         goto Next
-      end Msg_Write;
-      state Next is
-         Msg2 : Message;
-      begin
-         Msg2 := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
-      transition
-         goto Terminated
-      exception
-         goto Terminated
-      end Next;
-      state Terminated is null state;
-   end Session;
-   end Test;
+           generic
+               Channel : Channel with Readable, Writable;
+           session Session is
+               Msg : Message;
+           begin
+              state Start is
+              begin
+                 Channel'Read (Msg);
+              transition
+                 goto Reply
+                    if Msg'Valid = True
+                    and Msg.Message_Type = MT_Data
+                    and Msg.Length = 1
+                 goto null
+              end Start;
+
+              state Reply is
+              begin
+                 Msg := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
+              transition
+                 goto Msg_Write
+              exception
+                 goto null
+              end Reply;
+
+              state Msg_Write is
+              begin
+                 Channel'Write (Msg);
+              transition
+                 goto Next
+              end Msg_Write;
+
+              state Next is
+                 Msg2 : Message;
+              begin
+                 Msg2 := Message'(Message_Type => MT_Data, Length => 1, Value => 2);
+              transition
+                 goto null
+              exception
+                 goto null
+              end Next;
+           end Session;
+        end Test;
 """
+    )
     test_spec = tmp_path / "test.rflx"
     test_rfi = tmp_path / "test.rfi"
     test_spec.write_text(content, encoding="utf-8")

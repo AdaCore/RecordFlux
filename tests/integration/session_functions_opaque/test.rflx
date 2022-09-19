@@ -8,10 +8,7 @@ package Test is
       --  Channel : Channel with Readable, Writable; -- §S-P-C-RW
       -- §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-S
       with function Check_Size (Size : Size; Data : Opaque) return Boolean;
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
    begin
       state Start is
       begin
@@ -62,7 +59,7 @@ package Test is
          -- §S-S-A-A-CL, §S-E-CL-SAT, §S-E-CL-OAT
          Valid := Check_Size (Scalar_Sequence'Size, Scalar_Sequence'Opaque);
       transition
-         goto Terminated
+         goto null
             if Valid -- §S-S-T-V
          goto Error -- §S-S-T-N
       exception
@@ -72,10 +69,8 @@ package Test is
       state Error is
       begin
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Error;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

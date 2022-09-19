@@ -28,7 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_conversion/test.rflx:16:10
+      --  tests/integration/session_conversion/test.rflx:13:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -36,7 +36,7 @@ is
       then
          Ctx.P.Next_State := S_Process;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -56,12 +56,12 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_conversion/test.rflx:26:10
+      --  tests/integration/session_conversion/test.rflx:23:10
       if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
          Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -85,8 +85,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_conversion/test.rflx:35:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_conversion/test.rflx:32:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -127,7 +127,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Inner_Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -140,7 +140,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -154,7 +154,7 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

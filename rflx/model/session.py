@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Dict, Final, Iterable, List, Mapping, Optional, Sequence
 
 from rflx import expression as expr, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
@@ -32,11 +32,12 @@ class Transition(Base):
         return verbose_repr(self, ["target", "condition", "description"])
 
     def __str__(self) -> str:
+        target = self.target if self.target != FINAL_STATE.identifier else "null"
         with_aspects = f'\n   with Desc => "{self.description}"' if self.description else ""
         if_condition = (
             f"\n   if {indent_next(str(self.condition), 6)}" if self.condition != expr.TRUE else ""
         )
-        return f"goto {self.target}{with_aspects}{if_condition}"
+        return f"goto {target}{with_aspects}{if_condition}"
 
 
 class State(Base):
@@ -106,10 +107,6 @@ class State(Base):
         return self._actions
 
     @property
-    def is_null(self) -> bool:
-        return not self._transitions
-
-    @property
     def has_exceptions(self) -> bool:
         return any(
             isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
@@ -135,7 +132,18 @@ class State(Base):
             for a in self._actions
         )
 
-    def _normalize(self) -> None:  # pylint: disable = too-many-branches
+    def _normalize(self) -> None:
+        self._normalize_transitions()
+        self._normalize_actions()
+
+    def _normalize_transitions(self) -> None:
+        for t in self._transitions:
+            if t.target == ID("null"):
+                t.target = FINAL_STATE.identifier
+        if self._exception_transition and self._exception_transition.target == ID("null"):
+            self._exception_transition.target = FINAL_STATE.identifier
+
+    def _normalize_actions(self) -> None:  # pylint: disable = too-many-branches
         field_assignments: list[stmt.MessageFieldAssignment] = []
         actions: list[stmt.Statement] = []
 
@@ -291,8 +299,6 @@ class AbstractSession(BasicDeclaration):
     def __init__(
         self,
         identifier: StrID,
-        initial: StrID,
-        final: StrID,
         states: Sequence[State],
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
@@ -300,9 +306,7 @@ class AbstractSession(BasicDeclaration):
         location: Location = None,
     ):
         super().__init__(identifier, location)
-        self.initial = ID(initial)
-        self.final = ID(final)
-        self.states = states
+        self.states = [*states, FINAL_STATE] if FINAL_STATE not in states else states
         self.declarations = {d.identifier: d for d in declarations}
         self.parameters = {p.identifier: p for p in parameters}
         self.direct_dependencies = {t.identifier: t for t in types}
@@ -334,8 +338,6 @@ class AbstractSession(BasicDeclaration):
         if isinstance(other, self.__class__):
             return (
                 self.identifier == other.identifier
-                and self.initial == other.initial
-                and self.final == other.final
                 and self.states == other.states
                 and self.declarations == other.declarations
                 and self.parameters == other.parameters
@@ -344,17 +346,20 @@ class AbstractSession(BasicDeclaration):
         return NotImplemented
 
     def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "initial", "states", "declarations", "parameters"])
+        return verbose_repr(self, ["identifier", "states", "declarations", "parameters"])
 
     def __str__(self) -> str:
         parameters = "".join([f"{p};\n" for p in self.parameters.values()])
         declarations = "".join([f"{d};\n" for d in self.declarations.values()])
-        states = "\n\n".join([f"{s};" for s in self.states])
+        states = "\n\n".join([f"{s};" for s in self.states if s != FINAL_STATE])
         return (
-            f"generic\n{indent(parameters, 3)}session {self.identifier.name} with\n"
-            f"   Initial => {self.initial},\n   Final => {self.final}\n"
-            f"is\n{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
+            f"generic\n{indent(parameters, 3)}session {self.identifier.name} is\n"
+            f"{indent(declarations, 3)}begin\n{indent(states, 3)}\nend {self.identifier.name}"
         )
+
+    @property
+    def initial_state(self) -> State:
+        return self.states[0]
 
     @property
     def literals(self) -> Mapping[ID, mty.Type]:
@@ -419,8 +424,6 @@ class Session(AbstractSession):
     def __init__(
         self,
         identifier: StrID,
-        initial: StrID,
-        final: StrID,
         states: Sequence[State],
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
@@ -429,8 +432,6 @@ class Session(AbstractSession):
     ):
         super().__init__(
             identifier,
-            initial,
-            final,
             states,
             declarations,
             parameters,
@@ -446,7 +447,7 @@ class Session(AbstractSession):
             state.optimize()
 
     def _validate_states(self) -> None:
-        if not self.states:
+        if all(s == FINAL_STATE for s in self.states):
             self.error.extend(
                 [("empty states", Subsystem.MODEL, Severity.ERROR, self.location)],
             )
@@ -456,29 +457,7 @@ class Session(AbstractSession):
         self._validate_state_reachability()
 
     def _validate_state_existence(self) -> None:
-        state_identifiers = [s.identifier for s in self.states]
-        if self.initial not in state_identifiers:
-            self.error.extend(
-                [
-                    (
-                        f'initial state "{self.initial}" does not exist in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.initial.location,
-                    )
-                ],
-            )
-        if self.final not in state_identifiers:
-            self.error.extend(
-                [
-                    (
-                        f'final state "{self.final}" does not exist in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.final.location,
-                    )
-                ],
-            )
+        state_identifiers = {s.identifier for s in self.states}
         for s in self.states:
             for t in s.transitions:
                 if t.target not in state_identifiers:
@@ -531,7 +510,7 @@ class Session(AbstractSession):
                 else:
                     inputs[t.target] = [s.identifier]
 
-            if s.identifier != self.initial and s.identifier not in inputs:
+            if s not in [self.initial_state, FINAL_STATE] and s.identifier not in inputs:
                 self.error.extend(
                     [
                         (
@@ -543,7 +522,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-            if s.identifier != self.final and not s.transitions:
+            if s != FINAL_STATE and not s.transitions:
                 self.error.extend(
                     [
                         (
@@ -873,8 +852,6 @@ class UnprovenSession(AbstractSession):
     def __init__(
         self,
         identifier: StrID,
-        initial: StrID,
-        final: StrID,
         states: Sequence[State],
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
@@ -884,8 +861,6 @@ class UnprovenSession(AbstractSession):
         # pylint: disable=useless-super-delegation
         super().__init__(
             identifier,
-            initial,
-            final,
             states,
             declarations,
             parameters,
@@ -896,11 +871,12 @@ class UnprovenSession(AbstractSession):
     def proven(self) -> Session:
         return Session(
             self.identifier,
-            self.initial,
-            self.final,
             self.states,
             list(self.declarations.values()),
             list(self.parameters.values()),
             list(self.types.values()),
             self.location,
         )
+
+
+FINAL_STATE: Final[State] = State("Final")

@@ -25,16 +25,16 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:18:10
+      --  tests/integration/session_channel_multiplexing/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_1_Ctx);
-      --  tests/integration/session_channel_multiplexing/test.rflx:19:10
+      --  tests/integration/session_channel_multiplexing/test.rflx:16:10
       Universal.Message.Verify_Message (Ctx.P.Message_2_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply_1;
       elsif Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply_2;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -54,7 +54,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_1_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:30:10
+      --  tests/integration/session_channel_multiplexing/test.rflx:27:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_1_Invariant);
    end Reply_1;
@@ -74,7 +74,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:37:10
+      --  tests/integration/session_channel_multiplexing/test.rflx:34:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;
@@ -116,7 +116,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Message_2_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -130,7 +130,7 @@ is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_1_Ctx, Ctx.P.Message_1_Ctx.First, Ctx.P.Message_1_Ctx.First - 1);
             Universal.Message.Reset (Ctx.P.Message_2_Ctx, Ctx.P.Message_2_Ctx.First, Ctx.P.Message_2_Ctx.First - 1);
-         when S_Reply_1 | S_Reply_2 | S_Terminated =>
+         when S_Reply_1 | S_Reply_2 | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -144,7 +144,7 @@ is
             Reply_1 (Ctx);
          when S_Reply_2 =>
             Reply_2 (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

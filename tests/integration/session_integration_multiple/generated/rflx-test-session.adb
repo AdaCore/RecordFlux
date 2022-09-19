@@ -24,9 +24,9 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_integration_multiple/test.rflx:15:10
+      --  tests/integration/session_integration_multiple/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.M_Ctx);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Start_Invariant);
    end Start;
 
@@ -53,7 +53,7 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := M_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -66,7 +66,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.M_Ctx, Ctx.P.M_Ctx.First, Ctx.P.M_Ctx.First - 1);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -76,7 +76,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Start (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

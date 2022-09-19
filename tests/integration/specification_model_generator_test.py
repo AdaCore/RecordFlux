@@ -355,7 +355,7 @@ def test_transitive_type_use(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type U8  is mod 2 ** 8;
+           type U8 is mod 2 ** 8;
 
            type M1 is
               message
@@ -597,10 +597,7 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
 
           generic
              Transport : Channel with Readable, Writable;
-          session Session with
-             Initial => Receive,
-             Final => Error
-          is
+          session Session is
              Packet : Packet;
           begin
              state Receive
@@ -610,7 +607,7 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
              transition
                 goto Process
                    if Packet'Valid
-                goto Error
+                goto null
              end Receive;
 
              state Process
@@ -623,7 +620,7 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
              transition
                 goto Send
              exception
-                goto Error
+                goto null
              end Process;
 
              state Send
@@ -633,8 +630,6 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
              transition
                 goto Receive
              end Send;
-
-             state Error is null state;
           end Session;
 
        end Test;
@@ -664,10 +659,7 @@ def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> 
               end message;
 
            generic
-           session S with
-              Initial => Init,
-              Final   => Done
-           is
+           session S is
               M : Message;
               D : Data;
               E : Elems;
@@ -679,12 +671,10 @@ def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> 
                                Elems => E,
                                Data  => D.Value);
               transition
-                 goto Done
+                 goto null
               exception
-                 goto Done
+                 goto null
               end Init;
-
-              state Done is null state;
            end S;
 
         end Test;
@@ -716,10 +706,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
            generic
               Channel : Channel with Readable;
               Output : Channel with Writable;
-           session Session with
-              Initial => Read,
-              Final => Terminated
-           is
+           session Session is
              Incoming : M1;
              Outgoing : M2;
            begin
@@ -736,17 +723,15 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
               transition
                  goto Write
               exception
-                 goto Terminated
+                 goto null
               end Process;
 
               state Write is
               begin
                 Output'Write (Outgoing);
               transition
-                 goto Terminated
+                 goto null
               end Write;
-
-              state Terminated is null state;
            end Session;
 
         end Test;
@@ -772,20 +757,15 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
 
            generic
               Channel : Channel with {mode};
-           session Session with
-              Initial => Init,
-              Final => Terminated
-           is
+           session Session is
              Message : Message;
            begin
               state Init is
               begin
                 Channel'{action} (Message);
               transition
-                 goto Terminated
+                 goto null
               end Init;
-
-              state Terminated is null state;
            end Session;
 
         end Test;
@@ -806,10 +786,7 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
         package Test is
 
            generic
-           session Session with
-              Initial => A,
-              Final => D
-           is
+           session Session is
            begin
               state A is
               begin
@@ -826,10 +803,8 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
               state C is
               begin
               transition
-                 goto D
+                 goto null
               end C;
-
-              state D is null state;
            end Session;
 
         end Test;
@@ -872,10 +847,7 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
         package Test is
 
            generic
-           session Session with
-              Initial => Init,
-              Final => Terminated
-           is
+           session Session is
               Global : Boolean := False;
            begin
               state Init is
@@ -884,12 +856,10 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
                  Global := {local_rel};
                  Local := {global_rel};
               transition
-                 goto Terminated
+                 goto null
                     if {global_rel} and {local_rel}
-                 goto Terminated
+                 goto null
               end Init;
-
-              state Terminated is null state;
            end Session;
 
         end Test;

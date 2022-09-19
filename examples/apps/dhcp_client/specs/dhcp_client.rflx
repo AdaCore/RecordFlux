@@ -7,10 +7,7 @@ package DHCP_Client is
 
    generic
       Channel : Channel with Readable, Writable;
-   session Session with
-      Initial => Create_Discover,
-      Final => Terminated
-   is
+   session Session is
       Discover : DHCP::Message;
       Offer : DHCP::Message;
       Request : DHCP::Message;
@@ -189,16 +186,14 @@ package DHCP_Client is
       state Success is
       begin
       transition
-         goto Terminated
+         goto null
       end Success;
 
       state Failure is
       begin
       transition
-         goto Terminated
+         goto null
       end Failure;
-
-      state Terminated is null state;
    end Session;
 
 end DHCP_Client;

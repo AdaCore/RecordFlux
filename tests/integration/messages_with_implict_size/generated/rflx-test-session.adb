@@ -25,7 +25,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/messages_with_implict_size/test.rflx:16:10
+      --  tests/integration/messages_with_implict_size/test.rflx:13:10
       Universal.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -46,19 +46,19 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/messages_with_implict_size/test.rflx:24:10
+      --  tests/integration/messages_with_implict_size/test.rflx:21:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
       if
          not (Universal.Message.Size (Ctx.P.M_R_Ctx) <= 32768
           and then Universal.Message.Size (Ctx.P.M_R_Ctx) mod RFLX_Types.Byte'Size = 0
           and then Universal.Message.Structural_Valid (Ctx.P.M_R_Ctx, Universal.Message.F_Data))
       then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) < Universal.Message.Field_Size (Ctx.P.M_R_Ctx, Universal.Message.F_Data) + 8 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -88,17 +88,17 @@ is
                   Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
                end;
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Process_Invariant);
                goto Finalize_Process;
             end if;
          else
-            Ctx.P.Next_State := S_Terminated;
+            Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -122,8 +122,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/messages_with_implict_size/test.rflx:33:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/messages_with_implict_size/test.rflx:30:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -164,7 +164,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := M_S_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -177,7 +177,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.M_R_Ctx, Ctx.P.M_R_Ctx.First, Ctx.P.M_R_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -191,7 +191,7 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

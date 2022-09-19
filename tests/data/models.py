@@ -555,11 +555,8 @@ DEFINITE_MESSAGE = Message(
 
 SESSION = Session(
     identifier="P::S",
-    initial="A",
-    final="B",
     states=[
-        State("A", transitions=[Transition(target="B")]),
-        State("B"),
+        State("A", transitions=[Transition(target="null")]),
     ],
     declarations=[],
     parameters=[],

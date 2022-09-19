@@ -14,6 +14,7 @@ from .message import (  # noqa: F401
 )
 from .model import Model as Model  # noqa: F401
 from .session import (  # noqa: F401
+    FINAL_STATE as FINAL_STATE,
     AbstractSession as AbstractSession,
     Session as Session,
     State as State,

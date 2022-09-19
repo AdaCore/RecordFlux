@@ -38,8 +38,6 @@ def test_str() -> None:
         str(
             Session(
                 "P::S",
-                "A",
-                "C",
                 [
                     State(
                         "A",
@@ -57,7 +55,7 @@ def test_str() -> None:
                         actions=[],
                         transitions=[
                             Transition(
-                                "C",
+                                "null",
                                 condition=expr.And(
                                     expr.Equal(expr.Variable("Z"), expr.TRUE),
                                     expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
@@ -68,7 +66,6 @@ def test_str() -> None:
                         ],
                         description="rfc1149.txt+51:4-52:9",
                     ),
-                    State("C"),
                 ],
                 [
                     decl.VariableDeclaration("M", "TLV::Message"),
@@ -90,10 +87,7 @@ def test_str() -> None:
                X : Channel with Readable, Writable;
                with function F return Boolean;
                with function G (P : Boolean) return Boolean;
-            session S with
-               Initial => A,
-               Final => C
-            is
+            session S is
                M : TLV::Message;
                Y : Boolean := False;
             begin
@@ -110,14 +104,12 @@ def test_str() -> None:
                   Z : Boolean := Y;
                begin
                transition
-                  goto C
+                  goto null
                      with Desc => "rfc1149.txt+45:4-47:8"
                      if Z = True
                         and G (F) = True
                   goto A
                end B;
-
-               state C is null state;
             end S"""
         ),
     )
@@ -130,11 +122,8 @@ def test_invalid_name() -> None:
     ):
         Session(
             identifier=ID("P::S::X", location=Location((10, 20))),
-            initial=ID("Start"),
-            final=ID("End"),
             states=[
-                State("Start", transitions=[Transition(target=ID("End"))]),
-                State("End"),
+                State("Start", transitions=[Transition(target=ID("null"))]),
             ],
             declarations=[],
             parameters=[],
@@ -149,67 +138,8 @@ def test_empty_states() -> None:
         parameters=[],
         types=[],
         location=Location((1, 1)),
-        regex=(
-            r"^"
-            r"<stdin>:1:1: model: error: empty states\n"
-            r'<stdin>:1:2: model: error: initial state "Start" does not exist in "P::S"\n'
-            r'<stdin>:1:3: model: error: final state "End" does not exist in "P::S"'
-            r"$"
-        ),
+        regex=r"^<stdin>:1:1: model: error: empty states$",
     )
-
-
-def test_invalid_initial() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            r"^"
-            r'<stdin>:1:2: model: error: initial state "NonExistent" does not exist in "P::S"\n'
-            r'<stdin>:10:20: model: error: unreachable state "Start"'
-            r"$"
-        ),
-    ):
-        Session(
-            identifier="P::S",
-            initial=ID("NonExistent", location=Location((1, 2))),
-            final=ID("End"),
-            states=[
-                State(
-                    "Start",
-                    transitions=[Transition(target=ID("End"))],
-                    location=Location((10, 20)),
-                ),
-                State("End"),
-            ],
-            declarations=[],
-            parameters=[],
-            types=[],
-            location=Location((1, 1)),
-        )
-
-
-def test_invalid_final() -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=(
-            r"^"
-            r'<stdin>:1:3: model: error: final state "NonExistent" does not exist in "P::S"\n'
-            r'<stdin>:10:20: model: error: detached state "End"'
-            r"$"
-        ),
-    ):
-        Session(
-            identifier="P::S",
-            initial=ID("Start"),
-            final=ID("NonExistent", location=Location((1, 3))),
-            states=[
-                State("Start", transitions=[Transition(target=ID("End"))]),
-                State("End", location=Location((10, 20))),
-            ],
-            declarations=[],
-            parameters=[],
-            types=[],
-        )
 
 
 def test_invalid_target_state() -> None:
@@ -219,10 +149,8 @@ def test_invalid_target_state() -> None:
                 "Start",
                 transitions=[
                     Transition(target=ID("NonExistent", location=Location((10, 20)))),
-                    Transition(target=ID("End")),
                 ],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -241,15 +169,14 @@ def test_duplicate_state() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 20)),
             ),
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 30)),
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -283,7 +210,7 @@ def test_multiple_duplicate_states() -> None:
             ),
             State(
                 "Bar",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 50)),
             ),
             State(
@@ -293,7 +220,7 @@ def test_multiple_duplicate_states() -> None:
             ),
             State(
                 "Bar",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 70)),
             ),
             State(
@@ -301,7 +228,6 @@ def test_multiple_duplicate_states() -> None:
                 transitions=[Transition(target=ID("Bar"))],
                 location=Location((10, 80)),
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -324,13 +250,12 @@ def test_multiple_duplicate_states() -> None:
 def test_unreachable_state() -> None:
     assert_session_model_error(
         states=[
-            State("Start", transitions=[Transition(target=ID("End"))]),
+            State("Start", transitions=[Transition(target=ID("null"))]),
             State(
                 "Unreachable",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 20)),
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -342,18 +267,17 @@ def test_unreachable_state() -> None:
 def test_multiple_unreachable_states() -> None:
     assert_session_model_error(
         states=[
-            State("Start", transitions=[Transition(target=ID("End"))]),
+            State("Start", transitions=[Transition(target=ID("null"))]),
             State(
                 "Unreachable1",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 20)),
             ),
             State(
                 "Unreachable2",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 location=Location((10, 30)),
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -372,10 +296,9 @@ def test_detached_state() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End")), Transition(target=ID("Detached"))],
+                transitions=[Transition(target=ID("null")), Transition(target=ID("Detached"))],
             ),
             State("Detached", location=Location((10, 20))),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -390,14 +313,13 @@ def test_multiple_detached_states() -> None:
             State(
                 "Start",
                 transitions=[
-                    Transition(target=ID("End")),
+                    Transition(target=ID("null")),
                     Transition(target=ID("Detached1")),
                     Transition(target=ID("Detached2")),
                 ],
             ),
             State("Detached1", location=Location((10, 20))),
             State("Detached2", location=Location((10, 30))),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -418,7 +340,7 @@ def test_undeclared_variable() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Variable("Undefined", location=Location((10, 20))), expr.TRUE
                         ),
@@ -428,7 +350,6 @@ def test_undeclared_variable() -> None:
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -444,7 +365,7 @@ def test_undefined_type() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(expr.Variable("Defined"), expr.TRUE),
                     ),
                     Transition(
@@ -452,7 +373,6 @@ def test_undefined_type() -> None:
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Defined", "Undefined_Type", location=Location((10, 20)))
@@ -466,14 +386,12 @@ def test_undefined_type() -> None:
 def test_declared_variable() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Variable("Defined"), expr.Variable("TLV::Msg_Data")
                         ),
@@ -483,7 +401,6 @@ def test_declared_variable() -> None:
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
         parameters=[],
@@ -494,14 +411,12 @@ def test_declared_variable() -> None:
 def test_declared_local_variable() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(expr.Variable("Local"), expr.Variable("Global")),
                     ),
                     Transition(
@@ -510,7 +425,6 @@ def test_declared_local_variable() -> None:
                 ],
                 declarations=[decl.VariableDeclaration("Local", "Boolean")],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -535,7 +449,7 @@ def test_undeclared_local_variable() -> None:
                 "State",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Variable("Local", location=Location((10, 20))),
                             expr.Variable("Global"),
@@ -547,7 +461,6 @@ def test_undeclared_local_variable() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -559,14 +472,12 @@ def test_undeclared_local_variable() -> None:
 def test_declared_local_variable_valid() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(expr.Valid(expr.Variable("Global")), expr.TRUE),
                     ),
                     Transition(
@@ -575,7 +486,6 @@ def test_declared_local_variable_valid() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
@@ -586,14 +496,12 @@ def test_declared_local_variable_valid() -> None:
 def test_declared_local_variable_message_field() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Selected(expr.Variable("Global"), "Length"), expr.Number(1)
                         ),
@@ -604,7 +512,6 @@ def test_declared_local_variable_message_field() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
@@ -617,13 +524,12 @@ def test_assignment_to_undeclared_variable() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment("Undefined", expr.FALSE, location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -637,7 +543,7 @@ def test_assignment_from_undeclared_variable() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -645,7 +551,6 @@ def test_assignment_from_undeclared_variable() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -659,8 +564,8 @@ def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -669,7 +574,6 @@ def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -683,11 +587,10 @@ def test_reset_of_undeclared_list() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[stmt.Reset("Undefined", location=Location((10, 20)))],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -701,11 +604,10 @@ def test_reset_incompatible() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[stmt.Reset("Global", location=Location((10, 20)))],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -722,7 +624,7 @@ def test_call_to_undeclared_function() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -733,7 +635,6 @@ def test_call_to_undeclared_function() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -749,7 +650,7 @@ def test_call_undeclared_variable() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -765,7 +666,6 @@ def test_call_undeclared_variable() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -783,7 +683,7 @@ def test_call_invalid_argument_type() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -795,7 +695,6 @@ def test_call_invalid_argument_type() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -819,7 +718,7 @@ def test_call_missing_arguments() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -831,7 +730,6 @@ def test_call_missing_arguments() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -849,7 +747,7 @@ def test_call_too_many_arguments() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -862,7 +760,6 @@ def test_call_too_many_arguments() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -878,16 +775,13 @@ def test_call_too_many_arguments() -> None:
 def test_channel_read() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[stmt.Read("Some_Channel", expr.Variable("Global"))],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Global", "TLV::Message"),
@@ -902,16 +796,13 @@ def test_channel_read() -> None:
 def test_channel_write() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[stmt.Write("Some_Channel", expr.Variable("M"))],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("M", "TLV::Message"),
@@ -928,13 +819,12 @@ def test_channel_read_undeclared() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.Read("Undeclared", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
@@ -948,7 +838,7 @@ def test_channel_read_invalid_type() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.Read(
@@ -958,7 +848,6 @@ def test_channel_read_invalid_type() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
@@ -980,13 +869,12 @@ def test_channel_read_invalid_mode() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.Read("Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "TLV::Message"),
@@ -1009,13 +897,12 @@ def test_channel_write_invalid_mode() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "TLV::Message"),
@@ -1036,16 +923,13 @@ def test_channel_write_invalid_mode() -> None:
 def test_channel_attribute_has_data() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[stmt.VariableAssignment("Result", expr.HasData(expr.Variable("Message")))],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1063,7 +947,7 @@ def test_undeclared_variable_in_function_call() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1079,7 +963,6 @@ def test_undeclared_variable_in_function_call() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -1099,7 +982,7 @@ def test_local_variable_shadows_global() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1109,7 +992,6 @@ def test_local_variable_shadows_global() -> None:
                     decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 30)))],
         parameters=[],
@@ -1129,10 +1011,9 @@ def test_unused_global_variable() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))],
         parameters=[],
@@ -1146,12 +1027,11 @@ def test_unused_local_variable() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[
                     decl.VariableDeclaration("Data", "Boolean", location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -1163,8 +1043,7 @@ def test_unused_local_variable() -> None:
 def test_unused_channel() -> None:
     assert_session_model_error(
         states=[
-            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
-            State("End"),
+            State("Start", transitions=[Transition(target=ID("null"))], declarations=[]),
         ],
         declarations=[],
         parameters=[
@@ -1178,8 +1057,7 @@ def test_unused_channel() -> None:
 def test_unused_function() -> None:
     assert_session_model_error(
         states=[
-            State("Start", transitions=[Transition(target=ID("End"))], declarations=[]),
-            State("End"),
+            State("Start", transitions=[Transition(target=ID("null"))], declarations=[]),
         ],
         declarations=[],
         parameters=[
@@ -1193,21 +1071,18 @@ def test_unused_function() -> None:
 def test_type_declaration() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Greater(expr.Variable("V"), expr.Number(128)),
                     ),
-                    Transition(target=ID("End")),
+                    Transition(target=ID("null")),
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("V", "P::T", location=Location((11, 20)))],
         parameters=[
@@ -1224,14 +1099,13 @@ def test_shadowed_type_declaration() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Greater(expr.Variable("V"), expr.Number(128)),
                     ),
-                    Transition(target=ID("End")),
+                    Transition(target=ID("null")),
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("V", "P::T", location=Location((11, 20)))],
         parameters=[
@@ -1245,14 +1119,12 @@ def test_shadowed_type_declaration() -> None:
 def test_renaming() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Length(expr.Variable("Null_Message")), expr.Number(0)
                         ),
@@ -1263,7 +1135,6 @@ def test_renaming() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1285,7 +1156,7 @@ def test_renaming_invalid() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(
                             expr.Length(expr.Variable("Universal_Message")), expr.Number(0)
                         ),
@@ -1296,7 +1167,6 @@ def test_renaming_invalid() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1326,7 +1196,7 @@ def test_renaming_undefined() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(expr.Length(expr.Variable("M")), expr.Number(0)),
                     ),
                     Transition(
@@ -1335,7 +1205,6 @@ def test_renaming_undefined() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[
             decl.RenamingDeclaration(
@@ -1353,12 +1222,10 @@ def test_renaming_undefined() -> None:
 def test_binding_as_function_parameter() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -1370,7 +1237,6 @@ def test_binding_as_function_parameter() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Result", "Boolean"),
@@ -1386,14 +1252,12 @@ def test_binding_as_function_parameter() -> None:
 def test_for_all() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.ForAllIn(
                             "E",
                             expr.Variable("List"),
@@ -1407,7 +1271,6 @@ def test_for_all() -> None:
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
@@ -1418,13 +1281,11 @@ def test_for_all() -> None:
 def test_append() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.Append(
@@ -1436,7 +1297,6 @@ def test_append() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
@@ -1449,14 +1309,13 @@ def test_append_incompatible() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -1473,14 +1332,13 @@ def test_append_message_unsupported() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.Append("List", expr.Variable("Element", location=Location((10, 20))))
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1498,17 +1356,14 @@ def test_append_message_unsupported() -> None:
 def test_extend() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[stmt.Extend("List", expr.Variable("Element"))],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1524,14 +1379,13 @@ def test_extend_incompatible() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20)))
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -1548,8 +1402,8 @@ def test_message_aggregate_with_undefined_parameter() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -1561,7 +1415,6 @@ def test_message_aggregate_with_undefined_parameter() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("Data", "TLV::Message")],
         parameters=[],
@@ -1575,8 +1428,8 @@ def test_message_aggregate_with_undefined_type() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -1589,7 +1442,6 @@ def test_message_aggregate_with_undefined_type() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "P::Undefined", location=Location((10, 20)))
@@ -1606,13 +1458,11 @@ def test_message_aggregate_with_undefined_type() -> None:
 def test_comprehension() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Result",
@@ -1627,7 +1477,6 @@ def test_comprehension() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("List", "TLV::Messages"),
@@ -1643,8 +1492,8 @@ def test_assignment_opaque_function_undef_parameter() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Data",
@@ -1656,7 +1505,6 @@ def test_assignment_opaque_function_undef_parameter() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1672,13 +1520,11 @@ def test_assignment_opaque_function_undef_parameter() -> None:
 def test_assignment_opaque_function_result() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Data",
@@ -1688,7 +1534,6 @@ def test_assignment_opaque_function_result() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1703,13 +1548,11 @@ def test_assignment_opaque_function_result() -> None:
 def test_assignment_opaque_function_binding() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Data",
@@ -1720,7 +1563,6 @@ def test_assignment_opaque_function_binding() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Data", "Opaque"),
@@ -1737,8 +1579,8 @@ def test_message_field_assignment_with_invalid_field_name() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Message",
@@ -1747,7 +1589,6 @@ def test_message_field_assignment_with_invalid_field_name() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1764,8 +1605,8 @@ def test_message_field_assignment_to_message_parameter() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Message",
@@ -1774,7 +1615,6 @@ def test_message_field_assignment_to_message_parameter() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "Parameterized::Message"),
@@ -1796,8 +1636,8 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Message",
@@ -1806,7 +1646,6 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1827,15 +1666,14 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Message", "Tag", expr.Variable("TLV::Msg_Data"), location=Location((1, 2))
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Tag"),
@@ -1854,13 +1692,11 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
 def test_conversion() -> None:
     Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Converted",
@@ -1871,7 +1707,6 @@ def test_conversion() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1887,8 +1722,8 @@ def test_conversion_undefined() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Converted",
@@ -1900,7 +1735,6 @@ def test_conversion_undefined() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -1923,8 +1757,8 @@ def test_conversion_invalid_argument() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Converted",
@@ -1935,7 +1769,6 @@ def test_conversion_invalid_argument() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "Opaque"),
@@ -1955,8 +1788,8 @@ def test_conversion_invalid() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End")),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.VariableAssignment(
                         "Converted",
@@ -1968,7 +1801,6 @@ def test_conversion_invalid() -> None:
                     )
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
@@ -2008,7 +1840,7 @@ def test_undefined_type_in_parameters(parameters: ty.Sequence[decl.FormalDeclara
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.Equal(expr.Call("X", [expr.TRUE]), expr.TRUE),
                     ),
                     Transition(
@@ -2016,7 +1848,6 @@ def test_undefined_type_in_parameters(parameters: ty.Sequence[decl.FormalDeclara
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=parameters,
@@ -2047,14 +1878,13 @@ def test_undefined_type_in_declarations(declarations: ty.Sequence[decl.BasicDecl
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=declarations,
         parameters=[],
@@ -2087,7 +1917,7 @@ def test_undefined_type_in_local_declarations(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -2095,7 +1925,6 @@ def test_undefined_type_in_local_declarations(
                 ],
                 declarations=declarations,
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -2111,7 +1940,7 @@ def test_type_error_in_variable_declaration() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -2119,7 +1948,6 @@ def test_type_error_in_variable_declaration() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("X", "Boolean", expr.Number(1, location=Location((10, 20))))
@@ -2142,7 +1970,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("End"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
                     ),
                     Transition(
                         target=ID("Start"),
@@ -2150,7 +1978,6 @@ def test_type_error_in_renaming_declaration() -> None:
                 ],
                 declarations=[],
             ),
-            State("End"),
         ],
         declarations=[
             decl.RenamingDeclaration(
@@ -2261,7 +2088,7 @@ def test_conflicting_actions(
                 actions=actions,
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.And(
                             expr.Equal(expr.Variable("X"), expr.TRUE),
                             expr.Equal(expr.Valid("M1"), expr.TRUE),
@@ -2270,11 +2097,10 @@ def test_conflicting_actions(
                         ),
                     ),
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("M1", UNIVERSAL_MESSAGE.identifier),
@@ -2296,7 +2122,7 @@ def test_missing_exception_transition() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
                     stmt.Append(
@@ -2309,7 +2135,6 @@ def test_missing_exception_transition() -> None:
                 ],
                 location=Location((10, 20)),
             ),
-            State("End"),
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
@@ -2323,12 +2148,11 @@ def test_unnecessary_exception_transition() -> None:
         states=[
             State(
                 "Start",
-                transitions=[Transition(target=ID("End"))],
-                exception_transition=Transition(target=ID("End"), location=Location((10, 20))),
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null"), location=Location((10, 20))),
                 declarations=[],
                 actions=[],
             ),
-            State("End"),
         ],
         declarations=[],
         parameters=[],
@@ -2340,8 +2164,6 @@ def test_unnecessary_exception_transition() -> None:
 def test_resolving_of_function_calls() -> None:
     session = Session(
         identifier="P::S",
-        initial=ID("Start"),
-        final=ID("End"),
         states=[
             State(
                 "Start",
@@ -2353,15 +2175,14 @@ def test_resolving_of_function_calls() -> None:
                 ],
                 transitions=[
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                         condition=expr.And(expr.Variable("Global"), expr.Variable("Local")),
                     ),
                     Transition(
-                        target=ID("End"),
+                        target=ID("null"),
                     ),
                 ],
             ),
-            State("End"),
         ],
         declarations=[
             decl.VariableDeclaration("Global", "Boolean", expr.Variable("Func")),
@@ -2562,34 +2383,34 @@ def test_state_normalization(
     assert str(
         State(
             "S",
-            transitions=[Transition(target=ID("End"))],
-            exception_transition=Transition(target=ID("End")),
+            transitions=[Transition(target=ID("null"))],
+            exception_transition=Transition(target=ID("null")),
             actions=actions,
         )
     ) == str(
         State(
             "S",
-            transitions=[Transition(target=ID("End"))],
-            exception_transition=Transition(target=ID("End")),
+            transitions=[Transition(target=ID("null"))],
+            exception_transition=Transition(target=ID("null")),
             actions=normalized_actions,
         )
     )
     assert State(
         "S",
-        transitions=[Transition(target=ID("End"))],
-        exception_transition=Transition(target=ID("End")),
+        transitions=[Transition(target=ID("null"))],
+        exception_transition=Transition(target=ID("null")),
         actions=actions,
     ) == State(
         "S",
-        transitions=[Transition(target=ID("End"))],
-        exception_transition=Transition(target=ID("End")),
+        transitions=[Transition(target=ID("null"))],
+        exception_transition=Transition(target=ID("null")),
         actions=normalized_actions,
     )
     assert str(
         State(
             "S",
-            transitions=[Transition(target=ID("End"))],
-            exception_transition=Transition(target=ID("End")),
+            transitions=[Transition(target=ID("null"))],
+            exception_transition=Transition(target=ID("null")),
             actions=[
                 stmt.VariableAssignment("X", expr.Number(0)),
                 *actions,
@@ -2599,8 +2420,8 @@ def test_state_normalization(
     ) == str(
         State(
             "S",
-            transitions=[Transition(target=ID("End"))],
-            exception_transition=Transition(target=ID("End")),
+            transitions=[Transition(target=ID("null"))],
+            exception_transition=Transition(target=ID("null")),
             actions=[
                 stmt.VariableAssignment("X", expr.Number(0)),
                 *normalized_actions,
@@ -2610,8 +2431,8 @@ def test_state_normalization(
     )
     assert State(
         "S",
-        transitions=[Transition(target=ID("End"))],
-        exception_transition=Transition(target=ID("End")),
+        transitions=[Transition(target=ID("null"))],
+        exception_transition=Transition(target=ID("null")),
         actions=[
             stmt.VariableAssignment("X", expr.Number(0)),
             *actions,
@@ -2619,8 +2440,8 @@ def test_state_normalization(
         ],
     ) == State(
         "S",
-        transitions=[Transition(target=ID("End"))],
-        exception_transition=Transition(target=ID("End")),
+        transitions=[Transition(target=ID("null"))],
+        exception_transition=Transition(target=ID("null")),
         actions=[
             stmt.VariableAssignment("X", expr.Number(0)),
             *normalized_actions,
@@ -2641,7 +2462,7 @@ def test_state_normalization(
                         "Msg", "Message", type_=rty.Message("M", is_definite=False)
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2650,7 +2471,7 @@ def test_state_normalization(
                         "Msg", "Message", type_=rty.Message("M", is_definite=False)
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2667,7 +2488,7 @@ def test_state_normalization(
                         expression=expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2682,7 +2503,7 @@ def test_state_normalization(
                         expression=expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2693,7 +2514,7 @@ def test_state_normalization(
                         "Int", "Integer", type_=rty.Integer("Integer", rty.Bounds(0, 255))
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2702,7 +2523,7 @@ def test_state_normalization(
                         "Int", "Integer", type_=rty.Integer("Integer", rty.Bounds(0, 255))
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2719,7 +2540,7 @@ def test_state_normalization(
                     )
                 ],
                 actions=[stmt.Reset("Msg")],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2734,7 +2555,7 @@ def test_state_normalization(
                     )
                 ],
                 actions=[stmt.Reset("Msg")],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2754,7 +2575,7 @@ def test_state_normalization(
                     stmt.Append("List", expr.Variable("E")),
                     stmt.Append("List", expr.Variable("Msg")),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2772,7 +2593,7 @@ def test_state_normalization(
                     stmt.Append("List", expr.Variable("E")),
                     stmt.Append("List", expr.Variable("Msg")),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2794,7 +2615,7 @@ def test_state_normalization(
                         expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2814,7 +2635,7 @@ def test_state_normalization(
                         expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2837,7 +2658,7 @@ def test_state_normalization(
                         expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2858,7 +2679,7 @@ def test_state_normalization(
                         expr.Variable("X"),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2895,7 +2716,7 @@ def test_state_normalization(
                         ),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2926,7 +2747,7 @@ def test_state_normalization(
                         ),
                     )
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -2954,7 +2775,7 @@ def test_state_normalization(
                         ),
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -2981,7 +2802,7 @@ def test_state_normalization(
                         ),
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
         (
@@ -3003,7 +2824,7 @@ def test_state_normalization(
                         expr.Valid("Msg"),
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
             State(
                 "S",
@@ -3023,7 +2844,7 @@ def test_state_normalization(
                         expr.Valid("Msg"),
                     ),
                 ],
-                transitions=[Transition(target=ID("End"))],
+                transitions=[Transition(target=ID("null"))],
             ),
         ),
     ],

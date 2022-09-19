@@ -62,7 +62,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       pragma Assert (Check_Message_Invariant);
-      --  tests/integration/session_functions_opaque/test.rflx:27:10
+      --  tests/integration/session_functions_opaque/test.rflx:24:10
       Universal.Message.Reset (Message_Ctx);
       if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Message_Type) < 40 then
          Ctx.P.Next_State := S_Error;
@@ -81,7 +81,7 @@ is
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
-      --  tests/integration/session_functions_opaque/test.rflx:29:10
+      --  tests/integration/session_functions_opaque/test.rflx:26:10
       declare
          RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Message_Ctx);
@@ -135,7 +135,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Message_Sequence_Ctx, Message_Sequence_Buffer);
       pragma Assert (Check_Message_Sequence_Invariant);
-      --  tests/integration/session_functions_opaque/test.rflx:43:10
+      --  tests/integration/session_functions_opaque/test.rflx:40:10
       if
          not Universal.Options.Has_Element (Message_Sequence_Ctx)
          or Universal.Options.Available_Space (Message_Sequence_Ctx) < 40
@@ -167,7 +167,7 @@ is
          Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
          pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_functions_opaque/test.rflx:45:10
+      --  tests/integration/session_functions_opaque/test.rflx:42:10
       declare
          RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Sequence_Length : constant RFLX_Types.Length := Universal.Options.Byte_Size (Message_Sequence_Ctx);
@@ -221,7 +221,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Values.Initialize (Scalar_Sequence_Ctx, Scalar_Sequence_Buffer);
       pragma Assert (Check_Scalar_Sequence_Invariant);
-      --  tests/integration/session_functions_opaque/test.rflx:59:10
+      --  tests/integration/session_functions_opaque/test.rflx:56:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
          or Universal.Values.Available_Space (Scalar_Sequence_Ctx) < Universal.Value'Size
@@ -231,7 +231,7 @@ is
          goto Finalize_Check_Scalar_Sequence;
       end if;
       Universal.Values.Append_Element (Scalar_Sequence_Ctx, 1);
-      --  tests/integration/session_functions_opaque/test.rflx:61:10
+      --  tests/integration/session_functions_opaque/test.rflx:58:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
          or Universal.Values.Available_Space (Scalar_Sequence_Ctx) < Universal.Value'Size
@@ -241,7 +241,7 @@ is
          goto Finalize_Check_Scalar_Sequence;
       end if;
       Universal.Values.Append_Element (Scalar_Sequence_Ctx, 2);
-      --  tests/integration/session_functions_opaque/test.rflx:63:10
+      --  tests/integration/session_functions_opaque/test.rflx:60:10
       declare
          RFLX_Check_Size_Arg_1_Scalar_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Check_Size_Arg_1_Scalar_Sequence_Length : constant RFLX_Types.Length := Universal.Values.Byte_Size (Scalar_Sequence_Ctx);
@@ -255,7 +255,7 @@ is
          Check_Size (Ctx, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2), Valid);
       end;
       if Valid then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       else
          Ctx.P.Next_State := S_Error;
       end if;
@@ -284,7 +284,7 @@ is
         Ghost;
    begin
       pragma Assert (Error_Invariant);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Error_Invariant);
    end Error;
 
@@ -297,7 +297,7 @@ is
    procedure Finalize (Ctx : in out Context'Class) is
    begin
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Tick (Ctx : in out Context'Class) is
@@ -313,7 +313,7 @@ is
             Check_Scalar_Sequence (Ctx);
          when S_Error =>
             Error (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
    end Tick;
