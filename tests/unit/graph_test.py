@@ -181,27 +181,24 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
 def test_session_graph(tmp_path: Path) -> None:
     s = Session(
         identifier="P::S",
-        initial=ID("START"),
-        final=ID("END"),
         states=[
             State(
                 "START",
                 transitions=[
                     Transition(target=ID("STATE"), condition=Equal(Variable("Global"), TRUE)),
-                    Transition(target=ID("END")),
+                    Transition(target=ID("null")),
                 ],
             ),
             State(
                 "STATE",
-                transitions=[Transition(target=ID("IGNORED_1")), Transition(target=ID("END"))],
+                transitions=[Transition(target=ID("IGNORED_1")), Transition(target=ID("null"))],
                 actions=[stmt.VariableAssignment("Global", FALSE), stmt.Reset("Local")],
                 declarations=[decl.VariableDeclaration("Local", "Opaque")],
             ),
             State(
                 "IGNORED_1",
-                transitions=[Transition(target=ID("END"))],
+                transitions=[Transition(target=ID("null"))],
             ),
-            State("END"),
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
@@ -217,13 +214,13 @@ def test_session_graph(tmp_path: Path) -> None:
                   shape=box, style="rounded,filled", width="1.5"];
             START [fillcolor="#ffffff", fontcolor=black];
             START -> STATE  [minlen=3, tooltip="START → STATE\n\n[0] Global = True"];
-            START -> END  [minlen=3, tooltip=""];
+            START -> Final  [minlen=3, tooltip=""];
             STATE;
             STATE -> IGNORED_1 [minlen=3, tooltip=""];
-            STATE -> END  [minlen=3, tooltip=""];
+            STATE -> Final  [minlen=3, tooltip=""];
             IGNORED_1;
-            IGNORED_1 -> END  [minlen=3, tooltip=""];
-            END [fillcolor="#6f6f6f"];
+            IGNORED_1 -> Final  [minlen=3, tooltip=""];
+            Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
 
@@ -238,10 +235,10 @@ def test_session_graph(tmp_path: Path) -> None:
                   shape=box, style="rounded,filled", width="1.5"];
             START [fillcolor="#ffffff", fontcolor=black];
             START -> STATE  [minlen=3, tooltip="START → STATE\n\n[0] Global = True"];
-            START -> END  [minlen=3, tooltip=""];
+            START -> Final  [minlen=3, tooltip=""];
             STATE;
-            STATE -> END  [minlen=3, tooltip=""];
-            END [fillcolor="#6f6f6f"];
+            STATE -> Final  [minlen=3, tooltip=""];
+            Final [fillcolor="#6f6f6f", label="", shape=circle, width="0.5"];
         }
         """
 

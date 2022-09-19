@@ -4,10 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Readable, Writable; -- §S-P-C-RW
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Global : Universal::Value := 11; -- §S-D-V-T-SC, §S-D-V-E-L
       Uninitialized_Global : Universal::Value; -- §S-D-V-T-SC, §S-D-V-E-N
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
@@ -32,19 +29,17 @@ package Test is
       transition
          goto Reply
             if Local < Global -- §S-S-T-V
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Process;
 
       state Reply is
       begin
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Reply;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

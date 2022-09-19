@@ -8,7 +8,7 @@ from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, INITIAL, AbstractSession, Link, Message
+from rflx.model import FINAL, FINAL_STATE, INITIAL, AbstractSession, Link, Message
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ def create_session_graph(session: AbstractSession, ignore: Sequence[str] = None)
         if _is_ignored(state.identifier):
             continue
 
-        if state.identifier == session.initial:
+        if state == session.initial_state:
             result.add_node(
                 Node(
                     name=str(state.identifier.name),
@@ -119,11 +119,14 @@ def create_session_graph(session: AbstractSession, ignore: Sequence[str] = None)
                     fontcolor="black",
                 )
             )
-        elif state.identifier == session.final:
+        elif state == FINAL_STATE:
             result.add_node(
                 Node(
-                    name=str(state.identifier.name),
+                    name=str(FINAL_STATE.identifier.name),
                     fillcolor="#6f6f6f",
+                    shape="circle",
+                    width="0.5",
+                    label="",
                 )
             )
         else:

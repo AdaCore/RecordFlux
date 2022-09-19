@@ -29,10 +29,7 @@ package Test is
          (Message_Type : Universal::Option_Type;
           Strict : Boolean)
       return Result;
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
       Definite_Message : Definite_Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
@@ -44,7 +41,7 @@ package Test is
             if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Start;
 
       state Process is
@@ -60,9 +57,9 @@ package Test is
       transition
          goto Reply
             if Valid = M_Valid -- §S-S-T-BE
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Process;
 
       state Reply is
@@ -81,17 +78,15 @@ package Test is
       transition
          goto Reply_2 -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Process_2;
 
       state Reply_2 is
       begin
          Channel'Write (Definite_Message); -- §S-S-A-WR-V
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Reply_2;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

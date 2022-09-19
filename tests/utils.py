@@ -54,8 +54,6 @@ def assert_session_model_error(
     with pytest.raises(RecordFluxError, match=regex):
         Session(
             "P::S",
-            ID("Start", location=Location((1, 2))),
-            ID("End", location=Location((1, 3))),
             states,
             declarations,
             parameters,

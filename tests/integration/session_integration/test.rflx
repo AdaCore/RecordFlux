@@ -4,10 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Readable, Writable; -- §S-P-C-RW
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
@@ -18,7 +15,7 @@ package Test is
             if Message'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 1 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Start;
 
       state Prepare_Message is
@@ -27,7 +24,7 @@ package Test is
       transition
          goto Reply
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Prepare_Message;
 
       state Reply is
@@ -43,12 +40,10 @@ package Test is
       begin
          M := Universal::Message'(Message_Type => Universal::MT_Data, Length => 1, Data => [2]);
       transition
-         goto Terminated
+         goto null
       exception
-         goto Terminated
+         goto null
       end Next;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

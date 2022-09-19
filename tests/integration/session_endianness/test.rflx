@@ -5,10 +5,7 @@ package Test is
    generic
       I : Channel with Readable;
       O : Channel with Writable;
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       In_Msg : Messages::Msg_LE_Nested;
       In_Msg2 : Messages::Msg_LE;
       Out_Msg : Messages::Msg_LE;
@@ -20,7 +17,7 @@ package Test is
       transition
          goto Copy
             if In_Msg'Has_Data
-         goto Terminated
+         goto null
       end Start;
 
       state Copy is
@@ -29,7 +26,7 @@ package Test is
       transition
          goto Reply
       exception
-         goto Terminated
+         goto null
       end Copy;
 
       state Reply is
@@ -45,7 +42,7 @@ package Test is
       transition
          goto Copy2
           if In_Msg2'Has_Data
-         goto Terminated
+         goto null
       end Read2;
 
       state Copy2 is
@@ -54,7 +51,7 @@ package Test is
       transition
          goto Reply2
       exception
-         goto Terminated
+         goto null
       end Copy2;
 
       state Reply2 is
@@ -63,8 +60,6 @@ package Test is
       transition
          goto Start
       end Reply2;
-
-      state Terminated is null state;
    end Session;
 
 end Test;

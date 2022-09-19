@@ -27,7 +27,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:16:10
+      --  tests/integration/session_sequence_append/test.rflx:13:10
       Universal.Option.Verify_Message (Ctx.P.Option_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -60,13 +60,13 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:25:10
+      --  tests/integration/session_sequence_append/test.rflx:22:10
       if
          not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
           and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0
           and then Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data))
       then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -74,7 +74,7 @@ is
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data) + 24
       then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -87,7 +87,7 @@ is
          if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
             Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
          else
-            Ctx.P.Next_State := S_Terminated;
+            Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
             pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -118,7 +118,7 @@ is
                      Ctx.P.Option_Ctx := RFLX_Ctx_P_Option_Ctx_Tmp;
                   end;
                else
-                  Ctx.P.Next_State := S_Terminated;
+                  Ctx.P.Next_State := S_Final;
                   pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
                   Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
                   pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -126,7 +126,7 @@ is
                   goto Finalize_Process;
                end if;
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
                Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
                pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -134,7 +134,7 @@ is
                goto Finalize_Process;
             end if;
          else
-            Ctx.P.Next_State := S_Terminated;
+            Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
             pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -145,18 +145,18 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_sequence_append/test.rflx:29:10
+      --  tests/integration/session_sequence_append/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if
          not (Universal.Options.Size (Options_Ctx) <= 32768
           and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0)
       then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < Universal.Options.Size (Options_Ctx) + 24 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -168,7 +168,7 @@ is
          pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options));
          Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -201,8 +201,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:40:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_sequence_append/test.rflx:37:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -243,7 +243,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -256,7 +256,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Option.Reset (Ctx.P.Option_Ctx, Ctx.P.Option_Ctx.First, Ctx.P.Option_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -270,7 +270,7 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

@@ -16,10 +16,7 @@ package Test is
 
    generic
       C : Channel with Readable, Writable;
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       M_R : Message;
       M_S : Message;
       Extended : Boolean := False;
@@ -75,17 +72,15 @@ package Test is
       begin
          M_S'Reset (Length => M_R.Length, Extended => M_R.Extended);
       transition
-         goto Terminated
+         goto null
       end Reset;
 
       state Error
       is
       begin
       transition
-         goto Terminated
+         goto null
       end Error;
-
-      state Terminated is null state;
    end Session;
 
 end Test;

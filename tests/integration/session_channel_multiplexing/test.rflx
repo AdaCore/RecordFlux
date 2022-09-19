@@ -6,10 +6,7 @@ package Test is
       I_1 : Channel with Readable; -- §S-P-C-R
       I_2 : Channel with Readable; -- §S-P-C-R
       O : Channel with Writable; -- §S-P-C-W
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Message_1 : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
       Message_2 : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
@@ -22,7 +19,7 @@ package Test is
             if Message_1'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto Reply_2
             if Message_2'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Start;
 
       state Reply_1 is
@@ -38,8 +35,6 @@ package Test is
       transition
          goto Start -- §S-S-T-N
       end Reply_2;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

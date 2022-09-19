@@ -24,12 +24,12 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:22:10
+      --  tests/integration/session_case_expression_numeric/test.rflx:19:10
       Test.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Test.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Prepare;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -49,7 +49,7 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:32:10
+      --  tests/integration/session_case_expression_numeric/test.rflx:29:10
       if Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Value := Test.Tiny_Int ((case Test.Message.Get_Value (Ctx.P.Message_Ctx) is
              when 1 | 2 =>
@@ -59,14 +59,14 @@ is
              when 4 =>
                 2));
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      --  tests/integration/session_case_expression_numeric/test.rflx:37:10
+      --  tests/integration/session_case_expression_numeric/test.rflx:34:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
       if Test.Message.Available_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) < 8 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
@@ -91,8 +91,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:46:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_case_expression_numeric/test.rflx:43:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -119,7 +119,7 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -132,7 +132,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Test.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Prepare | S_Reply | S_Terminated =>
+         when S_Prepare | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -146,7 +146,7 @@ is
             Prepare (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

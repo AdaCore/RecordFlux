@@ -90,7 +90,7 @@ def create_transition(
 ) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
-    target = create_id(error, transition.f_target, filename)
+    target = create_id_or_null(error, transition.f_target, filename)
     condition: expr.Expr = expr.TRUE
     description = create_description(transition.f_description)
     if isinstance(transition, lang.ConditionalTransition):
@@ -171,8 +171,6 @@ def create_state(
 ) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(error, state.f_identifier, filename)
-    if isinstance(state.f_body, lang.NullStateBody):
-        return model.State(identifier)
     assert isinstance(state.f_body, lang.StateBody)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
         error.extend(
@@ -241,8 +239,6 @@ def create_unproven_session(
 
     return model.UnprovenSession(
         package * create_id(error, session.f_identifier, filename),
-        create_id(error, session.f_aspects.f_initial, filename),
-        create_id(error, session.f_aspects.f_final, filename),
         [create_state(error, s, package, filename) for s in session.f_states],
         [create_declaration(error, d, package, filename) for d in session.f_declarations],
         [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
@@ -292,7 +288,13 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
             )
         return name
 
-    raise NotImplementedError(f"Invalid ID: {identifier.text}")
+    raise NotImplementedError(f"Invalid ID: {identifier.text} {type(identifier)}")
+
+
+def create_id_or_null(error: RecordFluxError, identifier: lang.AbstractID, filename: Path) -> ID:
+    if isinstance(identifier, lang.UnqualifiedID) and identifier.text.lower() == "null":
+        return ID("null", location=node_location(identifier, filename))
+    return create_id(error, identifier, filename)
 
 
 def create_sequence(
@@ -1207,7 +1209,7 @@ def create_message_structure(
             )
 
         for then in field.f_thens:
-            if then.f_target.kind_name != "NullID" and not any(
+            if then.f_target.text.lower() != "null" and not any(
                 then.f_target.text == c.f_identifier.text for c in fields.f_fields
             ):
                 error.extend(

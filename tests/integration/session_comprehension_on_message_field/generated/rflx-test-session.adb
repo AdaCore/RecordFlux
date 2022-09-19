@@ -34,7 +34,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:15:10
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -42,7 +42,7 @@ is
       then
          Ctx.P.Next_State := S_Process;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -75,7 +75,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:27:10
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:24:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
@@ -115,7 +115,7 @@ is
                            then
                               Universal.Option_Types.Append_Element (Option_Types_Ctx, Universal.Option.Get_Option_Type (E_Ctx));
                            else
-                              Ctx.P.Next_State := S_Terminated;
+                              Ctx.P.Next_State := S_Final;
                               pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                               Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
                               pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
@@ -131,7 +131,7 @@ is
                            end if;
                         end if;
                      else
-                        Ctx.P.Next_State := S_Terminated;
+                        Ctx.P.Next_State := S_Final;
                         pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                         Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
                         pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
@@ -154,7 +154,7 @@ is
                Universal.Options.Take_Buffer (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer);
                pragma Warnings (On, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
                pragma Assert (RFLX_Message_Options_Buffer /= null);
                Ctx.P.Slots.Slot_Ptr_3 := RFLX_Message_Options_Buffer;
@@ -168,11 +168,11 @@ is
             pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:29:10
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:26:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
@@ -212,7 +212,7 @@ is
                            then
                               Universal.Option_Types.Append_Element (Option_Types_Ctx, Universal.Option.Get_Option_Type (E_Ctx));
                            else
-                              Ctx.P.Next_State := S_Terminated;
+                              Ctx.P.Next_State := S_Final;
                               pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                               Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
                               pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
@@ -228,7 +228,7 @@ is
                            end if;
                         end if;
                      else
-                        Ctx.P.Next_State := S_Terminated;
+                        Ctx.P.Next_State := S_Final;
                         pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
                         Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
                         pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
@@ -251,7 +251,7 @@ is
                Universal.Options.Take_Buffer (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer);
                pragma Warnings (On, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
                pragma Assert (RFLX_Message_Options_Buffer /= null);
                Ctx.P.Slots.Slot_Ptr_4 := RFLX_Message_Options_Buffer;
@@ -265,22 +265,22 @@ is
             pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:31:10
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:28:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if
          not (Universal.Option_Types.Size (Option_Types_Ctx) <= 32768
           and then Universal.Option_Types.Size (Option_Types_Ctx) mod RFLX_Types.Byte'Size = 0)
       then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < Universal.Option_Types.Size (Option_Types_Ctx) + 24 then
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -292,7 +292,7 @@ is
          pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types));
          Universal.Message.Set_Option_Types (Ctx.P.Message_Ctx, Option_Types_Ctx);
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
@@ -326,8 +326,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:42:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_comprehension_on_message_field/test.rflx:39:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;
 
@@ -354,7 +354,7 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -367,7 +367,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Terminated =>
+         when S_Process | S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -381,7 +381,7 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

@@ -4,10 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Writable; -- §S-P-C-W
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
       state Start is
@@ -24,17 +21,15 @@ package Test is
       transition
          goto Reply -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Start;
 
       state Reply is
       begin
          Channel'Write (Message); -- §S-S-A-WR-V
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Reply;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

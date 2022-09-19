@@ -4,10 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Readable, Writable; -- §S-P-C-RW
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       Options : Universal::Options; -- §S-D-V-T-MS, §S-D-V-E-N
       First_Option : Universal::Option; -- §S-D-V-T-M, §S-D-V-E-N
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
@@ -23,7 +20,7 @@ package Test is
       transition
          goto Process_1 -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Start;
 
       state Process_1 is
@@ -36,9 +33,9 @@ package Test is
       transition
          goto Send_1 -- §S-S-T-BE
             if First_Option_Length > 0
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Process_1;
 
       state Send_1 is
@@ -65,7 +62,7 @@ package Test is
       transition
          goto Send_2 -- §S-S-T-N
       exception
-         goto Terminated -- §S-S-E
+         goto null -- §S-S-E
       end Process_2;
 
       state Send_2
@@ -74,10 +71,8 @@ package Test is
          -- §S-S-A-WR-V
          Channel'Write (First_Option);
       transition
-         goto Terminated -- §S-S-T-N
+         goto null -- §S-S-T-N
       end Send_2;
-
-      state Terminated is null state; -- §S-S-N
    end Session;
 
 end Test;

@@ -8,7 +8,7 @@ package RFLX.Test.Session with
   SPARK_Mode
 is
 
-   type State is (S_Start, S_Check_Message, S_Check_Message_Sequence, S_Check_Scalar_Sequence, S_Error, S_Terminated);
+   type State is (S_Start, S_Check_Message, S_Check_Message_Sequence, S_Check_Scalar_Sequence, S_Error, S_Final);
 
    type Private_Context is private;
 
@@ -79,7 +79,7 @@ private
      (Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
    function Active (Ctx : Context'Class) return Boolean is
-     (Ctx.P.Next_State /= S_Terminated);
+     (Ctx.P.Next_State /= S_Final);
 
    function Next_State (Ctx : Context'Class) return State is
      (Ctx.P.Next_State);

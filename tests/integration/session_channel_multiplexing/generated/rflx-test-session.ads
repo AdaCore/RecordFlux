@@ -16,7 +16,7 @@ is
 
    type Channel is (C_I_1, C_I_2, C_O);
 
-   type State is (S_Start, S_Reply_1, S_Reply_2, S_Terminated);
+   type State is (S_Start, S_Reply_1, S_Reply_2, S_Final);
 
    type Private_Context is private;
 
@@ -136,7 +136,7 @@ private
       and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
 
    function Active (Ctx : Context'Class) return Boolean is
-     (Ctx.P.Next_State /= S_Terminated);
+     (Ctx.P.Next_State /= S_Final);
 
    function Next_State (Ctx : Context'Class) return State is
      (Ctx.P.Next_State);

@@ -850,10 +850,7 @@ def test_state_error(string: str, error: str) -> None:
                generic
                   X : Channel with Readable, Writable;
                   with function F return Boolean;
-               session Session with
-                  Initial => A,
-                  Final => B
-               is
+               session Session is
                   Y : Boolean := True;
                begin
                   state A is
@@ -861,18 +858,14 @@ def test_state_error(string: str, error: str) -> None:
                   begin
                      Z := False;
                   transition
-                     goto B
+                     goto null
                         if Z = False
                      goto A
                   end A;
-
-                  state B is null state;
                end Session
          """,
             model.UnprovenSession(
                 ID("Package::Session"),
-                ID("A"),
-                ID("B"),
                 [
                     model.State(
                         "A",
@@ -882,13 +875,12 @@ def test_state_error(string: str, error: str) -> None:
                         actions=[stmt.VariableAssignment("Z", expr.Variable("False"))],
                         transitions=[
                             model.Transition(
-                                "B",
+                                "null",
                                 condition=expr.Equal(expr.Variable("Z"), expr.Variable("False")),
                             ),
                             model.Transition("A"),
                         ],
                     ),
-                    model.State("B"),
                 ],
                 [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.Variable("True"))],
                 [
@@ -914,12 +906,13 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
         (
             """
                generic
-               session X with
-                  Initial => A,
-                  Final => A
-               is
+               session X is
                begin
-                  state A is null state;
+                  state A is
+                  begin
+                  transition
+                     goto null
+                  end A;
                end Y
          """,
             "<stdin>:2:16: parser: error: inconsistent session identifier: X /= Y.*",
@@ -938,10 +931,7 @@ def test_session() -> None:
         package Test is
 
            generic
-           session Session with
-              Initial => A,
-              Final => C
-           is
+           session Session is
            begin
               state A is
               begin
@@ -952,10 +942,8 @@ def test_session() -> None:
               state B is
               begin
               transition
-                 goto C
+                 goto null
               end B;
-
-              state C is null state;
            end Session;
 
         end Test;

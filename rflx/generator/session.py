@@ -100,7 +100,7 @@ from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Location, Subsystem, fail, fatal_fail
 from rflx.identifier import ID
-from rflx.model import declaration as decl, statement as stmt
+from rflx.model import FINAL_STATE, declaration as decl, statement as stmt
 
 from . import common, const
 from .allocator import AllocatorGenerator
@@ -148,7 +148,7 @@ class ExceptionHandler:
         return [
             Assignment(
                 "Ctx.P.Next_State",
-                Variable(f"S_{self.state.exception_transition.target}"),
+                Variable(state_id(self.state.exception_transition.target)),
             ),
             *self.finalization,
             GotoStatement(f"Finalize_{self.state.identifier}"),
@@ -343,7 +343,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             evaluated_declarations.initialization,
         )
         unit += self._create_finalize_procedure(
-            self._session,
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.finalization,
         )
@@ -374,7 +373,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return (
             self._create_use_clauses(self._session_context.used_types)
             + self._create_channel_and_state_types(self._session)
-            + self._create_context_type(self._session.initial, global_variables)
+            + self._create_context_type(self._session.initial_state.identifier, global_variables)
             + unit
         )
 
@@ -433,7 +432,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     if channel_params
                     else []
                 ),
-                EnumerationType("State", {ID(f"S_{s.identifier}"): None for s in session.states}),
+                EnumerationType(
+                    "State",
+                    {state_id(s.identifier): None for s in [*session.states, model.State("Final")]},
+                ),
             ],
         )
 
@@ -457,7 +459,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 RecordType(
                     "Private_Context",
                     [
-                        Component("Next_State", "State", Variable(f"S_{initial_state}")),
+                        Component("Next_State", "State", Variable(state_id(initial_state))),
                         *[
                             Component(
                                 identifier,
@@ -752,143 +754,134 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         unit_body: List[Declaration] = []
 
         for state in session.states:
-            if not state.is_null:
-                invariant = []
-                slots = []
+            if state == FINAL_STATE:
+                continue
 
-                for d in state.declarations.values():
-                    assert isinstance(d, decl.VariableDeclaration)
-                    if isinstance(d.type_, (rty.Message, rty.Sequence)):
-                        identifier = context_id(d.identifier, is_global)
-                        type_identifier = self._ada_type(d.type_.identifier)
-                        invariant.extend(
-                            [
-                                *(
-                                    [Call("Global_Initialized", [Variable("Ctx")])]
-                                    if composite_globals
-                                    else []
-                                ),
-                                Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
-                                Equal(
-                                    Variable(identifier * "Buffer_First"),
-                                    First(self._prefix * const.TYPES_INDEX),
-                                ),
-                                # Due to the reuse of allocation slots, `Buffer_Last` can be greater
-                                # then the actual required size.
-                                GreaterEqual(
-                                    Variable(identifier * "Buffer_Last"),
-                                    Add(
-                                        First(self._prefix * const.TYPES_INDEX),
-                                        Number(
-                                            self._allocator.get_size(d.identifier, state.identifier)
-                                            - 1
-                                        ),
-                                    ),
-                                ),
-                                Equal(
-                                    Variable(
-                                        "Ctx.P.Slots" * self._allocator.get_slot_ptr(d.location)
-                                    ),
-                                    Variable("null"),
-                                ),
-                            ]
-                        )
-                        slots.append(self._allocator.get_slot_ptr(d.location))
+            invariant = []
+            slots = []
 
-                invariant.extend(
-                    [
-                        *[
+            for d in state.declarations.values():
+                assert isinstance(d, decl.VariableDeclaration)
+                if isinstance(d.type_, (rty.Message, rty.Sequence)):
+                    identifier = context_id(d.identifier, is_global)
+                    type_identifier = self._ada_type(d.type_.identifier)
+                    invariant.extend(
+                        [
+                            *(
+                                [Call("Global_Initialized", [Variable("Ctx")])]
+                                if composite_globals
+                                else []
+                            ),
+                            Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
                             Equal(
-                                Variable("Ctx.P.Slots" * s),
+                                Variable(identifier * "Buffer_First"),
+                                First(self._prefix * const.TYPES_INDEX),
+                            ),
+                            # Due to the reuse of allocation slots, `Buffer_Last` can be greater
+                            # then the actual required size.
+                            GreaterEqual(
+                                Variable(identifier * "Buffer_Last"),
+                                Add(
+                                    First(self._prefix * const.TYPES_INDEX),
+                                    Number(
+                                        self._allocator.get_size(d.identifier, state.identifier) - 1
+                                    ),
+                                ),
+                            ),
+                            Equal(
+                                Variable("Ctx.P.Slots" * self._allocator.get_slot_ptr(d.location)),
                                 Variable("null"),
-                            )
-                            for s in self._allocator.get_global_slot_ptrs()
-                        ],
-                        *[
-                            NotEqual(
-                                Variable("Ctx.P.Slots" * s),
-                                Variable("null"),
-                            )
-                            for s in self._allocator.get_local_slot_ptrs()
-                            if s not in slots
-                        ],
-                    ]
-                )
+                            ),
+                        ]
+                    )
+                    slots.append(self._allocator.get_slot_ptr(d.location))
 
-                evaluated_declarations = self._evaluate_declarations(
-                    state.declarations.values(), is_global
-                )
-                statements = [
+            invariant.extend(
+                [
                     *[
-                        s
-                        for a in state.actions
-                        for s in self._state_action(
-                            state.identifier,
-                            a,
-                            ExceptionHandler(
-                                self._session_context.state_exception,
-                                state,
-                                [
-                                    PragmaStatement(
-                                        "Assert", [Call(f"{state.identifier}_Invariant")]
-                                    )
-                                ],
-                            ),
-                            is_global,
+                        Equal(
+                            Variable("Ctx.P.Slots" * s),
+                            Variable("null"),
                         )
+                        for s in self._allocator.get_global_slot_ptrs()
                     ],
-                    *self._determine_next_state(state.transitions, is_global),
+                    *[
+                        NotEqual(
+                            Variable("Ctx.P.Slots" * s),
+                            Variable("null"),
+                        )
+                        for s in self._allocator.get_local_slot_ptrs()
+                        if s not in slots
+                    ],
                 ]
+            )
 
-                unit_body += [
-                    SubprogramBody(
-                        ProcedureSpecification(
-                            state.identifier,
-                            [
-                                InOutParameter(["Ctx"], "Context'Class"),
-                            ],
+            evaluated_declarations = self._evaluate_declarations(
+                state.declarations.values(), is_global
+            )
+            statements = [
+                *[
+                    s
+                    for a in state.actions
+                    for s in self._state_action(
+                        state.identifier,
+                        a,
+                        ExceptionHandler(
+                            self._session_context.state_exception,
+                            state,
+                            [PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")])],
                         ),
+                        is_global,
+                    )
+                ],
+                *self._determine_next_state(state.transitions, is_global),
+            ]
+
+            unit_body += [
+                SubprogramBody(
+                    ProcedureSpecification(
+                        state.identifier,
                         [
-                            *evaluated_declarations.global_declarations,
-                            *evaluated_declarations.initialization_declarations,
-                            ExpressionFunctionDeclaration(
-                                FunctionSpecification(f"{state.identifier}_Invariant", "Boolean"),
-                                And(*invariant),
-                                [Annotate("GNATprove", "Inline_For_Proof"), Ghost()],
-                            ),
-                            *(
-                                [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
-                                if state.identifier in self._session_context.state_exception
-                                else []
-                            ),
-                        ],
-                        [
-                            *evaluated_declarations.initialization,
-                            PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
-                            *statements,
-                            PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
-                            *(
-                                [Label(f"Finalize_{state.identifier}")]
-                                if state.has_exceptions
-                                else []
-                            ),
-                            *evaluated_declarations.finalization,
-                            *(
-                                [
-                                    PragmaStatement(
-                                        "Assert", [Call("Global_Initialized", [Variable("Ctx")])]
-                                    )
-                                ]
-                                if composite_globals and evaluated_declarations.finalization
-                                else []
-                            ),
-                        ],
-                        aspects=[
-                            Precondition(Call("Initialized", [Variable("Ctx")])),
-                            Postcondition(Call("Initialized", [Variable("Ctx")])),
+                            InOutParameter(["Ctx"], "Context'Class"),
                         ],
                     ),
-                ]
+                    [
+                        *evaluated_declarations.global_declarations,
+                        *evaluated_declarations.initialization_declarations,
+                        ExpressionFunctionDeclaration(
+                            FunctionSpecification(f"{state.identifier}_Invariant", "Boolean"),
+                            And(*invariant),
+                            [Annotate("GNATprove", "Inline_For_Proof"), Ghost()],
+                        ),
+                        *(
+                            [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
+                            if state.identifier in self._session_context.state_exception
+                            else []
+                        ),
+                    ],
+                    [
+                        *evaluated_declarations.initialization,
+                        PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
+                        *statements,
+                        PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
+                        *([Label(f"Finalize_{state.identifier}")] if state.has_exceptions else []),
+                        *evaluated_declarations.finalization,
+                        *(
+                            [
+                                PragmaStatement(
+                                    "Assert", [Call("Global_Initialized", [Variable("Ctx")])]
+                                )
+                            ]
+                            if composite_globals and evaluated_declarations.finalization
+                            else []
+                        ),
+                    ],
+                    aspects=[
+                        Precondition(Call("Initialized", [Variable("Ctx")])),
+                        Postcondition(Call("Initialized", [Variable("Ctx")])),
+                    ],
+                ),
+            ]
 
         return UnitPart(body=unit_body)
 
@@ -904,7 +897,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             [
                                 Assignment(
                                     "Ctx.P.Next_State",
-                                    Variable(f"S_{t.target}"),
+                                    Variable(state_id(t.target)),
                                 )
                             ],
                         )
@@ -913,7 +906,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [
                         Assignment(
                             "Ctx.P.Next_State",
-                            Variable(f"S_{transitions[-1].target}"),
+                            Variable(state_id(transitions[-1].target)),
                         )
                     ],
                 )
@@ -936,7 +929,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    NotEqual(Variable("Ctx.P.Next_State"), Variable(f"S_{session.final}"))
+                    NotEqual(
+                        Variable("Ctx.P.Next_State"), Variable(state_id(FINAL_STATE.identifier))
+                    )
                     if len(session.states) > 1
                     else Variable("False"),
                 ),
@@ -973,7 +968,9 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     declarations,
                     [
                         *initialization,
-                        Assignment("Ctx.P.Next_State", Variable(f"S_{session.initial}")),
+                        Assignment(
+                            "Ctx.P.Next_State", Variable(state_id(session.initial_state.identifier))
+                        ),
                     ],
                 ),
             ],
@@ -981,7 +978,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     @staticmethod
     def _create_finalize_procedure(
-        session: model.Session,
         declarations: Sequence[Declaration],
         finalization: Sequence[Statement],
     ) -> UnitPart:
@@ -1009,7 +1005,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     declarations,
                     [
                         *finalization,
-                        Assignment("Ctx.P.Next_State", Variable(f"S_{session.final}")),
+                        Assignment("Ctx.P.Next_State", Variable(state_id(FINAL_STATE.identifier))),
                     ],
                 ),
             ],
@@ -1054,7 +1050,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Variable("Ctx.P.Next_State"),
                             [
                                 (
-                                    Variable(f"S_{state.identifier}"),
+                                    Variable(state_id(state.identifier)),
                                     [
                                         CallStatement(
                                             message_type.identifier * "Reset",
@@ -1113,13 +1109,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                             Variable("Ctx.P.Next_State"),
                             [
                                 (
-                                    Variable(f"S_{s.identifier}"),
+                                    Variable(state_id(s.identifier)),
                                     [
                                         *self._debug_output(f"State: {s.identifier}"),
-                                        CallStatement(s.identifier, [Variable("Ctx")])
-                                        if s.identifier != session.final
-                                        else NullStatement(),
-                                    ],
+                                        CallStatement(s.identifier, [Variable("Ctx")]),
+                                    ]
+                                    if s != FINAL_STATE
+                                    else [NullStatement()],
                                 )
                                 for s in session.states
                             ],
@@ -1163,7 +1159,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     in_io_state_specification,
                     In(
                         Variable("Ctx.P.Next_State"),
-                        ChoiceList(*[Variable(f"S_{state.identifier}") for state in io_states]),
+                        ChoiceList(*[Variable(state_id(state.identifier)) for state in io_states]),
                     )
                     if io_states
                     else FALSE,
@@ -1256,7 +1252,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     [
                                         *[
                                             (
-                                                Variable(f"S_{write.state}"),
+                                                Variable(state_id(write.state)),
                                                 And(
                                                     Call(
                                                         write.message_type
@@ -1320,7 +1316,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 Case(
                                     Variable("Ctx.P.Next_State"),
                                     [
-                                        *[(Variable(f"S_{read.state}"), TRUE) for read in reads],
+                                        *[(Variable(state_id(read.state)), TRUE) for read in reads],
                                         (Variable("others"), FALSE),
                                     ],
                                 ),
@@ -1370,7 +1366,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     [
                                         *[
                                             (
-                                                Variable(f"S_{write.state}"),
+                                                Variable(state_id(write.state)),
                                                 Call(
                                                     write.message_type * "Byte_Size",
                                                     [
@@ -1434,7 +1430,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                     [
                                         *[
                                             (
-                                                Variable(f"S_{read.state}"),
+                                                Variable(state_id(read.state)),
                                                 Call(
                                                     read.message_type * "Buffer_Length",
                                                     [Variable(context_id(read.message, is_global))],
@@ -1610,7 +1606,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                             [
                                                 *[
                                                     (
-                                                        Variable(f"S_{write.state}"),
+                                                        Variable(state_id(write.state)),
                                                         [
                                                             CallStatement(
                                                                 (write.message_type * "Read").flat,
@@ -1830,7 +1826,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                             [
                                                 *[
                                                     (
-                                                        Variable(f"S_{write.state}"),
+                                                        Variable(state_id(write.state)),
                                                         [
                                                             CallStatement(
                                                                 (write.message_type * "Write").flat,
@@ -5423,6 +5419,11 @@ def buffer_id(identifier: ID) -> ID:
 
 def found_id(identifier: ID) -> ID:
     return ID("RFLX_" + identifier.flat + "_Found")
+
+
+def state_id(identifier: ID) -> ID:
+    assert identifier != ID("null")
+    return "S_" + identifier
 
 
 def _unexpected_expression(expression: expr.Expr, context: str) -> NoReturn:

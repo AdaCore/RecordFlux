@@ -3,20 +3,15 @@ package B is
 
    generic
       Channel : Channel with Readable;
-   session Session with
-      Initial => Start,
-      Final => Terminated
-   is
+   session Session is
       M : Universal::Message;
    begin
       state Start is
       begin
          Channel'Read (M);
       transition
-         goto Terminated
+         goto null
       end Start;
-
-      state Terminated is null state;
    end Session;
 
 end B;

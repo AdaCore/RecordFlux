@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_functions/test.rflx:41:10
+      --  tests/integration/session_functions/test.rflx:38:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -38,7 +38,7 @@ is
       then
          Ctx.P.Next_State := S_Process;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -61,19 +61,19 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_functions/test.rflx:55:10
+      --  tests/integration/session_functions/test.rflx:52:10
       Get_Message_Type (Ctx, Message_Type);
-      --  tests/integration/session_functions/test.rflx:56:10
+      --  tests/integration/session_functions/test.rflx:53:10
       Valid_Message (Ctx, Message_Type, True, Valid);
-      --  tests/integration/session_functions/test.rflx:57:10
+      --  tests/integration/session_functions/test.rflx:54:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Length := Test.Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) / 8);
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_functions/test.rflx:59:10
+      --  tests/integration/session_functions/test.rflx:56:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
             Definite_Message : Test.Definite_Message.Structure;
@@ -86,25 +86,25 @@ is
                if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
                   Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
                else
-                  Ctx.P.Next_State := S_Terminated;
+                  Ctx.P.Next_State := S_Final;
                   pragma Assert (Process_Invariant);
                   goto Finalize_Process;
                end if;
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Process_Invariant);
                goto Finalize_Process;
             end if;
          end;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
       if Valid = M_Valid then
          Ctx.P.Next_State := S_Reply;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
@@ -125,7 +125,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_functions/test.rflx:70:10
+      --  tests/integration/session_functions/test.rflx:67:10
       Ctx.P.Next_State := S_Process_2;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -146,16 +146,16 @@ is
         Ghost;
    begin
       pragma Assert (Process_2_Invariant);
-      --  tests/integration/session_functions/test.rflx:78:10
+      --  tests/integration/session_functions/test.rflx:75:10
       Length := Test.Length (Universal.Message.Size (Ctx.P.Message_Ctx) / 8);
-      --  tests/integration/session_functions/test.rflx:80:10
+      --  tests/integration/session_functions/test.rflx:77:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
          RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Create_Message_Arg_2_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Ctx.P.Message_Ctx);
       begin
          if not Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
-            Ctx.P.Next_State := S_Terminated;
+            Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
             goto Finalize_Process_2;
          end if;
@@ -165,12 +165,12 @@ is
             if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
                Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
             else
-               Ctx.P.Next_State := S_Terminated;
+               Ctx.P.Next_State := S_Final;
                pragma Assert (Process_2_Invariant);
                goto Finalize_Process_2;
             end if;
          else
-            Ctx.P.Next_State := S_Terminated;
+            Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
             goto Finalize_Process_2;
          end if;
@@ -195,8 +195,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
-      --  tests/integration/session_functions/test.rflx:89:10
-      Ctx.P.Next_State := S_Terminated;
+      --  tests/integration/session_functions/test.rflx:86:10
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;
 
@@ -237,7 +237,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Definite_Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -250,7 +250,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Process | S_Reply | S_Process_2 | S_Reply_2 | S_Terminated =>
+         when S_Process | S_Reply | S_Process_2 | S_Reply_2 | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -268,7 +268,7 @@ is
             Process_2 (Ctx);
          when S_Reply_2 =>
             Reply_2 (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

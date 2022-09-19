@@ -24,12 +24,12 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_reuse_of_message/test.rflx:15:10
+      --  tests/integration/session_reuse_of_message/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply;
       else
-         Ctx.P.Next_State := S_Terminated;
+         Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
    end Start;
@@ -48,7 +48,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_reuse_of_message/test.rflx:24:10
+      --  tests/integration/session_reuse_of_message/test.rflx:21:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -76,7 +76,7 @@ is
       Ctx.P.Slots.Slot_Ptr_1 := Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -89,7 +89,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
-         when S_Reply | S_Terminated =>
+         when S_Reply | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -101,7 +101,7 @@ is
             Start (Ctx);
          when S_Reply =>
             Reply (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);

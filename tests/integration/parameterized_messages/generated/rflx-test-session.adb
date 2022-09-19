@@ -26,7 +26,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:30:10
+      --  tests/integration/parameterized_messages/test.rflx:27:10
       Test.Message.Reset (Ctx.P.M_R_Ctx, Length => 2, Extended => Ctx.P.Extended);
       Ctx.P.Next_State := S_Receive;
       pragma Assert (Start_Invariant);
@@ -48,7 +48,7 @@ is
         Ghost;
    begin
       pragma Assert (Receive_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:38:10
+      --  tests/integration/parameterized_messages/test.rflx:35:10
       Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
       if Test.Message.Structural_Valid_Message (Ctx.P.M_R_Ctx) then
          Ctx.P.Next_State := S_Process;
@@ -87,7 +87,7 @@ is
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (M_T_Ctx, M_T_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       pragma Assert (Process_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:51:10
+      --  tests/integration/parameterized_messages/test.rflx:48:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
       if
          not (Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
@@ -149,11 +149,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/parameterized_messages/test.rflx:52:10
+      --  tests/integration/parameterized_messages/test.rflx:49:10
       Length := Ctx.P.M_S_Ctx.Length;
-      --  tests/integration/parameterized_messages/test.rflx:53:10
+      --  tests/integration/parameterized_messages/test.rflx:50:10
       Test.Message.Reset (M_T_Ctx, Length => Ctx.P.M_S_Ctx.Length, Extended => True);
-      --  tests/integration/parameterized_messages/test.rflx:54:10
+      --  tests/integration/parameterized_messages/test.rflx:51:10
       if not Test.Message.Valid_Next (M_T_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Process_Invariant);
@@ -219,7 +219,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/parameterized_messages/test.rflx:56:10
+      --  tests/integration/parameterized_messages/test.rflx:53:10
       Equal := Ctx.P.M_S_Ctx.Length = M_T_Ctx.Length
       and then Ctx.P.M_S_Ctx.Extended = M_T_Ctx.Extended;
       if
@@ -258,7 +258,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:68:10
+      --  tests/integration/parameterized_messages/test.rflx:65:10
       Ctx.P.Next_State := S_Reset;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -279,9 +279,9 @@ is
         Ghost;
    begin
       pragma Assert (Reset_Invariant);
-      --  tests/integration/parameterized_messages/test.rflx:76:10
+      --  tests/integration/parameterized_messages/test.rflx:73:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => Ctx.P.M_R_Ctx.Extended);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Reset_Invariant);
    end Reset;
 
@@ -301,7 +301,7 @@ is
         Ghost;
    begin
       pragma Assert (Error_Invariant);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
       pragma Assert (Error_Invariant);
    end Error;
 
@@ -343,7 +343,7 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := M_S_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session_Allocator.Finalize (Ctx.P.Slots);
-      Ctx.P.Next_State := S_Terminated;
+      Ctx.P.Next_State := S_Final;
    end Finalize;
 
    procedure Reset_Messages_Before_Write (Ctx : in out Context'Class) with
@@ -358,7 +358,7 @@ is
             null;
          when S_Receive =>
             Test.Message.Reset (Ctx.P.M_R_Ctx, Ctx.P.M_R_Ctx.First, Ctx.P.M_R_Ctx.First - 1, Ctx.P.M_R_Ctx.Length, Ctx.P.M_R_Ctx.Extended);
-         when S_Process | S_Reply | S_Reset | S_Error | S_Terminated =>
+         when S_Process | S_Reply | S_Reset | S_Error | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -378,7 +378,7 @@ is
             Reset (Ctx);
          when S_Error =>
             Error (Ctx);
-         when S_Terminated =>
+         when S_Final =>
             null;
       end case;
       Reset_Messages_Before_Write (Ctx);
