@@ -3269,12 +3269,10 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                   begin
                      Z := False;
                   transition
-                     goto B
+                     goto null
                         if Z = False
                      goto A
                   end A;
-
-                  state B is null state;
                end Session
          """,
             {
@@ -3375,7 +3373,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                                         },
                                     },
                                     "description": None,
-                                    "target": {"_kind": "UnqualifiedID", "_value": "B"},
+                                    "target": {"_kind": "UnqualifiedID", "_value": "null"},
                                 }
                             ],
                             "declarations": [
@@ -3416,12 +3414,6 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
                         },
                         "description": None,
                         "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
-                    },
-                    {
-                        "_kind": "State",
-                        "body": {"_kind": "NullStateBody", "_value": "null state"},
-                        "description": None,
-                        "identifier": {"_kind": "UnqualifiedID", "_value": "B"},
                     },
                 ],
             },

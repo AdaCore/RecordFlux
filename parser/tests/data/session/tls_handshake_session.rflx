@@ -1486,10 +1486,8 @@ package TLS_Handshake_Session is
          Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::APPLICATION_ALERT, Length => Data'Size, Data => Data)
             where Data = GreenTLS::Alert_Message'(Description => Error));
       transition
-         goto TERMINATED
+         goto null
       end ERROR_SEND_LOCAL;
-
-      state TERMINATED is null state;
    end Client;
 
 end TLS_Handshake_Session;

@@ -167,15 +167,6 @@ class RenamingDecl(LocalDecl):
 
 
 @abstract
-class BaseStateBody(RFLXNode):
-    """Base class for session state body."""
-
-
-class NullStateBody(BaseStateBody):
-    pass
-
-
-@abstract
 class Statement(RFLXNode):
     """Base class for statements."""
 
@@ -270,7 +261,7 @@ class ConditionalTransition(Transition):
     condition = Field(type=Expr)
 
 
-class StateBody(BaseStateBody):
+class StateBody(RFLXNode):
     """Body of a session state."""
 
     declarations = Field(type=LocalDecl.list)
@@ -286,7 +277,7 @@ class State(RFLXNode):
 
     identifier = Field(type=UnqualifiedID)
     description = Field(type=Description)
-    body = Field(type=BaseStateBody)
+    body = Field(type=StateBody)
 
 
 class SessionDecl(Declaration):

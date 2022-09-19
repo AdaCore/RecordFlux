@@ -463,10 +463,8 @@ package TLS_Record_Session is
          Client_Key_Update_Message'Reset;
          Server_Key_Update_Message'Reset;
       transition
-         goto TERMINATED
+         goto null
       end TERMINATING;
-
-      state TERMINATED is null state;
    end Client;
 
 end TLS_Record_Session;

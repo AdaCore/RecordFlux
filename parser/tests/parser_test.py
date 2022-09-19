@@ -382,10 +382,6 @@ KEYWORD_TESTS = [
             librflxlang.GrammarRule.state_body_rule,
         ),
         (
-            "state {keyword} is null state",
-            librflxlang.GrammarRule.state_rule,
-        ),
-        (
             "generic session {keyword} is begin end {keyword}",
             librflxlang.GrammarRule.session_declaration_rule,
         ),

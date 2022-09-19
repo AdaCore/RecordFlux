@@ -489,7 +489,6 @@ grammar.add_rules(
     ),
     declaration=Or(grammar.renaming_declaration, grammar.variable_declaration),
     description_aspect=ast.Description("Desc", "=>", grammar.string_literal),
-    null_state_body=ast.NullStateBody("null", "state"),
     assignment_statement=ast.Assignment(
         grammar.unqualified_identifier, ":=", grammar.extended_expression
     ),
@@ -534,7 +533,7 @@ grammar.add_rules(
     ),
     transition=ast.Transition(
         "goto",
-        Or(ast.NullID("null"), grammar.unqualified_identifier),
+        grammar.unqualified_identifier,
         Opt("with", grammar.description_aspect),
     ),
     state_body=ast.StateBody(
@@ -553,7 +552,7 @@ grammar.add_rules(
         grammar.unqualified_identifier,
         Opt("with", grammar.description_aspect),
         "is",
-        Or(grammar.null_state_body, grammar.state_body),
+        grammar.state_body,
     ),
     session_declaration=ast.SessionDecl(
         "generic",
