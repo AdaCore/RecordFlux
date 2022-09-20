@@ -16,7 +16,13 @@ CLI:
 
 ### Changed
 
+Specification:
+
 - Syntax for defining initial and final states of session (#700)
+
+Model:
+
+- Change representation of null messages (#643)
 
 ### Removed
 

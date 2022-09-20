@@ -1,6 +1,5 @@
 import logging
 import re
-from copy import copy
 from pathlib import Path
 from typing import Sequence
 
@@ -8,7 +7,7 @@ from pydotplus import Dot, Edge, Node
 
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL, FINAL_STATE, INITIAL, AbstractSession, Link, Message
+from rflx.model import FINAL_STATE, AbstractSession, Link, Message
 
 log = logging.getLogger(__name__)
 
@@ -54,19 +53,13 @@ def create_message_graph(message: Message) -> Dot:
             first=str(link.first) if link.first != UNDEFINED else "⋆",
         )
 
-    msg = copy(message)
-    if not msg.structure:
-        # https://github.com/Componolit/RecordFlux/issues/643
-        # pylint: disable-next = protected-access
-        msg._structure = [Link(INITIAL, FINAL)]
-
-    result = _graph_with_defaults(msg.full_name)
+    result = _graph_with_defaults(message.full_name)
     result.add_node(
         Node(name="Initial", fillcolor="#ffffff", shape="circle", width="0.5", label="")
     )
-    for f in msg.fields:
+    for f in message.fields:
         result.add_node(Node(name=f.name))
-    for i, l in enumerate(msg.structure):
+    for i, l in enumerate(message.structure):
         intermediate_node = f"intermediate_{i}"
         result.add_node(
             Node(

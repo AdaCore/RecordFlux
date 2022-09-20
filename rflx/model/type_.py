@@ -603,7 +603,7 @@ class Sequence(Composite):
                 location,
             )
 
-            if not element_type.structure:
+            if element_type.is_null:
                 self.error.extend(
                     [
                         error,

@@ -128,6 +128,9 @@ class AbstractMessage(mty.Type):
 
         assert len(self.identifier.parts) > 1, "type identifier must contain package"
 
+        if not structure:
+            structure = [Link(INITIAL, FINAL)]
+
         self._structure = sorted(structure)
         self._types = types
         self._paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
@@ -142,7 +145,7 @@ class AbstractMessage(mty.Type):
         self._byte_order = {}
 
         try:
-            if not state and (structure or types):
+            if not state and not self.is_null:
                 self._state.has_unreachable = self._validate()
                 self._normalize()
                 fields = self._compute_topological_sorting(self._state.has_unreachable)
@@ -184,7 +187,7 @@ class AbstractMessage(mty.Type):
         return verbose_repr(self, ["identifier", "structure", "types", "checksums", "byte_order"])
 
     def __str__(self) -> str:
-        if not self.structure or not self.types:
+        if self.is_null:
             return f"type {self.name} is null message"
 
         parameters = "; ".join(
@@ -219,6 +222,10 @@ class AbstractMessage(mty.Type):
                 fields += ";"
 
         return f"type {self.name}{parameters} is\n   message\n{indent(fields, 6)}\n   end message"
+
+    @property
+    def is_null(self) -> bool:
+        return self._structure == [Link(INITIAL, FINAL)] and not self._types
 
     @property
     def direct_dependencies(self) -> List[mty.Type]:
@@ -839,7 +846,7 @@ class Message(AbstractMessage):
         self.error.propagate()
 
     def verify(self) -> None:
-        if self.structure or self.types:
+        if not self.is_null:
             self._verify_expression_types()
             self._verify_expressions()
             self._verify_checksums()
@@ -910,7 +917,7 @@ class Message(AbstractMessage):
                 )
                 for p in self.paths(FINAL)
             }
-            if self.structure
+            if not self.is_null
             else set(),
             {f.identifier: t.type_ for f, t in self._state.parameter_types.items()},
             {f.identifier: t.type_ for f, t in self._state.field_types.items()},
@@ -1005,7 +1012,7 @@ class Message(AbstractMessage):
                     self.location,
                 )
         else:
-            if not self.structure:
+            if self.is_null:
                 return expr.Number(0)
 
             fields = list(self.fields)
@@ -1164,7 +1171,7 @@ class Message(AbstractMessage):
         )
 
     def max_size(self) -> expr.Number:
-        if not self.structure:
+        if self.is_null:
             return expr.Number(0)
 
         if self.has_implicit_size:
@@ -1183,7 +1190,7 @@ class Message(AbstractMessage):
         return max_size
 
     def max_field_sizes(self) -> Dict[Field, expr.Number]:
-        if not self.structure:
+        if self.is_null:
             return {}
 
         if self.has_implicit_size:
