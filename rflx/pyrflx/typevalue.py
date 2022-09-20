@@ -741,9 +741,7 @@ class MessageValue(TypeValue):
 
     def _next_link(self, source_field_name: str) -> ty.Optional[Link]:
         field = Field(source_field_name)
-        if field == FINAL or not self._type.structure:
-            # structure is empty in case of NULL message
-            # https://github.com/Componolit/RecordFlux/issues/643
+        if field == FINAL:
             return None
         for link in self._type.outgoing(field):
             if self._simplified(link.condition) == TRUE:
@@ -758,10 +756,6 @@ class MessageValue(TypeValue):
         if append_to_path and next_link is not None:
             self._path.append(next_link)
 
-        if next_link is None and field_name == INITIAL.name:
-            # the INITIAL field has no outgoing links in case of NULL message
-            # https://github.com/Componolit/RecordFlux/issues/643
-            return FINAL.name
         return next_link.target.name if next_link is not None else ""
 
     def _prev_field(self, fld: str) -> str:
