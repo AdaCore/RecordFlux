@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -27,7 +27,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_endianness/test.rflx:16:10
+      -- tests/integration/session_endianness/test.rflx:16:10
       Messages.Msg_LE_Nested.Verify_Message (Ctx.P.In_Msg_Ctx);
       if Messages.Msg_LE_Nested.Byte_Size (Ctx.P.In_Msg_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy;
@@ -54,7 +54,7 @@ is
         Ghost;
    begin
       pragma Assert (Copy_Invariant);
-      --  tests/integration/session_endianness/test.rflx:25:10
+      -- tests/integration/session_endianness/test.rflx:25:10
       Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx);
       if Messages.Msg_LE.Available_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) < 64 then
          Ctx.P.Next_State := S_Final;
@@ -97,7 +97,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_endianness/test.rflx:34:10
+      -- tests/integration/session_endianness/test.rflx:34:10
       Ctx.P.Next_State := S_Read2;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -119,7 +119,7 @@ is
         Ghost;
    begin
       pragma Assert (Read2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:41:10
+      -- tests/integration/session_endianness/test.rflx:41:10
       Messages.Msg_LE.Verify_Message (Ctx.P.In_Msg2_Ctx);
       if Messages.Msg_LE.Byte_Size (Ctx.P.In_Msg2_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy2;
@@ -146,7 +146,7 @@ is
         Ghost;
    begin
       pragma Assert (Copy2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:50:10
+      -- tests/integration/session_endianness/test.rflx:50:10
       Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx);
       if Messages.Msg.Available_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) < 64 then
          Ctx.P.Next_State := S_Final;
@@ -189,7 +189,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply2_Invariant);
-      --  tests/integration/session_endianness/test.rflx:59:10
+      -- tests/integration/session_endianness/test.rflx:59:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply2_Invariant);
    end Reply2;

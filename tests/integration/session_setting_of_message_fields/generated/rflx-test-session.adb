@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:12:10
+      -- tests/integration/session_setting_of_message_fields/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -69,7 +69,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Local_Message_Ctx, Local_Message_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:25:10
+      -- tests/integration/session_setting_of_message_fields/test.rflx:25:10
       if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -92,7 +92,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_setting_of_message_fields/test.rflx:31:10
+      -- tests/integration/session_setting_of_message_fields/test.rflx:31:10
       if not Universal.Message.Valid_Next (Local_Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -137,7 +137,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_setting_of_message_fields/test.rflx:42:10
+      -- tests/integration/session_setting_of_message_fields/test.rflx:42:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_functions/test.rflx:38:10
+      -- tests/integration/session_functions/test.rflx:38:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -61,11 +61,11 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_functions/test.rflx:52:10
+      -- tests/integration/session_functions/test.rflx:52:10
       Get_Message_Type (Ctx, Message_Type);
-      --  tests/integration/session_functions/test.rflx:53:10
+      -- tests/integration/session_functions/test.rflx:53:10
       Valid_Message (Ctx, Message_Type, True, Valid);
-      --  tests/integration/session_functions/test.rflx:54:10
+      -- tests/integration/session_functions/test.rflx:54:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Length := Test.Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data) / 8);
       else
@@ -73,7 +73,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_functions/test.rflx:56:10
+      -- tests/integration/session_functions/test.rflx:56:10
       if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
             Definite_Message : Test.Definite_Message.Structure;
@@ -125,7 +125,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_functions/test.rflx:67:10
+      -- tests/integration/session_functions/test.rflx:67:10
       Ctx.P.Next_State := S_Process_2;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -146,9 +146,9 @@ is
         Ghost;
    begin
       pragma Assert (Process_2_Invariant);
-      --  tests/integration/session_functions/test.rflx:75:10
+      -- tests/integration/session_functions/test.rflx:75:10
       Length := Test.Length (Universal.Message.Size (Ctx.P.Message_Ctx) / 8);
-      --  tests/integration/session_functions/test.rflx:77:10
+      -- tests/integration/session_functions/test.rflx:77:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
          RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
@@ -195,7 +195,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
-      --  tests/integration/session_functions/test.rflx:86:10
+      -- tests/integration/session_functions/test.rflx:86:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;

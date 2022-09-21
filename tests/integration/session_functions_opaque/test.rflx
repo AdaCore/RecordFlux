@@ -5,7 +5,6 @@ package Test is
    type Size is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    generic
-      --  Channel : Channel with Readable, Writable; -- §S-P-C-RW
       -- §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-S
       with function Check_Size (Size : Size; Data : Opaque) return Boolean;
    session Session is

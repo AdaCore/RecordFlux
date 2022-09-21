@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal.Option_Types;
 with RFLX.Universal.Options;
@@ -34,7 +34,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:12:10
+      -- tests/integration/session_comprehension_on_message_field/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -75,7 +75,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:24:10
+      -- tests/integration/session_comprehension_on_message_field/test.rflx:24:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
@@ -172,7 +172,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:26:10
+      -- tests/integration/session_comprehension_on_message_field/test.rflx:26:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
@@ -269,7 +269,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:28:10
+      -- tests/integration/session_comprehension_on_message_field/test.rflx:28:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if
          not (Universal.Option_Types.Size (Option_Types_Ctx) <= 32768
@@ -326,7 +326,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_comprehension_on_message_field/test.rflx:39:10
+      -- tests/integration/session_comprehension_on_message_field/test.rflx:39:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

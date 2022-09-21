@@ -7,8 +7,8 @@ is
    use type RFLX.RFLX_Builtin_Types.Index;
    use type Ada.Streams.Stream_Element_Offset;
 
-   --  https://github.com/Componolit/RecordFlux/issues/482
-   --  Ada.Streams.Stream_Element_Array is not yet supported as buffer type and thus a conversion is needed.
+   -- https://github.com/Componolit/RecordFlux/issues/482
+   -- Ada.Streams.Stream_Element_Array is not yet supported as buffer type and thus a conversion is needed.
 
    function To_Ada_Stream (Buffer : RFLX.RFLX_Builtin_Types.Bytes) return Ada.Streams.Stream_Element_Array with
       Pre =>

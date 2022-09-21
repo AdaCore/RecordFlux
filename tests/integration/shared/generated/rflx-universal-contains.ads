@@ -1,4 +1,4 @@
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 with RFLX.Universal.Message;

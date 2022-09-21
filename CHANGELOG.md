@@ -26,6 +26,7 @@ Model:
 
 Generator:
 
+- Style of Ada comments (#816)
 - Detect when a generated file would overwrite an existing file (#993)
 
 ### Removed

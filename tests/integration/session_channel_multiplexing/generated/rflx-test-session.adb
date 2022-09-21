@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -25,9 +25,9 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:15:10
+      -- tests/integration/session_channel_multiplexing/test.rflx:15:10
       Universal.Message.Verify_Message (Ctx.P.Message_1_Ctx);
-      --  tests/integration/session_channel_multiplexing/test.rflx:16:10
+      -- tests/integration/session_channel_multiplexing/test.rflx:16:10
       Universal.Message.Verify_Message (Ctx.P.Message_2_Ctx);
       if Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0 then
          Ctx.P.Next_State := S_Reply_1;
@@ -54,7 +54,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_1_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:27:10
+      -- tests/integration/session_channel_multiplexing/test.rflx:27:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_1_Invariant);
    end Reply_1;
@@ -74,7 +74,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
-      --  tests/integration/session_channel_multiplexing/test.rflx:34:10
+      -- tests/integration/session_channel_multiplexing/test.rflx:34:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;

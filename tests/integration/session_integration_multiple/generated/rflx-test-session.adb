@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -24,7 +24,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_integration_multiple/test.rflx:12:10
+      -- tests/integration/session_integration_multiple/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.M_Ctx);
       Ctx.P.Next_State := S_Final;
       pragma Assert (Start_Invariant);

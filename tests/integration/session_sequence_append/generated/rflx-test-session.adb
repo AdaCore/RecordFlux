@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal.Options;
 
@@ -27,7 +27,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:13:10
+      -- tests/integration/session_sequence_append/test.rflx:13:10
       Universal.Option.Verify_Message (Ctx.P.Option_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -60,7 +60,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:22:10
+      -- tests/integration/session_sequence_append/test.rflx:22:10
       if
          not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
           and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0
@@ -145,7 +145,7 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_sequence_append/test.rflx:26:10
+      -- tests/integration/session_sequence_append/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if
          not (Universal.Options.Size (Options_Ctx) <= 32768
@@ -201,7 +201,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_sequence_append/test.rflx:37:10
+      -- tests/integration/session_sequence_append/test.rflx:37:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

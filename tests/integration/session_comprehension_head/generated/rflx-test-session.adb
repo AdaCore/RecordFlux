@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -32,7 +32,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:15:10
+      -- tests/integration/session_comprehension_head/test.rflx:15:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 32
@@ -64,7 +64,7 @@ is
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_comprehension_head/test.rflx:17:10
+      -- tests/integration/session_comprehension_head/test.rflx:17:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 8
@@ -83,7 +83,7 @@ is
          Universal.Options.Update (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_comprehension_head/test.rflx:19:10
+      -- tests/integration/session_comprehension_head/test.rflx:19:10
       if
          not Universal.Options.Has_Element (Ctx.P.Options_Ctx)
          or Universal.Options.Available_Space (Ctx.P.Options_Ctx) < 40
@@ -139,7 +139,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_1_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:30:10
+      -- tests/integration/session_comprehension_head/test.rflx:30:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -240,7 +240,7 @@ is
          pragma Assert (Process_1_Invariant);
          goto Finalize_Process_1;
       end if;
-      --  tests/integration/session_comprehension_head/test.rflx:32:10
+      -- tests/integration/session_comprehension_head/test.rflx:32:10
       if Universal.Options.Valid (Ctx.P.Options_Ctx) then
          declare
             RFLX_Copy_Options_Ctx : Universal.Options.Context;
@@ -395,7 +395,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_1_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:44:10
+      -- tests/integration/session_comprehension_head/test.rflx:44:10
       Ctx.P.Next_State := S_Recv;
       pragma Assert (Send_1_Invariant);
    end Send_1;
@@ -418,7 +418,7 @@ is
         Ghost;
    begin
       pragma Assert (Recv_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:52:10
+      -- tests/integration/session_comprehension_head/test.rflx:52:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       Ctx.P.Next_State := S_Process_2;
       pragma Assert (Recv_Invariant);
@@ -442,7 +442,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_2_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:61:10
+      -- tests/integration/session_comprehension_head/test.rflx:61:10
       if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
@@ -603,7 +603,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_2_Invariant);
-      --  tests/integration/session_comprehension_head/test.rflx:72:10
+      -- tests/integration/session_comprehension_head/test.rflx:72:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Send_2_Invariant);
    end Send_2;

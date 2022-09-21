@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -25,7 +25,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/messages_with_single_opaque_field/test.rflx:16:10
+      -- tests/integration/messages_with_single_opaque_field/test.rflx:16:10
       Test.Message.Verify_Message (Ctx.P.M_R_Ctx);
       Ctx.P.Next_State := S_Process;
       pragma Assert (Start_Invariant);
@@ -46,7 +46,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/messages_with_single_opaque_field/test.rflx:24:10
+      -- tests/integration/messages_with_single_opaque_field/test.rflx:24:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
       if
          not (Test.Message.Size (Ctx.P.M_R_Ctx) <= 32768
@@ -120,7 +120,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/messages_with_single_opaque_field/test.rflx:33:10
+      -- tests/integration/messages_with_single_opaque_field/test.rflx:33:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

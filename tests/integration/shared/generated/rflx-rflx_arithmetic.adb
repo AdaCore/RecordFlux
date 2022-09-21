@@ -1,4 +1,4 @@
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
 package body RFLX.RFLX_Arithmetic with
   SPARK_Mode

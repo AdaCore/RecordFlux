@@ -1,4 +1,4 @@
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma SPARK_Mode;
 with RFLX.RFLX_Generic_Types;
 with RFLX.RFLX_Builtin_Types;

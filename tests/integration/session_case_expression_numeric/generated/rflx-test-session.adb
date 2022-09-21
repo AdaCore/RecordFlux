@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -24,7 +24,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:19:10
+      -- tests/integration/session_case_expression_numeric/test.rflx:19:10
       Test.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Test.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Prepare;
@@ -49,7 +49,7 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:29:10
+      -- tests/integration/session_case_expression_numeric/test.rflx:29:10
       if Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Value := Test.Tiny_Int ((case Test.Message.Get_Value (Ctx.P.Message_Ctx) is
              when 1 | 2 =>
@@ -63,7 +63,7 @@ is
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      --  tests/integration/session_case_expression_numeric/test.rflx:34:10
+      -- tests/integration/session_case_expression_numeric/test.rflx:34:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
       if Test.Message.Available_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) < 8 then
          Ctx.P.Next_State := S_Final;
@@ -91,7 +91,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_case_expression_numeric/test.rflx:43:10
+      -- tests/integration/session_case_expression_numeric/test.rflx:43:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal.Options;
 with RFLX.Universal.Option;
@@ -38,7 +38,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_append_unconstrained/test.rflx:14:10
+      -- tests/integration/session_append_unconstrained/test.rflx:14:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 32
@@ -70,7 +70,7 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_append_unconstrained/test.rflx:16:10
+      -- tests/integration/session_append_unconstrained/test.rflx:16:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 40
@@ -102,7 +102,7 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_append_unconstrained/test.rflx:18:10
+      -- tests/integration/session_append_unconstrained/test.rflx:18:10
       if
          not Universal.Options.Has_Element (Options_Ctx)
          or Universal.Options.Available_Space (Options_Ctx) < 8
@@ -121,7 +121,7 @@ is
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
-      --  tests/integration/session_append_unconstrained/test.rflx:20:10
+      -- tests/integration/session_append_unconstrained/test.rflx:20:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if
          not (Universal.Options.Size (Options_Ctx) <= 32768
@@ -174,7 +174,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_append_unconstrained/test.rflx:29:10
+      -- tests/integration/session_append_unconstrained/test.rflx:29:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

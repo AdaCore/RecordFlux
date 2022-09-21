@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
 package body RFLX.Test.Session with
@@ -29,7 +29,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_integration/test.rflx:12:10
+      -- tests/integration/session_integration/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
@@ -58,7 +58,7 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Message_Invariant);
-      --  tests/integration/session_integration/test.rflx:23:10
+      -- tests/integration/session_integration/test.rflx:23:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
          Ctx.P.Next_State := S_Final;
@@ -97,7 +97,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_integration/test.rflx:33:10
+      -- tests/integration/session_integration/test.rflx:33:10
       Ctx.P.Next_State := S_Next;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -128,7 +128,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
       pragma Assert (Next_Invariant);
-      --  tests/integration/session_integration/test.rflx:41:10
+      -- tests/integration/session_integration/test.rflx:41:10
       Universal.Message.Reset (M_Ctx);
       if Universal.Message.Available_Space (M_Ctx, Universal.Message.F_Message_Type) < 32 then
          Ctx.P.Next_State := S_Final;

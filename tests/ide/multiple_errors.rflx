@@ -1,49 +1,49 @@
---  error: dependency cycle
+-- error: dependency cycle
 with Multiple_Errors;
 
---  error: RFLX prefix not allowed
---  error: Package identifier inconsistent with file name
+-- error: RFLX prefix not allowed
+-- error: Package identifier inconsistent with file name
 package RFLX_Invalid is
 
    type R is range 5 .. 23 with Size => 16;
    type R_Sequence is sequence of R;
 
-   --  error: first contains variable
-   --  error: last contains variable
+   -- error: first contains variable
+   -- error: last contains variable
    type Range2 is range X + 2 .. X + 55 with Size => 24;
 
-   --  error: range negative
+   -- error: range negative
    type Range3 is range 100 .. 50 with Size => 24;
 
-   --  error: size contains variable negative
+   -- error: size contains variable negative
    type Range4 is range 1 .. 50 with Size => 24 + T;
 
-   --  error: size too small
+   -- error: size too small
    type Range5 is range 0 .. 255 with Size => 7;
 
-   --  error: undefined element type
+   -- error: undefined element type
    type A2 is sequence of Undef;
 
-   --  error: Modular type exceeds limit
+   -- error: Modular type exceeds limit
    type S is mod 2 ** 128;
 
-   --  error: Modular type is not base 2
+   -- error: Modular type is not base 2
    type T is mod 1023;
 
-   --  error: Modulus contains variable
+   -- error: Modulus contains variable
    type Mod3 is mod 2 ** Value;
 
-   --  error: Duplicate type
+   -- error: Duplicate type
    type R is (R_E1, R_E2) with Size => 8;
 
-   --  error: Redefinition of built-in type
+   -- error: Redefinition of built-in type
    type Boolean is (Foo, Bar) with Size => 12;
 
-   --  error: Conflicting literals
+   -- error: Conflicting literals
    type R2 is (R2_E1, R2_E2, Foo) with Size => 24;
 
-   --  error: Size too small
-   --  error: Duplicate element
+   -- error: Size too small
+   -- error: Duplicate element
    type E2 is (E2_1, E2_2, E2_2) with Size => 1;
 
    -- error: duplicate enumeration value
@@ -89,7 +89,7 @@ package RFLX_Invalid is
       message
          Field : Boolean
             then null
-               --  error: invalid first aspect
+               -- error: invalid first aspect
                with First => 0;
       end message;
 
@@ -164,7 +164,7 @@ package RFLX_Invalid is
    type M5 is
       message
          F2 : M4;
-         --  error: name conflict
+         -- error: name conflict
          F2_F1 : R;
       end message;
 
@@ -246,7 +246,7 @@ package RFLX_Invalid is
       message
          null
             then F1
-               --  error: subsequent field referenced
+               -- error: subsequent field referenced
                if F1 > 42;
          F1 : Modular_32;
       end message;
@@ -284,7 +284,7 @@ package RFLX_Invalid is
       message
          F1 : Modular_32
             then null
-               --  error: size aspect for final field
+               -- error: size aspect for final field
                with Size => 32;
       end message;
 
@@ -293,5 +293,5 @@ package RFLX_Invalid is
       -- error: unnecessary Always_Valid
       Always_Valid;
 
---  error: End identifier inconsistent with package identifier
+-- error: End identifier inconsistent with package identifier
 end Inconsistent;
