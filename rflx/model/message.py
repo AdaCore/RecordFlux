@@ -848,6 +848,10 @@ class Message(AbstractMessage):
     def verify(self) -> None:
         if not self.is_null:
             self._verify_parameters()
+            self._verify_use_of_literals()
+
+            self.error.propagate()
+
             self._verify_expression_types()
             self._verify_expressions()
             self._verify_checksums()
@@ -1248,6 +1252,60 @@ class Message(AbstractMessage):
                             Severity.ERROR,
                             p.identifier.location,
                         )
+                    ]
+                )
+
+    def _verify_use_of_literals(self) -> None:
+        for link in self.structure:
+            for expression in [link.condition, link.size, link.first]:
+                literals = [
+                    *(
+                        [expression]
+                        if isinstance(expression, expr.Literal) and expression != expr.TRUE
+                        else []
+                    ),
+                    *[
+                        e
+                        for ass_expr in expression.findall(lambda x: isinstance(x, expr.AssExpr))
+                        if isinstance(ass_expr, expr.AssExpr)
+                        for e in ass_expr.terms
+                        if isinstance(e, expr.Literal)
+                    ],
+                ]
+
+                self.error.extend(
+                    [
+                        (
+                            f'invalid use of enum literal "{l}" in expression',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            l.location,
+                        )
+                        for l in literals
+                        if l.identifier in self._qualified_enum_literals
+                    ]
+                )
+
+                literals.extend(
+                    [
+                        e
+                        for relation in expression.findall(lambda x: isinstance(x, expr.Relation))
+                        if isinstance(relation, expr.Relation)
+                        for e in [relation.left, relation.right]
+                        if isinstance(e, expr.Literal)
+                    ]
+                )
+
+                self.error.extend(
+                    [
+                        (
+                            f'invalid use of type literal "{l}" in expression',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            l.location,
+                        )
+                        for l in literals
+                        if l.identifier in self._type_literals
                     ]
                 )
 

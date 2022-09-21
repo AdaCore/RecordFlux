@@ -17,6 +17,7 @@ CLI:
 Model:
 
 - Detection of unused parameters (#874)
+- Detection of invalid use of literals in expressions (#686, #1194)
 
 ### Changed
 
