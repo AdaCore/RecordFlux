@@ -695,6 +695,61 @@ def test_field_locations() -> None:
     assert message.fields == (f2, f3)
 
 
+@pytest.mark.parametrize(
+    "expression",
+    [
+        Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+        And(
+            TRUE,
+            Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+            location=Location((3, 4)),
+        ),
+        Equal(
+            Add(Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))), Number(1)),
+            Number(1),
+        ),
+        Equal(
+            Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+            Variable("X"),
+        ),
+    ],
+)
+def test_invalid_use_of_type_literal(expression: Expr) -> None:
+    structure = [
+        Link(INITIAL, Field("X")),
+        Link(Field("X"), FINAL, condition=expression),
+    ]
+    types = {Field("X"): MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:1:2: model: error: invalid use of type literal "P::Modular" in expression$',
+    )
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        Variable("Zero", location=Location((1, 2))),
+        And(TRUE, Variable("Zero", location=Location((1, 2)))),
+        Equal(Add(Variable("Zero", location=Location((1, 2))), Number(1)), Number(1)),
+    ],
+)
+def test_invalid_use_of_enum_literal(expression: Expr) -> None:
+    structure = [
+        Link(INITIAL, Field("X")),
+        Link(Field("X"), FINAL, condition=expression),
+    ]
+    types = {Field("X"): ENUMERATION}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:1:2: model: error: invalid use of enum literal "P::Zero" in expression$',
+    )
+
+
 class NewType(Type):
     pass
 
