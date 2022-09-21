@@ -1,20 +1,25 @@
 {
-  "python.testing.pytestArgs": ["-vv", "-nauto", "tests"],
-  "python.analysis.extraPaths": [
-    "./stubs"
-  ],
-  "python.formatting.provider": "black",
-  "python.linting.flake8Enabled": true,
-  "python.linting.flake8Path": ".venv/bin/pflake8",
-  "python.linting.mypyEnabled": true,
-  "python.linting.pydocstyleEnabled": true,
-  "githubIssues.issueBranchTitle": "issue_${issueNumber}",
-  "coverage-gutters.showLineCoverage": true,
-  "coverage-gutters.showRulerCoverage": true,
   "coverage-gutters.coverageReportFileName": "build/coverage/index.html",
   "coverage-gutters.highlightdark": "",
   "coverage-gutters.highlightlight": "",
   "coverage-gutters.showGutterCoverage": false,
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  "githubIssues.issueBranchTitle": "issue_${issueNumber}",
+  "python.analysis.extraPaths": [
+    "./stubs"
+  ],
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Path": ".venv/bin/pflake8",
+  "python.linting.mypyEnabled": true,
+  "python.linting.pydocstyleEnabled": true,
   "python.linting.pylintEnabled": true,
+  "python.testing.pytestArgs": [
+    "-vv",
+    "-nauto",
+    "tests"
+  ],
   "python.testing.pytestEnabled": true
 }
