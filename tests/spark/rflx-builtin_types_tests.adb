@@ -65,9 +65,9 @@ package body RFLX.Builtin_Types_Tests is
    function Identity (X : Offset_Type) return Offset_Type is
       (X);
 
-   --  Simulate an offset value that is determined at runtime.
-   --  This prevents the false assumption that the offset is statically determined at compile time,
-   --  which could affect the ability to prove the precondition of the RFLX_Types.Extract function.
+   -- Simulate an offset value that is determined at runtime.
+   -- This prevents the false assumption that the offset is statically determined at compile time,
+   -- which could affect the ability to prove the precondition of the RFLX_Types.Extract function.
    function Dynamic_Offset is new Identity (RFLX_Types.Offset);
 
    procedure Test_Extract_Modular_Integer_1 (T : in out AUnit.Test_Cases.Test_Case'Class) with

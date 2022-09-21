@@ -1,25 +1,25 @@
 with IPv4;
 
---  Dynamic Host Configuration Protocol (RFC 2131)
+-- Dynamic Host Configuration Protocol (RFC 2131)
 
 package DHCP is
 
-   --  DHCP Options and BOOTP Vendor Extensions (RFC 1533)
+   -- DHCP Options and BOOTP Vendor Extensions (RFC 1533)
 
-   --  https://github.com/Componolit/RecordFlux-specifications/issues/70
-   --  The full list of Codes is defined in
-   --  https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#options.
+   -- https://github.com/Componolit/RecordFlux-specifications/issues/70
+   -- The full list of Codes is defined in
+   -- https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#options.
    type Code is
-      (--  BOOTP Vendor Information Extensions (RFC 1497)
+      (-- BOOTP Vendor Information Extensions (RFC 1497)
        Pad_Option                                              =>   0,
        End_Option                                              => 255,
        Subnet_Mask_Option                                      =>   1,
        Router_Option                                           =>   3,
        Domain_Name_Server_Option                               =>   6,
        Domain_Name_Option                                      =>  15,
-       --  IP Layer Parameters per Interface (RFC 1533)
+       -- IP Layer Parameters per Interface (RFC 1533)
        Broadcast_Address_Option                                =>  28,
-       --  DHCP Extensions (RFC 1533)
+       -- DHCP Extensions (RFC 1533)
        Requested_IP_Address_Option                             =>  50,
        IP_Address_Lease_Time_Option                            =>  51,
        Option_Overload_Option                                  =>  52,
@@ -74,9 +74,9 @@ package DHCP is
        File_And_Sname_Overload => 3)
    with Size => 8;
 
-   --  https://github.com/Componolit/RecordFlux-specifications/issues/70
-   --  The full list of Codes is defined in
-   --  https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#message-type-53.
+   -- https://github.com/Componolit/RecordFlux-specifications/issues/70
+   -- The full list of Codes is defined in
+   -- https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#message-type-53.
    type DHCP_Message_Type is
       (DHCPDISCOVER => 1,
        DHCPOFFER    => 2,
@@ -176,12 +176,12 @@ package DHCP is
             then null;
       end message;
 
-   --  DHCP Message (RFC 2131, 2)
+   -- DHCP Message (RFC 2131, 2)
 
    type Message_Op_Code is (BOOTREQUEST => 1, BOOTREPLY => 2) with Size => 8;
-   --  https://github.com/Componolit/RecordFlux-specifications/issues/70
-   --  The full list of Hardware Types is defined in
-   --  https://www.iana.org/assignments/arp-parameters/arp-parameters.xml#arp-parameters-2.
+   -- https://github.com/Componolit/RecordFlux-specifications/issues/70
+   -- The full list of Hardware Types is defined in
+   -- https://www.iana.org/assignments/arp-parameters/arp-parameters.xml#arp-parameters-2.
    type Hardware_Address_Type is (HT_Reserved => 0, HT_Ethernet_10 => 1) with Size => 8, Always_Valid;
    type Hardware_Address_Length is (HL_Ethernet => 6) with Size => 8;
    type Hops is mod 2 ** 8;

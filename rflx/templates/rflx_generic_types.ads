@@ -1,4 +1,4 @@
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
 with Ada.Unchecked_Deallocation;
 with {prefix}RFLX_Arithmetic;

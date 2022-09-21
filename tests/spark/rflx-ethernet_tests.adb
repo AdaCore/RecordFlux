@@ -345,7 +345,7 @@ package body RFLX.Ethernet_Tests is
          Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
       end;
 
-      --  https://github.com/Componolit/Workarounds/issues/32
+      -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Ethernet.Frame.Take_Buffer (Context, Buffer);
       pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
@@ -397,7 +397,7 @@ package body RFLX.Ethernet_Tests is
          Assert (Data (First .. Last), Expected.all, "Invalid binary representation");
       end;
 
-      --  https://github.com/Componolit/Workarounds/issues/32
+      -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Ethernet.Frame.Take_Buffer (Context, Buffer);
       pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
@@ -455,7 +455,7 @@ package body RFLX.Ethernet_Tests is
       function Identity (X : T) return T is
         (X);
 
-      --  Simulate a type/length/TPID value that is determined at runtime
+      -- Simulate a type/length/TPID value that is determined at runtime
       function Dynamic_Type_Length is new Identity (Ethernet.Type_Length);
 
       Expected : RFLX_Builtin_Types.Bytes_Ptr := Read_File_Ptr ("tests/data/captured/ethernet_vlan_tag.raw");

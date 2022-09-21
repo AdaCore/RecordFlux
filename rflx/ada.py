@@ -1812,7 +1812,7 @@ class CommentStatement(Statement):
         self.comment = comment
 
     def __str__(self) -> str:
-        return f"--  {self.comment}"
+        return f"-- {self.comment}"
 
 
 class IfStatement(Statement):

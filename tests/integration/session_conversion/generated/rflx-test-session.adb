@@ -1,5 +1,5 @@
 pragma Restrictions (No_Streams);
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal.Contains;
 
@@ -28,7 +28,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      --  tests/integration/session_conversion/test.rflx:13:10
+      -- tests/integration/session_conversion/test.rflx:13:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
          Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
@@ -56,7 +56,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      --  tests/integration/session_conversion/test.rflx:23:10
+      -- tests/integration/session_conversion/test.rflx:23:10
       if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
          Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
@@ -85,7 +85,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      --  tests/integration/session_conversion/test.rflx:32:10
+      -- tests/integration/session_conversion/test.rflx:32:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

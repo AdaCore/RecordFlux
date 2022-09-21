@@ -1,4 +1,4 @@
-pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 with {prefix}RFLX_Types;
 
 generic
@@ -209,7 +209,7 @@ is
 
 private
 
-   --  https://github.com/Componolit/Workarounds/issues/24
+   -- https://github.com/Componolit/Workarounds/issues/24
    pragma Warnings (Off, "use clause for package * has no effect");
 
    use {prefix}RFLX_Types;

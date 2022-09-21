@@ -1097,7 +1097,7 @@ class UnknownStatement(stmt.Statement):
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    A : Universal.Message_Type;
 begin
@@ -1211,7 +1211,7 @@ end;\
                 location=Location(start=(1, 1)),
             ),
             """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    A : Universal.Message_Type;
 begin
@@ -1310,7 +1310,7 @@ end;\
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    A_Ctx : Universal.Message.Context;
    A_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1404,7 +1404,7 @@ end;\
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    A_Ctx : Universal.Message.Context;
    A_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1546,7 +1546,7 @@ end;\
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
---  <stdin>:1:1
+-- <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
 if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) < 24 then
    Ada.Text_IO.Put_Line ("Error: insufficient space in ""X_Ctx"" for creating message");
@@ -1584,7 +1584,7 @@ end if;\
                 location=Location(start=(1, 1)),
             ),
             """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    A : Universal.Message.Structure;
 begin
@@ -1609,7 +1609,7 @@ end;\
                 location=Location(start=(1, 1)),
             ),
             """\
---  <stdin>:1:1
+-- <stdin>:1:1
 declare
    X : Universal.Option.Structure;
    A : Universal.Message.Structure;
@@ -1644,7 +1644,7 @@ end;\
                 type_=rty.BOOLEAN,
                 location=Location(start=(1, 1)),
             ),
-            "--  <stdin>:1:1\nX := A\nand then B;",
+            "-- <stdin>:1:1\nX := A\nand then B;",
         ),
         (
             stmt.Reset(
@@ -1652,7 +1652,7 @@ end;\
                 type_=rty.Message("P::M"),
                 location=Location(start=(1, 1)),
             ),
-            "--  <stdin>:1:1\nP.M.Reset (X_Ctx);",
+            "-- <stdin>:1:1\nP.M.Reset (X_Ctx);",
         ),
         (
             stmt.Reset(
@@ -1660,7 +1660,7 @@ end;\
                 type_=rty.Sequence("P::S", rty.Integer("A")),
                 location=Location(start=(1, 1)),
             ),
-            "--  <stdin>:1:1\nP.S.Reset (X_Ctx);",
+            "-- <stdin>:1:1\nP.S.Reset (X_Ctx);",
         ),
         (
             stmt.Read(
@@ -1668,7 +1668,7 @@ end;\
                 expr.Variable("Y", type_=rty.Message("P::M")),
                 location=Location(start=(1, 1)),
             ),
-            "--  <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
+            "-- <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
         ),
         (
             stmt.Write(
@@ -1676,7 +1676,7 @@ end;\
                 expr.Variable("Y", type_=rty.Message("P::M")),
                 location=Location(start=(1, 1)),
             ),
-            "--  <stdin>:1:1",
+            "-- <stdin>:1:1",
         ),
     ],
 )
@@ -2576,7 +2576,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
         '''\
-        pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+        pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
         pragma Warnings (Off, "redundant conversion");
         with RFLX_Types;
 
@@ -2619,7 +2619,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
         (
             False,
             """\
-            pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+            pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
             pragma Warnings (Off, "redundant conversion");
             with RFLX_Types;
 
@@ -2662,7 +2662,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
         (
             True,
             """\
-            pragma Style_Checks ("N3aAbcdefhiIklnOprStux");
+            pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
             pragma Warnings (Off, "redundant conversion");
             with RFLX_Types;
 
