@@ -99,7 +99,7 @@ jobs:
   installation:
     name: Installation
     needs: skip_check_general
-    if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
+    if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -464,7 +464,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          paths: '[".github/workflows/**", "*.gpr", "tests/spark/**"]'
+          paths: '[".github/workflows/**", "*.gpr", "rflx/**", "tests/**"]'
 
   verification_spark:
     name: Verification
