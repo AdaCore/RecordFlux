@@ -24,6 +24,10 @@ Model:
 
 - Change representation of null messages (#643)
 
+Generator:
+
+- Detect when a generated file would overwrite an existing file (#993)
+
 ### Removed
 
 Specification:
