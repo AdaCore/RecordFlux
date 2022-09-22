@@ -1465,10 +1465,8 @@ class Generator:
 def create_file(filename: Path, content: str) -> None:
     log.info("Creating %s", filename)
 
-    try:
-        filename.unlink()
-    except FileNotFoundError:
-        pass
+    if filename.exists():
+        fail(f"file {filename} already exists", subsystem=Subsystem.GENERATOR)
     filename.write_text(content)
 
 

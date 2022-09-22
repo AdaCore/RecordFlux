@@ -118,14 +118,16 @@ def test_main_generate_no_library_files(tmp_path: Path) -> None:
 
 
 def test_main_generate_prefix(tmp_path: Path) -> None:
-    for prefix in ["", " ", "A", "A.B", "A.B.C"]:
+    for index, prefix in enumerate(["", " ", "A", "A.B", "A.B.C"]):
+        path = tmp_path / str(index)
+        path.mkdir()
         assert (
             cli.main(
                 [
                     "rflx",
                     "generate",
                     "-d",
-                    str(tmp_path),
+                    str(path),
                     "-p",
                     prefix,
                     MESSAGE_SPEC_FILE,

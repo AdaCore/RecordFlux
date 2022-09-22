@@ -143,6 +143,12 @@ def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Pat
         Generator().generate(Model(), Integration(), tmp_path)
 
 
+def test_generate_existing_file(tmp_path: Path) -> None:
+    Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
+    with pytest.raises(RecordFluxError, match="^generator: error: file [^ ]+ already exists$"):
+        Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
+
+
 @pytest.mark.parametrize("model", MODELS)
 def test_equality(model: Model, tmp_path: Path) -> None:
     assert_equal_code(model, Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
