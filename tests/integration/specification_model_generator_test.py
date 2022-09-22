@@ -446,9 +446,7 @@ def test_refinement_with_self(tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.verification
-def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
-    spec = """\
+DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC = """\
        package Test is
 
           type Length is range 0 .. 2 ** 7 - 1 with Size => 7;
@@ -464,8 +462,17 @@ def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
 
        end Test;
         """
-    utils.assert_compilable_code_string(spec, tmp_path)
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
+
+
+def test_definite_message_with_builtin_type(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC, tmp_path)
+
+
+@pytest.mark.verification
+def test_definite_message_with_builtin_type_provability(tmp_path: Path) -> None:
+    utils.assert_provable_code_string(
+        DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC, tmp_path, units=["rflx-test-message"]
+    )
 
 
 def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
@@ -538,9 +545,7 @@ def test_feature_integration(tmp_path: Path) -> None:
     utils.assert_compilable_code_specs([SPEC_DIR / "feature_integration.rflx"], tmp_path)
 
 
-@pytest.mark.verification
-def test_parameterized_message(tmp_path: Path) -> None:
-    spec = """\
+PARAMETERIZED_MESSAGE_SPEC = """\
         package Test is
 
            type Length is range 1 .. 2 ** 14 - 1 with Size => 16;
@@ -559,13 +564,20 @@ def test_parameterized_message(tmp_path: Path) -> None:
 
         end Test;
         """
-    utils.assert_compilable_code_string(spec, tmp_path)
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
+
+
+def test_parameterized_message(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(PARAMETERIZED_MESSAGE_SPEC, tmp_path)
 
 
 @pytest.mark.verification
-def test_definite_parameterized_message(tmp_path: Path) -> None:
-    spec = """\
+def test_parameterized_message_provability(tmp_path: Path) -> None:
+    utils.assert_provable_code_string(
+        PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
+    )
+
+
+DEFINITE_PARAMETERIZED_MESSAGE_SPEC = """\
         package Test is
 
            type Length is range 1 .. 2 ** 14 - 1 with Size => 16;
@@ -578,8 +590,17 @@ def test_definite_parameterized_message(tmp_path: Path) -> None:
 
         end Test;
         """
-    utils.assert_compilable_code_string(spec, tmp_path)
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-message"])
+
+
+def test_definite_parameterized_message(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(DEFINITE_PARAMETERIZED_MESSAGE_SPEC, tmp_path)
+
+
+@pytest.mark.verification
+def test_definite_parameterized_message_provability(tmp_path: Path) -> None:
+    utils.assert_provable_code_string(
+        DEFINITE_PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
+    )
 
 
 def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
