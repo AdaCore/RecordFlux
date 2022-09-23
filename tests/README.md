@@ -12,19 +12,20 @@ A unit test verifies the functionality of a single Python module. The result of 
 
 Integration tests verify the correct interaction between multiple modules. Complex tests comprising just a single module may also be included in this directory.
 
-Subdirectories containing a `test.rflx` file are considered as feature tests. The following actions are performed for each feature test:
+Each subdirectory is considered as a feature test and must contain a `test.rflx` file. The following actions are performed for each feature test:
 
 - Check parsability of specification and creation of model
 - Check for changes in SPARK code generation (if `generated` directory exists)
-- Check compilability of generated SPARK code (if no `output` key in config is defined)
-- Check executability of generated SPARK code (if `output` key in config is defined)
+- Check compilability of generated SPARK code
+- Check executability of generated SPARK code (if `sequence` key in config is defined)
 - Check provabilility of generated SPARK code (if `prove` key in config is defined)
 
-The executability and provability tests require the definition of a session called `Session` with one readable and writable channel. The actions can be configured in an optional `config.yml` file:
+The executability and provability tests require the definition of a session called `Session`. The actions can be configured in an optional `config.yml` file:
 
-- `input`: Each list element is interpreted as an input message for the session channel. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
-- `output`: Each read or written message and each entry of a state (except the final state) is written to `stdout`. The expected output is defined in `output`.
-- `prove`: If the `prove` key exists, the generated SPARK code for `Session` and each unit listed in `prove` will be proved.
+- `input`: A mapping of all readable channels to a list of messages. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
+- `output`: A list of all writable channels.
+- `sequence`: The expected sequence of entered states and IO actions (read and written messages).
+- `prove`: If the `prove` key exists, the generated SPARK code for `Session` and each additionally listed unit will be proved.
 
 Session functions can be defined by putting a custom implementation of the `Session` package inside the `src` directory.
 
