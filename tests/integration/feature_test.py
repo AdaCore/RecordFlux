@@ -22,9 +22,10 @@ from tests.utils import (
 )
 
 MAIN = "main.adb"
-FEATURES = [
-    f for f in Path(__file__).parent.glob("*") if f.is_dir() and (f / "test.rflx").is_file()
-]
+FEATURES = [f for f in Path(__file__).parent.glob("*") if f.is_dir() and f.name != "__pycache__"]
+INCOMPLETE_FEATURE_TESTS = [f for f in FEATURES if not (f / "test.rflx").is_file()]
+
+assert not INCOMPLETE_FEATURE_TESTS
 
 
 class ConfigFile(BaseModel):
