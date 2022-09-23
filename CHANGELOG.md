@@ -14,6 +14,10 @@ CLI:
 - `rflx setup_ide` subcommand for installing IDE integration (#795)
 - `rflx` option `--unsafe` (#987)
 
+Model:
+
+- Detection of unused parameters (#874)
+
 ### Changed
 
 Specification:

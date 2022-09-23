@@ -709,6 +709,17 @@ def test_invalid_message_field_type() -> None:
         )
 
 
+def test_unused_parameter() -> None:
+    structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
+    types = {Field(ID("P", Location((1, 2)))): MODULAR_INTEGER, Field("X"): MODULAR_INTEGER}
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:1:2: model: error: unused parameter "P"$',
+    )
+
+
 @pytest.mark.parametrize(
     "condition",
     [
@@ -4081,7 +4092,11 @@ def test_message_str() -> None:
         "P::M",
         [
             Link(INITIAL, Field("L")),
-            Link(Field("L"), Field("O"), condition=Greater(Variable("L"), Number(100))),
+            Link(
+                Field("L"),
+                Field("O"),
+                condition=And(Greater(Variable("L"), Number(100)), Equal(Variable("A"), TRUE)),
+            ),
             Link(Field("L"), Field("P"), condition=LessEqual(Variable("L"), Number(100))),
             Link(Field("P"), FINAL),
             Link(Field("O"), FINAL),
@@ -4102,6 +4117,7 @@ def test_message_str() -> None:
                   L : P::Modular
                      then O
                         if L > 100
+                           and A = True
                      then P
                         if L <= 100;
                   O : P::Modular

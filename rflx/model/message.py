@@ -847,6 +847,7 @@ class Message(AbstractMessage):
 
     def verify(self) -> None:
         if not self.is_null:
+            self._verify_parameters()
             self._verify_expression_types()
             self._verify_expressions()
             self._verify_checksums()
@@ -1228,6 +1229,27 @@ class Message(AbstractMessage):
                 *self.type_constraints(expr.TRUE),
             ],
         )
+
+    def _verify_parameters(self) -> None:
+        variables = [
+            v.identifier
+            for l in self.structure
+            for e in [l.condition, l.size, l.first]
+            for v in e.findall(lambda x: isinstance(x, expr.Variable))
+            if isinstance(v, expr.Variable)
+        ]
+        for p in self.parameters:
+            if p.identifier not in variables:
+                self.error.extend(
+                    [
+                        (
+                            f'unused parameter "{p.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            p.identifier.location,
+                        )
+                    ]
+                )
 
     def _verify_expression_types(self) -> None:
         types: Dict[Field, mty.Type] = {}

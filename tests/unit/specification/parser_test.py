@@ -2819,7 +2819,9 @@ def test_parse_error_name_conflict_between_parameters() -> None:
            type T is mod 2 ** 8;
            type M (P : T; P : T) is
               message
-                 F : T;
+                 F : T
+                    then null
+                       if P = F;
               end message;
         end Test;
         """,
