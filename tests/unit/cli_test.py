@@ -11,10 +11,11 @@ import rflx.specification
 from rflx import cli, generator, validator
 from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
 from rflx.pyrflx import PyRFLXError
-from tests.const import SPEC_DIR
+from tests.const import DATA_DIR, SPEC_DIR
 
 MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
 SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
+IANA_XML_FILE = str(DATA_DIR / "bootp-dhcp-parameters.xml")
 
 
 def raise_parser_error() -> None:
@@ -523,3 +524,7 @@ def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
         ),
         re.DOTALL,
     )
+
+
+def test_main_convert_iana(tmp_path: Path) -> None:
+    assert cli.main(["rflx", "convert", "iana", "-d", str(tmp_path), IANA_XML_FILE]) == 0

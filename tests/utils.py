@@ -11,6 +11,7 @@ import librflxlang as lang
 import pytest
 
 from rflx import ada
+from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Debug, Generator, const
@@ -19,7 +20,6 @@ from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
 from rflx.specification import Parser
 from rflx.specification.parser import (
-    STDIN,
     create_bool_expression,
     create_expression,
     create_math_expression,
