@@ -63,6 +63,7 @@ class Subsystem(Enum):
     ID = auto()
     VALIDATOR = auto()
     STYLE = auto()
+    CONVERTER = auto()
 
     def __str__(self) -> str:
         return str.lower(self.name)

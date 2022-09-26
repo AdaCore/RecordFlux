@@ -4,11 +4,11 @@ import librflxlang as lang
 import pytest
 
 from rflx import expression as expr, model
+from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import State, declaration as decl, statement as stmt
 from rflx.specification.parser import (
-    STDIN,
     Parser,
     create_declaration,
     create_formal_declaration,
