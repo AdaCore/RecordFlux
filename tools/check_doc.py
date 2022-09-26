@@ -18,9 +18,10 @@ from ruamel.yaml.parser import ParserError
 
 import rflx.error
 import rflx.specification
+from rflx.common import STDIN
 from rflx.error import RecordFluxError
 from rflx.specification import style
-from rflx.specification.parser import STDIN, diagnostics_to_error
+from rflx.specification.parser import diagnostics_to_error
 from tests.const import GENERATED_DIR
 
 

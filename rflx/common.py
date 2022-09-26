@@ -1,7 +1,10 @@
 import re
 import textwrap
 from abc import ABC
+from pathlib import Path
 from typing import Iterable, Iterator, Sequence, TypeVar
+
+STDIN = Path("<stdin>")
 
 
 class Base(ABC):

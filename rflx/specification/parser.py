@@ -11,6 +11,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 import librflxlang as lang
 
 from rflx import expression as expr, model
+from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
@@ -21,7 +22,6 @@ from . import style
 from .cache import Cache
 
 log = logging.getLogger(__name__)
-STDIN = Path("<stdin>")
 
 
 def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = False) -> Location:

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import shutil
+import sys
 import traceback
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -12,6 +13,7 @@ import librflxlang
 from pkg_resources import get_distribution, resource_filename
 
 from rflx import __version__
+from rflx.converter import iana
 from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
 from rflx.generator import Debug, Generator
 from rflx.graph import create_message_graph, create_session_graph, write_graph
@@ -207,6 +209,29 @@ def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-stat
         default=Path.home() / ".gnatstudio",
     )
     parser_setup.set_defaults(func=setup)
+
+    parser_convert = subparsers.add_parser(
+        "convert", help="convert foreign specifications into RecordFlux specifications"
+    )
+
+    convert_subparsers = parser_convert.add_subparsers(dest="subcommand")
+
+    parser_iana = convert_subparsers.add_parser(
+        "iana", help="convert IANA registry into RecordFlux specifications"
+    )
+
+    parser_iana.add_argument(
+        "-a",
+        "--always-valid",
+        help="add an Always_Valid aspect to each type that does not "
+        "explicitly cover all possible values for the type's length",
+        action="store_true",
+    )
+    parser_iana.add_argument(
+        "-d", dest="output_directory", type=Path, default=".", help="output directory"
+    )
+    parser_iana.add_argument("file", type=argparse.FileType("r"), nargs="?", default=sys.stdin)
+    parser_iana.set_defaults(func=convert_iana)
 
     args = parser.parse_args(argv[1:])
 
@@ -421,3 +446,14 @@ def setup(args: argparse.Namespace) -> None:
         plugins_dir.mkdir(parents=True, exist_ok=True)
     print(f'Installing RecordFlux plugin into "{plugins_dir}"')
     shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)
+
+
+def convert_iana(args: argparse.Namespace) -> None:
+    xml_str = args.file.read()
+    iana.convert(
+        xml_str,
+        args.file,
+        args.always_valid,
+        args.output_directory,
+        os.environ.get("RFLX_REPRODUCIBLE") is not None,
+    )

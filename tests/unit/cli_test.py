@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Callable
 
@@ -9,12 +10,14 @@ from _pytest.monkeypatch import MonkeyPatch
 
 import rflx.specification
 from rflx import cli, generator, validator
+from rflx.converter import iana
 from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
 from rflx.pyrflx import PyRFLXError
-from tests.const import SPEC_DIR
+from tests.const import DATA_DIR, SPEC_DIR
 
 MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
 SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
+IANA_XML_FILE = str(DATA_DIR / "bootp-dhcp-parameters.xml")
 
 
 def raise_parser_error() -> None:
@@ -523,3 +526,32 @@ def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
         ),
         re.DOTALL,
     )
+
+
+def test_main_convert_iana(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    result = []
+
+    def convert_mock(
+        data: str,
+        source: TextIOWrapper,
+        always_valid: bool,
+        output_dir: Path,
+        _reproducible: bool = False,
+    ) -> None:
+        result.append((data, source.name, always_valid, output_dir))
+
+    monkeypatch.setattr(iana, "convert", convert_mock)
+    assert cli.main(["rflx", "convert", "iana", "-d", str(tmp_path / "1"), IANA_XML_FILE]) == 0
+    assert (
+        cli.main(
+            ["rflx", "convert", "iana", "-d", str(tmp_path / "2"), "--always-valid", IANA_XML_FILE]
+        )
+        == 0
+    )
+
+    with open(IANA_XML_FILE, "r", encoding="utf-8") as f:
+        data = f.read()
+        assert result == [
+            (data, IANA_XML_FILE, False, tmp_path / "1"),
+            (data, IANA_XML_FILE, True, tmp_path / "2"),
+        ]

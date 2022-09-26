@@ -1,6 +1,6 @@
 import pytest
 
-from rflx.specification.parser import STDIN
+from rflx.common import STDIN
 from tests.const import DATA_DIR
 from tools.check_doc import CheckDocError, check_file, check_files
 
