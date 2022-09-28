@@ -1,0 +1,16 @@
+Tagged-Test DEFINITIONS ::= BEGIN
+  Tagged ::= SEQUENCE {
+     name      OCTET STRING,
+     payload       CHOICE {
+        -- a=Appl, c=Ctxt, i=implicit, e=explicit, p=primitive, c=constructed
+        aip    [APPLICATION 0] IMPLICIT INTEGER,
+        aic    [APPLICATION 1] IMPLICIT SEQUENCE OF INTEGER,
+        aep    [APPLICATION 2] INTEGER,
+        aec    [APPLICATION 3] SEQUENCE OF INTEGER,
+        cip    [4] IMPLICIT INTEGER,
+        cic    [5] IMPLICIT SEQUENCE OF INTEGER,
+        cep    [6] INTEGER,
+        cec    [7] SEQUENCE OF INTEGER
+     }
+  }
+END

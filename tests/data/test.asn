@@ -1,0 +1,15 @@
+-- Source: https://en.wikipedia.org/wiki/ASN.1#Example
+
+Test DEFINITIONS ::= BEGIN
+
+    Question ::= SEQUENCE {
+        id        INTEGER,
+        question  IA5String
+    }
+
+    Answer ::= SEQUENCE {
+        id        INTEGER,
+        answer    BOOLEAN
+    }
+
+END

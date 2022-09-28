@@ -1,0 +1,15 @@
+-- From: https://asn1.io/asn1playground/Default.aspx
+World-Schema DEFINITIONS ::= 
+BEGIN
+  Rocket ::= SEQUENCE       
+  {
+     range     INTEGER,
+     name      OCTET STRING,
+     ident     OBJECT IDENTIFIER,
+     payload   CHOICE
+     { 
+        one    INTEGER,  
+        many   SEQUENCE OF INTEGER  
+     }
+  }
+END

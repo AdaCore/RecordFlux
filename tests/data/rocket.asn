@@ -1,0 +1,18 @@
+-- From: https://asn1.io/asn1playground/Default.aspx
+--<ASN1.HugeInteger World-Schema.Rocket.range>--
+World-Schema DEFINITIONS AUTOMATIC TAGS ::= 
+BEGIN
+  Rocket ::= SEQUENCE       
+  {
+     range     INTEGER, -- huge (see a special directive above)
+     name      UTF8String (SIZE(1..16)),
+     message   UTF8String DEFAULT "Hello World" , 
+     fuel      ENUMERATED {solid, liquid, gas},
+     speed     CHOICE     
+     { 
+        mph    INTEGER,  
+        kmph   INTEGER  
+     }  OPTIONAL, 
+     payload   SEQUENCE OF UTF8String 
+  }                                                     
+END

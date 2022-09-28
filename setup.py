@@ -42,7 +42,9 @@ setup(
     package_data={"rflx": ["py.typed", "templates/*"], "ide": ["gnatstudio/*"]},
     python_requires=">=3.8",
     install_requires=[
+        "asn1tools >=0.163.0, <0.164.0",
         "attrs >=20, <22",
+        "frozendict >=2.3.4, <2.4",
         "icontract >=2.3.4, <3",
         "pydantic >=1, <2",
         "pydotplus >=2, <3",
