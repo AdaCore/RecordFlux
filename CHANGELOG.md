@@ -13,6 +13,8 @@ CLI:
 
 - `rflx setup_ide` subcommand for installing IDE integration (#795)
 - `rflx` option `--unsafe` (#987)
+- `rflx convert` subcommand for converting foreign specifications
+- `rflx convert iana` subcommand for converting IANA "Service Name and Transport Protocol Port Number Registry" XML files (#708)
 
 Model:
 
