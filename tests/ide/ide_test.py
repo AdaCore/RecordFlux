@@ -49,8 +49,6 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
             f'{path}:40:4: model: error: illegal redefinition of built-in type "Boolean"',
-            f'{path}:2:6: parser: error: dependency cycle when including "Multiple_Errors"',
-            f'{path}:2:6: parser: info: when including "Multiple_Errors"',
             f'{path}:13:9: model: error: first of "Range2" contains variable',
             f'{path}:13:9: model: error: last of "Range2" contains variable',
             f'{path}:16:9: model: error: range of "Range3" negative',

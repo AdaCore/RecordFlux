@@ -1,5 +1,7 @@
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import itertools
 import logging
 import textwrap
@@ -11,7 +13,7 @@ from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple
 import librflxlang as lang
 
 from rflx import expression as expr, model
-from rflx.common import STDIN
+from rflx.common import STDIN, unique
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
@@ -1678,10 +1680,44 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
 
 
 @dataclass(frozen=True)
-class SpecificationNode:
+class ContextClause:
+    name: ID
+    location: Location
+
+    @property
+    def withed_file(self) -> str:
+        return f"{str(self.name).lower()}.rflx"
+
+
+@dataclass(frozen=True)
+class SpecificationFile:
     filename: Path
     spec: lang.Specification
-    withed_files: List[str]
+    context_clauses: list[ContextClause]
+
+    @staticmethod
+    def create(
+        error: RecordFluxError,
+        spec: lang.Specification,
+        filename: Path,
+    ) -> SpecificationFile:
+        check_naming(error, spec.f_package_declaration, filename)
+
+        return SpecificationFile(
+            filename,
+            spec,
+            [
+                ContextClause(
+                    create_id(error, context.f_item, filename),
+                    node_location(context.f_item, filename),
+                )
+                for context in spec.f_context_clause
+            ],
+        )
+
+    @property
+    def package(self) -> ID:
+        return ID(self.spec.f_package_declaration.f_identifier.text)
 
 
 class Parser:
@@ -1696,7 +1732,7 @@ class Parser:
             warn("model verification skipped", Subsystem.MODEL)
         self.skip_verification = skip_verification
         self._workers = workers
-        self._specifications: OrderedDict[str, SpecificationNode] = OrderedDict()
+        self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
         self._types: List[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
@@ -1705,118 +1741,36 @@ class Parser:
         self._integration: Integration = Integration(integration_files_dir)
         self._cache = Cache(not skip_verification and cached)
 
-    def _convert_unit(
-        self,
-        error: RecordFluxError,
-        spec: lang.Specification,
-        filename: Path,
-        transitions: List[ID] = None,
-    ) -> None:
-        transitions = transitions or []
-        withed_files = []
-
-        check_naming(error, spec.f_package_declaration, filename)
-        packagefile = f"{spec.f_package_declaration.f_identifier.text.lower()}.rflx"
-        for context in spec.f_context_clause:
-            item = create_id(error, context.f_item, filename)
-            if item in transitions:
-                error.extend(
-                    [
-                        (
-                            f'dependency cycle when including "{transitions[0]}"',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            transitions[0].location,
-                        ),
-                        *[
-                            (
-                                f'when including "{i}"',
-                                Subsystem.PARSER,
-                                Severity.INFO,
-                                i.location,
-                            )
-                            for i in transitions[1:] + [item]
-                        ],
-                    ],
-                )
-                continue
-            withed_file = filename.parent / f"{str(item).lower()}.rflx"
-            withed_files.append(withed_file.name)
-            if withed_file.name not in self._specifications:
-                error.extend(self._parse_specfile(withed_file, transitions + [item]))
-
-        if (
-            packagefile in self._specifications
-            and filename != self._specifications[packagefile].filename
-        ):
-            error.extend(
-                [
-                    (
-                        "duplicate specification",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(spec.f_package_declaration.f_identifier, filename),
-                    ),
-                    (
-                        "previous specification",
-                        Subsystem.PARSER,
-                        Severity.INFO,
-                        node_location(
-                            self._specifications[
-                                packagefile
-                            ].spec.f_package_declaration.f_identifier,
-                            self._specifications[packagefile].filename,
-                        ),
-                    ),
-                ],
-            )
-        self._specifications[packagefile] = SpecificationNode(filename, spec, withed_files)
-
-    def _parse_specfile(self, filename: Path, transitions: List[ID] = None) -> RecordFluxError:
-        error = RecordFluxError()
-        transitions = transitions or []
-
-        log.info("Parsing %s", filename)
-        unit = lang.AnalysisContext().get_from_file(str(filename))
-        if diagnostics_to_error(unit.diagnostics, error, filename):
-            return error
-        self._integration.load_integration_file(filename, error)
-        if unit.root:
-            assert isinstance(unit.root, lang.Specification)
-            self._convert_unit(error, unit.root, filename, transitions)
-        return error
-
-    def _sort_specs_topologically(self) -> None:
-        """(Reverse) Topologically sort specifications using Kahn's algorithm."""
-
-        result: List[str] = []
-        incoming: Dict[str, Set[str]] = {f: set() for f in self._specifications.keys()}
-        for filename, spec_node in self._specifications.items():
-            for d in spec_node.withed_files:
-                if d in incoming:
-                    incoming[d].add(filename)
-
-        specs = [f for f, i in incoming.items() if len(i) == 0]
-        visited = set(specs)
-
-        while specs:
-            s = specs.pop(0)
-            result.insert(0, s)
-            for e in self._specifications[s].withed_files:
-                visited.add(e)
-                if e in incoming and incoming[e] <= visited:
-                    specs.append(e)
-
-        self._specifications = OrderedDict((f, self._specifications[f]) for f in result)
-
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
 
-        for f in specfiles:
-            error.extend(self._parse_specfile(f))
+        include_paths = []
+        specifications = []
+
+        for f in unique(specfiles):
+            if f.parent.is_dir() and f.parent not in include_paths:
+                include_paths.append(f.parent)
+
+            spec = self._parse_file(error, f)
+            if spec:
+                specifications.append(spec)
+
             error.extend(style.check(f))
-        self._sort_specs_topologically()
+
+        _check_for_duplicate_specifications(
+            error, [*self._specifications.values(), *specifications]
+        )
+
+        self._specifications.update({s.package: s for s in specifications})
+
+        self._parse_withed_files(
+            error, [c for s in specifications for c in s.context_clauses], include_paths
+        )
+        _check_for_dependency_cycles(error, specifications, self._specifications)
+
         error.propagate()
+
+        self._specifications = _sort_specs_topologically(self._specifications)
 
     def parse_string(
         self,
@@ -1824,14 +1778,24 @@ class Parser:
         rule: str = lang.GrammarRule.main_rule_rule,
     ) -> None:
         error = RecordFluxError()
+        specifications = []
         string = textwrap.dedent(string)
         unit = lang.AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
+
         if not diagnostics_to_error(unit.diagnostics, error, STDIN):
             error.extend(style.check_string(string))
             assert isinstance(unit.root, lang.Specification)
-            self._convert_unit(error, unit.root, STDIN)
-            self._sort_specs_topologically()
+            specifications.append(SpecificationFile.create(error, unit.root, STDIN))
+
+        _check_for_duplicate_specifications(
+            error, [*self._specifications.values(), *specifications]
+        )
+
         error.propagate()
+
+        self._specifications = _sort_specs_topologically(
+            {**self._specifications, **{s.package: s for s in specifications}}
+        )
 
     def create_model(self) -> model.Model:
         error = RecordFluxError()
@@ -1855,6 +1819,66 @@ class Parser:
             spec_node.spec.f_package_declaration.f_identifier.text: spec_node.spec
             for spec_node in self._specifications.values()
         }
+
+    def _parse_file(self, error: RecordFluxError, filename: Path) -> Optional[SpecificationFile]:
+        log.info("Parsing %s", filename)
+        unit = lang.AnalysisContext().get_from_file(str(filename))
+
+        if diagnostics_to_error(unit.diagnostics, error, filename) or not unit.root:
+            return None
+
+        assert isinstance(unit.root, lang.Specification)
+
+        self._integration.load_integration_file(filename, error)
+
+        return SpecificationFile.create(error, unit.root, filename)
+
+    def _parse_withed_files(
+        self,
+        error: RecordFluxError,
+        context_clauses: Sequence[ContextClause],
+        include_paths: Sequence[Path],
+    ) -> None:
+        if not context_clauses:
+            return
+
+        nested_context_clauses: list[ContextClause] = []
+        for context_clause in context_clauses:
+            if context_clause.name in self._specifications:
+                continue
+            for path in include_paths:
+                f = path / context_clause.withed_file
+                if f.exists():
+                    spec = self._parse_file(error, f)
+                    if spec:
+                        self._specifications[spec.package] = spec
+                        nested_context_clauses.extend(
+                            [
+                                c
+                                for c in spec.context_clauses
+                                if c
+                                not in [
+                                    *context_clauses,
+                                    *nested_context_clauses,
+                                ]
+                                and c.name not in self._specifications
+                            ]
+                        )
+                    error.extend(style.check(f))
+                    break
+            else:
+                error.extend(
+                    [
+                        (
+                            f'cannot find specification "{context_clause.name}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            context_clause.location,
+                        )
+                    ]
+                )
+
+        self._parse_withed_files(error, nested_context_clauses, include_paths)
 
     def _evaluate_specification(
         self, error: RecordFluxError, spec: lang.Specification, filename: Path
@@ -1926,3 +1950,113 @@ class Parser:
                     self._sessions.append(new_session)
             else:
                 raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
+
+
+def _check_for_duplicate_specifications(
+    error: RecordFluxError, specifications: Sequence[SpecificationFile]
+) -> None:
+    for i, n1 in enumerate(specifications, start=1):
+        for n2 in specifications[i:]:
+            if n1.package == n2.package:
+                error.extend(
+                    [
+                        (
+                            "duplicate specification",
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(n2.spec.f_package_declaration.f_identifier, n2.filename),
+                        ),
+                        (
+                            "previous specification",
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            node_location(n1.spec.f_package_declaration.f_identifier, n1.filename),
+                        ),
+                    ],
+                )
+
+
+def _check_for_dependency_cycles(
+    error: RecordFluxError,
+    given_specs: list[SpecificationFile],
+    specifications: Mapping[ID, SpecificationFile],
+) -> None:
+    for spec in given_specs:
+        for p, c in [(c.name, c) for c in spec.context_clauses]:
+            try:
+                _check_for_dependency_cycle(p, c, [], specifications)
+            except RecordFluxError as e:
+                error.extend(e)
+
+
+def _check_for_dependency_cycle(
+    package: ID,
+    context: ContextClause,
+    visited: list[tuple[ID, ContextClause]],
+    specifications: Mapping[ID, SpecificationFile],
+) -> None:
+    if package not in specifications:
+        return  # ignore missing specifications
+
+    visited_packages = [s for s, _ in visited]
+    if package in visited_packages:
+        idx = visited_packages.index(package)
+        assert isinstance(context, ContextClause)
+        cycle: list[ContextClause] = []
+        for _, c in visited[idx:]:
+            assert isinstance(c, ContextClause)
+            cycle.append(c)
+        if context not in cycle:
+            cycle.append(context)
+        error = RecordFluxError()
+        error.extend(
+            [
+                (
+                    f'dependency cycle when including "{cycle[0].name}"',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    cycle[0].location,
+                ),
+                *[
+                    (
+                        f'when including "{c.name}"',
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        c.location,
+                    )
+                    for c in cycle[1:]
+                ],
+            ],
+        )
+        raise error
+
+    for p, c in [(c.name, c) for c in specifications[package].context_clauses]:
+        _check_for_dependency_cycle(p, c, [*visited, (package, context)], specifications)
+
+
+def _sort_specs_topologically(
+    specifications: Mapping[ID, SpecificationFile]
+) -> OrderedDict[ID, SpecificationFile]:
+    """(Reverse) Topologically sort specifications using Kahn's algorithm."""
+
+    result: List[ID] = []
+    incoming: Dict[ID, Set[ID]] = {f: set() for f in specifications.keys()}
+    for package, spec_node in specifications.items():
+        for c in spec_node.context_clauses:
+            if c.name in incoming:
+                incoming[c.name].add(package)
+
+    specs = [f for f, i in incoming.items() if len(i) == 0]
+    visited = set(specs)
+
+    while specs:
+        s = specs.pop(0)
+        result.insert(0, s)
+        for c in specifications[s].context_clauses:
+            visited.add(c.name)
+            if c.name in incoming and incoming[c.name] <= visited:
+                specs.append(c.name)
+
+    assert not (set(specifications) - visited), "dependency cycle"
+
+    return OrderedDict((f, specifications[f]) for f in result)
