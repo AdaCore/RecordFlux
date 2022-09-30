@@ -45,6 +45,8 @@ Specification:
 ### Fixed
 
 - Non-null state accepted as final state (#1130)
+- Spurious error if providing specifications in certain order (#759)
+- Handling of specification dependencies when using multiple directories
 
 ## [0.6.0] - 2022-08-31
 

@@ -129,8 +129,7 @@ def assert_ast_files(  # type: ignore[misc]
     expected: Dict[str, Any],
 ) -> None:
     p = parser.Parser()
-    for filename in filenames:
-        p.parse(Path(filename))
+    p.parse(*[Path(f) for f in filenames])
     result = {f: to_dict(s) for f, s in p.specifications.items()}
     assert result == expected, filenames
 
@@ -1849,6 +1848,18 @@ def test_parse_error_context_dependency_cycle() -> None:
     )
 
 
+def test_parse_error_context_dependency_cycle_2() -> None:
+    assert_error_files(
+        [f"{SPEC_DIR}/context_cycle_1.rflx"],
+        f"^"
+        f"{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: error: dependency cycle when "
+        f'including "Context_Cycle_2"\n'
+        f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
+        f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+        f"$",
+    )
+
+
 def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
         """\
@@ -2850,7 +2861,7 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
     )
 
 
-def test_parse_error_duplicate_spec_file_file() -> None:
+def test_parse_error_duplicate_spec_file() -> None:
     p = parser.Parser()
     p.parse(SPEC_DIR / "message_type.rflx")
     with pytest.raises(
@@ -3112,3 +3123,98 @@ def test_enumeration() -> None:
             always_valid=False,
         ),
     ]
+
+
+def test_parse_dependencies_given_as_argument(tmp_path: Path) -> None:
+    a = tmp_path / "a" / "a.rflx"
+    a.parent.mkdir()
+    a.write_text("with B; package A is end A;")
+
+    b = tmp_path / "b" / "b.rflx"
+    b.parent.mkdir()
+    b.write_text("package B is end B;")
+
+    p = parser.Parser()
+    p.parse(a, b)
+
+    assert set(p.specifications.keys()) == {"A", "B"}
+
+    p = parser.Parser()
+    p.parse(b, a)
+
+    assert set(p.specifications.keys()) == {"A", "B"}
+
+
+def test_parse_dependencies_not_given_as_argument(tmp_path: Path) -> None:
+    a = tmp_path / "a" / "a.rflx"
+    a.parent.mkdir()
+    a.write_text("with C; package A is end A;")
+
+    b = tmp_path / "b" / "b.rflx"
+    b.parent.mkdir()
+    b.write_text("package B is end B;")
+
+    (tmp_path / "b" / "c.rflx").write_text("with D; package C is end C;")
+
+    (tmp_path / "a" / "d.rflx").write_text("package D is end D;")
+
+    p = parser.Parser()
+    p.parse(a, b)
+
+    assert set(p.specifications.keys()) == {"A", "B", "C", "D"}
+
+    p = parser.Parser()
+    p.parse(b, a)
+
+    assert set(p.specifications.keys()) == {"A", "B", "C", "D"}
+
+
+def test_parse_order_of_include_paths(tmp_path: Path) -> None:
+    a = tmp_path / "a" / "a.rflx"
+    a.parent.mkdir()
+    a.write_text("with C; package A is end A;")
+
+    b = tmp_path / "b" / "b.rflx"
+    b.parent.mkdir()
+    b.write_text("package B is end B;")
+
+    c = tmp_path / "b" / "c.rflx"
+    c.write_text("with D; package C is end C;")
+
+    (tmp_path / "a" / "d.rflx").write_text("package D is end D;")
+
+    invalid = tmp_path / "b" / "d.rflx"
+    invalid.write_text("INVALID")
+
+    p = parser.Parser()
+    p.parse(a, b)
+
+    assert set(p.specifications.keys()) == {"A", "B", "C", "D"}
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            rf'{invalid}:1:1: parser: error: End of input expected, got "Unqualified_Identifier"'
+            r"$"
+        ),
+    ):
+        parser.Parser().parse(b, a)
+
+
+def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
+    a = tmp_path / "a" / "a.rflx"
+    a.parent.mkdir()
+    a.write_text("with C; package A is end A;")
+
+    b = tmp_path / "b" / "b.rflx"
+    b.parent.mkdir()
+    b.write_text("package B is end B;")
+
+    error = rf'^{a}:1:6: parser: error: cannot find specification "C"$'
+
+    with pytest.raises(RecordFluxError, match=error):
+        parser.Parser().parse(a, b)
+
+    with pytest.raises(RecordFluxError, match=error):
+        parser.Parser().parse(b, a)
