@@ -1815,6 +1815,21 @@ def test_parse_error_incorrect_name() -> None:
     )
 
 
+def test_parse_error_illegal_redefinition() -> None:
+    # https://github.com/Componolit/RecordFlux/issues/1208
+    error = r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"$'
+    with pytest.raises(RecordFluxError, match=error):
+        parser.Parser().parse_string(
+            textwrap.dedent(
+                """\
+                package Test is
+                   type Boolean is mod 2;
+                end Test;
+                """
+            )
+        )
+
+
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/incorrect_specification.rflx"],
@@ -3109,6 +3124,7 @@ def test_enumeration() -> None:
         """\
         package Test is
            type E is (E1 => 1, E2 => 2) with Always_Valid => False, Size => 8;
+           type A is (A1 => 10) with Always_Valid => True, Size => 6;
         end Test;
         """
     )
@@ -3121,6 +3137,12 @@ def test_enumeration() -> None:
             [("E1", expr.Number(1)), ("E2", expr.Number(2))],
             size=expr.Number(8),
             always_valid=False,
+        ),
+        Enumeration(
+            "Test::A",
+            [("A1", expr.Number(10))],
+            size=expr.Number(6),
+            always_valid=True,
         ),
     ]
 
