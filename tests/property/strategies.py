@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import string
 import typing as ty
+from collections import abc
 from dataclasses import dataclass
+from typing import Optional, TypeVar
 
 from hypothesis import assume, strategies as st
 
@@ -29,11 +33,11 @@ from rflx.model import (
 )
 from rflx.specification import const
 
-T = ty.TypeVar("T")
-Draw = ty.TypeVar("Draw", bound=ty.Callable[[st.SearchStrategy[T]], T])
+T = TypeVar("T")
+Draw = TypeVar("Draw", bound=ty.Callable[[st.SearchStrategy[T]], T])  # noqa: PEA001
 
 
-def unique_qualified_identifiers() -> ty.Generator[ID, None, None]:
+def unique_qualified_identifiers() -> abc.Generator[ID, None, None]:
     prefix = ""
     pos = -1
     while True:
@@ -74,7 +78,7 @@ def sizes(
 @st.composite
 def modular_integers(
     draw: Draw,
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> ModularInteger:
@@ -87,7 +91,7 @@ def modular_integers(
 @st.composite
 def range_integers(
     draw: Draw,
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> RangeInteger:
@@ -103,12 +107,12 @@ def range_integers(
 @st.composite
 def enumerations(
     draw: Draw,
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> Enumeration:
     @st.composite
-    def literal_identifiers(_: ty.Callable[[], object]) -> str:
+    def literal_identifiers(_: abc.Callable[[], object]) -> str:
         assert unique_identifiers
         return str(next(unique_identifiers).name)
 
@@ -138,7 +142,7 @@ def enumerations(
 @st.composite
 def scalars(
     draw: Draw,
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
 ) -> Scalar:
@@ -155,7 +159,7 @@ def scalars(
 def sequences(
     draw: Draw,
     element_types: st.SearchStrategy[Type],
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
 ) -> Sequence:
     return Sequence(next(unique_identifiers), draw(element_types))
 
@@ -166,7 +170,7 @@ def opaque(draw: Draw) -> Opaque:
 
 
 @st.composite
-def composites(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) -> Composite:
+def composites(draw: Draw, unique_identifiers: abc.Generator[ID, None, None]) -> Composite:
     return draw(
         st.one_of(
             opaque(),
@@ -184,7 +188,7 @@ def composites(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) -> 
 @st.composite
 def messages(
     draw: Draw,
-    unique_identifiers: ty.Generator[ID, None, None],
+    unique_identifiers: abc.Generator[ID, None, None],
     not_null: bool = False,
 ) -> Message:
     # pylint: disable=too-many-locals, too-many-statements
@@ -193,8 +197,8 @@ def messages(
     class FieldPair:
         source: Field
         target: Field
-        source_type: ty.Optional[Type]
-        target_type: ty.Optional[Type]
+        source_type: Optional[Type]
+        target_type: Optional[Type]
 
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2**29 - 1
@@ -228,12 +232,12 @@ def messages(
         return expr.TRUE
 
     @st.composite
-    def fields(_: ty.Callable[[], object]) -> Field:
+    def fields(_: abc.Callable[[], object]) -> Field:
         return Field(next(unique_identifiers).name)
 
-    structure: ty.List[Link] = []
+    structure: list[Link] = []
 
-    def outgoing(field: Field) -> ty.Sequence[Link]:
+    def outgoing(field: Field) -> abc.Sequence[Link]:
         return [l for l in structure if l.source == field]
 
     alignment = 0
@@ -321,13 +325,13 @@ def messages(
 
 
 def non_null_messages(
-    unique_identifiers: ty.Generator[ID, None, None]
+    unique_identifiers: abc.Generator[ID, None, None]
 ) -> st.SearchStrategy[Message]:
     return messages(unique_identifiers, not_null=True)
 
 
 @st.composite
-def refinements(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) -> Refinement:
+def refinements(draw: Draw, unique_identifiers: abc.Generator[ID, None, None]) -> Refinement:
     pdu = draw(messages(unique_identifiers))
     opaque_fields = [f for f, t in pdu.types.items() if isinstance(t, Opaque)]
     assume(opaque_fields)
@@ -338,7 +342,7 @@ def refinements(draw: Draw, unique_identifiers: ty.Generator[ID, None, None]) ->
 
 @st.composite
 def models(draw: Draw) -> Model:
-    types_: ty.List[Type] = []
+    types_: list[Type] = []
 
     def append_types(message: Message) -> None:
         types_.append(message)

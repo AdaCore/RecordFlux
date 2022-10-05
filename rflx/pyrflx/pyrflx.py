@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, Union
+from typing import Union
 
 from rflx.error import FatalError
 from rflx.identifier import ID, StrID
@@ -18,11 +21,11 @@ class PyRFLX:
     def __init__(
         self,
         model: Model,
-        checksum_functions: Dict[StrID, Dict[str, ChecksumFunction]] = None,
+        checksum_functions: Mapping[StrID, Mapping[str, ChecksumFunction]] = None,
         skip_message_verification: bool = False,
     ) -> None:
-        self._packages: Dict[str, Package] = {}
-        messages: Dict[ID, MessageValue] = {}
+        self._packages: dict[str, Package] = {}
+        messages: dict[ID, MessageValue] = {}
 
         for m in model.messages:
             p = str(m.package)
@@ -45,7 +48,7 @@ class PyRFLX:
         files: Iterable[Union[str, Path]],
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
-    ) -> "PyRFLX":
+    ) -> PyRFLX:
         paths = list(map(Path, files))
         for p in paths:
             if not p.is_file():
@@ -55,7 +58,9 @@ class PyRFLX:
         model = parser.create_model()
         return cls(model, None, skip_message_verification)
 
-    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, ChecksumFunction]]) -> None:
+    def set_checksum_functions(
+        self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
+    ) -> None:
         for identifier_str, checksum_field_function in functions.items():
             identifier_str = str(identifier_str)
             try:

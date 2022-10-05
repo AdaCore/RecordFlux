@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import zip_longest
-from typing import Dict, List, Optional, Sequence
+from typing import Optional
 
 from rflx import expression as expr, typing_ as rty
 from rflx.ada import (
@@ -52,7 +53,7 @@ from . import const
 @dataclass
 class SlotInfo:
     size: int
-    locations: List[Location]
+    locations: Sequence[Location]
 
 
 @dataclass
@@ -65,15 +66,15 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def __init__(self, session: Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
-        self._declaration_context: List[ContextItem] = []
-        self._body_context: List[ContextItem] = []
-        self._allocation_slots: Dict[Location, int] = {}
+        self._declaration_context: list[ContextItem] = []
+        self._body_context: list[ContextItem] = []
+        self._allocation_slots: dict[Location, int] = {}
         self._unit_part = UnitPart()
         self._integration = integration
 
-        global_slots: List[SlotInfo] = self._allocate_global_slots()
-        local_slots: List[SlotInfo] = self._allocate_local_slots()
-        numbered_slots: List[NumberedSlotInfo] = []
+        global_slots: list[SlotInfo] = self._allocate_global_slots()
+        local_slots: list[SlotInfo] = self._allocate_local_slots()
+        numbered_slots: list[NumberedSlotInfo] = []
         count = 1
 
         for slot in global_slots:
@@ -95,11 +96,11 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
         return self._session.identifier.parent * f"{self._session.identifier.name}_Allocator"
 
     @property
-    def declaration_context(self) -> List[ContextItem]:
+    def declaration_context(self) -> list[ContextItem]:
         return self._declaration_context
 
     @property
-    def body_context(self) -> List[ContextItem]:
+    def body_context(self) -> list[ContextItem]:
         return self._body_context
 
     @property
@@ -335,7 +336,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
     def _needs_allocation(type_: rty.Type) -> bool:
         return isinstance(type_, (rty.Message, rty.Sequence))
 
-    def _allocate_global_slots(self) -> List[SlotInfo]:
+    def _allocate_global_slots(self) -> list[SlotInfo]:
         slots = []
         for d in self._session.declarations.values():
             if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
@@ -355,7 +356,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
             return state.identifier.name
         return None
 
-    def _allocate_local_slots(self) -> List[SlotInfo]:  # pylint: disable-next = too-many-branches
+    def _allocate_local_slots(self) -> list[SlotInfo]:  # pylint: disable-next = too-many-branches
         """
         Allocate slots for state variables and state actions.
 
@@ -372,7 +373,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
             location: Optional[Location]
             size: int
 
-        alloc_requirements_per_state: List[List[AllocationRequirement]] = []
+        alloc_requirements_per_state: list[list[AllocationRequirement]] = []
         for s in self._session.states:
             state_requirements = []
             for d in s.declarations.values():

@@ -6,10 +6,11 @@ import itertools
 import os
 from abc import abstractmethod
 from collections import OrderedDict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
 from sys import intern
-from typing import List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Optional, Union
 
 from rflx import expression as expr
 from rflx.common import Base, file_name, indent, indent_next, unique
@@ -43,7 +44,7 @@ class Expr(Base):
     def __hash__(self) -> int:
         return hash(self.__class__.__name__)
 
-    def __neg__(self) -> "Expr":
+    def __neg__(self) -> Expr:
         raise NotImplementedError
 
     @abstractmethod
@@ -55,7 +56,7 @@ class Expr(Base):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def parenthesized(self, expression: "Expr") -> str:
+    def parenthesized(self, expression: Expr) -> str:
         if expression.precedence.value <= self.precedence.value:
             return "(" + indent_next(str(expression), 1) + ")"
         return str(expression)
@@ -196,7 +197,7 @@ class Number(Expr):
         self.value = value
         self.base = base
 
-    def __neg__(self) -> "Number":
+    def __neg__(self) -> Number:
         return Number(-self.value)
 
     def _update_str(self) -> None:
@@ -353,7 +354,7 @@ class Variable(Name):
         self.identifier = ID(identifier)
         super().__init__(negative)
 
-    def __neg__(self) -> "Variable":
+    def __neg__(self) -> Variable:
         return self.__class__(self.identifier, not self.negative)
 
     @property
@@ -383,7 +384,7 @@ class Attribute(Name):
         self.prefix: Expr = prefix
         super().__init__(negative)
 
-    def __neg__(self) -> "Attribute":
+    def __neg__(self) -> Attribute:
         return self.__class__(self.prefix, not self.negative)
 
     @property
@@ -506,7 +507,7 @@ class Max(BinAttributeExpr):
 
 
 class NamedAttributeExpr(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], *associations: Tuple[StrID, Expr]) -> None:
+    def __init__(self, prefix: Union[StrID, Expr], *associations: tuple[StrID, Expr]) -> None:
         self.associations = [(ID(n) if isinstance(n, str) else n, e) for n, e in associations]
         super().__init__(prefix)
 
@@ -530,7 +531,7 @@ class Indexed(Name):
         self.elements = list(elements)
         super().__init__(negative)
 
-    def __neg__(self) -> "Indexed":
+    def __neg__(self) -> Indexed:
         return self.__class__(self.prefix, *self.elements, negative=not self.negative)
 
     @property
@@ -554,7 +555,7 @@ class Selected(Name):
         self.selector = ID(selector)
         super().__init__(negative)
 
-    def __neg__(self) -> "Selected":
+    def __neg__(self) -> Selected:
         return self.__class__(self.prefix, self.selector, not self.negative)
 
     @property
@@ -578,7 +579,7 @@ class Call(Name):
         self.named_arguments = named_arguments or {}
         super().__init__(negative)
 
-    def __neg__(self) -> "Call":
+    def __neg__(self) -> Call:
         return self.__class__(
             self.identifier, self.arguments, self.named_arguments, not self.negative
         )
@@ -651,7 +652,7 @@ class String(Aggregate):
 
 
 class NamedAggregate(Expr):
-    def __init__(self, *elements: Tuple[Union[StrID, Expr], Expr]) -> None:
+    def __init__(self, *elements: tuple[Union[StrID, Expr], Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
@@ -742,7 +743,7 @@ class NotIn(Relation):
         return " not in "
 
 
-def If(condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None) -> Expr:
+def If(condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None) -> Expr:
     # pylint: disable=invalid-name
     if len(condition_expressions) == 0 and else_expression is not None:
         return else_expression
@@ -753,7 +754,7 @@ def If(condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr
 
 class IfExpr(Expr):
     def __init__(
-        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
+        self, condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None
     ) -> None:
         super().__init__()
         self.condition_expressions = condition_expressions
@@ -795,7 +796,7 @@ class IfExpr(Expr):
         )
 
 
-def Case(control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]) -> Expr:
+def Case(control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]) -> Expr:
     # pylint: disable=invalid-name
     if len(case_expressions) == 1 and case_expressions[0][0] == Variable("others"):
         return case_expressions[0][1]
@@ -804,7 +805,7 @@ def Case(control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]
 
 class CaseExpr(Expr):
     def __init__(
-        self, control_expression: Expr, case_expressions: Sequence[Tuple[Expr, Expr]]
+        self, control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]
     ) -> None:
         super().__init__()
         self.control_expression = control_expression
@@ -1096,7 +1097,7 @@ class ClassPostcondition(Aspect):
 
 
 class ContractCases(Aspect):
-    def __init__(self, *cases: Tuple[Expr, Expr]) -> None:
+    def __init__(self, *cases: tuple[Expr, Expr]) -> None:
         self.cases = cases
 
     @property
@@ -1259,7 +1260,7 @@ class FormalDeclaration(Base):
 
 
 class FormalSubprogramDeclaration(FormalDeclaration):
-    def __init__(self, specification: "SubprogramSpecification", default: StrID = None) -> None:
+    def __init__(self, specification: SubprogramSpecification, default: StrID = None) -> None:
         self.specification = specification
         self.default = ID(default) if default else None
 
@@ -1296,10 +1297,10 @@ class PackageDeclaration(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        declarations: List[Declaration] = None,
-        private_declarations: List[Declaration] = None,
-        formal_parameters: List[FormalDeclaration] = None,
-        aspects: List[Aspect] = None,
+        declarations: Sequence[Declaration] = None,
+        private_declarations: Sequence[Declaration] = None,
+        formal_parameters: Sequence[FormalDeclaration] = None,
+        aspects: Sequence[Aspect] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
@@ -1321,9 +1322,9 @@ class PackageBody(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        declarations: List[Declaration] = None,
-        statements: List["Statement"] = None,
-        aspects: List[Aspect] = None,
+        declarations: Sequence[Declaration] = None,
+        statements: Sequence[Statement] = None,
+        aspects: Sequence[Aspect] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
@@ -1671,7 +1672,7 @@ class RecordType(TypeDeclaration):
     def __init__(  # pylint: disable = too-many-arguments
         self,
         identifier: StrID,
-        components: List[Component],
+        components: Sequence[Component],
         discriminants: Sequence[Discriminant] = None,
         variant_part: VariantPart = None,
         aspects: Sequence[Aspect] = None,
@@ -1818,7 +1819,7 @@ class CommentStatement(Statement):
 class IfStatement(Statement):
     def __init__(
         self,
-        condition_statements: Sequence[Tuple[Expr, Sequence[Statement]]],
+        condition_statements: Sequence[tuple[Expr, Sequence[Statement]]],
         else_statements: Sequence[Statement] = None,
     ) -> None:
         assert condition_statements or else_statements
@@ -1858,7 +1859,7 @@ class CaseStatement(Statement):
     def __init__(
         self,
         control_expression: Expr,
-        case_statements: Sequence[Tuple[Expr, Sequence[Statement]]],
+        case_statements: Sequence[tuple[Expr, Sequence[Statement]]],
         case_grouping: bool = True,
     ) -> None:
         self.control_expression = control_expression
@@ -2114,7 +2115,7 @@ class ExpressionFunctionDeclaration(Subprogram):
         self,
         specification: FunctionSpecification,
         expression: Expr,
-        aspects: List[Aspect] = None,
+        aspects: Sequence[Aspect] = None,
     ) -> None:
         super().__init__(specification)
         self.expression = expression
@@ -2130,7 +2131,7 @@ class GenericProcedureInstantiation(Subprogram):
         self,
         identifier: StrID,
         specification: ProcedureSpecification,
-        associations: List[StrID] = None,
+        associations: Sequence[StrID] = None,
     ) -> None:
         super().__init__(specification)
         self.identifier = ID(identifier)
@@ -2152,7 +2153,7 @@ class GenericFunctionInstantiation(Subprogram):
         self,
         identifier: StrID,
         specification: FunctionSpecification,
-        associations: List[StrID] = None,
+        associations: Sequence[StrID] = None,
     ) -> None:
         super().__init__(specification)
         self.identifier = ID(identifier)
@@ -2181,7 +2182,7 @@ class SubprogramRenamingDeclaration(Subprogram):
 
 
 class Pragma(Declaration, ContextItem):
-    def __init__(self, identifier: StrID, parameters: List[Expr] = None) -> None:
+    def __init__(self, identifier: StrID, parameters: Sequence[Expr] = None) -> None:
         super().__init__(identifier)
         self.pragma_parameters = parameters or []
 
@@ -2203,7 +2204,7 @@ class Pragma(Declaration, ContextItem):
 
 class Unit(Base):
     @abstractmethod
-    def __iadd__(self, other: object) -> "Unit":
+    def __iadd__(self, other: object) -> Unit:
         raise NotImplementedError
 
     @property
@@ -2226,9 +2227,9 @@ class Unit(Base):
 class PackageUnit(Unit):
     def __init__(
         self,
-        declaration_context: List[ContextItem],
+        declaration_context: list[ContextItem],
         declaration: PackageDeclaration,
-        body_context: List[ContextItem],
+        body_context: list[ContextItem],
         body: PackageBody,
     ) -> None:
         self.declaration_context = declaration_context
@@ -2236,16 +2237,15 @@ class PackageUnit(Unit):
         self.body_context = body_context
         self.body = body
 
-    def __iadd__(self, other: object) -> "PackageUnit":
+    def __iadd__(self, other: object) -> PackageUnit:
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
-            self.declaration.declarations = self.declaration.declarations + list(
-                other.specification
-            )
-            self.declaration.private_declarations = self.declaration.private_declarations + list(
-                other.private
-            )
-            self.body.declarations = self.body.declarations + list(other.body)
-            self.body.statements += list(other.statements)
+            self.declaration.declarations = [*self.declaration.declarations, *other.specification]
+            self.declaration.private_declarations = [
+                *self.declaration.private_declarations,
+                *other.private,
+            ]
+            self.body.declarations = [*self.body.declarations, *other.body]
+            self.body.statements = [*self.body.statements, *other.statements]
             return self
         return NotImplemented
 
@@ -2264,7 +2264,7 @@ class PackageUnit(Unit):
 
 class InstantiationUnit(Unit):
     def __init__(
-        self, context: List[ContextItem], declaration: GenericPackageInstantiation
+        self, context: Sequence[ContextItem], declaration: GenericPackageInstantiation
     ) -> None:
         self.context = context
         self.declaration = declaration
@@ -2287,12 +2287,12 @@ class InstantiationUnit(Unit):
 
 @dataclass
 class UnitPart:
-    specification: List[Declaration] = dataclass_field(default_factory=list)
-    body: List[Declaration] = dataclass_field(default_factory=list)
-    private: List[Declaration] = dataclass_field(default_factory=list)
-    statements: List[Statement] = dataclass_field(default_factory=list)
+    specification: list[Declaration] = dataclass_field(default_factory=list)
+    body: list[Declaration] = dataclass_field(default_factory=list)
+    private: list[Declaration] = dataclass_field(default_factory=list)
+    statements: list[Statement] = dataclass_field(default_factory=list)
 
-    def __add__(self, other: object) -> "UnitPart":
+    def __add__(self, other: object) -> UnitPart:
         if isinstance(other, UnitPart):
             return UnitPart(
                 self.specification + other.specification,
@@ -2302,7 +2302,7 @@ class UnitPart:
             )
         return NotImplemented
 
-    def __iadd__(self, other: object) -> "UnitPart":
+    def __iadd__(self, other: object) -> UnitPart:
         if isinstance(other, UnitPart):
             self.specification += other.specification
             self.body += other.body
@@ -2314,10 +2314,10 @@ class UnitPart:
 
 @dataclass
 class SubprogramUnitPart:
-    specification: List[Subprogram] = dataclass_field(default_factory=list)
-    body: List[Subprogram] = dataclass_field(default_factory=list)
-    private: List[Subprogram] = dataclass_field(default_factory=list)
-    statements: List[Statement] = dataclass_field(default_factory=list)
+    specification: list[Subprogram] = dataclass_field(default_factory=list)
+    body: list[Subprogram] = dataclass_field(default_factory=list)
+    private: list[Subprogram] = dataclass_field(default_factory=list)
+    statements: list[Statement] = dataclass_field(default_factory=list)
 
 
 def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:
@@ -2328,7 +2328,7 @@ def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:
     )
 
 
-def declarative_items(declarations: List[Declaration], private: bool = False) -> str:
+def declarative_items(declarations: Sequence[Declaration], private: bool = False) -> str:
     result = "\n\n".join(indent(str(d), 3) for d in unique(declarations) if str(d))
     if result:
         result = f"private\n\n{result}" if private else result

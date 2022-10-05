@@ -2,6 +2,8 @@
 
 """Check the correctness of code examples in the documentation."""
 
+from __future__ import annotations
+
 import enum
 import os
 import re
@@ -10,7 +12,7 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from librflxlang import AnalysisContext, GrammarRule
 from ruamel.yaml import YAML
@@ -149,7 +151,7 @@ def check_file(filename: Path, content: str) -> bool:
     return found
 
 
-def check_files(files: List[Path]) -> None:
+def check_files(files: list[Path]) -> None:
 
     found = False
 

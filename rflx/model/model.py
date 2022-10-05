@@ -1,5 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, Sequence
 
 from rflx import const
 from rflx.common import Base, unique, verbose_repr
@@ -41,8 +43,8 @@ class Model(Base):
     def sessions(self) -> Sequence[session.Session]:
         return self._sessions
 
-    def create_specifications(self) -> Dict[ID, str]:
-        pkgs: Dict[ID, Package] = {}
+    def create_specifications(self) -> dict[ID, str]:
+        pkgs: dict[ID, Package] = {}
         for ty in self._types:
             if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
                 pkg_name: ID = ty.package
@@ -76,8 +78,8 @@ class Model(Base):
 
     def _check_duplicates(self) -> RecordFluxError:
         error = RecordFluxError()
-        types: Dict[ID, type_.Type] = {}
-        sessions: Dict[ID, session.Session] = {}
+        types: dict[ID, type_.Type] = {}
+        sessions: dict[ID, session.Session] = {}
 
         for t in self._types:
             if t.identifier in types:

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Callable, ClassVar, Sequence
+from collections.abc import Callable, Sequence
+from typing import ClassVar
 
 import rflx.typing_ as rty
 from rflx.common import Base

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+import typing as ty
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Extra, Field, ValidationError
 from pydantic.types import ConstrainedInt
@@ -18,8 +21,10 @@ class IntSize(ConstrainedInt):
 
 class SessionSize(BaseModel, extra=Extra.forbid):
     default: Optional[IntSize] = Field(alias="Default")
-    global_: Optional[Dict[str, IntSize]] = Field(alias="Global")
-    local_: Optional[Dict[str, Dict[str, IntSize]]] = Field(alias="Local")
+    global_: Optional[ty.Mapping[str, IntSize]] = Field(alias="Global")  # noqa: PEA001
+    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(  # noqa: PEA001
+        alias="Local"
+    )
 
 
 class SessionIntegration(BaseModel, extra=Extra.forbid):
@@ -27,7 +32,7 @@ class SessionIntegration(BaseModel, extra=Extra.forbid):
 
 
 class IntegrationFile(BaseModel, extra=Extra.forbid):
-    session: Dict[str, SessionIntegration] = Field(alias="Session")
+    session: ty.Mapping[str, SessionIntegration] = Field(alias="Session")  # noqa: PEA001
 
 
 class Integration:
@@ -36,7 +41,7 @@ class Integration:
         return 4096
 
     def __init__(self, integration_files_dir: Optional[Path] = None) -> None:
-        self._packages: Dict[str, IntegrationFile] = {}
+        self._packages: dict[str, IntegrationFile] = {}
         self._integration_files_dir = integration_files_dir
 
     def load_integration_file(self, spec_file: Path, error: RecordFluxError) -> None:

@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import re
 from functools import reduce
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -288,7 +289,7 @@ def test_no_verification_sequence_nested_messages(
     sequence_message_one.set("Byte", 5)
     sequence_message_two = sequence_message_package.new_message("Sequence_Element")
     sequence_message_two.set("Byte", 6)
-    sequence: List[TypeValue] = [sequence_message_one, sequence_message_two]
+    sequence: list[TypeValue] = [sequence_message_one, sequence_message_two]
     message_sequence_value.set("Length", 2)
     message_sequence_value.set("Sequence_Field", sequence)
     assert message_sequence_value.valid_message
@@ -304,7 +305,7 @@ def test_no_verification_sequence_nested_messages(
     sequence_element_one_unv.set("Byte", 5)
     sequence_element_two_unv = sequence_message_package_unv.new_message("Sequence_Element")
     sequence_element_two_unv.set("Byte", 6)
-    sequence_unv: List[TypeValue] = [sequence_element_one_unv, sequence_element_two_unv]
+    sequence_unv: list[TypeValue] = [sequence_element_one_unv, sequence_element_two_unv]
     sequence_message_unv.set("Length", 2)
     sequence_message_unv.set("Sequence_Field", sequence_unv)
     assert sequence_message_unv.valid_message
@@ -383,7 +384,7 @@ def test_sequence_message_serialization(
     sequence_message_one.set("Byte", 5)
     sequence_message_two = sequence_message_package.new_message("Sequence_Element")
     sequence_message_two.set("Byte", 6)
-    sequence: List[TypeValue] = [sequence_message_one, sequence_message_two]
+    sequence: list[TypeValue] = [sequence_message_one, sequence_message_two]
     message_sequence_value.set("Length", 2)
     message_sequence_value.set("Sequence_Field", sequence)
     assert message_sequence_value.valid_message

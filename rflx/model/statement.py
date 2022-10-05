@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Callable, Dict, List, Sequence
+from collections.abc import Callable, Mapping, Sequence
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -126,7 +128,7 @@ class AttributeStatement(Statement):
         self,
         identifier: StrID,
         attribute: str,
-        parameters: List[Expr],
+        parameters: list[Expr],
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:
@@ -215,7 +217,7 @@ class Reset(AttributeStatement):
     def __init__(
         self,
         identifier: StrID,
-        associations: Dict[ID, Expr] = None,
+        associations: Mapping[ID, Expr] = None,
         type_: rty.Type = rty.Undefined(),
         location: Location = None,
     ) -> None:

@@ -1,6 +1,8 @@
 # pylint: disable = too-many-lines
 
-from typing import Mapping, Sequence
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
 
 import rflx.expression as expr
 from rflx.ada import (

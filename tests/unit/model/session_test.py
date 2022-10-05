@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import textwrap
-import typing as ty
+from collections import abc
 
 import pytest
 
@@ -1833,7 +1833,7 @@ def test_conversion_invalid() -> None:
         ],
     ],
 )
-def test_undefined_type_in_parameters(parameters: ty.Sequence[decl.FormalDeclaration]) -> None:
+def test_undefined_type_in_parameters(parameters: abc.Sequence[decl.FormalDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1871,7 +1871,7 @@ def test_undefined_type_in_parameters(parameters: ty.Sequence[decl.FormalDeclara
         ],
     ],
 )
-def test_undefined_type_in_declarations(declarations: ty.Sequence[decl.BasicDeclaration]) -> None:
+def test_undefined_type_in_declarations(declarations: abc.Sequence[decl.BasicDeclaration]) -> None:
     assert_session_model_error(
         states=[
             State(
@@ -1909,7 +1909,7 @@ def test_undefined_type_in_declarations(declarations: ty.Sequence[decl.BasicDecl
     ],
 )
 def test_undefined_type_in_local_declarations(
-    declarations: ty.Sequence[decl.BasicDeclaration],
+    declarations: abc.Sequence[decl.BasicDeclaration],
 ) -> None:
     assert_session_model_error(
         states=[
@@ -2076,8 +2076,8 @@ def test_type_error_in_renaming_declaration() -> None:
     ],
 )
 def test_conflicting_actions(
-    declarations: ty.Sequence[decl.BasicDeclaration],
-    actions: ty.Sequence[stmt.Statement],
+    declarations: abc.Sequence[decl.BasicDeclaration],
+    actions: abc.Sequence[stmt.Statement],
     errors: str,
 ) -> None:
     assert_session_model_error(

@@ -1,4 +1,7 @@
-from typing import Dict, Iterator, Mapping, Union
+from __future__ import annotations
+
+from collections.abc import Iterator, Mapping
+from typing import Union
 
 from rflx.common import Base
 from rflx.identifier import StrID
@@ -10,7 +13,7 @@ from .typevalue import ChecksumFunction, MessageValue
 class Package(Base):
     def __init__(self, name: str) -> None:
         self._name = name
-        self._messages: Dict[str, MessageValue] = {}
+        self._messages: dict[str, MessageValue] = {}
 
     @property
     def name(self) -> str:
@@ -30,7 +33,9 @@ class Package(Base):
     def __iter__(self) -> Iterator[MessageValue]:
         return self._messages.values().__iter__()
 
-    def set_checksum_functions(self, functions: Dict[StrID, Dict[str, ChecksumFunction]]) -> None:
+    def set_checksum_functions(
+        self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
+    ) -> None:
         for message_name, field_name_to_function_mapping in functions.items():
             message_name = str(message_name)
             if message_name not in self._messages:

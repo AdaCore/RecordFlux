@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -5,9 +7,10 @@ import os
 import shutil
 import sys
 import traceback
+from collections.abc import Sequence
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Optional, Union
 
 import librflxlang
 from pkg_resources import get_distribution, resource_filename
@@ -29,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 DEFAULT_PREFIX = "RFLX"
 
 
-def main(argv: List[str]) -> Union[int, str]:  # pylint: disable = too-many-statements
+def main(argv: Sequence[str]) -> Union[int, str]:  # pylint: disable = too-many-statements
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"
@@ -342,7 +345,7 @@ def parse(
     skip_verification: bool = False,
     workers: int = 1,
     integration_files_dir: Optional[Path] = None,
-) -> Tuple[Model, Integration]:
+) -> tuple[Model, Integration]:
     parser = Parser(
         skip_verification, cached=True, workers=workers, integration_files_dir=integration_files_dir
     )
@@ -384,7 +387,7 @@ def graph(args: argparse.Namespace) -> None:
         filename = args.output_directory.joinpath(s.identifier.flat).with_suffix(f".{args.format}")
         write_graph(create_session_graph(s, args.ignore), filename, fmt=args.format)
 
-    locations: Dict[str, Dict[str, Dict[str, Dict[str, int]]]] = {
+    locations: dict[str, dict[str, dict[str, dict[str, int]]]] = {
         str(m.location.source): {
             m.identifier.flat: {
                 "start": {"line": m.location.start[0], "column": m.location.start[1]},

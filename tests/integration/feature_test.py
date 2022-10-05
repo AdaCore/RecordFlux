@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import typing as ty
+from collections.abc import Sequence
 from dataclasses import dataclass, field as dataclass_field
 from pathlib import Path
 from shutil import copytree
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Optional
 
 import pytest
 from pydantic import BaseModel, validator
@@ -29,23 +31,27 @@ assert not INCOMPLETE_FEATURE_TESTS
 
 
 class ConfigFile(BaseModel):
-    input: Optional[Mapping[str, Optional[Sequence[str]]]]
-    output: Optional[Sequence[str]]
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]  # noqa: PEA001
+    output: Optional[ty.Sequence[str]]  # noqa: PEA001
     sequence: Optional[str]
-    prove: Optional[Sequence[str]]
+    prove: Optional[ty.Sequence[str]]  # noqa: PEA001
 
     @validator("input")  # pylint: disable-next = no-self-argument
     def initialize_input_if_present(
-        cls, value: Optional[Mapping[str, Sequence[str]]]
-    ) -> Mapping[str, Sequence[str]]:
+        cls, value: Optional[ty.Mapping[str, ty.Sequence[str]]]  # noqa: PEA001
+    ) -> ty.Mapping[str, ty.Sequence[str]]:  # noqa: PEA001
         return value if value is not None else {}
 
     @validator("output")  # pylint: disable-next = no-self-argument
-    def initialize_output_if_present(cls, value: Optional[Sequence[str]]) -> Sequence[str]:
+    def initialize_output_if_present(
+        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
+    ) -> ty.Sequence[str]:  # noqa: PEA001
         return value if value is not None else []
 
     @validator("prove")  # pylint: disable-next = no-self-argument
-    def initialize_prove_if_present(cls, value: Optional[Sequence[str]]) -> Sequence[str]:
+    def initialize_prove_if_present(
+        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
+    ) -> ty.Sequence[str]:  # noqa: PEA001
         return value if value is not None else []
 
 
@@ -79,7 +85,7 @@ def get_config(feature: str) -> Config:
     return Config()
 
 
-def create_model(feature: str) -> Tuple[Model, Integration]:
+def create_model(feature: str) -> tuple[Model, Integration]:
     parser = Parser()
     parser.parse(Path("tests/integration") / feature / "test.rflx")
     return parser.create_model(), parser.get_integration()

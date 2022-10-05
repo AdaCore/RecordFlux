@@ -2,12 +2,15 @@
 
 """Check that each requirement is referenced at least once in the given directories."""
 
+from __future__ import annotations
+
 import argparse
 import itertools
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Union
 
 ID_SEPARATOR = "-"
 ID_REGEX = r"§(?:[A-Z0-9]+" + ID_SEPARATOR + r")*[A-Z0-9]+"
@@ -29,7 +32,7 @@ class ID:
         return self.parts < other.parts[: len(self.parts)]
 
     @property
-    def parts(self) -> Tuple[str, ...]:
+    def parts(self) -> tuple[str, ...]:
         return self._parts
 
 
@@ -39,7 +42,7 @@ class Requirement:
         identifier: str,
         description: str,
         referenced: bool = False,
-        requirements: List["Requirement"] = None,
+        requirements: list[Requirement] = None,
     ):
         self._identifier = identifier
         self._description = description.capitalize()
@@ -98,8 +101,8 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
     return error
 
 
-def parse_requirements(requirements_file: Path) -> Tuple[List[Requirement], bool]:
-    requirements: Dict[str, Requirement] = {}
+def parse_requirements(requirements_file: Path) -> tuple[list[Requirement], bool]:
+    requirements: dict[str, Requirement] = {}
     error = False
 
     for l in requirements_file.read_text().split("\n"):
@@ -130,8 +133,8 @@ def parse_requirements(requirements_file: Path) -> Tuple[List[Requirement], bool
     return (list(requirements.values()), error)
 
 
-def search_references(directories: Sequence[Path]) -> List[str]:
-    references: List[str] = []
+def search_references(directories: Sequence[Path]) -> list[str]:
+    references: list[str] = []
 
     for d in directories:
         for f in itertools.chain(d.rglob("*.py"), d.rglob("*.rflx")):
@@ -142,7 +145,7 @@ def search_references(directories: Sequence[Path]) -> List[str]:
     return references
 
 
-def check_references(requirements: List[Requirement], references: Sequence[str]) -> bool:
+def check_references(requirements: Sequence[Requirement], references: Sequence[str]) -> bool:
     error = False
 
     for req in requirements:

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import textwrap
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Sequence, Set, Tuple, Type
 
 import pkg_resources
 import pytest
@@ -107,11 +107,11 @@ def test_unexpected_type(tmp_path: Path) -> None:
 # pylint: disable-next = too-many-arguments
 def test_generate(
     debug: Debug,
-    debug_expected: Set[str],
+    debug_expected: set[str],
     prefix: str,
     library_files: bool,
     top_level_package: bool,
-    expected: Set[str],
+    expected: set[str],
     tmp_path: Path,
 ) -> None:
     Generator(prefix, reproducible=True, debug=debug).generate(
@@ -274,8 +274,8 @@ def test_substitution_relation_boolean_literal(
 )
 def test_substitution_relation_scalar(
     relation: Callable[[expr.Expr, expr.Expr], expr.Relation],
-    expressions: Tuple[expr.Expr, expr.Expr],
-    expected: Tuple[expr.Expr, expr.Expr],
+    expressions: tuple[expr.Expr, expr.Expr],
+    expected: tuple[expr.Expr, expr.Expr],
 ) -> None:
     assert_equal(
         relation(*expressions).substituted(
@@ -438,7 +438,7 @@ class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
     ],
 )
 def test_session_create_abstract_functions_error(
-    parameter: decl.FormalDeclaration, error_type: Type[BaseError], error_msg: str
+    parameter: decl.FormalDeclaration, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -690,7 +690,7 @@ def test_session_evaluate_declarations(
     ],
 )
 def test_session_evaluate_declarations_error(
-    declaration: decl.BasicDeclaration, error_type: Type[BaseError], error_msg: str
+    declaration: decl.BasicDeclaration, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -995,7 +995,7 @@ def test_session_declare(
     ],
 )
 def test_session_declare_error(
-    type_: rty.Type, expression: expr.Expr, error_type: Type[BaseError], error_msg: str
+    type_: rty.Type, expression: expr.Expr, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1751,7 +1751,7 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
     ],
 )
 def test_session_state_action_error(
-    action: stmt.Statement, error_type: Type[BaseError], error_msg: str
+    action: stmt.Statement, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -2210,7 +2210,7 @@ def test_session_state_action_error(
 def test_session_assign_error(
     type_: rty.Type,
     expression: expr.Expr,
-    error_type: Type[BaseError],
+    error_type: type[BaseError],
     error_msg: str,
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
@@ -2265,7 +2265,7 @@ def test_session_assign_error(
     ],
 )
 def test_session_append_error(
-    append: stmt.Append, error_type: Type[BaseError], error_msg: str
+    append: stmt.Append, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -2295,7 +2295,7 @@ def test_session_append_error(
         ),
     ],
 )
-def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_msg: str) -> None:
+def test_session_read_error(read: stmt.Read, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -2323,7 +2323,7 @@ def test_session_read_error(read: stmt.Read, error_type: Type[BaseError], error_
     ],
 )
 def test_session_write_error(
-    write: stmt.Write, error_type: Type[BaseError], error_msg: str
+    write: stmt.Write, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -2479,7 +2479,7 @@ def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> Non
     ],
 )
 def test_session_substitution_error(
-    expression: expr.Expr, error_type: Type[BaseError], error_msg: str
+    expression: expr.Expr, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN

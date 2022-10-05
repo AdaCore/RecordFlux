@@ -7,10 +7,12 @@ A Python package requires an  __init__.py. Some tools (e.g., mypy) ignore all di
 which are not a correct Python package.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 
 def main(argv: Sequence[str]) -> bool:

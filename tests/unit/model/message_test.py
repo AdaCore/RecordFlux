@@ -1,6 +1,9 @@
 # pylint: disable=too-many-lines
+
+from __future__ import annotations
+
 import textwrap
-import typing as ty
+from collections import abc
 from copy import deepcopy
 
 import pytest
@@ -790,7 +793,7 @@ def test_unused_parameter() -> None:
     ],
 )
 def test_undefined_variable(
-    operation: ty.Callable[[Expr, Expr], Expr], condition: ty.Tuple[Expr, Expr]
+    operation: abc.Callable[[Expr, Expr], Expr], condition: tuple[Expr, Expr]
 ) -> None:
     mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
     enum_type = Enumeration(
@@ -2598,7 +2601,7 @@ def test_discontiguous_optional_fields() -> None:
         ),
     ],
 )
-def test_checksum(checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr) -> None:
+def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Expr) -> None:
     f1 = Field("F1")
     f2 = Field("F2")
     f3 = Field("F3")
@@ -2653,7 +2656,7 @@ def test_checksum(checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr)
     ],
 )
 def test_checksum_error(
-    checksums: ty.Mapping[ID, ty.Sequence[Expr]], condition: Expr, error: str
+    checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Expr, error: str
 ) -> None:
     f1 = Field("F1")
     f2 = Field("F2")

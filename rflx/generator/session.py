@@ -2,19 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
-from typing import (
-    Callable,
-    Iterable,
-    List,
-    Mapping,
-    NoReturn,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import NoReturn, Optional, Union
 
 import attr
 
@@ -108,22 +98,22 @@ from .allocator import AllocatorGenerator
 
 @dataclass
 class SessionContext:
-    referenced_types: List[ID] = dataclass_field(default_factory=list)
-    referenced_types_body: List[ID] = dataclass_field(default_factory=list)
-    referenced_packages_body: List[ID] = dataclass_field(default_factory=list)
-    used_types: List[ID] = dataclass_field(default_factory=list)
-    used_types_body: List[ID] = dataclass_field(default_factory=list)
-    state_exception: Set[ID] = dataclass_field(default_factory=set)
+    referenced_types: list[ID] = dataclass_field(default_factory=list)
+    referenced_types_body: list[ID] = dataclass_field(default_factory=list)
+    referenced_packages_body: list[ID] = dataclass_field(default_factory=list)
+    used_types: list[ID] = dataclass_field(default_factory=list)
+    used_types_body: list[ID] = dataclass_field(default_factory=list)
+    state_exception: set[ID] = dataclass_field(default_factory=set)
 
 
 @dataclass
 class EvaluatedDeclaration:
-    global_declarations: List[Declaration] = dataclass_field(default_factory=list)
-    initialization_declarations: List[Declaration] = dataclass_field(default_factory=list)
-    initialization: List[Statement] = dataclass_field(default_factory=list)
-    finalization: List[Statement] = dataclass_field(default_factory=list)
+    global_declarations: list[Declaration] = dataclass_field(default_factory=list)
+    initialization_declarations: list[Declaration] = dataclass_field(default_factory=list)
+    initialization: list[Statement] = dataclass_field(default_factory=list)
+    finalization: list[Statement] = dataclass_field(default_factory=list)
 
-    def __iadd__(self, other: object) -> "EvaluatedDeclaration":
+    def __iadd__(self, other: object) -> EvaluatedDeclaration:
         if isinstance(other, EvaluatedDeclaration):
             return EvaluatedDeclaration(
                 [*self.global_declarations, *other.global_declarations],
@@ -137,11 +127,11 @@ class EvaluatedDeclaration:
 
 @attr.s()
 class ExceptionHandler:
-    session_context_state_exception: Set[ID] = attr.ib()
+    session_context_state_exception: set[ID] = attr.ib()
     state: model.State = attr.ib()
     finalization: Sequence[Statement] = attr.ib()
 
-    def execute(self) -> Sequence[Statement]:
+    def execute(self) -> list[Statement]:
         assert (
             self.state.exception_transition
         ), f'missing exception transition for state "{self.state.identifier}"'
@@ -181,8 +171,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._allocator = allocator
 
         self._session_context = SessionContext()
-        self._declaration_context: List[ContextItem] = []
-        self._body_context: List[ContextItem] = []
+        self._declaration_context: list[ContextItem] = []
+        self._body_context: list[ContextItem] = []
         self._unit_part = UnitPart()
 
         self._create()
@@ -192,11 +182,11 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return self._session.identifier
 
     @property
-    def declaration_context(self) -> List[ContextItem]:
+    def declaration_context(self) -> list[ContextItem]:
         return self._declaration_context
 
     @property
-    def body_context(self) -> List[ContextItem]:
+    def body_context(self) -> list[ContextItem]:
         return self._body_context
 
     @property
@@ -219,8 +209,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._declaration_context, self._body_context = self._create_context()
         self._unit_part = UnitPart(body=self._create_use_clauses_body()) + state_machine
 
-    def _create_context(self) -> Tuple[List[ContextItem], List[ContextItem]]:
-        declaration_context: List[ContextItem] = []
+    def _create_context(self) -> tuple[list[ContextItem], list[ContextItem]]:
+        declaration_context: list[ContextItem] = []
 
         if self._allocator.required:
             declaration_context.append(WithClause(self._prefix * self._allocator.unit_identifier))
@@ -231,7 +221,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ):
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
-        body_context: List[ContextItem] = [
+        body_context: list[ContextItem] = [
             *(
                 [
                     WithClause(self._prefix * ID("RFLX_Debug"))
@@ -440,7 +430,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
 
     def _create_context_type(
-        self, initial_state: ID, global_variables: Mapping[ID, Tuple[ID, Optional[Expr]]]
+        self, initial_state: ID, global_variables: Mapping[ID, tuple[ID, Optional[Expr]]]
     ) -> UnitPart:
         return UnitPart(
             [
@@ -490,7 +480,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self,
         parameters: Iterable[decl.FormalDeclaration],
     ) -> UnitPart:
-        result: List[Declaration] = []
+        result: list[Declaration] = []
 
         for parameter in parameters:
             if isinstance(parameter, decl.ChannelDeclaration):
@@ -514,8 +504,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _create_abstract_function(
         self, function: decl.FunctionDeclaration
-    ) -> List[SubprogramDeclaration]:
-        procedure_parameters: List[Parameter] = [InOutParameter(["Ctx"], "Context")]
+    ) -> Sequence[SubprogramDeclaration]:
+        procedure_parameters: list[Parameter] = [InOutParameter(["Ctx"], "Context")]
 
         if function.type_ == rty.Undefined():
             fatal_fail(
@@ -751,7 +741,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if self._allocator.get_global_slot_ptrs() or self._allocator.get_local_slot_ptrs():
             self._session_context.used_types_body.append(const.TYPES_BYTES_PTR)
 
-        unit_body: List[Declaration] = []
+        unit_body: list[Declaration] = []
 
         for state in session.states:
             if state == FINAL_STATE:
@@ -887,7 +877,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _determine_next_state(
         self, transitions: Sequence[model.Transition], is_global: Callable[[ID], bool]
-    ) -> list[Statement]:
+    ) -> Sequence[Statement]:
         return (
             [
                 IfStatement(
@@ -2132,7 +2122,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _declare_and_assign(  # pylint: disable = too-many-arguments
         self,
-        variables: Sequence[Tuple[ID, rty.Type, expr.Expr]],
+        variables: Sequence[tuple[ID, rty.Type, expr.Expr]],
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
@@ -4032,12 +4022,12 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     def _ensure(
         self,
-        statements: List[Statement],
+        statements: list[Statement],
         property_expression: Expr,
         error_message: str,
         exception_handler: ExceptionHandler,
-    ) -> List[Statement]:
-        nested: List[Statement] = []
+    ) -> list[Statement]:
+        nested: list[Statement] = []
         statements.append(
             IfStatement(
                 [
@@ -4080,7 +4070,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
         state: ID,
         size_check: bool = True,
-    ) -> list[Statement]:
+    ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
         message_type = message_aggregate.type_
@@ -4144,7 +4134,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         value: expr.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-    ) -> list[Statement]:
+    ) -> Sequence[Statement]:
         # pylint: disable = too-many-arguments, too-many-statements, too-many-branches, too-many-locals
 
         message_type_id = message_type.identifier
@@ -4654,7 +4644,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-    ) -> List[Declaration]:
+    ) -> Sequence[Declaration]:
         return [
             self._declare_context(identifier, type_, is_global),
             self._declare_buffer(identifier),
@@ -5378,7 +5368,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.referenced_types_body.append(target_type.identifier)
         return expr.Conversion(target_type.identifier, expression)
 
-    def _debug_output(self, string: str) -> List[CallStatement]:
+    def _debug_output(self, string: str) -> Sequence[CallStatement]:
         return (
             [
                 CallStatement(

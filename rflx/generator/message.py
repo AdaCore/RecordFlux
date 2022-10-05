@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import itertools
-import typing as ty
+from collections import abc
+from typing import Optional, Union
 
 from rflx import expression as expr
 from rflx.ada import (
@@ -106,7 +107,7 @@ from rflx.model import (
 from . import common, const
 
 
-def create_use_type_clause(composite_fields: ty.Sequence[Field], offset: bool) -> UnitPart:
+def create_use_type_clause(composite_fields: abc.Sequence[Field], offset: bool) -> UnitPart:
     return UnitPart(
         [
             Pragma(
@@ -292,7 +293,7 @@ def create_cursor_validation_functions() -> UnitPart:
 
 
 def create_valid_context_function(
-    message: Message, composite_fields: ty.Sequence[Field], prefix: str
+    message: Message, composite_fields: abc.Sequence[Field], prefix: str
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Valid_Context",
@@ -1330,7 +1331,7 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
 
 
 def create_valid_value_function(
-    prefix: str, message: Message, scalar_fields: ty.Mapping[Field, Scalar]
+    prefix: str, message: Message, scalar_fields: abc.Mapping[Field, Scalar]
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Valid_Value",
@@ -1476,8 +1477,8 @@ def create_path_condition_function(prefix: str, message: Message) -> UnitPart:
 def create_field_size_function(
     prefix: str,
     message: Message,
-    scalar_fields: ty.Mapping[Field, Type],
-    composite_fields: ty.Sequence[Field],
+    scalar_fields: abc.Mapping[Field, Type],
+    composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Field_Size",
@@ -1563,7 +1564,7 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
 
     def first(link: Link, message: Message) -> tuple[Expr, Expr]:
         def substituted(
-            expression: expr.Expr, target_type: ty.Optional[ID] = const.TYPES_BASE_INT
+            expression: expr.Expr, target_type: Optional[ID] = const.TYPES_BASE_INT
         ) -> Expr:
             return (
                 expression.substituted(
@@ -1650,8 +1651,8 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
 def create_field_last_function(
     prefix: str,
     message: Message,
-    scalar_fields: ty.Mapping[Field, Type],
-    composite_fields: ty.Sequence[Field],
+    scalar_fields: abc.Mapping[Field, Type],
+    composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Field_Last",
@@ -2015,7 +2016,7 @@ def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
 
 
 def create_valid_predecessor_function(
-    message: Message, composite_fields: ty.Sequence[Field]
+    message: Message, composite_fields: abc.Sequence[Field]
 ) -> UnitPart:
 
     specification = FunctionSpecification(
@@ -2320,8 +2321,8 @@ def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
 def create_equal_function(
     prefix: str,
     message: Message,
-    scalar_fields: ty.Mapping[Field, Type],
-    composite_fields: ty.Sequence[Field],
+    scalar_fields: abc.Mapping[Field, Type],
+    composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Equal",
@@ -2625,7 +2626,7 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
 
 
 def create_composite_field_function(
-    scalar_fields: ty.Mapping[Field, Type], composite_fields: ty.Sequence[Field]
+    scalar_fields: abc.Mapping[Field, Type], composite_fields: abc.Sequence[Field]
 ) -> UnitPart:
     always_true = not scalar_fields and len(composite_fields) == 1
     return UnitPart(
@@ -2648,7 +2649,7 @@ def create_composite_field_function(
 
 
 def create_switch_procedures(
-    prefix: str, message: Message, sequence_fields: ty.Mapping[Field, Type]
+    prefix: str, message: Message, sequence_fields: abc.Mapping[Field, Type]
 ) -> UnitPart:
     def specification(field: Field) -> ProcedureSpecification:
         return ProcedureSpecification(
@@ -2818,7 +2819,7 @@ def create_switch_procedures(
 
 
 def create_complete_functions(
-    prefix: str, message: Message, sequence_fields: ty.Mapping[Field, Type]
+    prefix: str, message: Message, sequence_fields: abc.Mapping[Field, Type]
 ) -> UnitPart:
     def specification(field: Field) -> FunctionSpecification:
         return FunctionSpecification(
@@ -2874,7 +2875,7 @@ def create_complete_functions(
 
 
 def create_update_procedures(
-    prefix: str, message: Message, sequence_fields: ty.Mapping[Field, Type]
+    prefix: str, message: Message, sequence_fields: abc.Mapping[Field, Type]
 ) -> UnitPart:
     def specification(field: Field) -> ProcedureSpecification:
         return ProcedureSpecification(
@@ -2887,7 +2888,7 @@ def create_update_procedures(
             ],
         )
 
-    def take_buffer_arguments(field: Field) -> ty.Sequence[Expr]:
+    def take_buffer_arguments(field: Field) -> abc.Sequence[Expr]:
         arguments = [
             Variable("Seq_Ctx"),
             Variable("Buffer"),
@@ -3126,7 +3127,7 @@ def _create_structure_type(prefix: str, message: Message) -> UnitPart:
 
             type_ = message.field_types[link.target]
 
-            component_type: ty.Union[ID, Expr]
+            component_type: Union[ID, Expr]
 
             if isinstance(type_, Scalar):
                 component_type = common.prefixed_type_identifier(type_.identifier, prefix)
@@ -3268,7 +3269,7 @@ def _create_sufficient_buffer_length_function(prefix: str, message: Message) -> 
 def _create_to_structure_procedure(prefix: str, message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
-    statements: ty.List[Statement] = []
+    statements: list[Statement] = []
 
     for path in message.paths(FINAL):
         for link in path:
@@ -3370,7 +3371,7 @@ def _create_to_structure_procedure(prefix: str, message: Message) -> UnitPart:
 
 def _struct_substitution(
     message: Message,
-) -> ty.Callable[[expr.Expr], expr.Expr]:
+) -> abc.Callable[[expr.Expr], expr.Expr]:
     def func(expression: expr.Expr) -> expr.Expr:
         if (
             isinstance(expression, expr.Size)
@@ -3404,7 +3405,7 @@ def _struct_substitution(
 def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
-    body: ty.List[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
+    body: list[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
     statements = body
 
     for path in message.paths(FINAL):
@@ -3570,7 +3571,7 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
     )
 
 
-def _switch_update_conditions(prefix: str, message: Message, field: Field) -> ty.Sequence[Expr]:
+def _switch_update_conditions(prefix: str, message: Message, field: Field) -> abc.Sequence[Expr]:
     return [
         Not(Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")])),
         Call(prefix * common.sequence_name(message, field) * "Has_Buffer", [Variable("Seq_Ctx")]),
