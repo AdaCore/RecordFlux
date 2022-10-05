@@ -6,14 +6,17 @@ Extract all packets of a specified protocol layer from a PCAP file.
 The byte representation of each packet is written into a separate file.
 """
 
+from __future__ import annotations
+
 import argparse
 import pkgutil
 import pyclbr
 import sys
+from collections.abc import Sequence
 from math import ceil, log
 from pathlib import Path
 from pydoc import locate
-from typing import Sequence, Union
+from typing import Union
 
 import scapy.layers  # type: ignore
 from scapy.utils import hexdump, rdpcap  # type: ignore
