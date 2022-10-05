@@ -6,9 +6,8 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
+from rflx.converter import iana
 from rflx.validator import Validator
-
-import tools.iana_to_rflx
 
 DATA_PATH = Path("tests/data")
 
@@ -24,7 +23,7 @@ def test_spec(spec: str, tmp_path: Path) -> None:
 @pytest.mark.parametrize("registry_file", (Path(f) for f in glob.glob("iana_registries/*.xml")))
 def test_iana_specs_synchronized(registry_file: Path) -> None:
     registry = ElementTree.fromstring(registry_file.read_text(encoding="utf-8"))
-    registry_last_updated = registry.find("iana:updated", tools.iana_to_rflx.NAMESPACE)
+    registry_last_updated = registry.find("iana:updated", iana.NAMESPACE)
     assert registry_last_updated is not None
     assert (
         re.search(
