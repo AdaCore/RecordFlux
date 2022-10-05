@@ -1,7 +1,9 @@
 # pylint: disable = too-many-lines
 
+from __future__ import annotations
+
+from collections.abc import Mapping
 from enum import Enum
-from typing import List, Mapping
 
 from rflx import expression as expr
 from rflx.ada import (
@@ -227,7 +229,7 @@ class SerializerGenerator:
         self,
         message: Message,
         scalar_fields: Mapping[Field, Scalar],
-        composite_fields: List[Field],
+        composite_fields: list[Field],
     ) -> UnitPart:
         if not self.requires_set_procedure(message):
             return UnitPart()
@@ -1242,7 +1244,7 @@ class SerializerGenerator:
                 [InOutParameter(["Ctx"], "Context"), Parameter(["Length"], const.TYPES_LENGTH)],
             )
 
-        def formal_parameters(field: Field) -> List[FormalSubprogramDeclaration]:
+        def formal_parameters(field: Field) -> list[FormalSubprogramDeclaration]:
             return [
                 FormalSubprogramDeclaration(
                     ProcedureSpecification(
@@ -1382,8 +1384,8 @@ class SerializerGenerator:
     def create_composite_initialize_procedures(
         self,
         message: Message,
-        fields_with_explicit_size: List[Field],
-        fields_with_implicit_size: List[Field],
+        fields_with_explicit_size: list[Field],
+        fields_with_implicit_size: list[Field],
     ) -> UnitPart:
         def specification_private(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -1646,7 +1648,7 @@ class SerializerGenerator:
             ],
         )
 
-    def setter_preconditions(self, message: Message, field_name: StrID) -> List[Expr]:
+    def setter_preconditions(self, message: Message, field_name: StrID) -> list[Expr]:
         return [
             Not(Constrained("Ctx")),
             Call(self.prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
@@ -1656,7 +1658,7 @@ class SerializerGenerator:
             ),
         ]
 
-    def private_setter_postconditions(self, message: Message, field: Field) -> List[Expr]:
+    def private_setter_postconditions(self, message: Message, field: Field) -> list[Expr]:
         return [
             Equal(
                 Variable("Ctx.Verified_Last"),
@@ -1668,7 +1670,7 @@ class SerializerGenerator:
             *self.setter_postconditions(message, field),
         ]
 
-    def public_setter_postconditions(self, message: Message, field: Field) -> List[Expr]:
+    def public_setter_postconditions(self, message: Message, field: Field) -> list[Expr]:
         return [
             *(
                 [
@@ -1694,7 +1696,7 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def last_predecessor_relation(message: Message, field: Field) -> List[Expr]:
+    def last_predecessor_relation(message: Message, field: Field) -> list[Expr]:
         if field in message.direct_successors(INITIAL):
             return []
         for link in message.incoming(field):
@@ -1722,7 +1724,7 @@ class SerializerGenerator:
             )
         ]
 
-    def setter_postconditions(self, message: Message, field: Field) -> List[Expr]:
+    def setter_postconditions(self, message: Message, field: Field) -> list[Expr]:
         return [
             *[
                 Call("Invalid", [Variable("Ctx"), Variable(p.affixed_name)])
@@ -1755,7 +1757,7 @@ class SerializerGenerator:
         ]
 
     @staticmethod
-    def composite_setter_postconditions(field: Field) -> List[Expr]:
+    def composite_setter_postconditions(field: Field) -> list[Expr]:
         return [
             Call("Has_Buffer", [Variable("Ctx")]),
             Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),
@@ -1763,7 +1765,7 @@ class SerializerGenerator:
 
     def composite_setter_field_condition_precondition(
         self, message: Message, field: Field, empty: bool = False
-    ) -> List[Expr]:
+    ) -> list[Expr]:
         return [
             common.field_condition_call(
                 self.prefix,
@@ -1776,7 +1778,7 @@ class SerializerGenerator:
 
     def composite_setter_preconditions(
         self, message: Message, field: Field, size: Expr = None
-    ) -> List[Expr]:
+    ) -> list[Expr]:
         return [
             common.sufficient_space_for_field_condition(
                 self.prefix * message.identifier,
@@ -1847,7 +1849,7 @@ class SerializerGenerator:
         )
 
     @staticmethod
-    def _update_last(message: Message = None, field: Field = None) -> List[Statement]:
+    def _update_last(message: Message = None, field: Field = None) -> list[Statement]:
         assert (message and field) or not (message or field)
         last = (
             Variable("Last")

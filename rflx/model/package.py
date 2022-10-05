@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import textwrap
 from dataclasses import dataclass, field
-from typing import List, Set
 
 from rflx import const
 from rflx.identifier import ID
@@ -11,9 +12,9 @@ from . import session, type_
 @dataclass
 class Package:
     name: ID
-    imports: Set[ID] = field(default_factory=set)
-    types: List[type_.Type] = field(default_factory=list)
-    sessions: List[session.Session] = field(default_factory=list)
+    imports: frozenset[ID] = field(default_factory=frozenset)
+    types: list[type_.Type] = field(default_factory=list)
+    sessions: list[session.Session] = field(default_factory=list)
 
     @property
     def imports_str(self) -> str:

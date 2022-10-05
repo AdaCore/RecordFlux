@@ -6,9 +6,10 @@ import itertools
 import logging
 import textwrap
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Optional, Union
 
 import librflxlang as lang
 
@@ -54,7 +55,7 @@ def type_location(identifier: ID, node: lang.RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: List[lang.Diagnostic], error: RecordFluxError, filename: Path
+    diagnostics: Sequence[lang.Diagnostic], error: RecordFluxError, filename: Path
 ) -> bool:
     """Append langkit diagnostics to RecordFlux error. Return True if error occured."""
 
@@ -348,7 +349,7 @@ def create_numeric_literal(
     raise NotImplementedError(f"Invalid numeric literal: {expression.text}")
 
 
-OPERATIONS: Dict[str, Type[expr.BinExpr]] = {
+OPERATIONS: Mapping[str, type[expr.BinExpr]] = {
     "OpIn": expr.In,
     "OpNotin": expr.NotIn,
     "OpEq": expr.Equal,
@@ -382,7 +383,7 @@ def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) 
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
-MATH_OPERATIONS: Dict[str, Union[Type[expr.BinExpr], Type[expr.AssExpr]]] = {
+MATH_OPERATIONS: Mapping[str, Union[type[expr.BinExpr], type[expr.AssExpr]]] = {
     "OpPow": expr.Pow,
     "OpAdd": expr.Add,
     "OpSub": expr.Sub,
@@ -405,7 +406,7 @@ def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: P
     )
 
 
-MATH_COMPARISONS: Dict[str, Type[expr.Relation]] = {
+MATH_COMPARISONS: Mapping[str, type[expr.Relation]] = {
     "OpLt": expr.Less,
     "OpGt": expr.Greater,
     "OpLe": expr.LessEqual,
@@ -726,7 +727,7 @@ def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -
         assert isinstance(result, expr.Number)
         return result
 
-    choices: List[Tuple[List[Union[ID, expr.Number]], expr.Expr]] = [
+    choices: Sequence[tuple[Sequence[Union[ID, expr.Number]], expr.Expr]] = [
         (
             [
                 create_choice(s, filename)
@@ -977,15 +978,15 @@ def create_message_types(
     fields: lang.MessageFields,
     types: Sequence[model.Type],
     filename: Path,
-) -> Tuple[Mapping[model.Field, model.Type], Dict[ID, Dict[ID, expr.Expr]]]:
+) -> tuple[Mapping[model.Field, model.Type], Mapping[ID, Mapping[ID, expr.Expr]]]:
     def get_parameters(param: lang.Parameters) -> Optional[lang.ParameterList]:
         if not param:
             return None
         assert isinstance(param.f_parameters, lang.ParameterList)
         return param.f_parameters
 
-    field_types: Dict[model.Field, model.Type] = {}
-    message_arguments: Dict[ID, Dict[ID, expr.Expr]] = defaultdict(dict)
+    field_types: dict[model.Field, model.Type] = {}
+    message_arguments: dict[ID, dict[ID, expr.Expr]] = defaultdict(dict)
 
     for field_identifier, type_identifier, type_arguments in itertools.chain(
         (
@@ -1052,7 +1053,7 @@ def create_message_arguments(
     type_arguments: lang.TypeArgumentList,
     field_type_location: Optional[Location],
     filename: Path,
-) -> Dict[ID, expr.Expr]:
+) -> dict[ID, expr.Expr]:
     result = {}
     argument_errors = RecordFluxError()
 
@@ -1108,8 +1109,8 @@ def create_message_arguments(
 
 def create_message_structure(
     error: RecordFluxError, fields: lang.MessageFields, filename: Path
-) -> List[model.Link]:
-    def extract_aspect(aspects: lang.AspectList) -> Tuple[expr.Expr, expr.Expr]:
+) -> list[model.Link]:
+    def extract_aspect(aspects: lang.AspectList) -> tuple[expr.Expr, expr.Expr]:
 
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
@@ -1143,7 +1144,7 @@ def create_message_structure(
 
     def extract_then(
         then: lang.ThenNode,
-    ) -> Tuple[model.Field, expr.Expr, expr.Expr, expr.Expr, Location]:
+    ) -> tuple[model.Field, expr.Expr, expr.Expr, expr.Expr, Location]:
         target = (
             model.FINAL
             if then.f_target.text == "null"
@@ -1157,7 +1158,7 @@ def create_message_structure(
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
 
-    structure: List[model.Link] = []
+    structure: list[model.Link] = []
 
     if fields.f_initial_field:
         structure.append(
@@ -1311,7 +1312,9 @@ def merge_field_condition(
             )
 
 
-def check_duplicate_aspect(error: RecordFluxError, name: str, locations: List[Location]) -> None:
+def check_duplicate_aspect(
+    error: RecordFluxError, name: str, locations: Sequence[Location]
+) -> None:
     if len(locations) > 1:
         error.extend(
             [
@@ -1336,7 +1339,7 @@ def check_duplicate_aspect(error: RecordFluxError, name: str, locations: List[Lo
 
 def parse_aspects(
     error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
-) -> Tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
+) -> tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
     # pylint: disable=too-many-branches
     checksum_result = {}
     byte_order_result = None
@@ -1461,9 +1464,9 @@ def create_enumeration(
     filename: Path,
 ) -> Optional[model.Type]:
     assert isinstance(enumeration, lang.EnumerationTypeDef)
-    literals: List[Tuple[StrID, expr.Number]] = []
+    literals: list[tuple[StrID, expr.Number]] = []
 
-    def create_aspects(aspects: lang.AspectList) -> Optional[Tuple[expr.Expr, bool]]:
+    def create_aspects(aspects: lang.AspectList) -> Optional[tuple[expr.Expr, bool]]:
         always_valid = False
         size = None
 
@@ -1734,11 +1737,11 @@ class Parser:
         self.skip_verification = skip_verification
         self._workers = workers
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
-        self._types: List[model.Type] = [
+        self._types: list[model.Type] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
         ]
-        self._sessions: List[model.Session] = []
+        self._sessions: list[model.Session] = []
         self._integration: Integration = Integration(integration_files_dir)
         self._cache = Cache(not skip_verification and cached)
 
@@ -1815,7 +1818,7 @@ class Parser:
         return self._integration
 
     @property
-    def specifications(self) -> Dict[str, lang.Specification]:
+    def specifications(self) -> dict[str, lang.Specification]:
         return {
             spec_node.spec.f_package_declaration.f_identifier.text: spec_node.spec
             for spec_node in self._specifications.values()
@@ -1884,7 +1887,7 @@ class Parser:
     def _evaluate_specification(
         self, error: RecordFluxError, spec: lang.Specification, filename: Path
     ) -> None:
-        handlers: Dict[
+        handlers: Mapping[
             str,
             Callable[
                 [
@@ -2040,8 +2043,8 @@ def _sort_specs_topologically(
 ) -> OrderedDict[ID, SpecificationFile]:
     """(Reverse) Topologically sort specifications using Kahn's algorithm."""
 
-    result: List[ID] = []
-    incoming: Dict[ID, Set[ID]] = {f: set() for f in specifications.keys()}
+    result: list[ID] = []
+    incoming: dict[ID, set[ID]] = {f: set() for f in specifications.keys()}
     for package, spec_node in specifications.items():
         for c in spec_node.context_clauses:
             if c.name in incoming:

@@ -5,7 +5,8 @@ import pathlib
 import shutil
 import subprocess
 import textwrap
-from typing import Iterable, Mapping, Sequence, Tuple, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Union
 
 import librflxlang as lang
 import pytest
@@ -793,7 +794,7 @@ end Main;
 def parse(
     data: str,
     rule: str,
-) -> Tuple[lang.RFLXNode, pathlib.Path]:
+) -> tuple[lang.RFLXNode, pathlib.Path]:
     unit = lang.AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):

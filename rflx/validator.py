@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import importlib
 import json
 import os
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 from types import TracebackType
-from typing import Dict, Iterable, List, Optional, TextIO, Type, Union
+from typing import Optional, TextIO, Union
 
 from ruamel.yaml.main import YAML
 
@@ -126,7 +129,7 @@ class Validator:
             raise ValidationError("\n".join(e for e in error_msgs))
 
     def _create_model(
-        self, files: List[Path], skip_model_verification: bool, split_disjunctions: bool
+        self, files: Sequence[Path], skip_model_verification: bool, split_disjunctions: bool
     ) -> Model:
         for f in files:
             if not f.is_file():
@@ -135,14 +138,14 @@ class Validator:
         parser.parse(*files)
         model = parser.create_model()
         if split_disjunctions:
-            messages: Dict[ID, Message] = {}
+            messages: dict[ID, Message] = {}
             for t in model.types:
                 if isinstance(t, Message):
                     messages[t.identifier] = self._expand_message_links(t, messages)
             model = Model([self._replace_messages(t, messages) for t in model.types])
         return model
 
-    def _expand_message_links(self, message: Message, messages: Dict[ID, Message]) -> Message:
+    def _expand_message_links(self, message: Message, messages: Mapping[ID, Message]) -> Message:
         """Split disjunctions in link conditions."""
         structure = []
         for link in message.structure:
@@ -169,7 +172,7 @@ class Validator:
         return message.copy(structure=structure, types=types)
 
     @staticmethod
-    def _replace_messages(type_: mty.Type, messages: Dict[ID, Message]) -> mty.Type:
+    def _replace_messages(type_: mty.Type, messages: Mapping[ID, Message]) -> mty.Type:
         """Recursively replace messages."""
         if isinstance(type_, Message):
             return messages[type_.identifier]
@@ -191,7 +194,7 @@ class Validator:
         return type_
 
     @staticmethod
-    def _expand_expression(expression: expr.Expr) -> List[expr.Expr]:
+    def _expand_expression(expression: expr.Expr) -> list[expr.Expr]:
         """Create disjunction by expanding the expression and return it as a list."""
         if isinstance(expression, expr.Or):
             return expression.terms
@@ -210,7 +213,7 @@ class Validator:
 
         disjunctions.append([expr.And(*atoms)])
 
-        result: List[expr.Expr] = []
+        result: list[expr.Expr] = []
         for value in (expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)):
             for seen in result:
                 if expr.Not(expr.Equal(value, seen)).check().result == expr.ProofResult.UNSAT:
@@ -220,7 +223,7 @@ class Validator:
         return result
 
     @staticmethod
-    def _parse_checksum_module(name: Optional[str]) -> Dict[StrID, Dict[str, ChecksumFunction]]:
+    def _parse_checksum_module(name: Optional[str]) -> dict[StrID, dict[str, ChecksumFunction]]:
         if name is None:
             return {}
 
@@ -259,12 +262,12 @@ class Validator:
     @staticmethod
     def _validate_message(
         message_path: Path, valid_original_message: bool, message_value: MessageValue
-    ) -> "ValidationResult":
+    ) -> ValidationResult:
         if not message_path.is_file():
             raise ValidationError(f"{message_path} is not a regular file")
 
         parameters_path = message_path.with_suffix(".yaml")
-        message_parameters: Dict[str, Union[bool, int, str]] = {}
+        message_parameters: dict[str, Union[bool, int, str]] = {}
 
         if parameters_path.is_file():
             yaml = YAML()
@@ -303,9 +306,9 @@ class Validator:
 
 
 class CoverageInformation:
-    def __init__(self, packages: List[Package], coverage: bool) -> None:
-        self._total_message_coverage: Dict[ID, Dict[Link, bool]] = {}
-        self._spec_files: Dict[str, List[ID]] = defaultdict(list)
+    def __init__(self, packages: Sequence[Package], coverage: bool) -> None:
+        self._total_message_coverage: dict[ID, dict[Link, bool]] = {}
+        self._spec_files: dict[str, list[ID]] = defaultdict(list)
         self._coverage = coverage
 
         if not self._coverage:
@@ -350,7 +353,7 @@ class CoverageInformation:
             for message in self._spec_files[file_name]
         )
 
-    def file_uncovered_links(self, file_name: str) -> List[Link]:
+    def file_uncovered_links(self, file_name: str) -> list[Link]:
         assert file_name in self._spec_files
         return [
             link
@@ -414,7 +417,7 @@ class ValidationResult:
     valid_original_message: bool
     valid_parser_result: bool
 
-    def as_json(self) -> Dict[str, object]:
+    def as_json(self) -> dict[str, object]:
         output = {
             "file name": str(self.message_path),
             "provided as": self.valid_original_message,
@@ -457,12 +460,12 @@ class OutputWriter:
             self.file = file
         self.classified_incorrectly = 0
 
-    def __enter__(self) -> "OutputWriter":
+    def __enter__(self) -> OutputWriter:
         return self
 
     def __exit__(
         self,
-        exception_type: Optional[Type[BaseException]],
+        exception_type: Optional[type[BaseException]],
         exception_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:

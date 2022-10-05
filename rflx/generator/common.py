@@ -1,7 +1,10 @@
 # pylint: disable = too-many-lines
 
+from __future__ import annotations
+
 import enum
-from typing import Callable, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Callable, Sequence
+from typing import Optional
 
 from rflx import expression as expr, model
 from rflx.ada import (
@@ -196,7 +199,7 @@ def substitution_facts(
     embedded: bool = False,
     public: bool = False,
     target_type: Optional[ID] = const.TYPES_BASE_INT,
-) -> Mapping[expr.Name, expr.Expr]:
+) -> dict[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(ID("Ctx") * name) if not embedded else expr.Variable(name)
 
@@ -593,7 +596,7 @@ def public_context_predicate() -> Expr:
     )
 
 
-def context_invariant(message: model.Message, loop_entry: bool = False) -> Sequence[Expr]:
+def context_invariant(message: model.Message, loop_entry: bool = False) -> list[Expr]:
     return [
         Equal(e, LoopEntry(e) if loop_entry else Old(e))
         for e in [
@@ -608,7 +611,7 @@ def context_invariant(message: model.Message, loop_entry: bool = False) -> Seque
 
 def valid_path_to_next_field_condition(
     message: model.Message, field: model.Field, prefix: str
-) -> Sequence[Expr]:
+) -> list[Expr]:
     return [
         If(
             [
@@ -641,7 +644,7 @@ def valid_path_to_next_field_condition(
 
 def context_cursor_unchanged(
     message: model.Message, field: model.Field, predecessors: bool
-) -> List[Expr]:
+) -> list[Expr]:
     lower: model.Field
     upper: model.Field
     if predecessors:
@@ -700,7 +703,7 @@ def sufficient_space_for_field_condition(
 
 def initialize_field_statements(
     field: model.Field, reset_written_last: bool = False
-) -> Sequence[Statement]:
+) -> list[Statement]:
     return [
         CallStatement(
             "Reset_Dependent_Fields",
@@ -773,7 +776,7 @@ def initialize_field_statements(
     ]
 
 
-def field_bit_location_declarations(field_name: Name) -> Sequence[Declaration]:
+def field_bit_location_declarations(field_name: Name) -> list[Declaration]:
     return [
         ObjectDeclaration(
             ["First"],
@@ -904,11 +907,11 @@ def create_sequence_instantiation(
     sequence_type: model.Sequence,
     prefix: str = "",
     flat: bool = False,
-) -> Tuple[List[ContextItem], GenericPackageInstantiation]:
+) -> tuple[list[ContextItem], GenericPackageInstantiation]:
     element_type = sequence_type.element_type
     element_type_package = element_type.package.name
 
-    sequence_context: List[ContextItem] = []
+    sequence_context: list[ContextItem] = []
     sequence_package: GenericPackageInstantiation
     if isinstance(element_type, model.Message):
         element_type_identifier = ID(
@@ -1042,14 +1045,14 @@ def conditional_field_size(field: model.Field, message: model.Message, prefix: s
     )
 
 
-def message_parameters(message: model.Message) -> List[Parameter]:
+def message_parameters(message: model.Message) -> list[Parameter]:
     return [
         Parameter([p.name], ada_type_identifier(t.identifier))
         for p, t in message.parameter_types.items()
     ]
 
 
-def initialize_conditions(message: model.Message) -> Sequence[Expr]:
+def initialize_conditions(message: model.Message) -> list[Expr]:
     return [
         *[
             Equal(

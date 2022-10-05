@@ -3,7 +3,8 @@ from __future__ import annotations
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Dict, Final, Iterable, List, Mapping, Optional, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Final, Optional
 
 from rflx import expression as expr, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
@@ -499,7 +500,7 @@ class Session(AbstractSession):
                     )
 
     def _validate_state_reachability(self) -> None:
-        inputs: Dict[ID, List[ID]] = {}
+        inputs: dict[ID, list[ID]] = {}
         for s in self.states:
             for t in [
                 *s.transitions,

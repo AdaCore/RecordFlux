@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Optional, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import Optional, TypeVar, Union
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fatal_fail
 

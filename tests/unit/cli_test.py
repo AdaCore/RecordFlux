@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch

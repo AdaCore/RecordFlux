@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections import deque
+from collections.abc import Sequence
 from enum import Enum, auto
 from pathlib import Path
 from threading import local
-from typing import Deque, List, NoReturn, Optional, Tuple, TypeVar, Union
+from typing import NoReturn, Optional, TypeVar, Union
 
 from rflx.common import Base, verbose_repr
 
@@ -14,9 +17,9 @@ ERROR_CONFIG.fail_after_value = 0
 class Location(Base):
     def __init__(
         self,
-        start: Tuple[int, int],
+        start: tuple[int, int],
         source: Path = None,
-        end: Tuple[int, int] = None,
+        end: tuple[int, int] = None,
         verbose: bool = False,
     ):
         self._source = source
@@ -25,7 +28,7 @@ class Location(Base):
         self._verbose = verbose
 
     def __str__(self) -> str:
-        def linecol_str(linecol: Tuple[int, int]) -> str:
+        def linecol_str(linecol: tuple[int, int]) -> str:
             return f"{linecol[0]}:{linecol[1]}"
 
         start = f":{linecol_str(self._start)}"
@@ -42,11 +45,11 @@ class Location(Base):
         return self._source
 
     @property
-    def start(self) -> Tuple[int, int]:
+    def start(self) -> tuple[int, int]:
         return self._start
 
     @property
-    def end(self) -> Optional[Tuple[int, int]]:
+    def end(self) -> Optional[tuple[int, int]]:
         return self._end
 
     def __hash__(self) -> int:
@@ -111,7 +114,7 @@ class BaseError(Exception, Base):
     @abstractmethod
     def __init__(self) -> None:
         super().__init__()
-        self._errors: Deque[BaseError.Entry] = deque()
+        self._errors: deque[BaseError.Entry] = deque()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -139,12 +142,12 @@ class BaseError(Exception, Base):
         return NotImplemented
 
     @property
-    def errors(self) -> Deque["BaseError.Entry"]:
+    def errors(self) -> deque[BaseError.Entry]:
         return self._errors
 
     def extend(
         self,
-        entries: Union[List[Tuple[str, Subsystem, Severity, Optional[Location]]], "BaseError"],
+        entries: Union[Sequence[tuple[str, Subsystem, Severity, Optional[Location]]], BaseError],
     ) -> None:
         if isinstance(entries, BaseError):
             self._errors.extend(entries.errors)

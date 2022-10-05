@@ -1,4 +1,7 @@
-import typing as ty
+from __future__ import annotations
+
+from collections import abc
+from typing import Union
 
 import pytest
 
@@ -664,7 +667,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
         ),
     ],
 )
-def test_common_type(types: ty.Sequence[Type], expected: Type) -> None:
+def test_common_type(types: abc.Sequence[Type], expected: Type) -> None:
     assert common_type(types) == expected
     assert common_type(list(reversed(types))) == expected
 
@@ -719,7 +722,7 @@ def test_check_type_error(actual: Type, expected: Type, match: str) -> None:
     ],
 )
 def test_check_type_instance(
-    actual: Type, expected: ty.Union[ty.Type[Type], ty.Tuple[ty.Type[Type], ...]]
+    actual: Type, expected: Union[type[Type], tuple[type[Type], ...]]
 ) -> None:
     check_type_instance(actual, expected, Location((10, 20)), '"A"').propagate()
 
@@ -747,7 +750,7 @@ def test_check_type_instance(
     ],
 )
 def test_check_type_instance_error(
-    actual: Type, expected: ty.Union[ty.Type[Type], ty.Tuple[ty.Type[Type], ...]], match: str
+    actual: Type, expected: Union[type[Type], tuple[type[Type], ...]], match: str
 ) -> None:
     with pytest.raises(RecordFluxError, match=match):
         check_type_instance(actual, expected, Location((10, 20)), '"A"').propagate()

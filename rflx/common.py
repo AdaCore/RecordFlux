@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import re
 import textwrap
 from abc import ABC
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence, TypeVar
+from typing import TypeVar
 
 STDIN = Path("<stdin>")
 

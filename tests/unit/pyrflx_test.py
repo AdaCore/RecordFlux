@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
-import typing as ty
+
+from collections import abc
 from pathlib import Path
 
 import pytest
@@ -1350,7 +1351,7 @@ def test_get_inner_messages(  # pylint: disable=invalid-name
     sequence_element_three = sequence_message_package.new_message("Sequence_Element")
     sequence_element_three.set("Byte", 7)
 
-    sequence_contents: ty.Sequence[TypeValue] = [sequence_element_one, sequence_element_two]
+    sequence_contents: abc.Sequence[TypeValue] = [sequence_element_one, sequence_element_two]
     message_sequence_refinement_value.set("Length", 2)
     message_sequence_refinement_value.set("Sequence_Field", sequence_contents)
     message_sequence_refinement_value.set("Payload", sequence_element_three.bytestring)

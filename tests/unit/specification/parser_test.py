@@ -1,9 +1,12 @@
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import textwrap
+from collections.abc import Mapping, Sequence
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Dict, Sequence
+from typing import Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -126,7 +129,7 @@ def to_dict(node: Any) -> Any:  # type: ignore[misc]
 
 def assert_ast_files(  # type: ignore[misc]
     filenames: Sequence[str],
-    expected: Dict[str, Any],
+    expected: Mapping[str, Any],
 ) -> None:
     p = parser.Parser()
     p.parse(*[Path(f) for f in filenames])
@@ -134,7 +137,7 @@ def assert_ast_files(  # type: ignore[misc]
     assert result == expected, filenames
 
 
-def assert_ast_string(string: str, expected: Dict[str, Any]) -> None:  # type: ignore[misc]
+def assert_ast_string(string: str, expected: Mapping[str, Any]) -> None:  # type: ignore[misc]
     p = parser.Parser()
     p.parse_string(string)
     assert to_dict(list(p.specifications.items())[0][1]) == expected

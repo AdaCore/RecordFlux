@@ -6,6 +6,7 @@ import difflib
 import itertools
 import operator
 from abc import abstractmethod
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ from functools import lru_cache
 from itertools import groupby
 from operator import itemgetter
 from sys import intern
-from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Optional, Union
 
 import z3
 
@@ -49,9 +50,7 @@ class ProofResult(Enum):
 
 
 class Proof:
-    def __init__(
-        self, expr: "Expr", facts: Optional[Sequence["Expr"]] = None, logic: str = "QF_NIA"
-    ):
+    def __init__(self, expr: Expr, facts: Optional[Sequence[Expr]] = None, logic: str = "QF_NIA"):
         self._expr = expr
         self._facts = facts or []
         self._result = ProofResult.UNSAT
@@ -72,7 +71,7 @@ class Proof:
         return self._result
 
     @property
-    def error(self) -> List[Tuple[str, Optional[Location]]]:
+    def error(self) -> list[tuple[str, Optional[Location]]]:
         assert self._result != ProofResult.SAT
         if self._result == ProofResult.UNKNOWN:
             assert self._unknown_reason is not None
@@ -95,8 +94,8 @@ class Proof:
 
 @dataclass
 class ProofJob:
-    goal: "Expr"
-    facts: List["Expr"]
+    goal: Expr
+    facts: Sequence[Expr]
     expected: ProofResult
     error: RecordFluxError
     negate: bool
@@ -105,14 +104,14 @@ class ProofJob:
 
 class ParallelProofs:
     def __init__(self, workers: int) -> None:
-        self._proofs: List[List[ProofJob]] = []
-        self._current: List[ProofJob] = []
+        self._proofs: list[list[ProofJob]] = []
+        self._current: list[ProofJob] = []
         self._workers = workers
 
     def add(
         self,
-        goal: "Expr",
-        facts: List["Expr"],
+        goal: Expr,
+        facts: Sequence[Expr],
         expected: ProofResult,
         error: RecordFluxError,
         negate: bool = False,
@@ -127,7 +126,7 @@ class ParallelProofs:
             self._current.clear()
 
     @staticmethod
-    def check_proof(jobs: List[ProofJob]) -> RecordFluxError:
+    def check_proof(jobs: Sequence[ProofJob]) -> RecordFluxError:
         result = RecordFluxError()
         for job in jobs:
             proof = job.goal.check(job.facts)
@@ -197,11 +196,11 @@ class Expr(DBC, Base):
     def __hash__(self) -> int:
         return hash(self.__class__.__name__)
 
-    def __contains__(self, item: "Expr") -> bool:
+    def __contains__(self, item: Expr) -> bool:
         return item == self
 
     @abstractmethod
-    def __neg__(self) -> "Expr":
+    def __neg__(self) -> Expr:
         raise NotImplementedError
 
     @abstractmethod
@@ -213,14 +212,14 @@ class Expr(DBC, Base):
         """Initialize and check the types of sub-expressions."""
         raise NotImplementedError
 
-    def check_type(self, expected: Union[rty.Type, Tuple[rty.Type, ...]]) -> RecordFluxError:
+    def check_type(self, expected: Union[rty.Type, tuple[rty.Type, ...]]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         return self._check_type_subexpr() + rty.check_type(
             self.type_, expected, self.location, _entity_name(self)
         )
 
     def check_type_instance(
-        self, expected: Union[Type[rty.Type], Tuple[Type[rty.Type], ...]]
+        self, expected: Union[type[rty.Type], tuple[type[rty.Type], ...]]
     ) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         return self._check_type_subexpr() + rty.check_type_instance(
@@ -232,24 +231,24 @@ class Expr(DBC, Base):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return []
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else []
 
     @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
-        self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
-    ) -> "Expr":
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
         func = substitution(mapping or {}, func)
         return func(self)
 
     @abstractmethod
-    def simplified(self) -> "Expr":
+    def simplified(self) -> Expr:
         raise NotImplementedError
 
-    def parenthesized(self, expr: "Expr") -> str:
+    def parenthesized(self, expr: Expr) -> str:
         if expr.precedence.value <= self.precedence.value:
             return "(" + indent_next(str(expr), 1) + ")"
         return str(expr)
@@ -262,7 +261,7 @@ class Expr(DBC, Base):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def check(self, facts: Optional[Sequence["Expr"]] = None) -> Proof:
+    def check(self, facts: Optional[Sequence[Expr]] = None) -> Proof:
         return Proof(self, facts)
 
 
@@ -284,17 +283,17 @@ class Not(Expr):
     def precedence(self) -> Precedence:
         return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return self.expr.variables()
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -373,10 +372,10 @@ class BinExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return list(unique(self.left.variables() + self.right.variables()))
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *self.left.findall(match),
@@ -384,7 +383,7 @@ class BinExpr(Expr):
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -438,17 +437,17 @@ class AssExpr(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return list(unique([v for t in self.terms for v in t.variables()]))
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *[m for t in self.terms for m in t.findall(match)],
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -459,7 +458,7 @@ class AssExpr(Expr):
         return expr
 
     def simplified(self) -> Expr:
-        terms: List[Expr] = []
+        terms: list[Expr] = []
         all_terms = list(self.terms)
         total = self.neutral_element()
 
@@ -727,20 +726,20 @@ class Number(Expr):
     def __int__(self) -> int:
         return self.value
 
-    def __neg__(self) -> "Number":
+    def __neg__(self) -> Number:
         return Number(-self.value)
 
-    def __add__(self, other: object) -> "Number":
+    def __add__(self, other: object) -> Number:
         if isinstance(other, Number):
             return Number(self.value + other.value)
         return NotImplemented
 
-    def __sub__(self, other: object) -> "Number":
+    def __sub__(self, other: object) -> Number:
         if isinstance(other, Number):
             return Number(self.value - other.value)
         return NotImplemented
 
-    def __mul__(self, other: object) -> "Number":
+    def __mul__(self, other: object) -> Number:
         if isinstance(other, Number):
             return Number(self.value * other.value)
         return NotImplemented
@@ -752,12 +751,12 @@ class Number(Expr):
             return Div(Number(self.value), Number(other.value))
         return NotImplemented
 
-    def __pow__(self, other: object) -> "Number":
+    def __pow__(self, other: object) -> Number:
         if isinstance(other, Number):
             return Number(self.value**other.value)
         return NotImplemented
 
-    def __mod__(self, other: object) -> "Number":
+    def __mod__(self, other: object) -> Number:
         if isinstance(other, Number):
             return Number(self.value % other.value)
         return NotImplemented
@@ -852,7 +851,7 @@ class Add(MathAssExpr):
         expr = super().simplified()
         if not isinstance(expr, Add):
             return expr
-        terms: List[Expr] = []
+        terms: list[Expr] = []
         for term in reversed(expr.terms):
             complement = None
             for other in terms:
@@ -1086,7 +1085,7 @@ class Name(Expr):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping["Name", Expr] = None
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
     ) -> Expr:
         if self.immutable:
             return self
@@ -1136,7 +1135,7 @@ class Literal(Name):
     def representation(self) -> str:
         return str(self.name)
 
-    def variables(self) -> List[Variable]:
+    def variables(self) -> list[Variable]:
         return []
 
     def ada_expr(self) -> ada.Expr:
@@ -1186,7 +1185,7 @@ class Variable(Name):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __neg__(self) -> "Variable":
+    def __neg__(self) -> Variable:
         return self.__class__(
             self.identifier, not self.negative, self.immutable, self.type_, self.location
         )
@@ -1202,7 +1201,7 @@ class Variable(Name):
     def representation(self) -> str:
         return str(self.name)
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return [self]
 
     def ada_expr(self) -> ada.Expr:
@@ -1253,10 +1252,10 @@ class Attribute(Name):
     def symbol(self) -> str:
         return self.__class__.__name__
 
-    def __neg__(self) -> "Attribute":
+    def __neg__(self) -> Attribute:
         return self.__class__(self.prefix, not self.negative)
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else self.prefix.findall(match)
 
     def substituted(
@@ -1274,7 +1273,7 @@ class Attribute(Name):
         expr = self.__class__(self.prefix.simplified())
         return -expr if self.negative else expr
 
-    def variables(self) -> List[Variable]:
+    def variables(self) -> list[Variable]:
         return self.prefix.variables()
 
     def ada_expr(self) -> ada.Expr:
@@ -1441,13 +1440,13 @@ class Val(Attribute):
         self.expression = expression
         super().__init__(prefix)
 
-    def __neg__(self) -> "Val":
+    def __neg__(self) -> Val:
         return self.__class__(self.prefix, self.expression, not self.negative)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         raise NotImplementedError
 
-    def variables(self) -> List[Variable]:
+    def variables(self) -> list[Variable]:
         raise NotImplementedError
 
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
@@ -1486,7 +1485,7 @@ class Indexed(Name):
         self.elements = list(elements)
         super().__init__(negative)
 
-    def __neg__(self) -> "Indexed":
+    def __neg__(self) -> Indexed:
         return self.__class__(self.prefix, *self.elements, negative=not self.negative)
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1520,12 +1519,12 @@ class Selected(Name):
         self.selector = ID(selector)
         super().__init__(negative, immutable, type_, location)
 
-    def __neg__(self) -> "Selected":
+    def __neg__(self) -> Selected:
         return self.__class__(
             self.prefix, self.selector, not self.negative, self.immutable, self.type_, self.location
         )
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *self.prefix.findall(match),
@@ -1561,7 +1560,7 @@ class Selected(Name):
     def representation(self) -> str:
         return f"{self.prefix}.{self.selector}"
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return self.prefix.variables()
 
     def substituted(
@@ -1624,7 +1623,7 @@ class Call(Name):
         self.argument_types = argument_types or []
         super().__init__(negative, immutable, type_, location)
 
-    def __neg__(self) -> "Call":
+    def __neg__(self) -> Call:
         return self.__class__(
             self.identifier,
             self.args,
@@ -1683,13 +1682,13 @@ class Call(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         result = [Variable(self.identifier, location=self.location)]
         for t in self.args:
             result.extend(t.variables())
         return result
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *[e for a in self.args for e in a.findall(match)],
@@ -1744,7 +1743,7 @@ class UndefinedExpr(Name):
     def representation(self) -> str:
         return "__UNDEFINED__"
 
-    def __neg__(self) -> "UndefinedExpr":
+    def __neg__(self) -> UndefinedExpr:
         raise NotImplementedError
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1851,7 +1850,7 @@ class String(Aggregate):
 class NamedAggregate(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
 
-    def __init__(self, *elements: Tuple[Union[StrID, Expr], Expr]) -> None:
+    def __init__(self, *elements: tuple[Union[StrID, Expr], Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
@@ -1875,7 +1874,7 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        elements: List[Tuple[Union[ID, ada.Expr], ada.Expr]] = [
+        elements: list[tuple[Union[ID, ada.Expr], ada.Expr]] = [
             (
                 n if isinstance(n, ID) else n.ada_expr(),
                 e.ada_expr(),
@@ -2133,7 +2132,7 @@ class NotIn(Relation):
 
 class IfExpr(Expr):
     def __init__(
-        self, condition_expressions: Sequence[Tuple[Expr, Expr]], else_expression: Expr = None
+        self, condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None
     ) -> None:
         super().__init__()
         self.condition_expressions = condition_expressions
@@ -2280,7 +2279,7 @@ class QuantifiedExpr(Expr):
     def keyword(self) -> str:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return list(
             unique(
                 v
@@ -2385,8 +2384,8 @@ class ValueRange(Expr):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[["Expr"], "Expr"] = None, mapping: Mapping["Name", "Expr"] = None
-    ) -> "Expr":
+        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+    ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
         if isinstance(expr, self.__class__):
@@ -2506,7 +2505,7 @@ class Conversion(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return self.argument.variables()
 
 
@@ -2625,7 +2624,7 @@ class Comprehension(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return [
             v
             for v in self.sequence.variables()
@@ -2736,7 +2735,7 @@ class MessageAggregate(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *[e for v in self.field_values.values() for e in v.findall(match)],
@@ -2775,7 +2774,7 @@ class MessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         result = []
         for v in self.field_values.values():
             result.extend(v.variables())
@@ -2906,7 +2905,7 @@ class DeltaMessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List[Variable]:
+    def variables(self) -> list[Variable]:
         result = []
         for v in self.field_values.values():
             result.extend(v.variables())
@@ -2947,7 +2946,7 @@ class Binding(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),
@@ -2982,12 +2981,12 @@ class Binding(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         return self.simplified().variables()
 
 
 def substitution(
-    mapping: Mapping[Name, Expr], func: Callable[["Expr"], "Expr"] = None
+    mapping: Mapping[Name, Expr], func: Callable[[Expr], Expr] = None
 ) -> Callable[[Expr], Expr]:
     if func:
         return func
@@ -3033,7 +3032,7 @@ class CaseExpr(Expr):
     def __init__(
         self,
         expr: Expr,
-        choices: List[Tuple[List[Union[ID, Number]], Expr]],
+        choices: Sequence[tuple[Sequence[Union[ID, Number]], Expr]],
         location: Location = None,
     ) -> None:
         super().__init__(rty.Undefined(), location)
@@ -3252,7 +3251,7 @@ class CaseExpr(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def findall(self, match: Callable[["Expr"], bool]) -> Sequence["Expr"]:
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),
@@ -3298,7 +3297,7 @@ class CaseExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def variables(self) -> List["Variable"]:
+    def variables(self) -> list[Variable]:
         simplified = self.simplified()
         assert isinstance(simplified, CaseExpr)
         return list(
@@ -3313,7 +3312,7 @@ class CaseExpr(Expr):
 
 def _similar_field_names(
     field: ID, fields: Iterable[ID], location: Optional[Location]
-) -> List[Tuple[str, Subsystem, Severity, Optional[Location]]]:
+) -> list[tuple[str, Subsystem, Severity, Optional[Location]]]:
     field_similarity = sorted(
         ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
         key=lambda x: x[1],

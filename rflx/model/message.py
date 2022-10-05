@@ -5,10 +5,11 @@ from __future__ import annotations
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import Optional, Union
 
 import rflx.typing_ as rty
 from rflx import expression as expr
@@ -94,7 +95,7 @@ class Link(Base):
         return bool(self.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
 
 
-def valid_message_field_types(message: "AbstractMessage") -> bool:
+def valid_message_field_types(message: AbstractMessage) -> bool:
     for t in message.types.values():
         if not isinstance(t, (mty.Scalar, mty.Composite, AbstractMessage)):
             return False
@@ -104,7 +105,7 @@ def valid_message_field_types(message: "AbstractMessage") -> bool:
 class MessageState(Base):
     parameter_types: Mapping[Field, mty.Type] = {}
     field_types: Mapping[Field, mty.Type] = {}
-    definite_predecessors: Optional[Mapping[Field, Tuple[Field, ...]]] = None
+    definite_predecessors: Optional[Mapping[Field, tuple[Field, ...]]] = None
     path_condition: Optional[Mapping[Field, expr.Expr]] = None
     has_unreachable = False
 
@@ -133,7 +134,7 @@ class AbstractMessage(mty.Type):
 
         self._structure = sorted(structure)
         self._types = types
-        self._paths_cache: Dict[Field, Set[Tuple[Link, ...]]] = {}
+        self._paths_cache: dict[Field, set[tuple[Link, ...]]] = {}
         self._checksums = checksums or {}
 
         self._state = state or MessageState()
@@ -228,11 +229,11 @@ class AbstractMessage(mty.Type):
         return self._structure == [Link(INITIAL, FINAL)] and not self._types
 
     @property
-    def direct_dependencies(self) -> List[mty.Type]:
+    def direct_dependencies(self) -> list[mty.Type]:
         return [*self._types.values(), self]
 
     @property
-    def dependencies(self) -> List[mty.Type]:
+    def dependencies(self) -> list[mty.Type]:
         return [*unique(a for t in self._types.values() for a in t.dependencies), self]
 
     @property
@@ -249,24 +250,24 @@ class AbstractMessage(mty.Type):
         byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
-    ) -> "AbstractMessage":
+    ) -> AbstractMessage:
         raise NotImplementedError
 
     @abstractmethod
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> "Message":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
         raise NotImplementedError
 
     @property
-    def parameters(self) -> Tuple[Field, ...]:
+    def parameters(self) -> tuple[Field, ...]:
         return tuple(self._state.parameter_types or {})
 
     @property
-    def fields(self) -> Tuple[Field, ...]:
+    def fields(self) -> tuple[Field, ...]:
         """Return fields topologically sorted."""
         return tuple(self._state.field_types or {})
 
     @property
-    def all_fields(self) -> Tuple[Field, ...]:
+    def all_fields(self) -> tuple[Field, ...]:
         return (INITIAL, *self.fields, FINAL)
 
     @property
@@ -292,33 +293,33 @@ class AbstractMessage(mty.Type):
     def checksums(self) -> Mapping[ID, Sequence[expr.Expr]]:
         return self._checksums
 
-    def incoming(self, field: Field) -> List[Link]:
+    def incoming(self, field: Field) -> list[Link]:
         return [l for l in self.structure if l.target == field]
 
-    def outgoing(self, field: Field) -> List[Link]:
+    def outgoing(self, field: Field) -> list[Link]:
         return [l for l in self.structure if l.source == field]
 
-    def predecessors(self, field: Field) -> Tuple[Field, ...]:
+    def predecessors(self, field: Field) -> tuple[Field, ...]:
         if field == INITIAL:
             return ()
         if field == FINAL:
             return self.fields
         return self.fields[: self.fields.index(field)]
 
-    def successors(self, field: Field) -> Tuple[Field, ...]:
+    def successors(self, field: Field) -> tuple[Field, ...]:
         if field == INITIAL:
             return self.fields
         if field == FINAL:
             return ()
         return self.fields[self.fields.index(field) + 1 :]
 
-    def direct_predecessors(self, field: Field) -> List[Field]:
+    def direct_predecessors(self, field: Field) -> list[Field]:
         return list(dict.fromkeys([l.source for l in self.incoming(field)]))
 
-    def direct_successors(self, field: Field) -> List[Field]:
+    def direct_successors(self, field: Field) -> list[Field]:
         return list(dict.fromkeys([l.target for l in self.outgoing(field)]))
 
-    def definite_predecessors(self, field: Field) -> Tuple[Field, ...]:
+    def definite_predecessors(self, field: Field) -> tuple[Field, ...]:
         """Return preceding fields which are part of all possible paths."""
         if self._state.definite_predecessors is None:
             self._state.definite_predecessors = {
@@ -361,7 +362,7 @@ class AbstractMessage(mty.Type):
             field.identifier.location,
         )
 
-    def paths(self, field: Field) -> Set[Tuple[Link, ...]]:
+    def paths(self, field: Field) -> set[tuple[Link, ...]]:
         if field == INITIAL:
             return set()
         if field in self._paths_cache:
@@ -378,7 +379,7 @@ class AbstractMessage(mty.Type):
         self._paths_cache[field] = result
         return result
 
-    def prefixed(self, prefix: str) -> "AbstractMessage":
+    def prefixed(self, prefix: str) -> AbstractMessage:
         fields = {f.identifier for f in self.fields}
 
         def prefixed_expression(expression: expr.Expr) -> expr.Expr:
@@ -422,14 +423,14 @@ class AbstractMessage(mty.Type):
 
         return self.copy(structure=structure, types=types, byte_order=byte_order)
 
-    def type_constraints(self, expression: expr.Expr) -> List[expr.Expr]:
+    def type_constraints(self, expression: expr.Expr) -> list[expr.Expr]:
         return [
             *self._aggregate_constraints(expression),
             *self._scalar_constraints(),
             *self._type_size_constraints(),
         ]
 
-    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> List[expr.Expr]:
+    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
             comp = self._types[Field(field.name)]
             assert isinstance(comp, mty.Composite)
@@ -445,7 +446,7 @@ class AbstractMessage(mty.Type):
                 ]
             return [result]
 
-        aggregate_constraints: List[expr.Expr] = []
+        aggregate_constraints: list[expr.Expr] = []
         for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
             assert isinstance(r, (expr.Equal, expr.NotEqual))
             if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
@@ -455,7 +456,7 @@ class AbstractMessage(mty.Type):
 
         return aggregate_constraints
 
-    def _scalar_constraints(self) -> List[expr.Expr]:
+    def _scalar_constraints(self) -> list[expr.Expr]:
         scalar_types = [
             (f.name, t)
             for f, t in self._types.items()
@@ -470,7 +471,7 @@ class AbstractMessage(mty.Type):
             for c in t.constraints(name=n, proof=True, same_package=False)
         ]
 
-    def _type_size_constraints(self) -> List[expr.Expr]:
+    def _type_size_constraints(self) -> list[expr.Expr]:
         return [
             expr.Equal(expr.Size(l), t.size)
             for l, t in self._type_literals.items()
@@ -478,7 +479,7 @@ class AbstractMessage(mty.Type):
         ]
 
     @classmethod
-    def message_constraints(cls) -> List[expr.Expr]:
+    def message_constraints(cls) -> list[expr.Expr]:
         return [
             expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
             expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
@@ -499,7 +500,7 @@ class AbstractMessage(mty.Type):
 
         return has_unreachable
 
-    def _validate_types(self, type_fields: Set[Field], structure_fields: Set[Field]) -> None:
+    def _validate_types(self, type_fields: set[Field], structure_fields: set[Field]) -> None:
         parameters = self._types.keys() - structure_fields
 
         for p in parameters:
@@ -571,7 +572,7 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
-    def _validate_names(self, type_fields: Set[Field]) -> None:
+    def _validate_names(self, type_fields: set[Field]) -> None:
         name_conflicts = [
             (f, l)
             for f in type_fields
@@ -599,7 +600,7 @@ class AbstractMessage(mty.Type):
                 ],
             )
 
-    def _validate_structure(self, structure_fields: Set[Field]) -> bool:
+    def _validate_structure(self, structure_fields: set[Field]) -> bool:
         has_unreachable = False
 
         for f in structure_fields:
@@ -771,9 +772,9 @@ class AbstractMessage(mty.Type):
                             location=link.location,
                         )
 
-    def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[Tuple[Field, ...]]:
+    def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
-        result: Tuple[Field, ...] = ()
+        result: tuple[Field, ...] = ()
         fields = [INITIAL]
         visited = set()
         while fields:
@@ -798,7 +799,7 @@ class AbstractMessage(mty.Type):
             return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
 
-    def _compute_definite_predecessors(self, final: Field) -> Tuple[Field, ...]:
+    def _compute_definite_predecessors(self, final: Field) -> tuple[Field, ...]:
         return tuple(
             f
             for f in self.fields
@@ -836,7 +837,7 @@ class Message(AbstractMessage):
             identifier, structure, types, checksums, byte_order, location, error, state
         )
 
-        self._refinements: List["Refinement"] = []
+        self._refinements: list[Refinement] = []
         self._skip_proof = skip_proof
         self._workers = workers
 
@@ -877,7 +878,7 @@ class Message(AbstractMessage):
         byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
-    ) -> "Message":
+    ) -> Message:
         return Message(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
@@ -889,7 +890,7 @@ class Message(AbstractMessage):
             skip_proof=self._skip_proof,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> "Message":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
         return copy(self)
 
     def is_possibly_empty(self, field: Field) -> bool:
@@ -906,7 +907,7 @@ class Message(AbstractMessage):
 
         return False
 
-    def set_refinements(self, refinements: List["Refinement"]) -> None:
+    def set_refinements(self, refinements: list[Refinement]) -> None:
         if any(r.pdu != self for r in refinements):
             fatal_fail("setting refinements for different message", Subsystem.MODEL)
         self._refinements = refinements
@@ -1194,7 +1195,7 @@ class Message(AbstractMessage):
 
         return max_size
 
-    def max_field_sizes(self) -> Dict[Field, expr.Number]:
+    def max_field_sizes(self) -> dict[Field, expr.Number]:
         if self.is_null:
             return {}
 
@@ -1216,7 +1217,7 @@ class Message(AbstractMessage):
 
         return result
 
-    def _max_value(self, target: expr.Expr, path: Tuple[Link, ...]) -> expr.Number:
+    def _max_value(self, target: expr.Expr, path: tuple[Link, ...]) -> expr.Number:
         message_size = expr.Add(
             *[
                 expr.Size(link.target.name)
@@ -1310,7 +1311,7 @@ class Message(AbstractMessage):
                 )
 
     def _verify_expression_types(self) -> None:
-        types: Dict[Field, mty.Type] = {}
+        types: dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             return self._typed_variable(expression, types)
@@ -2021,7 +2022,7 @@ class Message(AbstractMessage):
 
     def _link_size_expressions(
         self, link: Link, ignore_implicit_sizes: bool = False
-    ) -> List[expr.Expr]:
+    ) -> list[expr.Expr]:
         name = link.target.name
         target_first = self._target_first(link)
         target_size = self._target_size(link)
@@ -2107,7 +2108,7 @@ class DerivedMessage(Message):
         byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
-    ) -> "DerivedMessage":
+    ) -> DerivedMessage:
         return DerivedMessage(
             identifier if identifier else self.identifier,
             self.base,
@@ -2119,7 +2120,7 @@ class DerivedMessage(Message):
             error if error else self.error,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> "DerivedMessage":
+    def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
         return copy(self)
 
 
@@ -2134,7 +2135,7 @@ class UnprovenMessage(AbstractMessage):
         byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
-    ) -> "UnprovenMessage":
+    ) -> UnprovenMessage:
         return UnprovenMessage(
             identifier if identifier else self.identifier,
             structure if structure else copy(self.structure),
@@ -2405,8 +2406,8 @@ class UnprovenMessage(AbstractMessage):
 
     @staticmethod
     def _prune_dangling_fields(
-        structure: List[Link], types: Dict[Field, mty.Type], byte_order: Dict[Field, ByteOrder]
-    ) -> Tuple[List[Link], Dict[Field, mty.Type], Dict[Field, ByteOrder]]:
+        structure: list[Link], types: dict[Field, mty.Type], byte_order: dict[Field, ByteOrder]
+    ) -> tuple[list[Link], dict[Field, mty.Type], dict[Field, ByteOrder]]:
         dangling = []
         progress = True
         while progress:
@@ -2478,7 +2479,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
         byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
         location: Location = None,
         error: RecordFluxError = None,
-    ) -> "UnprovenDerivedMessage":
+    ) -> UnprovenDerivedMessage:
         return UnprovenDerivedMessage(
             identifier if identifier else self.identifier,
             self.base,
@@ -2632,11 +2633,11 @@ class Refinement(mty.Type):
         return hash(self.identifier)
 
     @property
-    def direct_dependencies(self) -> List[mty.Type]:
+    def direct_dependencies(self) -> list[mty.Type]:
         return list(unique([self.pdu, self.sdu, self]))
 
     @property
-    def dependencies(self) -> List[mty.Type]:
+    def dependencies(self) -> list[mty.Type]:
         return list(unique([*self.pdu.dependencies, *self.sdu.dependencies, self]))
 
 
@@ -2646,7 +2647,7 @@ def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
     return [expression]
 
 
-def to_mapping(facts: Sequence[expr.Expr]) -> Dict[expr.Name, expr.Expr]:
+def to_mapping(facts: Sequence[expr.Expr]) -> dict[expr.Name, expr.Expr]:
     return {
         f.left: f.right
         for f in facts

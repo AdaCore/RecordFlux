@@ -6,7 +6,7 @@ import argparse
 import logging
 import pathlib
 import sys
-from typing import Sequence
+from collections.abc import Sequence
 
 from rflx import common
 

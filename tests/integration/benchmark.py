@@ -3,9 +3,9 @@
 import argparse
 import cProfile
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from time import perf_counter
-from typing import Generator
 
 from tqdm import tqdm  # type: ignore
 

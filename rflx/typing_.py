@@ -1,6 +1,9 @@
-import typing as ty
+from __future__ import annotations
+
 from abc import abstractmethod
+from collections import abc
 from pathlib import Path
+from typing import ClassVar, Optional, Union
 
 import attr
 
@@ -11,8 +14,8 @@ from rflx.identifier import ID
 
 @attr.s(frozen=True)
 class Bounds:
-    lower: ty.Optional[int] = attr.ib()
-    upper: ty.Optional[int] = attr.ib()
+    lower: Optional[int] = attr.ib()
+    upper: Optional[int] = attr.ib()
 
     def __attrs_post_init__(self) -> None:
         assert self.lower is None or self.upper is None or self.lower <= self.upper
@@ -45,33 +48,33 @@ class Bounds:
         return f"{self.lower} .. {self.upper}"
 
     @staticmethod
-    def union(left: "Bounds", right: "Bounds") -> "Bounds":
+    def union(left: Bounds, right: Bounds) -> Bounds:
         if left.lower is None or left.upper is None or right.lower is None or right.upper is None:
             return Bounds(None, None)
         return Bounds(min(left.lower, right.lower), max(left.upper, right.upper))
 
 
 class Type:
-    DESCRIPTIVE_NAME: ty.ClassVar[str]
+    DESCRIPTIVE_NAME: ClassVar[str]
 
     def __str__(self) -> str:
         return self.DESCRIPTIVE_NAME
 
     @abstractmethod
-    def is_compatible(self, other: "Type") -> bool:
+    def is_compatible(self, other: Type) -> bool:
         raise NotImplementedError
 
-    def is_compatible_strong(self, other: "Type") -> bool:
+    def is_compatible_strong(self, other: Type) -> bool:
         return self.is_compatible(other)
 
     @abstractmethod
-    def common_type(self, other: "Type") -> "Type":
+    def common_type(self, other: Type) -> Type:
         raise NotImplementedError
 
 
 @attr.s(frozen=True)
 class Undefined(Type):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "undefined type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "undefined type"
 
     def is_compatible(self, other: Type) -> bool:
         return False
@@ -82,7 +85,7 @@ class Undefined(Type):
 
 @attr.s(frozen=True)
 class Any(Type):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "any type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "any type"
 
     def is_compatible(self, other: Type) -> bool:
         return not isinstance(other, Undefined)
@@ -108,10 +111,10 @@ class IndependentType(Any):
 
 @attr.s(frozen=True)
 class Enumeration(IndependentType):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "enumeration type"
-    literals: ty.Sequence[ID] = attr.ib()
+    DESCRIPTIVE_NAME: ClassVar[str] = "enumeration type"
+    literals: abc.Sequence[ID] = attr.ib()
     always_valid: bool = attr.ib(False)
-    location: ty.Optional[Location] = attr.ib(default=None, cmp=False)
+    location: Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
@@ -126,12 +129,12 @@ BOOLEAN = Enumeration(
 
 @attr.s(frozen=True)
 class AnyInteger(Any):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or isinstance(other, AnyInteger)
 
-    def common_type(self, other: "Type") -> "Type":
+    def common_type(self, other: Type) -> Type:
         if other == Any() or self == other:
             return self
         if isinstance(other, AnyInteger):
@@ -149,7 +152,7 @@ class UndefinedInteger(AnyInteger):
 
 @attr.s(frozen=True)
 class UniversalInteger(AnyInteger):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "type universal integer"
+    DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
     bounds: Bounds = attr.ib(Bounds(None, None))
 
     def __str__(self) -> str:
@@ -176,10 +179,10 @@ class UniversalInteger(AnyInteger):
 
 @attr.s(frozen=True)
 class Integer(AnyInteger):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "integer type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib(Bounds(None, None))
-    location: ty.Optional[Location] = attr.ib(default=None, cmp=False)
+    location: Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
@@ -206,12 +209,12 @@ class Integer(AnyInteger):
 
 
 class Composite(Any):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "composite type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "composite type"
 
 
 @attr.s(frozen=True)
 class Aggregate(Composite):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "aggregate"
+    DESCRIPTIVE_NAME: ClassVar[str] = "aggregate"
     element: Type = attr.ib()
 
     def __str__(self) -> str:
@@ -236,7 +239,7 @@ class Aggregate(Composite):
 
 @attr.s(frozen=True)
 class Sequence(Composite):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "sequence type"
+    DESCRIPTIVE_NAME: ClassVar[str] = "sequence type"
     identifier: ID = attr.ib(converter=ID)
     element: Type = attr.ib()
 
@@ -268,7 +271,7 @@ OPAQUE = Sequence(const.INTERNAL_PACKAGE * "Opaque", Integer("Byte", Bounds(0, 2
 @attr.s(frozen=True)
 class Refinement:
     field: ID = attr.ib(converter=ID)
-    sdu: "Message" = attr.ib()
+    sdu: Message = attr.ib()
     package: ID = attr.ib(converter=ID)
 
 
@@ -276,22 +279,22 @@ class Refinement:
 class Compound(IndependentType):
     """Base type for any type consisting of multiple fields of different types."""
 
-    DESCRIPTIVE_NAME: ty.ClassVar[str]
+    DESCRIPTIVE_NAME: ClassVar[str]
     identifier: ID = attr.ib(converter=ID)
-    field_combinations: ty.Set[ty.Tuple[str, ...]] = attr.ib(factory=set)
-    parameter_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
-    field_types: ty.Mapping[ID, Type] = attr.ib(factory=dict)
+    field_combinations: set[tuple[str, ...]] = attr.ib(factory=set)
+    parameter_types: abc.Mapping[ID, Type] = attr.ib(factory=dict)
+    field_types: abc.Mapping[ID, Type] = attr.ib(factory=dict)
 
     @property
-    def parameters(self) -> ty.Set[ID]:
+    def parameters(self) -> set[ID]:
         return set(self.parameter_types.keys())
 
     @property
-    def fields(self) -> ty.Set[ID]:
+    def fields(self) -> set[ID]:
         return set(self.field_types.keys())
 
     @property
-    def types(self) -> ty.Mapping[ID, Type]:
+    def types(self) -> abc.Mapping[ID, Type]:
         return {**self.parameter_types, **self.field_types}
 
     def __str__(self) -> str:
@@ -306,13 +309,13 @@ class Structure(Compound):
 @attr.s(frozen=True)
 class Message(Compound):
     DESCRIPTIVE_NAME = "message type"
-    refinements: ty.Sequence[Refinement] = attr.ib(factory=list)
+    refinements: abc.Sequence[Refinement] = attr.ib(factory=list)
     is_definite: bool = attr.ib(False)
 
 
 @attr.s(frozen=True)
 class Channel(Any):
-    DESCRIPTIVE_NAME: ty.ClassVar[str] = "channel"
+    DESCRIPTIVE_NAME: ClassVar[str] = "channel"
     readable: bool = attr.ib()
     writable: bool = attr.ib()
 
@@ -337,7 +340,7 @@ class Channel(Any):
         return Undefined()
 
 
-def common_type(types: ty.Sequence[Type]) -> Type:
+def common_type(types: abc.Sequence[Type]) -> Type:
     result: Type = Any()
 
     for t in types:
@@ -348,8 +351,8 @@ def common_type(types: ty.Sequence[Type]) -> Type:
 
 def check_type(
     actual: Type,
-    expected: ty.Union[Type, ty.Tuple[Type, ...]],
-    location: ty.Optional[Location],
+    expected: Union[Type, tuple[Type, ...]],
+    location: Optional[Location],
     description: str,
 ) -> RecordFluxError:
     assert expected, "empty expected types"
@@ -379,8 +382,8 @@ def check_type(
 
 def check_type_instance(
     actual: Type,
-    expected: ty.Union[ty.Type[Type], ty.Tuple[ty.Type[Type], ...]],
-    location: ty.Optional[Location],
+    expected: Union[type[Type], tuple[type[Type], ...]],
+    location: Optional[Location],
     description: str = "",
 ) -> RecordFluxError:
     assert expected, "empty expected types"
@@ -406,7 +409,7 @@ def check_type_instance(
     return error
 
 
-def _undefined_type(location: ty.Optional[Location], description: str = "") -> RecordFluxError:
+def _undefined_type(location: Optional[Location], description: str = "") -> RecordFluxError:
     error = RecordFluxError()
     error.extend(
         [

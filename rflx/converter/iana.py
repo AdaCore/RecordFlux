@@ -3,9 +3,10 @@ from __future__ import annotations
 import re
 import string
 import textwrap
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, ParseError
 
@@ -53,7 +54,7 @@ def convert(
 
 def write_rflx_specification(
     file: Path,
-    enum_types: List[EnumType],
+    enum_types: Sequence[EnumType],
     package_name: str,
     registry_title: Optional[Element],
     registry_last_updated: Optional[Element],
@@ -78,7 +79,7 @@ def write_rflx_specification(
         f.write(f"end {package_name};\n")
 
 
-def resolve_duplicate_literals(enum_types: List[EnumType]) -> None:
+def resolve_duplicate_literals(enum_types: Sequence[EnumType]) -> None:
     literal_names = [
         enum_literal.name for enum_type in enum_types for enum_literal in enum_type.enum_literals
     ]
@@ -99,7 +100,7 @@ def _convert_registry_to_enum_type(
         return None
 
     registry_title = _normalize_name(title.text)
-    enum_literals: Dict[str, EnumLiteral] = {}
+    enum_literals: dict[str, EnumLiteral] = {}
     enum_literal_highest_bit_len = 0
     for record in records:
         name_tag = _get_name_tag(record)
@@ -171,7 +172,11 @@ def _get_name_tag(record: Element) -> Optional[str]:
 
 class EnumType:
     def __init__(
-        self, type_name: str, enum_literals: List[EnumLiteral], type_size: int, always_valid: bool
+        self,
+        type_name: str,
+        enum_literals: Sequence[EnumLiteral],
+        type_size: int,
+        always_valid: bool,
     ) -> None:
         self.type_name = type_name
         self.enum_literals = enum_literals
@@ -195,13 +200,13 @@ class EnumLiteral:
         rflx_name: str,
         rflx_value: str,
         bit_length: int,
-        comments: Optional[List[Element]] = None,
+        comments: Optional[list[Element]] = None,
     ):
         self.name = rflx_name
         self.value = rflx_value
         self.bit_length = bit_length
         self.comment_list = comments or []
-        self.alternative_names: List[str] = [f"alternative_name = {self.name}"]
+        self.alternative_names: list[str] = [f"alternative_name = {self.name}"]
 
     def join(self, duplicate: EnumLiteral, registry_name: str) -> None:
         self.name = f"{registry_name}_{self.value.replace('16#', '').replace('#', '')}"
@@ -209,7 +214,7 @@ class EnumLiteral:
         self.alternative_names.append(f"alternative_name = {duplicate.name}")
 
     @property
-    def comment(self) -> List[str]:
+    def comment(self) -> list[str]:
         comments = [
             f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
             if c.tag is not None and c.text is not None
@@ -246,13 +251,13 @@ class EnumLiteral:
 
 
 def _normalize_name(description_text: str) -> str:
-    t: Dict[str, Union[int, str, None]] = {c: " " for c in string.punctuation + "\n"}
+    t: dict[str, Union[int, str, None]] = {c: " " for c in string.punctuation + "\n"}
     name = description_text.translate(str.maketrans(t))
     name = "_".join([s[0].upper() + s[1:] for s in name.split()])
     return name
 
 
-def _normalize_value(value: str) -> Tuple[str, int]:
+def _normalize_value(value: str) -> tuple[str, int]:
     """
     Return hex string and required bit length.
 

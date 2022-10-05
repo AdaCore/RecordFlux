@@ -1,7 +1,9 @@
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import textwrap
-from typing import Callable, Mapping
+from collections.abc import Callable, Mapping
 
 import pytest
 import z3

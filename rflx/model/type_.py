@@ -1,7 +1,9 @@
 # pylint: disable = cyclic-import
 
-import typing as ty
+from __future__ import annotations
+
 from abc import abstractmethod
+from collections import abc
 from pathlib import Path
 
 import rflx.typing_ as rty
@@ -20,7 +22,7 @@ class Type(BasicDeclaration):
         return rty.Undefined()
 
     @property
-    def direct_dependencies(self) -> ty.List["Type"]:
+    def direct_dependencies(self) -> list[Type]:
         """
         Return a list consisting of the type and all the types on which the type directly depends.
 
@@ -30,7 +32,7 @@ class Type(BasicDeclaration):
         return [self]
 
     @property
-    def dependencies(self) -> ty.List["Type"]:
+    def dependencies(self) -> list[Type]:
         """
         Return a list consisting of the type and all types on which the type depends.
 
@@ -78,7 +80,7 @@ class Scalar(Type):
     @abstractmethod
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> ty.Sequence[expr.Expr]:
+    ) -> abc.Sequence[expr.Expr]:
         raise NotImplementedError
 
 
@@ -176,7 +178,7 @@ class ModularInteger(Integer):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> ty.Sequence[expr.Expr]:
+    ) -> abc.Sequence[expr.Expr]:
         if proof:
             return [
                 expr.Less(expr.Variable(name), self._modulus, location=self.location),
@@ -339,7 +341,7 @@ class RangeInteger(Integer):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> ty.Sequence[expr.Expr]:
+    ) -> abc.Sequence[expr.Expr]:
         if proof:
             return [
                 expr.GreaterEqual(expr.Variable(name), self.first, location=self.location),
@@ -354,7 +356,7 @@ class Enumeration(Scalar):
     def __init__(
         self,
         identifier: StrID,
-        literals: ty.Sequence[ty.Tuple[StrID, expr.Number]],
+        literals: abc.Sequence[tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
         location: Location = None,
@@ -517,7 +519,7 @@ class Enumeration(Scalar):
 
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
-    ) -> ty.Sequence[expr.Expr]:
+    ) -> abc.Sequence[expr.Expr]:
         if proof:
             prefixed_literals = {self.package * l: v for l, v in self.literals.items()}
             if self.package == const.BUILTINS_PACKAGE:
@@ -526,7 +528,7 @@ class Enumeration(Scalar):
                 literals = {**self.literals, **prefixed_literals}
             else:
                 literals = prefixed_literals
-            result: ty.List[expr.Expr] = [
+            result: list[expr.Expr] = [
                 expr.Or(
                     *[
                         expr.Equal(expr.Variable(name), expr.Literal(l), self.location)
@@ -649,11 +651,11 @@ class Sequence(Composite):
         return expr.Size(self.element_type.name)
 
     @property
-    def direct_dependencies(self) -> ty.List["Type"]:
+    def direct_dependencies(self) -> list[Type]:
         return [self.element_type, self]
 
     @property
-    def dependencies(self) -> ty.List["Type"]:
+    def dependencies(self) -> list[Type]:
         return [*self.element_type.dependencies, self]
 
 
@@ -732,7 +734,7 @@ def internal_type_identifier(identifier: ID, package: ID = None) -> ID:
     return identifier
 
 
-def enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumeration]:
+def enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID, Enumeration]:
     literals = {}
 
     for t in types:
@@ -746,7 +748,7 @@ def enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumerat
     return literals
 
 
-def unqualified_enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[ID, Enumeration]:
+def unqualified_enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID, Enumeration]:
     return {
         l: t
         for t in types
@@ -755,7 +757,7 @@ def unqualified_enum_literals(types: ty.Iterable[Type], package: ID) -> ty.Dict[
     }
 
 
-def qualified_enum_literals(types: ty.Iterable[Type]) -> ty.Dict[ID, Enumeration]:
+def qualified_enum_literals(types: abc.Iterable[Type]) -> dict[ID, Enumeration]:
     return {
         l if t.package == const.BUILTINS_PACKAGE else t.package * l: t
         for t in types
@@ -764,7 +766,7 @@ def qualified_enum_literals(types: ty.Iterable[Type]) -> ty.Dict[ID, Enumeration
     }
 
 
-def qualified_type_literals(types: ty.Iterable[Type]) -> ty.Dict[ID, Type]:
+def qualified_type_literals(types: abc.Iterable[Type]) -> dict[ID, Type]:
     return {
         t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
     }

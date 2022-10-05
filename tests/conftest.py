@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import glob
 import os
 import re
-from typing import Sequence
+from collections.abc import Sequence
 
 import hypothesis
 from _pytest.config import Config

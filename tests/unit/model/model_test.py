@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import textwrap
+from collections.abc import Sequence
 from copy import copy
 from pathlib import Path
-from typing import List, Sequence
 
 import pytest
 
@@ -150,7 +152,7 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
         ),
     ],
 )
-def test_init_introduce_type_dependencies(types: List[Type], model: Model) -> None:
+def test_init_introduce_type_dependencies(types: Sequence[Type], model: Model) -> None:
     assert Model(types).types == model.types
 
 
