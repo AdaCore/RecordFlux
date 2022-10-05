@@ -4,9 +4,11 @@ python-packages := tests tools
 
 IANA_REGISTRIES_DIR := tests/iana_registries
 
-.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format test test_python install_devel
+.PHONY: all
 
 all: check test
+
+.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
 check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
@@ -28,9 +30,13 @@ check_mypy:
 check_pydocstyle:
 	pydocstyle $(python-packages)
 
+.PHONY: format
+
 format:
 	black -l 100 $(python-packages)
 	isort $(python-packages)
+
+.PHONY: test test_python test_python_coverage
 
 test: test_python_coverage
 
@@ -40,8 +46,7 @@ test_python:
 test_python_coverage:
 	python3 -m pytest -n$(shell nproc) -vv --cov=tools --cov-branch --cov-fail-under=0 --cov-report=term-missing:skip-covered tests
 
-test_python_validation_tool:
-	python3 -m pytest -n$(shell nproc) -vv --cov=tools.validate_spec --cov-branch tests/test_validation_tool.py --cov-fail-under=100 --cov-report=term-missing:skip-covered
+.PHONY: generate_iana generate_iana_protocol_numbers generate_iana_tls_parameters generate_iana_bootp_dhcp_parameters generate_iana_arp_parameters
 
 generate_iana: generate_iana_protocol_numbers generate_iana_tls_parameters generate_iana_bootp_dhcp_parameters generate_iana_arp_parameters
 
@@ -56,6 +61,8 @@ generate_iana_bootp_dhcp_parameters:
 
 generate_iana_arp_parameters:
 	rflx convert iana ./iana_registries/arp-parameters.xml
+
+.PHONY: install_devel
 
 install_devel:
 	$(MAKE) -C .config/python-style install_devel
