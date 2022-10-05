@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 
-from typing import Dict
+from __future__ import annotations
 
 import pytest
 from librflxlang import GrammarRule
@@ -17,7 +17,7 @@ from tests.utils import parse
         ("X_Y_3", {"_kind": "UnqualifiedID", "_value": "X_Y_3"}),
     ],
 )
-def test_unqualified_identifier(string: str, expected: Dict[str, str]) -> None:
+def test_unqualified_identifier(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.unqualified_identifier_rule)
     assert actual == expected
 
@@ -91,7 +91,7 @@ def test_unqualified_identifier(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_qualified_identifier(string: str, expected: Dict[str, str]) -> None:
+def test_qualified_identifier(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.qualified_identifier_rule)
     assert actual == expected
 
@@ -133,7 +133,7 @@ def test_qualified_identifier(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_numeric_literal(string: str, expected: Dict[str, str]) -> None:
+def test_expression_numeric_literal(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.expression_rule)
     assert actual == expected
 
@@ -165,7 +165,7 @@ def test_expression_numeric_literal(string: str, expected: Dict[str, str]) -> No
         ),
     ],
 )
-def test_variable(string: str, expected: Dict[str, str]) -> None:
+def test_variable(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.variable_rule)
     assert actual == expected
 
@@ -350,7 +350,7 @@ def test_variable(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_suffix(string: str, expected: Dict[str, str]) -> None:
+def test_expression_suffix(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.extended_expression_rule)
     assert actual == expected
 
@@ -632,7 +632,7 @@ def test_expression_suffix(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_mathematical(string: str, expected: Dict[str, str]) -> None:
+def test_expression_mathematical(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.expression_rule)
     assert actual == expected
 
@@ -774,7 +774,7 @@ def test_expression_mathematical(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_relation(string: str, expected: Dict[str, str]) -> None:
+def test_expression_relation(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.expression_rule)
     assert actual == expected
 
@@ -859,7 +859,7 @@ def test_expression_relation(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_boolean(string: str, expected: Dict[str, str]) -> None:
+def test_expression_boolean(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.expression_rule)
     assert actual == expected
 
@@ -921,7 +921,7 @@ def test_expression_boolean(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_mathematical_expression(string: str, expected: Dict[str, str]) -> None:
+def test_mathematical_expression(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.extended_expression_rule)
     assert actual == expected
 
@@ -983,7 +983,7 @@ def test_mathematical_expression(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
+def test_boolean_expression(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.extended_expression_rule)
     assert actual == expected
 
@@ -1361,7 +1361,7 @@ def test_boolean_expression(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_base(string: str, expected: Dict[str, str]) -> None:
+def test_expression_base(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.extended_expression_rule)
     assert actual == expected
 
@@ -2617,7 +2617,7 @@ def test_expression_base(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_expression_complex(string: str, expected: Dict[str, str]) -> None:
+def test_expression_complex(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.extended_expression_rule)
     assert actual == expected
 
@@ -2654,7 +2654,7 @@ def test_expression_complex(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_channel_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_channel_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.session_parameter_rule)
     assert actual == expected
 
@@ -2712,7 +2712,7 @@ def test_channel_declaration(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_formal_function_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_formal_function_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.session_parameter_rule)
     assert actual == expected
 
@@ -2768,7 +2768,7 @@ def test_formal_function_declaration(string: str, expected: Dict[str, str]) -> N
         ),
     ],
 )
-def test_variable_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_variable_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.declaration_rule)
     assert actual == expected
 
@@ -2802,7 +2802,7 @@ def test_variable_declaration(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_renaming_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_renaming_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.declaration_rule)
     assert actual == expected
 
@@ -2827,7 +2827,7 @@ def test_renaming_declaration(string: str, expected: Dict[str, str]) -> None:
         )
     ],
 )
-def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
+def test_assignment_statement(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.assignment_statement_rule)
     assert actual == expected
 
@@ -2853,7 +2853,7 @@ def test_assignment_statement(string: str, expected: Dict[str, str]) -> None:
         )
     ],
 )
-def test_message_field_assignment_statement(string: str, expected: Dict[str, str]) -> None:
+def test_message_field_assignment_statement(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.message_field_assignment_statement_rule)
     assert actual == expected
 
@@ -2954,7 +2954,7 @@ def test_message_field_assignment_statement(string: str, expected: Dict[str, str
         ),
     ],
 )
-def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
+def test_attribute_statement(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.action_rule)
     assert actual == expected
 
@@ -3247,7 +3247,7 @@ def test_attribute_statement(string: str, expected: Dict[str, str]) -> None:
     ],
     ids=range(1, 7),
 )
-def test_state(string: str, expected: Dict[str, str]) -> None:
+def test_state(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.state_rule)
     assert actual == expected
 
@@ -3421,7 +3421,7 @@ def test_state(string: str, expected: Dict[str, str]) -> None:
     ],
     ids=[1],
 )
-def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_session_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.session_declaration_rule)
     assert actual == expected
 
@@ -3598,6 +3598,6 @@ def test_session_declaration(string: str, expected: Dict[str, str]) -> None:
         ),
     ],
 )
-def test_type_declaration(string: str, expected: Dict[str, str]) -> None:
+def test_type_declaration(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, GrammarRule.type_declaration_rule)
     assert actual == expected

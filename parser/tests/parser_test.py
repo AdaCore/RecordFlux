@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import re
-from typing import Dict
 
 import librflxlang
 import pytest
@@ -730,6 +731,6 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
         ),
     ],
 )
-def test_extended_case_expression(string: str, expected: Dict[str, str]) -> None:
+def test_extended_case_expression(string: str, expected: dict[str, str]) -> None:
     actual = parse(string, rule=librflxlang.GrammarRule.extended_expression_rule)
     assert actual == expected

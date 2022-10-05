@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
-from typing import List
 
 
 class GPRGenError(Exception):
     pass
 
 
-def template(name: str, interfaces: List[str]) -> str:
+def template(name: str, interfaces: list[str]) -> str:
     interfaces_str = ", ".join([f'"{i}"' for i in interfaces])
     return f"""
 with "gnatcoll";
@@ -37,7 +38,7 @@ end Lib{name};
 """
 
 
-def extract(source: str) -> List[str]:
+def extract(source: str) -> list[str]:
     with open(source, mode="r", encoding="utf-8") as f:
         data = f.read()
         search = re.search(r"for\s+Interfaces\s+use\s*\(([^)]*)\)\s*;", data)
