@@ -1,0 +1,107 @@
+package ICMPv6 is
+
+   -- RFC 4443
+
+   type Reserved_8 is range 0 .. 0 with Size => 8;
+   type Reserved_32 is range 0 .. 0 with Size => 32;
+   type Checksum is mod 2**16;
+
+   type Tag is
+      (Destination_Unreachable     =>   1,
+       Packet_Too_Big              =>   2,
+       Time_Exceeded               =>   3,
+       Parameter_Problem           =>   4,
+       Private_Experimentation_100 => 100,
+       Private_Experimentation_101 => 101,
+       Reserved_127                => 127,
+       Echo_Request                => 128,
+       Echo_Reply                  => 129,
+       Private_Experimentation_200 => 200,
+       Private_Experimentation_201 => 201,
+       Reserved_255                => 255)
+   with Size => 8;
+
+   type Code_Destination_Unreachable is
+      (No_Route_To_Destination        => 0,
+       Communication_Prohibited       => 1,
+       Beyond_Scope_Of_Source_Address => 2,
+       Address_Unreachable            => 3,
+       Port_Unreachable               => 4,
+       Source_Address_Failed_Policy   => 5,
+       Route_To_Destination_Rejected  => 6)
+   with Size => 8;
+
+   type Code_Time_Exceeded is
+      (Hop_Limit_Exceeded                => 0,
+       Fragment_Reassembly_Time_Exceeded => 1)
+   with Size => 8;
+
+   type Code_Parameter_Problem is
+      (Erroneous_Header_Field   => 0,
+       Unrecognized_Next_Header => 1,
+       Unrecognized_IPv6_Option => 2)
+   with Size => 8;
+
+   type MTU is range 1280 .. 2**32 - 1 with Size => 32;
+   type Pointer is range 0 .. 2**32 - 1 with Size => 32;
+   type Identifier is mod 2**16;
+   type Sequence_Number is mod 2**16;
+
+   type Message is
+      message
+         Tag : Tag
+            then Code_Destination_Unreachable
+               if Tag = Destination_Unreachable
+            then Code_Time_Exceeded
+               if Tag = Time_Exceeded
+            then Code_Parameter_Problem
+               if Tag = Parameter_Problem
+            then Code_Unused
+               if Tag = Packet_Too_Big
+                  or Tag = Echo_Request
+                  or Tag = Echo_Reply
+            then Data
+               with Size => Message'Size - Tag'Size
+               if Tag = Private_Experimentation_100
+                  or Tag = Private_Experimentation_101
+                  or Tag = Reserved_127
+                  or Tag = Private_Experimentation_200
+                  or Tag = Private_Experimentation_201
+                  or Tag = Reserved_255;
+         Code_Destination_Unreachable : Code_Destination_Unreachable
+            then Checksum;
+         Code_Time_Exceeded : Code_Time_Exceeded
+            then Checksum;
+         Code_Parameter_Problem : Code_Parameter_Problem
+            then Checksum;
+         Code_Unused : Reserved_8
+            then Checksum;
+         Checksum : Checksum
+            then Unused
+               if Tag = Destination_Unreachable
+                  or Tag = Time_Exceeded
+            then MTU
+               if Tag = Packet_Too_Big
+            then Pointer
+               if Tag = Parameter_Problem
+            then Identifier
+               if Tag = Echo_Request
+                  or Tag = Echo_Reply;
+         Unused : Reserved_32
+            then Data
+               with Size => Message'Size - (Unused'Last - Tag'First + 1);
+         MTU : MTU
+            then Data
+               with Size => Message'Size - (MTU'Last - Tag'First + 1);
+         Pointer : Pointer
+            then Data
+               with Size => Message'Size - (Pointer'Last - Tag'First + 1);
+         Identifier : Identifier;
+         Sequence_Number : Sequence_Number
+            then Data
+               with Size => Message'Size - (Sequence_Number'Last - Tag'First + 1);
+         Data : Opaque
+            if Message'Size >= 64 and Message'Size <= 8 * 1280;
+      end message;
+
+end ICMPv6;

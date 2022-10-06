@@ -1,0 +1,320 @@
+package SLPv2 is
+   -- RFC 2608
+   
+   type U8  is mod 2**8;
+   type U16 is mod 2**16;
+   type U24 is mod 2**24;
+   type U32 is mod 2**32;
+
+   -- 7. Errors
+   type Error is (
+      ERR_LANGUAGE_NOT_SUPPORTED => 1,
+      ERR_PARSE_ERROR => 2,
+      ERR_INVALID_REGISTRATION => 3,
+      ERR_SCOPE_NOT_SUPPORTED => 4,
+      ERR_AUTHENTICATION_UNKNOWN => 5,
+      ERR_AUTHENTICATION_ABSENT => 6,
+      ERR_AUTHENTICATION_FAILED => 7,
+      ERR_VER_NOT_SUPPORTED => 9,
+      ERR_INTERNAL_ERROR => 10,
+      ERR_DA_BUSY_NOW => 11,
+      ERR_OPTION_NOT_UNDERSTOOD => 12,
+      ERR_INVALID_UPDATE => 13,
+      ERR_MSG_NOT_SUPPORTED => 14,
+      ERR_REFRESH_REJECTED => 15
+   ) with Size => 16;
+
+   type Function_ID is (
+      FI_SERVICE_REQUEST => 1,
+      FI_SERVICE_REPLY => 2,
+      FI_SERVICE_REGISTRATION => 3,
+      FI_SERVICE_DEREGISTER => 4,
+      FI_SERVICE_ACKNOWLEDGE => 5,
+      FI_ATTRIBUTE_REQUEST => 6,
+      FI_ATTRIBUTE_REPLY => 7,
+      FI_DA_ADVERTISEMENT => 8,
+      FI_SERVICE_TYPE_REQUEST => 9,
+      FI_SERVICE_TYPE_REPLY => 10,
+      FI_SA_ADVERTISEMENT => 11
+   ) with Size => 8;
+
+   -- 8. Required SLP Messages
+   type SLPv2_Version is range 2 .. 2 with Size => 8;
+   type SLPv2_Length is range 15 .. 2**24 - 1 with Size => 24;
+   type SLPv2_Flag_Reserved is range 0 .. 0 with Size => 13;
+   type SLPv2 is
+      message
+         Version : SLPv2_Version;
+         Function_ID : Function_ID;
+         Length : SLPv2_Length;
+         Flag_O : Boolean;
+         Flag_F : Boolean;
+         Flag_R : Boolean;
+         Flag_Reserved : SLPv2_Flag_Reserved;
+         Next_Extension_Offset : U24;
+         XID : U16;
+         Language_Tag_Length : U16;
+         Language_Tag : Opaque
+            with Size => Language_Tag_Length * 8
+            then Payload
+               with Size => 8 * Length - (Language_Tag'Last - Version'First + 1)
+               if (8 * Length >= (Language_Tag'Last - Version'First + 1))
+                  and (Next_Extension_Offset = 0)
+            then Payload
+               with Size => 8 * Next_Extension_Offset - (Language_Tag'Last - Version'First + 1)
+               if (Next_Extension_Offset > 0)
+                  and (Next_Extension_Offset < Length)
+                  and (8 * Next_Extension_Offset >= (Language_Tag'Last - Version'First + 1));
+         Payload : Opaque
+            then null
+               if (Next_Extension_Offset = 0)
+                  or (Next_Extension_Offset >= Length)
+            then Extension
+               if (Next_Extension_Offset > 0)
+                  and (Next_Extension_Offset < Length);
+         Extension : Opaque
+            with Size => (Length - Next_Extension_Offset) * 8;
+      end message;
+
+   -- 8.1. Service Request
+   type Service_Request is
+      message
+         Length_Of_PR_List : U16;
+         PR_List_String : Opaque
+            with Size => Length_Of_PR_List * 8;
+         Length_Of_Service_Type : U16;
+         Service_Type_String : Opaque
+            with Size => Length_Of_Service_Type * 8;
+         Length_Of_Scope_List : U16;
+         Scope_List_String : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         Length_Of_Predicate_String : U16;
+         Service_Request_Predicate : Opaque
+            with Size => Length_Of_Predicate_String * 8;
+         Length_Of_SLP_SPI_String : U16;
+         SLP_SPI_String : Opaque
+            with Size => Length_Of_SLP_SPI_String * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Request)
+      if Function_ID = FI_SERVICE_REQUEST;
+
+   -- 9.2. Authentication Blocks
+   type Authentication_Block_Authentication_Block_Length is range 10 .. 2**16-1 with Size => 16;
+   type Authentication_Block is
+      message
+         Block_Structure_Descriptor : U16;
+         Authentication_Block_Length : Authentication_Block_Authentication_Block_Length;
+         Authentication_Block_Timestamp : U32;
+         SLP_SPI_String_Length : U16;
+         SLP_SPI_String : Opaque
+            with Size => SLP_SPI_String_Length * 8;
+         Structured_Authentication_Block : Opaque
+            with Size => 8 * Authentication_Block_Length - (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1)
+            if (8 * Authentication_Block_Length >= (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1));
+      end message;
+   type Authentication_Blocks is sequence of Authentication_Block;
+
+   -- 4.3. URL Entries
+   type URL_Entry_Reserved is range 0 .. 0 with Size => 8;
+   type URL_Entry is
+      message
+         Reserved : URL_Entry_Reserved;
+         Lifetime : U16;
+         URL_Length : U16;
+         URL : Opaque
+            with Size => URL_Length * 8;
+         Number_Of_URL_Authentications : U8;
+         Authentication_Blocks : Authentication_Blocks
+            with Size => Number_Of_URL_Authentications * 8;
+      end message;
+   type URL_Entries is sequence of URL_Entry;
+
+   -- 8.2. Service Reply
+   type Service_Reply is
+      message
+         Error_Code : Error;
+         URL_Entry_Count : U16;
+         URL_Entries : URL_Entries
+            with Size => URL_Entry_Count * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Reply)
+      if Function_ID = FI_SERVICE_REPLY;
+
+   -- 8.3. Service Registration
+   type Service_Registration is
+      message
+         URL_Entry : URL_Entry;
+         Length_Of_Service_Type_String : U16;
+         Service_Type : Opaque
+            with Size => Length_Of_Service_Type_String * 8;
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         Length_Of_Attribute_List_String : U16;
+         Attribute_List : Opaque
+            with Size => Length_Of_Attribute_List_String * 8;
+         Number_Of_Attribute_Authentication_Blocks : U8;
+         Attribute_Authentication_Blocks : Authentication_Blocks
+            with Size => Number_Of_Attribute_Authentication_Blocks * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Registration)
+      if Function_ID = FI_SERVICE_REGISTRATION;
+
+   -- 8.4. Service Acknowledgement
+   type Service_Acknowledgement is
+      message
+         Error_Code : Error;
+      end message;
+   for SLPv2 use (Payload => Service_Acknowledgement)
+      if Function_ID = FI_SERVICE_ACKNOWLEDGE;
+
+   -- 8.5. Directory Agent Advertisement
+   type Directory_Agent_Advertisement is
+      message
+         Error_Code : Error;
+         DA_Stateless_Boot_Timestamp : U32;
+         Length_Of_URL : U16;
+         URL : Opaque
+            with Size => Length_Of_URL * 8;
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         Length_Of_Attribute_List_String : U16;
+         Attribute_List : Opaque
+            with Size => Length_Of_Attribute_List_String * 8;
+         SLP_SPI_String_Length : U16;
+         SLP_SPI_String : Opaque
+            with Size => SLP_SPI_String_Length * 8;
+         Number_Of_Authentication_Blocks : U8;
+         Authentication_Blocks : Authentication_Blocks
+            with Size => Number_Of_Authentication_Blocks * 8;
+      end message;
+   for SLPv2 use (Payload => Directory_Agent_Advertisement)
+      if Function_ID = FI_DA_ADVERTISEMENT;
+
+   -- 8.6. Service Agent Advertisement
+   type Service_Agent_Advertisement is
+      message
+         Length_Of_URL : U16;
+         URL : Opaque
+            with Size => Length_Of_URL * 8;
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         Length_Of_Attribute_List_String : U16;
+         Attribute_List : Opaque
+            with Size => Length_Of_Attribute_List_String * 8;
+         Number_Of_Authentication_Blocks : U8;
+         Authentication_Blocks : Authentication_Blocks
+            with Size => Number_Of_Authentication_Blocks * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Agent_Advertisement)
+      if Function_ID = FI_SA_ADVERTISEMENT;
+
+   -- 9.1. Service Location Protocol Extensions
+   -- ISSUE: Componolit/RecordFlux#598
+   type Extension_Id is range 16#0000# .. 16#8FFF# with Size => 16;
+   type Service_Location_Extension is
+      message
+         Extension_Id : Extension_Id;
+         Next_Extension_Offset : U24;
+         Extension_Data : Opaque
+            with Size => 0; -- Extensions not supported
+      end message;
+
+   -- 10.1. Service Type Request
+   type Service_Type_Request is
+      message
+         Length_Of_PR_List : U16;
+         Previous_Responder_List : Opaque
+            with Size => Length_Of_PR_List * 8;
+         Length_Of_Naming_Authority : U16
+            then Naming_Authority
+               with Size => Length_Of_Naming_Authority * 8
+               if Length_Of_Naming_Authority < 16#FFFF#
+            then Naming_Authority
+               with Size => 0
+               if Length_Of_Naming_Authority = 16#FFFF#;
+         Naming_Authority : Opaque;
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Type_Request)
+      if Function_ID = FI_SERVICE_TYPE_REQUEST;
+
+   -- 10.2 Service Type Reply
+   type Service_Type_Reply is
+      message
+         Error_Code : Error;
+         Length_Of_Service_Type_String : U16;
+         Service_Type : Opaque
+            with Size => Length_Of_Service_Type_String * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Type_Reply)
+      if Function_ID = FI_SERVICE_TYPE_REPLY;
+
+   -- 10.3. Attribute Request
+   type Attribute_Request is
+      message
+         Length_Of_PR_List : U16;
+         Previous_Responder_List : Opaque
+            with Size => Length_Of_PR_List * 8;
+         Length_Of_URL : U16;
+         URL : Opaque
+            with Size => Length_Of_URL * 8;
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         Length_Of_Tag_List_String : U16;
+         Tag_List_string : Opaque
+            with Size => Length_Of_Tag_List_String * 8;
+         SLP_SPI_String_Length : U16;
+         SLP_SPI_String : Opaque
+            with Size => SLP_SPI_String_Length * 8;
+      end message;
+   for SLPv2 use (Payload => Attribute_Request)
+      if Function_ID = FI_ATTRIBUTE_REQUEST;
+
+   -- 10.4. Attribute Reply
+   type Attribute_Reply is
+      message
+         Error_Code : Error;
+         Length_Of_Attribute_List_String : U16;
+         Attribute_List : Opaque
+            with Size => Length_Of_Attribute_List_String * 8;
+         Number_Of_Authentication_Blocks : U8;
+         Authentication_Blocks : Authentication_Blocks
+            with Size => Number_Of_Authentication_Blocks * 8;
+      end message;
+   for SLPv2 use (Payload => Attribute_Reply)
+      if Function_ID = FI_ATTRIBUTE_REPLY;
+
+   -- 10.6. Service Deregistration
+   type Service_Deregistration is
+      message
+         Length_Of_Scope_List : U16;
+         Scope_List : Opaque
+            with Size => Length_Of_Scope_List * 8;
+         URL_Entry : URL_Entry;
+         Length_Of_Tag_List_String : U16;
+         Tag_List_string : Opaque
+            with Size => Length_Of_Tag_List_String * 8;
+      end message;
+   for SLPv2 use (Payload => Service_Deregistration)
+      if Function_ID = FI_SERVICE_DEREGISTER;
+
+   -- D.1. Required Attribute Missing Option
+   type Attribute_Missing_Option_Extension_Type is range 1 .. 1 with Size => 16;
+   type Attribute_Missing_Option is
+      message
+         Extension_Length : U16;
+         Template_IDVer_Length : U16;
+         Template_IDVer_String : Opaque
+            with Size => Template_IDVer_Length * 8;
+         Required_Attribute_Tag_List_Length : U16;
+         Required_Attribute_Tag_List : Opaque
+            with Size => Required_Attribute_Tag_List_Length * 8;
+      end message;
+
+end SLPv2;

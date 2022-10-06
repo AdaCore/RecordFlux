@@ -1,0 +1,47 @@
+with Ethernet;
+with IPv4;
+
+package ARP is
+
+   -- RFC 826
+
+   type Hardware_Address_Space is
+      (HAS_ETHERNET =>   1,
+       HAS_HW_EXP1  =>  36,
+       HAS_HW_EXP2  => 256)
+   with Size => 16;
+
+   type Opcode is (OP_REQUEST => 1, OP_REPLY => 2) with Size => 16;
+
+   type Address_Length is mod 2**8;
+
+   type Packet_IPv4 is
+      message
+         --  Hardware address space
+         Hrd : Hardware_Address_Space
+            then Pro if Hrd = HAS_ETHERNET;
+         --  Protocol address space
+         Pro : Ethernet::Ether_Type
+            then Hln if Pro = Ethernet::ET_IPV4;
+         --  Byte length of each hardware address
+         Hln : Address_Length
+            --  ISSUE: Componolit/RecordFlux#559
+            --  then pln if Hln = Ethernet::Address'Size / 8;
+            then Pln if Hln = 6;
+         --  Byte length of each protocol address
+         Pln : Address_Length
+            --  ISSUE: Componolit/RecordFlux#559
+            --  then Op if Pln = IPv4::Address'Size / 8;
+            then Op if Pln = 4;
+         Op  : Opcode;
+         --  Hardware address of sender of this packet
+         Sha : Ethernet::Address;
+         --  Protocol address of sender of this packet
+         Spa : IPv4::Address;
+         --  Hardware address of target of this packet
+         Tha : Ethernet::Address;
+         --  Protocol address of target
+         Tpa : IPv4::Address;
+      end message;
+
+end ARP;

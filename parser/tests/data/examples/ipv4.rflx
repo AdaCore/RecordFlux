@@ -1,0 +1,65 @@
+with IANA;
+
+package IPv4 is
+
+   type Version is range 4 .. 4 with Size => 4;
+   type IHL is range 5 .. 15 with Size => 4;
+   type DCSP is mod 2**6;
+   type ECN is mod 2**2;
+   type Total_Length is mod 2**16;
+   type Identification is mod 2**16;
+   type Fragment_Offset is mod 2**13;
+   type TTL is mod 2**8;
+   type Header_Checksum is mod 2**16;
+   type Address is mod 2**32;
+
+   type Option_Class is (CONTROL => 0, DEBUGGING_AND_MEASUREMENT => 2) with Size => 2;
+   type Option_Number is mod 2**5;
+   type Option_Length is range 2 .. 2**8 - 1 with Size => 8;
+
+   type Option is
+      message
+         Copied : Boolean;
+         Option_Class : Option_Class;
+         Option_Number : Option_Number
+            then null
+               if Option_Class = CONTROL and Option_Number = 1
+            then Option_Length
+               if Option_Number > 1;
+         Option_Length : Option_Length;
+         Option_Data : Opaque
+            with Size => (Option_Length - 2) * 8
+            if (Option_Class = CONTROL and Option_Number = 2 and Option_Length = 11)
+               or (Option_Class = CONTROL and Option_Number = 8 and Option_Length = 4)
+               or (Option_Class = CONTROL and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+               or (Option_Class = DEBUGGING_AND_MEASUREMENT and Option_Number = 4);
+      end message;
+
+   type Options is sequence of Option;
+
+   type Packet is
+      message
+         Version : Version;
+         IHL : IHL;
+         DSCP : DCSP;
+         ECN : ECN;
+         Total_Length : Total_Length;
+         Identification : Identification
+            if Total_Length >= IHL * 4;
+         Flag_R : Boolean;
+         Flag_DF : Boolean
+            if Flag_R = False;
+         Flag_MF : Boolean;
+         Fragment_Offset : Fragment_Offset;
+         TTL : TTL;
+         Protocol : IANA::Protocol_Number;
+         Header_Checksum : Header_Checksum;
+         Source : Address;
+         Destination : Address;
+         Options : Options
+            with Size => IHL * 32 - (Destination'Last - Message'First + 1);
+         Payload : Opaque
+            with Size => Total_Length * 8 - (IHL * 32);
+      end message;
+
+end IPv4;

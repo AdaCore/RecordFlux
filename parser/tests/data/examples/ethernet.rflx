@@ -1,0 +1,88 @@
+package Ethernet is
+
+   type Address is mod 2**48;
+   type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+   type TPID is range 16#8100# .. 16#8100# with Size => 16;
+   type TCI is mod 2**16;
+   type Ether_Type is
+      (ET_IPV4               => 16#0800#,
+       ET_ARP                => 16#0806#,
+       ET_WAKE_ON_LAN        => 16#0842#,
+       ET_AVTB               => 16#22F0#,
+       ET_TRILL              => 16#22F3#,
+       ET_SRP                => 16#22EA#,
+       ET_RARP               => 16#8035#,
+       ET_VLAN_TAG           => 16#8100#,
+       ET_SLPP               => 16#8102#,
+       ET_VLACP              => 16#8103#,
+       ET_IPX                => 16#8137#,
+       ET_QNX_QNET           => 16#8204#,
+       ET_IPV6               => 16#86DD#,
+       ET_FLOW_CONTROL       => 16#8808#,
+       ET_LACP               => 16#8809#,
+       ET_MPLS_UNICAST       => 16#8847#,
+       ET_MPLS_MULTICAST     => 16#8848#,
+       ET_PPPOE_DISCOVERY    => 16#8863#,
+       ET_PPPOE_SESSION      => 16#8864#,
+       ET_HOMEPLUG_10_MME    => 16#887B#,
+       ET_EAP_OVER_LAN       => 16#888E#,
+       ET_PROFINET           => 16#8892#,
+       ET_ATA_OVER_ETHERNET  => 16#88A2#,
+       ET_ETHERCAT           => 16#88A4#,
+       ET_SERVICE_VLAN_TAG   => 16#88A8#,
+       ET_ETHERNET_POWERLINK => 16#88AB#,
+       ET_GOOSE              => 16#88B8#,
+       ET_GSE                => 16#88B9#,
+       ET_SV                 => 16#88BA#,
+       ET_LLDP               => 16#88CC#,
+       ET_SERCOS_III         => 16#88CD#,
+       ET_WSMP               => 16#88DC#,
+       ET_MRP                => 16#88E3#,
+       ET_MAC_SECURITY       => 16#88E5#,
+       ET_PBB                => 16#88E7#,
+       ET_PTP                => 16#88F7#,
+       ET_NC_SI              => 16#88F8#,
+       ET_PRP                => 16#88FB#,
+       ET_CFM                => 16#8902#,
+       ET_FCOE               => 16#8906#,
+       ET_FCOE_INIT          => 16#8914#,
+       ET_ROCE               => 16#8915#,
+       ET_TTE                => 16#891D#,
+       ET_HSR                => 16#892F#,
+       ET_CTP                => 16#9000#,
+       ET_VLAN_TAG_DOUBLE    => 16#9100#,
+       ET_REDUNDANCY_TAG     => 16#F1C1#)
+   with Size => 16;
+
+   type Frame is
+      message
+         Destination : Address;
+         Source : Address;
+         Type_Length_TPID : Type_Length
+            then TPID
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID = 16#8100#
+            then Payload
+               with Size => Type_Length_TPID * 8
+               if Type_Length_TPID <= 1500
+            then Ether_Type
+               with First => Type_Length_TPID'First
+               if Type_Length_TPID >= 1536 and Type_Length_TPID /= 16#8100#;
+         TPID : TPID;
+         TCI : TCI;
+         Type_Length : Type_Length
+            then Payload
+               with Size => Type_Length * 8
+               if Type_Length <= 1500
+            then Ether_Type
+               with First => Type_Length'First
+               if Type_Length >= 1536;
+         Ether_Type : Ether_Type
+            then Payload
+               with Size => Message'Last - Ether_Type'Last;
+         Payload : Opaque
+            then null
+               if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
+      end message;
+
+end Ethernet;
