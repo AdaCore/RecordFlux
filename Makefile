@@ -136,7 +136,7 @@ test_python_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests/unit tests/integration
 
 test_python_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=96.11 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests/unit
@@ -162,7 +162,7 @@ test_binary_size:
 	$(MAKE) -C examples/apps/dhcp_client binary_size
 
 test_specs:
-	cd examples/specs && $(PYTEST) tests/test_specs.py
+	$(PYTEST) tests/examples/specs_test.py
 
 test_installation:
 	rm -rf $(build-dir)/venv $(build-dir)/test_installation

@@ -45,6 +45,10 @@ Tool tests verify the functionality of the complementary tools in the `tools/` d
 
 IDE tests allow to verify the functionality of the IDE plugin. These tests are not executed automatically.
 
+### Tests for Examples (`tests/examples`)
+
+New specifications in the `examples/specs` directory are automatically detected. Each message specification is validated by valid and invalid binary samples, which are expected in `tests/examples/data/<package_name>/<message_name>/valid` and `tests/examples/data/<package_name>/<message_name>/invalid`, respectively.
+
 ## Test Data (`tests/data`)
 
 - Binary test message (`tests/data/captured`)
