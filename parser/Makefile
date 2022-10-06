@@ -1,13 +1,52 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/Componolit
+ADACORE_ORIGIN ?= https://github.com/AdaCore
 
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
+GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
+LANGKIT_HEAD = 5d83c8b292c222f08c1b4d4c201b4202360a2862
 
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
-CHECKOUT_PYTHON_STYLE := test -d .config/python-style && git -C .config/python-style fetch origin main && git -C .config/python-style -c advice.detachedHead=false checkout $(PYTHON_STYLE_HEAD)
+
+# Switch to a specific revision of the git repository.
+#
+# @param $(1) directory of the git repository
+# @param $(2) commit id
+define checkout_repo
+$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2))
+endef
+
+# Get the HEAD revision of the git repository.
+#
+# @param $(1) directory of the git repository
+# @param $(2) default value
+repo_head = $(shell test -d $(1) && git -C $(1) rev-parse HEAD || echo $(2))
+
+# Switch to the expected revision of the git repository, if the current HEAD is not the expected one.
+#
+# @param $(1) directory of the git repository
+# @param $(2) expected revision
+reinit_repo = $(if $(filter-out $(2),$(call repo_head,$(1),$(2))),$(call checkout_repo,$(1),$(2)),)
+
+# Remove the git repository, if no changes are present.
+#
+# The function looks for changed and untracked files as well as commits that are not pushed to a
+# remote branch. If the repository is unchanged, it will be removed completely.
+#
+# @param $(1) directory of the git repository
+define remove_repo
+$(if
+	$(or
+		$(shell test -d $(1) && git -C $(1) status --porcelain),
+		$(shell test -d $(1) && git -C $(1) log --branches --not --remotes --format=oneline)
+	),
+	$(info Keeping $(1) due to local changes),
+	$(shell rm -rf $(1))
+)
+endef
 
 ifneq ($(MAKECMDGOALS),clean)
 DUMMY := $(shell mkdir -p $(BUILDDIR))
@@ -15,6 +54,10 @@ ifeq ($(DISTDIR),)
 DISTDIR := $(shell mktemp -d --tmpdir=$(BUILDDIR) dist-XXXXXXXX)
 endif
 endif
+
+$(shell $(call reinit_repo,.config/python-style,$(PYTHON_STYLE_HEAD)))
+$(shell $(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD)))
+$(shell $(call reinit_repo,contrib/langkit,$(langkit_HEAD)))
 
 export MYPYPATH = $(PWD)/stubs
 
@@ -26,27 +69,30 @@ all: check test
 
 .PHONY: init deinit
 
-init: .config/python-style
-	$(VERBOSE)$(CHECKOUT_PYTHON_STYLE)
+init: .config/python-style contrib/gnatcoll-bindings contrib/langkit
+	$(VERBOSE)$(call checkout_repo,.config/python-style,$(PYTHON_STYLE_HEAD))
+	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
+	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
 	$(VERBOSE)ln -sf .config/python-style/pyproject.toml
 	$(VERBOSE)git update-index --skip-worktree pyproject.toml
 
 deinit:
-ifneq ($(or $(shell test -d .config/python-style && git -C .config/python-style status --porcelain), $(shell test -d .config/python-style && git -C .config/python-style log --branches --not --remotes --format=oneline)),)
-	$(info Keeping .config/python-style due to local changes)
-else
-	$(VERBOSE)rm -rf .config/python-style
-endif
+	$(VERBOSE)$(call remove_repo,.config/python-style)
+	$(VERBOSE)$(call remove_repo,contrib/gnatcoll-bindings)
+	$(VERBOSE)$(call remove_repo,contrib/langkit)
 	$(VERBOSE)ln -sf .config/pyproject.toml
 	$(VERBOSE)git update-index --no-skip-worktree pyproject.toml
 
 .config/python-style:
 	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
 
-ifneq ($(PYTHON_STYLE_HEAD), $(shell test -d .config/python-style && git -C .config/python-style rev-parse HEAD || echo $(PYTHON_STYLE_HEAD)))
-$(info Reinitialize development configuration)
-$(shell $(CHECKOUT_PYTHON_STYLE))
-endif
+contrib/gnatcoll-bindings:
+	$(VERBOSE)mkdir -p contrib
+	$(VERBOSE)git clone $(ADACORE_ORIGIN)/gnatcoll-bindings.git contrib/gnatcoll-bindings
+
+contrib/langkit:
+	$(VERBOSE)mkdir -p contrib
+	$(VERBOSE)git clone $(ADACORE_ORIGIN)/langkit.git contrib/langkit
 
 .PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
 	test test_python test_python_coverage install install_devel install_devel_edge clean

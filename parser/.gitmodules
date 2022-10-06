@@ -1,6 +1,0 @@
-[submodule "contrib/gnatcoll-bindings"]
-	path = contrib/gnatcoll-bindings
-	url = https://github.com/AdaCore/gnatcoll-bindings
-[submodule "contrib/langkit"]
-	path = contrib/langkit
-	url = https://github.com/AdaCore/langkit.git
