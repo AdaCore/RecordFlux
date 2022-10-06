@@ -1,5 +1,8 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
+RECORDFLUX_ORIGIN ?= https://github.com/Componolit
+
+PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 
 SHELL := /bin/bash
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
@@ -7,6 +10,64 @@ PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
 python-packages := bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 
 build-dir := build
+
+# Switch to a specific revision of the git repository.
+#
+# @param $(1) directory of the git repository
+# @param $(2) commit id
+define checkout_repo
+$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2))
+endef
+
+# Get the HEAD revision of the git repository.
+#
+# @param $(1) directory of the git repository
+# @param $(2) default value
+repo_head = $(shell test -d $(1) && git -C $(1) rev-parse HEAD || echo $(2))
+
+# Switch to the expected revision of the git repository, if the current HEAD is not the expected one.
+#
+# @param $(1) directory of the git repository
+# @param $(2) expected revision
+reinit_repo = $(if $(filter-out $(2),$(call repo_head,$(1),$(2))),$(call checkout_repo,$(1),$(2)),)
+
+# Remove the git repository, if no changes are present.
+#
+# The function looks for changed and untracked files as well as commits that are not pushed to a
+# remote branch. If the repository is unchanged, it will be removed completely.
+#
+# @param $(1) directory of the git repository
+define remove_repo
+$(if
+	$(or
+		$(shell test -d $(1) && git -C $(1) status --porcelain),
+		$(shell test -d $(1) && git -C $(1) log --branches --not --remotes --format=oneline)
+	),
+	$(info Keeping $(1) due to local changes),
+	$(shell rm -rf $(1))
+)
+endef
+
+$(shell $(call reinit_repo,.config/python-style,$(PYTHON_STYLE_HEAD)))
+
+.PHONY: all
+
+all: check test prove
+
+.PHONY: init deinit
+
+init: .config/python-style
+	$(VERBOSE)$(call checkout_repo,.config/python-style,$(PYTHON_STYLE_HEAD))
+	$(VERBOSE)ln -sf .config/python-style/pyproject.toml
+	$(VERBOSE)git update-index --skip-worktree pyproject.toml
+
+deinit:
+	$(VERBOSE)$(call remove_repo,.config/python-style)
+	$(VERBOSE)ln -sf .config/pyproject.toml
+	$(VERBOSE)git update-index --no-skip-worktree pyproject.toml
+
+.config/python-style:
+	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
@@ -17,8 +78,6 @@ build-dir := build
 	doc \
 	dist \
 	clean
-
-all: check test prove
 
 check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
