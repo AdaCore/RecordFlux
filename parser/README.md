@@ -11,6 +11,12 @@ As a prerequisite to build the parser, the following dependencies need to be ins
 
 **Note**: GNAT must be added to the PATH environment variable after installation: `export PATH=<GNAT-directory>/bin:$PATH`.
 
+The configuration of the development tools and some dependencies are managed in separate repositories and must be downloaded and set up once.
+
+```Console
+$ make init
+```
+
 To run the tests, the RecordFlux parser package and its dependencies must be installed. Use the respective make target:
 
 ```Console

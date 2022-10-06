@@ -7,6 +7,3 @@
 [submodule "contrib/langkit"]
 	path = contrib/langkit
 	url = https://github.com/AdaCore/langkit.git
-[submodule ".config/python-style"]
-	path = .config/python-style
-	url = https://github.com/Componolit/python-style.git

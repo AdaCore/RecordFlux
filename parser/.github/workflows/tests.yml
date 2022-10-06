@@ -47,7 +47,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev
-        make install_devel
+        make init install_devel
     - name: Check
       run: |
         make check_${{ matrix.target }}
@@ -97,14 +97,14 @@ jobs:
     - name: Install FSF GNAT
       if: ${{ matrix.gnat-distrib == 'fsf' }}
       run: |
-        make install_gnat
+        make init install_gnat
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev
         eval `make printenv_gnat`
-        make install_devel
+        make init install_devel
     - name: Test
       run: |
         eval `make printenv_gnat`

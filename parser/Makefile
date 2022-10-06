@@ -1,7 +1,11 @@
 VERBOSE ?= @
+RECORDFLUX_ORIGIN ?= https://github.com/Componolit
 
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
+PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
+
+CHECKOUT_PYTHON_STYLE := test -d .config/python-style && git -C .config/python-style fetch origin main && git -C .config/python-style -c advice.detachedHead=false checkout $(PYTHON_STYLE_HEAD)
 
 ifneq ($(MAKECMDGOALS),clean)
 DUMMY := $(shell mkdir -p $(BUILDDIR))
@@ -14,10 +18,36 @@ export MYPYPATH = $(PWD)/stubs
 
 python-packages := language tests disttools/setup.py disttools/gprgen.py
 
-.PHONY: all check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
-	test test_python test_python_coverage install install_devel install_devel_edge clean
+.PHONY: all
 
 all: check test
+
+.PHONY: init deinit
+
+init: .config/python-style
+	$(VERBOSE)$(CHECKOUT_PYTHON_STYLE)
+	$(VERBOSE)ln -sf .config/python-style/pyproject.toml
+	$(VERBOSE)git update-index --skip-worktree pyproject.toml
+
+deinit:
+ifneq ($(or $(shell test -d .config/python-style && git -C .config/python-style status --porcelain), $(shell test -d .config/python-style && git -C .config/python-style log --branches --not --remotes --format=oneline)),)
+	$(info Keeping .config/python-style due to local changes)
+else
+	$(VERBOSE)rm -rf .config/python-style
+endif
+	$(VERBOSE)ln -sf .config/pyproject.toml
+	$(VERBOSE)git update-index --no-skip-worktree pyproject.toml
+
+.config/python-style:
+	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
+
+ifneq ($(PYTHON_STYLE_HEAD), $(shell test -d .config/python-style && git -C .config/python-style rev-parse HEAD || echo $(PYTHON_STYLE_HEAD)))
+$(info Reinitialize development configuration)
+$(shell $(CHECKOUT_PYTHON_STYLE))
+endif
+
+.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
+	test test_python test_python_coverage install install_devel install_devel_edge clean
 
 check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
