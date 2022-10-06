@@ -1,10 +1,12 @@
 VERBOSE ?= @
+TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/Componolit
 
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 
+PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
 CHECKOUT_PYTHON_STYLE := test -d .config/python-style && git -C .config/python-style fetch origin main && git -C .config/python-style -c advice.detachedHead=false checkout $(PYTHON_STYLE_HEAD)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -76,10 +78,10 @@ format:
 test: test_python_coverage
 
 test_python:
-	python3 -m pytest -n$(shell nproc) -vv tests
+	$(PYTEST) tests
 
 test_python_coverage:
-	python3 -m pytest -n$(shell nproc) -vv --cov=librflxlang --cov-branch --cov-fail-under=75 --cov-report=term-missing:skip-covered tests
+	$(PYTEST) --cov=librflxlang --cov-branch --cov-fail-under=75 --cov-report=term-missing:skip-covered tests
 
 install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
