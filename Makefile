@@ -2,14 +2,13 @@ VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/Componolit
 
+BUILD_DIR = build
+PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 
 SHELL := /bin/bash
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
 
-python-packages := bin doc/conf.py examples/apps rflx tests tools stubs setup.py
-
-build-dir := build
 
 # Switch to a specific revision of the git repository.
 #
@@ -82,38 +81,38 @@ deinit:
 check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
 check_packages:
-	tools/check_packages.py $(python-packages)
+	tools/check_packages.py $(PYTHON_PACKAGES)
 
 check_dependencies:
 	tools/check_dependencies.py
 
 check_black:
-	black --check --diff --line-length 100 $(python-packages) ide/gnatstudio
+	black --check --diff --line-length 100 $(PYTHON_PACKAGES) ide/gnatstudio
 
 check_isort:
-	isort --check --diff $(python-packages) ide/gnatstudio
+	isort --check --diff $(PYTHON_PACKAGES) ide/gnatstudio
 
 check_flake8:
-	pflake8 $(python-packages) ide/gnatstudio
+	pflake8 $(PYTHON_PACKAGES) ide/gnatstudio
 
 check_pylint:
-	pylint $(python-packages)
+	pylint $(PYTHON_PACKAGES)
 
 check_mypy:
-	mypy --pretty $(python-packages)
+	mypy --pretty $(PYTHON_PACKAGES)
 
 check_contracts:
-	pyicontract-lint $(python-packages)
+	pyicontract-lint $(PYTHON_PACKAGES)
 
 check_pydocstyle:
-	pydocstyle $(python-packages)
+	pydocstyle $(PYTHON_PACKAGES)
 
 check_doc:
 	tools/check_doc.py
 
 format:
-	black -l 100 $(python-packages) ide/gnatstudio
-	isort $(python-packages) ide/gnatstudio
+	black -l 100 $(PYTHON_PACKAGES) ide/gnatstudio
+	isort $(PYTHON_PACKAGES) ide/gnatstudio
 
 test: test_python_coverage test_python_unit_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_installation
 
@@ -165,13 +164,13 @@ test_specs:
 	$(PYTEST) tests/examples/specs_test.py
 
 test_installation:
-	rm -rf $(build-dir)/venv $(build-dir)/test_installation
-	mkdir -p $(build-dir)/test_installation
-	python3 -m venv $(build-dir)/venv
-	$(build-dir)/venv/bin/pip install .
-	$(build-dir)/venv/bin/rflx --version
-	HOME=$(build-dir)/test_installation $(build-dir)/venv/bin/rflx setup_ide
-	test -f $(build-dir)/test_installation/.gnatstudio/plug-ins/recordflux.py
+	rm -rf $(BUILD_DIR)/venv $(BUILD_DIR)/test_installation
+	mkdir -p $(BUILD_DIR)/test_installation
+	python3 -m venv $(BUILD_DIR)/venv
+	$(BUILD_DIR)/venv/bin/pip install .
+	$(BUILD_DIR)/venv/bin/rflx --version
+	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx setup_ide
+	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
 
 prove: prove_tests prove_python_tests prove_apps
 
@@ -227,7 +226,7 @@ dist:
 	python3 setup.py sdist
 
 clean:
-	rm -rf $(build-dir) .coverage .hypothesis .mypy_cache .pytest_cache
+	rm -rf $(BUILD_DIR) .coverage .hypothesis .mypy_cache .pytest_cache
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
