@@ -247,7 +247,7 @@ class Description(RFLXNode):
 class Transition(RFLXNode):
     """Unconditional session state transition."""
 
-    target = Field(type=AbstractID)
+    target = Field(type=UnqualifiedID)
     description = Field(type=Description)
 
 
@@ -365,7 +365,7 @@ class EnumerationTypeDef(TypeDef):
 class Then(RFLXNode):
     """Link to field."""
 
-    target = Field(type=AbstractID)
+    target = Field(type=UnqualifiedID)
     aspects = Field(type=Aspect.list)
     condition = Field(type=Expr)
 
