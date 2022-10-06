@@ -90,7 +90,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Check
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
@@ -199,7 +199,7 @@ jobs:
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Test
       if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
@@ -325,7 +325,7 @@ jobs:
           python -m pip install --upgrade pip wheel
           eval `make printenv_gnat`
           gnat --version
-          make install_devel
+          make init install_devel
       - name: Test
         if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         run: |
@@ -378,7 +378,7 @@ jobs:
           echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
           sudo apt install graphviz libgmp-dev patchelf
           python -m pip install --upgrade pip wheel
-          make install_devel
+          make init install_devel
       - name: Test
         if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         run: |
@@ -435,7 +435,7 @@ jobs:
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Connect to Memcached server
       shell: bash
       env:
@@ -542,7 +542,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Connect to Memcached server
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       shell: bash
@@ -641,7 +641,7 @@ jobs:
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Install Alire
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
@@ -729,7 +729,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Connect to Memcached server
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       shell: bash
@@ -817,7 +817,7 @@ jobs:
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Install Alire
       if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
@@ -883,7 +883,7 @@ jobs:
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
-        make install_devel
+        make init install_devel
     - name: Generate
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |

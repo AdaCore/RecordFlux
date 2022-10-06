@@ -19,12 +19,19 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ make install_gnat
    $ eval `make printenv_gnat`
 
+
+The configuration of the development tools is managed in a separate repository and must be downloaded and set up once.
+
+.. code:: console
+
+   $ make init
+
 ``pip`` can be used to install the Python project in editable mode. The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_ is recommended.
 
 .. code:: console
 
-   $ virtualenv -p python3 venv
-   $ source venv/bin/activate
+   $ python3 -m venv .venv
+   $ . .venv/bin/activate
    $ make install_devel
 
 The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
@@ -43,6 +50,8 @@ Tools
 
 Make targets for common development tasks are:
 
+- ``init`` Download and set up development configuration
+- ``deinit`` Remove development configuration
 - ``all`` Execute ``check``, ``test`` and ``prove``
 - ``check`` Run general checks and static code analysis tools for Python code
 - ``test`` Execute tests for Python code and SPARK code
