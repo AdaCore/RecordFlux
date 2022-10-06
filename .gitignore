@@ -4,8 +4,12 @@
 *.o
 *.pyc
 .coverage
+.coverage.*
+.env
 .hypothesis
 .mypy_cache
+.venv
+.vscode/configurationCache.log
 \.*.swp
 __pycache__
 build
@@ -14,7 +18,3 @@ gnatinspect.db
 htmlcov
 why3session.xml.bak
 why3shapes.gz.bak
-.vscode/configurationCache.log
-.env
-.venv
-.coverage.*
