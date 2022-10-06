@@ -5,6 +5,7 @@ ADACORE_ORIGIN ?= https://github.com/AdaCore
 
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
+PYTHON_PACKAGES = language tests disttools/setup.py disttools/gprgen.py
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 5d83c8b292c222f08c1b4d4c201b4202360a2862
@@ -61,8 +62,6 @@ $(shell $(call reinit_repo,contrib/langkit,$(langkit_HEAD)))
 
 export MYPYPATH = $(PWD)/stubs
 
-python-packages := language tests disttools/setup.py disttools/gprgen.py
-
 .PHONY: all
 
 all: check test
@@ -100,26 +99,26 @@ contrib/langkit:
 check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
 check_black:
-	black --check --diff --line-length 100 $(python-packages)
+	black --check --diff --line-length 100 $(PYTHON_PACKAGES)
 
 check_isort:
-	isort --check --diff $(python-packages)
+	isort --check --diff $(PYTHON_PACKAGES)
 
 check_flake8:
-	pflake8 $(python-packages)
+	pflake8 $(PYTHON_PACKAGES)
 
 check_pylint:
-	pylint $(python-packages)
+	pylint $(PYTHON_PACKAGES)
 
 check_mypy:
-	mypy --pretty $(python-packages)
+	mypy --pretty $(PYTHON_PACKAGES)
 
 check_pydocstyle:
-	pydocstyle $(python-packages)
+	pydocstyle $(PYTHON_PACKAGES)
 
 format:
-	black -l 100 $(python-packages)
-	isort $(python-packages)
+	black -l 100 $(PYTHON_PACKAGES)
+	isort $(PYTHON_PACKAGES)
 
 test: test_python_coverage
 
