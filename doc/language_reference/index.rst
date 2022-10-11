@@ -53,7 +53,7 @@ Two types of integers are supported: modular type and range type.
 
 .. productionlist::
    modular_type: type `name` is mod `modulus`
-   range_type: type `name` is range first .. last with Size => `number`
+   range_type: type `name` is range `first` .. `last` with Size => `number`
    modulus: `mathematical_expression`
    first: `mathematical_expression`
    last: `mathematical_expression`
