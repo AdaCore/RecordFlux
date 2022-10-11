@@ -181,8 +181,12 @@ class ModularInteger(Integer):
     ) -> abc.Sequence[expr.Expr]:
         if proof:
             return [
-                expr.Less(expr.Variable(name), self._modulus, location=self.location),
-                expr.GreaterEqual(expr.Variable(name), expr.Number(0), location=self.location),
+                expr.Less(
+                    expr.Variable(name, type_=self.type_), self._modulus, location=self.location
+                ),
+                expr.GreaterEqual(
+                    expr.Variable(name, type_=self.type_), expr.Number(0), location=self.location
+                ),
                 expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
 
@@ -344,8 +348,12 @@ class RangeInteger(Integer):
     ) -> abc.Sequence[expr.Expr]:
         if proof:
             return [
-                expr.GreaterEqual(expr.Variable(name), self.first, location=self.location),
-                expr.LessEqual(expr.Variable(name), self.last, location=self.location),
+                expr.GreaterEqual(
+                    expr.Variable(name, type_=self.type_), self.first, location=self.location
+                ),
+                expr.LessEqual(
+                    expr.Variable(name, type_=self.type_), self.last, location=self.location
+                ),
                 expr.Equal(expr.Size(name), self.size, location=self.location),
             ]
 
@@ -531,14 +539,19 @@ class Enumeration(Scalar):
             result: list[expr.Expr] = [
                 expr.Or(
                     *[
-                        expr.Equal(expr.Variable(name), expr.Literal(l), self.location)
+                        expr.Equal(
+                            expr.Variable(name, type_=self.type_), expr.Literal(l), self.location
+                        )
                         for l in literals
                     ],
                     location=self.location,
                 )
             ]
             result.extend(
-                [expr.Equal(expr.Literal(l), v, self.location) for l, v in literals.items()]
+                [
+                    expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
+                    for l, v in literals.items()
+                ]
             )
             result.append(expr.Equal(expr.Size(name), self.size, self.location))
             return result
