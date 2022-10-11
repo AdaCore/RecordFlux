@@ -141,6 +141,7 @@ package RFLX_Invalid is
                -- error: Undefined variable
                if Undef_Var > 5
                   -- error: Subsequent field F1 referenced
+                  -- not reported as Undef_Var aborts checking this path
                   and F1 > 1000;
          Data  : Opaque
             then F1

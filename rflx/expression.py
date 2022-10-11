@@ -1209,6 +1209,8 @@ class Variable(Name):
 
     @lru_cache(maxsize=None)
     def z3expr(self) -> z3.ExprRef:
+        if self.type_ == rty.BOOLEAN:
+            return z3.Bool(self.name)
         if self.negative:
             return -z3.Int(self.name)
         return z3.Int(self.name)

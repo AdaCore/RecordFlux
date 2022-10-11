@@ -155,6 +155,7 @@ class AbstractMessage(mty.Type):
                     self._state.parameter_types = {
                         f: t for f, t in self._types.items() if f not in fields
                     }
+                self._set_types()
             byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
             if not isinstance(byte_order, dict):
                 assert isinstance(byte_order, ByteOrder)
@@ -817,6 +818,33 @@ class AbstractMessage(mty.Type):
             location=field.identifier.location,
         )
 
+    def _set_types(self) -> None:
+        def set_types(expression: expr.Expr) -> expr.Expr:
+            return self._typed_variable(expression, self.types)
+
+        for link in self.structure:
+            link.condition = link.condition.substituted(set_types)
+            link.size = link.size.substituted(set_types)
+            link.first = link.first.substituted(set_types)
+
+    def _typed_variable(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
+        expression = copy(expression)
+        if isinstance(expression, expr.Variable):
+            assert expression.identifier not in {
+                *self._qualified_enum_literals,
+                *self._type_literals,
+            }, f'variable "{expression.identifier}" has the same name as a literal'
+            if expression.name.lower() == "message":
+                expression.type_ = rty.OPAQUE
+            elif Field(expression.identifier) in types:
+                expression.type_ = types[Field(expression.identifier)].type_
+        if isinstance(expression, expr.Literal):
+            if expression.identifier in self._qualified_enum_literals:
+                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
+            elif expression.identifier in self._type_literals:
+                expression.type_ = self._type_literals[expression.identifier].type_
+        return expression
+
 
 class Message(AbstractMessage):
     # pylint: disable=too-many-arguments
@@ -989,9 +1017,6 @@ class Message(AbstractMessage):
         the given field values.
         """
 
-        def typed_variable(expression: expr.Expr) -> expr.Expr:
-            return self._typed_variable(expression, self.types)
-
         field_values = field_values if field_values else {}
 
         if subpath:
@@ -1132,7 +1157,6 @@ class Message(AbstractMessage):
                     )
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
-                    .substituted(typed_variable)
                     .substituted(add_message_prefix)
                     .substituted(remove_variable_prefix)
                     .simplified()
@@ -1141,7 +1165,6 @@ class Message(AbstractMessage):
                     expr.Size(expr.Variable(field.name, type_=self.types[field].type_))
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
-                    .substituted(typed_variable)
                     .substituted(add_message_prefix)
                     .substituted(remove_variable_prefix)
                 )
@@ -1310,7 +1333,7 @@ class Message(AbstractMessage):
                     ]
                 )
 
-    def _verify_expression_types(self) -> None:
+    def _verify_expression_types(self) -> None:  # pylint: disable=too-many-branches
         types: dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -1319,6 +1342,33 @@ class Message(AbstractMessage):
         for p in self.paths(FINAL):
             types = {f: t for f, t in self.types.items() if f in self.parameters}
             path = []
+            type_error = False
+
+            for l in p:
+                path.append(l.target)
+                for expression in [l.condition, l.size, l.first]:
+                    if expression == expr.UNDEFINED:
+                        continue
+
+                    error = expression.check_type(rty.Any())
+
+                    self.error.extend(error)
+
+                    if error.check():
+                        self.error.extend(
+                            [
+                                (
+                                    "on path " + " -> ".join(f.name for f in path),
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    expression.location,
+                                )
+                            ],
+                        )
+                        type_error = True
+
+            if type_error:
+                break
 
             try:
                 # check for contradictions in conditions of path
@@ -1328,7 +1378,27 @@ class Message(AbstractMessage):
             except expr.Z3TypeError:
                 pass
 
+            path = []
+            untyped_path = []
+
+            def remove_types(expression: expr.Expr) -> expr.Expr:
+                if isinstance(expression, expr.Variable):
+                    expression = copy(expression)
+                    expression.type_ = rty.Undefined()
+                return expression
+
             for l in p:
+                untyped_path.append(
+                    Link(
+                        source=l.source,
+                        target=l.target,
+                        condition=l.condition.substituted(remove_types),
+                        first=l.first.substituted(remove_types),
+                        size=l.size.substituted(remove_types),
+                    )
+                )
+
+            for l in untyped_path:
                 path.append(l.target)
 
                 if l.source in self.types:
@@ -2056,24 +2126,6 @@ class Message(AbstractMessage):
             *expression_list(link.condition),
         ]
 
-    def _typed_variable(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
-        expression = copy(expression)
-        if isinstance(expression, expr.Variable):
-            assert expression.identifier not in {
-                *self._qualified_enum_literals,
-                *self._type_literals,
-            }, f'variable "{expression.identifier}" has the same name as a literal'
-            if expression.name.lower() == "message":
-                expression.type_ = rty.OPAQUE
-            elif Field(expression.identifier) in types:
-                expression.type_ = types[Field(expression.identifier)].type_
-        if isinstance(expression, expr.Literal):
-            if expression.identifier in self._qualified_enum_literals:
-                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
-            elif expression.identifier in self._type_literals:
-                expression.type_ = self._type_literals[expression.identifier].type_
-        return expression
-
 
 class DerivedMessage(Message):
     # pylint: disable=too-many-arguments
@@ -2178,7 +2230,7 @@ class UnprovenMessage(AbstractMessage):
 
             message = self._merge_inner_message(message, *inner_message, message_arguments)
 
-    def _merge_inner_message(
+    def _merge_inner_message(  # pylint: disable=too-many-locals
         self,
         message: UnprovenMessage,
         field: Field,
@@ -2198,6 +2250,9 @@ class UnprovenMessage(AbstractMessage):
             else {}
         )
         structure = []
+
+        def set_types(expression: expr.Expr) -> expr.Expr:
+            return self._typed_variable(expression, inner_message.types)
 
         for path in message.paths(FINAL):
             for link in path:
@@ -2222,6 +2277,7 @@ class UnprovenMessage(AbstractMessage):
                         merged_condition = expr.And(
                             link.condition, final_link.condition
                         ).substituted(mapping=substitution)
+                        merged_condition = merged_condition.substituted(set_types)
                         proof = merged_condition.check(
                             [
                                 *inner_message.message_constraints(),

@@ -819,6 +819,23 @@ def test_undefined_variable(
     )
 
 
+def test_undefined_variable_boolean_condition_value() -> None:
+    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), condition=Variable("X", location=Location((10, 20)))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {Field("F1"): mod_type, Field("F2"): mod_type}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "X"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+    )
+
+
 def test_undefined_variables() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
@@ -4286,4 +4303,20 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
         r' of "P::M"'
         r"$",
+    )
+
+
+def test_boolean_value_as_condition() -> None:
+    Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("Tag_1")),
+            Link(Field("Tag_1"), Field("Tag_2"), condition=Variable("Has_Tag")),
+            Link(Field("Tag_2"), FINAL),
+        ],
+        {
+            Field("Tag_1"): MODULAR_INTEGER,
+            Field("Tag_2"): MODULAR_INTEGER,
+            Field("Has_Tag"): BOOLEAN,
+        },
     )
