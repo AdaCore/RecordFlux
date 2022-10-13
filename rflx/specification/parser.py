@@ -13,6 +13,7 @@ from typing import Optional, Union
 
 import librflxlang as lang
 
+import rflx.typing_ as rty
 from rflx import expression as expr, model
 from rflx.common import STDIN, unique
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, warn
@@ -469,7 +470,11 @@ def create_variable(error: RecordFluxError, expression: lang.Expr, filename: Pat
     assert isinstance(expression, lang.Variable)
     location = node_location(expression, filename)
     if expression.f_identifier.text.lower() in ("true", "false"):
-        return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
+        return expr.Literal(
+            create_id(error, expression.f_identifier, filename),
+            location=location,
+            type_=rty.BOOLEAN,
+        )
     return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
 
 
@@ -1483,9 +1488,9 @@ def create_enumeration(
             if aspect.f_identifier.text == "Always_Valid":
                 if aspect.f_value:
                     av_expr = create_bool_expression(error, aspect.f_value, filename)
-                    if av_expr == expr.Variable("True"):
+                    if av_expr == expr.TRUE:
                         always_valid = True
-                    elif av_expr == expr.Variable("False"):
+                    elif av_expr == expr.FALSE:
                         always_valid = False
                     else:
                         error.extend(

@@ -872,17 +872,17 @@ def test_state_error(string: str, error: str) -> None:
                         declarations=[
                             decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y"))
                         ],
-                        actions=[stmt.VariableAssignment("Z", expr.Variable("False"))],
+                        actions=[stmt.VariableAssignment("Z", expr.FALSE)],
                         transitions=[
                             model.Transition(
                                 "null",
-                                condition=expr.Equal(expr.Variable("Z"), expr.Variable("False")),
+                                condition=expr.Equal(expr.Variable("Z"), expr.FALSE),
                             ),
                             model.Transition("A"),
                         ],
                     ),
                 ],
-                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.Variable("True"))],
+                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.TRUE)],
                 [
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
