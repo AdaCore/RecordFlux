@@ -19,7 +19,8 @@
                 "--cov-report=html:${workspaceFolder}/build/coverage/",
                 "-m",
                 "not verification and not hypothesis and not compilation",
-                "tests"
+                "tests/unit",
+                "tests/integration"
             ],
             "problemMatcher": []
         }
