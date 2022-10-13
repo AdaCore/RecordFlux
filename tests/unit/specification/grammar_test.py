@@ -299,12 +299,12 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42 > X", "Invalid math BinOp OpGt.*"),
-        ("X and Y", "Invalid math BinOp OpAnd.*"),
+        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context"),
+        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context"),
     ],
 )
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises(NotImplementedError, match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_math_expression(string, extended=False)
 
 
@@ -324,12 +324,12 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     "string,error",
     [
-        ("42", "'NumericLiteral'"),
-        ("X * 3", "Invalid bool BinOp OpMul => X [*] 3"),
+        ("42", "<stdin>:1:1: parser: error: math expression in boolean context"),
+        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context"),
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
-    with pytest.raises((KeyError, NotImplementedError), match=rf"^{error}$"):
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_bool_expression(string, extended=False)
 
 

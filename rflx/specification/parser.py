@@ -16,7 +16,7 @@ import librflxlang as lang
 import rflx.typing_ as rty
 from rflx import expression as expr, model
 from rflx.common import STDIN, unique
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, warn
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import declaration as decl, statement as stmt
@@ -402,6 +402,14 @@ def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: P
             create_math_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
+
+    if expression.f_op.kind_name in [*OPERATIONS, *MATH_COMPARISONS, *BOOLEAN_OPERATIONS]:
+        fail(
+            "boolean expression in math context",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
+
     raise NotImplementedError(
         f"Invalid math BinOp {expression.f_op.kind_name} => {expression.text}"
     )
@@ -440,6 +448,14 @@ def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: P
             create_expression(error, expression.f_right, filename),
             location=node_location(expression, filename),
         )
+
+    if expression.f_op.kind_name in MATH_OPERATIONS:
+        fail(
+            "math expression in boolean context",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
+
     raise NotImplementedError(
         f"Invalid bool BinOp {expression.f_op.kind_name} => {expression.text}"
     )
@@ -844,7 +860,14 @@ def create_math_expression(
         "SelectNode": create_selected,
         "SequenceAggregate": create_sequence_aggregate,
     }
-    return handlers[expression.kind_name](error, expression, filename)
+    result = handlers[expression.kind_name](error, expression, filename)
+    if result.type_ == rty.BOOLEAN:
+        fail(
+            "boolean expression in math context",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
+    return result
 
 
 def create_bool_expression(
@@ -861,6 +884,12 @@ def create_bool_expression(
         "SelectNode": create_selected,
         "CaseExpression": create_case,
     }
+    if expression.kind_name == "NumericLiteral":
+        fail(
+            "math expression in boolean context",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
     return handlers[expression.kind_name](error, expression, filename)
 
 

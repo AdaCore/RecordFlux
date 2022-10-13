@@ -3243,3 +3243,51 @@ def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
 
     with pytest.raises(RecordFluxError, match=error):
         parser.Parser().parse(b, a)
+
+
+@pytest.mark.parametrize(
+    "expression,message",
+    [
+        ("A + 1", r"^<stdin>:7:19: parser: error: math expression in boolean context"),
+        ("42", r"^<stdin>:7:19: parser: error: math expression in boolean context"),
+    ],
+)
+def test_parse_error_math_expression_in_bool_context(expression: str, message: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type T is mod 2 ** 8;
+           type M is
+              message
+                 A : T
+                    then null
+                       if {expression};
+              end message;
+        end Test;
+        """,
+        message,
+    )
+
+
+@pytest.mark.parametrize(
+    "expression,message",
+    [
+        ("True", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
+        ("3 < 4", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
+        ("A = B", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
+        ("A /= False", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
+    ],
+)
+def test_parse_error_bool_expression_in_math_context(expression: str, message: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type M is
+              message
+                 A : Opaque
+                    with Size => {expression};
+              end message;
+        end Test;
+        """,
+        message,
+    )
