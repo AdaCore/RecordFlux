@@ -1,5 +1,9 @@
-#  pylint: disable=unused-argument,no-self-use
-from typing import BinaryIO, Iterable, Optional
+# pylint: disable = unused-argument, multiple-statements, redefined-builtin
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import BinaryIO, Optional
 
 class Edge:  # noqa: E302, conflicts with isort
     def __init__(self, dst: str, src: str, **attr: Optional[str]): ...
