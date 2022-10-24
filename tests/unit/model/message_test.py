@@ -815,7 +815,7 @@ def test_undefined_variable(
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: undefined variable "X"\nmodel: info: on path F1 -> F2$',
+        r'^<stdin>:10:20: model: error: undefined variable "X"$',
     )
 
 
@@ -829,10 +829,7 @@ def test_undefined_variable_boolean_condition_value() -> None:
     types = {Field("F1"): mod_type, Field("F2"): mod_type}
 
     assert_message_model_error(
-        structure,
-        types,
-        r'^<stdin>:10:20: model: error: undefined variable "X"\n'
-        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+        structure, types, r'^<stdin>:10:20: model: error: undefined variable "X"$'
     )
 
 
@@ -846,10 +843,7 @@ def test_undefined_variable_size() -> None:
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
 
     assert_message_model_error(
-        structure,
-        types,
-        r'^<stdin>:10:20: model: error: undefined variable "Field_Size"\n'
-        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+        structure, types, r'^<stdin>:10:20: model: error: undefined variable "Field_Size"$'
     )
 
 
@@ -863,10 +857,7 @@ def test_undefined_variable_first() -> None:
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
 
     assert_message_model_error(
-        structure,
-        types,
-        r'^<stdin>:10:20: model: error: undefined variable "Field_First"\n'
-        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+        structure, types, r'^<stdin>:10:20: model: error: undefined variable "Field_First"$'
     )
 
 
@@ -890,8 +881,7 @@ def test_undefined_variables() -> None:
         structure,
         types,
         r'^<stdin>:10:20: model: error: undefined variable "X"\n'
-        r'<stdin>:10:30: model: error: undefined variable "Y"\n'
-        r"model: info: on path F1 -> F2$",
+        r'<stdin>:10:30: model: error: undefined variable "Y"$',
     )
 
 

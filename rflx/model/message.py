@@ -881,6 +881,10 @@ class Message(AbstractMessage):
 
             self.error.propagate()
 
+            self._verify_message_types()
+
+            self.error.propagate()
+
             self._verify_expression_types()
             self._verify_expressions()
             self._verify_checksums()
@@ -1333,7 +1337,26 @@ class Message(AbstractMessage):
                     ]
                 )
 
-    def _verify_expression_types(self) -> None:  # pylint: disable=too-many-branches
+    def _verify_message_types(self) -> None:
+
+        for l in self.structure:
+            for expression in [l.condition, l.size, l.first]:
+                if expression == expr.UNDEFINED:
+                    continue
+                for var in expression.variables():
+                    if var.type_ == rty.Undefined():
+                        self.error.extend(
+                            [
+                                (
+                                    f'undefined variable "{var.identifier}"',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    var.location,
+                                )
+                            ]
+                        )
+
+    def _verify_expression_types(self) -> None:
         types: dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -1341,34 +1364,6 @@ class Message(AbstractMessage):
 
         for p in self.paths(FINAL):
             types = {f: t for f, t in self.types.items() if f in self.parameters}
-            path = []
-            type_error = False
-
-            for l in p:
-                path.append(l.target)
-                for expression in [l.condition, l.size, l.first]:
-                    if expression == expr.UNDEFINED:
-                        continue
-
-                    error = expression.check_type(rty.Any())
-
-                    self.error.extend(error)
-
-                    if error.check():
-                        self.error.extend(
-                            [
-                                (
-                                    "on path " + " -> ".join(f.name for f in path),
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    expression.location,
-                                )
-                            ],
-                        )
-                        type_error = True
-
-            if type_error:
-                break
 
             try:
                 # check for contradictions in conditions of path
@@ -1378,27 +1373,24 @@ class Message(AbstractMessage):
             except expr.Z3TypeError:
                 pass
 
-            path = []
-            untyped_path = []
-
             def remove_types(expression: expr.Expr) -> expr.Expr:
                 if isinstance(expression, expr.Variable):
                     expression = copy(expression)
                     expression.type_ = rty.Undefined()
                 return expression
 
-            for l in p:
-                untyped_path.append(
-                    Link(
-                        source=l.source,
-                        target=l.target,
-                        condition=l.condition.substituted(remove_types),
-                        first=l.first.substituted(remove_types),
-                        size=l.size.substituted(remove_types),
-                    )
-                )
+            path = []
 
-            for l in untyped_path:
+            for l in [
+                Link(
+                    source=l.source,
+                    target=l.target,
+                    condition=l.condition.substituted(remove_types),
+                    first=l.first.substituted(remove_types),
+                    size=l.size.substituted(remove_types),
+                )
+                for l in p
+            ]:
                 path.append(l.target)
 
                 if l.source in self.types:
