@@ -138,10 +138,7 @@ package RFLX_Invalid is
          Length : R
             then Data
                with Size => Length
-               -- error: Undefined variable
-               if Undef_Var > 5
-                  -- error: Subsequent field F1 referenced
-                  and F1 > 1000;
+               if F1 > 1000;
          Data  : Opaque
             then F1
                -- error: invalid relation to aggregate
@@ -292,6 +289,16 @@ package RFLX_Invalid is
       Size => 2,
       -- error: unnecessary Always_Valid
       Always_Valid;
+
+   type M18 is
+      message
+         F1 : Modular_32;
+         F2 : Modular_32
+            then F3
+               -- error: undefined variable
+               if F1 = 0 and Undef_Var;
+         F3 : Modular_32;
+      end message;
 
 -- error: End identifier inconsistent with package identifier
 end Inconsistent;

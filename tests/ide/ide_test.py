@@ -39,14 +39,14 @@ def test_multiple_errors() -> None:
         [
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
-            f'{path}:298:5: parser: error: inconsistent package identifier "Inconsistent"',
+            f'{path}:304:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid",'
             ' should be "rflx_invalid.rflx"',
             f'{path}:40:4: model: error: illegal redefinition of built-in type "Boolean"',
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
-            f'{path}:298:5: parser: error: inconsistent package identifier "Inconsistent"',
+            f'{path}:304:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
@@ -104,58 +104,60 @@ def test_multiple_errors() -> None:
             f'{path}:8:9: parser: info: invalid base message type "RFLX_Invalid::R"',
             f'{path}:134:21: parser: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
-            f'{path}:142:19: model: error: undefined variable "Undef_Var"',
-            f"{path}:142:19: model: info: on path Length -> Data",
-            f"{path}:149:25: model: error: expected integer type",
-            f"{path}:149:25: model: info: found aggregate with element type universal integer"
+            f'{path}:141:19: model: error: undefined variable "F1"',
+            f"{path}:141:19: model: info: on path Length -> Data",
+            f'{path}:145:19: model: error: undefined variable "F1"',
+            f"{path}:145:25: model: error: expected integer type",
+            f"{path}:145:25: model: info: found aggregate with element type universal integer"
             " (5 .. 20)",
-            f"{path}:149:19: model: info: on path Length -> Data -> F1",
-            f'{path}:157:24: model: error: expected integer type "RFLX_Invalid::R" (5 .. 23)',
-            f"{path}:157:24: model: info: found aggregate with element type universal integer"
+            f"{path}:145:19: model: info: on path Length -> Data -> F1",
+            f'{path}:153:24: model: error: expected integer type "RFLX_Invalid::R" (5 .. 23)',
+            f"{path}:153:24: model: info: found aggregate with element type universal integer"
             " (1 .. 100)",
-            f"{path}:157:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
-            f'{path}:153:19: model: error: invalid use of size attribute for "1"',
-            f'{path}:169:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
-            f'{path}:160:9: model: info: when merging message "RFLX_Invalid::M4"',
-            f'{path}:167:10: model: info: into field "F2"',
-            f'{path}:181:27: model: error: expected sequence type "RFLX_Invalid::R_Sequence"'
+            f"{path}:153:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
+            f'{path}:149:19: model: error: invalid use of size attribute for "1"',
+            f'{path}:165:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
+            f'{path}:156:9: model: info: when merging message "RFLX_Invalid::M4"',
+            f'{path}:163:10: model: info: into field "F2"',
+            f'{path}:177:27: model: error: expected sequence type "RFLX_Invalid::R_Sequence"'
             ' with element integer type "RFLX_Invalid::R" (5 .. 23)',
+            f"{path}:177:27: model: info: found aggregate with element type universal integer"
+            " (1 .. 1000)",
+            f"{path}:177:19: model: info: on path Length -> Data1 -> Data2",
+            f'{path}:181:27: model: error: expected sequence type "__INTERNAL__::Opaque"'
+            ' with element integer type "Byte" (0 .. 255)',
             f"{path}:181:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",
-            f"{path}:181:19: model: info: on path Length -> Data1 -> Data2",
-            f'{path}:185:27: model: error: expected sequence type "__INTERNAL__::Opaque"'
-            ' with element integer type "Byte" (0 .. 255)',
-            f"{path}:185:27: model: info: found aggregate with element type universal integer"
-            " (1 .. 1000)",
-            f"{path}:185:19: model: info: on path Length -> Data1 -> Data2 -> Final",
-            f'{path}:188:36: parser: error: undefined element type "RFLX_Invalid::M5"',
-            f'{path}:194:17: parser: error: undefined type "RFLX_Invalid::M5_Sequence"',
-            f'{path}:194:10: model: error: missing type for field "Data" in "RFLX_Invalid::M7"',
-            f'{path}:205:10: model: error: conflicting conditions for field "F1"',
-            f"{path}:209:19: model: info: condition 0 (F1 -> F2): F1 < 80",
-            f"{path}:207:19: model: info: condition 1 (F1 -> Final): F1 > 50",
-            f'{path}:217:10: model: error: unreachable field "F2" in "RFLX_Invalid::M9"',
-            f'{path}:232:18: model: error: fixed size field "F1" with size aspect',
-            f"{path}:242:30: model: error: illegal first aspect at initial link",
-            f'{path}:251:19: model: error: undefined variable "F1"',
-            f"{path}:251:19: model: info: on path F1",
-            f'{path}:258:18: model: error: negative size for field "F2" (F1 -> F2)',
-            f"{path}:258:18: model: error: size of opaque field "
+            f"{path}:181:19: model: info: on path Length -> Data1 -> Data2 -> Final",
+            f'{path}:184:36: parser: error: undefined element type "RFLX_Invalid::M5"',
+            f'{path}:190:17: parser: error: undefined type "RFLX_Invalid::M5_Sequence"',
+            f'{path}:190:10: model: error: missing type for field "Data" in "RFLX_Invalid::M7"',
+            f'{path}:201:10: model: error: conflicting conditions for field "F1"',
+            f"{path}:205:19: model: info: condition 0 (F1 -> F2): F1 < 80",
+            f"{path}:203:19: model: info: condition 1 (F1 -> Final): F1 > 50",
+            f'{path}:213:10: model: error: unreachable field "F2" in "RFLX_Invalid::M9"',
+            f'{path}:228:18: model: error: fixed size field "F1" with size aspect',
+            f"{path}:238:30: model: error: illegal first aspect at initial link",
+            f'{path}:247:19: model: error: undefined variable "F1"',
+            f"{path}:247:19: model: info: on path F1",
+            f'{path}:254:18: model: error: negative size for field "F2" (F1 -> F2)',
+            f"{path}:254:18: model: error: size of opaque field "
             f'"F2" not multiple of 8 bit (F1 -> F2)',
-            f'{path}:255:9: model: error: negative start for field "Final" (F1 -> F2 -> Final)',
-            f"{path}:258:18: model: info: unsatisfied \"F2'Last ="
+            f'{path}:251:9: model: error: negative start for field "Final" (F1 -> F2 -> Final)',
+            f"{path}:254:18: model: info: unsatisfied \"F2'Last ="
             " (F1'Last + 1 + (F1 - 2 ** 33)) - 1\"",
-            f"{path}:257:10: model: info: unsatisfied \"F1'Last = (Message'First + 32) - 1\"",
-            f'{path}:200:9: model: info: unsatisfied "F1 < 2 ** 32"',
-            f"{path}:261:10: model: info: unsatisfied \"F2'Last + 1 >= Message'First\"",
-            f'{path}:267:10: model: error: unconstrained field "F1" without size aspect',
-            f'{path}:273:9: model: error: field "F3" not congruent with overlaid field "F1"',
-            f"{path}:273:9: model: info: unsatisfied \"F1'First = Message'First\"",
-            f"{path}:275:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
-            f"{path}:277:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
-            f'{path}:289:29: model: error: size aspect for final field in "RFLX_Invalid::M17"',
-            f"{path}:292:9: model: error: unnecessary always-valid aspect"
+            f"{path}:253:10: model: info: unsatisfied \"F1'Last = (Message'First + 32) - 1\"",
+            f'{path}:196:9: model: info: unsatisfied "F1 < 2 ** 32"',
+            f"{path}:257:10: model: info: unsatisfied \"F2'Last + 1 >= Message'First\"",
+            f'{path}:263:10: model: error: unconstrained field "F1" without size aspect',
+            f'{path}:269:9: model: error: field "F3" not congruent with overlaid field "F1"',
+            f"{path}:269:9: model: info: unsatisfied \"F1'First = Message'First\"",
+            f"{path}:271:10: model: info: unsatisfied \"F1'Last = (Message'First + 8) - 1\"",
+            f"{path}:273:13: model: info: unsatisfied \"(F1'First + 16) - 1 = F1'Last\"",
+            f'{path}:285:29: model: error: size aspect for final field in "RFLX_Invalid::M17"',
+            f"{path}:288:9: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
+            f"{path}:299:30: model: error: undefined variable " '"Undef_Var"',
             f'{path}:37:9: model: error: name conflict for type "RFLX_Invalid::R"',
             f'{path}:8:9: model: info: previous occurrence of "RFLX_Invalid::R"',
             f'{path}:40:9: model: error: name conflict for type "__BUILTINS__::Boolean"',
