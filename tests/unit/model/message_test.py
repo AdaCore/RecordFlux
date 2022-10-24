@@ -836,6 +836,40 @@ def test_undefined_variable_boolean_condition_value() -> None:
     )
 
 
+def test_undefined_variable_size() -> None:
+    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), size=Variable("Field_Size", location=Location((10, 20)))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "Field_Size"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+    )
+
+
+def test_undefined_variable_first() -> None:
+    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), size=Variable("Field_First", location=Location((10, 20)))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "Field_First"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+    )
+
+
 def test_undefined_variables() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
@@ -4306,7 +4340,7 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
     )
 
 
-def test_boolean_value_as_condition() -> None:
+def test_boolean_variable_as_condition() -> None:
     Message(
         "P::M",
         [
