@@ -2269,6 +2269,11 @@ class UnprovenMessage(AbstractMessage):
                         merged_condition = expr.And(
                             link.condition, final_link.condition
                         ).substituted(mapping=substitution)
+                        # The outer message may references to merged fields in its conditions
+                        # that are not yet present as the messages are not yet merged.
+                        # Due to this the types are not set completely. To avoid type errors
+                        # when checking the paths of the merged message the types of the
+                        # prefixed inner message have to be added to the merged condition.
                         merged_condition = merged_condition.substituted(set_types)
                         proof = merged_condition.check(
                             [
