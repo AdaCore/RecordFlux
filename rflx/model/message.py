@@ -878,9 +878,6 @@ class Message(AbstractMessage):
         if not self.is_null:
             self._verify_parameters()
             self._verify_use_of_literals()
-
-            self.error.propagate()
-
             self._verify_message_types()
 
             self.error.propagate()
@@ -1362,6 +1359,12 @@ class Message(AbstractMessage):
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             return self._typed_variable(expression, types)
 
+        def remove_types(expression: expr.Expr) -> expr.Expr:
+            if isinstance(expression, expr.Variable):
+                expression = copy(expression)
+                expression.type_ = rty.Undefined()
+            return expression
+
         for p in self.paths(FINAL):
             types = {f: t for f, t in self.types.items() if f in self.parameters}
 
@@ -1372,12 +1375,6 @@ class Message(AbstractMessage):
                     break
             except expr.Z3TypeError:
                 pass
-
-            def remove_types(expression: expr.Expr) -> expr.Expr:
-                if isinstance(expression, expr.Variable):
-                    expression = copy(expression)
-                    expression.type_ = rty.Undefined()
-                return expression
 
             path = []
 
