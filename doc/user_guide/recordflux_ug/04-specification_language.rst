@@ -54,6 +54,11 @@ the language:
 .. TODO:: For each of the above, are the rules the same as for Ada?
    If not, what are the differences?
 
+The comment syntax in RecordFlux is the same as in Ada:
+two consecutive hyphens and all following text up to the next end-of-line
+(except when the hyphens are part of a string literal).
+
+
 The type system is inspired by Ada, but differs in some details.
 In contrast to Ada, integer variables are considered type compatible.
 Explicit type conversions of integer variables are neither required
