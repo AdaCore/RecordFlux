@@ -148,7 +148,7 @@ the following field. A more detailed description can be found in
    :number-lines:
 
    package TLV is
-   
+
       type Tag_Type    is (Msg_Data => 1, Msg_Error => 3)
          with Size => 8;
       type Length_Type is mod 2**16;
