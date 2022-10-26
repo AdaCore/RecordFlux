@@ -136,6 +136,9 @@ def check_file(filename: Path, content: str) -> bool:
             continue
 
         if state == State.HEADER:
+            if re.match(r"^ +:[^:]+:$", line):
+                continue
+
             match = re.match("^$", line)
             if not match:
                 raise CheckDocError(f"{filename}:{lineno}: missing empty line in code block")
