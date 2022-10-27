@@ -18,12 +18,15 @@ What This Guide Contains
 
 This guide contains the following chapters:
 
+* :ref:`Installation` describes ....
 * :ref:`Getting_Started_with_RecordFlux` describes ....
+* :ref:`Specification Language` describes ....
 
 
 Appendices cover several additional topics:
 
 * :ref:`Syntax_Reference` describes ...
+* :ref:`GNU Free Documentation License` describes ....
 
 
 
@@ -45,9 +48,9 @@ Related Information
 
 Reference material for these languages is available online:
 
-* :title:`Ada 2012 Reference Manual` <<(NEED LINK>>.
+* `Ada 2012 Reference Manual <http://www.ada-auth.org/standards/ada12.html>`_
 
-* <<TBD>>
+* `SPARK User's Guide <https://docs.adacore.com/spark2014-docs/html/ug/>`_
 
 The GNAT Pro development environments for Ada and the SPARK Pro toolsuite
 are commercially available from AdaCore.
