@@ -308,6 +308,17 @@ def substitution_facts(
 def message_structure_invariant(
     message: model.Message, prefix: str, link: model.Link = None, embedded: bool = False
 ) -> Expr:
+    """
+    Create the invariant that defines a valid message structure.
+
+    This invariant ensures the properties of message fields that can depend on the concrete message
+    path: the field size, the location of the field and the predecessor of the field. This is
+    realized by nested if-expressions. Each if-expression represents a link in the message and
+    checks the validity of the message field and the link condition. The if-expressions form a
+    tree-like structure with the link to the first field as the root and the links to the final
+    field as the leafs.
+    """
+
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
@@ -418,6 +429,16 @@ def context_predicate(
     message: model.Message, composite_fields: Sequence[model.Field], prefix: str
 ) -> Expr:
     def cursors_invariant() -> Expr:
+        """
+        Create the invariant that defines valid representations of fields.
+
+        Each field cursor represents the state of one parsed or serialized message field.
+        This invariant ensures for all structurally valid fields that
+
+            - the field bounds are inside the range of verified buffer part,
+            - the field size is greater or equal to zero,
+            - and the field value fulfills all constraints of its field type.
+        """
         return ForAllIn(
             "F",
             Variable("Field"),
@@ -464,6 +485,18 @@ def context_predicate(
         )
 
     def valid_predecessors_invariant() -> Expr:
+        """
+        Create the invariant that defines the state of predecessors of valid fields.
+
+        This invariant ensures for all structurally valid message fields that
+
+            - one of its predecessor fields is structurally valid,
+            - the predecessor component in the cursor refers to a valid predecessor,
+            - and the condition on the link between the field and its predecessor is fulfilled.
+
+        This ensures that there is a valid message path from each structurally valid field to the
+        initial field.
+        """
         return AndThen(
             *[
                 If(
@@ -520,6 +553,12 @@ def context_predicate(
         )
 
     def invalid_successors_invariant() -> Expr:
+        """
+        Create the invariant that defines the state of successors of invalid fields.
+
+        This invariant ensures for all invalid message fields that all its successor fields are also
+        invalid.
+        """
         return AndThen(
             *[
                 If(
@@ -585,6 +624,17 @@ def context_predicate(
 
 
 def public_context_predicate() -> Expr:
+    """
+    Create the predicate that defines the relations between the public discriminants of the context.
+
+    This invariant ensures that
+
+        - the positions of the first and last usable bit are inside the range of the buffer,
+        - the size of the usable buffer is greater or equal to zero,
+        - the value of `Last` and `Buffer_Last` is less than the last possible value of their
+          respective type to allow the representation of a size of zero in these edge cases
+        - and the positions of the first and last usable bit are byte aligned.
+    """
     return And(
         GreaterEqual(Call(const.TYPES_TO_INDEX, [Variable("First")]), Variable("Buffer_First")),
         LessEqual(Call(const.TYPES_TO_INDEX, [Variable("Last")]), Variable("Buffer_Last")),
