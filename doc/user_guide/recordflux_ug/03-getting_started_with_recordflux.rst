@@ -152,7 +152,7 @@ the following field. A more detailed description can be found in
 
       type Tag_Type    is (Msg_Data => 1, Msg_Error => 3)
          with Size => 8;
-      type Length_Type is mod 2**16;
+      type Length_Type is mod 2 ** 16;
 
       type Message_Type is
          message
@@ -260,7 +260,7 @@ and contain a single package definition.
 The file name must be the same as the package name,
 folded to lower case.
 
-.. code-block:: sh
+.. code:: console
 
    $ rflx check tlv.rflx
    Parsing tlv.rflx
@@ -283,7 +283,7 @@ that can be used to formally prove a variety of message properties.
 
 .. TODO:: Mention which properties can be proved
 
-.. code-block:: sh
+.. code:: console
 
    $ mkdir generated
    $ rflx generate -d generated tlv.rflx
@@ -321,7 +321,7 @@ The child package ``RFLX.TLV`` contains Ada type declarations
 for the scalar types defined in the ``TLV`` package
 (in the :file:`TLV.rflx` source file):
 
-.. doc-check: ada
+.. doc-check: ada,declaration
 .. code:: ada
 
    type Tag_Type is (Msg_Data, Msg_Error) with Size => 8;
@@ -360,7 +360,7 @@ main functionality.
 
 .. rubric:: Types
 
-.. doc-check: ada
+.. doc-check: ada,declaration
 .. code:: ada
 
    type Virtual_Field is (F_Initial, F_Tag, F_Length, F_Value, F_Final);
@@ -370,7 +370,7 @@ main functionality.
 
    The ``Field`` (sub)type represents the ``Message_Type`` components.
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    type Context
@@ -394,7 +394,7 @@ main functionality.
 
 .. rubric:: Initialization
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Initialize (Ctx : out Context; Buffer : in out Bytes_Ptr);
@@ -404,7 +404,7 @@ main functionality.
    Initialize ``Ctx`` with ``Buffer`` and then set ``Buffer``
    to ``null``.
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Initialize (Ctx          : out Context; 
@@ -423,7 +423,7 @@ main functionality.
 
 .. rubric:: Buffer operations
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out Bytes_Ptr);
@@ -436,7 +436,7 @@ main functionality.
    thus further verification of the message is not possible after
    this action.
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    function Has_Buffer (Ctx : Context) return Boolean;
@@ -447,7 +447,7 @@ main functionality.
 
 .. rubric:: Field "setter" operations
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Set_Tag    (Ctx : in out Context; Value : Tag);
@@ -457,7 +457,7 @@ main functionality.
 
    Set the ``Tag`` and ``Length`` fields, respectively
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Set_Value_Empty (Ctx : in out Context);
@@ -468,7 +468,7 @@ main functionality.
    
    .. TODO:: What does it mean for the ``Value`` field to be empty?
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Set_Value (Ctx : in out Context; Value : Bytes);
@@ -478,7 +478,7 @@ main functionality.
   Set the contents of the ``Value`` field.
 
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    generic 
@@ -490,7 +490,7 @@ main functionality.
    Invoke the ``Process_Value`` procedure on the contents of the
    ``Value`` field.
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    procedure Initialize_Value (Ctx : in out Context);
@@ -505,7 +505,7 @@ main functionality.
 
 .. rubric:: Field "getter" operations
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    function Get_Tag    (Ctx : Context) return RFLX.TLV.Tag_Type;
@@ -529,7 +529,7 @@ main functionality.
 
 .. rubric:: Field and Message Validation
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
 
    function             (Ctx : Context; Fld : Field) return Boolean;
@@ -591,7 +591,7 @@ Constructing a Message
 The following program constructs a TLV message and inspects its
 contents:
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
    :number-lines:
 
@@ -647,7 +647,7 @@ since it has not been refined.
 
 Executing the program produces the following output:
    
-.. code-block:: sh
+.. code:: console
 
    $ ./generate_tlv
    Expected
@@ -660,7 +660,7 @@ Parsing a Message
 The following program decomposes a TLV message into its
 constituent fields:
 
-.. doc-check: ada
+.. doc-check: ignore
 .. code:: ada
    :number-lines:
 
@@ -733,7 +733,7 @@ constituent fields:
 
 Executing the program produces the following output:
 
-.. code-block:: sh
+.. code:: console
 
    $ ./parse_tlv
    Tag field is MSG_DATA

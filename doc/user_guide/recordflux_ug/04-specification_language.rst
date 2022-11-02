@@ -98,10 +98,15 @@ to be specified explicitly.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
-   type Address is mod 2**48
-   type Type_Length is range 46 .. 2**16 - 1 with Size => 16
+   type Address is mod 2 ** 48
+
+.. doc-check: rflx,basic_declaration
+.. code:: ada
+
+   type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16
 
 
 Enumeration Types
@@ -140,9 +145,13 @@ its value corresponds to one of the specified literals.
 
 .. rubric:: Example
 
-.. code::
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Tag is (Msg_Error, Msg_Data) with Size => 1
+
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Ether_Type is
       (ET_IPv4            => 16#0800#,
@@ -309,7 +318,8 @@ of the message.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Frame is
       message
@@ -334,7 +344,8 @@ of the message.
                if Payload'Size / 8 >= 46 and Payload'Size / 8 <= 1500;
       end message
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Empty_Message is null message
 
@@ -369,7 +380,8 @@ under a certain condition, a null message can be used as message type.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    for Ethernet::Frame use (Payload => IPv4::Packet)
       if Ether_Type = Ethernet::IPV4
@@ -395,7 +407,8 @@ derived message type.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Specific_Extension is new Extension
 
@@ -439,7 +452,8 @@ within the range ``0 .. N-1``.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    type Options is sequence of Option
 
@@ -448,11 +462,11 @@ Protocol Sessions
 =================
 
 .. TODO:: This may change, or at least should be clarified since it is
-   not clear where the generic gets instandtiated
+   not clear where the generic gets instantiated
 
 A session defines the dynamic behavior of a protocol using a finite state machine.
 The external interface of a session is defined by parameters.
-The initial and final state are defined by aspects.
+The first state that is defined is considered the initial state.
 The declaration part declares session global variables.
 The main part of a session definition comprises the state definitions.
 
@@ -473,17 +487,14 @@ The main part of a session definition comprises the state definitions.
           
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,basic_declaration
+.. code:: ada
 
    generic
       X : Channel with Readable, Writable;
-      type T is private;
       with function F return T;
       with function G (P : T) return Boolean;
-   session S with
-      Initial => A,
-      Final => B
-   is
+   session S is
       Y : Boolean := False;
    begin
       state A
@@ -494,45 +505,25 @@ The main part of a session definition comprises the state definitions.
       begin
          X'Read (M);
       transition
-         goto B
+         goto null
             with Desc => "rfc1149.txt+45:4-47:8"
             if Z = True
                and G (F) = True
          goto A
       end A;
-   
-      state B is null state;
    end S
 
 Session Parameters
 ------------------
 
-Private types, functions and channels can be defined
+Functions and channels can be defined
 as session parameters.
 
 .. rubric:: Syntax
 
 .. productionlist::
-   session_parameter: ( `private_type_declaration` |
-                    :   `function_declaration`     |
-                    :   `channel_declaration` ) ;
+   session_parameter: ( `function_declaration`| `channel_declaration` ) ;
 
-Private Types
-^^^^^^^^^^^^^
-
-A private type parameter represents an externally defined type.
-
-.. rubric:: Syntax
-
-.. productionlist::
-   private_type_declaration: "type" `name` "is" "private"
-
-.. rubric:: Example
-
-.. code-block:: ada
-
-   type Hash is private
-   
 Functions
 ^^^^^^^^^
  
@@ -564,7 +555,7 @@ A *definite message* is a message with no optional fields and an explicit size
 
 .. TODO:: Clarify the "i.e." in the above.
  
-SPARK
+.. rubric:: SPARK
  
 For each function declaration in the session specification
 a formal procedure declaration is added to the corresponding
@@ -575,7 +566,8 @@ procedure declaration.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,session_parameter
+.. code:: ada
 
    with function Decrypt (Key_Update_Message : Key_Update_Message;
                           Sequence_Number    : Sequence_Number;
@@ -601,7 +593,8 @@ Channels can be readable, writable, or both.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,session_parameter
+.. code:: ada
 
    Data_Channel : Channel with Readable, Writable
 
@@ -631,7 +624,8 @@ A declared variable must have a type and can be optionally initialized using an 
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,declaration
+.. code:: ada
 
    Error_Sent : Boolean := False
 
@@ -646,7 +640,8 @@ Renaming Declaration
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,declaration
+.. code:: ada
 
    Client_Hello_Message : TLS_Handshake::Client_Hello renames
                             Client_Hello_Handshake_Message.Payload
@@ -705,7 +700,8 @@ If all conditions are ``False``, or no conditional transitions are defined,
 the default transition is taken.
 
 
-.. code-block:: ada
+.. doc-check: rflx,state,6
+.. code:: ada
 
    state A
       with Desc => "rfc1149.txt+51:4-52:9"
@@ -715,13 +711,12 @@ the default transition is taken.
    begin
       X'Read (M);
    transition
-      goto B
+      goto null
          with Desc => "rfc1149.txt+45:4-47:8"
          if Z = True and G (F) = True
       goto A
    end A
 
-   state B is null state
 
 State Declarations
 ^^^^^^^^^^^^^^^^^^
@@ -758,7 +753,8 @@ which must not contain any condition.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,conditional_transition,9
+.. code:: ada
 
    goto B
          with Desc => "rfc1149.txt+45:4-47:8"
@@ -795,10 +791,33 @@ An assignment always creates a copy of the original object.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,assignment_statement
+.. code:: ada
 
    Error_Sent := True
 
+Message Field Assignment Statements
+***********************************
+
+A message field assignment sets the value of a message field.
+
+.. rubric:: Syntax
+
+.. productionlist::
+   message_field_assignment: variable_`name`.field_`name` := `expression`
+
+.. rubric Dynamic Semantics
+
+Message fields must be set in order. Trying to set a message field
+which is not a valid next field leads to an exception transition.
+All subsequent fields of the set message field are invalidated.
+
+.. rubric:: Example
+
+.. doc-check: rflx,message_field_assignment_statement
+.. code:: ada
+
+    Packet.Length := 42
 
 Append Attribute Statements
 ***************************
@@ -818,10 +837,33 @@ exception transition.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,attribute_statement
+.. code:: ada
+
+   Parameter_Request_List'Append (DHCP::Domain_Name_Option)
+
+
+Extend Attribute Statements
+***************************
+
+The Extend attributes adds a sequence of elements to the end of a sequence.
+
+.. rubric:: Syntax
+
+.. productionlist::
+   extend: sequence_`name`'Extend ( `expression` )
+
+.. rubric:: Dynamic Semantics
+
+Extending a sequence might lead to an exception transition.
+
+.. rubric:: Example
+
+.. doc-check: rflx,attribute_statement
+.. code:: ada
 
    Parameter_Request_List'Extend (Parameters)
-   
+
 
 Reset Attribute Statements
 **************************
@@ -846,7 +888,8 @@ The existing state of a message or sequence is removed
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,attribute_statement
+.. code:: ada
 
    Message'Reset
    
@@ -863,7 +906,8 @@ The read attribute statement is used to retrieve a message from a channel.
    
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,attribute_statement
+.. code:: ada
 
    Data_Channel'Read (Message)
    
@@ -881,11 +925,12 @@ A message can be sent through a channel using a write attribute statement.
 .. rubric:: Dynamic Semantics
 
 Writing an invalid message leads to an exception transition.
-This behavior will change in the future (cf. #569).
+This behavior will change in the future (cf. #569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,attribute_statement
+.. code:: ada
 
    Data_Channel'Write (Message)
 
@@ -926,8 +971,6 @@ Message Aggregates
 
 .. rubric:: Syntax
 
-
-
 .. productionlist::
    message_aggregate: message_`type_name`'(
                     :  `message_aggregate_association_list`
@@ -951,13 +994,17 @@ to an exception transition.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_primary
+.. code:: ada
 
-   TLS_Record::TLS_Record'(Tag                   => TLS_Record::Alert, 
+   TLS_Record::TLS_Record'(Tag                   => TLS_Record::Alert,
                            Legacy_Record_Version => TLS_Record::TLS_1_2,
                            Length                => Alert_Message'Size / 8,
                            Fragment              => Alert_Message'Opaque)
-   
+ 
+.. doc-check: rflx,extended_primary
+.. code:: ada
+
    Null_Message'(null message)
 
 
@@ -975,10 +1022,15 @@ empty aggregates, are extensions to Ada syntax.
 
 .. rubric:: Example
  
-.. code::
+.. doc-check: rflx,extended_primary
+.. code:: ada
 
    [0, 1, 2]
-   [] 
+
+.. doc-check: rflx,extended_primary
+.. code:: ada
+
+   []
  
  
 Attribute Expressions
@@ -1015,7 +1067,8 @@ This behavior will change in the future (cf. #569).
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_suffix
+.. code:: ada
 
    Message'Valid
 
@@ -1038,7 +1091,8 @@ This behavior will change in the future (cf. #569).
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_suffix
+.. code:: ada
 
    Ethernet_Frame.Payload
    
@@ -1062,10 +1116,11 @@ This behavior will change in the future (cf. #569).
 
 .. rubric:: Example
 
-.. code::
+.. doc-check: rflx,extended_suffix
+.. code:: ada
 
-   [for O in Offer.Options 
-     if O.Code = DHCP::DHCP_Message_Type_Option => 
+   [for O in Offer.Options
+     if O.Code = DHCP::DHCP_Message_Type_Option =>
      O.DHCP_Message_Type]
  
  
@@ -1085,7 +1140,8 @@ declare a separate variable.
  
 .. rubric:: Example
  
-.. code-block:: ada
+.. doc-check: rflx,extended_suffix
+.. code:: ada
 
     TLS_Alert::Alert'(Level => Level, Description => Description)
        where
@@ -1108,9 +1164,10 @@ Quantified expressions facilitate reasoning about properties of sequences.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_primary
+.. code:: ada
 
-   for all E in Server_Hello_Message.Extensions => 
+   for all E in Server_Hello_Message.Extensions =>
      E.Tag /= TLS_Handshake::ET_Supported_Versions
 
 Calls
@@ -1125,10 +1182,11 @@ All functions declared in the session parameters can be called.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_primary
+.. code:: ada
 
-   Decrypt (Key_Update_Message, 
-            Sequence_Number, 
+   Decrypt (Key_Update_Message,
+            Sequence_Number,
             TLS_Record_Message.Encrypted_Record)
 
 
@@ -1154,10 +1212,43 @@ This behavior will change in the future (cf. #569).
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,extended_primary
+.. code:: ada
 
    Key_Update_Message (Handshake_Control_Message.Data)
    
+Case Expressions
+****************
+
+A `case expression <#grammar-token-case_expression>`_ selects one of several alternative dependent
+`expressions <#grammar-token-expression>`_ for evaluation based on the value of a selecting
+`expression <#grammar-token-expression>`_.
+
+.. rubric:: Syntax
+
+.. productionlist::
+   case_expression: ( case selecting_`expression`
+                  : is `case_expression_alternative` { ,
+                  : `case_expression_alternative` } )
+   case_expression_alternative: when `discrete_choice_list` => dependent_`expression`
+   discrete_choice_list: `discrete_choice` { | `discrete_choice` }
+   discrete_choice: `number` | `qualified_name`
+
+.. rubric:: Static Semantics
+
+The type of all the dependent `expression <#grammar-token-expression>`_\ s shall be compatible to the type of the `case expression <#grammar-token-case_expression>`_.
+Each value of the type of the selecting `expression <#grammar-token-expression>`_ shall be covered by a `discrete choice <#grammar-token-discrete_choice>`_.
+Two distinct `discrete choices <#grammar-token-discrete_choice>`_ of a `case expression <#grammar-token-case_expression>`_ shall not cover the same value.
+
+.. rubric:: Example
+
+.. doc-check: rflx,extended_primary
+.. code:: ada
+
+   (case Value is
+       when T::V1 | T::V2 => 2,
+       when T::V3         => 4)
+
 
 Packages
 ========
@@ -1182,14 +1273,15 @@ By convention one protocol is specified in one package.
 
 .. rubric:: Example
 
-.. code:: 
+.. doc-check: rflx
+.. code:: ada
 
    package Ethernet is
    
-      type Address     is mod 2**48;
-      type Type_Length is range 46 .. 2**16 - 1 with Size => 16;
+      type Address     is mod 2 ** 48;
+      type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16;
       type TPID        is range 16#8100# .. 16#8100# with Size => 16;
-      type TCI         is mod 2**16;
+      type TCI         is mod 2 ** 16;
       type Ether_Type is
          (ET_IPv4            => 16#0800#,
           ET_ARP             => 16#0806#,
@@ -1197,7 +1289,7 @@ By convention one protocol is specified in one package.
           ET_IPv6            => 16#86DD#,
           ET_VLAN_Tag_Double => 16#9100#)
       with Size => 16, Always_Valid;
-   
+
       type Frame is
          message
             Destination      : Address;
@@ -1211,7 +1303,7 @@ By convention one protocol is specified in one package.
                   if Type_Length_TPID <= 1500
                then Ether_Type
                   with First => Type_Length_TPID'First
-                  if Type_Length_TPID >= 1536 and 
+                  if Type_Length_TPID >= 1536 and
                      Type_Length_TPID /= 16#8100#;
             TPID       : TPID;
             TCI        : TCI;
@@ -1224,10 +1316,7 @@ By convention one protocol is specified in one package.
       generic
          Input  : Channel with Readable;
          Output : Channel with Writable;
-      session Validator with
-         Initial => Validate,
-         Final  => Error
-      is
+      session Validator is
          Frame : Ethernet::Frame;
       begin
          state Validate
@@ -1246,11 +1335,8 @@ By convention one protocol is specified in one package.
             Output'Write (Frame);
          transition
             goto Validate
-         exception
-            goto Error
          end Forward;
    
-         state Error is null state;
       end Validator;
    
    end Ethernet;
@@ -1270,11 +1356,12 @@ via a list of `with_clause`\ s
 
 .. rubric:: Static Semantics
 
-Each referenced package needs to be identified in  a corresponding `with_clause` at the beginning of the file.
+Each referenced package needs to be identified in a corresponding `with_clause` at the beginning of the file.
 
 .. rubric:: Example
 
-.. code-block:: ada
+.. doc-check: rflx,context_clause
+.. code:: ada
 
    with Ethernet;
    with IPv4;
@@ -1298,7 +1385,8 @@ The file name must match the package name in lower case characters.
 
 File: :file:`in_ethernet.rflx`
 
-.. code-block:: ada
+.. doc-check: rflx,specification,0
+.. code:: ada
 
    with Ethernet;
    with IPv4;
@@ -1309,4 +1397,3 @@ File: :file:`in_ethernet.rflx`
          if Ether_Type = Ethernet::ET_IPv4;
    
    end In_Ethernet;
-
